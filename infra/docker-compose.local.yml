@@ -85,14 +85,16 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-master:
     container_name: seaweedfs-master
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     expose:
       - '9333'   # Master HTTP port
       - '19333'  # Master gRPC port
+    # Since 4.41 the master reports cluster statistics to telemetry.seaweedfs.com unless -telemetry=false.
     command: >
       master
       -ip=seaweedfs-master
+      -telemetry=false
       -ip.bind=0.0.0.0
       -defaultReplication=000
       -volumeSizeLimitMB=1024
@@ -123,12 +125,12 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-volume:
     container_name: seaweedfs-volume
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     expose: ['8080', '18080']
     command: >
       volume
-      -mserver="seaweedfs-master:9333"
+      -master="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
       -port=8080
       -max=500
@@ -155,12 +157,13 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-filer:
     container_name: seaweedfs-filer
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     ports: [8889:8888, '18888']
     command: >
       filer
       -master="seaweedfs-master:9333"
+      -ip=seaweedfs-filer
       -ip.bind=0.0.0.0
     environment:
       # Internal JWT Authentication
@@ -207,7 +210,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-s3:
     container_name: seaweedfs-s3
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     ports: [9000:9000]
     volumes:
@@ -227,7 +230,9 @@ services:
       S3_PORT: '9000'
       S3_FILER: seaweedfs-filer:8888
       S3_BIND_IP: 0.0.0.0
-      S3_ALLOW_EMPTY_FOLDER: true
+      # The gateway registers with the master like the filer does; on two networks it would otherwise
+      # advertise whichever address it detects first.
+      S3_ADVERTISED_IP: seaweedfs-s3
     depends_on:
       seaweedfs-filer:
         condition: service_healthy
@@ -263,6 +268,27 @@ services:
       - proxy  # External S3 API access via Traefik
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  seaweedfs-ttl-init:
+    container_name: seaweedfs-ttl-init
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
+    restart: 'no'
+    depends_on:
+      seaweedfs-filer:
+        condition: service_healthy
+    environment:
+      SEAWEEDFS_MASTER: seaweedfs-master:9333
+      SEAWEEDFS_FILER: seaweedfs-filer:8888
+    volumes: [./configs/seaweedfs/ttl-init.sh:/usr/local/bin/ttl-init.sh:ro]
+    entrypoint: [/bin/sh, /usr/local/bin/ttl-init.sh]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - storage
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-init:
     container_name: seaweedfs-init
     image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
@@ -270,6 +296,8 @@ services:
     depends_on:
       seaweedfs-s3:
         condition: service_healthy
+      seaweedfs-ttl-init:
+        condition: service_started
     environment:
       AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
@@ -292,11 +320,13 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
-    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.15.5
     restart: always
+    volumes: [./configs/oauth2-proxy:/templates:ro]
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
-      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_COOKIE_SECURE: 'true'
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://seaweedfs-filer:8888
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_SEAWEEDFS}
@@ -346,7 +376,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   etcd:
     container_name: etcd
-    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
+    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.35
     restart: always
     command:
       - etcd
@@ -408,7 +438,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   milvus-standalone:
     container_name: milvus
-    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7
+    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.25
     restart: always
     command: [milvus, run, standalone]
     security_opt: [seccomp:unconfined]
@@ -470,11 +500,13 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-attu:
     container_name: oauth2proxy-attu
-    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.15.5
     restart: always
+    volumes: [./configs/oauth2-proxy:/templates:ro]
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4182
-      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_COOKIE_SECURE: 'true'
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://attu:3000
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_ATTU}
@@ -662,7 +694,7 @@ services:
   # License: GPL-3.0 — third-party (see LICENSE_REPORT.md)
   neo4j:
     container_name: neo4j
-    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community
+    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.32-community-trixie
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/logs:/logs
@@ -738,7 +770,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-worker:
     container_name: langfuse-worker
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3.225.8
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3.225.14
     restart: always
     depends_on:
       postgres:
@@ -804,7 +836,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-web:
     container_name: langfuse-web
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3.225.8
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3.225.14
     restart: always
     depends_on:
       postgres:
@@ -903,6 +935,16 @@ services:
       - traefik.http.routers.langfuse.middlewares=security-headers@file
       - traefik.http.services.langfuse.loadbalancer.server.port=3000
       - traefik.http.routers.langfuse.tls=true
+      # Next.js's image optimizer carries the Next.js advisories Langfuse 3.x still bundles (fixed only in Langfuse v4).
+      # The UI does not request it, so the route answers 403 to everyone.
+      - traefik.http.routers.langfuse-next-image.rule=Host(`langfuse.${DOMAIN}`) &&
+        PathPrefix(`/_next/image`)
+      - traefik.http.routers.langfuse-next-image.priority=4100
+      - traefik.http.routers.langfuse-next-image.entrypoints=websecure
+      - traefik.http.routers.langfuse-next-image.service=langfuse
+      - traefik.http.routers.langfuse-next-image.middlewares=langfuse-next-image-deny
+      - traefik.http.middlewares.langfuse-next-image-deny.ipallowlist.sourcerange=127.0.0.1/32
+      - traefik.http.routers.langfuse-next-image.tls=true
     networks:
       - backend
       - data  # For PostgreSQL access
@@ -1306,11 +1348,13 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-backup:
     container_name: oauth2proxy-backup
-    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.15.5
     restart: always
+    volumes: [./configs/oauth2-proxy:/templates:ro]
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_COOKIE_SECURE: 'true'
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://backup-webserver:3000
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-backup
@@ -1778,7 +1822,7 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-playwright1.63.0-1
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
@@ -2123,11 +2167,13 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-dagster:
     container_name: oauth2proxy-dagster
-    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.15.5
     restart: always
+    volumes: [./configs/oauth2-proxy:/templates:ro]
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_COOKIE_SECURE: 'true'
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://dagster-webserver:3000
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-dagster
@@ -2298,7 +2344,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   traefik:
     container_name: traefik
-    image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2
+    image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.7.16
     restart: always
     depends_on:
       docker-socket-proxy:
@@ -2318,7 +2364,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=proxy
       # --- HTTP to HTTPS Redirect and ACME Challenge ---
-      - traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)
+      - traefik.http.routers.http-catch.rule=HostRegexp(`.+`) && !PathPrefix(`/.well-known/acme-challenge/`)
       - traefik.http.routers.http-catch.entrypoints=web
       - traefik.http.routers.http-catch.priority=10
       - traefik.http.routers.http-catch.middlewares=https-redirect

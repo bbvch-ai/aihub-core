@@ -31,6 +31,7 @@ deployment/
 │       ├── init_etcd.sh.j2            # etcd auth setup (idempotent)
 │       ├── s3-entrypoint.sh.j2        # SeaweedFS S3 gateway startup
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
+│       ├── s3-ttl-init.sh.j2          # Bucket expiry as filer TTL rules (never S3 lifecycle, see ADR 2026_10_27)
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
 │       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
 │       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)

@@ -20,30 +20,30 @@ global:
 # -------------------------------------------------------------------
 image_tags:
   # --- Core Infrastructure (mostly static) ---
-  seaweedfs: seaweedfs:4.01
+  seaweedfs: seaweedfs:4.51
   aws_cli: aws-cli-alpine:3.22.1
-  etcd: etcd:v3.5.25
-  milvus: milvus:v2.6.7
+  etcd: etcd:v3.5.35
+  milvus: milvus:v2.6.25
   attu: attu:v2.5.12
   postgres: pgvector-repack:pg17
   clickhouse: clickhouse/clickhouse-server:25.8
-  langfuse_web: langfuse/langfuse:3.225.8
-  langfuse_worker: langfuse/langfuse-worker:3.225.8
+  langfuse_web: langfuse/langfuse:3.225.14
+  langfuse_worker: langfuse/langfuse-worker:3.225.14
   nats: nats:2.11.4
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
-  neo4j: neo4j:5.26.16-community
+  neo4j: neo4j:5.26.32-community-trixie
   litellm: litellm:v1.106.4
   mineru_api: mineru-api:v2.7.5
   mineru_vlm: mineru-vlm:v2.7.5
   open_terminal: open-terminal-office:0.11.34-1
   otel_collector: otel/opentelemetry-collector-contrib:0.164.0
-  traefik: traefik:v3.6.2
+  traefik: traefik:v3.7.16
   docker_socket_proxy: tecnativa/docker-socket-proxy:0.3
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
   presidio_analyzer: presidio-analyzer:2.2.364-swiss-3
-  oauth2proxy: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
-  open_webui: open-webui:v0.11.3-playwright1.63.0-1
+  oauth2proxy: oauth2-proxy:v7.15.5
+  open_webui: open-webui:v0.11.4-playwright1.63.0-1
   open_webui_init: postgres:17
   playwright: playwright:v1.63.0-jammy-1
   vllm: vllm-openai:v0.15.1
