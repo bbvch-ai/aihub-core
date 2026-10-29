@@ -1211,6 +1211,7 @@ services:
       # Read by the pii-anonymisation guardrail (litellm_functions/pii_anonymisation_guardrail.py)
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
       PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
+      PII_ANONYMISE_EXTERNAL_MODELS: ${PII_ANONYMISE_EXTERNAL_MODELS}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
