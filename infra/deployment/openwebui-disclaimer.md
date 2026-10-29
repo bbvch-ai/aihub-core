@@ -58,7 +58,7 @@ AI Hub displays its tenant warning.
 
 ## Footer placement
 
-Tested in Chromium with OpenWebUI v0.11.3-slim. The loader:
+Tested in Chromium with OpenWebUI v0.11.4-slim. The loader:
 
 1. Finds `#chat-input-container #chat-input` and its form inside `#chat-pane`.
 2. Searches that composer's ancestors for the upstream footer with

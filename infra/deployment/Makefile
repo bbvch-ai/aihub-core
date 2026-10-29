@@ -59,14 +59,14 @@ build-and-push-playwright-image:
 # Build the project-managed OpenWebUI image (the mirrored release + a refreshed CA bundle) and push to ghcr.
 # The Dockerfile lives at `infra/deployment/docker/open-webui/Dockerfile`. Re-run this whenever the base tag changes.
 build-and-push-openwebui-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-1..."
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-1..."
 	@docker login ghcr.io
 	@docker build --platform linux/amd64 \
-		-t ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-1 \
+		-t ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-1 \
 		-f docker/open-webui/Dockerfile \
 		docker/open-webui
-	@docker push ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-1
-	@echo "Successfully published open-webui:v0.11.3-1"
+	@docker push ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-1
+	@echo "Successfully published open-webui:v0.11.4-1"
 
 # Build the project-managed rclone image (upstream rclone + a refreshed CA bundle) and push to ghcr.
 # The Dockerfile lives at `infra/deployment/docker/rclone/Dockerfile`. Re-run this whenever the base rclone tag changes.

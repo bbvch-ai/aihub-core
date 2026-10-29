@@ -241,8 +241,8 @@ litellm_settings:
   prompt_injection_params:
     heuristics_check: false  # Disable simple pattern matching (too many false positives)
     similarity_check: true  # Keep pattern comparison to known attacks
-    # Off: since v1.106 this check sends the whole conversation to llm_api_name through the router, and the model's
-    # verdict rejected ordinary messages ("Say: Hello"). v1.83.10 never ran it.
+    # Off: since v1.106.2 this check sends the whole conversation to llm_api_name through the router, past the
+    # pii-anonymisation guardrail, and the model's verdict rejected ordinary messages ("Say: Hello"). v1.83.10 never ran it.
     llm_api_check: false
     llm_api_name: text-generation/gemma-4-31B-it
     llm_api_system_prompt: You are a security system analyzing prompts for malicious

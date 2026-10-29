@@ -1,4 +1,4 @@
-// Temporary adapter for stock OpenWebUI v0.11.3. See infra/deployment/openwebui-disclaimer.md.
+// Temporary adapter for stock OpenWebUI v0.11.4. See infra/deployment/openwebui-disclaimer.md.
 (() => {
   if (window.parent === window) return;
 

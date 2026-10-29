@@ -31,6 +31,7 @@ deployment/
 │       ├── init_etcd.sh.j2            # etcd auth setup (idempotent)
 │       ├── s3-entrypoint.sh.j2        # SeaweedFS S3 gateway startup
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
+│       ├── s3-ttl-init.sh.j2          # Bucket expiry as filer TTL rules (never S3 lifecycle, see ADR 2026_10_27)
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
 │       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
 │       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)
@@ -226,7 +227,7 @@ built earlier still trust `emSign ECC Root CA - G3`, so three images refresh the
   `ca-certificates`. Drop it for the plain mirror once an upstream rclone release ships a clean bundle.
 - `docker/playwright/` (`playwright:v1.60.0-jammy-1`, `build-and-push-playwright-image`): Ubuntu `ca-certificates` and
   `libnss3`. Chromium and Firefox compile their own root stores in, which change only with a Playwright release.
-- `docker/open-webui/` (`open-webui:v0.11.3-1`, `build-and-push-openwebui-image`): Debian `ca-certificates`, `certifi`,
+- `docker/open-webui/` (`open-webui:v0.11.4-1`, `build-and-push-openwebui-image`): Debian `ca-certificates`, `certifi`,
   and `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` pointing gRPC at the system bundle instead of its bundled root list.
 
 Keep these lines when bumping the base tag, and publish the new tag **before** pinning it in `compose-config.yml`.
@@ -304,7 +305,9 @@ Rules when editing:
   managed into `aihub-realm.{stage}.json` for `--import-realm` (fresh boots come up complete without waiting for the
   reconciler). Run `make generate-compose` after any edit and commit the regenerated files.
 - The `keycloak-config-cli` image tag in `compose-config.yml` must be bumped together with the Keycloak image (tag
-  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`).
+  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`). When upstream has no build for the new
+  Keycloak version yet, keep the newest release and check on the dev stack that `keycloak-config` still exits 0 against
+  an upgraded realm and a fresh `--import-realm` (Keycloak 26.8.1 currently runs with `6.5.1-26.5.5`).
 
 The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
 `realm-management` client roles. The current minimum required for the API to function correctly is:
