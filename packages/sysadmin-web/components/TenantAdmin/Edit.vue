@@ -5,6 +5,7 @@
         <InputText
           id="tenant_name"
           v-model="tenant.name"
+          :maxlength="nameMaxLength"
           class="w-full"
         />
         <label for="tenant_name">
@@ -15,6 +16,7 @@
         <Textarea
           id="tenant_description"
           v-model="tenant.description"
+          :maxlength="descriptionMaxLength"
           rows="3"
           class="w-full"
         />
@@ -33,9 +35,8 @@
       :label="t('tenant_admin.form.chat_disclaimer')"
       :help="t('tenant_admin.form.chat_disclaimer_help')"
       :placeholder="{ en: t('tenant_admin.form.chat_disclaimer') }"
-      validation="localeRequired|disclaimerLength"
-      :validation-rules="{ disclaimerLength }"
-      :validation-messages="{ disclaimerLength: t('tenant_admin.form.chat_disclaimer_too_long') }"
+      :max-length="100"
+      validation="localeRequired|localeMaxLength:100"
     />
 
     <AccessRulesEditor
@@ -51,9 +52,14 @@ import AccessRulesEditor from '@core/components/Role/AccessRulesEditor.vue'
 
 import type { TenantResponse, UpdateTenantMetadataRequest } from '~/sdk/client'
 
+import { CreateTenantMetadataRequestSchema } from '~/sdk/client/schemas.gen'
+
 type EditableTenant = TenantResponse | UpdateTenantMetadataRequest
 
 const { t } = useI18n()
+
+const nameMaxLength = schemaMaxLength(CreateTenantMetadataRequestSchema, 'name')
+const descriptionMaxLength = schemaMaxLength(CreateTenantMetadataRequestSchema, 'description')
 
 const props = defineProps<{
   modelValue: EditableTenant
@@ -65,11 +71,6 @@ const emit = defineEmits<{
 
 const initialAccessRules = ref<string[]>([...(props.modelValue.access_rules ?? [])])
 const tenant = ref<EditableTenant>(props.modelValue)
-
-function disclaimerLength(node: { value: unknown }) {
-  return Object.values((node.value ?? {}) as Record<string, string | null>)
-    .every(value => !value || [...value.trim()].length <= 100)
-}
 
 watch(() => props.modelValue, (newValue) => {
   tenant.value = newValue

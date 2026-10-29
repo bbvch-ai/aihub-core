@@ -10,7 +10,7 @@ for an agent that will never fire.
 from typing import Annotated, ClassVar
 
 from pydantic import Field
-from swiss_ai_hub.core.agents import CRON_CONFIG_KEY, AgentConfig
+from swiss_ai_hub.core.agents import ANONYMISE_CONFIG_KEY, CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import CronStartEvent, StopEvent, UserMessageEvent
 from swiss_ai_hub.core.form import ConfigSpecs
@@ -158,4 +158,12 @@ class TestTheScheduleRendersAfterTheBlueprintsOwnSettings:
         runner = AgentRunner(agent_type=_CronAgent, agent_config=_SettingsConfig.as_form())
 
         names = [element.name for element in runner.form]
-        assert names == ["agent_id", "name", "description", "icon", "system_prompt", CRON_CONFIG_KEY]
+        assert names == [
+            "agent_id",
+            "name",
+            "description",
+            "icon",
+            "system_prompt",
+            ANONYMISE_CONFIG_KEY,
+            CRON_CONFIG_KEY,
+        ]

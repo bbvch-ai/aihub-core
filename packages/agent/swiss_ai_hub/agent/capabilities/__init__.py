@@ -21,6 +21,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
     from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
     from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
+    from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
+    from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch_fields import WebFetchFields
 
 __all__ = [
     "AttachedFiles",
@@ -41,6 +43,8 @@ __all__ = [
     "ToolOptions",
     "ToolSet",
     "UserMemoryConfig",
+    "WebFetch",
+    "WebFetchFields",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
@@ -62,6 +66,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ToolOptions": "swiss_ai_hub.agent.capabilities.tool_loop.tool_options",
     "ToolSet": "swiss_ai_hub.agent.capabilities.tool_loop.tool_set",
     "UserMemoryConfig": "swiss_ai_hub.agent.capabilities.memory.user_memory_config",
+    "WebFetch": "swiss_ai_hub.agent.capabilities.web_fetch.web_fetch",
+    "WebFetchFields": "swiss_ai_hub.agent.capabilities.web_fetch.web_fetch_fields",
 }
 
 

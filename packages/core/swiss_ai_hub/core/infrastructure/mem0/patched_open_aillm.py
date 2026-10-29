@@ -3,6 +3,8 @@ from typing import Self, override
 
 from mem0.llms.openai import OpenAILLM
 
+from swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails import GatewayGuardrails
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,7 +16,12 @@ class PatchedOpenAILLM(OpenAILLM):
     response_format={"type": "json_object"} and require json_schema instead.
     mem0 hardcodes json_object in its vector store add path, so this patch
     removes it and relies on the prompt to produce valid JSON.
+
+    It also sends `requested_guardrails` with every call. mem0 runs its calls on worker threads of its own, which
+    do not inherit the step's `GatewayGuardrails` context, so the names are set on the instance instead.
     """
+
+    requested_guardrails: tuple[str, ...] = ()
 
     @classmethod
     def from_llm(cls, llm: OpenAILLM) -> Self:
@@ -23,6 +30,10 @@ class PatchedOpenAILLM(OpenAILLM):
         instance.config = llm.config
         instance.client = llm.client
         return instance
+
+    @override
+    def _get_supported_params(self, **kwargs) -> dict:
+        return GatewayGuardrails.merged_into(super()._get_supported_params(**kwargs), self.requested_guardrails)
 
     @override
     def generate_response(

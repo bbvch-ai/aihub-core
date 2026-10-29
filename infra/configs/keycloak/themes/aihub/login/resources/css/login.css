@@ -1,5 +1,8 @@
 /* AI-Hub Keycloak Login Theme
  * Extends keycloak.v2 with dark design matching the AI-Hub frontend.
+ * Loaded after keycloak.v2's own css/styles.css (theme.properties `styles`),
+ * which carries the layout of components such as the identity provider
+ * buttons; these rules only restyle it.
  * Colors from aihub-theme.ts surface scale.
  * Zero accent colors — all neutrals (white, gray, black). */
 
@@ -125,7 +128,7 @@ html.login-pf {
   color: #0d0d0d !important;
 }
 
-/* ── Secondary / social buttons ── */
+/* ── Secondary buttons ── */
 .pf-v5-c-button.pf-m-secondary {
   background-color: transparent !important;
   color: #ffffff !important;
@@ -138,16 +141,27 @@ html.login-pf {
   border-color: #9b9b9b !important;
 }
 
-/* ── Social provider SVG icons: constrain size ── */
-#kc-social-providers svg {
-  height: 1.25rem !important;
-  width: 1.25rem !important;
-  filter: invert(1) !important;
-  flex-shrink: 0;
+/* ── Identity provider buttons (PatternFly tertiary: the border is drawn by ::after) ── */
+#kc-social-providers .pf-v5-c-button.pf-m-tertiary {
+  --pf-v5-c-button--m-tertiary--BackgroundColor: transparent;
+  --pf-v5-c-button--m-tertiary--Color: #ffffff;
+  --pf-v5-c-button--m-tertiary--after--BorderColor: #4e4e4e;
+  --pf-v5-c-button--m-tertiary--hover--BackgroundColor: #262626;
+  --pf-v5-c-button--m-tertiary--hover--Color: #ffffff;
+  --pf-v5-c-button--m-tertiary--hover--after--BorderColor: #9b9b9b;
+  --pf-v5-c-button--BorderRadius: 6px;
+  --pf-v5-c-button--after--BorderRadius: 6px;
+  /* Beats the gray `a` rule below — the button is a link */
+  color: #ffffff !important;
+  gap: 0.5rem;
 }
 
-#kc-social-providers .pf-v5-c-button {
-  gap: 0.5rem;
+/* ── Identity provider icons: always white ──
+ * keycloak.v2 picks the icon by the OS color scheme (<picture>), so a light
+ * OS would get the black icon on this always-dark card. */
+#kc-social-providers img {
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
 }
 
 /* ── All links: neutral gray ── */
@@ -165,7 +179,17 @@ a:hover {
   color: #b4b4b4 !important;
 }
 
-/* ── "Or sign in with" divider ── */
+/* ── "or" divider above the identity providers ── */
+.kc-login-divider::before,
+.kc-login-divider::after {
+  border-bottom-color: #333333;
+}
+
+.kc-login-divider span {
+  color: #9b9b9b !important;
+}
+
+/* ── Info band at the bottom of the card ── */
 .pf-v5-c-login__main-footer-band {
   border-top-color: #333333 !important;
 }

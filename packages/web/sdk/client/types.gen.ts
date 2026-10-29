@@ -4406,6 +4406,7 @@ export type ContextualizedAgentEvent = {
     | MemoryRecalledEvent
     | MemoryStorageRequestedEvent
     | SearchKnowledgeEvent
+    | FetchWebPagesEvent
     | ExtractRecordsEvent
     | ReadAttachedFilesEvent
     | AttachedFilesReadEvent
@@ -4422,6 +4423,7 @@ export type ContextualizedAgentEvent = {
     | ThoughtEvent
     | AttachedFileEvent
     | KnowledgeSearchedEvent
+    | WebPagesFetchedEvent
     | RecordsExtractedEvent
     | ToolResultEvent
     | ToolLoopStatusEvent
@@ -6489,15 +6491,15 @@ export type ExtractRecordsEvent = {
    */
   display_description?: LocaleString | null;
   /**
-   * The documents to extract from; none when the request continues a pending extraction.
+   * The documents to extract from; none when the request confirms a sample.
    */
   selection?: KnowledgeDocumentSelection | null;
   /**
-   * Continue Pending
+   * Confirmed
    *
-   * Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.
+   * Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.
    */
-  continue_pending?: boolean;
+  confirmed?: boolean;
   /**
    * Fields
    *
@@ -6516,6 +6518,12 @@ export type ExtractRecordsEvent = {
    * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
    */
   row_terms?: string | null;
+  /**
+   * Document Terms
+   *
+   * Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.
+   */
+  document_terms?: string | null;
   /**
    * Collections
    *
@@ -6538,6 +6546,120 @@ export type ExtractRecordsEvent = {
    * Tool Call Id
    *
    * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ExtractedTableFile
+ *
+ * Where the whole table of an extraction is stored, as CSV.
+ *
+ * Events carry this reference and a preview, never every row: a table of any size then stays out of the message
+ * broker, the event store and the traces, and clients download it from object storage instead.
+ */
+export type ExtractedTableFile = {
+  /**
+   * Bucket
+   *
+   * The object storage bucket holding the file.
+   */
+  bucket: string;
+  /**
+   * Key
+   *
+   * The object key of the file within the bucket.
+   */
+  key: string;
+  /**
+   * Filename
+   *
+   * The name the file is downloaded under.
+   */
+  filename: string;
+  /**
+   * Size
+   *
+   * The file's size in bytes.
+   */
+  size: number;
+  /**
+   * Row Count
+   *
+   * Rows the file holds, without the header.
+   */
+  row_count: number;
+  /**
+   * Content Type
+   *
+   * The file's media type.
+   */
+  content_type?: string;
+};
+
+/**
+ * FetchWebPagesEvent
+ *
+ * Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.
+ *
+ * Built with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the
+ * profile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.
+ */
+export type FetchWebPagesEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Urls
+   *
+   * The links to read, in the order the user gave them.
+   */
+  urls?: Array<string>;
+  /**
+   * Reading
+   *
+   * Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.
+   */
+  reading?: boolean;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the pages by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
    */
   tool_call_id?: string | null;
   /**
@@ -9717,6 +9839,12 @@ export type InputText = {
    */
   iconSuffix?: string | null;
   /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
+  /**
    * Validation
    */
   readonly validation: string;
@@ -11126,6 +11254,12 @@ export type LocaleInput = {
    */
   placeholder?: LocaleString | string | null;
   /**
+   * Maxlength
+   *
+   * Maximum number of characters per language
+   */
+  maxLength?: number | null;
+  /**
    * Validation
    *
    * Emits `localeRequired` where other elements emit FormKit's `required`.
@@ -11491,7 +11625,7 @@ export type MailClassificationRef = {
   /**
    * Target Folder
    *
-   * Folder the message was filed into.
+   * Folder the message was filed into, or the inbox when it was kept there.
    */
   target_folder: string;
   /**
@@ -15666,11 +15800,14 @@ export type RecallMemoryEvent = {
 /**
  * RecordsExtractedEvent
  *
- * The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.
+ * The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a
+ * file, and its summary.
  *
- * A blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop
- * (`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as
- * a block of the answer, the OpenAI-compatible API as answer text.
+ * The event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size
+ * stays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.
+ * When a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients
+ * show the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients
+ * offer the file for download.
  */
 export type RecordsExtractedEvent = {
   /**
@@ -15706,9 +15843,13 @@ export type RecordsExtractedEvent = {
   /**
    * Table
    *
-   * The rows as a markdown table, empty when there are none.
+   * The first rows as a markdown table, a preview when `file` holds more; empty without rows.
    */
   table?: string;
+  /**
+   * The whole table as a CSV file; none when there are no rows.
+   */
+  file?: ExtractedTableFile | null;
   /**
    * Summary
    *
@@ -15730,33 +15871,27 @@ export type RecordsExtractedEvent = {
   /**
    * Row Count
    *
-   * Rows in the table.
+   * Rows in the preview.
    */
   row_count?: number;
   /**
    * Total Row Count
    *
-   * Rows found, more than the table holds when cut.
+   * Rows found; every one of them is in `file`.
    */
   total_row_count?: number;
   /**
    * Truncated
    *
-   * Whether the result was cut short at a limit.
+   * Whether the search for documents stopped at a limit, so documents may be missing.
    */
   truncated?: boolean;
   /**
-   * Remaining Documents
+   * Awaiting Confirmation
    *
-   * Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.
+   * Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.
    */
-  remaining_documents?: number;
-  /**
-   * Remaining Rows
-   *
-   * Rows found but not shown yet, shown first when the user continues.
-   */
-  remaining_rows?: number;
+  awaiting_confirmation?: boolean;
   /**
    * Tool Call Id
    *
@@ -16751,6 +16886,12 @@ export type RunToolLoopEvent = {
    * The collections the user referenced on the message, for tools that search knowledge.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * The web pages the message links or references, for tools that read them.
+   */
+  web_references?: Array<string>;
   /**
    * Event Name
    *
@@ -18266,6 +18407,12 @@ export type StoreUserMemoryRequestedEvent = {
    */
   origin_memory_llm?: string | null;
   /**
+   * Origin Anonymise
+   *
+   * Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.
+   */
+  origin_anonymise?: boolean;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -18761,6 +18908,12 @@ export type Textarea = {
    * Whether to automatically resize based on content
    */
   autoResize?: boolean;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   /**
    * Validation
    */
@@ -20412,6 +20565,12 @@ export type UnreadMailListedEvent = {
    */
   messages?: Array<UnreadMailSummary>;
   /**
+   * Uid Validity
+   *
+   * The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.
+   */
+  uid_validity?: number | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -20955,6 +21114,12 @@ export type UserMessageEvent = {
    */
   knowledge_references?: Array<KnowledgeReference>;
   /**
+   * Web References
+   *
+   * Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.
+   */
+  web_references?: Array<string>;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -21312,6 +21477,118 @@ export type VoiceId = {
    * Id
    */
   id: string;
+  [key: string]: unknown;
+};
+
+/**
+ * WebFetchFailure
+ *
+ * A linked page the agent could not read, with the reason the answer reports to the user.
+ */
+export type WebFetchFailure = {
+  /**
+   * Url
+   *
+   * The URL as the user sent it.
+   */
+  url: string;
+  /**
+   * Why the page could not be read.
+   */
+  reason: WebFetchFailureReason;
+};
+
+/**
+ * WebFetchFailureReason
+ *
+ * Why a linked page could not be read, so the answer can tell the user instead of inventing the page.
+ */
+export const WebFetchFailureReason = {
+  MALFORMED_URL: "malformed_url",
+  UNSUPPORTED_URL: "unsupported_url",
+  BLOCKED_HOST: "blocked_host",
+  NOT_FOUND: "not_found",
+  ACCESS_DENIED: "access_denied",
+  HTTP_ERROR: "http_error",
+  TIMEOUT: "timeout",
+  UNSUPPORTED_CONTENT: "unsupported_content",
+  EMPTY_CONTENT: "empty_content",
+  URL_LIMIT_REACHED: "url_limit_reached",
+} as const;
+
+/**
+ * WebFetchFailureReason
+ *
+ * Why a linked page could not be read, so the answer can tell the user instead of inventing the page.
+ */
+export type WebFetchFailureReason =
+  (typeof WebFetchFailureReason)[keyof typeof WebFetchFailureReason];
+
+/**
+ * WebPagesFetchedEvent
+ *
+ * The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.
+ *
+ * Displayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources
+ * the answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of
+ * those pages, with the failures beside them.
+ */
+export type WebPagesFetchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the pages read and the links that failed.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The pages the block holds, one per page, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNode>;
+  /**
+   * Failures
+   *
+   * The links that could not be read, with the reason for each.
+   */
+  failures?: Array<WebFetchFailure>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -23645,6 +23922,7 @@ export type ContextualizedAgentEventWritable = {
     | MemoryRecalledEventWritable
     | MemoryStorageRequestedEventWritable
     | SearchKnowledgeEventWritable
+    | FetchWebPagesEventWritable
     | ExtractRecordsEventWritable
     | ReadAttachedFilesEventWritable
     | AttachedFilesReadEventWritable
@@ -23661,6 +23939,7 @@ export type ContextualizedAgentEventWritable = {
     | ThoughtEventWritable
     | AttachedFileEventWritable
     | KnowledgeSearchedEventWritable
+    | WebPagesFetchedEventWritable
     | RecordsExtractedEventWritable
     | ToolResultEventWritable
     | ToolLoopStatusEventWritable
@@ -24425,15 +24704,15 @@ export type ExtractRecordsEventWritable = {
    */
   display_description?: LocaleString | null;
   /**
-   * The documents to extract from; none when the request continues a pending extraction.
+   * The documents to extract from; none when the request confirms a sample.
    */
   selection?: KnowledgeDocumentSelection | null;
   /**
-   * Continue Pending
+   * Confirmed
    *
-   * Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.
+   * Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.
    */
-  continue_pending?: boolean;
+  confirmed?: boolean;
   /**
    * Fields
    *
@@ -24452,6 +24731,12 @@ export type ExtractRecordsEventWritable = {
    * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
    */
   row_terms?: string | null;
+  /**
+   * Document Terms
+   *
+   * Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.
+   */
+  document_terms?: string | null;
   /**
    * Collections
    *
@@ -24474,6 +24759,60 @@ export type ExtractRecordsEventWritable = {
    * Tool Call Id
    *
    * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * FetchWebPagesEvent
+ *
+ * Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.
+ *
+ * Built with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the
+ * profile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.
+ */
+export type FetchWebPagesEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Urls
+   *
+   * The links to read, in the order the user gave them.
+   */
+  urls?: Array<string>;
+  /**
+   * Reading
+   *
+   * Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.
+   */
+  reading?: boolean;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the pages by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
    */
   tool_call_id?: string | null;
   [key: string]: unknown;
@@ -26650,6 +26989,12 @@ export type InputTextWritable = {
    * Icon suffix
    */
   iconSuffix?: string | null;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   [key: string]: unknown;
 };
 
@@ -27816,6 +28161,12 @@ export type LocaleInputWritable = {
    * Placeholder text for each language
    */
   placeholder?: LocaleString | string | null;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters per language
+   */
+  maxLength?: number | null;
   [key: string]: unknown;
 };
 
@@ -30151,11 +30502,14 @@ export type RecallMemoryEventWritable = {
 /**
  * RecordsExtractedEvent
  *
- * The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.
+ * The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a
+ * file, and its summary.
  *
- * A blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop
- * (`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as
- * a block of the answer, the OpenAI-compatible API as answer text.
+ * The event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size
+ * stays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.
+ * When a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients
+ * show the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients
+ * offer the file for download.
  */
 export type RecordsExtractedEventWritable = {
   /**
@@ -30191,9 +30545,13 @@ export type RecordsExtractedEventWritable = {
   /**
    * Table
    *
-   * The rows as a markdown table, empty when there are none.
+   * The first rows as a markdown table, a preview when `file` holds more; empty without rows.
    */
   table?: string;
+  /**
+   * The whole table as a CSV file; none when there are no rows.
+   */
+  file?: ExtractedTableFile | null;
   /**
    * Summary
    *
@@ -30215,33 +30573,27 @@ export type RecordsExtractedEventWritable = {
   /**
    * Row Count
    *
-   * Rows in the table.
+   * Rows in the preview.
    */
   row_count?: number;
   /**
    * Total Row Count
    *
-   * Rows found, more than the table holds when cut.
+   * Rows found; every one of them is in `file`.
    */
   total_row_count?: number;
   /**
    * Truncated
    *
-   * Whether the result was cut short at a limit.
+   * Whether the search for documents stopped at a limit, so documents may be missing.
    */
   truncated?: boolean;
   /**
-   * Remaining Documents
+   * Awaiting Confirmation
    *
-   * Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.
+   * Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.
    */
-  remaining_documents?: number;
-  /**
-   * Remaining Rows
-   *
-   * Rows found but not shown yet, shown first when the user continues.
-   */
-  remaining_rows?: number;
+  awaiting_confirmation?: boolean;
   /**
    * Tool Call Id
    *
@@ -30981,6 +31333,12 @@ export type RunToolLoopEventWritable = {
    * The collections the user referenced on the message, for tools that search knowledge.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * The web pages the message links or references, for tools that read them.
+   */
+  web_references?: Array<string>;
   [key: string]: unknown;
 };
 
@@ -32238,6 +32596,12 @@ export type StoreUserMemoryRequestedEventWritable = {
    * Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.
    */
   origin_memory_llm?: string | null;
+  /**
+   * Origin Anonymise
+   *
+   * Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.
+   */
+  origin_anonymise?: boolean;
   [key: string]: unknown;
 };
 
@@ -32509,6 +32873,12 @@ export type TextareaWritable = {
    * Whether to automatically resize based on content
    */
   autoResize?: boolean;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   [key: string]: unknown;
 };
 
@@ -33618,6 +33988,12 @@ export type UnreadMailListedEventWritable = {
    * Header summaries of the unread messages in the inbox.
    */
   messages?: Array<UnreadMailSummary>;
+  /**
+   * Uid Validity
+   *
+   * The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.
+   */
+  uid_validity?: number | null;
   [key: string]: unknown;
 };
 
@@ -33700,6 +34076,12 @@ export type UserMessageEventWritable = {
    * Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.
+   */
+  web_references?: Array<string>;
   [key: string]: unknown;
 };
 
@@ -33873,6 +34255,61 @@ export type VectorStoreInputWritable = {
    * Whether to enable filtering/search
    */
   filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * WebPagesFetchedEvent
+ *
+ * The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.
+ *
+ * Displayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources
+ * the answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of
+ * those pages, with the failures beside them.
+ */
+export type WebPagesFetchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the pages read and the links that failed.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The pages the block holds, one per page, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNodeWritable>;
+  /**
+   * Failures
+   *
+   * The links that could not be read, with the reason for each.
+   */
+  failures?: Array<WebFetchFailure>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -35106,6 +35543,56 @@ export type GetOpenChatHitlResponses = {
 
 export type GetOpenChatHitlResponse =
   GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
+
+export type GetExtractedTableDownloadUrlData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Thread ID
+     */
+    thread_id: string;
+    /**
+     * Extraction ID
+     */
+    extraction_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/threads/{thread_id}/extracted-tables/{extraction_id}/download-url";
+};
+
+export type GetExtractedTableDownloadUrlErrors = {
+  /**
+   * The thread holds no extracted table with this id
+   */
+  404: unknown;
+  /**
+   * The table was stored, but its retention has passed and it is deleted
+   */
+  410: unknown;
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetExtractedTableDownloadUrlError =
+  GetExtractedTableDownloadUrlErrors[keyof GetExtractedTableDownloadUrlErrors];
+
+export type GetExtractedTableDownloadUrlResponses = {
+  /**
+   * Successful Response
+   */
+  200: SignedUrlDto;
+};
+
+export type GetExtractedTableDownloadUrlResponse =
+  GetExtractedTableDownloadUrlResponses[keyof GetExtractedTableDownloadUrlResponses];
 
 export type GetAgentClassesData = {
   body?: never;

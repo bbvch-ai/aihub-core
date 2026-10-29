@@ -31,6 +31,8 @@
     "expert_asking_agent",
     "namespace_selection_agent",
     "memory_writer_agent",
+    "release_notes_agent",
+    "anonymiser_agent",
     "mineru-api",
     "mineru-vlm",
     "backup"

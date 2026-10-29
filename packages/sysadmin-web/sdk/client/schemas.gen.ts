@@ -352,11 +352,13 @@ export const CreateRoleRequestSchema = {
   properties: {
     name: {
       type: "string",
+      maxLength: 120,
       title: "Name",
       description: "The unique name of the role.",
     },
     description: {
       type: "string",
+      maxLength: 500,
       title: "Description",
       description: "A short description of the role's purpose.",
     },
@@ -909,6 +911,7 @@ export const UpdateRoleRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 120,
         },
         {
           type: "null",
@@ -921,6 +924,7 @@ export const UpdateRoleRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 500,
         },
         {
           type: "null",

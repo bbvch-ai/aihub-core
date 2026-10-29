@@ -2,3 +2,6 @@
 metadata:
   name: Agent
   description: ''
+notice:
+  anonymised: Personendaten wurden durch Platzhalter ersetzt, bevor diese Anfrage
+    das Sprachmodell erreichte.

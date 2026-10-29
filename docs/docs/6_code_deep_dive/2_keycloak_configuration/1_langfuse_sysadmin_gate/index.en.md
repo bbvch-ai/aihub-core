@@ -48,7 +48,7 @@ to add anything, the whole flow tree must be recreated and bound as the realm br
 
 | Flow                            | Role                                                                       |
 | ------------------------------- | -------------------------------------------------------------------------- |
-| `browser-aihub`                 | Top level: `[REQUIRED authenticate] → [CONDITIONAL langfuse-gate-browser]` |
+| `browser-aihub`                 | Top level: `[REQUIRED authenticate] → [CONDITIONAL aihub-access-gate-browser] → [CONDITIONAL langfuse-gate-browser]` |
 | `browser-aihub-authenticate`    | The built-in alternatives: cookie SSO, IdP redirector, forms               |
 | `browser-aihub-forms`           | Username/password form (replica of built-in `forms`)                       |
 | `browser-aihub-conditional-2fa` | Conditional OTP (replica of built-in `Browser - Conditional 2FA`)          |

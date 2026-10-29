@@ -50,3 +50,11 @@ not each other via this network.
 - Each service needs explicit network assignments
 - Network issues may be harder to diagnose
 - Must update assignments when adding new services
+
+## Amendment 2026-10-20: a `browser` zone for Playwright
+
+Playwright now reads pages users link (ADR `2026_10_20_agents_read_linked_web_pages_through_playwright`). Its agents'
+URL guard cannot close DNS rebinding, because the browser resolves the name again, so Playwright no longer shares
+`backend`. It sits in an internal `browser` zone with only its callers (`open-webui` and the agents that fetch pages)
+and keeps `egress` for the internet: `playwright` is now on browser, egress. A new agent that fetches pages adds
+`browser` to its networks.

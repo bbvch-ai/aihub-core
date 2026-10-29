@@ -19,3 +19,11 @@ class UnreadMailListedEvent(ControlAndDisplayEvent):
         list[UnreadMailSummary],
         Field(default_factory=list, description="Header summaries of the unread messages in the inbox."),
     ]
+    uid_validity: Annotated[
+        int | None,
+        Field(
+            default=None,
+            description="The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the "
+            "run can advance the watermark in the same UID space it listed from. None for a plain unread listing.",
+        ),
+    ]

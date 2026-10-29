@@ -1,0 +1,76 @@
+---
+# Ticket texts for `seed --release`: each ticket takes the next kind of the requested ones and one of that kind's
+# templates, with {area} filled in, so a release of a hundred tickets reads like a real one. Descriptions are lists of
+# wiki-markup blocks, joined by blank lines.
+areas:
+  - login page
+  - invoice export
+  - search
+  - user settings
+  - notification emails
+  - dashboard
+  - file upload
+  - API tokens
+  - audit log
+  - PDF preview
+  - team calendar
+  - mobile app
+kinds:
+  bug:
+    - summary: '{area} shows an error after the session expires'
+      description:
+        - h3. Problem
+        - Users who leave the {area} open over lunch get a generic error when they
+          come back, and their last change is lost.
+        - h3. Expected
+        - The {area} asks them to sign in again and keeps what they typed.
+    - summary: Dates in the {area} use the server's time zone
+      description:
+        - Times in the {area} are shown in UTC instead of the user's own time zone,
+          so meetings look an hour off for customers in Zurich.
+        - '* Use the time zone from the user profile'
+        - "* Fall back to the browser's time zone"
+    - summary: '{area} is slow for accounts with many projects'
+      description:
+        - Opening the {area} takes more than ten seconds for accounts with over 500
+          projects, because every project is loaded at once.
+        - The fix loads the first 50 and the rest on demand.
+  story:
+    - summary: Export from the {area} as CSV
+      description:
+        - As a team lead I want to export what the {area} shows as CSV, so that I
+          can share it with people who have no account.
+        - h3. Acceptance criteria
+        - '# The export holds the columns shown on screen'
+        - '# Dates use ISO 8601'
+    - summary: Filter the {area} by team
+      description:
+        - As a member of several teams I want to filter the {area} by team, so that
+          I only see what concerns me.
+        - The filter is remembered per user.
+    - summary: Keyboard shortcuts in the {area}
+      description:
+        - Power users asked for shortcuts in the {area}. {{g}} then {{s}} opens search,
+          {{?}} lists every shortcut.
+  improvement:
+    - summary: Clearer error messages in the {area}
+      description:
+        - Error messages in the {area} now say what went wrong and what to do next,
+          instead of showing an error code.
+    - summary: Faster loading of the {area}
+      description:
+        - The {area} now loads its data in parallel and caches it for five minutes,
+          which halves the loading time in our measurements.
+    - summary: Accessible colours in the {area}
+      description:
+        - Text and buttons in the {area} now meet the WCAG AA contrast ratio, and
+          focus is always visible.
+  task:
+    - summary: Update the libraries behind the {area}
+      description:
+        - Routine update of the third-party libraries the {area} uses, including two
+          security fixes. No visible change.
+    - summary: Remove the old {area} feature flag
+      description:
+        - The new {area} has been on for everyone for a month, so the flag and the
+          old code path are removed.

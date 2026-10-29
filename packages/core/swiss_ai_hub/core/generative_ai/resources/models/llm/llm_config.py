@@ -1,10 +1,12 @@
-from typing import Annotated, Any, Self
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING, Annotated, Any, Self
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
-from llama_index.llms.openai_like import OpenAILike
 from opentelemetry.propagate import inject
 from pydantic import Field
 
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.form.constraints import Ge, Le
 from swiss_ai_hub.core.form.elements.checkbox import Checkbox
 from swiss_ai_hub.core.form.elements.input_number import InputNumber
@@ -17,6 +19,10 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base import L
 from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
+
+if TYPE_CHECKING:
+    from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 
 # What a model without a curated `default_temperature` is sampled at; the value every model used before
 # defaults became per model.
@@ -71,9 +77,9 @@ class LLMParameter(Form):
     ] = 0
     timeout: Annotated[
         float | InputNumber,
-        Field(default=600.0, description="The timeout, in seconds, for API requests."),
+        Field(default=300.0, description="The timeout, in seconds, for API requests."),
         Ge(0),
-    ] = 600.0
+    ] = 300.0
 
     @classmethod
     def as_form(cls) -> Self:
@@ -132,7 +138,7 @@ class LLMParameter(Form):
         )
 
 
-class LLMConfig(LiteLLMBase[OpenAILike]):
+class LLMConfig(LiteLLMBase[ResilientOpenAILike]):
     """
     Configuration for a chat-based LLM, providing default parameters and a method
     to instantiate a chat LLM and cost tracker for llama_index.
@@ -196,6 +202,34 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             },
         )
 
+    @asynccontextmanager
+    async def cost_reporting_llm(
+        self,
+        displayer: "EventDisplayer",
+        extra_headers: dict[str, str] | None = None,
+        user: UserIdentity | None = None,
+    ) -> AsyncIterator[ResilientOpenAILike]:
+        """
+        Async context manager that yields an LLM configured with merged parameters and a system prompt.
+
+        On exit, also when the block raised, it reports the costs to `displayer` — tokens spent before a failure
+        are spent all the same — and closes the LLM's clients (see `ResilientOpenAILike.aclose`).
+        """
+        # The per-user key is the only carrier that reaches LiteLLM: it sets `user` on every spend log row
+        # and activates USER_MAX_BUDGET. Tenant is NOT sent: tenant attribution lives on LLMCostEvent. The
+        # gateway keeps request tags since LiteLLM v1.106.2, so tags and teams are both candidates for a
+        # gateway-side carrier; see ADR 2026_08_06_per_user_litellm_key_as_cost_attribution_carrier.
+        api_key = await LiteLLMService.api_key_for_user(user) if user else None
+
+        llm, cost_tracker = self.to_llama_index(extra_headers=extra_headers, api_key=api_key)
+        try:
+            yield llm
+        finally:
+            try:
+                await displayer.display_llm_costs(self.model_name, cost_tracker, user)
+            finally:
+                await llm.aclose()
+
     @property
     def max_input_tokens(self) -> int | None:
         """The model's context window as LiteLLM declares it, or None when it declares none.
@@ -230,7 +264,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
 
     def to_llama_index(
         self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
-    ) -> tuple[OpenAILike, LLMCostTracker]:
+    ) -> tuple[ResilientOpenAILike, LLMCostTracker]:
         """
         Instantiate an OpenAILike model with local endpoint logic and a LLMCostTracker.
 
@@ -276,6 +310,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             top_logprobs=self.default_parameter.top_logprobs,
             callback_manager=CallbackManager([token_counter]),
             timeout=self.default_parameter.timeout,
+            connect_timeout=config.CONNECT_TIMEOUT_SECONDS,
             default_headers=default_headers,
         )
 

@@ -44,6 +44,7 @@ class MemoryWriterAgent(Agent):
                 agent_id=event.origin_agent_id,
                 name=event.origin_agent_name,
                 description=event.origin_agent_description,
+                anonymise=event.origin_anonymise,
             ),
             agent_class=event.origin_agent_class,
             t=t,

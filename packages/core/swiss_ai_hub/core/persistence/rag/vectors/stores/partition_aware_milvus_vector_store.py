@@ -12,6 +12,7 @@ from llama_index.vector_stores.milvus.utils import BaseSparseEmbeddingFunction
 from pymilvus import MilvusClient
 
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
+from swiss_ai_hub.core.persistence.rag.vectors.stores.document_passage_hit import DocumentPassageHit
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
     DEFAULT_PARTITION_NAME,
     MANUAL_PARTITION_PREFIX,
@@ -449,6 +450,78 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
             existing = self._manual_partition_names()
             partition_names = [name for name in partition_names if name in existing]
         return [*partition_names, DEFAULT_PARTITION_NAME]
+
+    def passages_grouped_by_document(
+        self,
+        embedding: list[float],
+        namespaces: list[str],
+        filter_expression: str,
+        documents: int,
+        passages_per_document: int,
+        timeout: float | None = None,
+    ) -> list[DocumentPassageHit]:
+        """The closest passages of the closest documents, at most `passages_per_document` each.
+
+        Grouping happens in Milvus (`group_by_field`), so one document with many similar chunks cannot crowd the others
+        out of the top hits, which is what ranking documents rather than chunks needs. Documents come best first, ranked
+        by their closest passage.
+        """
+        hits = self._grouped_search(
+            embedding,
+            namespaces,
+            filter_expression,
+            documents,
+            passages_per_document,
+            [self.doc_id_field, self.text_key],
+            timeout,
+        )
+        return [DocumentPassageHit.from_hit(hit, self.text_key) for hit in hits]
+
+    def documents_with_passages(
+        self,
+        embedding: list[float],
+        namespaces: list[str],
+        filter_expression: str,
+        documents: int,
+        timeout: float | None = None,
+    ) -> set[str]:
+        """Which of the filtered documents have at least one passage, at most `documents` of them.
+
+        One hit per document and no text, so it is cheap enough to tell the documents a ranking cut off from those
+        that have no vectors at all.
+        """
+        hits = self._grouped_search(
+            embedding, namespaces, filter_expression, documents, 1, [self.doc_id_field], timeout
+        )
+        return {hit["entity"][self.doc_id_field] for hit in hits}
+
+    def _grouped_search(
+        self,
+        embedding: list[float],
+        namespaces: list[str],
+        filter_expression: str,
+        documents: int,
+        group_size: int,
+        output_fields: list[str],
+        timeout: float | None,
+    ) -> list[dict[str, Any]]:
+        partition_names = self.document_partition_names(namespaces)
+        self._ensure_collection_loaded(partition_names)
+        result = self.client.search(
+            collection_name=self.collection_name,
+            data=[embedding],
+            anns_field=self.embedding_field,
+            filter=filter_expression,
+            limit=documents,
+            group_by_field=self.doc_id_field,
+            group_size=group_size,
+            strict_group_size=False,
+            output_fields=output_fields,
+            partition_names=partition_names,
+            search_params={"metric_type": self.similarity_metric},
+            timeout=timeout,
+        )
+        return list(result[0])
 
     def delete_documents(self, ref_doc_ids: list[str], namespaces: list[str]) -> int:
         """Delete every node of these documents with a filtered delete; returns the number of deleted nodes.

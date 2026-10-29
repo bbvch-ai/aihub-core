@@ -73,7 +73,7 @@ packages/pipeline/                        # SDK framework
 │   ├── source_pipelines/
 │   │   ├── rclone_sync_config.py          # RcloneSyncConfig: the announced per-database source form (six backends)
 │   │   ├── structured_sync_config.py      # StructuredSyncConfig: source kind + one option group per kind
-│   │   ├── jira/                          # The Jira kind: options form, preflight, issue → markdown file, HTML → markdown
+│   │   ├── jira/                          # The Jira kind: options form, preflight, issue → markdown file
 │   │   ├── confluence/                    # The Confluence kind: options, preflight, page → markdown file, storage → markdown
 │   │   └── abstract_structured_source_adapter.py  # Contract per structured source kind: dlt source, record → file
 │   ├── services/
@@ -517,10 +517,10 @@ The demo registers a `structured_demo` row in your dev Mongo's `source_pipelines
 
 ### The Jira adapter
 
-`source_pipelines/jira/` holds the kind: options form, preflight, issue and comment models, HTML → markdown, and JQL
-timestamps. `resources/jira/` holds the HTTP client and its error. One adapter serves Jira Cloud and Jira Data Center
-(the `deployment` option); the differences live in `JiraClient`. Every rule below guards a failure that would otherwise
-be silent:
+`source_pipelines/jira/` holds the kind: options form, preflight, issue and comment models, and JQL timestamps.
+`resources/jira/` holds the HTTP client and its error. One adapter serves Jira Cloud and Jira Data Center (the
+`deployment` option); the differences live in `JiraClient`. Every rule below guards a failure that would otherwise be
+silent:
 
 - **Credentials go through `auth=` only** (`HttpBasicAuth` on Cloud, `BearerTokenAuth` on Data Center), never through
   headers, which dlt logs at DEBUG.
@@ -529,9 +529,10 @@ be silent:
   requests runs the hook before following one, so no answer can send a request on to a host nobody checked.
 - **Only public hosts.** A knowledge administrator sets the URL, and the pipeline sits on the networks of the platform's
   own services. The URL type refuses `?`, `#` and credentials (a `?` would turn the appended API path into a query), and
-  `SourceHostGuard` (`resources/structured/`) refuses, first thing in the preflight, a host without a dot (Docker
-  service names, `localhost`) and one resolving to any non-global address. `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`
-  exempts named hosts (`localhost` in `.env.dev`). DNS rebinding between the check and the request is not covered.
+  `SourceHostGuard` (core `network/`, shared with agents that read Jira) refuses, first thing in the preflight, a host
+  without a dot (Docker service names, `localhost`) and one resolving to any non-global address.
+  `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts (`localhost` in `.env.dev`). DNS rebinding between the
+  check and the request is not covered.
 - **Preflight before the sync and before the listing** (`JiraPreflight`: `/myself`, each project, the JQL clause). Jira
   answers a project the account cannot see, and on Cloud an invalid JQL clause, with zero issues, which the listing
   would take for deleted issues. Cloud's clause is checked with `POST /rest/api/3/jql/parse?validation=strict`; Data
@@ -541,7 +542,10 @@ be silent:
   when many fields are requested, and a partial listing deletes files. Cloud pages `/rest/api/2/search/jql` by
   `nextPageToken`; Data Center pages `/rest/api/2/search` by keyset (`id > N ORDER BY id ASC`), which also avoids the
   10,000-result cap of Data Center 11. A page that repeats an issue fails the search (Cloud's tokens have been reported
-  to loop), and so does a Data Center search returning fewer issues than its first page counted.
+  to loop), and so does a Data Center search returning fewer issues than its first page counted. Known limit: Data
+  Center's `ORDER BY id` sorts by key (checked on 11.3), so the keyset holds only while key order matches id order. An
+  issue moved in from another project keeps its old, lower id under a new, higher number, and that project's sync then
+  fails on the count check. Core's agent client pages Data Center by offset instead (see `packages/core/CLAUDE.md`).
 - **One query per project**: `project = "X" AND (clause)`, with the user's clause in parentheses. An issue of another
   project in the answer is refused (`_own_key`), so no clause can pull in a project the database was not given.
 - **File and listing keys come from Jira's returned key** through `JiraIssue.object_key_for`. The namespace keeps case,
@@ -554,10 +558,10 @@ be silent:
   Service Management internal comments are dropped. Data Center marks an internal comment only with the
   `sd.public.comment` property, which search never returns, so service desk projects always read comments from the
   endpoint with `expand=renderedBody,properties`.
-- **Text is Jira's rendered HTML**, the one format both editions share, converted with markdownify. Images are dropped,
-  mentions keep only the name, links are made absolute against the site (keeping a Data Center context path), and Data
-  Center's `<tt>` becomes code. Plain `_` and `*` stay unescaped, so identifiers are indexed as written. Jira's rendered
-  *dates* ("Today 10:15") are never used.
+- **Text is Jira's rendered HTML**, the one format both editions share, converted with markdownify by core's `JiraHtml`
+  (shared with agents that read Jira). Images are dropped, mentions keep only the name, links are made absolute against
+  the site (keeping a Data Center context path), and Data Center's `<tt>` becomes code. Plain `_` and `*` stay
+  unescaped, so identifiers are indexed as written. Jira's rendered *dates* ("Today 10:15") are never used.
 - **Options validators do not run when the API saves a source.** The URL and the edition therefore use type-level
   constraints (a 400 on save), and cross-field checks run in the adapter (`JiraOptions.problems()`).
   `hide_input_in_errors` keeps pydantic from echoing the decrypted token.
