@@ -5591,7 +5591,7 @@ requires-dist = [
     { name = "azure-mgmt-cosmosdb", specifier = ">=9.7.0" },
     { name = "azure-mgmt-resource", specifier = ">=23.2.0" },
     { name = "cryptography", specifier = ">=44.0.0" },
-    { name = "fastmcp", specifier = ">=2.11.2" },
+    { name = "fastmcp", specifier = ">=3.0.0" },
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "llama-index-embeddings-text-embeddings-inference", specifier = ">=0.4.2" },
