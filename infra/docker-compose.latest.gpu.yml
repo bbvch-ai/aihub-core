@@ -1148,7 +1148,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   rclone:
     container_name: rclone
-    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2-1
     restart: unless-stopped
     command:
       - rcd
@@ -1183,7 +1183,7 @@ services:
   # License: MIT — rclone (see LICENSES.md)
   sandbox-mirror:
     container_name: sandbox-mirror
-    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2-1
     restart: unless-stopped
     depends_on:
       seaweedfs-s3:
@@ -1658,7 +1658,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.106.2
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.106.4
     restart: always
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm
@@ -1788,7 +1788,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.60.0-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.60.0-jammy-1
     restart: always
     environment:
       NODE_ENV: production
@@ -1810,7 +1810,7 @@ services:
   # License: AGPL-3.0 — third-party (see LICENSE_REPORT.md)
   searxng:
     container_name: searxng
-    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.9.5-c7f3080aa
+    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.10.27-cb74e7f81
     restart: always
     volumes: [./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro]
     environment:
@@ -1928,7 +1928,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   otel-collector:
     container_name: otel-collector
-    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.154.0
+    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.164.0
     restart: always
     command: [--config=/etc/otel-config.yml]
     environment:
@@ -1989,7 +1989,7 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-1
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
