@@ -9238,6 +9238,20 @@ export const EventSpecsSchema = {
       description:
         "A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow.",
     },
+    api_input_schema: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Api Input Schema",
+      description:
+        "The schema of what an API caller sends for this event: the event without the fields the server fills in, and with the inputs the event converts itself, such as files sent inline. Absent for a specification stored before agents announced it.",
+    },
     event_parents: {
       items: {
         type: "string",

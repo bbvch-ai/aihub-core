@@ -6334,6 +6334,14 @@ export type EventSpecs = {
     [key: string]: unknown;
   };
   /**
+   * Api Input Schema
+   *
+   * The schema of what an API caller sends for this event: the event without the fields the server fills in, and with the inputs the event converts itself, such as files sent inline. Absent for a specification stored before agents announced it.
+   */
+  api_input_schema?: {
+    [key: string]: unknown;
+  } | null;
+  /**
    * Event Parents
    *
    * A list of parent event names that this event is derived from, allowing for hierarchical event structures.
