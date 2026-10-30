@@ -1,10 +1,15 @@
+import json
+
 import pytest
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.schema import NodeWithScore, TextNode
-from pytest_bdd import given, scenarios, then, when
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
-from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import combine_nodes_in_order
+from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import (
+    MAX_RECORD_FIELD_CHARACTERS,
+    combine_nodes_in_order,
+)
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
@@ -135,6 +140,15 @@ def _(datatable):
     return context_nodes
 
 
+@given(parsers.parse("the record of {document_id} carries the fields:"), target_fixture="the_context_nodes")
+def _(the_context_nodes: list[IngestedNode], document_id: str, docstring: str):
+    fields = json.loads(docstring)
+    return [
+        node.model_copy(update={"record_fields": fields}) if node.document_id == document_id else node
+        for node in the_context_nodes
+    ]
+
+
 @given("no context nodes", target_fixture="the_context_nodes")
 def _():
     return []
@@ -256,3 +270,22 @@ def test_image_block_renders_without_sandbox_security_error():
     messages = RichPromptTemplate(template_str=template).format_messages(context_blocks=[image_block])
 
     assert messages
+
+
+_TEXT_PROMPT = LocaleString(en="{% for block in context_blocks %}{{ block.text }}{% endfor %}")
+
+
+def test_a_long_record_field_is_cut_rather_than_dropped():
+    """A Confluence page's ancestors can be long; the header keeps the field, cut, so it cannot crowd out the text."""
+    node = _figure_node().model_copy(
+        update={
+            "content_type": "text",
+            "content": "Body.",
+            "record_fields": {"ancestors": ["x" * 200, "y" * 200], "space": "ENG"},
+        }
+    )
+
+    header = combine_nodes_in_order([node], LocaleHandler(locale="en"), _TEXT_PROMPT).blocks[0].text
+
+    expected_ancestors = ("x" * 200 + ", " + "y" * 200)[:MAX_RECORD_FIELD_CHARACTERS] + "…"
+    assert f"ancestors='{expected_ancestors}' space='ENG'>" in header

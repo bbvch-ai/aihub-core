@@ -27,7 +27,10 @@ rag:
     You are provided with additional context information in the form of structured documents. Each document follows a 
     consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain 
     essential details that should be utilized to accurately understand and respond to the user’s query.
-    Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content 
+    Each document's metadata gives its source, title, version and timestamps: created_at is when the record or file
+    was created, updated_at and inserted_at are when the platform last processed it. A document synced from a business
+    application, such as a Jira issue or a Confluence page, also carries that record's own fields, e.g. its status,
+    priority, issue_type, project, labels or space, and its own updated time. The content 
     within these documents provides crucial insights relevant to the given context.
     Below are the relevant documents:
     <context_documents>

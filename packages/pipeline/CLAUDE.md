@@ -651,10 +651,13 @@ and a converted file opening with a horizontal rule must not be taken for YAML. 
 - `MAX_METADATA_BYTES` (8 KiB, file order) caps the custom metadata: each node stores its metadata twice in Milvus' 64
   KiB dynamic field (keys + `_node_content`).
 
-**Not embedded.** Custom keys go into `excluded_embed_metadata_keys`: they exist to be filtered on, and on a short
-record they would outweigh the body in its vector. The title stays embedded. The exclusion has to survive every step
-that rebuilds a document or node — `refine_document_tables` passes it on, `build_nodes_from_splits` copies it to chunks,
-`RecursiveSummaryParser._create_summary_node` (core) copies it to summaries, and the doc store round-trips it.
+**Not embedded, but shown to the model.** Custom keys go into `excluded_embed_metadata_keys`: on a short record they
+would outweigh the body in its vector. The title stays embedded. The exclusion has to survive every step that rebuilds a
+document or node — `refine_document_tables` passes it on, `build_nodes_from_splits` copies it to chunks,
+`RecursiveSummaryParser._create_summary_node` (core) copies it to summaries, and the doc store round-trips it. That list
+is also how retrieval tells them apart from the platform's own metadata: core's `IngestedNode.from_llama_index_node`
+moves exactly those keys into `record_fields`, and `combine_nodes_in_order` writes them into each document's
+`<REFERENCE_DOCUMENT>` header, so an agent can answer "what is the status of ENG-2?" (aihub-core-private#362).
 
 **Filtering.** A retriever filters on keys listed in `allowed_metadata_filter_fields`, with values from
 `RAGStartEvent.additional_filters`. `MetadataFilterPair.to_llama_index()` (core) turns a text value into

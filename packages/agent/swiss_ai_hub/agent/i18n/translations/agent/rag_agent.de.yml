@@ -36,16 +36,21 @@ config:
       \ in Form von strukturierten Dokumenten. Jedes Dokument folgt einem\neinheitlichen\
       \ Format, beginnend mit `<REFERENCE_DOCUMENT [metadata]>` und endend mit `</REFERENCE_DOCUMENT>`.\
       \ Diese Dokumente enthalten\nwesentliche Details, die genutzt werden sollten,\
-      \ um die Anfrage des Benutzers genau zu verstehen und zu beantworten.\n\nJedes\
-      \ Dokument enthält Metadaten wie Quelle, Namespace, Typ, Sprache, Version und\
-      \ Zeitstempel. Der Inhalt\ndieser Dokumente liefert wichtige Erkenntnisse, die\
-      \ für den gegebenen Kontext relevant sind.\n\nNachfolgend finden Sie die relevanten\
-      \ Dokumente:\n\n<context_documents>\n{% for block in context_blocks %}\n{% if\
-      \ block.block_type == 'text' %}\n{{ block.text }}\n{% endif %}\n{% if block.block_type\
-      \ == 'image' %}\n{{ block.url | string | image}}\n{% endif %}\n{% endfor %}\n\
-      </context_documents>\n\nAnweisung: Erstellen Sie anhand der Informationen aus\
-      \ den bereitgestellten Dokumenten eine detaillierte und gut strukturierte Antwort\n\
-      auf die Frage des Benutzers.\n{% endchat %}\n"
+      \ um die Anfrage des Benutzers genau zu verstehen und zu beantworten.\n\nDie\
+      \ Metadaten jedes Dokuments nennen Quelle, Titel, Version und Zeitstempel: created_at\
+      \ ist der Zeitpunkt, an dem\nder Datensatz oder die Datei erstellt wurde, updated_at\
+      \ und inserted_at sind die Zeitpunkte, an denen die Plattform\nes zuletzt verarbeitet\
+      \ hat. Ein aus einer Geschäftsanwendung synchronisiertes Dokument, etwa ein\
+      \ Jira-Issue oder eine\nConfluence-Seite, trägt zusätzlich die Felder dieses\
+      \ Datensatzes, z. B. status, priority, issue_type, project, labels\noder space,\
+      \ sowie dessen eigenen Zeitpunkt updated. Der Inhalt\ndieser Dokumente liefert\
+      \ wichtige Erkenntnisse, die für den gegebenen Kontext relevant sind.\n\nNachfolgend\
+      \ finden Sie die relevanten Dokumente:\n\n<context_documents>\n{% for block\
+      \ in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url | string | image}}\n\
+      {% endif %}\n{% endfor %}\n</context_documents>\n\nAnweisung: Erstellen Sie\
+      \ anhand der Informationen aus den bereitgestellten Dokumenten eine detaillierte\
+      \ und gut strukturierte Antwort\nauf die Frage des Benutzers.\n{% endchat %}\n"
   enable_user_memory_retrieval:
     label: Benutzergedächtnis-Abruf aktivieren
     help: Ob benutzerspezifische Erinnerungen für personalisierten Kontext abgerufen
