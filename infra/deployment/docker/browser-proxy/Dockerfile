@@ -1,5 +1,5 @@
-FROM alpine:3.22
-RUN apk add --no-cache squid=6.12-r0 \
+FROM alpine:3.23
+RUN apk add --no-cache squid=7.6-r0 \
  && for template in /usr/share/squid/errors/templates/ERR_*; do : > "$template"; done
 COPY squid.conf /etc/squid/squid.conf
 # Started as root, Squid drops to its own user before opening its logs and then cannot open /dev/stdout.
