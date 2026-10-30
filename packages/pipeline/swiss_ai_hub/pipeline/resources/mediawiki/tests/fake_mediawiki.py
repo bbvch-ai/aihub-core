@@ -94,7 +94,6 @@ class FakeMediaWiki:
     def install(self, monkeypatch: pytest.MonkeyPatch) -> None:
         client = Client(raise_for_status=False, request_backoff_factor=0, request_max_retry_delay=0)
         client.session.mount("https://", FakeMediaWikiTransport(self))
-        client.session.mount("http://", FakeMediaWikiTransport(self))
         monkeypatch.setattr("swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_client.Client", lambda **_: client)
 
     def add_page(
