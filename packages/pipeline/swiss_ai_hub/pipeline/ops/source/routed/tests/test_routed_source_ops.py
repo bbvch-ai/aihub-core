@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from dagster import build_op_context
+from dagster import Output, build_op_context
 
 from swiss_ai_hub.pipeline.ops.source.routed.announce_removed_files import announce_removed_files
 from swiss_ai_hub.pipeline.ops.source.routed.build_data_lake_uri_for_bucket import build_data_lake_uri_for_bucket
@@ -8,6 +8,7 @@ from swiss_ai_hub.pipeline.ops.source.routed.delete_data_lake_files_from_bucket 
     delete_data_lake_files_from_bucket,
 )
 from swiss_ai_hub.pipeline.ops.source.routed.fetch_bucket_files_to_remove import fetch_bucket_files_to_remove
+from swiss_ai_hub.pipeline.ops.source.routed.mark_emptied_namespaces_deleting import mark_emptied_namespaces_deleting
 from swiss_ai_hub.pipeline.ops.source.routed.write_data_lake_file_to_bucket import write_data_lake_file_to_bucket
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3DataLakeClient
 from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile, RcloneFile
@@ -122,3 +123,65 @@ class TestDeleteDataLakeFilesFromBucket:
         client.delete_file.assert_called_once_with(uri="s3://hrdocs/hr docs/a.md")
         client.delete_directory.assert_called_once()
         assert output.value == ["s3://hrdocs/hr docs/a.md"]
+
+
+class TestMarkEmptiedNamespacesDeleting:
+    @staticmethod
+    def _namespace(folder_name: str, deleting: bool = False) -> MagicMock:
+        return MagicMock(id=f"id-{folder_name}", namespace_name=folder_name, folder_name=folder_name, deleting=deleting)
+
+    def _run(
+        self, uris_left: list[str], namespaces: list[MagicMock], *source_files: MinimalRcloneFile
+    ) -> tuple[MagicMock, Output]:
+        context = build_op_context(run_tags={BUCKET_RUN_TAG: "hrdocs"})
+        client = MagicMock()
+        client.list_ingestible_uris.return_value = uris_left
+        op_module = f"{_ROUTED}.mark_emptied_namespaces_deleting"
+        with (
+            patch(f"{op_module}.build_s3_data_lake_client", return_value=client),
+            patch(f"{op_module}.ensure_main_db_connection"),
+            patch(f"{op_module}.BucketEntity") as bucket_entity,
+            patch(f"{op_module}.NamespaceEntity") as namespace_entity,
+        ):
+            bucket_entity.get_bucket_by_bucket_name.return_value = MagicMock(id="bucket-id")
+            namespace_entity.get_namespaces_by_bucket.return_value = namespaces
+            removed = ["s3://hrdocs/Old/gone.pdf"]
+            output = (
+                mark_emptied_namespaces_deleting(context, removed, list(source_files))
+                if source_files
+                else mark_emptied_namespaces_deleting(context, removed)
+            )
+
+        namespace_entity.get_namespaces_by_bucket.assert_called_once_with("bucket-id")
+        return namespace_entity.mark_deleting, output
+
+    def test_a_folder_with_no_file_left_has_its_namespace_flagged_for_teardown(self):
+        mark_deleting, output = self._run(
+            ["s3://hrdocs/Policies/keep.pdf"], [self._namespace("Policies"), self._namespace("Old")]
+        )
+
+        mark_deleting.assert_called_once_with("id-Old")
+        assert output.value == ["s3://hrdocs/Old/gone.pdf"]
+        assert output.metadata["emptied_namespaces"].value == ["Old"]
+
+    def test_a_folder_matched_by_its_raw_name_keeps_its_namespace(self):
+        """The namespace name is sanitised, the folder name is not: a folder with a space must still count."""
+        namespace = MagicMock(id="id-hr", namespace_name="hr_docs", folder_name="hr docs", deleting=False)
+        mark_deleting, _ = self._run(["s3://hrdocs/hr docs/nested/a.md"], [namespace])
+
+        mark_deleting.assert_not_called()
+
+    def test_a_folder_whose_last_file_was_replaced_keeps_its_namespace_until_the_new_file_lands(self):
+        """The old file is gone from the data lake and the new one's write run has not landed yet. Flagging the folder
+        would let the teardown delete the new file once it arrives, and its unchanged partition would never rewrite it."""
+        replacement = MinimalRcloneFile(name="v2.pdf", path="/Old/v2.pdf", size=1, modified=1)
+        mark_deleting, output = self._run([], [self._namespace("Old")], replacement)
+
+        mark_deleting.assert_not_called()
+        assert output.metadata["emptied_namespaces"].value == []
+
+    def test_a_namespace_already_being_torn_down_is_not_flagged_again(self):
+        mark_deleting, output = self._run([], [self._namespace("Old", deleting=True)])
+
+        mark_deleting.assert_not_called()
+        assert output.metadata["emptied_namespaces"].value == []
