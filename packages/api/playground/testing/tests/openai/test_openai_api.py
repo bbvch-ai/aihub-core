@@ -66,7 +66,7 @@ async def test_get_embeddings(api_client):
     assert data.get("model") == EMBEDDING_MODEL
     assert isinstance(data.get("data"), list)
     for item in data.get("data"):
-        assert item.get("object") == "embeddings"
+        assert item.get("object") == "embedding"
         assert isinstance(item.get("embedding"), list)
         assert isinstance(item.get("index"), int)
 

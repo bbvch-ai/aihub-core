@@ -75,6 +75,7 @@ class StreamingResources:
         None  # Added field to store the final StopEvent
     )
     table_downloads: list[str] = field(default_factory=list)
+    costs: LLMCosts = field(default_factory=LLMCosts.from_zero)
 
 
 @dataclass
@@ -302,6 +303,8 @@ class ChatService:
             elif event.is_stop_event and is_primary_agent:
                 logger.debug("Received stop event. Stop streaming")
                 await stop_streaming(event, topic)
+            elif event.is_llm_cost_event:
+                resources.costs += event
             elif event.is_exception_event:
                 logger.warning(f"Received exception event: {event.event_name}")
                 await stop_streaming(event, topic)

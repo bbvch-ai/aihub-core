@@ -22,7 +22,9 @@ class ImageGenerationRequest(BaseModel):
     ] = "image-generation"
 
     n: int | None = None
-    quality: Literal["standard", "hd"] | None = None
+    quality: Literal["standard", "hd", "low", "medium", "high", "auto"] | None = None
     response_format: Literal["url", "b64_json"] | None = None
-    size: Literal["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"] | None = None
+    size: (
+        Literal["auto", "256x256", "512x512", "1024x1024", "1536x1024", "1024x1536", "1792x1024", "1024x1792"] | None
+    ) = None
     style: Literal["vivid", "natural"] | None = None
