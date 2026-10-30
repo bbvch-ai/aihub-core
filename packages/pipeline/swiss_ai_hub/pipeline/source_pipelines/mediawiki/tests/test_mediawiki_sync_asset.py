@@ -1,0 +1,176 @@
+"""Real syncs of the shipped structured asset against a fake MediaWiki, run after run, as the daily schedule does."""
+
+from unittest.mock import MagicMock
+
+import pytest
+from dagster import AssetKey
+from swiss_ai_hub.core.network import SourceHostGuard
+
+from swiss_ai_hub.pipeline.assets.factories.structured_to_data_lake.structured_sync_factory import (
+    structured_sync_factory,
+)
+from swiss_ai_hub.pipeline.ops.structured.tests.test_structured_sync_asset import World
+from swiss_ai_hub.pipeline.resources.mediawiki.tests.fake_mediawiki import SITE, FakeMediaWiki
+from swiss_ai_hub.pipeline.source_pipelines.structured_sync_config import StructuredSyncConfig
+
+_ASSET = structured_sync_factory(
+    AssetKey(["structured_source_to_datalake", "records"]), source="structured", config_type=StructuredSyncConfig
+)
+_FILES = [
+    "Main/Onboarding.md",
+    "Main/Onboarding/Laptop.md",
+    "Main/Welcome.md",
+    "Process/Release.md",
+]
+
+
+@pytest.fixture(autouse=True)
+def external_site(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The fake site's name must never reach a real resolver; the guard has tests of its own."""
+    monkeypatch.setattr(SourceHostGuard, "require_public", lambda url, allowed_hosts, allow_list_variable: None)
+
+
+@pytest.fixture
+def wiki(world: World, monkeypatch: pytest.MonkeyPatch) -> FakeMediaWiki:
+    fake = FakeMediaWiki(page_size=2)
+    fake.pluggable_auth = True
+    fake.add_page(1, "Welcome", html="<p>Hello <b>team</b></p>", categories=["Onboarding"])
+    fake.add_page(2, "Onboarding")
+    fake.add_page(3, "Onboarding/Laptop")
+    fake.add_page(4, "Lunch menu", categories=["Hide From AI"])
+    fake.add_page(10, "Release", namespace=100)
+    fake.add_page(20, "Old process", namespace=4)
+    fake.install(monkeypatch)
+    _configure(world)
+    world.rows["wiki-db"] = MagicMock(source="structured", deleting=False)
+    return fake
+
+
+def _configure(world: World, **changes: object) -> None:
+    options = {
+        "base_url": SITE,
+        "auth_method": "web_form",
+        "username": "Sync bot",
+        "password": "form-secret",
+        "namespaces": ["Main", "Process"],
+        "exclude_categories": ["Hide From AI"],
+        **changes,
+    }
+    world.configs["wiki-db"] = StructuredSyncConfig.model_validate({"source_kind": "mediawiki", "mediawiki": options})
+
+
+class TestMediaWikiSync:
+    def test_a_first_sync_writes_every_page_in_scope_with_subpages_as_folders(self, world: World, wiki: FakeMediaWiki):
+        result = world.sync("wiki-db", asset=_ASSET)
+
+        assert result.success
+        assert world.files("wiki-db") == _FILES
+        welcome = world.body("wiki-db", "Main/Welcome.md")
+        assert "url: https://wiki.acme.test/index.php/Welcome\n" in welcome
+        assert "created: '2026-10-01T08:00:00Z'\n" in welcome
+        assert "\n# Welcome\n\nHello **team**\n" in welcome
+
+    def test_a_second_sync_of_unchanged_pages_renders_nothing_and_writes_nothing(
+        self, world: World, wiki: FakeMediaWiki
+    ):
+        world.sync("wiki-db", asset=_ASSET)
+        writes, parses = world.file_writes(), len(wiki.parses())
+
+        result = world.sync("wiki-db", asset=_ASSET)
+
+        assert result.success
+        assert world.file_writes() == writes
+        assert wiki.parses()[parses:] == []
+        assert world.step_metadata(result, "sync_structured_records")["Files written"] == 0
+
+    def test_an_edited_page_is_the_only_one_rendered_and_rewritten(self, world: World, wiki: FakeMediaWiki):
+        world.sync("wiki-db", asset=_ASSET)
+        writes, parses = world.file_writes(), len(wiki.parses())
+        wiki.edit(3, "<p>Ask IT for a laptop.</p>")
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert wiki.parses()[parses:] == [3]
+        assert world.file_writes() == writes + 1
+        assert "Ask IT for a laptop." in world.body("wiki-db", "Main/Onboarding/Laptop.md")
+
+    def test_a_renamed_page_moves_its_file_and_leaves_no_stale_one(self, world: World, wiki: FakeMediaWiki):
+        """A move keeps the page's revision; only its path tells the sync that it changed."""
+        world.sync("wiki-db", asset=_ASSET)
+        wiki.rename(1, "Hello")
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert "Main/Hello.md" in world.files("wiki-db")
+        assert "Main/Welcome.md" not in world.files("wiki-db")
+        assert world.announced(world.removed_events) == ["Main/Welcome.md"]
+
+    def test_a_page_put_in_an_excluded_category_is_removed_without_a_new_revision(
+        self, world: World, wiki: FakeMediaWiki
+    ):
+        """A template edit can put a page in a category without giving the page itself a revision."""
+        world.sync("wiki-db", asset=_ASSET)
+        wiki.categorize(2, ["Hide From AI"])
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert "Main/Onboarding.md" not in world.files("wiki-db")
+
+    def test_a_page_taken_out_of_an_excluded_category_is_read_again(self, world: World, wiki: FakeMediaWiki):
+        wiki.category_pages.add("Hide From AI")
+        world.sync("wiki-db", asset=_ASSET)
+        parses = len(wiki.parses())
+        wiki.categorize(4, [])
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert wiki.parses()[parses:] == [4]
+        assert "Main/Lunch menu.md" in world.files("wiki-db")
+
+    def test_a_deleted_page_is_removed(self, world: World, wiki: FakeMediaWiki):
+        world.sync("wiki-db", asset=_ASSET)
+        wiki.remove(10)
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert "Process/Release.md" not in world.files("wiki-db")
+        assert world.announced(world.removed_events) == ["Process/Release.md"]
+
+    def test_included_categories_narrow_the_scope(self, world: World, wiki: FakeMediaWiki):
+        _configure(world, include_categories=["Onboarding"])
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert world.files("wiki-db") == ["Main/Welcome.md"]
+
+    def test_a_refused_sign_in_fails_the_sync_and_removes_nothing(self, world: World, wiki: FakeMediaWiki):
+        world.sync("wiki-db", asset=_ASSET)
+        wiki.accounts["Sync bot"] = "rotated"
+        wiki.signed_in_as = None
+
+        result = world.sync("wiki-db", asset=_ASSET)
+
+        assert not result.success
+        [failure] = result.get_step_failure_events()
+        shown_on_the_run_page = failure.event_specific_data.error.to_string()
+        assert "refused the user name or password of Sync bot" in shown_on_the_run_page
+        assert "form-secret" not in shown_on_the_run_page
+        assert world.files("wiki-db") == _FILES
+
+    def test_an_oauth_token_syncs_the_same_pages(self, world: World, wiki: FakeMediaWiki):
+        _configure(world, auth_method="oauth", username="", password="", access_token="oauth-secret")
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert world.files("wiki-db") == _FILES
+        assert all("Bearer oauth-secret" == request.headers.get("Authorization") for request in wiki.requests)
+
+    def test_adding_a_namespace_reads_everything_again(self, world: World, wiki: FakeMediaWiki):
+        world.sync("wiki-db", asset=_ASSET)
+        parses = len(wiki.parses())
+        _configure(world, namespaces=["Main", "Process", "Project"])
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert sorted(wiki.parses()[parses:]) == [1, 2, 3, 10, 20]
+        assert "Project/Old process.md" in world.files("wiki-db")

@@ -194,3 +194,47 @@ structured:
         label: Pages parentes
         help: Facultatif. Seules ces pages et les pages situées en dessous sont synchronisées.
           L'ID d'une page est le nombre figurant dans son URL.
+    mediawiki:
+      display_name: MediaWiki
+      base_url:
+        label: URL du wiki
+        help: Le dossier contenant le fichier api.php du wiki, p. ex. https://wiki.acme.ch
+          ou https://acme.ch/w.
+      auth_method:
+        label: Connexion
+        help: Comment le pipeline se connecte au wiki. Choisissez la page de connexion
+          si le wiki connecte ses utilisateurs via une extension comme LDAP ou l'authentification
+          unique.
+        bot_password: Mot de passe de robot
+        web_form: Page de connexion
+        oauth: Jeton d'accès OAuth
+        anonymous: Sans connexion (wiki public)
+      username:
+        label: Nom d'utilisateur
+        help: Le compte avec lequel le pipeline lit ; pour un mot de passe de robot,
+          Utilisateur@NomDuRobot tel qu'affiché sur Spécial:Mots de passe de robots.
+      password:
+        label: Mot de passe
+        help: Le mot de passe de robot ou celui du compte. Stocké chiffré. La base
+          contient toutes les pages que ce compte peut lire dans les espaces de noms
+          indiqués ; utilisez donc un compte dédié en lecture seule.
+      access_token:
+        label: Jeton d'accès
+        help: Le jeton d'accès d'un consommateur OAuth 2 réservé au propriétaire,
+          enregistré sur Spécial:OAuthConsumerRegistration avec le droit de base.
+          Stocké chiffré. La base contient toutes les pages que le compte du jeton
+          peut lire dans les espaces de noms indiqués ; enregistrez-le donc pour un
+          compte dédié en lecture seule.
+      namespaces:
+        label: Espaces de noms
+        help: Facultatif. Noms ou numéros des espaces de noms à synchroniser, p. ex.
+          Main ou Project. Seul l'espace principal si vide. Chaque espace de noms
+          du wiki devient un espace de noms de la base.
+      include_categories:
+        label: Catégories
+        help: Facultatif. Seules les pages d'au moins une de ces catégories sont synchronisées.
+      exclude_categories:
+        label: Catégories exclues
+        help: Facultatif. Les pages de l'une de ces catégories ne sont jamais synchronisées,
+          p. ex. une catégorie marquant les pages à tenir à l'écart des assistants
+          IA.

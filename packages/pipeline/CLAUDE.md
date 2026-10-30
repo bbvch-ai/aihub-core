@@ -50,6 +50,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── structured/                    # Structured sources: markdown dlt destination, per-database dlt state store
 │   │   ├── jira/                          # JiraClient (dlt RESTClient: Cloud + Data Center search, comments, preflight calls)
 │   │   ├── confluence/                    # ConfluenceClient (dlt RESTClient: REST v1 CQL search), next-link paginator, error
+│   │   ├── mediawiki/                     # MediaWikiClient (dlt RESTClient: action API, continue paging), sign-in, error
 │   │   ├── local_file_system/             # LocalFileSystemResource
 │   │   └── factory.py                     # Resource factory functions (assembles resource dicts)
 │   ├── sensors/
@@ -75,6 +76,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── structured_sync_config.py      # StructuredSyncConfig: source kind + one option group per kind
 │   │   ├── jira/                          # The Jira kind: options form, preflight, issue → markdown file
 │   │   ├── confluence/                    # The Confluence kind: options, preflight, page → markdown file, storage → markdown
+│   │   ├── mediawiki/                     # The MediaWiki kind: options, preflight, scope, page → markdown file, HTML → markdown
 │   │   └── abstract_structured_source_adapter.py  # Contract per structured source kind: dlt source, record → file
 │   ├── services/
 │   │   ├── knowledge_teardown_service.py  # Destroys a database/namespace across every store
@@ -425,8 +427,9 @@ defs = structured_pipeline_definitions(
 ```
 
 A pipeline whose config offers no source kind is built but not announced, so the create-database dialog never offers a
-source nothing can be configured for. The shipped pipeline offers two kinds, Jira and Confluence (see
-[The Jira adapter](#the-jira-adapter) and [The Confluence adapter](#the-confluence-adapter)).
+source nothing can be configured for. The shipped pipeline offers three kinds, Jira, Confluence and MediaWiki (see
+[The Jira adapter](#the-jira-adapter), [The Confluence adapter](#the-confluence-adapter) and
+[The MediaWiki adapter](#the-mediawiki-adapter)).
 
 **Adding a source kind** takes:
 
@@ -611,6 +614,68 @@ an `HTTPError`, so 429 and 5xx are retried), type-level URL constraints and `pro
   wraps them in `<table>` tags: `RawLoader` ingests markdown as written, and the table refiner and
   `MarkdownStructuralNodeParser` recognise a table only by that wrapper. An element replaced by an empty string makes
   markdownify strip the whitespace on both sides, so empty elements are removed instead.
+
+### The MediaWiki adapter
+
+`source_pipelines/mediawiki/` holds the kind: options, preflight, scope, page model and rendered HTML → markdown.
+`resources/mediawiki/` holds the action API client, the sign-in and the error. It reads the API (`api.php`), never
+crawls the HTML pages: the API gives namespace and category scope, revision ids and a complete listing for deletions,
+and `action=parse` returns the page with every template expanded but without the skin's navigation. It keeps the
+Confluence adapter's rules on the error hook (`MediaWikiRequestError`, an `HTTPError`, so 429 and 5xx are retried),
+type-level URL constraints, `problems()` and the `SourceHostGuard` check with
+`STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`. In addition:
+
+- **API errors arrive with status 200.** The response hook raises on an `error` object (its `code`, such as
+  `readapidenied`, is kept on the exception) and on a non-JSON answer, which is what a single sign-on gateway sends for
+  an expired session. `parse` alone turns `nosuchpageid` / `missingtitle` into None: a page deleted between listing and
+  read is skipped and compared again next run.
+- **Four sign-in methods** (`MediaWikiSignIn`): `bot_password` (`action=login`, which takes bot passwords only),
+  `web_form` (fills in `Special:UserLogin`), `oauth`, `anonymous`. `oauth` sends the access token of an owner-only OAuth
+  2 consumer (Extension:OAuth) as `Bearer` through `RESTClient`'s `auth=`, on every request and never as a header dlt
+  could log; `MediaWikiOptions.oauth_token()` returns it only while `oauth` is selected, so a leftover token never
+  travels with a password sign-in. A refused token answers 401: Wikimedia's gateway with `{"httpCode", "httpReason"}`
+  (observed 2026-10-30), a bare wiki with MediaWiki's `error` object; `MediaWikiRequestError.from_response` keeps either
+  reason, and the preflight turns 401/403 into what to check. The web form exists for wikis whose sign-in an extension
+  handles: on wiki.bbv.ch PluggableAuth answers `clientlogin` with a browser redirect the API cannot follow, so only the
+  login page works. It sends back every field the form renders (token, provider button) and fills in whichever of
+  `wpName`/`username` and `wpPassword`/`password` it has. Redirects are followed by hand, only on the wiki's host and
+  never from https to http, because the guard checked that host alone and the session's cookies must not travel.
+- **Credentials go through the bare session, never through `RESTClient`**, which logs a POST's form data at DEBUG. The
+  signed-in session is then handed to `RESTClient`; its cookies are added when a request is prepared, after dlt logged
+  it.
+- **No API version to choose.** `api.php` is versioned with MediaWiki itself and deprecates with response warnings
+  before removing anything. Every call the client makes exists since MediaWiki 1.27 (bot passwords, the AuthManager
+  login form and `meta=tokens` are the newest), so the preflight reads `siteinfo`'s `generator` and refuses an older or
+  unrecognisable wiki by name. Checked on 2026-10-30 against 1.43.11 (wiki.bbv.ch), 1.46.2 (wiki.archlinux.org) and
+  1.48.0-wmf.1 (mediawiki.org, en.wikipedia.org): no deprecation warnings.
+- **The guard runs before the sign-in**, inside `MediaWikiPreflight.check`, so no credential is sent to an internal
+  address. The preflight then refuses a session that still reads anonymously (an anonymous listing shrinks to public
+  pages and removes the rest), resolves namespaces by number, local or canonical name or `Main` (negative ones refused),
+  and checks that every included **and excluded** category exists: a mistyped excluded category would exclude nothing
+  and let in exactly the pages it was meant to keep out. A category exists when it has a page or any member, so an
+  excluded category whose last member leaves needs a page of its own.
+- **Scope is read as page ids** (`MediaWikiScope`): category members through `list=categorymembers`, so a category a
+  template assigns counts, then `generator=allpages` per namespace without redirects, with `prop=info` for `lastrevid`
+  and the canonical URL. About six requests list 2,700 pages without `apihighlimits`.
+- **Changes are found by `lastrevid|object key`**, kept in the resource state like Confluence's `seen` map: a rename and
+  a page entering scope keep their revision. Only changed pages are parsed; `created` comes from the oldest revision
+  (one request per changed page), `updated` from their parsed revisions in batches of 50. Known gap: a template edit
+  re-renders the pages using it without a new revision, so they are re-read only when next edited (`touched` would catch
+  it, but also changes on every cache purge).
+- **File and listing keys come from `MediaWikiPage.path_of`**: the knowledge namespace (`Main` for 0, else the wiki
+  namespace's local name), then the title without its prefix split at `/` (subpages). A split giving an empty or
+  dots-only folder keeps the title as one file name; a title of dots alone is written as `page {id}`.
+- **Frontmatter uses `page_id`, `revision` and `categories`** (visible ones only; hidden maintenance categories are
+  dropped).
+- **Text is the rendered HTML**, rewritten by `MediaWikiHtml` before markdownify. Parser comments, edit sections, the
+  table of contents, navboxes, empty elements, footnote back-links and images are dropped, links made absolute against
+  the page without their `title`, red links kept as text, and unset template parameters (`{{{name}}}`) removed. A
+  **layout table** (one holding another table, or a single row, as a frame, a message box or columns are) is replaced by
+  its cells' content, because as data it would put the whole page in one cell. The remaining data tables are converted
+  on their own through core's `HtmlTableConverter`, as Confluence does with its own copy of that code: the two kinds
+  share no code, so each can change without the other.
+- **Files are not synced yet.** `File:` description pages can be listed like any namespace, but the files themselves
+  need binary records, which the markdown destination does not write.
 
 ## Markdown Frontmatter
 
@@ -1023,8 +1088,8 @@ nothing can be created on top of them, and rows predating the `ingestor` field r
 
 Run it locally: `make document-ingestion-pipeline`. The rclone source pipeline runs on the host the same way with
 `dagster dev -m app.rclone_pipeline` against the dev stack's daemon (`RCLONE_URL=http://localhost:5572`). The structured
-source pipeline runs with `make structured-pipeline` (Jira, Confluence), or `make structured-demo` with the playground's
-demo source, each next to the ingestion pipeline as a second code location.
+source pipeline runs with `make structured-pipeline` (Jira, Confluence, MediaWiki), or `make structured-demo` with the
+playground's demo source, each next to the ingestion pipeline as a second code location.
 
 ## Testing
 

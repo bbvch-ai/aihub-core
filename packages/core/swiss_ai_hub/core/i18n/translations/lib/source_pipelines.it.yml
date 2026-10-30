@@ -193,3 +193,47 @@ structured:
         label: Pagine padre
         help: Facoltativo. Vengono sincronizzate solo queste pagine e le pagine sottostanti.
           L'ID di una pagina è il numero nel suo URL.
+    mediawiki:
+      display_name: MediaWiki
+      base_url:
+        label: URL del wiki
+        help: La cartella che contiene il file api.php del wiki, ad es. https://wiki.acme.ch
+          o https://acme.ch/w.
+      auth_method:
+        label: Accesso
+        help: Come la pipeline accede al wiki. Scegli la pagina di accesso se il wiki
+          autentica tramite un'estensione come LDAP o il single sign-on.
+        bot_password: Password del bot
+        web_form: Pagina di accesso
+        oauth: Token di accesso OAuth
+        anonymous: Senza accesso (wiki pubblico)
+      username:
+        label: Nome utente
+        help: L'account con cui la pipeline legge; per una password del bot, Utente@NomeBot
+          come indicato su Speciale:BotPasswords.
+      password:
+        label: Password
+        help: La password del bot o quella dell'account. Salvata cifrata. La base
+          contiene tutte le pagine che questo account può leggere nei namespace indicati;
+          usa quindi un account dedicato di sola lettura.
+      access_token:
+        label: Token di accesso
+        help: Il token di accesso di un consumer OAuth 2 riservato al proprietario,
+          registrato su Speciale:OAuthConsumerRegistration con il diritto di base.
+          Salvato cifrato. La base contiene tutte le pagine che l'account del token
+          può leggere nei namespace indicati; registralo quindi per un account dedicato
+          di sola lettura.
+      namespaces:
+        label: Namespace del wiki
+        help: Facoltativo. Nomi o numeri dei namespace da sincronizzare, ad es. Main
+          o Project. Solo il namespace principale se vuoto. Ogni namespace del wiki
+          diventa un namespace della base.
+      include_categories:
+        label: Categorie
+        help: Facoltativo. Vengono sincronizzate solo le pagine di almeno una di queste
+          categorie.
+      exclude_categories:
+        label: Categorie escluse
+        help: Facoltativo. Le pagine di una di queste categorie non vengono mai sincronizzate,
+          ad es. una categoria che contrassegna le pagine da tenere lontane dagli
+          assistenti IA.

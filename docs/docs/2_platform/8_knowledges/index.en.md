@@ -65,9 +65,9 @@ as a safety net, catching anything a missed notification would otherwise have le
 
 Instead of uploading, a database can be given a **Source** when it is created, or later through **Edit source** on the
 database. Two kinds of source are offered: **Cloud storage sync (rclone)** keeps files in sync, and **Business
-application sync** keeps records such as Jira issues and Confluence pages in sync, each record as one document.
-Credentials are stored encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the
-stored ones, so a rotation is a matter of editing the source. Either way, the system then:
+application sync** keeps records such as Jira issues, Confluence pages and wiki pages in sync, each record as one
+document. Credentials are stored encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps
+the stored ones, so a rotation is a matter of editing the source. Either way, the system then:
 
 - Syncs from the source on a daily schedule; until the first sync has filled it, the database shows **Nothing synced
   yet**
@@ -182,6 +182,59 @@ is not visible to the account, when a parent page lies outside the listed spaces
 an internal address, such as a Docker service, `localhost` or a private network address, that no operator has allowed.
 The reason is shown on the failed run in the Dagster UI, and in the failure notification when notifications are
 configured.
+
+#### MediaWiki pages
+
+Pick **MediaWiki** as the source system and enter the settings below. Any MediaWiki from version 1.27 (2016) on can be
+synced, which includes every release still supported.
+
+- **Wiki URL**: the folder holding the wiki's `api.php`, such as `https://wiki.acme.ch` or `https://acme.ch/w` for a
+  wiki installed like Wikipedia. As for Jira, it must be a public address, without `?` or `#`, and a redirect is not
+  followed. An operator can allow a wiki reachable only on the company network with
+  `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`.
+- **Sign-in**:
+  - **Bot password** (`Special:BotPasswords`) for wikis that sign in with MediaWiki's own accounts. The user name is
+    `User@BotName`.
+  - **Login page** for wikis whose sign-in goes through an extension such as LDAP or single sign-on (PluggableAuth),
+    which the API cannot sign in through. The pipeline fills in the wiki's own login page with the account's user name
+    and password.
+  - **OAuth access token** for wikis with the OAuth extension, such as Wikimedia's. Register an owner-only OAuth 2
+    consumer on `Special:OAuthConsumerRegistration` with the *Basic rights* grant; it is usable at once, and its access
+    token is what you enter.
+  - **No sign-in** for a public wiki.
+- **Namespaces** (optional): the names or numbers of the namespaces to sync, such as `Main`, `Project` or `100`. Only
+  the main namespace when empty.
+- **Categories** (optional): only pages in at least one of these categories are synced.
+- **Excluded categories** (optional): pages in any of these categories are never synced, such as a category that marks
+  pages to keep away from AI assistants. A category a template assigns counts as well.
+
+Each namespace becomes a collection (`Main` for the main namespace) and each page one document. A subpage title is split
+into folders, so `Onboarding/Laptop` is `Onboarding/Laptop` in the `Main` collection. Redirects are skipped; their
+target is synced under its own title. The document is titled with the page title, links back to the page, and holds the
+page as the wiki renders it, with every template expanded: headings, lists, links and data tables keep their formatting,
+and tables used only for layout, such as a frame around a page or a message box, are replaced by their content. Images,
+files and talk pages are not synced, and the edit links and table of contents are left out.
+
+The page's fields reach the document as [frontmatter](#markdown-files-with-frontmatter): a citation shows the page title
+and opens the page in the wiki, and the fields `categories`, `page_id`, `revision` and `updated` are metadata a
+retriever can filter on once they are among its allowed filter fields.
+
+::: warning Use a dedicated account
+The database holds every page the account can read in the listed namespaces, and everyone with access to the database
+can find them. Sync with a dedicated read-only account that sees only what the database's readers may see.
+:::
+
+The first sync reads every page in scope. Later syncs list every page with its latest revision and title, and read only
+the pages that are new, edited, renamed or newly in scope. Pages deleted, moved out of the listed namespaces, put in an
+excluded category or taken out of every listed category are removed. Changing the namespaces or categories reads
+everything again. An edit to a template changes the pages that use it without giving them a new revision, so they are
+read again only when they are next edited themselves.
+
+A sync fails before it changes anything when the wiki refuses the sign-in or the access token, when the session still
+reads anonymously after signing in, when the wiki is older than MediaWiki 1.27, when a namespace or category does not
+exist, or when the wiki URL points to an internal address that no operator has allowed. An excluded category counts as
+existing when it has members or a page of its own: give it a page, so a sync keeps running while it is empty, rather
+than letting a mistyped name exclude nothing.
 
 The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
 including deletions, into the Swiss AI Hub. Handing a database that already holds documents to a different source,
