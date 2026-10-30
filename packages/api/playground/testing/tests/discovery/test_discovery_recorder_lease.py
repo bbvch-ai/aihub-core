@@ -1,12 +1,15 @@
 """Exactly one API process records discovery rounds, and it keeps doing so across rounds until it stops."""
 
+import logging
 import os
 from collections.abc import AsyncIterator
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
 import pytest_asyncio
 from redis.asyncio import Redis
+from redis.exceptions import ConnectionError as RedisConnectionError
 from swiss_ai_hub.core.discovery import DiscoveryKind, DiscoverySettings
 from swiss_ai_hub.core.infrastructure import RedisSettings
 
@@ -81,3 +84,28 @@ async def test_agent_and_process_rounds_have_separate_leases(redis: Redis, key_p
 @pytest.mark.asyncio
 async def test_releasing_a_lease_never_held_is_harmless(redis: Redis, key_prefix: str) -> None:
     await _lease(redis, key_prefix).release()
+
+
+class TestRedisUnreachable:
+    """Redis must not stop the round: it also reconciles this process's endpoints, which need only NATS and Mongo."""
+
+    @staticmethod
+    def _unreachable_lease() -> DiscoveryRecorderLease:
+        lock = MagicMock()
+        lock.reacquire = AsyncMock(side_effect=RedisConnectionError("Valkey restarting"))
+        lock.acquire = AsyncMock(side_effect=RedisConnectionError("Valkey restarting"))
+        lock.release = AsyncMock(side_effect=RedisConnectionError("Valkey restarting"))
+        return DiscoveryRecorderLease(
+            MagicMock(lock=MagicMock(return_value=lock)), DiscoveryKind.AGENT, DiscoverySettings()
+        )
+
+    @pytest.mark.asyncio
+    async def test_the_round_is_not_recorded_instead_of_failing(self, caplog: pytest.LogCaptureFixture) -> None:
+        with caplog.at_level(logging.WARNING):
+            assert await self._unreachable_lease().held() is False
+
+        assert "Valkey restarting" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_releasing_at_shutdown_does_not_raise(self) -> None:
+        await self._unreachable_lease().release()

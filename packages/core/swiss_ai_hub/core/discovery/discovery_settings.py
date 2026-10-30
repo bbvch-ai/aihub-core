@@ -1,17 +1,19 @@
 from datetime import timedelta
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
+
+_DERIVED_SILENCE_FACTOR = 2.5
 
 
 class DiscoverySettings(EnvironmentSettings):
     """Pacing of the API's class discovery rounds and how many of them a class may miss.
 
     Online status is judged against completed rounds rather than the clock, so these knobs decide how
-    quickly a class that really went away reads offline — and nothing else: a round that fails or never
-    finishes changes no class's status however long it lasts.
+    quickly a class that really went away reads offline. A round that fails or never finishes changes no
+    class's status, until the max silence passes.
     """
 
     model_config = EnvironmentSettings.create_settings_config("DISCOVERY_")
@@ -41,23 +43,31 @@ class DiscoverySettings(EnvironmentSettings):
         ),
     ] = 3
     MAX_SILENCE_SECONDS: Annotated[
-        int,
+        int | None,
         Field(
             ge=1,
             description="However the rounds went, a class that has not answered for this long reads offline. "
             "Bounds how long dead classes keep reading online while every round fails, and how old the rounds "
-            "left over from before an API restart may be.",
+            "left over from before an API restart may be. Empty: 2.5 times the longest the missed rounds can "
+            "take (900 with the defaults), so it follows the interval and the round timeout.",
         ),
-    ] = 900
+    ] = None
+
+    @field_validator("MAX_SILENCE_SECONDS", mode="before")
+    @classmethod
+    def empty_max_silence_is_derived(cls, value: Any) -> Any:
+        """Compose passes the variable through even when it is left empty."""
+        return None if value == "" else value
 
     @model_validator(mode="after")
     def max_silence_exceeds_the_missed_rounds(self) -> Self:
-        """A limit inside the missed-rounds span would take healthy classes offline between two rounds."""
-        if self.MAX_SILENCE_SECONDS <= self.cold_start_window.total_seconds():
+        """A limit inside the missed-rounds span would take a class offline that the rule still counts online."""
+        span_seconds = self.missed_rounds_span.total_seconds()
+        if self.MAX_SILENCE_SECONDS is not None and self.MAX_SILENCE_SECONDS <= span_seconds:
             msg = (
-                f"DISCOVERY_MAX_SILENCE_SECONDS ({self.MAX_SILENCE_SECONDS}) must exceed the "
-                f"{self.cold_start_window.total_seconds():.0f}s that "
-                "DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE rounds span."
+                f"DISCOVERY_MAX_SILENCE_SECONDS ({self.MAX_SILENCE_SECONDS}) must exceed the {span_seconds:.0f}s "
+                "that DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE rounds can take, each running up to "
+                "DISCOVERY_ROUND_TIMEOUT_SECONDS. Leave it empty to derive it."
             )
             raise ValueError(msg)
         return self
@@ -80,7 +90,15 @@ class DiscoverySettings(EnvironmentSettings):
         return timedelta(seconds=round_period * self.MISSED_ROUNDS_BEFORE_OFFLINE)
 
     @property
+    def missed_rounds_span(self) -> timedelta:
+        """The longest the missed rounds can take: each may run up to its timeout, not just the response wait."""
+        round_period = self.INTERVAL_SECONDS + self.ROUND_TIMEOUT_SECONDS
+        return timedelta(seconds=round_period * self.MISSED_ROUNDS_BEFORE_OFFLINE)
+
+    @property
     def max_silence(self) -> timedelta:
+        if self.MAX_SILENCE_SECONDS is None:
+            return self.missed_rounds_span * _DERIVED_SILENCE_FACTOR
         return timedelta(seconds=self.MAX_SILENCE_SECONDS)
 
     @property

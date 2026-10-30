@@ -232,11 +232,14 @@ the subclasses only broadcast, name and register classes.
   error and not recorded, so it moves no class towards offline. The NATS check matters because nats-py buffers a publish
   while reconnecting instead of raising. A class whose answer cannot be saved counts as not having answered
   (`_stamp_answer`); it does not fail the round for every other class.
-- **Max silence**: the threshold is never older than `DISCOVERY_MAX_SILENCE_SECONDS` (900). Without it, a fault that
-  fails every round, or the rounds left from before an API restart, would keep dead classes online indefinitely.
+- **Max silence**: the threshold is never older than `DISCOVERY_MAX_SILENCE_SECONDS`. Without it, a fault that fails
+  every round, or the rounds left from before an API restart, would keep dead classes online indefinitely. Left empty
+  (the default) it is 2.5× the longest the missed rounds can take, `MISSED × (INTERVAL + ROUND_TIMEOUT)`: 900 s with the
+  defaults, and it follows the interval when that is raised. An explicit value must exceed that span.
 - **Several API processes**: every gunicorn worker or replica runs rounds, because each registers the dynamic endpoints
   on its own app, but only the holder of the Redis `DiscoveryRecorderLease` (`discovery:{kind}:recorder`) records them.
-  Rounds from N processes would make "the last N rounds" span a fraction of the configured time.
+  Rounds from N processes would make "the last N rounds" span a fraction of the configured time. While Redis is
+  unreachable the lease reports not held, so rounds still reconcile endpoints and are simply not recorded.
 - **One rule everywhere**: `is_online_since(threshold)`, the scheduler, `get_online_conversational` and endpoint removal
   all use it. Services read the threshold once per request and pass `is_online` into the DTO factories.
 - **Cold start**: until that many rounds exist, the wall-clock window they would span stands in.

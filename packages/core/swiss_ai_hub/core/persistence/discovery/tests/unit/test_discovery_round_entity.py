@@ -140,8 +140,21 @@ class TestSettings:
             DiscoverySettings(RESPONSE_WAIT_SECONDS=10, ROUND_TIMEOUT_SECONDS=10)
 
     def test_a_max_silence_inside_the_missed_rounds_span_is_rejected(self) -> None:
-        """It would take healthy classes offline between two rounds."""
+        """Rounds may each run up to their timeout, so three can take (60 + 60) * 3 = 360s, not (60 + 10) * 3."""
         with pytest.raises(ValueError, match="MAX_SILENCE_SECONDS"):
             DiscoverySettings(
-                INTERVAL_SECONDS=60, RESPONSE_WAIT_SECONDS=10, MISSED_ROUNDS_BEFORE_OFFLINE=3, MAX_SILENCE_SECONDS=210
+                INTERVAL_SECONDS=60, ROUND_TIMEOUT_SECONDS=60, MISSED_ROUNDS_BEFORE_OFFLINE=3, MAX_SILENCE_SECONDS=360
             )
+
+    def test_left_empty_the_max_silence_is_derived_from_the_rounds(self) -> None:
+        assert DiscoverySettings().max_silence == timedelta(seconds=900)
+        assert DiscoverySettings(MAX_SILENCE_SECONDS="").max_silence == timedelta(seconds=900)
+
+    def test_raising_the_interval_alone_raises_the_derived_max_silence(self) -> None:
+        """A fixed default would fail startup once the interval outgrew it."""
+        settings = DiscoverySettings(INTERVAL_SECONDS=300)
+
+        assert settings.max_silence == timedelta(seconds=(300 + 60) * 3 * 2.5)
+
+    def test_an_explicit_max_silence_is_kept(self) -> None:
+        assert DiscoverySettings(MAX_SILENCE_SECONDS=1200).max_silence == timedelta(seconds=1200)

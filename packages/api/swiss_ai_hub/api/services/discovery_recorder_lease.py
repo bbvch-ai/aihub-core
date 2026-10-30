@@ -1,7 +1,7 @@
 import logging
 
 from redis.asyncio import Redis
-from redis.exceptions import LockError
+from redis.exceptions import LockError, RedisError
 from swiss_ai_hub.core.discovery import DiscoveryKind, DiscoverySettings
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,19 @@ class DiscoveryRecorderLease:
         self._lock = redis.lock(f"{key_prefix}:{kind}:recorder", timeout=settings.recorder_lease_ttl)
 
     async def held(self) -> bool:
-        """Renews the lease if this process holds it, otherwise takes it if it is free."""
+        """Whether this process may record the round; False while Redis is unreachable.
+
+        Redis must not decide whether a round runs at all: the round also reconciles this process's
+        endpoints, and that only needs NATS and the database. Unrecorded rounds are safe, since online
+        status then falls back to `MAX_SILENCE_SECONDS`.
+        """
+        try:
+            return await self._renew_or_take()
+        except RedisError as e:
+            logger.warning(f"Discovery recorder lease unavailable, this round is not recorded: {e}")
+            return False
+
+    async def _renew_or_take(self) -> bool:
         try:
             return await self._lock.reacquire()
         except LockError:
@@ -31,5 +43,5 @@ class DiscoveryRecorderLease:
         """Hands the lease over at shutdown instead of leaving the others to wait for it to expire."""
         try:
             await self._lock.release()
-        except LockError:
-            logger.debug("Discovery recorder lease was not held at shutdown")
+        except RedisError as e:
+            logger.debug(f"Discovery recorder lease not released at shutdown, it expires on its own: {e}")
