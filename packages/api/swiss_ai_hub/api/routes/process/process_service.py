@@ -5,7 +5,7 @@ from bson import ObjectId
 from fastapi import HTTPException
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalProcessEvent, ExternalProcessEventDistributor
-from swiss_ai_hub.core.events.process import ProcessStartEvent, WorkEvent
+from swiss_ai_hub.core.events.process import HumanInSpecs, ProcessStartEvent, WorkEvent
 from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
@@ -26,6 +26,7 @@ from swiss_ai_hub.api.routes.process.dto.in_specs.human_in_dto import HumanInDTO
 from swiss_ai_hub.api.routes.process.dto.process_class_dto import ProcessClassDTO
 from swiss_ai_hub.api.routes.process.dto.process_walkthrough_dto import ProcessWalkthroughDTO
 from swiss_ai_hub.api.routes.process.dto.submitted_form_dto import SubmittedFormDTO
+from swiss_ai_hub.api.routes.process.human_work_request_assignment import HumanWorkRequestAssignment
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
@@ -59,9 +60,9 @@ class ProcessService:
     @staticmethod
     @trace_fn
     async def get_process_open_forms(
-        process_class: str, process_id: str, process_walkthrough_id: str, t: LocaleHandler
+        process_class: str, process_id: str, process_walkthrough_id: str, user: UserIdentity, t: LocaleHandler
     ) -> list[HumanInDTO]:
-        """Returns a list of formkit forms that the user can submit to continue the given process walkthrough."""
+        """Returns the forms of open work requests in the walkthrough that are assigned to the user."""
         class_entity = ProcessClassEntity.get_by_process_class(process_class)
         if not class_entity:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
@@ -74,6 +75,8 @@ class ProcessService:
         )
 
         for persisted_event in persisted_events:
+            if not HumanWorkRequestAssignment.is_assigned_to(persisted_event["event_data"], user):
+                continue
             for work_form in persisted_event["event_data"]["forms"]:
                 human_in_specs = next(
                     (
@@ -86,32 +89,46 @@ class ProcessService:
                 if not human_in_specs:
                     continue
 
-                work_form_elements: list[dict] = []
-
-                for key, value in work_form.items():
-                    if isinstance(value, dict) and value.get("is_formkit_element"):
-                        work_form_elements.append(
-                            {
-                                **value,
-                                "name": key,
-                            }
-                        )
-
-                process_human_input_dto = HumanInDTO(
-                    name=t.extract_required(human_in_specs.name, field_name="human_input.name"),
-                    description=t.extract_required(human_in_specs.description, field_name="human_input.description"),
-                    route=human_in_specs.route,
-                    method=human_in_specs.method,
-                    form=work_form_elements,
-                    is_process_start=False,
-                    event_specs=human_in_specs.event_specs,
-                )
-                process_human_input_dto.form = [
-                    form_element.in_locale(t) for form_element in process_human_input_dto.form
-                ]
-                process_human_input_dtos.append(process_human_input_dto)
+                process_human_input_dtos.append(ProcessService._open_form_dto(human_in_specs, work_form, t))
 
         return process_human_input_dtos
+
+    @staticmethod
+    def _open_form_dto(human_in_specs: HumanInSpecs, work_form: dict[str, Any], t: LocaleHandler) -> HumanInDTO:
+        work_form_elements = [
+            {**value, "name": key}
+            for key, value in work_form.items()
+            if isinstance(value, dict) and value.get("is_formkit_element")
+        ]
+        process_human_input_dto = HumanInDTO(
+            name=t.extract_required(human_in_specs.name, field_name="human_input.name"),
+            description=t.extract_required(human_in_specs.description, field_name="human_input.description"),
+            route=human_in_specs.route,
+            method=human_in_specs.method,
+            form=work_form_elements,
+            is_process_start=False,
+            event_specs=human_in_specs.event_specs,
+        )
+        process_human_input_dto.form = [form_element.in_locale(t) for form_element in process_human_input_dto.form]
+        return process_human_input_dto
+
+    @staticmethod
+    def _human_input_for(
+        class_entity: ProcessClassEntity, route: str, method: str, *, is_process_start: bool
+    ) -> HumanInSpecs:
+        """The human input declared on exactly this route and method, so a form is never submitted through
+        another step's endpoint."""
+        human_in = next(
+            (
+                specs
+                for specs in (entity.to_specs() for entity in class_entity.human_inputs)
+                if specs.route == route and specs.method == method and specs.is_process_start == is_process_start
+            ),
+            None,
+        )
+        if human_in is None:
+            raise HTTPException(status_code=404, detail=f"No human input found for route {route} and method {method}.")
+        return human_in
 
     @staticmethod
     @trace_fn
@@ -131,14 +148,7 @@ class ProcessService:
         if not class_entity:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
 
-        human_inputs_specs = [specs.to_specs() for specs in class_entity.human_inputs]
-        human_in = next(
-            (human_in for human_in in human_inputs_specs if human_in.route == route and human_in.method == method),
-            None,
-        )
-
-        if not human_in:
-            raise ValueError(f"No human input found for route {route} and method {method}")
+        human_in = ProcessService._human_input_for(class_entity, route, method, is_process_start=True)
 
         event: ProcessStartEvent = ProcessStartEvent.from_raw_data(
             raw_event_data=raw_event_data, human_in=human_in, process_config=process_config
@@ -170,35 +180,18 @@ class ProcessService:
         user: UserIdentity,
         t: LocaleHandler,
     ) -> SubmittedFormDTO:
-        """Submit an object satisfying a form to continue a process walkthrough."""
+        """Submit an object satisfying a form to continue a process walkthrough.
+
+        The form must answer an open work request of this walkthrough that is assigned to the user.
+        """
         class_entity = ProcessClassEntity.get_by_process_class(process_class)
         if not class_entity:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
 
-        human_inputs_specs = [specs.to_specs() for specs in class_entity.human_inputs]
-        persisted_events = PersistedProcessEventEntity.get_open_human_work_requests(
-            process_class, process_id, process_walkthrough_id
+        human_in = ProcessService._human_input_for(class_entity, route, method, is_process_start=False)
+        in_response_to = ProcessService._assigned_open_request_id(
+            process_class, process_id, process_walkthrough_id, human_in, user
         )
-
-        human_in = None
-        in_response_to = None
-        for persisted_event in persisted_events:
-            for work_form in persisted_event["event_data"]["forms"]:
-                potential_human_in = next(
-                    (
-                        human_in
-                        for human_in in human_inputs_specs
-                        if human_in.event_specs.event_name == work_form["_event_name"]
-                    ),
-                    None,
-                )
-                if potential_human_in:
-                    human_in = potential_human_in
-                    in_response_to = persisted_event["event_id"]
-                    break
-
-        if not human_in:
-            raise ValueError(f"No human input found for route {route} and method {method}")
 
         json_data: dict[str, Any] = {
             "event_id": str(ObjectId()),
@@ -224,6 +217,36 @@ class ProcessService:
             process_id=process_id,
             process_walkthrough_id=external_event.process_walkthrough_id,
         )
+
+    @staticmethod
+    def _assigned_open_request_id(
+        process_class: str, process_id: str, process_walkthrough_id: str, human_in: HumanInSpecs, user: UserIdentity
+    ) -> str:
+        """The id of the open work request this form answers, provided the user is one of its assignees."""
+        event_name = human_in.event_specs.event_name
+        open_requests = [
+            persisted_event
+            for persisted_event in PersistedProcessEventEntity.get_open_human_work_requests(
+                process_class, process_id, process_walkthrough_id
+            )
+            if any(work_form["_event_name"] == event_name for work_form in persisted_event["event_data"]["forms"])
+        ]
+        if not open_requests:
+            raise HTTPException(
+                status_code=404, detail=f"No open work request accepts {event_name} in this walkthrough."
+            )
+
+        assigned_request = next(
+            (
+                persisted_event
+                for persisted_event in open_requests
+                if HumanWorkRequestAssignment.is_assigned_to(persisted_event["event_data"], user)
+            ),
+            None,
+        )
+        if assigned_request is None:
+            raise HTTPException(status_code=403, detail="This work request is not assigned to you.")
+        return assigned_request["event_id"]
 
     @staticmethod
     async def _send_event(

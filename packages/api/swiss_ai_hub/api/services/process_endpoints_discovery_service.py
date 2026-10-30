@@ -315,7 +315,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         async def get_form(
             process_id: Annotated[str, Path(title="Process ID", description="The specific process instance ID")],
             process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern=r"^[a-f0-9]{24}$")],
-            _: Annotated[
+            user: Annotated[
                 UserIdentity,
                 Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{{process_id}}")),
             ],
@@ -331,6 +331,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 process_class=process_class,
                 process_id=process_id,
                 process_walkthrough_id=process_walkthrough_id,
+                user=user,
                 t=t,
             )
             process_dto = next(
