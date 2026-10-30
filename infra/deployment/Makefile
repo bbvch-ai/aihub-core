@@ -30,14 +30,14 @@ build-and-push-postgres-image:
 # pinned base tag or the installed libraries change. After running, non-build
 # stages pick up the new image automatically via `docker compose pull`.
 build-and-push-open-terminal-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1..."
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-2..."
 	@docker login ghcr.io
 	@docker build \
-		-t ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1 \
+		-t ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-2 \
 		-f docker/open-terminal/Dockerfile \
 		docker/open-terminal
-	@docker push ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1
-	@echo "Successfully published open-terminal-office:0.11.34-1"
+	@docker push ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-2
+	@echo "Successfully published open-terminal-office:0.11.34-2"
 
 # Build the project-managed Presidio analyzer image (Presidio 2.2.364 + GLiNER + spaCy German model, API-key check)
 # and push to ghcr. The tag is the one pinned in compose-config.yml (image_tags.presidio_analyzer); bump it with every

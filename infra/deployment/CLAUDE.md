@@ -229,7 +229,9 @@ continues to build locally so developers test Dockerfile edits without round-tri
 
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
 libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/xlsxwriter/python-docx/python-pptx/weasyprint/
-pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and is published manually via
+pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and headless LibreOffice with
+`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX
+and `pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
 `make -C infra/deployment build-and-push-open-terminal-image` (requires `docker login ghcr.io`). Re-publish whenever:
 
 - The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
@@ -241,7 +243,7 @@ in `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` whenever the
 After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
 `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
-> **Deployment checklist:** Publish `open-terminal-office:0.11.34-1` to ghcr **before any non-dev stage pulls it**.
+> **Deployment checklist:** Publish `open-terminal-office:0.11.34-2` to ghcr **before any non-dev stage pulls it**.
 > Non-dev stages (`local`/`build` build locally, but `nightly`/`latest` pull from the registry) reference this exact
 > tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
 > stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.
