@@ -56,10 +56,11 @@ class SandboxTools(BaseToolSpec):
         """Run a shell command in the user's code sandbox, in this conversation's folder.
 
         The folder holds the files attached to the conversation, unchanged, and keeps every file you write between
-        calls. Python 3 is installed with pandas, numpy, openpyxl, xlsxwriter, matplotlib, python-docx and
-        python-pptx.
+        calls. Python 3 has pandas, numpy, openpyxl, xlsxwriter, matplotlib, python-docx, python-pptx, pypdf and
+        pdfplumber; nothing else can be installed (no internet).
         - Use it to compute, convert or create files, and for attached spreadsheets, presentations and CSV files,
-          which code reads natively. Read documents such as PDF and Word files with the tool for attached files.
+          which code reads natively. Read PDF and Word files with the tool for attached files, but a PDF table you
+          need every row of with pdfplumber.
         - Print what the next step needs, such as counts, totals or the first rows, not whole tables: long output is
           cut.
         - The result says whether the command succeeded and which files it created or changed. A command that
