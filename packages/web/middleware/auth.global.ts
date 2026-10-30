@@ -2,6 +2,7 @@ import { getTenantAuthProvider } from '@core/sdk/client'
 import { ErrorResponse } from 'oidc-client-ts'
 
 import type { User, UserManager } from 'oidc-client-ts'
+import type { RouteLocationNormalized } from 'vue-router'
 
 /**
  * Tracks the last tenant synced with the backend to avoid redundant PUT calls
@@ -79,6 +80,30 @@ const ssoSessionIsGone = async (auth: UserManager, user: User): Promise<boolean>
   }
 }
 
+/**
+ * Whether the last protected navigation landed on a page with an SSO iframe.
+ * Tracked here rather than read from `from`, which on the first navigation of a
+ * page load already resolves to the target route.
+ */
+let onSsoIframePage = false
+
+/**
+ * The probe runs once per tab, so it misses a Keycloak session that ends on the
+ * server while the tab stays open (idle timeout, revocation, logout through
+ * another client). A page embedding an iframe that signs in through the SSO
+ * cookie would then show Keycloak's login form inside the frame, where an Entra
+ * sign-in breaks the embedded app's OAuth callback. Keycloak rejects the
+ * refresh token of an ended session, so renewing on the way in catches it with
+ * one token request. Moving within such a page (e.g. opening a chat side panel)
+ * keeps the iframe and needs no new check.
+ */
+const entersSsoIframePage = (to: RouteLocationNormalized): boolean => {
+  const embedsSsoIframe = to.meta.embedsSsoIframe === true
+  const entering = embedsSsoIframe && !onSsoIframePage
+  onSsoIframePage = embedsSsoIframe
+  return entering
+}
+
 const firstSegment = (path: string, localeCodes: string[]): string | undefined =>
   stripLocale(normalize(path), localeCodes).split('/')[1] || undefined
 
@@ -144,7 +169,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     // A renewal that gets no answer (e.g. Wi-Fi not back after waking) keeps the
     // session; useAuth().getToken() retries it on the page's first API call.
-    if (user.expired) {
+    // entersSsoIframePage() goes first: it must see every protected navigation.
+    if (entersSsoIframePage(to) || user.expired) {
       try {
         await $auth.signinSilent()
       }
