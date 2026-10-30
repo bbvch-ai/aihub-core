@@ -35,8 +35,8 @@ rebinding got past it.
 
 ### `browser-proxy`: Playwright's only way out
 
-Playwright loses `egress` and keeps only `browser`. A new service, `browser-proxy` (Squid 6.12 on Alpine, the
-project-managed image `browser-proxy:6.12-1` built from `infra/deployment/docker/browser-proxy/`), sits on `browser` and
+Playwright loses `egress` and keeps only `browser`. A new service, `browser-proxy` (Squid 7.6 on Alpine 3.23, the
+project-managed image `browser-proxy:7.6-1` built from `infra/deployment/docker/browser-proxy/`), sits on `browser` and
 `egress`. The fetching agents open their browser context with `proxy={"server": PLAYWRIGHT_PROXY_URL}`
 (`http://browser-proxy:3128`, a template constant like `PLAYWRIGHT_WS_URL`; no `.env` key). The Playwright server
 connects to the proxy, so the name resolves on the `browser` network in every stage, dev included.
@@ -45,7 +45,8 @@ Squid resolves each name itself, refuses the request when any of its addresses i
 and IPv6 ranges), and connects to an address it checked. Nothing else on the browser's side can reach the internet:
 without the proxy, every request fails.
 
-Three configuration choices were forced by the prototype (Playwright 1.63 against Squid 6.12):
+Three configuration choices were forced by the prototype (Playwright 1.63 against Squid 6.12), and hold unchanged on
+Squid 7.6:
 
 - **`CONNECT` is allowed to every safe port, not only 443.** `route.fetch`, which the request guard uses for every
   request, tunnels plain `http://` through the proxy with `CONNECT` as well. With Squid's default, every `http://` link
@@ -91,8 +92,11 @@ it needs no proxy.
   lives outside this repository (the playbook), needs a fixed subnet, and where the rules are missing, nothing is
   blocked.
 - **Smokescreen instead of Squid.** Built for exactly this, with private ranges denied by default, but it is not an
-  Alpine package, so we would build it from its Go sources and maintain that. Squid is one (`squid-6.12-r0`, pinned in
+  Alpine package, so we would build it from its Go sources and maintain that. Squid is one (`squid-7.6-r0`, pinned in
   the Dockerfile), its `dst` ACL does the same job, and it is widely known.
+- **Squid 6.12 on Alpine 3.22.** The first image used it. Upstream fixes only 7.x now, and 6.12 has 11 published
+  advisories. None applies to this configuration (no ICP, HTCP, SNMP, ESI, `cache_peer`, ICAP or FTP, empty error
+  pages, and every request a `CONNECT` tunnel), but the next one might not need any of those.
 
 ## Consequences
 

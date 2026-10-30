@@ -270,9 +270,9 @@ for.
 
 ### Publishing the browser-proxy image
 
-The browser-proxy image is project-managed: Alpine with `squid=6.12-r0`, our `squid.conf` and emptied error pages, built
+The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages, built
 from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image` (requires
-`docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:6.12-1` in the Makefile and `image_tags.browser_proxy`
+`docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and `image_tags.browser_proxy`
 with every change to that folder. Three settings look optional and are not (each verified against Playwright 1.63):
 `CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://` with `CONNECT` too; the
 error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted` instead of a 403 with
@@ -280,7 +280,11 @@ error pages stay empty, or about half the refusals reach the agent as `Route.fet
 would refuse all of IPv4. It needs no refreshed CA bundle (see below): it tunnels TLS without terminating it, so
 the browser checks the certificates.
 
-> **Deployment checklist:** publish `browser-proxy:6.12-1` to ghcr **before any non-dev stage pulls it**. Without it the
+Check the [Squid advisories](https://github.com/squid-cache/squid/security/advisories) when bumping the base, not an
+image scan. Alpine 3.22 froze Squid at 6.12, which upstream no longer fixes, and Alpine's secdb lists only the CVEs
+Alpine patched, so Trivy and Grype reported that image clean despite 11 published advisories.
+
+> **Deployment checklist:** publish `browser-proxy:7.6-1` to ghcr **before any non-dev stage pulls it**. Without it the
 > pull fails and with it the whole `docker compose up`.
 
 ### Images rebuilt for a current CA bundle

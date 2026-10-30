@@ -1822,7 +1822,7 @@ services:
   # License: GPL-2.0-or-later — third-party (see LICENSE_REPORT.md)
   browser-proxy:
     container_name: browser-proxy
-    image: ghcr.io/bbvch-ai/aihub-core/browser-proxy:6.12-1
+    image: ghcr.io/bbvch-ai/aihub-core/browser-proxy:7.6-1
     restart: always
     healthcheck:
       test: [CMD, nc, -z, 127.0.0.1, '3128']

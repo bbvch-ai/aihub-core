@@ -74,14 +74,14 @@ build-and-push-playwright-image:
 # Dockerfile, squid.conf or the alpine base changes, bumping the -N suffix here and
 # in compose-config.yml.
 build-and-push-browser-proxy-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/browser-proxy:6.12-1..."
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/browser-proxy:7.6-1..."
 	@docker login ghcr.io
 	@docker build --platform linux/amd64 \
-		-t ghcr.io/bbvch-ai/aihub-core/browser-proxy:6.12-1 \
+		-t ghcr.io/bbvch-ai/aihub-core/browser-proxy:7.6-1 \
 		-f docker/browser-proxy/Dockerfile \
 		docker/browser-proxy
-	@docker push ghcr.io/bbvch-ai/aihub-core/browser-proxy:6.12-1
-	@echo "Successfully published browser-proxy:6.12-1"
+	@docker push ghcr.io/bbvch-ai/aihub-core/browser-proxy:7.6-1
+	@echo "Successfully published browser-proxy:7.6-1"
 
 # Keep OpenWebUI's Python client compatible with the project-managed browser server.
 # Publish both images before deploying their matching tags from compose-config.yml.
