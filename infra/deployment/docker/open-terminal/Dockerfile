@@ -25,7 +25,7 @@
 # Pinned to an explicit version (not `latest`) for reproducible builds — bump this tag
 # deliberately. Re-publish via `make -C infra/deployment build-and-push-open-terminal-image`
 # after editing this file. Non-build stages then pick it up via `docker compose pull`.
-FROM ghcr.io/open-webui/open-terminal:0.11.34
+FROM ghcr.io/open-webui/open-terminal:0.14.6
 
 USER root
 RUN pip install --no-cache-dir reportlab fpdf2
