@@ -767,6 +767,14 @@ acceptance criteria against sites seeded with `packages/pipeline/playground/jira
   `AIHubSettings()` instances resolve to the test DB (never the dev/prod `aihub` DB), and registers a session-autouse
   fixture that drops the test DB at session start. Failing to import this first means tests silently hit the dev
   database.
+- `beanie_isolation`: tests of Beanie documents (the entities ported from MongoEngine, #1634). Opt a test in with
+  `@pytest.mark.beanie`, or a whole module with `pytestmark = pytest.mark.beanie`. The test then runs on
+  pytest-asyncio's session loop, where one `AsyncMongoClient` is initialised against the test DB, and every collection
+  in `beanie_document_models` (session fixture in the package's `conftest.py`) is emptied before it. Add a ported
+  document to that list. Unmarked tests keep their own loop, and an unmarked test that touches a Beanie document fails
+  with `Cannot use AsyncMongoClient in different event loop`. Not usable from `@async_test` steps, whose `asyncio.run()`
+  always makes a new loop. A package that opts in copies the core `conftest.py` wiring: the fixture imports, the
+  `pytest_pycollect_makeitem` hook, the `beanie` marker and its own `beanie_document_models`.
 - `@async_test`: Decorator for async pytest-bdd step functions (wraps with `asyncio.run()`)
 - `fake_user()`: Creates a mock `UserIdentity` for tests (uses constants in `auth_utils/test_identity.py`)
 - `ASGIAdapter`: ASGI adapter for testing FastAPI routes without a running server
