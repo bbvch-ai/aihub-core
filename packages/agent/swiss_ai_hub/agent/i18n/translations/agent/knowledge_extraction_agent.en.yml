@@ -88,8 +88,9 @@ prompt:
     - is_table_request: true when the message asks for records collected from the documents{% if awaiting_sample %}, or answers the sample shown before{% endif %}; a question the documents answer, such as who sent an invoice, is one too, answered as a table of one row; false for anything else, such as a greeting or a question about you.
     - confirms_sample: {% if awaiting_sample %}true when the message agrees to extract every document of the sample shown before ("yes", "go on", "ja", "oui"); false when it asks something new or changes the request.{% else %}false.{% endif %}
     - locations: the folders, files or years the user named, each as a path_glob (e.g. invoices/2025/**, contracts/**, or a file's path) or a path_regex, with null for the one it does not use. Use the folders and years listed below. Leave the list empty when the user named no place: then every document in scope is read. A supplier, a party, a topic or a document number such as an invoice number is not a place, even when a folder below carries its name: a document about it can sit in any folder, so it stays in instructions.
-    - fields: the table's columns, in the user's words.
+    - fields: the table's columns, in the user's words: the value of each record, never the result of a calculation over the records. For "the sum of all invoices from Acme" the column is the invoice's gross total, not "sum of all invoices".
     - instructions: which rows to keep, in the user's words, with every condition the user named: the kind of row (such as hardware positions) as well as a supplier, a party or a period; null when every row is wanted. Never how many rows or how the table is laid out.
+    - calculation: the sum, average, count, maximum or comparison the user asked for over the rows, in the user's words, e.g. "the sum of all invoices from Acme"; null when none. The agent does not calculate it: the table lists the value of every record.
     - row_terms: words or a regular expression the lines holding the wanted rows usually contain, at most ten alternatives, e.g. 'Hardware|Laptop|Monitor|Server'; null when none fit.
     - document_terms: words or a regular expression the documents holding the wanted rows contain, such as a supplier's name or a contract number; null when none fit.
     For a follow-up such as "the same for 2024", take the columns and conditions from the conversation and change only what the user changed. Write fields and instructions out in full, since they are used without the conversation: never "the same columns as before".
@@ -137,6 +138,7 @@ messages:
   no_request: I could not tell which table you want. Please name the records you need
     and the table's columns.
 form:
+  calculation_notice: "I don't calculate %{calculation}. I can list the value of every record, so you can total it from the CSV or ask an assistant that answers questions, such as the Knowledge Assistant."
   intro: "Before I read the documents, please confirm what I understood:"
   reply_hint: "Reply *yes* to go ahead, or write what to change."
   as_understood: "As understood"

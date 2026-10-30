@@ -4,6 +4,7 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 from swiss_ai_hub.core.topics import PartialAgentTopic
 
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_notices import ExtractionNotices
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_answer import ExtractionRequestAnswer
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_form_request_event import (
     ExtractionRequestFormRequestEvent,
@@ -39,10 +40,11 @@ class ExtractionRequestForm:
     ) -> ExtractionRequestFormRequestEvent:
         await run_context.set(READING_KEY, reading.model_dump(mode="json"))
         parts = ExtractionRequestParts.of(reading, t)
+        notices = ExtractionNotices.for_calculation(reading.calculation, t)
         return cls.request(
-            question=ExtractionRequestForm.text(parts, t),
+            question=ExtractionRequestForm.text(parts, notices, t),
             questions=[
-                ExtractionRequestForm._question("where", parts.where, bool(reading.locations), True, t),
+                ExtractionRequestForm._question("where", parts.where, bool(reading.locations), True, t, notices),
                 ExtractionRequestForm._question("rows", parts.rows, bool(reading.instructions), True, t),
                 ExtractionRequestForm._question("columns", parts.columns, bool(reading.fields), False, t),
             ],
@@ -65,13 +67,19 @@ class ExtractionRequestForm:
         ]
 
     @staticmethod
-    def text(parts: ExtractionRequestParts, t: LocaleHandler) -> str:
+    def text(parts: ExtractionRequestParts, notices: list[str], t: LocaleHandler) -> str:
+        """The form as text, for clients without a dialog; a calculation the agent does not do is said first."""
         lines = [f"- {line}" for line in parts.lines(t)]
-        return "\n".join([t(f"{_FORM}.intro"), "", *lines, "", t(f"{_FORM}.reply_hint")])
+        return "\n".join(
+            [*(f"{notice}\n" for notice in notices), t(f"{_FORM}.intro"), "", *lines, "", t(f"{_FORM}.reply_hint")]
+        )
 
     @staticmethod
-    def _question(key: str, value: str, named: bool, droppable: bool, t: LocaleHandler) -> HumanInTheLoopChoiceQuestion:
-        """The part as understood first; a part the user named can also be dropped, where dropping means anything."""
+    def _question(
+        key: str, value: str, named: bool, droppable: bool, t: LocaleHandler, notices: list[str] | None = None
+    ) -> HumanInTheLoopChoiceQuestion:
+        """The part as understood first; a part the user named can also be dropped, where dropping means anything.
+        Notices open the question, since a dialog shows only the questions."""
         understood = HumanInTheLoopChoiceOption(
             label=t(f"{_FORM}.as_understood"), description=ExtractionRequestForm._clip(value, DESCRIPTION_LENGTH)
         )
@@ -82,7 +90,9 @@ class ExtractionRequestForm:
         return HumanInTheLoopChoiceQuestion(
             id=key,
             header=t(f"{_FORM}.{key}.header"),
-            question=ExtractionRequestForm._clip(t(f"{_FORM}.{key}.question", value=value), QUESTION_LENGTH),
+            question=ExtractionRequestForm._clip(
+                " ".join([*(notices or []), t(f"{_FORM}.{key}.question", value=value)]), QUESTION_LENGTH
+            ),
             options=options,
             allow_other=True,
         )

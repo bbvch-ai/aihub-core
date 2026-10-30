@@ -542,7 +542,10 @@ def test_the_fallback_prompt_asks_for_folders_only_after_a_stopped_search():
 
 
 def _reading(
-    *locations: RequestedLocation, is_table_request: bool = True, confirms_sample: bool = False
+    *locations: RequestedLocation,
+    is_table_request: bool = True,
+    confirms_sample: bool = False,
+    calculation: str | None = None,
 ) -> ExtractionRequestAnswer:
     return ExtractionRequestAnswer(
         is_table_request=is_table_request,
@@ -550,6 +553,7 @@ def _reading(
         locations=list(locations),
         fields="item, amount",
         instructions="only Hooli hardware",
+        calculation=calculation,
         row_terms="Laptop|Server",
         document_terms="Hooli",
     )
@@ -912,6 +916,30 @@ class TestRequestForm:
         assert ask.await_args_list[1].args[0][-1].content == "add the date column"
 
     @pytest.mark.asyncio
+    async def test_a_calculation_is_named_first_in_the_form_and_under_the_table(self):
+        notice = T("agent.knowledge_extraction_agent.form.calculation_notice", calculation="the sum of all invoices")
+        reading = _reading(calculation="the sum of all invoices")
+
+        form, _, _ = await _discover(reading, answer=None)
+        request, ask, _ = await _discover(reading)
+
+        assert notice.startswith("I don't calculate the sum of all invoices.")
+        assert form.question.startswith(f"{notice}\n")
+        assert form.questions[0].question.startswith(f"{notice} Which documents should I read?")
+        assert not form.questions[1].question.startswith(notice)
+        assert request.notices[0] == notice
+        ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_without_a_calculation_neither_the_form_nor_the_table_names_one(self):
+        form, _, _ = await _discover(_reading(), answer=None)
+        request, _, _ = await _discover(_reading())
+
+        assert form.question.startswith("Before I read the documents")
+        assert form.questions[0].question.startswith("Which documents should I read?")
+        assert not any("calculate" in notice for notice in request.notices)
+
+    @pytest.mark.asyncio
     async def test_a_correction_the_model_cannot_read_asks_for_a_request(self):
         answer, _, _ = await _discover(_reading(), answer="hmm", reread=None)
 
@@ -1050,7 +1078,12 @@ class TestRequestReading:
     @pytest.mark.asyncio
     async def test_an_answer_cut_off_in_its_term_list_is_read_again_without_the_terms(self):
         plain = ExtractionRequestPlainAnswer(
-            is_table_request=True, confirms_sample=False, locations=[], fields="item, amount", instructions="hardware"
+            is_table_request=True,
+            confirms_sample=False,
+            locations=[],
+            fields="item, amount",
+            instructions="hardware",
+            calculation=None,
         )
         predict = AsyncMock(side_effect=[ValueError("EOF while parsing 'Drain|Sewer|Pipe|Tube|H"), plain])
 
@@ -1076,13 +1109,16 @@ class TestRequestReading:
             locations=[],
             fields="item, amount",
             instructions="hardware",
+            calculation=None,
             row_terms=None,
             document_terms=None,
         )
 
-    def test_the_prompt_names_every_field_of_the_answer(self):
-        prompt = T("agent.knowledge_extraction_agent.prompt.read_request")
+    @pytest.mark.parametrize("locale", ["en", "de", "fr", "it"])
+    def test_the_prompt_names_every_field_of_the_answer(self, locale: str):
+        prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.read_request")
 
+        assert "calculation" in ExtractionRequestAnswer.model_fields
         for field in ExtractionRequestAnswer.model_fields:
             assert field in prompt
         for field in RequestedLocation.model_fields:

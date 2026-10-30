@@ -87,8 +87,9 @@ prompt:
     - is_table_request: true quando il messaggio chiede record raccolti dai documenti{% if awaiting_sample %}, o risponde al campione mostrato prima{% endif %}; anche una domanda a cui rispondono i documenti, come chi ha inviato una fattura, lo è, con una tabella di una riga come risposta; false per tutto il resto, come un saluto o una domanda su di te.
     - confirms_sample: {% if awaiting_sample %}true quando il messaggio accetta di estrarre ogni documento del campione mostrato prima ("sì", "continua", "yes", "ja"); false quando chiede qualcosa di nuovo o modifica la richiesta.{% else %}false.{% endif %}
     - locations: le cartelle, i file o gli anni nominati dall'utente, ciascuno come path_glob (p. es. invoices/2025/**, contracts/** o il percorso di un file) o come path_regex, con null per quello non usato. Usa le cartelle e gli anni elencati sotto. Lascia l'elenco vuoto quando l'utente non ha nominato alcun luogo: allora viene letto ogni documento nell'ambito. Un fornitore, una parte, un argomento o un numero di documento come un numero di fattura non è un luogo, anche quando una cartella qui sotto porta il suo nome: un documento che lo riguarda può trovarsi in qualsiasi cartella, quindi resta in instructions.
-    - fields: le colonne della tabella, con le parole dell'utente.
+    - fields: le colonne della tabella, con le parole dell'utente: il valore di ogni record, mai il risultato di un calcolo sui record. Per "la somma di tutte le fatture di Acme" la colonna è l'importo lordo della fattura, non "somma di tutte le fatture".
     - instructions: quali righe tenere, con le parole dell'utente, con ogni condizione che ha nominato: il tipo di riga (come le posizioni hardware) così come un fornitore, una parte o un periodo; null quando si vogliono tutte le righe. Mai quante righe né come è impaginata la tabella.
+    - calculation: la somma, la media, il conteggio, il massimo o il confronto che l'utente chiede sulle righe, con le sue parole, p. es. "la somma di tutte le fatture di Acme"; null se non ce n'è. L'agente non calcola: la tabella elenca il valore di ogni record.
     - row_terms: parole o un'espressione regolare che le righe con i record voluti contengono di solito, al massimo dieci alternative, p. es. 'Hardware|Laptop|Monitor|Server'; null se nessuna è adatta.
     - document_terms: parole o un'espressione regolare che i documenti con i record voluti contengono, come il nome di un fornitore o un numero di contratto; null se nessuna è adatta.
     Per una domanda successiva come "lo stesso per il 2024", riprendi colonne e condizioni dalla conversazione e cambia solo ciò che l'utente ha cambiato. Scrivi fields e instructions per intero, perché sono usati senza la conversazione: mai "le stesse colonne di prima".
@@ -136,6 +137,7 @@ messages:
   no_request: Non ho capito quale tabella desidera. Indichi i record che le servono
     e le colonne della tabella.
 form:
+  calculation_notice: "Non calcolo %{calculation}. Posso elencare il valore di ogni record, così può sommarlo dal CSV o chiedere a un assistente che risponde alle domande, come il Knowledge Assistant."
   intro: "Prima di leggere i documenti, conferma per favore ciò che ho capito:"
   reply_hint: "Rispondi *sì* per procedere, oppure scrivi cosa cambiare."
   as_understood: "Come capito"

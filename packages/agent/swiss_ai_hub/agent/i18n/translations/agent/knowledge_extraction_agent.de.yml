@@ -88,8 +88,9 @@ prompt:
     - is_table_request: true, wenn die Nachricht nach Datensätzen aus den Dokumenten fragt{% if awaiting_sample %} oder auf die zuvor gezeigte Stichprobe antwortet{% endif %}; eine Frage, die die Dokumente beantworten, etwa wer eine Rechnung geschickt hat, ist auch eine, beantwortet als Tabelle mit einer Zeile; false für alles andere, etwa eine Begrüssung oder eine Frage über dich.
     - confirms_sample: {% if awaiting_sample %}true, wenn die Nachricht zustimmt, jedes Dokument der zuvor gezeigten Stichprobe zu extrahieren ("ja", "weiter", "yes", "oui"); false, wenn sie etwas Neues fragt oder die Anfrage ändert.{% else %}false.{% endif %}
     - locations: die Ordner, Dateien oder Jahre, die der Benutzer genannt hat, jeweils als path_glob (z. B. invoices/2025/**, contracts/** oder der Pfad einer Datei) oder als path_regex, mit null für das nicht verwendete. Verwende die unten aufgeführten Ordner und Jahre. Lass die Liste leer, wenn der Benutzer keinen Ort genannt hat: Dann wird jedes Dokument im Umfang gelesen. Ein Lieferant, eine Vertragspartei, ein Thema oder eine Dokumentnummer wie eine Rechnungsnummer ist kein Ort, auch wenn unten ein Ordner so heisst: Ein Dokument dazu kann in jedem Ordner liegen, also gehört er in instructions.
-    - fields: die Spalten der Tabelle, in den Worten des Benutzers.
+    - fields: die Spalten der Tabelle, in den Worten des Benutzers: der Wert jedes Datensatzes, nie das Ergebnis einer Berechnung über die Datensätze. Für "die Summe aller Rechnungen von Acme" ist die Spalte der Bruttobetrag der Rechnung, nicht "Summe aller Rechnungen".
     - instructions: welche Zeilen behalten werden, in den Worten des Benutzers, mit jeder Bedingung, die er genannt hat: die Art der Zeile (etwa Hardware-Positionen) ebenso wie ein Lieferant, eine Vertragspartei oder ein Zeitraum; null, wenn alle Zeilen gewünscht sind. Nie wie viele Zeilen oder wie die Tabelle aufgebaut ist.
+    - calculation: die Summe, der Durchschnitt, die Anzahl, das Maximum oder der Vergleich, den der Benutzer über die Zeilen verlangt, in seinen Worten, z. B. "die Summe aller Rechnungen von Acme"; null, wenn keiner. Der Agent rechnet nicht: die Tabelle listet den Wert jedes Datensatzes.
     - row_terms: Wörter oder ein regulärer Ausdruck, die die Zeilen mit den gesuchten Datensätzen meist enthalten, höchstens zehn Alternativen, z. B. 'Hardware|Laptop|Monitor|Server'; null, wenn keine passen.
     - document_terms: Wörter oder ein regulärer Ausdruck, die die Dokumente mit den gesuchten Datensätzen enthalten, etwa der Name eines Lieferanten oder eine Vertragsnummer; null, wenn keine passen.
     Bei einer Folgefrage wie "dasselbe für 2024" übernimm Spalten und Bedingungen aus dem Gespräch und ändere nur, was der Benutzer geändert hat. Schreibe fields und instructions vollständig aus, denn sie werden ohne das Gespräch verwendet: nie "dieselben Spalten wie vorher".
@@ -139,6 +140,7 @@ messages:
   no_request: Ich konnte nicht erkennen, welche Tabelle Sie möchten. Bitte nennen
     Sie die gesuchten Datensätze und die Spalten der Tabelle.
 form:
+  calculation_notice: "Ich berechne %{calculation} nicht. Ich kann den Wert jedes Datensatzes auflisten, damit Sie ihn aus der CSV-Datei summieren oder einen Assistenten fragen, der Fragen beantwortet, etwa den Wissensassistenten."
   intro: "Bevor ich die Dokumente lese, bestätige bitte, was ich verstanden habe:"
   reply_hint: "Antworte mit *ja*, um fortzufahren, oder schreibe, was zu ändern ist."
   as_understood: "Wie verstanden"

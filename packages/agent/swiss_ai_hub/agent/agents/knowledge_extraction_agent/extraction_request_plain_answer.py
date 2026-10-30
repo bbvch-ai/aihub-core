@@ -29,12 +29,25 @@ class ExtractionRequestPlainAnswer(BaseModel):
         list[RequestedLocation],
         Field(description="The folders, files or years the user named; empty when the whole scope is meant."),
     ]
-    fields: Annotated[str, Field(description="The table's columns in the user's words.")]
+    fields: Annotated[
+        str,
+        Field(
+            description="The table's columns in the user's words: the value of each record, never the result of a "
+            "calculation over the records."
+        ),
+    ]
     instructions: Annotated[
         str | None,
         Field(
             description="Which rows to keep, in the user's words: also a supplier, a party or a period the user "
             "named, since documents are not chosen by their text. Null when every row is wanted."
+        ),
+    ]
+    calculation: Annotated[
+        str | None,
+        Field(
+            description="The sum, average, count, maximum or comparison the user asked for over the rows, in the "
+            "user's words; null when none. The agent lists the values and does not calculate."
         ),
     ]
 

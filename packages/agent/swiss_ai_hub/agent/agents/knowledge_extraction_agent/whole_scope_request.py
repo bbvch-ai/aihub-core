@@ -100,7 +100,10 @@ class WholeScopeRequest:
             scope.pairs(),
             reading.instructions,
             reading.row_terms,
-            notices=ExtractionNotices.for_table(scope, False, t),
+            notices=[
+                *ExtractionNotices.for_calculation(reading.calculation, t),
+                *ExtractionNotices.for_table(scope, False, t),
+            ],
             document_terms=reading.document_terms,
         )
 
