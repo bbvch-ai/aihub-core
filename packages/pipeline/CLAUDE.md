@@ -394,6 +394,18 @@ announces each removal the same way.
 and the daemon remote of every database that still has partitions but no live row pointing at this source. Storage
 teardown stays with the ingestion pipeline.
 
+**Emptied folders.** Removing files leaves their namespace behind, and a sourced database refuses manual namespace
+deletion. So after each removal, `ops/source/routed/delete_emptied_namespaces.py` deletes the row of every namespace of
+the run's database whose folder holds no ingestible file any more. Only the row: the folder's documents, figures and
+vectors are removed per file by the ingestion pipeline, which finds them by the namespace name each document carries.
+Do not route this through `knowledge_teardown_sensor`. A teardown deletes the whole folder prefix and every vector of
+the namespace, so a folder re-created at the source while it waited would lose its new files; with the row gone, the
+next observation simply registers a fresh one. Rows flagged `deleting` are manual deletions and stay with the teardown.
+A folder emptied at the source counts as gone, because rclone lists files only. A folder the source still lists keeps
+its row even while the data lake holds none of its files, because rclone writes each file in a run of its own. The
+structured source pipeline runs the same op after its removal, without source files, because it writes within the same
+run.
+
 **A second source pipeline type** registers the same way: a `SourcePipelineConfig` subclass for its form, a factory
 shaped like `rclone_pipeline_definitions(source="acme_sync", display_name=..., description=..., config=...)` (or
 `announced_source_pipeline_sensor(...)`, the reserved-id and label gate every source pipeline builds through, wired into

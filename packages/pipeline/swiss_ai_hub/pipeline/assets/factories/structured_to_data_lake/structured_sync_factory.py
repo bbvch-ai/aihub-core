@@ -6,6 +6,7 @@ from swiss_ai_hub.pipeline.ops.source.routed.announce_removed_files import annou
 from swiss_ai_hub.pipeline.ops.source.routed.delete_data_lake_files_from_bucket import (
     delete_data_lake_files_from_bucket,
 )
+from swiss_ai_hub.pipeline.ops.source.routed.delete_emptied_namespaces import delete_emptied_namespaces
 from swiss_ai_hub.pipeline.ops.structured.list_structured_record_paths import list_structured_record_paths_op
 from swiss_ai_hub.pipeline.ops.structured.reconcile_structured_bucket import reconcile_structured_bucket_op
 from swiss_ai_hub.pipeline.ops.structured.sync_structured_records import sync_structured_records_op
@@ -19,7 +20,8 @@ def structured_sync_factory(
     source: Annotated[str, "Source pipeline id this code location runs as"],
     config_type: Annotated[type[StructuredSyncConfig], "Config class a database's source configuration is read as"],
 ) -> AssetsDefinition:
-    """One sync of the database the run's ``aihub/bucket`` tag names: write what changed, then remove what is gone.
+    """One sync of the database the run's ``aihub/bucket`` tag names: write what changed, remove what is gone, then
+    delete the namespaces left without files.
 
     Sync, listing and removal are steps of one asset rather than assets of their own: values handed between steps are
     stored per run, while an asset's value is stored under its key, which every database shares. The asset's own
@@ -36,6 +38,7 @@ def structured_sync_factory(
         description="Syncs the knowledge database this run targets from its structured source (routed by run tag).",
     )
     def structured_records() -> list[str]:
-        return announce_removed_files(delete_data_lake_files_from_bucket(reconcile(list_record_paths(sync()))))
+        removed = announce_removed_files(delete_data_lake_files_from_bucket(reconcile(list_record_paths(sync()))))
+        return delete_emptied_namespaces(removed)
 
     return structured_records

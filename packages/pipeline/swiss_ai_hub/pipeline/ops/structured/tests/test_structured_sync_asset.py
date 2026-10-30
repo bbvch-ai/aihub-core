@@ -143,11 +143,16 @@ def world():
         patch(f"{_OPS}.structured.reconcile_structured_bucket.build_s3_data_lake_client", side_effect=client),
         patch(f"{_OPS}.source.routed.delete_data_lake_files_from_bucket.build_s3_data_lake_client", side_effect=client),
         patch(f"{_OPS}.source.routed.announce_removed_files.notify_source_updated", world.removed_events),
+        patch(f"{_OPS}.source.routed.delete_emptied_namespaces.build_s3_data_lake_client", side_effect=client),
+        patch(f"{_OPS}.source.routed.delete_emptied_namespaces.ensure_main_db_connection"),
+        patch(f"{_OPS}.source.routed.delete_emptied_namespaces.BucketEntity"),
+        patch(f"{_OPS}.source.routed.delete_emptied_namespaces.NamespaceEntity") as namespace_entity,
         patch(f"{_STRUCTURED}.markdown_data_lake_destination.build_s3_data_lake_client", side_effect=client),
         patch(f"{_STRUCTURED}.markdown_data_lake_destination.notify_source_updated", world.written_events),
         patch(f"{_STRUCTURED}.structured_source_state_store.build_s3_data_lake_client", side_effect=client),
     ):
         bucket_entity.get_bucket_by_bucket_name.side_effect = row
+        namespace_entity.get_namespaces_by_bucket.return_value = []
         yield world
 
 
