@@ -8,7 +8,8 @@
 #                 cut the immutable tag vX.Y.Z-rc.N, move the rolling `staging`
 #                 pointer to it, and work out the changelog base ref.
 #   2. fan-out  - dispatch the per-image build-*.yml at the rc tag, tagging
-#                 images vX.Y.Z-rc.N and the rolling :staging.
+#                 images vX.Y.Z-rc.N and the rolling :staging, and WAIT for all
+#                 of them: step 3 must not run before the images are pushed.
 #   3. publish  - create-release.yml (channel=staging): refresh the rolling
 #                 `staging` bundle the QC VM fetches AND publish the immutable,
 #                 preserved per-rc release "Swiss AI Hub vX.Y.Z-rc.N" + rc notes.
@@ -109,22 +110,22 @@ jobs:
           echo "notes_from=$notes_from" >> "$GITHUB_OUTPUT"
           echo "rc changelog base: ${notes_from:-<none>}"
   fan-out:
-    name: Dispatch image builds at the rc tag
+    name: Build images at the rc tag
     needs: rc-tag
     runs-on: ubuntu-slim
-    timeout-minutes: 5
+    # Waits for every dispatched build, so the timeout must cover the slowest
+    # image (build-agents allows 45 minutes per agent), not just the dispatch.
+    timeout-minutes: 75
     permissions:
       actions: write
       contents: read
     steps:
-      - name: Dispatch build workflows
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          VERSION: ${{ needs.rc-tag.outputs.version }}
-        run: |-
-          set -euo pipefail
-          BUILDS=(
+      - name: Checkout release branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      - name: Dispatch build workflows and wait for the images
+        uses: ./.github/actions/dispatch_builds
+        with:
+          workflows: |
             build-agents.yml
             build-pipelines.yml
             build-api-and-bot.yml
@@ -132,15 +133,16 @@ jobs:
             build-web.yml
             build-backup.yml
             build-sysadmin.yml
-          )
-          for wf in "${BUILDS[@]}"; do
-            echo "Dispatching $wf @ $VERSION"
-            gh workflow run "$wf" --ref "$VERSION" \
-              -f release_version="$VERSION" -f secondary_tag=staging
-          done
+          ref: ${{ needs.rc-tag.outputs.version }}
+          release_version: ${{ needs.rc-tag.outputs.version }}
+          secondary_tag: staging
+          github_token: ${{ secrets.GITHUB_TOKEN }}
   publish-rc-bundle:
     name: Publish rc release + refresh rolling staging
-    needs: rc-tag
+    # Gated on fan-out: the bundle is what the QC VM fetches before it pulls the
+    # images, so publishing it while a build is still running hands the deploy a
+    # tag that is not in the registry yet.
+    needs: [rc-tag, fan-out]
     uses: ./.github/workflows/create-release.yml
     with:
       release_version: ${{ needs.rc-tag.outputs.version }}
