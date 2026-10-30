@@ -19,4 +19,4 @@ class ThreadTitlePersister:
     async def persist_thread_title(event: DisplayEvent, topic: AgentInstanceTopic) -> None:
         """Persist the generated conversation title onto the thread; ignore every other display event."""
         if isinstance(event, ConversationTitleEvent):
-            ThreadEntity.update_thread_name(topic.thread_id, event.title)
+            await ThreadEntity.update_thread_name(topic.thread_id, event.title)

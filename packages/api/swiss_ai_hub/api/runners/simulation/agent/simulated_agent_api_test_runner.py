@@ -324,7 +324,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         - AgentClassEntity: Class-level metadata (events, form schema, online status)
         - AgentConfigEntityDocument: Instance-level configuration
         """
-        AgentClassEntity.create_or_update(
+        await AgentClassEntity.create_or_update(
             AgentClassDiscoveryResponseEvent(
                 agent_class=self.agent_class,
                 name=self.agent_config.name,

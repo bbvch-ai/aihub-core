@@ -1,15 +1,15 @@
 import hashlib
 import logging
-from asyncio import sleep, to_thread
+from asyncio import sleep
 from collections.abc import Awaitable, Callable
 from enum import StrEnum
 from functools import partial, reduce
 from operator import or_
 from typing import Annotated, override
 
+from beanie.exceptions import DocumentNotFound
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Security
-from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from redis.asyncio import Redis
@@ -115,8 +115,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         )
 
     @override
-    def _online_class_names(self) -> set[str]:
-        return AgentClassEntity.get_online_class_names()
+    async def _online_class_names(self) -> set[str]:
+        return await AgentClassEntity.get_online_class_names()
 
     @override
     async def _after_round(self) -> None:
@@ -180,7 +180,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         name_locale_handler = ApiLocaleHandler(locale=self._openwebui_provisioner.model_name_locale)
         instances = await AgentService.get_all_agent_instances(t=name_locale_handler, online=True)
 
-        features_by_class = await to_thread(self._supported_features_by_class)
+        features_by_class = await self._supported_features_by_class()
         current_set = {
             (inst.agent_class, inst.agent_id, inst.name, ",".join(features_by_class.get(inst.agent_class, [])))
             for inst in instances
@@ -213,8 +213,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         return hashlib.sha256(",".join(normalized).encode()).hexdigest()
 
     @staticmethod
-    def _supported_features_by_class() -> dict[str, list[str]]:
-        return {entity.agent_class: sorted(entity.supported_features) for entity in AgentClassEntity.objects()}
+    async def _supported_features_by_class() -> dict[str, list[str]]:
+        return {entity.agent_class: sorted(entity.supported_features) for entity in await AgentClassEntity.get_all()}
 
     @classmethod
     def _agents_hash_key(cls, target: SyncTarget) -> str:
@@ -240,7 +240,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
     async def _sync_agent_instances_to_openwebui(self, instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
-            features_by_class = await to_thread(self._supported_features_by_class)
+            features_by_class = await self._supported_features_by_class()
             online_agents = [
                 OnlineAgent(
                     agent_class=inst.agent_class,
@@ -414,8 +414,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             if thread_id is not None:
                 try:
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-                except DoesNotExist:
-                    ThreadEntity.create_thread(
+                except DocumentNotFound:
+                    await ThreadEntity.create_thread(
                         "chat",
                         users=[User(user_id=user.id)],
                         agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
@@ -499,8 +499,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             if thread_id is not None:
                 try:
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-                except DoesNotExist:
-                    ThreadEntity.create_thread(
+                except DocumentNotFound:
+                    await ThreadEntity.create_thread(
                         "chat",
                         users=[User(user_id=user.id)],
                         agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],

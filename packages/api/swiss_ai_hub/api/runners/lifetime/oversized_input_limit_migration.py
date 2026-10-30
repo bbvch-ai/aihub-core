@@ -34,7 +34,7 @@ class OversizedInputLimitMigration:
         migrated: list[str] = []
         for document in await AgentConfigEntityDocument.list_all():
             if document.agent_class not in forms:
-                class_entity = AgentClassEntity.get_by_agent_class(document.agent_class)
+                class_entity = await AgentClassEntity.get_by_agent_class(document.agent_class)
                 forms[document.agent_class] = class_entity.form_elements if class_entity else []
             config_data = document.config_data
             rewritten = OversizedInputLimitMigration.rewritten(config_data, forms[document.agent_class], model_limits)

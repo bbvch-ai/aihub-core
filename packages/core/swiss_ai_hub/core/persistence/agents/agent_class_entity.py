@@ -1,66 +1,26 @@
-import json
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Annotated, Any, Self
 
-from bson import ObjectId
-from mongoengine import (
-    BooleanField,
-    DateTimeField,
-    DictField,
-    Document,
-    EmbeddedDocument,
-    EmbeddedDocumentField,
-    ListField,
-    StringField,
-)
-from pydantic import TypeAdapter
+from beanie import Document, PydanticObjectId
+from pydantic import ConfigDict, Field, TypeAdapter
+from pymongo import ASCENDING, IndexModel
 
 from swiss_ai_hub.core.discovery.discovery_kind import DiscoveryKind
 from swiss_ai_hub.core.events.agent.discovery.agent_class_discovery_response_event import (
     AgentClassDiscoveryResponseEvent,
 )
-from swiss_ai_hub.core.events.discovery.event_specs import EventSpecs
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.persistence.agents.event_spec import EventSpec
 from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
-from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
-from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
+from swiss_ai_hub.core.persistence.form.stored_config_specs import StoredConfigSpecs
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
 
 logger = logging.getLogger(__name__)
-
-
-class EventSpec(EmbeddedDocument):
-    """Information about an event specification."""
-
-    event_name = StringField(required=True)
-    event_schema_json = StringField(required=True)  # Store as JSON string to avoid issues with $ in keys
-    event_parents = ListField(StringField(), default=list)
-
-    @property
-    def event_schema(self):
-        """Deserialize the event schema from JSON string to dictionary."""
-        return json.loads(self.event_schema_json)
-
-    @classmethod
-    def from_specs(cls, event_specs: EventSpecs) -> Self:
-        """Create an EventSpec from an EventSpecs object."""
-        return cls(
-            event_name=event_specs.event_name,
-            event_schema_json=json.dumps(event_specs.event_schema),
-            event_parents=event_specs.event_parents,
-        )
-
-    def to_specs(self) -> EventSpecs:
-        """Convert this entity back to an EventSpecs Pydantic model."""
-        return EventSpecs(
-            event_name=self.event_name,
-            event_schema=self.event_schema,
-            event_parents=self.event_parents,
-        )
 
 
 class AgentClassEntity(Document):
@@ -73,44 +33,47 @@ class AgentClassEntity(Document):
 
     NOTE: This entity stores CLASS information only (one record per agent_class).
     Instance/configuration data is stored in AgentConfigEntityDocument.
+
+    Unknown fields are kept (`extra="allow"`): the MongoEngine document ran `strict: False`, so stored rows may
+    carry fields this model does not declare, and a full rewrite must not drop them. `first_discovered` and
+    `last_discovered` stay naive local time, the clock the discovery rounds use (see #1968).
     """
 
-    meta = {
-        "collection": "agent_classes",
-        "strict": False,
-        "indexes": [
-            {"fields": ["agent_class"], "unique": True},
-        ],
-    }
-    agent_class = StringField(required=True, unique=True)
+    model_config = ConfigDict(extra="allow")
 
-    # Class-level metadata (describes the agent class itself, not instances)
-    name = EmbeddedDocumentField(LocaleStringEntity, required=False, description="Display name for this agent class.")
-    description = EmbeddedDocumentField(
-        LocaleStringEntity, required=False, description="Description of this agent class."
-    )
-    icon = StringField(required=True, default="mage:robot", description="Icon for this agent class.")
-
-    form = ListField(DictField(), default=list, description="FormKit elements defining the agent configuration form.")
-    agent_config_specs = EmbeddedDocumentField(ConfigSpecsEntity, required=False)
-    is_conversational = BooleanField(required=True)
+    agent_class: str
+    name: Annotated[LocaleString | None, Field(description="Display name for this agent class.")] = None
+    description: Annotated[LocaleString | None, Field(description="Description of this agent class.")] = None
+    icon: Annotated[str, Field(description="Icon for this agent class.")] = "mage:robot"
+    form: Annotated[
+        list[dict[str, Any]], Field(description="FormKit elements defining the agent configuration form.")
+    ] = Field(default_factory=list)
+    agent_config_specs: StoredConfigSpecs | None = None
+    is_conversational: bool
     # Defaulted, unlike is_conversational: classes discovered before this field existed have no stored
     # value, and reads must not yield None into the non-optional DTO field. Self-heals on next discovery.
-    is_schedulable = BooleanField(required=True, default=False)
-    supported_features = ListField(StringField(), default=list)
-    start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
-    stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
-    hitl_request_events = ListField(EmbeddedDocumentField(EventSpec), default=list)
-    hitl_response_events = ListField(EmbeddedDocumentField(EventSpec), default=list)
-    network_graph = DictField(required=True)
-    templates = ListField(DictField(), default=list)
-    first_discovered = DateTimeField(required=True, default=datetime.now)
-    last_discovered = DateTimeField(required=True, default=datetime.now)
+    is_schedulable: bool = False
+    supported_features: list[str] = Field(default_factory=list)
+    start_events: list[EventSpec]
+    stop_events: list[EventSpec]
+    hitl_request_events: list[EventSpec] = Field(default_factory=list)
+    hitl_response_events: list[EventSpec] = Field(default_factory=list)
+    network_graph: dict[str, Any]
+    templates: list[dict[str, Any]] = Field(default_factory=list)
+    first_discovered: datetime = Field(default_factory=datetime.now)
+    last_discovered: datetime | None = Field(default_factory=datetime.now)
+
+    class Settings:
+        name = "agent_classes"
+        keep_nulls = False
+        use_state_management = True
+        state_management_replace_objects = True
+        indexes = [IndexModel([("agent_class", ASCENDING)], unique=True)]
 
     def is_online_since(self, threshold: datetime) -> bool:
         """Whether the class answered a discovery round at or after `threshold`, from `online_threshold()`.
 
-        `last_discovered` is nominally required, but the collection is `strict: False`, and a row missing it
+        `last_discovered` is nominally required, but stored rows predate any schema, and a row missing it
         would otherwise raise inside a caller's loop — the scheduler's snapshot would abort every tick.
         """
         return self.last_discovered is not None and self.last_discovered >= threshold
@@ -125,51 +88,7 @@ class AgentClassEntity(Document):
 
     @classmethod
     @trace_fn
-    def create_agent_class(
-        cls,
-        agent_class: str,
-        name: LocaleStringEntity | None,
-        description: LocaleStringEntity | None,
-        icon: str,
-        form: list[dict],
-        agent_config_specs: ConfigSpecsEntity | None,
-        is_conversational: bool,
-        is_schedulable: bool,
-        supported_features: list[str],
-        start_events: list[EventSpec],
-        stop_events: list[EventSpec],
-        hitl_request_events: list[EventSpec],
-        hitl_response_events: list[EventSpec],
-        network_graph: dict,
-        templates: list[dict] | None = None,
-        agent_class_entity_id: ObjectId | None = None,
-    ) -> Self:
-        agent = cls(
-            id=agent_class_entity_id or ObjectId(),
-            agent_class=agent_class,
-            name=name,
-            description=description,
-            icon=icon,
-            form=form,
-            agent_config_specs=agent_config_specs,
-            is_conversational=is_conversational,
-            is_schedulable=is_schedulable,
-            supported_features=supported_features,
-            start_events=start_events,
-            stop_events=stop_events,
-            hitl_request_events=hitl_request_events,
-            hitl_response_events=hitl_response_events,
-            network_graph=network_graph,
-            templates=templates or [],
-            first_discovered=datetime.now(),
-            last_discovered=datetime.now(),
-        )
-        agent.save()
-        return agent
-
-    @classmethod
-    @trace_fn
-    def create_or_update(cls, discovery: AgentClassDiscoveryResponseEvent) -> Self:
+    async def create_or_update(cls, discovery: AgentClassDiscoveryResponseEvent) -> Self:
         """
         Creates a new AgentClassEntity or updates an existing one if an agent
         with the same agent_class already exists.
@@ -177,86 +96,70 @@ class AgentClassEntity(Document):
         Takes the discovery response wholesale rather than its fields one by one: registering a class
         means recording exactly what the agent reported, so every field arrives from the same event.
         """
-        existing_agent = cls.objects(agent_class=discovery.agent_class).first()
-
-        name_entity = LocaleStringEntity.from_locale_string(discovery.name)
-        description_entity = LocaleStringEntity.from_locale_string(discovery.description)
-
-        # Store WITHOUT aliases - MongoDB doesn't allow keys starting with '$'
-        # Alias conversion happens in the API layer when serving to frontend
-        form_dicts = [element.model_dump() for element in discovery.form]
-        agent_config_specs_entity = ConfigSpecsEntity.from_specs(discovery.agent_config_specs)
-
-        start_events_entities = [EventSpec.from_specs(event) for event in discovery.start_events]
-        stop_events_entities = [EventSpec.from_specs(event) for event in discovery.stop_events]
-        hitl_request_events_entities = [EventSpec.from_specs(event) for event in discovery.hitl_request_events]
-        hitl_response_events_entities = [EventSpec.from_specs(event) for event in discovery.hitl_response_events]
-
-        network_graph_dict = discovery.network_graph.model_dump()
-        template_dicts = [template.model_dump() for template in discovery.templates]
-
+        reported = cls._fields_from_discovery(discovery)
+        existing_agent = await cls.find_one({"agent_class": discovery.agent_class})
         if existing_agent:
-            existing_agent.name = name_entity
-            existing_agent.description = description_entity
-            existing_agent.icon = discovery.icon
-            existing_agent.form = form_dicts
-            existing_agent.agent_config_specs = agent_config_specs_entity
-            existing_agent.is_conversational = discovery.is_conversational
-            existing_agent.is_schedulable = discovery.is_schedulable
-            existing_agent.supported_features = [str(feature) for feature in discovery.supported_features]
-            existing_agent.start_events = start_events_entities
-            existing_agent.stop_events = stop_events_entities
-            existing_agent.hitl_request_events = hitl_request_events_entities
-            existing_agent.hitl_response_events = hitl_response_events_entities
-            existing_agent.network_graph = network_graph_dict
-            existing_agent.templates = template_dicts
+            for field, value in reported.items():
+                setattr(existing_agent, field, value)
             existing_agent.last_discovered = datetime.now()
-            existing_agent.save()
+            await existing_agent.save_changes()
             return existing_agent
-        else:
-            return cls.create_agent_class(
-                agent_class=discovery.agent_class,
-                name=name_entity,
-                description=description_entity,
-                icon=discovery.icon,
-                form=form_dicts,
-                agent_config_specs=agent_config_specs_entity,
-                is_conversational=discovery.is_conversational,
-                is_schedulable=discovery.is_schedulable,
-                supported_features=[str(feature) for feature in discovery.supported_features],
-                start_events=start_events_entities,
-                stop_events=stop_events_entities,
-                hitl_request_events=hitl_request_events_entities,
-                hitl_response_events=hitl_response_events_entities,
-                network_graph=network_graph_dict,
-                templates=template_dicts,
-            )
+        now = datetime.now()
+        return await cls(
+            agent_class=discovery.agent_class, first_discovered=now, last_discovered=now, **reported
+        ).insert()
+
+    @staticmethod
+    def _fields_from_discovery(discovery: AgentClassDiscoveryResponseEvent) -> dict[str, Any]:
+        """Every stored field a discovery response sets, in its stored form.
+
+        The form is stored WITHOUT aliases, since MongoDB doesn't allow keys starting with '$'; alias conversion
+        happens in the API layer when serving to the frontend.
+        """
+        return {
+            "name": discovery.name,
+            "description": discovery.description,
+            "icon": discovery.icon,
+            "form": [element.model_dump() for element in discovery.form],
+            "agent_config_specs": StoredConfigSpecs.from_specs(discovery.agent_config_specs),
+            "is_conversational": discovery.is_conversational,
+            "is_schedulable": discovery.is_schedulable,
+            "supported_features": [str(feature) for feature in discovery.supported_features],
+            "start_events": [EventSpec.from_specs(event) for event in discovery.start_events],
+            "stop_events": [EventSpec.from_specs(event) for event in discovery.stop_events],
+            "hitl_request_events": [EventSpec.from_specs(event) for event in discovery.hitl_request_events],
+            "hitl_response_events": [EventSpec.from_specs(event) for event in discovery.hitl_response_events],
+            "network_graph": discovery.network_graph.model_dump(),
+            "templates": [template.model_dump() for template in discovery.templates],
+        }
 
     @classmethod
     @trace_fn
-    def get_all(cls) -> list["AgentClassEntity"]:
+    async def get_all(cls) -> list[Self]:
         """Get all registered agent classes."""
-        return list(cls.objects())
+        return await cls.find().to_list()
 
     @classmethod
     @trace_fn
-    def get_online_conversational(cls) -> list["AgentClassEntity"]:
-        return list(cls.objects(is_conversational=True, last_discovered__gte=cls.online_threshold()))
+    async def get_online_conversational(cls) -> list[Self]:
+        threshold = await cls.online_threshold()
+        return await cls.find({"is_conversational": True, "last_discovered": {"$gte": threshold}}).to_list()
 
     @classmethod
     @trace_fn
-    def get_online_class_names(cls) -> set[str]:
-        online = cls.objects(last_discovered__gte=cls.online_threshold()).only("agent_class")
+    async def get_online_class_names(cls) -> set[str]:
+        threshold = await cls.online_threshold()
+        online = await cls.find({"last_discovered": {"$gte": threshold}}).to_list()
         return {entity.agent_class for entity in online}
 
     @classmethod
-    def online_threshold(cls) -> datetime:
+    async def online_threshold(cls) -> datetime:
         """Read once per request or tick and passed to `is_online_since`, so a listing costs one lookup."""
-        return DiscoveryRoundEntity.online_threshold(DiscoveryKind.AGENT)
+        return await DiscoveryRoundEntity.online_threshold(DiscoveryKind.AGENT)
 
     @classmethod
     @trace_fn
-    def get_all_schedulable(cls) -> list["AgentClassEntity"]:
+    async def get_all_schedulable(cls) -> list[Self]:
         """Every schedulable class, online or not, for a caller that needs both halves.
 
         The scheduler needs online and offline classes on the same tick — one set to fire, the other to
@@ -264,16 +167,16 @@ class AgentClassEntity(Document):
         one round-trip instead of two, on a query that runs inside the API process every tick. That is
         why there is no online-only or offline-only query to reach for here.
         """
-        return list(cls.objects(is_schedulable=True))
+        return await cls.find({"is_schedulable": True}).to_list()
 
     @classmethod
     @trace_fn
-    def get_by_id(cls, agent_class_entity_id: str) -> Self:
+    async def get_by_id(cls, agent_class_entity_id: str) -> Self | None:
         """Get an agent class by its MongoDB document ID."""
-        return cls.objects().get(id=ObjectId(agent_class_entity_id))
+        return await cls.get(PydanticObjectId(agent_class_entity_id))
 
     @classmethod
     @trace_fn
-    def get_by_agent_class(cls, agent_class: str) -> "AgentClassEntity | None":
+    async def get_by_agent_class(cls, agent_class: str) -> Self | None:
         """Get an agent class by its class name."""
-        return cls.objects(agent_class=agent_class).first()
+        return await cls.find_one({"agent_class": agent_class})

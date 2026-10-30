@@ -53,12 +53,12 @@ def _install_stubs(
 ) -> SimpleNamespace:
     thread = SimpleNamespace(id=ObjectId(), users=[User(user_id=user_id)])
 
-    def _create_thread(*args, **kwargs):
+    async def _create_thread(cls, *args, **kwargs) -> SimpleNamespace:
         return thread
 
     persisted = SimpleNamespace(event_data=open_request.model_dump())
 
-    monkeypatch.setattr(ThreadEntity, "create_thread", classmethod(lambda cls, *a, **kw: thread))
+    monkeypatch.setattr(ThreadEntity, "create_thread", classmethod(_create_thread))
     monkeypatch.setattr(
         PersistedAgentEventEntity,
         "human_in_the_loop_request_events_for_thread",
@@ -72,6 +72,7 @@ def _install_stubs(
     return thread
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("request_cls", "expected_response_cls"),
     [
@@ -79,7 +80,7 @@ def _install_stubs(
         (HumanInTheLoopChatRequestEvent, HumanInTheLoopChatResponseEvent),
     ],
 )
-def test_hitl_dispatch_selects_matching_response_class(
+async def test_hitl_dispatch_selects_matching_response_class(
     monkeypatch: pytest.MonkeyPatch,
     request_cls: type[HumanInTheLoopRequestEvent],
     expected_response_cls: type,
@@ -89,7 +90,7 @@ def test_hitl_dispatch_selects_matching_response_class(
     open_request = request_cls(question="Please respond", topic=topic)
     _install_stubs(monkeypatch, open_request, user.id)
 
-    external_event, _ = ChatService._initialize_interaction(
+    external_event, _ = await ChatService._initialize_interaction(
         user=user,
         agent_class=AGENT_CLASS,
         agent_id=AGENT_ID,
@@ -103,14 +104,15 @@ def test_hitl_dispatch_selects_matching_response_class(
     assert isinstance(inner.request_event, request_cls)
 
 
-def test_hitl_dispatch_rejects_unsupported_request_type(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.asyncio
+async def test_hitl_dispatch_rejects_unsupported_request_type(monkeypatch: pytest.MonkeyPatch) -> None:
     user = fake_user()
     topic = _build_hitl_topic(event_name="HumanInTheLoopConfirmationResponseEvent")
     open_request = HumanInTheLoopConfirmationRequestEvent(question="Proceed?", topic=topic)
     _install_stubs(monkeypatch, open_request, user.id)
 
     with pytest.raises(ValueError, match="HumanInTheLoopConfirmationRequestEvent"):
-        ChatService._initialize_interaction(
+        await ChatService._initialize_interaction(
             user=user,
             agent_class=AGENT_CLASS,
             agent_id=AGENT_ID,

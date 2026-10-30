@@ -58,7 +58,7 @@ class AgentService:
     @trace_fn
     async def get_minimal_agent_instance(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentInstanceDTO:
         """Returns minimal details for an agent instance from database."""
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class=agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class=agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
@@ -75,7 +75,7 @@ class AgentService:
         Returns details for a given agent instance from the database.
         Online status compares the class's last_discovered timestamp with the completed discovery rounds.
         """
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
@@ -83,7 +83,7 @@ class AgentService:
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent instance {agent_class}/{agent_id} not found.")
 
-        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+        is_online = class_entity.is_online_since(await AgentClassEntity.online_threshold())
         return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
     @staticmethod
@@ -100,8 +100,8 @@ class AgentService:
         last `DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE` completed discovery rounds.
         """
         agents = []
-        online_threshold = AgentClassEntity.online_threshold()
-        for class_entity in AgentClassEntity.get_all():
+        online_threshold = await AgentClassEntity.online_threshold()
+        for class_entity in await AgentClassEntity.get_all():
             is_online = class_entity.is_online_since(online_threshold)
             if online is not None and is_online != online:
                 continue
@@ -138,9 +138,9 @@ class AgentService:
     ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
         """Sends an event to a specific agent."""
         if thread_id:
-            thread = ThreadEntity.get_thread_by_id(str(thread_id))
+            thread = await ThreadEntity.get_thread_by_id(str(thread_id))
         else:
-            thread = ThreadEntity.create_thread(
+            thread = await ThreadEntity.create_thread(
                 "chat",
                 users=[User(user_id=user.id)],
                 agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
@@ -246,9 +246,9 @@ class AgentService:
         )
 
         if thread_id:
-            thread = ThreadEntity.get_thread_by_id(str(thread_id))
+            thread = await ThreadEntity.get_thread_by_id(str(thread_id))
         else:
-            thread = ThreadEntity.create_thread(
+            thread = await ThreadEntity.create_thread(
                 "chat",
                 users=[User(user_id=user.id)],
                 agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
@@ -364,7 +364,7 @@ class AgentService:
         Update the configuration data for a specific agent instance.
         Validates the configuration against the agent's schema before saving.
         """
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if not class_entity:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
@@ -407,8 +407,8 @@ class AgentService:
     async def get_agent_classes(t: LocaleHandler, online: bool | None = None) -> list[AgentClassDTO]:
         """Returns all agent classes from the database."""
         agent_classes = []
-        online_threshold = AgentClassEntity.online_threshold()
-        for class_entity in AgentClassEntity.get_all():
+        online_threshold = await AgentClassEntity.online_threshold()
+        for class_entity in await AgentClassEntity.get_all():
             is_online = class_entity.is_online_since(online_threshold)
             if online is not None and is_online != online:
                 continue
@@ -419,21 +419,21 @@ class AgentService:
     @trace_fn
     async def get_agent_class(agent_class: str, t: LocaleHandler) -> AgentClassDTO:
         """Returns a specific agent class from the database."""
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
-        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+        is_online = class_entity.is_online_since(await AgentClassEntity.online_threshold())
         return AgentClassDTO.from_entity(class_entity, t, is_online=is_online)
 
     @staticmethod
     @trace_fn
     async def get_agent_class_instances(agent_class: str, t: LocaleHandler) -> list[FullAgentInstanceDTO]:
         """Returns all instances of a specific agent class from the database."""
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+        is_online = class_entity.is_online_since(await AgentClassEntity.online_threshold())
         instances = []
         configs = await AgentConfigEntityDocument.find_for_class(agent_class)
         for config_entity in configs:
@@ -455,11 +455,11 @@ class AgentService:
         Creates a new agent instance from an existing agent class.
         Requires the agent class to be online (i.e., the agent must be running).
         """
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class '{agent_class}' not found.")
 
-        if not class_entity.is_online_since(AgentClassEntity.online_threshold()):
+        if not class_entity.is_online_since(await AgentClassEntity.online_threshold()):
             raise HTTPException(
                 status_code=503,
                 detail=f"Agent class '{agent_class}' is not online. Make sure the agent is running.",

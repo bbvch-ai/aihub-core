@@ -145,8 +145,8 @@ class AgentClassDTO(BaseModel):
 
         network_graph = WorkflowGraph.model_validate(entity.network_graph)
 
-        name = entity.name.to_locale_string() if entity.name else LocaleString(de=entity.agent_class)
-        description = entity.description.to_locale_string() if entity.description else LocaleString(de="")
+        name = entity.name or LocaleString(de=entity.agent_class)
+        description = entity.description or LocaleString(de="")
 
         agent_config_specs = entity.agent_config_specs.to_specs() if entity.agent_config_specs else None
 

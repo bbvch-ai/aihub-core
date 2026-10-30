@@ -23,9 +23,9 @@ from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
 from swiss_ai_hub.core.form.config_specs import ConfigSpecs
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.persistence.agents.agent_class_entity import EventSpec
 from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
 from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
+from swiss_ai_hub.core.persistence.process.event_spec_entity import EventSpecEntity
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ class ProgramInSpecsEntity(EmbeddedDocument):
     route = StringField(required=True)
     method = StringField(required=True)
     is_process_start = BooleanField(required=True)
-    event_specs = EmbeddedDocumentField(EventSpec, required=True)
+    event_specs = EmbeddedDocumentField(EventSpecEntity, required=True)
 
     @classmethod
     def from_specs(cls, specs: ProgramInSpecs) -> Self:
@@ -48,7 +48,7 @@ class ProgramInSpecsEntity(EmbeddedDocument):
             route=specs.route,
             method=specs.method,
             is_process_start=specs.is_process_start,
-            event_specs=EventSpec.from_specs(specs.event_specs),
+            event_specs=EventSpecEntity.from_specs(specs.event_specs),
         )
 
     def to_specs(self) -> ProgramInSpecs:
@@ -69,7 +69,7 @@ class HumanInSpecsEntity(EmbeddedDocument):
     route = StringField(required=True)
     method = StringField(required=True)
     is_process_start = BooleanField(required=True)
-    event_specs = EmbeddedDocumentField(EventSpec, required=True)
+    event_specs = EmbeddedDocumentField(EventSpecEntity, required=True)
     form = ListField(DictField(), default=list)
 
     @classmethod
@@ -80,7 +80,7 @@ class HumanInSpecsEntity(EmbeddedDocument):
             route=specs.route,
             method=specs.method,
             is_process_start=specs.is_process_start,
-            event_specs=EventSpec.from_specs(specs.event_specs),
+            event_specs=EventSpecEntity.from_specs(specs.event_specs),
             form=[form_element.model_dump() for form_element in specs.form],
         )
 
@@ -105,7 +105,7 @@ class AgentInSpecsEntity(EmbeddedDocument):
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)
     is_process_start = BooleanField(required=True)
-    event_specs = EmbeddedDocumentField(EventSpec, required=True)
+    event_specs = EmbeddedDocumentField(EventSpecEntity, required=True)
 
     @classmethod
     def from_specs(cls, specs: AgentInSpecs) -> Self:
@@ -113,7 +113,7 @@ class AgentInSpecsEntity(EmbeddedDocument):
             agent_class=specs.agent_class,
             agent_id=specs.agent_id,
             is_process_start=specs.is_process_start,
-            event_specs=EventSpec.from_specs(specs.event_specs),
+            event_specs=EventSpecEntity.from_specs(specs.event_specs),
         )
 
     def to_specs(self) -> AgentInSpecs:
@@ -271,14 +271,18 @@ class ProcessClassEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_online_class_names(cls) -> set[str]:
-        online = cls.objects(last_discovered__gte=cls.online_threshold()).only("process_class")
+    def get_online_class_names(cls, threshold: datetime) -> set[str]:
+        """The classes online against `threshold`, from `online_threshold()`; synchronous, so callers offload it."""
+        online = cls.objects(last_discovered__gte=threshold).only("process_class")
         return {entity.process_class for entity in online}
 
     @classmethod
-    def online_threshold(cls) -> datetime:
-        """Read once per request and passed to `is_online_since`, so a listing costs one lookup."""
-        return DiscoveryRoundEntity.online_threshold(DiscoveryKind.PROCESS)
+    async def online_threshold(cls) -> datetime:
+        """Read once per request and passed to `is_online_since`, so a listing costs one lookup.
+
+        Async although this entity is still MongoEngine: the discovery rounds it is judged against are Beanie.
+        """
+        return await DiscoveryRoundEntity.online_threshold(DiscoveryKind.PROCESS)
 
     @classmethod
     @trace_fn

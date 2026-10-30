@@ -7,13 +7,13 @@ config RPC's requester (`NCRequester`) gives it one 5 s shot with no retry — s
 busy loop fails agent runs at start while NATS itself is idle.
 
 These tests assert the property directly rather than the implementation: a ticker
-coroutine must keep running while the call is in flight. The config read is a Beanie
-query awaited on the loop, so its stand-in is a slow awaitable; the discovery write is
-still MongoEngine, so its stand-in blocks the thread and only the `asyncio.to_thread`
-hop keeps the loop free.
+coroutine must keep running while the call is in flight. The config read and the
+discovery write are Beanie queries awaited on the loop, so their stand-ins are slow
+awaitables.
 """
 
 import asyncio
+from functools import partial
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -22,6 +22,7 @@ from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
+from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEndpointsDiscoveryService
 
 BLOCKING_SECONDS = 0.3
 TICK_SECONDS = 0.01
@@ -54,18 +55,6 @@ class Ticker:
         self._running = False
         if self._task:
             await self._task
-
-
-def blocking_stub(return_value: object) -> Mock:
-    """A stand-in for a slow Mongo round-trip: blocks the calling thread, like PyMongo does."""
-
-    def _blocking(*_args: object, **_kwargs: object) -> object:
-        import time
-
-        time.sleep(BLOCKING_SECONDS)
-        return return_value
-
-    return Mock(side_effect=_blocking)
 
 
 def slow_awaitable_stub(return_value: object) -> AsyncMock:
@@ -103,15 +92,19 @@ async def test_agent_class_persistence_leaves_the_event_loop_free() -> None:
     """The discovery round writes once per responding class; none of them may block the loop."""
     responses = [Mock(agent_class=f"Agent{index}") for index in range(3)]
 
-    with patch.object(AgentClassEntity, "create_or_update", blocking_stub(Mock())) as persist:
+    service = object.__new__(AgentEndpointsDiscoveryService)
+
+    with patch.object(AgentClassEntity, "create_or_update", slow_awaitable_stub(Mock())) as persist:
         async with Ticker() as ticker:
             for response in responses:
-                await asyncio.to_thread(AgentClassEntity.create_or_update, response)
+                assert await service._stamp_answer(
+                    response.agent_class, partial(AgentClassEntity.create_or_update, response)
+                )
 
-    assert persist.call_count == len(responses)
+    assert persist.await_count == len(responses)
     minimum = MINIMUM_EXPECTED_TICKS * len(responses)
     assert ticker.ticks >= minimum, (
-        f"The event loop was starved: {ticker.ticks} ticks during {len(responses)} blocking writes, "
+        f"The event loop was starved: {ticker.ticks} ticks during {len(responses)} slow writes, "
         f"expected at least {minimum}. Blocking writes starve every request this process serves and "
         f"can push the discovery round past DISCOVERY_ROUND_TIMEOUT_SECONDS."
     )

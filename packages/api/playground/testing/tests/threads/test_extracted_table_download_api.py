@@ -8,9 +8,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
+from beanie.exceptions import DocumentNotFound
 from bson import ObjectId
 from httpx import ASGITransport, AsyncClient
-from mongoengine import DoesNotExist
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.generative_ai import ExtractedTableFile, ExtractionFileStore
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
@@ -116,7 +116,7 @@ async def test_someone_outside_the_thread_gets_no_link(
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_an_unknown_thread_is_not_found(client: AsyncClient, thread: AsyncMock, stored: AsyncMock) -> None:
-    thread.side_effect = DoesNotExist()
+    thread.side_effect = DocumentNotFound()
 
     response = await client.get(ENDPOINT)
 

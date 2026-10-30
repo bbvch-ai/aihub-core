@@ -6,7 +6,7 @@ from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from typing import Annotated, Any
 
-import mongoengine.errors
+from beanie.exceptions import DocumentNotFound
 from bson import ObjectId
 from fastapi import HTTPException
 from llama_index.core.base.llms.types import ChatMessage, TextBlock
@@ -142,7 +142,7 @@ class ChatService:
         await asyncio.sleep(drain_grace_seconds)
 
     @staticmethod
-    def _initialize_interaction(
+    async def _initialize_interaction(
         user: UserIdentity,
         agent_class: str,
         agent_id: str,
@@ -163,16 +163,14 @@ class ChatService:
         thread = None
         if thread_id:
             try:
-                thread = ThreadEntity.get_thread_by_id(str(thread_id))
-                if not thread:
-                    raise mongoengine.errors.DoesNotExist()
+                thread = await ThreadEntity.get_thread_by_id(str(thread_id))
                 if user.id not in [u.user_id for u in thread.users]:
                     raise HTTPException(status_code=403, detail="User not part of the thread")
-            except mongoengine.errors.DoesNotExist:
+            except DocumentNotFound:
                 pass
 
         if not thread:
-            thread = ThreadEntity.create_thread(
+            thread = await ThreadEntity.create_thread(
                 "chat",
                 users=[User(user_id=user.id)],
                 agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
@@ -259,7 +257,7 @@ class ChatService:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
         """
-        external_event, topic_manager = ChatService._initialize_interaction(
+        external_event, topic_manager = await ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
@@ -347,7 +345,7 @@ class ChatService:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
         """
-        external_event, topic_manager = ChatService._initialize_interaction(
+        external_event, topic_manager = await ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
