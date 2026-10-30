@@ -13,9 +13,12 @@ from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
 
-_SETTINGS = DiscoverySettings(MISSED_ROUNDS_BEFORE_OFFLINE=3)
-# Recent enough that MAX_SILENCE_SECONDS does not cut in; the database keeps milliseconds only
-_ROUND_ZERO = datetime.now().replace(microsecond=0) - timedelta(minutes=10)
+# The silence limit is pushed out of the way so these fixed dates test the rounds rule alone; TestMaxSilence
+# covers the limit with the real default. Anchoring to the clock instead breaks once collection and the test
+# run lie minutes apart, as they do in CI.
+_TEN_YEARS = 10 * 365 * 24 * 3600
+_SETTINGS = DiscoverySettings(MISSED_ROUNDS_BEFORE_OFFLINE=3, MAX_SILENCE_SECONDS=_TEN_YEARS)
+_ROUND_ZERO = datetime(2026, 10, 1, 12, 0, 0)
 
 
 @pytest.fixture(autouse=True)
@@ -45,7 +48,7 @@ class TestThreshold:
     def test_a_class_stamped_during_the_latest_round_is_online(self) -> None:
         """Stamps land after the response wait, so a threshold taken from a round's end would miss them."""
         _complete_rounds(1)
-        settings = DiscoverySettings(MISSED_ROUNDS_BEFORE_OFFLINE=1)
+        settings = DiscoverySettings(MISSED_ROUNDS_BEFORE_OFFLINE=1, MAX_SILENCE_SECONDS=_TEN_YEARS)
         stamped_mid_round = AgentClassEntity(last_discovered=_round_start(0) + timedelta(seconds=10))
 
         assert stamped_mid_round.is_online_since(DiscoveryRoundEntity.online_threshold(DiscoveryKind.AGENT, settings))
@@ -76,23 +79,33 @@ class TestThreshold:
 
 
 class TestMaxSilence:
+    """Times are taken inside each test, never at import, so they hold however late the test runs."""
+
+    _SETTINGS = DiscoverySettings(MISSED_ROUNDS_BEFORE_OFFLINE=3)
+
+    def _complete_rounds_from(self, first_start: datetime) -> None:
+        for index in range(3):
+            DiscoveryRoundEntity.record_completed(
+                DiscoveryKind.AGENT, first_start + timedelta(minutes=index), self._SETTINGS
+            )
+
     def test_when_rounds_stop_completing_a_dead_class_still_goes_offline(self) -> None:
         """A fault that fails every round would otherwise keep the last threshold, and dead classes online, forever."""
-        long_ago = datetime.now() - _SETTINGS.max_silence - timedelta(hours=1)
-        for index in range(3):
-            DiscoveryRoundEntity.record_completed(DiscoveryKind.AGENT, long_ago + timedelta(minutes=index), _SETTINGS)
+        long_ago = datetime.now() - self._SETTINGS.max_silence - timedelta(hours=1)
+        self._complete_rounds_from(long_ago)
         answered_last_round = AgentClassEntity(last_discovered=long_ago + timedelta(minutes=2, seconds=10))
         before = datetime.now()
 
-        threshold = DiscoveryRoundEntity.online_threshold(DiscoveryKind.AGENT, _SETTINGS)
+        threshold = DiscoveryRoundEntity.online_threshold(DiscoveryKind.AGENT, self._SETTINGS)
 
-        assert before - _SETTINGS.max_silence <= threshold <= datetime.now() - _SETTINGS.max_silence
+        assert before - self._SETTINGS.max_silence <= threshold <= datetime.now() - self._SETTINGS.max_silence
         assert not answered_last_round.is_online_since(threshold)
 
     def test_it_does_not_cut_in_while_rounds_complete(self) -> None:
-        _complete_rounds(5)
+        first_start = datetime.now().replace(microsecond=0) - timedelta(minutes=5)
+        self._complete_rounds_from(first_start)
 
-        assert DiscoveryRoundEntity.online_threshold(DiscoveryKind.AGENT, _SETTINGS) == _round_start(2)
+        assert DiscoveryRoundEntity.online_threshold(DiscoveryKind.AGENT, self._SETTINGS) == first_start
 
 
 class TestColdStart:
