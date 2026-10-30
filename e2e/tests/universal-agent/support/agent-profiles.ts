@@ -29,10 +29,17 @@ export interface ToolLoopOverrides {
   approvals?: { tool: string; policy: 'never' | 'every_call' | 'once_per_run' | 'once_per_thread' }[]
 }
 
-/** A Universal Agent profile created for one spec file and deleted after it, as OpenWebUI shows it. */
+/** An agent profile created for one spec file and deleted after it, as OpenWebUI shows it. */
 export interface ThrowawayProfile {
   agentId: string
   modelId: string
+  agentClass: string
+}
+
+/** What a describe block needs besides the defaults: another blueprint, or settings on top of the copied profile. */
+export interface ProfileOptions {
+  agentClass?: string
+  configuration?: Configuration
 }
 
 /**
@@ -51,22 +58,27 @@ export class AgentProfiles {
     return new AgentProfiles(http)
   }
 
-  async create(label: string, toolLoop: ToolLoopOverrides): Promise<ThrowawayProfile> {
+  async create(label: string, toolLoop: ToolLoopOverrides, options: ProfileOptions = {}): Promise<ThrowawayProfile> {
+    const agentClass = options.agentClass ?? UNIVERSAL_AGENT_CLASS
     const agentId = `e2e-ua-${label}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
-    const response = await this.http.post(this.instancesUrl(), {
-      data: { agent_id: agentId, configuration: AgentProfiles.configuration(await this.template(), agentId, toolLoop) },
+    const configuration = {
+      ...AgentProfiles.configuration(await this.template(agentClass), agentId, toolLoop),
+      ...options.configuration,
+    }
+    const response = await this.http.post(this.instancesUrl(agentClass), {
+      data: { agent_id: agentId, configuration },
     })
     expect(
       response.status(),
       response.status() === 503
-        ? `The ${UNIVERSAL_AGENT_CLASS} class is offline (POST returned 503): start the agent service first.`
+        ? `The ${agentClass} class is offline (POST returned 503): start the agent service first.`
         : `Creating profile ${agentId}: ${await response.text()}`,
     ).toBe(201)
-    return { agentId, modelId: `${AGENT_MODEL_PREFIX}${UNIVERSAL_AGENT_CLASS}.${agentId}` }
+    return { agentId, modelId: `${AGENT_MODEL_PREFIX}${agentClass}.${agentId}`, agentClass }
   }
 
   async delete(profile: ThrowawayProfile): Promise<void> {
-    const response = await this.http.delete(`${this.instancesUrl()}/${profile.agentId}`)
+    const response = await this.http.delete(`${this.instancesUrl(profile.agentClass)}/${profile.agentId}`)
     expect([204, 404], `Deleting profile ${profile.agentId}`).toContain(response.status())
   }
 
@@ -91,17 +103,24 @@ export class AgentProfiles {
       .toBe(true)
   }
 
-  private instancesUrl(): string {
-    return `${API_URL}/${TENANT}/agents/classes/${UNIVERSAL_AGENT_CLASS}/instances`
+  private instancesUrl(agentClass: string): string {
+    return `${API_URL}/${TENANT}/agents/classes/${agentClass}/instances`
   }
 
-  private async template(): Promise<Configuration> {
-    const response = await this.http.get(this.instancesUrl())
-    await expect(response, `GET ${this.instancesUrl()}`).toBeOK()
+  /** An existing profile of the class, or else the class's first shipped template, so a fresh stack works too. */
+  private async template(agentClass: string): Promise<Configuration> {
+    const response = await this.http.get(this.instancesUrl(agentClass))
+    await expect(response, `GET ${this.instancesUrl(agentClass)}`).toBeOK()
     const instances = (await response.json()) as AgentInstance[]
-    const template = instances.find((instance) => instance.agent_id === TEMPLATE_PROFILE) ?? instances[0]
-    expect(template, `an existing ${UNIVERSAL_AGENT_CLASS} profile to copy`).toBeDefined()
-    return template.configuration
+    const instance = instances.find((candidate) => candidate.agent_id === TEMPLATE_PROFILE) ?? instances[0]
+    if (instance) {
+      return instance.configuration
+    }
+    const detail = await this.http.get(`${API_URL}/${TENANT}/agents/classes/${agentClass}`)
+    await expect(detail, `GET the ${agentClass} class`).toBeOK()
+    const templates = ((await detail.json()) as { templates: Configuration[] }).templates
+    expect(templates[0], `an existing ${agentClass} profile or template to copy`).toBeDefined()
+    return templates[0]
   }
 
   private static configuration(template: Configuration, agentId: string, toolLoop: ToolLoopOverrides): Configuration {
@@ -115,11 +134,15 @@ export class AgentProfiles {
       description: localized,
       llm: { ...llm, model_name: MAIN_LLM },
       task_llm: { ...((template.task_llm as Configuration | null) ?? llm), model_name: TASK_LLM },
-      user_memory: {
-        ...(template.user_memory as Configuration),
-        enable_user_memory_retrieval: false,
-        enable_user_memory_storage: false,
-      },
+      ...(template.user_memory
+        ? {
+            user_memory: {
+              ...(template.user_memory as Configuration),
+              enable_user_memory_retrieval: false,
+              enable_user_memory_storage: false,
+            },
+          }
+        : {}),
       knowledge_tool: { ...(template.knowledge_tool as Configuration), every_readable_collection: true },
       tool_loop: { ...(template.tool_loop as Configuration), ...UNRESTRICTED_TOOL_LOOP, ...toolLoop },
     }

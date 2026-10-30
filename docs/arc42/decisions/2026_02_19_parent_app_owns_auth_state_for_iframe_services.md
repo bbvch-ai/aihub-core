@@ -118,13 +118,13 @@ network error), a server-side OAuth error (`server_error`, `temporarily_unavaila
 status without `session_state`. None of these says anything about the cookie, and an unhealthy Keycloak must not log
 users out.
 
-The probe is costly: the hidden iframe boots the whole app a second time on `/auth/renew`, and a code exchange runs whose
-tokens are discarded, all before the first page renders. It therefore runs once per browser session, not per page load:
-a passed probe records the user's `sub` in sessionStorage (`utils/ssoSessionCheck.ts`), and later loads in that tab skip
-it. sessionStorage ends together with the session cookie, so the skip cannot hide a lost cookie. The login callback
-records the `sub` too, since Keycloak has just set the cookie; this also keeps a deployment where the iframe cannot see
-the cookie (Keycloak on another site, third-party cookies blocked) from looping between login and the probe. Keycloak
-must still be on the same site as the app, or the OpenWebUI iframe cannot sign in at all.
+The probe is costly: the hidden iframe boots the whole app a second time on `/auth/renew`, and a code exchange runs
+whose tokens are discarded, all before the first page renders. It therefore runs once per browser session, not per page
+load: a passed probe records the user's `sub` in sessionStorage (`utils/ssoSessionCheck.ts`), and later loads in that
+tab skip it. sessionStorage ends together with the session cookie, so the skip cannot hide a lost cookie. The login
+callback records the `sub` too, since Keycloak has just set the cookie; this also keeps a deployment where the iframe
+cannot see the cookie (Keycloak on another site, third-party cookies blocked) from looping between login and the probe.
+Keycloak must still be on the same site as the app, or the OpenWebUI iframe cannot sign in at all.
 
 **Effect on this decision.** The probe cannot tell a lost cookie from an SSO session ended by an embedded service's
 logout — both answer `login_required`. A new tab after an OpenWebUI logout therefore logs the parent out. In a tab that
@@ -141,3 +141,23 @@ through the renewal in `middleware/auth.global.ts` and `useAuth().getToken()`; a
 session and only fails the request. `useAuth().getToken()` re-runs the route guard on the current page, as the
 `silentRenewError` handler does, so a tenant page goes to its identity provider and is restored after login. Together
 with the probe above, these are the paths that log the user out of the parent application.
+
+## Addendum (2026-10-30): renew on entering a page with an SSO iframe
+
+**Context.** The probe runs once per tab, so a Keycloak session that ends on the server while the tab stays open (idle
+timeout, revocation, a logout through OpenWebUI or another client) went unnoticed until the next token renewal, up to
+the access token lifespan later. Entering the chat in that window sent the OpenWebUI iframe to Keycloak's login form.
+An Entra sign-in inside that frame then fails OpenWebUI's OAuth callback with `mismatching_state`, which OpenWebUI shows
+as "The email or password provided is incorrect" (bbvch-ai/aihub-core-private#307).
+
+**Change.** Pages whose iframe signs in through the SSO cookie declare `definePageMeta({ embedsSsoIframe: true })`.
+When a protected navigation enters such a page from one without it, `middleware/auth.global.ts` renews the session with
+the refresh token, through the same branch as an expired token: Keycloak rejects the refresh token of an ended session,
+so the parent removes its stored user and redirects to login before the iframe is created. A renewal that gets no
+answer keeps the session, as before. It costs one token request per entry; moving within the page (opening a chat side
+panel) does not renew again. The probe is still needed: after a browser restart the server-side session is alive and
+the renewal succeeds, while the cookie the iframe needs is gone.
+
+**Effect on this decision.** After an OpenWebUI logout, the parent now logs out the next time the user enters the chat
+rather than at its next token renewal. That is the moment the preserved session would otherwise put Keycloak's login
+form inside the iframe.

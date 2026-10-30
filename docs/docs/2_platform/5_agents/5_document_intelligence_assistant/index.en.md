@@ -115,7 +115,8 @@ The agent is delivered as a **blueprint** from which you create configured **pro
 3. **Add at least one knowledge source.** Pick the vector store (knowledge base) to search and the matching embedding
    model. This is mandatory — the agent needs somewhere to retrieve from. You can add several sources to search them
    together.
-4. **Choose the chat model** and adjust its temperature (keep it low for factual, grounded answers).
+4. **Choose the chat model** and adjust its parameters (for factual, grounded answers, switch on the temperature
+   override and set it low).
 5. **Tune retrieval and answering** as needed: how many passages to fetch, whether to rerank, whether to run the
    sufficiency guard and allow multi-hop, and the system prompt.
 6. **Enable memory and guards** if you want them (all optional — see below).
@@ -123,8 +124,8 @@ The agent is delivered as a **blueprint** from which you create configured **pro
 
 ## Drafting and reviewing Jira stories
 
-The **Jira Story Assistant** template turns this agent into an assistant for product owners. From a short description
-it drafts a story that follows the project's story template. Given an existing story, it checks every section of the
+The **Jira Story Assistant** template turns this agent into an assistant for product owners. From a short description it
+drafts a story that follows the project's story template. Given an existing story, it checks every section of the
 template, lists contradictions and overlaps with your specifications, handbooks and other stories, and suggests a
 rewrite. It only writes into the chat: nothing changes in Jira until a product owner copies a suggestion over.
 
@@ -144,14 +145,14 @@ rewrite. It only writes into the chat: nothing changes in Jira until a product o
 ### Setting it up
 
 1. **Prepare the knowledge databases.**
-   - **Jira**: a database whose source is [Jira issues](../../8_knowledges/#jira-issues), with the projects whose stories
-     the product owners write. Leave service-desk projects and request types out with the source's JQL filter: the
-     agent can only cite what the database holds.
+   - **Jira**: a database whose source is [Jira issues](../../8_knowledges/#jira-issues), with the projects whose
+     stories the product owners write. Leave service-desk projects and request types out with the source's JQL filter:
+     the agent can only cite what the database holds.
    - **Confluence**: the pages holding your specifications, glossary and working agreements.
    - **Handbooks**: for example handbook folders synced from SharePoint with
      [cloud storage sync](../../8_knowledges/#files-from-cloud-storage).
-2. **Create the profile** under **Admin > Agents > Templates > Jira Story Assistant**. If its Agent ID is already taken in
-   this deployment, choose another one.
+2. **Create the profile** under **Admin > Agents > Templates > Jira Story Assistant**. If its Agent ID is already taken
+   in this deployment, choose another one.
 3. **Point it at your databases.** Change the database of the existing knowledge source instead of deleting it, so it
    keeps `hybrid`, and switch on **Search all namespaces** or pick the project and space keys. For every further
    database, **Add Item** and fill in what a new source starts without:
@@ -159,15 +160,15 @@ rewrite. It only writes into the chat: nothing changes in Jira until a product o
    - the **Query mode**, which starts at `default`: set it to `hybrid`;
    - the namespaces: switch on **Search all namespaces** or pick the keys, otherwise the profile cannot be saved.
 4. **Add your story templates** to the system prompt, see below.
-5. **Give the product owners access** to the profile and read access to every database it searches. A database a
-   product owner cannot read is left out of their answers without notice.
+5. **Give the product owners access** to the profile and read access to every database it searches. A database a product
+   owner cannot read is left out of their answers without notice.
 
 ### Adapting the prompt
 
-- **Story templates.** The prompt holds a `<story_templates>` block with a `default` template. Add one block per
-  project next to it, for example `<template project="ABC"> … </template>`, with that project's sections. The agent
-  uses the template of the project the user names, or the default, and says which one it used. It never takes a
-  template from a retrieved document, so copy a template kept in Confluence into the prompt.
+- **Story templates.** The prompt holds a `<story_templates>` block with a `default` template. Add one block per project
+  next to it, for example `<template project="ABC"> … </template>`, with that project's sections. The agent uses the
+  template of the project the user names, or the default, and says which one it used. It never takes a template from a
+  retrieved document, so copy a template kept in Confluence into the prompt.
 - **Markup.** The `<output_markup>` block asks for Markdown. If your product owners paste into the text editor of Jira
   Data Center, which expects wiki markup, change it to `Write the story text in Jira wiki markup.`
 - **Languages.** The prompt exists in English only, and every interface language falls back to it. If you fill in
@@ -219,13 +220,21 @@ least one knowledge source** are required; everything else has sensible defaults
 
 ### Language model
 
-| Field                        | Type             | Default | Description                                                                                |
-| ---------------------------- | ---------------- | ------- | ------------------------------------------------------------------------------------------ |
-| **Model**                    | Model picker     | —       | The chat model that writes the answer. Required.                                           |
-| **Temperature**              | Number           | `0.0`   | Randomness. Keep low (`0.0`–`0.3`) for grounded, factual answers. Range 0.0–2.0.           |
-| **Return Log Probabilities** | Toggle           | Off     | Advanced diagnostic option for token-level confidence. Leave off unless needed.            |
-| **Top Log Probabilities**    | Number           | `0`     | Alternative tokens to report per position; only when log probabilities are on. Range 0–20. |
-| **Timeout**                  | Number (seconds) | `600`   | How long to wait for the model before giving up.                                           |
+| Field                              | Type              | Default       | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------------------- | ----------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Model**                          | Model picker      | —             | The chat model that writes the answer. Required.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **Temperature**                    | Number (optional) | Model default | Randomness. The checkbox **Override the model's default temperature** shows the selected model's recommended default in parentheses, e.g. "(1.0)" for gemma, "(0.7)" for Qwen3-VL, "(0.05)" for Ministral, or "(0.0)" for models without a curated default. Unticked, the field stays visible but disabled and shows that default, which is what the agent uses; it follows the model when you switch models. Ticking it pre-fills the field with the default for you to adjust (range 0.0–2.0); for grounded, factual answers use `0.0`–`0.3`. Unticking returns to the model's default. Existing profiles that stored a temperature keep it. Helper steps (checks, titles, question condensation) use `0.0` while it is unticked; a value you set applies to them too. |
+| **Breadth of word choice (top_p)** | Number (optional) | Model default | How many alternatives the model considers for each next word, range 0–1; lower is more focused. Same override checkbox as **Temperature**, with the model's default in parentheses (e.g. "(0.95)" for gemma). Models without a curated default show "(provider default)": the provider decides while the checkbox is unticked.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Accept images**                  | Checkbox          | On            | Whether images in the conversation are passed to the model. Disabled for models that declare no image support; every chat model shipped today reads images.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Return Log Probabilities**       | Toggle            | Off           | Advanced diagnostic option for token-level confidence. Leave off unless needed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Top Log Probabilities**          | Number            | `0`           | Alternative tokens to report per position; only when log probabilities are on. Range 0–20.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Timeout**                        | Number (seconds)  | `300`         | How long to wait for the model before giving up.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+
+If a message carries images the agent cannot pass on (**Accept images** off, or a model without image support), the
+agent replies that it cannot look at images instead of answering. Models with a known per-request image limit
+(Ministral-3-14B: 10; Qwen3.5-122B and gemma-4-31B-it on Infomaniak: 20; local Qwen3-VL on GPU deployments: 8) drop
+images from earlier turns first. If the latest message alone has more images than the limit, the agent replies "You sent
+N images, but I can look at no more than M at once." instead of calling the model.
 
 ### Knowledge sources (retrievers)
 
@@ -325,11 +334,11 @@ out the knowledge search.
 
 ### Prompts and input budget
 
-| Field                | Type      | Default               | Description                                                                                                                                    |
-| -------------------- | --------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **System prompt**    | Long text | *(grounding default)* | Defines the assistant's role and rules. The default instructs it to answer only from retrieved context and quote sources.                      |
-| **Context prompt**   | Long text | *(template default)*  | Template for how retrieved passages are presented to the model. Most deployments leave this at the default.                                    |
-| **Max input tokens** | Number    | `128000`              | The input budget; the conversation and retrieved context are trimmed to fit. Keep within the chat model's context window. Range 1,024–128,000. |
+| Field                | Type              | Default               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------- | ----------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **System prompt**    | Long text         | *(grounding default)* | Defines the assistant's role and rules. The default instructs it to answer only from retrieved context and quote sources.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **Context prompt**   | Long text         | *(template default)*  | Template for how retrieved passages are presented to the model. Most deployments leave this at the default.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Max input tokens** | Number (optional) | Model window (85%)    | The input budget; the conversation and retrieved context are trimmed to fit. Optional. Unticked by default: the agent fills about 85% of the selected chat model's input window, which is shown in the checkbox label and the disabled field (e.g. "(78,050)" for gemma on Infomaniak) and follows the model when you switch models. The 15% margin allows for differences between the token counter and the model's tokenizer. Tick **Set your own input limit** to set a lower limit and cut cost: minimum 1,024, maximum that same 85% figure, which the hint under the field names next to the model's full window; a higher value is blocked in the form and rejected by the API. Profiles that stored a limit above that figure have it unset automatically when the platform is upgraded. |
 
 If a message alone is larger than the chat model's context window, the agent replies that the input is too large (and
 suggests a smaller file) instead of ending in an error. The check uses the real window of the model, not only this
@@ -346,7 +355,8 @@ budget.
 the agent to say "I don't have enough information" than to produce a confident wrong answer. Pair it with a small number
 of multi-hop retries.
 
-**Keep temperature low.** `0.0`–`0.3` keeps answers faithful to the retrieved sources.
+**Keep temperature low.** `0.0`–`0.3` keeps answers faithful to the retrieved sources. Switch the temperature override
+on and set it, since the default now follows the model.
 
 **Start with a few knowledge sources, not all of them.** Searching every collection at once produces noisy, mixed
 results. If users span very different topics, consider the Document Navigation Assistant to route each question to the

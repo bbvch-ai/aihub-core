@@ -4,23 +4,26 @@
     :class="{ 'bg-surface-100 dark:bg-surface-800': isActive }"
   >
     <div class="flex items-start gap-3">
-      <div class="flex flex-1 flex-col gap-3">
-        <div class="flex items-center gap-2">
+      <div class="flex min-w-0 flex-1 flex-col gap-3">
+        <div class="flex min-w-0 items-center gap-2">
           <div
-            class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
+            class="flex shrink-0 items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
           >
             <Icon
               name="mage:book"
               size="1.5em"
             />
           </div>
-          <h3 class="font-semibold opacity-80">
+          <h3
+            v-tooltip.top="role.name"
+            class="truncate font-semibold opacity-80"
+          >
             {{ role.name }}
           </h3>
         </div>
         <span
           v-if="role.description"
-          class="text-xs"
+          class="line-clamp-3 text-xs [overflow-wrap:anywhere]"
         >
           {{ role.description }}
         </span>

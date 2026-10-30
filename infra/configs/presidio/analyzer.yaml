@@ -1,0 +1,220 @@
+---
+# Presidio analyzer recognizers: Swiss and international patterns plus GLiNER's multilingual PII model. Mounted into
+# the presidio-analyzer container as ANALYZER_CONF_FILE; edit here and run `make generate-compose`, no image rebuild.
+#
+# One language code (de) for all traffic: GLiNER is multilingual, so French, Italian and English text sent as "de" is
+# covered, and one language means one GLiNER copy in memory. spaCy only supplies tokens and lemmas. Recognizers for
+# other countries (e.g. ItFiscalCodeRecognizer) are registered under "de" for the same reason.
+#
+# Patterns cover Swiss AHV numbers, phone numbers, addresses, patient and case numbers, health insurance cards,
+# passport and ID numbers, birth dates, and national IDs, health insurance and record numbers of the US, UK, France,
+# Italy and Germany. They were written against synthetic test sets; check them against real document formats before
+# relying on the patterned types.
+#
+# Entities to request (the gateway guardrail's entity list): PERSON, LOCATION, CH_ADDRESS, EMAIL_ADDRESS, PHONE_NUMBER,
+# IBAN_CODE, NATIONAL_ID, CH_MRN, CH_ID_DOCUMENT, CH_INSURANCE_CARD, DATE_OF_BIRTH. Birth dates and passports get an
+# explicit GLiNER label; the number types are left to the patterns, because GLiNER labels such as "medical record
+# number" also fire on invoice references, order and ticket numbers. Presidio's GLiNER recognizer passes unmapped
+# entity names to GLiNER as raw labels.
+#
+# global_regex_flags 26 = IGNORECASE | MULTILINE | DOTALL, so patterns that need a capital letter use (?-i:...).
+supported_languages: [de]
+default_score_threshold: 0
+nlp_configuration:
+  nlp_engine_name: spacy
+  models:
+    - {lang_code: de, model_name: de_core_news_lg}
+  ner_model_configuration:
+    labels_to_ignore: [MISC, ORG, PER, LOC]
+recognizer_registry:
+  global_regex_flags: 26
+  recognizers:
+    - {name: SpacyRecognizer, type: predefined, enabled: false}
+    - {name: PhoneRecognizer, type: predefined, enabled: false}
+    - {name: EmailRecognizer, type: predefined}
+    - {name: CreditCardRecognizer, type: predefined}
+    - {name: UrlRecognizer, type: predefined}
+    - name: GLiNERRecognizer
+      type: predefined
+      supported_languages: [de]
+      model_name: urchade/gliner_multi_pii-v1
+      threshold: 0.4
+      entity_mapping:
+        person: PERSON
+        street address: CH_ADDRESS
+        address: CH_ADDRESS
+        city: LOCATION
+        passport number: CH_ID_DOCUMENT
+        birth date: DATE_OF_BIRTH
+    - name: IbanRecognizer
+      type: predefined
+      supported_languages:
+        - {language: de, context: [iban, konto, bankverbindung, compte, conto, account]}
+    - name: SwissPhoneRecognizer
+      supported_entity: PHONE_NUMBER
+      patterns:
+        - {name: ch_international, regex: '(?<![\w+])(?<!\d[ ])(?:\+|00)41[ ]?(?:\(0\)[
+            ]?)?[1-9]\d(?:[ /.\-]?\d){7}\b(?![ ]?\d)', score: 0.8}
+        - {name: ch_national, regex: '(?<![\w.])(?<!\d[ ])0[1-9]\d(?:[ /.\-]?\d){7}\b(?![.,]\d)(?![
+            ]?\d)', score: 0.7}
+        - {name: other_international, regex: '(?<![\w+])\+(?!41)[1-9]\d{0,2}(?:[ ]?\(0\))?(?:[
+            \-]?\d{2,4}){2,5}\b(?![ ]?\d)', score: 0.5}
+      supported_languages:
+        - {language: de, context: [telefon, tel, natel, handy, mobile, nummer, téléphone,
+            telefono, phone]}
+    - name: SwissAhvRecognizer
+      supported_entity: NATIONAL_ID
+      patterns:
+        - {name: ahv_13_digits, regex: '\b756[. ]?\d{4}[. ]?\d{4}[. ]?\d{2}\b', score: 0.95}
+      supported_languages:
+        - {language: de, context: [ahv, ahv-nr, ahv-nummer, avs, sozialversicherungsnummer]}
+    - name: NationalIdRecognizer
+      supported_entity: NATIONAL_ID
+      patterns:
+        - name: us_ssn
+          regex: \b(?!000|666|9\d\d)\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b
+          score: 0.6
+        - name: us_ssn_labelled
+          regex: '(?<=\b(?:ssn|social security(?: number| no\.?)?)(?:[ ]is)?[ ]?[:#]?[
+            ]?)(?!000|666|9\d\d)\d{9}\b'
+          score: 0.85
+        - name: fr_nir
+          regex: '(?<!\d[ ]?)\b(?:[12]\d{2}(?:0[1-9]|1[0-2]|[2-9]\d)(?:\d{2}|2[AB])\d{6}(?:\d{2})?|[12]
+            \d{2} (?:0[1-9]|1[0-2]|[2-9]\d) (?:\d{2}|2[AB]) \d{3} \d{3}(?: \d{2})?)\b(?![
+            ]?\d)'
+          score: 0.6
+        - name: de_tax_id_labelled
+          regex: (?<=\b(?:steuer-?id|steuer-?identifikationsnummer|steueridentifikationsnummer|idnr|tax
+            id)[ ]?[:#]?[ ]?)\d{2}[ ]?\d{3}[ ]?\d{3}[ ]?\d{3}\b
+          score: 0.85
+      supported_languages:
+        - {language: de, context: [ssn, social security, sécurité sociale, nir, steuer-id,
+            steueridentifikationsnummer, codice fiscale]}
+    - name: UkNinoRecognizer
+      type: predefined
+      supported_entity: NATIONAL_ID
+      supported_languages:
+        - {language: de, context: [national insurance, ni number, nino]}
+    - name: ItFiscalCodeRecognizer
+      type: predefined
+      supported_entity: NATIONAL_ID
+      supported_languages:
+        - {language: de, context: [codice fiscale, c.f., cf, tessera sanitaria, code
+                fiscal]}
+    - name: DeTaxIdRecognizer
+      type: predefined
+      supported_entity: NATIONAL_ID
+      supported_languages:
+        - {language: de, context: [steuer-id, steueridentifikationsnummer, idnr, tax
+                id]}
+    - name: SwissMedicalRecordNumberRecognizer
+      supported_entity: CH_MRN
+      patterns:
+        - name: labelled_patient_or_case_number
+          regex: (?<=\b(?:PID|FID|IPP|MRN|Patient(?:en)?[- ]?(?:nummer|nr\.?|id)|Fall-?(?:nummer|nr\.?)|Fall|KG-?Nr\.?|case
+            (?:number|no\.?)|numéro de séjour|numero (?:di )?caso|case|N° ?(?:patient|de
+            séjour|dossier|IPP)|N\. ?(?:paziente|caso)|numero ?(?:paziente|caso))(?:[
+            ](?:is|isch|ist|est|è))?[ ]?[:#]?[ ]?)\d{6,11}\b
+          score: 0.85
+        - name: labelled_record_id
+          regex: '(?<=\b(?:MRN|medical record (?:number|no\.?)|patient (?:id|number|no\.?)|hospital
+            (?:number|no\.?)|PID|IPP|N° de dossier|numéro de (?:dossier|patient)|cartella
+            clinica(?: n\.?)?|N\. nosologico|nosologico|codice paziente|Patientennummer|Fall-?Nr\.?|Fallnummer)(?:[
+            ]is)?[ ]?[:#\-]?[ ]?)(?:(?-i:[A-Z]{1,3})-?)?(?:\d{4}[-/])?\d{4,11}\b'
+          score: 0.85
+      supported_languages: [de]
+    # GLiNER misses a single surname after a form label or a title ("Name: Meier", "Frau Brunner"). Both patterns ask
+    # for a capitalised word, so "Name: unbekannt" stays untouched. A label word after another word ("Company name:",
+    # "File name:") names a thing, not a person. A title followed by another title ("Frau Dr. Meier") masks only the
+    # surname. "Patient" is no title: English headings ("Patient Information") follow it, and GLiNER finds the name
+    # in "Patient Meier" on its own.
+    - name: SwissLabelledNameRecognizer
+      supported_entity: PERSON
+      patterns:
+        - name: form_label_name
+          regex: (?<=\b(?<![\p{L}][ \-])(?:name|vorname|nachname|familienname|nom|prénom|nom
+            de famille|cognome|nome|surname|first name|last name|given name|family
+            name|full name|patient name)[ ]?:[ ]?)(?-i:\p{Lu}\p{Ll}[\p{L}'’\-]*(?:[
+            ]\p{Lu}\p{Ll}[\p{L}'’\-]*)?)
+          score: 0.7
+        - name: titled_name
+          regex: (?<=\b(?-i:Herr|Frau|Hr\.|Fr\.|Dr\.|Dr|Prof\.|M\.|Mme|Mlle|Monsieur|Madame|Signor|Signora|Sig\.|Sig\.ra|Dott\.|Dott\.ssa|Mr\.?|Mrs\.?|Ms\.?|Patientin|patiente|paziente)[
+            ])(?!(?:Dr|Prof|Dipl|Ing|Med|Sc|Nr)\b)(?-i:\p{Lu}\p{Ll}[\p{L}'’\-]*(?:[
+            ]\p{Lu}\p{Ll}[\p{L}'’\-]*)?)
+          score: 0.6
+      supported_languages: [de]
+    - name: HealthInsuranceNumberRecognizer
+      supported_entity: CH_INSURANCE_CARD
+      patterns:
+        - {name: eu_health_card_number, regex: '\b80\d{3}(?:[ .\-]?\d){15}\b', score: 0.85}
+        - name: labelled_insurance_number
+          regex: "(?<=\\b(?:member id|insurance (?:id|number|no\\.?)|policy (?:number|no\\\
+            .?)|n° d['’]adhérent(?: mutuelle)?|numéro d['’]adhérent|tessera sanitaria(?:\
+            \ n\\.?)?|tessera d['’]assicurato(?: n\\.?)?|carte d['’]assuré(?: n°)?|versichertenkarte(?:\
+            \ nr\\.?)?|krankenversichertennummer|versichertennummer|nhs (?:number|no\\\
+            .?))(?:[ ]is)?[ ]?[:#]?[ ]?)(?-i:[A-Z]){0,3}\\d[\\d ]{5,23}\\d\\b"
+          score: 0.85
+      supported_languages:
+        - {language: de, context: [versichertenkarte, krankenkassenkarte, versicherungskarte,
+            assuré, assicurato, cassa malati, insurance card, nhs, member id]}
+    - name: DeHealthInsuranceRecognizer
+      type: predefined
+      supported_entity: CH_INSURANCE_CARD
+      supported_languages:
+        - {language: de, context: [krankenversichertennummer, versichertennummer,
+            kvnr]}
+    - name: SwissIdDocumentRecognizer
+      supported_entity: CH_ID_DOCUMENT
+      patterns:
+        - name: labelled_passport_or_id_card
+          regex: (?<=\b(?:reisepass|pass|passport|passeport|passaporto|ausweis|identitätskarte|id-?karte|id
+            card|carte d['’]identité|carta d['’]identità)(?:[ \-]?(?:nr\.?|nummer|no\.?|number|n°|n\.))?(?:[
+            ]is)?[ ]?[:#]?[ ]?)(?:(?-i:[A-Z]{1,2})\d{7,8}|\d{9}|\d{2}(?-i:[A-Z]{2})\d{5}|(?-i:C[CFGHJKLMNPRTVWXYZ0-9]{8}))\b
+          score: 0.8
+      supported_languages: [de]
+    - name: DateOfBirthRecognizer
+      supported_entity: DATE_OF_BIRTH
+      patterns:
+        - name: labelled_birth_date
+          regex: '(?<=(?:\b(?:geb\.|geboren(?: am)?|geburtsdatum|n[ée](?:\(e\)|e)?
+            le|date de naissance|nat[oa](?:/a)? il|data di nascita|born(?: on)?|date
+            of birth|dob)|\*)[ ]?[:,]?[ ]?)(?:\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2}|\d{1,2}\.?[
+            ](?:januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember|janvier|février|mars|avril|juin|juillet|août|septembre|octobre|novembre|décembre|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|dicembre|january|february|march|may|june|july|october|december)[
+            ]\d{4}|(?:january|february|march|april|may|june|july|august|september|october|november|december|jan\.?|feb\.?|mar\.?|apr\.?|jun\.?|jul\.?|aug\.?|sep\.?|sept\.?|oct\.?|nov\.?|dec\.?)[
+            ]\d{1,2},?[ ]\d{4})\b'
+          score: 0.85
+      supported_languages: [de]
+    - name: SwissAddressRecognizer
+      supported_entity: CH_ADDRESS
+      patterns:
+        - name: street_de
+          regex: \b(?-i:[A-ZÄÖÜ])[\w\-]*(?:strasse|str\.|gasse|weg|platz|rain|halde|ring|allee|matte)[
+            ]\d{1,4}[ ]?[a-z]?\b
+          score: 0.6
+        - name: street_fr
+          regex: \b(?:rue|avenue|av\.|chemin|ch\.|route|rte|place|boulevard|bd|quai|impasse|allée|sentier)[
+            ](?:(?:de la|de l'|des|du|de|d')[ ]?)?(?-i:[A-ZÉÈ])[\w'\-]*(?:[ ](?-i:[A-ZÉ])[\w'\-]*)?,?[
+            ]\d{1,4}[a-z]?\b
+          score: 0.6
+        - name: street_fr_number_first
+          regex: \b\d{1,4}[a-z]?,?[ ](?:rue|avenue|chemin|route|place|boulevard|quai|impasse)[
+            ](?:(?:de la|de l'|des|du|de|d')[ ]?)?(?-i:[A-ZÉÈ])[\w'\-]*(?:[ ](?-i:[A-ZÉ])[\w'\-]*)?
+          score: 0.6
+        - name: street_it
+          regex: \b(?:via|viale|piazza|piazzale|piazzetta|vicolo|vico|strada|corso|contrada|canale|stretto|borgo|largo|lungomare|rotonda|incrocio|salita|località|galleria|rione)[
+            ](?:(?:dei|delle|degli|di|del|della|san|santa)[ ])?(?-i:[A-Z])[\w'’\-]*(?:[
+            ](?-i:[A-Z])[\w'’\-]*)?,?[ ]\d{1,4}[a-z]?(?:[ ](?:appartamento|piano|scala|interno|int\.)[
+            ]\w{1,4})*(?:,?[ ]\d{5},?[ ](?-i:[A-Z])[\w'’\-]*(?:[ ](?-i:[A-Z])[\w'’\-]*)?(?:[
+            ]\((?-i:[A-Z]{2})\))?)?
+          score: 0.6
+        - name: postcode5_city
+          regex: (?<=,[ ]?|\n|^)\d{5},?[ ](?-i:[A-ZÄÖÜÉÈ])[\w'’\-]+(?:[ ](?-i:[A-ZÄÖÜÉÈ])[\w'’\-]+)?(?:[
+            ]\((?-i:[A-Z]{2})\))?
+          score: 0.4
+        - name: postcode_city
+          regex: \b(?:CH-)?[1-9]\d{3}[ ](?:(?:st|ste)\.[ ](?-i:[A-ZÄÖÜÉ])[\w\-/]+|(?-i:[A-ZÄÖÜÉ])[\w\-/]+(?:[
+            ](?-i:[A-ZÄÖÜÉ])[\w\-/]+)?)
+          score: 0.5
+      supported_languages:
+        - {language: de, context: [adresse, wohnhaft, strasse, plz, ort, domicile,
+            indirizzo]}

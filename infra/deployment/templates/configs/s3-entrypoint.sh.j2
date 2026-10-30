@@ -14,7 +14,7 @@ SANDBOX_MIRROR_S3_SECRET_KEY=${SANDBOX_MIRROR_S3_SECRET_KEY}
 S3_PORT=${S3_PORT:-9000}
 S3_FILER=${S3_FILER:-seaweedfs-filer:8888}
 S3_BIND_IP=${S3_BIND_IP:-0.0.0.0}
-S3_ALLOW_EMPTY_FOLDER=${S3_ALLOW_EMPTY_FOLDER:-true}
+S3_ADVERTISED_IP=${S3_ADVERTISED_IP:?S3_ADVERTISED_IP must name the address the master hands out for this gateway}
 
 # Generate s3.json dynamically from environment variables
 cat > /tmp/s3.json <<EOF
@@ -68,7 +68,7 @@ CMD_ARGS="${CMD_ARGS} -filer=${S3_FILER}"
 CMD_ARGS="${CMD_ARGS} -port=${S3_PORT}"
 CMD_ARGS="${CMD_ARGS} -ip.bind=${S3_BIND_IP}"
 CMD_ARGS="${CMD_ARGS} -config=/tmp/s3.json"
-CMD_ARGS="${CMD_ARGS} -allowEmptyFolder=${S3_ALLOW_EMPTY_FOLDER}"
+CMD_ARGS="${CMD_ARGS} -ip=${S3_ADVERTISED_IP}"
 CMD_ARGS="${CMD_ARGS} -allowedOrigins=*"
 
 echo "Executing: weed s3 ${CMD_ARGS}"

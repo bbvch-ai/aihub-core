@@ -5,6 +5,8 @@ import IconSelector from '@core/components/FormKit/IconSelector.vue'
 import KnowledgeCollectionSelector from '@core/components/FormKit/KnowledgeCollectionSelector.vue'
 import KnowledgeDatabaseSelector from '@core/components/FormKit/KnowledgeDatabaseSelector.vue'
 import LocaleInput from '@core/components/FormKit/LocaleInput.vue'
+import ModelBoundNumber from '@core/components/FormKit/ModelBoundNumber.vue'
+import ModelGatedCheckbox from '@core/components/FormKit/ModelGatedCheckbox.vue'
 import ModelSelect from '@core/components/FormKit/ModelSelect.vue'
 import SecretFileInput from '@core/components/FormKit/SecretFileInput.vue'
 import TenantSelect from '@core/components/FormKit/TenantSelect.vue'
@@ -33,6 +35,14 @@ function localeRequired(node: FormKitNode): boolean {
 // never-touched field, whose value is still `null`, and a blank Name would pass on a fresh
 // create form: precisely the case this rule exists to catch.
 localeRequired.skipEmpty = false
+
+// FormKit's built-in `length` rule measures the `{de, en, fr, it}` object, not the text inside it.
+// Backend `LocaleInput` elements with a `max_length` emit this rule; the API enforces the same
+// limit on save (see packages/core/swiss_ai_hub/core/form/elements/locale_input.py).
+function localeMaxLength(node: FormKitNode, max: string): boolean {
+  const value = node.value as Record<string, string | null> | null | undefined
+  return Object.values(value ?? {}).every(text => !text || [...text.trim()].length <= Number(max))
+}
 
 // Same shape of problem for agentSelector: its value is always an `{agent_class, agent_id}` object,
 // so picking a class alone yields a non-empty object with a blank `agent_id` that `required` accepts.
@@ -71,6 +81,13 @@ const localeRequiredMessages = {
   it: 'Almeno una lingua deve essere compilata.',
 }
 
+const localeMaxLengthMessages: Record<typeof LOCALES[number], (max: string) => string> = {
+  de: max => `Maximal ${max} Zeichen pro Sprache.`,
+  en: max => `At most ${max} characters per language.`,
+  fr: max => `Au maximum ${max} caractères par langue.`,
+  it: max => `Al massimo ${max} caratteri per lingua.`,
+}
+
 const agentRefRequiredMessages = {
   de: 'Bitte wählen Sie einen Agententyp und ein Agentenprofil aus.',
   en: 'Please select both an agent type and an agent profile.',
@@ -86,11 +103,12 @@ const memberOfMessages = {
 }
 
 const config: DefaultConfigOptions = {
-  rules: { localeRequired, agentRefRequired, memberOf },
+  rules: { localeRequired, localeMaxLength, agentRefRequired, memberOf },
   messages: Object.fromEntries(
     LOCALES.map(locale => [locale, {
       validation: {
         localeRequired: localeRequiredMessages[locale],
+        localeMaxLength: ({ args }: { args: string[] }) => localeMaxLengthMessages[locale](args[0]!),
         agentRefRequired: agentRefRequiredMessages[locale],
         memberOf: memberOfMessages[locale],
       },
@@ -117,7 +135,13 @@ const config: DefaultConfigOptions = {
       props: ['options', 'placeholder'],
     }),
     localeInput: createInput(LocaleInput, {
-      props: ['inputType', 'rows', 'placeholder', 'allowTranslation'],
+      props: ['inputType', 'rows', 'placeholder', 'allowTranslation', 'maxLength'],
+    }),
+    modelBoundNumber: createInput(ModelBoundNumber, {
+      props: ['modelRef', 'maxFrom', 'defaultFrom', 'fallbackDefault', 'overrideLabel', 'fillFactor', 'min', 'max', 'step', 'minFractionDigits', 'maxFractionDigits', 'useGrouping'],
+    }),
+    modelGatedCheckbox: createInput(ModelGatedCheckbox, {
+      props: ['modelRef', 'requires'],
     }),
     modelSelect: createInput(ModelSelect, {
       props: ['mode', 'placeholder', 'filter', 'showClear'],

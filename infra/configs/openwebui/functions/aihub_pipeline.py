@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import re
+import secrets
 import time
 import urllib.parse
 from abc import ABC, abstractmethod
@@ -38,7 +39,6 @@ from urllib.parse import urlparse
 
 import httpx
 from pydantic import BaseModel, Field
-from bson import ObjectId
 from open_webui.models.chats import Chats
 from open_webui.models.files import Files
 from open_webui.models.users import Users
@@ -66,8 +66,8 @@ KNOWLEDGE_COLLECTION_TYPE = "collection"
 # a file forwarded again on a later turn is not copied into the agent bucket a second time.
 AGENT_UPLOADS_FILE_META_KEY = "aihub_agent_uploads"
 
-# A temporary chat stores no file in Open WebUI, so the pipe remembers the agent's upload of each attached text item,
-# by the id the browser gave it, in Open WebUI's Redis; for as long as the agent-files bucket keeps the upload.
+# A temporary chat's text item and a note have no file in Open WebUI, so the pipe remembers the agent's upload of each,
+# by the item's id (a note's with its version), in Open WebUI's Redis; for as long as the agent-files bucket keeps it.
 # A temporary chat's id comes from the browser, so the key also names the user the upload belongs to.
 AIHUB_TEMPORARY_UPLOAD_REDIS_KEY = "aihub:temp-upload:{user_id}:{thread_id}:{item_id}"
 AIHUB_TEMPORARY_UPLOAD_REDIS_TTL_SECONDS = 7 * 24 * 60 * 60
@@ -106,6 +106,7 @@ class BlockType(StrEnum):
     TEXT = "text"
     THINKING = "thinking"
     TOOL = "tool"
+    TABLE = "table"
 
 
 class ContentBlock(BaseModel, ABC):
@@ -226,6 +227,23 @@ class ToolBlock(ContentBlock):
 
     def is_complete(self) -> Annotated[bool, "Always true for tool blocks"]:
         """Tool blocks are always complete once created"""
+        return True
+
+
+class TableBlock(ContentBlock):
+    """A table an agent extracted while the model works on in its tool loop.
+
+    It stays where it arrived, between the tool calls and the answer, and is never folded into a thought: the model
+    only reads the table's summary and refers to it, so the table itself must reach the user as delivered.
+    """
+
+    type: Annotated[BlockType, "Block type"] = Field(default=BlockType.TABLE, frozen=True)
+    content: Annotated[str, "The table and its summary, as markdown"]
+
+    def to_html(self) -> Annotated[str, "The table as markdown"]:
+        return f"\n\n{self.content.strip()}\n\n"
+
+    def is_complete(self) -> Annotated[bool, "Always true for table blocks"]:
         return True
 
 
@@ -354,6 +372,13 @@ class MessageConverter:
         r"\n*^Download: [^\n]*\]\([^)\s]*/api/v1/files/[^)\s/]+/content\)[^\n]*$", re.MULTILINE
     )
     _FILE_LINK = re.compile(r"!?\[([^\]\n]*)\]\([^)\s]*/api/v1/files/[^)\s/]+/content\)")
+    # An extracted table an agent answered with, marked by core's ``ExtractedTableMarkup``. Every later message would
+    # carry it back to the agent, hundreds of rows on every event of the conversation, so it goes down to one line;
+    # the summary after it stays.
+    _EXTRACTED_TABLE = re.compile(
+        r'^\[aihub-extracted-table\]: # "rows=(\d+)"[ \t]*\r?$.*?^\[/aihub-extracted-table\]: #[ \t]*(?=\r?$)',
+        re.DOTALL | re.MULTILINE,
+    )
     # A removed block leaves the newlines that surrounded it; collapse the run so the text either side
     # does not end up glued into one line (nor separated by a growing gap).
     _EXCESS_BLANK_LINES = re.compile(r"\n{3,}")
@@ -369,7 +394,8 @@ class MessageConverter:
         markup into its prose, an agent writes a tool block as text instead of calling the tool, making up
         the result, and it links a new file to an earlier file's download.
         """
-        stripped = cls._DETAILS_BLOCK.sub("\n", text)
+        stripped = cls._EXTRACTED_TABLE.sub(r"[A table of \1 extracted rows was shown here.]", text)
+        stripped = cls._DETAILS_BLOCK.sub("\n", stripped)
         stripped = cls._ORPHAN_MARKUP.sub("", stripped)
         stripped = cls._DOWNLOAD_LINE.sub("", stripped)
         stripped = cls._FILE_LINK.sub(r"\1", stripped)
@@ -655,6 +681,12 @@ class StreamingStateManager:
             if isinstance(block, ToolBlock) and block.tool_id == tool_id:
                 self._content_blocks[index] = block.model_copy(update={"result": result, "closed": True})
 
+    def add_table_block(self, content: Annotated[str, "The table and its summary, as markdown"]) -> None:
+        """Pin an extracted table where the run has got to, behind the blocks so far"""
+        self._close_open_blocks()
+        self._finalize_current_block()
+        self._content_blocks.append(TableBlock(content=content))
+
     def append_to_current_block(self, content: Annotated[str, "Content to append"]) -> None:
         """Append content to current block if it supports it"""
         if self._current_block:
@@ -736,9 +768,10 @@ class StreamingStateManager:
         # answer above them keeps growing, and flushing later lands them in this same position.
         if self._deferred_thinking:
             blocks.append(self._deferred_thinking)
+        # A table's cells are document text, never citations or file links, so they are shown as extracted.
         return "".join(
             block.to_html()
-            if isinstance(block, ToolBlock)
+            if isinstance(block, (ToolBlock, TableBlock))
             else self.files.resolve(self.citations.resolve(block.to_html()))
             for block in blocks
         )
@@ -789,6 +822,17 @@ class EventContext:
     ) -> None:
         source_data = self.state_manager.citations.register(source_data, citation_id)
         await self.emitter({"type": "source", "data": source_data})
+
+    async def attach_file(
+        self, file: Annotated[dict[str, Any], "A file in our storage: bucket, key, filename and content_type"]
+    ) -> None:
+        """Attach a file the agent produced to the answer, so it downloads like an upload."""
+        attached = await self.attachments.attach(file, self.chat_id, self.message_id)
+        self.state_manager.files.register(attached)
+        # Open WebUI's server appends a `files` event to the message while its browser replaces the list with it,
+        # so the new file is persisted on its own and the browser then gets every file of the answer.
+        await self.emitter({"type": "files", "data": {"files": [attached]}})
+        await self.emitter({"type": "chat:message:files", "data": {"files": self.attachments.attached}})
 
 
 class EventHandler(ABC):
@@ -1178,11 +1222,11 @@ class GroundingNodesEventHandler(EventHandler):
         for node in event.get("grounding_nodes") or []:
             documents.setdefault(node.get("citation_id") or node.get("source", ""), []).append(node)
         for citation_id, nodes in documents.items():
-            await context.emit_source(self._build_source_data(nodes), citation_id)
+            await context.emit_source(self.source_data(nodes), citation_id)
         return True
 
     @staticmethod
-    def _build_source_data(
+    def source_data(
         nodes: Annotated[list[dict[str, Any]], "Nodes of one document"],
     ) -> Annotated[dict[str, Any], "Source data structure"]:
         first = nodes[0]
@@ -1277,6 +1321,120 @@ class AttachedFileEventHandler(EventHandler):
         return True
 
 
+class FetchWebPagesEventHandler(EventHandler):
+    """Shows that the agent is reading the pages the user linked. Every turn asks, so a turn that links nothing
+    stays silent, and so does one whose profile has web fetch off, since its links are left unread."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if web page fetch request"]:
+        return event.get("_event_name") == "FetchWebPagesEvent"
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Web page fetch request"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        if event.get("urls") and event.get("reading", True):
+            description = event.get("display_description", {}).get("en", "Reading the linked web pages")
+            status = {"action": None, "description": description, "done": False}
+            await context.emitter({"type": "status", "data": status})
+        return True
+
+
+class WebPagesFetchedEventHandler(EventHandler):
+    """Lists each page the agent read as a source, by its title and URL, and reports the links it could not read.
+
+    The answer itself explains why a page was not read; the status names the links, so the user sees it even when
+    the answer does not dwell on them.
+    """
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if web pages fetched event"]:
+        return event.get("_event_name") == "WebPagesFetchedEvent"
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Web pages fetched event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        pages = event.get("grounding_nodes") or []
+        failures = event.get("failures") or []
+        for page in pages:
+            await context.emit_source(GroundingNodesEventHandler.source_data([page]), page.get("citation_id"))
+        if pages:
+            description = f"Read {len(pages)} web page" + ("s" if len(pages) != 1 else "")
+            status = {"action": None, "description": description, "done": True}
+            await context.emitter({"type": "status", "data": status})
+        if failures:
+            unread = ", ".join(failure.get("url", "") for failure in failures)
+            await context.emitter(
+                {"type": "status", "data": {"description": f"Could not read: {unread}", "done": True, "error": True}}
+            )
+        if not pages and not failures:
+            await context.emitter({"type": "status", "data": {"action": None, "description": "", "done": True}})
+        return True
+
+
+class RecordsExtractedEventHandler(EventHandler):
+    """Attaches the whole table of an extraction to the answer, and shows the preview of one a model extracted.
+
+    The event carries only a preview; every row is in a CSV file in our storage, which becomes a file of the answer.
+    A blueprint that extracts on its own streams the preview as its answer, so the preview is only shown here for a
+    result answering a tool call, whose model reads just the summary. Open WebUI re-renders the whole message on every
+    event, so the preview shown inline is capped by size as well; its summary always follows it. An event from before
+    tables were stored as files holds its whole table and has no file: its table is shown capped the same way.
+    """
+
+    INLINE_ROWS = 100
+    INLINE_CHARACTERS = 64_000
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True for an extracted table"]:
+        return event.get("_event_name") == "RecordsExtractedEvent"
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Records extracted event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        if event.get("file"):
+            await context.attach_file(event["file"])
+        if event.get("tool_call_id") and event.get("table"):
+            context.state_manager.add_table_block(f"{self._inline(event)}\n\n{event.get('summary', '')}")
+            await context.emitter({"type": "replace", "data": {"content": context.state_manager.serialize_to_html()}})
+        return True
+
+    def _inline(self, event: Annotated[dict[str, Any], "Records extracted event"]) -> Annotated[str, "Table"]:
+        table = event["table"]
+        lines = table.split("\n")
+        rows = [line for line in lines if line.startswith("|")]
+        header, body = rows[:2], rows[2:]
+        kept = self._within_size(header, body)
+        total = max(event.get("total_row_count") or 0, len(body))
+        if len(kept) == total:
+            return table
+        cut = "\n".join([*header, *kept])
+        where = " The whole table is attached as a file." if event.get("file") else ""
+        note = f"_Showing the first {len(kept)} of {total} rows here.{where}_"
+        # The marker keeps the table's real row count: the condensed line later says how many rows were found.
+        return f"{lines[0]}\n\n{cut}\n\n{note}\n\n[/aihub-extracted-table]: #"
+
+    def _within_size(
+        self, header: Annotated[list[str], "Header and separator rows"], body: Annotated[list[str], "Table rows"]
+    ) -> Annotated[list[str], "The leading rows that fit inline"]:
+        kept: list[str] = []
+        size = sum(len(line) for line in header)
+        for row in body[: self.INLINE_ROWS]:
+            size += len(row) + 1
+            if size > self.INLINE_CHARACTERS:
+                break
+            kept.append(row)
+        return kept
+
+
 class SandboxFileDisplayedEventHandler(EventHandler):
     """Attaches a file the agent showed from the user's code sandbox to the answer, as an Open WebUI file."""
 
@@ -1290,12 +1448,7 @@ class SandboxFileDisplayedEventHandler(EventHandler):
         event: Annotated[dict[str, Any], "Sandbox file displayed event"],
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
-        attached = await context.attachments.attach(event, context.chat_id, context.message_id)
-        context.state_manager.files.register(attached)
-        # Open WebUI's server appends a `files` event to the message while its browser replaces the list with it,
-        # so the new file is persisted on its own and the browser then gets every file of the answer.
-        await context.emitter({"type": "files", "data": {"files": [attached]}})
-        await context.emitter({"type": "chat:message:files", "data": {"files": context.attachments.attached}})
+        await context.attach_file(event)
         return True
 
 
@@ -1564,7 +1717,10 @@ class EventProcessorFactory:
             RetrieverEventHandler(),
             GroundingNodesEventHandler(),
             AttachedFileEventHandler(),
+            FetchWebPagesEventHandler(),
+            WebPagesFetchedEventHandler(),
             SandboxFileDisplayedEventHandler(),
+            RecordsExtractedEventHandler(),
             RetrieveUserMemoryEventHandler(),
             RetrieveOrganizationMemoryEventHandler(),
             ConversationTitleEventHandler(),
@@ -1950,7 +2106,7 @@ class AgentFileAttachmentService:
 
     async def attach(
         self,
-        event: Annotated[dict[str, Any], "Sandbox file displayed event"],
+        file: Annotated[dict[str, Any], "A file in our storage: bucket, key, filename and content_type"],
         chat_id: Annotated[Optional[str], "Open WebUI chat id"],
         message_id: Annotated[Optional[str], "Open WebUI message id"],
     ) -> Annotated[dict[str, Any], "The file as a message file entry"]:
@@ -1959,10 +2115,10 @@ class AgentFileAttachmentService:
         from fastapi import UploadFile
         from open_webui.routers.files import upload_file_handler
 
-        content = await asyncio.to_thread(self._read, event["bucket"], event["key"])
+        content = await asyncio.to_thread(self._read, file["bucket"], file["key"])
         user = await Users.get_user_by_id(self._user_id)
         upload = UploadFile(
-            file=io.BytesIO(content), filename=event["filename"], headers={"content-type": event["content_type"]}
+            file=io.BytesIO(content), filename=file["filename"], headers={"content-type": file["content_type"]}
         )
         item = await upload_file_handler(
             self._request,
@@ -1977,8 +2133,8 @@ class AgentFileAttachmentService:
             "type": "file",
             "id": item.id,
             "url": self._request.app.url_path_for("get_file_content_by_id", id=item.id),
-            "name": event["filename"],
-            "content_type": event["content_type"],
+            "name": file["filename"],
+            "content_type": file["content_type"],
             "size": len(content),
         }
         self.attached.append(entry)
@@ -2032,9 +2188,30 @@ class KnowledgeReferenceService:
             return response.json()
 
 
+class WebReferenceService:
+    """Turns the web pages the user referenced with `#` into links the agent reads itself.
+
+    Open WebUI fetches such a page in the browser as soon as it is picked and sends its text along. The agent reads
+    the page through the platform's own browser instead, so the fetch is traced and checked, and only the URL is
+    forwarded: Open WebUI's copy of the text is dropped.
+    """
+
+    @staticmethod
+    def references_for_event(
+        files: Annotated[Optional[list[dict[str, Any]]], "Files of the current message branch from Open WebUI"],
+    ) -> Annotated[list[str], "The URLs of the referenced pages, once each"]:
+        return list(dict.fromkeys(file["url"] for file in files or [] if WebReferenceService.is_web_reference(file)))
+
+    @staticmethod
+    def is_web_reference(file: Annotated[dict[str, Any], "One file of the branch"]) -> Annotated[bool, "A web page"]:
+        """Attach Webpage sends `type: "text"` with the page's `url` and its text nested under `file.data`; a temporary
+        chat's upload is `type: "text"` too, but carries its text at the top level and no URL."""
+        return file.get("type") == "text" and file.get("content") is None and bool(file.get("url"))
+
+
 class TemporaryUploadScope(BaseModel):
-    """Where a temporary chat's uploads are remembered: Open WebUI keeps no file for its attachments, so without this
-    each turn would upload them again. Redis only saves that copy, so a Redis error never costs the turn its file."""
+    """Where uploads of items without an Open WebUI file are remembered, a temporary chat's text and notes: without
+    this each turn would upload them again. Redis only saves that copy, so a Redis error never costs the turn its file."""
 
     user_id: str
     thread_id: str
@@ -2066,18 +2243,18 @@ class TemporaryUploadScope(BaseModel):
 
 
 class AgentAttachment(BaseModel):
-    """One file of the turn on its way into the agent's bucket, with the upload it has there once known."""
+    """One file of the turn on its way into the agent's bucket, with the upload it has there once known.
+
+    An item Open WebUI keeps no file for, a temporary chat's text or a note, carries its `text` instead, and its upload
+    is remembered in Redis under `upload_key`."""
 
     source: dict[str, Any]
     filename: str
     content_type: str
     file_id: str | None = None
     owui_file: Any = None
-
-    @property
-    def is_temporary_text(self) -> bool:
-        """A temporary chat stores nothing in Open WebUI and sends the browser-extracted text instead."""
-        return self.owui_file is None
+    text: str | None = None
+    upload_key: str | None = None
 
     @property
     def owui_file_id(self) -> str | None:
@@ -2165,10 +2342,11 @@ class FileProcessingService:
         agent_key: Annotated[str, "Agent class/id the uploads belong to"],
         scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
     ) -> Annotated[list[AgentAttachment], "The turn's files, each with its known upload if any"]:
-        """A knowledge entry stands for one of our collections, which the agent searches itself, so it is no file."""
+        """A knowledge entry stands for one of our collections, which the agent searches itself, and a web page for a
+        link it reads itself, so neither is a file."""
         attachments: list[AgentAttachment] = []
         for file in files or []:
-            if file.get("type") == KNOWLEDGE_COLLECTION_TYPE:
+            if file.get("type") == KNOWLEDGE_COLLECTION_TYPE or WebReferenceService.is_web_reference(file):
                 continue
             try:
                 attachment = await self._resolve(file, agent_key, scope)
@@ -2186,7 +2364,7 @@ class FileProcessingService:
         scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
     ) -> Annotated[AgentAttachment | None, "The file with its known upload, or None when Open WebUI lacks it"]:
         """A temporary chat's text, which only carries content, is uploaded as a plain-text file for the agent to read
-        like any other attachment; a web or YouTube item is of the same type but carries none."""
+        like any other attachment, and a note as a markdown file."""
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
         if file.get("type") == "text" and file.get("content") is not None:
             name = file.get("name") or "attachment"
@@ -2195,7 +2373,11 @@ class FileProcessingService:
                 filename=name if name.lower().endswith(".txt") else f"{name}.txt",
                 content_type="text/plain",
                 file_id=await scope.recall(file.get("id")),
+                text=file["content"],
+                upload_key=file.get("id"),
             )
+        if file.get("type") == "note":
+            return await self._resolve_note(file, scope)
 
         file_obj = await Files.get_file_by_id(file.get("id", ""))
         if not file_obj:
@@ -2208,6 +2390,36 @@ class FileProcessingService:
             content_type=file_meta.get("content_type", "application/octet-stream"),
             file_id=(file_meta.get(AGENT_UPLOADS_FILE_META_KEY) or {}).get(agent_key),
             owui_file=file_obj,
+        )
+
+    @staticmethod
+    async def _resolve_note(
+        file: Annotated[dict[str, Any], "A note the user attached"],
+        scope: Annotated[TemporaryUploadScope, "Where the note's upload is remembered, for the user it belongs to"],
+    ) -> Annotated[AgentAttachment | None, "The note as markdown, or None when it is gone or the user may not read it"]:
+        """The pipe reads Open WebUI's database with its own rights, so it repeats Open WebUI's read check: only the
+        note's owner or a user it was shared with gets it. The upload is remembered per version of the note, so an edit
+        reaches the agent and an unchanged note is not copied again."""
+        from open_webui.models.access_grants import AccessGrants
+        from open_webui.models.notes import Notes
+
+        note = await Notes.get_note_by_id(file.get("id", ""))
+        if not note:
+            logger.warning(f"Could not retrieve note with ID: {file.get('id', '')}")
+            return None
+        if note.user_id != scope.user_id and not await AccessGrants.has_access(
+            user_id=scope.user_id, resource_type="note", resource_id=note.id, permission="read"
+        ):
+            logger.warning(f"User {scope.user_id} may not read note {note.id}")
+            return None
+        upload_key = f"note:{note.id}:{note.updated_at}"
+        return AgentAttachment(
+            source=file,
+            filename=f"{note.title or 'note'}.md",
+            content_type="text/markdown",
+            file_id=await scope.recall(upload_key),
+            text=((note.data or {}).get("content") or {}).get("md") or "",
+            upload_key=upload_key,
         )
 
     async def _upload_all(
@@ -2255,14 +2467,14 @@ class FileProcessingService:
         """Remembered so a later turn validates the upload instead of copying the file again; forgetting only costs
         that copy, so it never fails the turn."""
         try:
-            if not attachment.is_temporary_text:
+            if attachment.owui_file is not None:
                 known_uploads = (attachment.owui_file.meta or {}).get(AGENT_UPLOADS_FILE_META_KEY) or {}
                 await Files.update_file_metadata_by_id(
                     attachment.source.get("id", ""),
                     {AGENT_UPLOADS_FILE_META_KEY: {**known_uploads, agent_key: attachment.file_id}},
                 )
             elif attachment.file_id:
-                await scope.remember(attachment.source.get("id"), attachment.file_id)
+                await scope.remember(attachment.upload_key, attachment.file_id)
         except Exception as e:
             logger.warning(f"Could not remember the upload of {attachment.filename}: {e}")
 
@@ -2304,8 +2516,8 @@ class FileProcessingService:
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
     ) -> Annotated[str, "The agent file id of the upload"]:
-        if attachment.is_temporary_text:
-            content = attachment.source["content"].encode()
+        if attachment.text is not None:
+            content = attachment.text.encode()
         else:
             content = await asyncio.to_thread(self._read_file_content, attachment.owui_file)
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -2485,9 +2697,9 @@ class ResponseMergeService:
         salt: Annotated[str, "Salt mixed into the hash"] = "",
     ) -> Annotated[str, "ObjectId string"]:
         if not context_id:
-            return str(ObjectId())
+            return secrets.token_hex(12)
         hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
-        return str(ObjectId(hashed)).lower()
+        return hashed.hex()
 
     @staticmethod
     def _error_message(body_bytes: Annotated[bytes, "Error response body"]) -> Annotated[str, "Human-readable cause"]:
@@ -2515,7 +2727,7 @@ class ResponseMergeService:
         reads the delta.
         """
         chunk = {
-            "id": str(ObjectId()),
+            "id": secrets.token_hex(12),
             "object": "chat.completion.chunk",
             "created": int(time.time()),
             "model": self._model_name or "unknown",
@@ -2697,9 +2909,9 @@ class Pipe:
     ) -> Annotated[str, "ObjectId string"]:
         """Convert string to ObjectId format"""
         if not context_id:
-            return str(ObjectId())
+            return secrets.token_hex(12)
         hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
-        return str(ObjectId(hashed)).lower()
+        return hashed.hex()
 
     @staticmethod
     async def _merge_agent_class_tag(
@@ -2842,6 +3054,7 @@ class Pipe:
                 knowledge_references = await self._knowledge_reference_service.references_for_event(
                     __files__, headers
                 )
+                web_references = WebReferenceService.references_for_event(__files__)
 
                 # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
                 open_hitl = await self._check_open_chat_hitl(thread_id, headers)
@@ -2876,6 +3089,8 @@ class Pipe:
                         logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
                     if knowledge_references:
                         event_payload["knowledge_references"] = knowledge_references
+                    if web_references:
+                        event_payload["web_references"] = web_references
 
                 # Emit initial status
                 await __event_emitter__(

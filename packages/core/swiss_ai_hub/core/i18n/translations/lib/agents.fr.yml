@@ -15,6 +15,12 @@ config:
   icon:
     label: Icône
     help: Sélectionnez une icône prédéfinie ou entrez un nom d'icône Iconify
+  anonymise:
+    label: Anonymiser les données personnelles
+    help: Remplace les noms, adresses, IBAN, numéros AVS et autres données personnelles
+      par des espaces réservés avant qu'une requête de ce profil n'atteigne un modèle
+      de langage, même si le modèle tourne dans ce déploiement. Les réponses affichent
+      toujours les valeurs d'origine.
   cron:
     label: Planification
     help: Quand ce profil s'exécute automatiquement. Laisser vide pour désactiver

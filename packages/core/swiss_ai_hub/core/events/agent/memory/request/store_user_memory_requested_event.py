@@ -61,6 +61,13 @@ class StoreUserMemoryRequestedEvent(StartEvent):
             "that profile configured. None means the platform default."
         ),
     ] = None
+    origin_anonymise: Annotated[
+        bool,
+        Field(
+            description="Whether the originating run anonymised its LLM calls. The write's extraction calls are "
+            "calls of that run, so the writer anonymises them too."
+        ),
+    ] = False
 
     @property
     def user_query(self) -> str:

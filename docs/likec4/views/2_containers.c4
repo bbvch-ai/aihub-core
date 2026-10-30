@@ -92,7 +92,7 @@ views {
     description "Auxiliary services consumed mostly by OpenWebUI and operators. Open Terminal is the code-execution sandbox (plain LLM models). Attu provides a Milvus admin surface."
 
     include
-      hub.searxng, hub.open_terminal, hub.playwright, hub.attu,
+      hub.searxng, hub.open_terminal, hub.playwright, hub.browser_proxy, hub.attu,
       hub.openwebui, hub.milvus, hub.oidc_middleware
   }
 }

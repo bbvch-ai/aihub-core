@@ -26,7 +26,7 @@ class GatheringToolLoopAgent(Agent):
     async def contextualize_step(
         self, event: UserMessageEvent, config: ToolLoopPlaygroundConfig
     ) -> Conversation.ContextualizeRequest:
-        history = limit_chat_history(chat_history=event.messages, number_of_input_tokens=config.number_of_input_tokens)
+        history = limit_chat_history(chat_history=event.messages, number_of_input_tokens=config.input_budget)
         return Conversation.contextualize(history=history, message=event)
 
     @step()

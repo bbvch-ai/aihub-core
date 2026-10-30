@@ -1,0 +1,107 @@
+---
+steps:
+  plan:
+    name: Plan the Table
+    description: Resolves the selected documents and designs the table's columns
+  extract:
+    name: Extract from a Document
+    description: Reads one document and extracts its rows
+  assemble:
+    name: Assemble the Table
+    description: Joins the rows of every document into one table
+  extract_as_tool:
+    name: Extract a Table as a Tool
+    description: Runs the table extraction the model chose
+  answer_tool_call:
+    name: Return the Table to the Model
+    description: Hands the table's summary back to the model's tool loop
+config:
+  extraction_model_name:
+    label: Extraction Model
+    help: The model that reads each document and extracts its rows. Empty uses the
+      main model.
+  max_documents_total:
+    label: Most Documents per Table
+    help: 'Above this many matching documents nothing is extracted: the user is shown
+      a sample and asked to narrow the request. Below it, one answer extracts every
+      document.'
+  max_document_chars:
+    label: Longest Fully Read Document (Characters)
+    help: Longer documents are read only in their relevant parts, and their rows are
+      marked as partly read.
+  max_parallel_extractions:
+    label: Model Calls at Once
+    help: How many extraction calls one agent instance makes at the same time. Lower
+      it when the model gateway is busy.
+tools:
+  extract:
+    label: Extract a Table
+    approval: 'Extract a table with these columns from knowledge documents: {fields}'
+    description: Extracts one table from many knowledge documents, one row per record
+      found, each row naming its file. Use it when the user wants records collected
+      across documents, such as every hardware position on the 2025 invoices of a
+      supplier; not for a question one document or the knowledge search answers. First
+      find the documents with the listing and search tools and check them with select_knowledge_documents;
+      then call this with the same conditions. The user sees the table directly and
+      can download all of it; you get its summary. When more documents match than
+      one answer extracts unasked, the user gets a sample and decides; extract them
+      all only when they agree, with confirm_sample set to true.
+  select:
+    label: Select Documents
+    approval: 'Select knowledge documents for a table with these columns: {fields}'
+table:
+  match: Match
+  match_yes: 'yes'
+  match_unsure: unsure, please check
+  partly_read: (partly read)
+  collection: Collection
+  path: Path
+  filename: File
+summary:
+  no_rows: '**No rows from:** %{files}'
+  unsure: '**Unsure:** %{count} rows may not meet the condition; they are kept and
+    marked in the Match column so you can check them.'
+  partly_read: '**Partly read (rows may be missing):** %{files}'
+  counts: '**Files:** %{files} · **Rows found:** %{rows} · **Files that failed:**
+    %{failed}'
+  sample_counts: '**Sample:** %{files} of %{total} matching documents · **Rows found:**
+    %{rows}'
+  sample_counts_ceiling: '**Sample:** %{files} of more than %{total} matching documents
+    · **Rows found:** %{rows}'
+  criteria: '**Selected:** %{criteria}'
+  listed_more: and %{count} more
+  failed_files: '**Files that could not be extracted:**'
+  failed_more: …and %{count} more files that could not be extracted.
+  no_documents: No document matches the selection, so nothing was extracted.
+  not_started: 'The table could not be extracted: %{reason}'
+  too_broad: '**%{total} documents match.** Extracting all of them takes about %{minutes}
+    minutes; above are the rows of a sample of them.'
+  too_broad_ceiling: '**More than %{total} documents match.**'
+  options_narrow: 'Please narrow the request, for example to one of the folders or
+    years above: this many documents are not extracted part by part.'
+  scope_changed: The collections the sample was taken from are no longer all available
+    to this conversation, so nothing was extracted. Ask again to extract from what
+    is available now.
+  preview: '**Shown here:** the first %{shown} of %{rows} rows; the file holds all
+    of them.'
+  every_row: every row
+  interpretation: '**Columns:** %{columns} · **Rows kept:** %{kept}'
+  options_confirm: Reply *yes* to extract all %{total} documents in one answer, or
+    narrow the request, for example to one of the folders or years above.
+  nothing_awaiting: There is no sampled table extraction to go on with in this conversation.
+    Please ask for the table again.
+facets:
+  folders: '**By folder:** %{entries}'
+  years: '**By year in the path:** %{entries}'
+  collections: '**By collection:** %{entries}'
+  first: These are the folders and years of the first %{total} documents by path;
+    there are more.
+progress:
+  partial: '%{path} is long: reading only its relevant parts.'
+  plan: Extracting %{fields} from %{files} documents, about %{minutes} minutes (%{criteria}).
+  sample: '%{total} documents match; extracting a sample from %{files} of them (%{fields}).'
+  extracted: '%{done} of %{files} · %{path}: %{rows} rows'
+  failed: '%{done} of %{files} · %{path}: failed, %{reason}'
+  reading: Reading %{path}, a long document.
+  still_reading: Still reading %{path} (%{minutes} min).
+  extracted_rows: '%{done} of %{files} · %{path}: %{rows} rows — %{first}'

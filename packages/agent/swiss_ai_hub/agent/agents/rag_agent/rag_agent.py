@@ -31,6 +31,7 @@ from swiss_ai_hub.agent.capabilities.attached_files.attached_files import Attach
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
+from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -128,19 +129,26 @@ class RAGAgent(Agent):
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
-    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]:
-        """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's and may
-        reference collections to search on top of the configured ones."""
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest | WebFetch.FetchRequest]:
+        """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's, may
+        reference collections to search on top of the configured ones, and may link pages to read."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
         references = start_event.knowledge_references if isinstance(start_event, UserMessageEvent) else []
+        links = WebFetch.links_of(start_event) if isinstance(start_event, UserMessageEvent) else []
         cite_sources = CitationPolicy.cites_sources(start_event)
         reserve = agent_config.retrieved_context_reserve() + agent_config.context_sufficient_guard_reserve(t, ctx.query)
         if references:
             reserve += agent_config.knowledge.context_reserve()
+        reserve += agent_config.web_fetch_reserve(links)
         files = AttachedFiles.read(
             start_event.files, ctx.history, ctx.query, reserve_tokens=reserve, cite_sources=cite_sources
         )
-        return [Memory.recall(ctx.query, namespaces), files, Knowledge.search(references, ctx.query, cite_sources)]
+        return [
+            Memory.recall(ctx.query, namespaces),
+            files,
+            Knowledge.search(references, ctx.query, cite_sources),
+            WebFetch.fetch(links, agent_config, cite_sources),
+        ]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.name"),
@@ -255,11 +263,12 @@ class RAGAgent(Agent):
         memories: Memory.Recalled,
         files: AttachedFiles.Contents,
         knowledge: Knowledge.Searched,
+        pages: WebFetch.Fetched,
         run_context: RunContext,
         user: UserIdentity | None = None,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
         """The verdict weighs the retrieved documents against everything else the answer will see: a recalled
-        memory, an attached file or a referenced collection may already answer the question."""
+        memory, an attached file, a referenced collection or a linked page may already answer the question."""
         return await do_context_sufficient_guard(
             ctx.query,
             event.context_message,
@@ -270,7 +279,7 @@ class RAGAgent(Agent):
             displayer,
             t,
             history=ctx.history,
-            blocks=[*memories.blocks, knowledge.block, files.block],
+            blocks=[*memories.blocks, knowledge.block, pages.block, files.block],
             conversation=agent_config,
             user=user,
         )
@@ -306,6 +315,7 @@ class RAGAgent(Agent):
         memories: Memory.Recalled,
         files: AttachedFiles.Contents,
         knowledge: Knowledge.Searched,
+        pages: WebFetch.Fetched,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
@@ -319,7 +329,7 @@ class RAGAgent(Agent):
             None if accepted else outcome,
             do_context_block(documents.context_message) if accepted and documents else [],
             ctx,
-            (memories, files, knowledge),
+            (memories, files, knowledge, pages),
             start_event,
             agent_config.system_prompt,
             guard_config.context_insufficient_prompt,

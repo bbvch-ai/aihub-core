@@ -15,3 +15,6 @@ translation:
   fr: Französisch
   it: Italienisch
   en: Englisch
+model_limits:
+  above_maximum: '%{field}: Für das Modell %{model} sind höchstens %{maximum} erlaubt.'
+  capability_missing: '%{field}: Das Modell %{model} unterstützt dies nicht.'

@@ -342,6 +342,37 @@ event:
     error: Fehler
     stop: Endet mit
     targetAgent: Gedächtnisschreiber
+    links: Links
+    webReferences: Referenzierte Webseiten
+    pagesRead: Gelesene Seiten
+    notRead: Nicht gelesen
+    webFetchFailure:
+      malformed_url: Ungültiger Link
+      unsupported_url: Nicht unterstützter Link
+      blocked_host: Gesperrte Adresse
+      not_found: Nicht gefunden
+      access_denied: Zugriff verweigert
+      http_error: Serverfehler
+      timeout: Zeitüberschreitung
+      unsupported_content: Keine Webseite
+      empty_content: Kein lesbarer Inhalt
+      url_limit_reached: Über dem Link-Limit
+  extraction:
+    fields: Spalten
+    instructions: Zu behaltende Zeilen
+    criteria: Ausgewählte Dokumente
+    collections: Sammlungen
+    notices: Hinweise
+    documentIds: '{count} gewählte Dokumente'
+    files: Dateien
+    failedFiles: Fehlgeschlagene Dateien
+    rows: Gezeigte / gefundene Zeilen
+    truncated: Gekürzt
+    confirmed: Extrahiert alle vom Benutzer bestätigten Dokumente
+    awaitingConfirmation: Stichprobe wartet auf die Freigabe des Benutzers
+    previewRows: '{shown} von {total} Zeilen angezeigt'
+    download: Ganze Tabelle herunterladen (CSV)
+    downloadFailed: Die Tabelle konnte nicht heruntergeladen werden
   toolLoop:
     loop: Werkzeugsatz
     mode: Modus
@@ -972,6 +1003,17 @@ form:
       nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie
       sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
+  modelBound:
+    providerDefault: Anbieter-Standard
+    overrideRequired: Geben Sie einen Wert ein, oder deaktivieren Sie die Überschreibung,
+      um den Standard zu verwenden.
+    defaultPlaceholder: 'Modellstandard: {value}'
+    maximumHint: Höchstens {maximum} für {model}.
+    maximumHintWithFill: 'Höchstens {maximum} für {model}: {percent} der {modelMaximum}
+      Tokens des Modells, als Reserve für Abweichungen bei der Token-Zählung.'
+    aboveMaximum: Für {model} sind höchstens {maximum} erlaubt.
+  modelGated:
+    unavailable: '{model} unterstützt dies nicht.'
   cron:
     errors:
       required: Jede Position ist erforderlich — eine leere ergibt keinen gültigen
@@ -1002,6 +1044,8 @@ lib:
       angeboten werden.
     empty: Der gewählte Agent ist für keine Sammlung konfiguriert.
     unavailable: Gespeichert, wird aber vom gewählten Agenten nicht abgerufen
+  knowledgeDatabases:
+    unavailable: '{name} (gelöscht oder für Sie nicht sichtbar)'
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen

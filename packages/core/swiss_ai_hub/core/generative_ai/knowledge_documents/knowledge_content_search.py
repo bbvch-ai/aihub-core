@@ -44,7 +44,8 @@ class KnowledgeContentSearch:
 
     Callers pass the collections the run may read, and the search trusts that list exactly as `KnowledgeDocumentReader`
     does: it must be the agent's configured collections narrowed to those the asking user may read, never a model's
-    tool arguments. The query, the regex flag, the glob and the offset are safe to take from a model.
+    tool arguments. The query, the regex flag, the globs and the offset are safe to take from a model; a caller that
+    restricts a model to part of a collection passes its own glob alongside the model's, so the model can only narrow.
     """
 
     @staticmethod
@@ -55,7 +56,9 @@ class KnowledgeContentSearch:
         *,
         is_regex: Annotated[bool, "Whether `query` is a regular expression rather than literal text"] = False,
         case_sensitive: Annotated[bool, "Whether letter case must match; by default it is ignored"] = False,
-        path_glob: Annotated[str | None, "Only documents whose path matches this glob, as in `matching_glob`"] = None,
+        path_globs: Annotated[
+            list[str] | None, "Only documents whose path matches every one of these globs, as in `matching_glob`"
+        ] = None,
         offset: Annotated[int, "Position of the first document to return, from a previous `next_offset`"] = 0,
         limits: Annotated[KnowledgeContentSearchLimits | None, "Page size, line caps and time budget"] = None,
     ) -> KnowledgeContentSearchResult:
@@ -65,10 +68,10 @@ class KnowledgeContentSearch:
         if offset < 0:
             raise ValueError(f"offset must not be negative, got {offset}")
         pattern = KnowledgeContentPattern(query, is_regex=is_regex, case_sensitive=case_sensitive)
-        glob = None if path_glob is None else PathGlob(path_glob)
+        globs = [PathGlob(path_glob) for path_glob in path_globs or []]
         resolved = await KnowledgeCollectionResolver.resolve_all(collections)
         try:
-            candidates = await KnowledgeContentSearch._candidates(resolved, pattern, glob, budget)
+            candidates = await KnowledgeContentSearch._candidates(resolved, pattern, globs, budget)
             matches, next_index, dropped = await KnowledgeContentSearch._page(
                 candidates, offset, pattern, limits, budget
             )
@@ -85,6 +88,38 @@ class KnowledgeContentSearch:
         )
 
     @staticmethod
+    @trace_fn
+    async def matching_ids(
+        collections: Annotated[list[BucketNamespacePair], "Collections the caller may read; nothing else is searched"],
+        query: Annotated[str, "Term to find, or a regular expression when `is_regex` is set"],
+        budget: Annotated[KnowledgeSearchBudget, "Deadline shared with the caller's other queries"],
+        *,
+        is_regex: Annotated[bool, "Whether `query` is a regular expression rather than literal text"] = False,
+        path_globs: Annotated[list[str] | None, "Only documents whose path matches every one of these globs"] = None,
+    ) -> set[tuple[str, str, str]]:
+        """Bucket, collection and id of every document whose text the database matches, in one scan and without
+        loading any text, for callers that need to know which documents match rather than where.
+
+        The lines are not checked, so a document the database's engine matches but Python's would not (rare, see
+        `search`) is counted; a selection may include it, and its extraction then finds nothing.
+        """
+        pattern = KnowledgeContentPattern(query, is_regex=is_regex, case_sensitive=False)
+        globs = [PathGlob(path_glob) for path_glob in path_globs or []]
+        resolved = await KnowledgeCollectionResolver.resolve_all(collections)
+        try:
+            candidates = await KnowledgeContentSearch._candidates(resolved, pattern, globs, budget)
+        except ExecutionTimeout as execution_timeout:
+            raise budget.exhausted() from execution_timeout
+        except OperationFailure as operation_failure:
+            if operation_failure.code != _PCRE_REJECTED:
+                raise
+            raise KnowledgeContentSearch._rejected(query, operation_failure) from operation_failure
+        return {
+            (collection.collection.bucket_name, collection.collection.namespace_name, document_id)
+            for collection, document_id in candidates
+        }
+
+    @staticmethod
     def _rejected(query: str, operation_failure: OperationFailure) -> InvalidSearchPatternError:
         reason = (operation_failure.details or {}).get("errmsg", "")
         hint = (
@@ -98,10 +133,10 @@ class KnowledgeContentSearch:
     async def _candidates(
         resolved: list[ResolvedKnowledgeCollection],
         pattern: KnowledgeContentPattern,
-        glob: PathGlob | None,
+        globs: list[PathGlob],
         budget: KnowledgeSearchBudget,
     ) -> list[_Candidate]:
-        """Ids of the documents the database matched, collection by collection; the source is loaded only for a glob,
+        """Ids of the documents the database matched, collection by collection; the source is loaded only for globs,
         since every extra field read costs a decompression of the whole row."""
         per_collection = await asyncio.gather(
             *(
@@ -112,7 +147,7 @@ class KnowledgeContentSearch:
                     pattern.database_pattern,
                     pattern.database_options,
                     budget.remaining_ms(),
-                    glob is not None,
+                    bool(globs),
                 )
                 for collection in resolved
             )
@@ -125,7 +160,7 @@ class KnowledgeContentSearch:
             (collection, str(ref_doc.id))
             for collection, ref_docs in ordered
             for ref_doc in ref_docs
-            if glob is None or glob.matches(collection.relative_path(ref_doc.data.metadata.source))
+            if all(glob.matches(collection.relative_path(ref_doc.data.metadata.source)) for glob in globs)
         ]
 
     @staticmethod

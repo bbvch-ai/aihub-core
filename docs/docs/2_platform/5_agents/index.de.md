@@ -1,6 +1,6 @@
 ---
 title: Agents
-source_sha: bde5d4ed5ba5f9fa2ab68f650248091c20a1f6136a92954857241233bd7246b8
+source_sha: 1f5cdee02feea71183c8c9d54a4ac5634a3799bbfac0bf7af7deac632bafca34
 ---
 
 # Agents
@@ -11,7 +11,9 @@ oder Geschäftsprozesse abzuschliessen.
 
 Agents können interaktiv (beantworten Benutzerfragen per Chat) oder autonom (führen Aufgaben automatisch nach einem
 Zeitplan oder ereignisgesteuert aus) sein. Der strukturierte Workflow-Ansatz macht Agents vorhersehbar, transparent und
-auditierbar, unabhängig von ihrer Betriebsweise.
+auditierbar, unabhängig von ihrer Betriebsweise. Wo eine Aufgabe es erfordert, lässt der Universal Agent das Modell
+unter den Werkzeugen wählen, die Sie aktiviert haben, weiterhin innerhalb der Grenzen, Berechtigungen und Freigaben, die
+Sie festlegen.
 
 ## Was ist ein Agent?
 
@@ -27,6 +29,75 @@ Beispiele:
 
 Agents kombinieren grosse Sprachmodelle (LLMs) für das Verständnis natürlicher Sprache mit strukturierten Prozessen für
 einen zuverlässigen Betrieb.
+
+## Das Standard-Blueprint-Set
+
+Die folgenden Seiten dokumentieren jeden Agent-Blueprint, den die Plattform mitliefert. Ein Mandant erhält nicht alle
+davon.
+
+Drei werden einem neuen Mandanten standardmässig freigegeben:
+
+- **Anweisungsbasierter Assistent** — folgt Anweisungen in Klartext, die Sie schreiben
+- **Belehrbarer Assistent** — lernt aus Beispielen, welche Form der Antwort Sie wünschen
+- **Dokumenten-Intelligenz-Assistent** — antwortet aus Ihren Wissensdatenbanken und nennt seine Quellen
+
+Der Universal Agent ist das eine Profil, das ein Administrator einmal für offene Aufgaben konfiguriert: Das Modell
+entscheidet pro Nachricht, ob es Wissen durchsucht, die angehängten Dateien des Benutzers liest, sich an Gespeichertes
+erinnert oder ein anderes aktiviertes Werkzeug nutzt. Der Wissensextraktions-Agent sammelt Datensätze aus vielen
+Dokumenten in einer Tabelle, jede Zeile mit ihrer Datei.
+
+Die übrigen sind hier dokumentiert, weil sie gebaut, unterstützt und einsatzbereit sind — ein Mandant sieht einen davon
+aber erst, nachdem ein Sysadmin ihn freigegeben hat. So bleibt der Katalog eines neuen Mandanten klein genug für eine
+Auswahl, ohne einem Mandanten etwas wegzunehmen, der bereits auf einen Agenten ausserhalb des Sets setzt. Eine Freigabe
+wirkt sofort, ohne erneutes Deployment; siehe [Zugriffskontrolle](../16_multi_tenancy/4_access_control/).
+
+## Was jeder Chat-Agent kann
+
+Die Konversations-Blueprints, die auf den gemeinsamen Fähigkeiten aufbauen (Anweisungsbasierter, Belehrbarer und
+Dokumenten-Intelligenz-Assistent, Agent für Unternehmenswissen, MCP Tool Agent, Universal Agent und
+Webseiten-Assistent), verhalten sich in der Unterhaltung gleich:
+
+- **Angehängte Dateien.** Im Chat angehängte Dateien liest der Agent selbst und führt sie als Quellen auf. Eine lange
+  Datei wird auf die Abschnitte gekürzt, die für die Frage wichtig sind, und die Antwort sagt das.
+- **Wissensverweise.** Die Eingabe von `#` in Open WebUI verweist den Agenten auf eine der Wissenssammlungen des
+  Unternehmens, beschränkt auf das, was der Benutzer lesen darf.
+- **Verlinkte Webseiten.** Wo das Profil **Read Linked Web Pages** einschaltet, liest der Agent die Seiten, die eine
+  Nachricht verlinkt oder mit `#` anhängt, zitiert sie und nennt die, die er nicht lesen konnte. Verfügbar beim
+  Anweisungsbasierten Assistenten, beim Dokumenten-Intelligenz-Assistenten, beim Agent für Unternehmenswissen und beim
+  Universal Agent, im Webseiten-Assistenten immer eingeschaltet; siehe
+  [Verlinkte Webseiten](../10_chat_ui/15_linked_web_pages/).
+- **Inline-Zitate.** Aussagen verlinken auf das Dokument, aus dem sie stammen, als nummerierte Chips in der Antwort.
+- **Gedächtnis.** Was der Agent über den Benutzer und die Organisation weiss, fliesst in die Anweisungen des Modells
+  ein.
+- **Chat-Umschalter.** Ein Chat-Umschalter ist eine Anfrage an den Agenten, der sie als nachverfolgte, kostenzugeordnete
+  Schritte ausführt. Ein Agent zeigt einen Umschalter nur, wenn er ihn bedienen kann; heute sind das Code Interpreter
+  und My Files beim Universal Agent.
+- **Ablehnungen statt Fehler.** Eine Nachricht, die grösser ist als das Kontextfenster des Modells, oder eine Anfrage
+  ausserhalb des Aufgabenbereichs eines Belehrbaren Assistenten wird im Chat mit einer kurzen Erklärung statt mit einem
+  Fehler beantwortet.
+
+Wie dies in Open WebUI erscheint, ist unter [Integrationsarchitektur](../10_chat_ui/11_integration_architecture/)
+beschrieben; die Einstellungen finden Sie unter
+[Blueprints & Profile](2_blueprints_and_profiles/#gemeinsame-chat-einstellungen).
+
+## Werkzeuge, die das Modell wählt
+
+Ein fester Workflow ist der Standard, weil er vorhersehbar ist. Manche Aufgaben lassen sich nicht als feste Abfolge
+schreiben, daher kann ein Agent dem Modell auch eine Reihe von Werkzeugen übergeben und es pro Nachricht entscheiden
+lassen, welche es verwendet, sie ausführen und erneut entscheiden, bis es antworten kann. Das ist die Werkzeugschleife,
+und so arbeitet der Universal Agent.
+
+Die Schleife bleibt innerhalb von Kontrollen, die ein Administrator pro Profil festlegt:
+
+- **Nur Angebotenes wird ausgeführt.** Ein Werkzeug wird nur angeboten, wenn das Profil es aktiviert, der Zugriff des
+  Benutzers es erlaubt und, bei Code Interpreter oder My Files, der Chat-Umschalter eingeschaltet ist. Ein Aufruf von
+  etwas anderem wird abgelehnt.
+- **Freigaben.** Ein Werkzeug kann den Benutzer zuerst um Bestätigung bitten: bei jedem Aufruf, einmal pro Antwort oder
+  einmal pro Unterhaltung. Ein abgelehntes Werkzeug wird für diese Antwort nicht erneut angefragt.
+- **Grenzen.** Das Profil begrenzt die Anzahl der Entscheidungen und Werkzeugaufrufe. An der Grenze antwortet das Modell
+  mit dem, was es hat, und der Chat zeigt an, dass es vorzeitig aufgehört hat.
+- **Transparenz.** Jeder Aufruf und jedes Ergebnis erscheint im Chat und in der Event-Historie, sodass der Weg zu einer
+  Antwort wie jeder Workflow auditiert werden kann.
 
 ## Agenten-"Training"
 

@@ -65,6 +65,7 @@ def _locale_handler() -> MagicMock:
 def _llm_config_returning(apredict: AsyncMock) -> MagicMock:
     llm = MagicMock()
     llm.apredict = apredict
+    llm.aclose = AsyncMock()
     llm_config = MagicMock()
     llm_config.to_llama_index.return_value = (llm, None)
     return llm_config
@@ -95,6 +96,26 @@ async def _translate(source: LocaleString, apredict: AsyncMock, source_locale: s
 
 
 class TestTranslate:
+    @pytest.mark.asyncio
+    async def test_the_llm_client_is_closed_after_translating(self):
+        """Left to the garbage collector, its delayed close can hang another call's connect (aihub-core-private#349)."""
+        llm_config = _llm_config_returning(AsyncMock(return_value="<translation>x</translation>"))
+
+        with (
+            patch(f"{_SERVICE_MODULE}.PromptTemplate"),
+            patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
+        ):
+            await TranslationService.translate(
+                locale_string=LocaleString(en="Hello"),
+                llm_config=llm_config,
+                t=_locale_handler(),
+                user=MagicMock(),
+                source_locale="en",
+            )
+
+        llm, _ = llm_config.to_llama_index.return_value
+        llm.aclose.assert_awaited_once()
+
     @pytest.mark.asyncio
     async def test_translates_every_target_locale_in_its_own_call(self):
         apredict = _per_locale_responses(
@@ -222,12 +243,12 @@ class TestTranslateFromRequest:
         with (
             patch(f"{_SERVICE_MODULE}.PromptTemplate"),
             patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
-            patch(f"{_SERVICE_MODULE}.LLMConfig", return_value=llm_config) as llm_config_class,
+            patch(f"{_SERVICE_MODULE}.LLMConfig.deterministic", return_value=llm_config) as deterministic_config,
         ):
             response = await TranslationService.translate_from_request(
                 TranslationRequest(text=LocaleString(en="Hello")), _locale_handler(), MagicMock()
             )
 
-        llm_config_class.assert_called_once_with(model_name=TranslationService.DEFAULT_MODEL)
+        deterministic_config.assert_called_once_with(TranslationService.DEFAULT_MODEL)
         assert response.translated.model_dump() == {"en": "Hello", "de": "Hallo", "fr": None, "it": "Ciao"}
         assert response.failed_locales == ["fr"]

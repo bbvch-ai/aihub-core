@@ -44,11 +44,14 @@ from swiss_ai_hub.agent.agents.email_classification_agent.reply_drafting import 
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.imap.draft_prompt_builder import DraftPromptBuilder
+from swiss_ai_hub.agent.imap.inbox_position import InboxPosition
+from swiss_ai_hub.agent.imap.inbox_watermark import InboxWatermark
 from swiss_ai_hub.agent.imap.mailbox_lease_lost_error import MailboxLeaseLostError
 from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
 from swiss_ai_hub.agent.imap.step_functions import (
     do_fetch_and_archive,
     do_list_unread,
+    do_list_unread_above,
 )
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -90,8 +93,10 @@ class EmailClassificationAgent(Agent):
     `cron` field on the `AgentConfig` base is what `CronScheduler` reads to decide when a profile fires. Scheduled runs
     carry no user, which costs this agent nothing — it reads its mailbox and its tenant from its own profile.
 
-    Mail the model is not confident about is never forced into a bucket; it goes to the configured fallback folder.
-    Filing is also what makes a re-run safe: every message leaves the inbox, so the next unread listing cannot see it.
+    Mail the model is not confident about is never forced into a bucket; it goes to the configured fallback folder, or
+    stays unread in the inbox when the admin keeps uncategorised mail there. Filing is also what makes a re-run safe:
+    every message leaves the inbox, so the next unread listing cannot see it — and mail kept in the inbox sits below the
+    inbox watermark, which the next listing starts above.
     Filing is only the dedup *between* runs, though: a message is unread right up until it moves, so two runs
     overlapping on a slow mailbox would both classify and file the same batch. `MailboxRunLease` is what stops that,
     and unattended scheduling is exactly what makes the overlap reachable.
@@ -115,6 +120,7 @@ class EmailClassificationAgent(Agent):
         self,
         _event: ClassifyMailStartEvent | CronStartEvent,
         imap_config: ImapClientConfig,
+        classification: EmailClassificationSettings,
         topic: AgentInstanceTopic,
         redis: Redis,
         displayer: EventDisplayer,
@@ -127,6 +133,9 @@ class EmailClassificationAgent(Agent):
         Claiming before listing is the point: everything after this is slow (a fetch, one LLM call per message, then
         the filing), and the messages stay unread throughout, so a second run entering here would redo all of it. A run
         that cannot claim stops rather than queueing — the holder is already filing the mail this run would have found.
+
+        With uncategorised mail kept in the inbox, an unread message there may already have been classified, so only
+        mail above the inbox watermark is listed, lowest UID first.
         """
         if not await MailboxRunLease(redis).acquire(topic.agent_class, topic.agent_id, topic.run_id):
             await displayer.display_thought(
@@ -135,7 +144,11 @@ class EmailClassificationAgent(Agent):
             )
             return StopEvent()
 
-        return UnreadMailListedEvent(messages=await do_list_unread(imap_config))
+        if not classification.keep_uncategorised_in_inbox:
+            return UnreadMailListedEvent(messages=await do_list_unread(imap_config))
+        position = await InboxWatermark(redis).read(topic.agent_class, topic.agent_id, imap_config)
+        uid_validity, messages = await do_list_unread_above(imap_config, position)
+        return UnreadMailListedEvent(messages=messages, uid_validity=uid_validity)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.email_classification_agent.steps.classify_and_file.name"),
@@ -213,6 +226,19 @@ class EmailClassificationAgent(Agent):
                 )
 
             classified = await MailFiler.file_all(fetched, verdicts, imap_config, classification, displayer)
+            # Advanced only once filing succeeded, and before drafting: a run that failed mid-batch leaves the
+            # watermark where it was, so the next run re-lists what this one never finished, while a lease lost during
+            # drafting cannot put a second run on this batch — it now sits below the watermark.
+            if event.uid_validity is not None:
+                await InboxWatermark(redis).advance(
+                    topic.agent_class,
+                    topic.agent_id,
+                    imap_config,
+                    InboxPosition(
+                        uid_validity=event.uid_validity,
+                        uid=max(int(message.message_id) for message in event.messages),
+                    ),
+                )
 
         per_category = Counter(ref.category for ref in classified if ref.category)
         # Counted off the verdicts, not off `classified`: a decline and a failure both leave `category` empty, so
@@ -237,7 +263,7 @@ class EmailClassificationAgent(Agent):
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.email_classification_agent.steps.request_grounded_drafts.name"),
-        icon="mage:book-open",
+        icon="mage:book",
     )
     async def request_grounded_drafts_step(
         self,

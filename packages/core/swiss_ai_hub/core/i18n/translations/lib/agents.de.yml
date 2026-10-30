@@ -17,6 +17,12 @@ config:
     label: Symbol
     help: Wählen Sie ein voreingestelltes Symbol oder geben Sie einen Iconify-Symbolnamen
       ein
+  anonymise:
+    label: Personendaten anonymisieren
+    help: Ersetzt Namen, Adressen, IBAN, AHV-Nummern und andere Personendaten durch
+      Platzhalter, bevor eine Anfrage dieses Profils ein Sprachmodell erreicht, auch
+      wenn das Modell innerhalb dieses Deployments läuft. Antworten zeigen weiterhin
+      die Originalwerte.
   cron:
     label: Zeitplan
     help: Wann dieses Profil automatisch läuft. Leer lassen, um geplante Läufe zu

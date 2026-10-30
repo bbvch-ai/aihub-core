@@ -175,7 +175,7 @@ class AttachedFiles(Capability):
         )
         counter = conversation.llm.token_counter
         available = (
-            conversation.input_budget() - estimate_prompt_tokens(request.history, counter) - request.reserve_tokens
+            conversation.input_budget - estimate_prompt_tokens(request.history, counter) - request.reserve_tokens
         )
         budget = AttachedFilesBudget(available, files_config.attached_files.share_of_input_budget, counter)
         rooms = budget.allocate(
@@ -245,7 +245,7 @@ class AttachedFiles(Capability):
             query=arguments.query,
             first_page=arguments.first_page,
             last_page=arguments.last_page,
-            reserve_tokens=max(conversation.input_budget() - loop.tool_loop.max_result_tokens, 0),
+            reserve_tokens=max(conversation.input_budget - loop.tool_loop.max_result_tokens, 0),
             cite_sources=call.cite_sources,
             tool_call_id=call.tool_call_id,
         )

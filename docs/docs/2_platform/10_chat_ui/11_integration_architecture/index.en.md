@@ -104,8 +104,8 @@ When a user attaches a file in an agent chat, the agent reads it; Open WebUI onl
   embeddings. Plain LLM models keep Open WebUI's own file handling.
 - **The agent reads the whole document**: the pipe copies each file into the agent's upload bucket, once per agent, and
   the agent parses it with the platform's document extraction (MinerU for PDFs and images, openpyxl for XLSX, MarkItDown
-  for other Office files), cached by content so each file is converted once. The
-  full text goes into the model's context, trimmed to fit, and the user is told when only part of a file fit.
+  for other Office files), cached by content so each file is converted once. The full text goes into the model's
+  context, trimmed to fit, and the user is told when only part of a file fit.
 - **Later turns and edited messages**: every file of the current message branch is sent on every turn, so a file
   attached earlier keeps answering later questions, and an edited or regenerated message sees only its branch's files.
 - **Sources**: each file the model read is listed as a source that opens the original upload and shows the text the
@@ -167,6 +167,18 @@ system administrators in the SysAdmin UI under **Tenants → Overview**. It can 
 Italian, up to 100 characters each, and follows the user's language; a tenant without custom text shows the translated
 default. Open WebUI has no setting for this, so the platform shows the text through a small script Open WebUI loads. The
 deployment details are in `infra/deployment/openwebui-disclaimer.md`.
+
+## Streaming indicator
+
+While an answer is still streaming, the chat shows three pulsing dots after it. While a thought or tool call shows its
+own progress, the dots are hidden, so an agent that works for minutes before it answers shows only that progress row.
+Open WebUI's own marker is a thin pulsing bar that would sit under the "Thinking..." row for that whole time and read as
+a stray `|`. The platform restyles it through the stylesheet Open WebUI loads from `/static/custom.css`.
+
+Edit `infra/deployment/templates/openwebui-style/custom.css` and run `make generate-compose`. Compose mounts the
+generated copy at `/app/build/static/custom.css`; recreate `open-webui` to apply it. The rules target Open WebUI v0.11.4
+markup. When an upgrade changes that markup they stop matching and Open WebUI's own bar returns, so check the indicator
+after every Open WebUI upgrade.
 
 ## Configuration and deployment
 

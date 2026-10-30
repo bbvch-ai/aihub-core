@@ -20,40 +20,40 @@ global:
 # -------------------------------------------------------------------
 image_tags:
   # --- Core Infrastructure (mostly static) ---
-  seaweedfs: seaweedfs:4.01
+  seaweedfs: seaweedfs:4.51
   aws_cli: aws-cli-alpine:3.22.1
-  etcd: etcd:v3.5.25
-  milvus: milvus:v2.6.7
+  etcd: etcd:v3.5.35
+  milvus: milvus:v2.6.25
   attu: attu:v2.5.12
   postgres: pgvector-repack:pg17
   clickhouse: clickhouse/clickhouse-server:25.8
-  langfuse_web: langfuse/langfuse:3.225.8
-  langfuse_worker: langfuse/langfuse-worker:3.225.8
+  langfuse_web: langfuse/langfuse:3.225.14
+  langfuse_worker: langfuse/langfuse-worker:3.225.14
   nats: nats:2.11.4
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
-  neo4j: neo4j:5.26.16-community
-  litellm: litellm:v1.83.10-stable
+  neo4j: neo4j:5.26.32-community-trixie
+  litellm: litellm:v1.106.4
   mineru_api: mineru-api:v2.7.5
   mineru_vlm: mineru-vlm:v2.7.5
   open_terminal: open-terminal-office:0.11.34-2
-  otel_collector: otel/opentelemetry-collector-contrib:0.154.0
-  traefik: traefik:v3.6.2
+  otel_collector: otel/opentelemetry-collector-contrib:0.164.0
+  traefik: traefik:v3.7.16
   docker_socket_proxy: tecnativa/docker-socket-proxy:0.3
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
-  presidio_analyzer: presidio-analyzer:2.2.359
-  presidio_anonymizer: presidio-anonymizer:2.2.359
-  oauth2proxy: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
-  open_webui: open-webui:v0.11.3-playwright1.63.0
+  presidio_analyzer: presidio-analyzer:2.2.364-swiss-3
+  oauth2proxy: oauth2-proxy:v7.15.5
+  open_webui: open-webui:v0.11.4-playwright1.63.0-1
   open_webui_init: postgres:17
-  playwright: playwright:v1.63.0-jammy
+  playwright: playwright:v1.63.0-jammy-1
+  browser_proxy: browser-proxy:7.6-1
   vllm: vllm-openai:v0.15.1
   speaches: speaches-ai/speaches:latest-cuda-12.6.3
   pgbouncer: pgbouncer:v1.24.1-p1
-  rclone: rclone:1.71.2
-  keycloak: keycloak:26.5.5
+  rclone: rclone:1.71.2-1
+  keycloak: keycloak:26.8.1
   keycloak_config_cli: keycloak-config-cli:6.5.1-26.5.5
-  searxng: searxng:2026.9.5-c7f3080aa
+  searxng: searxng:2026.10.27-cb74e7f81
 
   # --- Custom Application Services ---
   api:
@@ -91,6 +91,16 @@ image_tags:
     local: universal_agent:latest
     nightly: universal_agent:nightly
     latest: universal_agent:latest
+  web_fetch_agent:
+    build: localbuild
+    local: web_fetch_agent:latest
+    nightly: web_fetch_agent:nightly
+    latest: web_fetch_agent:latest
+  knowledge_extraction_agent:
+    build: localbuild
+    local: knowledge_extraction_agent:latest
+    nightly: knowledge_extraction_agent:nightly
+    latest: knowledge_extraction_agent:latest
   rag_agent:
     build: localbuild
     local: rag_agent:latest
@@ -126,6 +136,11 @@ image_tags:
     local: memory_writer_agent:latest
     nightly: memory_writer_agent:nightly
     latest: memory_writer_agent:latest
+  anonymiser_agent:
+    build: localbuild
+    local: anonymiser_agent:latest
+    nightly: anonymiser_agent:nightly
+    latest: anonymiser_agent:latest
   imap_agent:
     build: localbuild
     local: imap_agent:latest
@@ -136,6 +151,11 @@ image_tags:
     local: email_classification_agent:latest
     nightly: email_classification_agent:nightly
     latest: email_classification_agent:latest
+  release_notes_agent:
+    build: localbuild
+    local: release_notes_agent:latest
+    nightly: release_notes_agent:nightly
+    latest: release_notes_agent:latest
   # Frozen: the legacy per-bucket pipelines' code is gone from main, so these images are pinned and are not
   # rebuilt by CI. v0.320.1 is the last release that still contained the code (v0.320.0) plus the knowledge
   # namespace teardown sensor, built once from a branch off that tag — the freeze deliberately took effect

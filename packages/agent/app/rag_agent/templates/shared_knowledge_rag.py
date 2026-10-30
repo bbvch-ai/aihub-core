@@ -45,12 +45,11 @@ def build() -> RAGAgentConfig:
                 "sufficiente e cita i documenti utilizzati."
             ),
         ),
-        icon="mage:book-open",
+        icon="mage:book",
         llm=LLMConfig(
             model_name="text-generation/gemma-4-31B-it",
             default_parameter=LLMParameter(temperature=0.1, timeout=120.0),
         ),
-        number_of_input_tokens=128000,
         context_sufficient_guard=ContextSufficientGuardStepConfig(
             check_context_sufficiency=True,
             max_hops=2,

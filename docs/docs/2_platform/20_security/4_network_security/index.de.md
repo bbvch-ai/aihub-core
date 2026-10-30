@@ -1,6 +1,6 @@
 ---
 title: Netzwerksicherheit
-source_sha: 2984c296f0ae3bd0076102bf4a50253bf0b7ae232877f428447259e8a12dd9b3
+source_sha: 620c78dd605c8ae40d284c6841f058383cfeaf90fcfa5a8e87d2363bf17ca7fb
 ---
 
 # Netzwerksicherheit
@@ -69,15 +69,20 @@ aktualisiert.
 
 ### Netzwerksegmentierung
 
-Die Plattform verwendet fünf isolierte Docker-Netzwerke (`proxy`, `backend`, `data`, `storage`, `egress`), um das
-Prinzip der geringsten Rechte auf der Netzwerkebene durchzusetzen. Services werden nur den Netzwerken zugewiesen, die
-sie benötigen:
+Die Plattform verwendet sieben isolierte Docker-Netzwerke (`proxy`, `backend`, `data`, `storage`, `egress`,
+`code-sandbox`, `browser`), um das Prinzip der geringsten Rechte auf der Netzwerkebene durchzusetzen. Services werden
+nur den Netzwerken zugewiesen, die sie benötigen:
 
 - **Interne Netzwerke** (`backend`, `data`, `storage`) haben keinen externen Internetzugang
 - **Egress-Netzwerk** erlaubt nur ausgehenden Internetzugang, wobei die Inter-Container Communication (ICC) deaktiviert
   ist
-- Services, die externe Websites durchsuchen müssen (z.B. Playwright), verwenden das `egress`-Netzwerk, ohne Ingress
-  offenzulegen
+- Services, die externe Websites erreichen müssen (z.B. searxng), verwenden das `egress`-Netzwerk, ohne Ingress
+  offenzulegen. Der Headless-Browser hat kein eigenes `egress`: Sein einziger Weg nach draussen ist `browser-proxy`, der
+  jedes nicht-öffentliche Ziel ablehnt
+- **Caller-only-Zonen** enthalten jeweils einen riskanten Service, den sie nur mit den Services teilen, die ihn
+  aufrufen: `code-sandbox` für die Code-Execution-Sandbox, `browser` für den Headless-Browser, der die von Benutzern
+  verlinkten Webseiten lädt (plus sein filternder Proxy). Keine der beiden kann `backend`, `data` oder `storage`
+  erreichen
 
 Siehe [Netzwerk-Isolation](../../2_architecture/4_network_isolation/) für detaillierte Netzwerktopologie und
 Service-Zuweisungen.

@@ -2,8 +2,10 @@
 config:
   number_of_input_tokens:
     label: Tokens d'entrée max
-    help: Nombre maximum de tokens autorisés dans l'entrée du LLM. Limite la taille
-      du contexte pour gérer les coûts et éviter de dépasser les limites du modèle.
+    help: La quantité maximale d'historique et de contexte que reçoit le modèle. Sans
+      limite propre, l'agent utilise la fenêtre d'entrée du modèle (moins une marge)
+      ; une limite plus basse réduit les coûts.
+    toggle_label: Définir votre propre limite d'entrée
   condense_question:
     label: Condenser la question
     help: Reformule le dernier message en une question autonome à partir de la conversation,
@@ -40,7 +42,16 @@ thoughts:
   input_too_large: "L'entrée ne tient pas dans la fenêtre de contexte du modèle :\
     \ environ %{tokens} jetons pour un budget utilisable de %{budget}. L'appel au\
     \ modèle est refusé."
+  images_not_accepted: Le message contient %{images} images, mais cet assistant ne
+    transmet pas d'images à son modèle %{model}. Refus au lieu d'appeler le modèle.
+  too_many_images: Le message contient %{images} images, plus que les %{max_images}
+    que le modèle %{model} accepte par requête. Refus au lieu d'appeler le modèle.
 messages:
+  images_not_accepted: Cet assistant ne peut pas regarder d'images. Veuillez décrire
+    le contenu de l'image par écrit, ou passer à un assistant dont le modèle prend
+    en charge les images.
+  too_many_images: Vous avez envoyé %{images} images, mais je ne peux pas en regarder
+    plus de %{max_images} à la fois. Veuillez envoyer moins d'images par message.
   condensation_empty: Je n'ai pas réussi à déterminer ce qu'il fallait rechercher
     à partir de ce message. Veuillez reformuler votre question et réessayer.
   input_too_large: Ce fichier est trop volumineux pour que je le lise en une seule

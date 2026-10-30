@@ -167,6 +167,9 @@ import type {
   GetEmbeddingsData,
   GetEmbeddingsError,
   GetEmbeddingsResponse,
+  GetExtractedTableDownloadUrlData,
+  GetExtractedTableDownloadUrlError,
+  GetExtractedTableDownloadUrlResponse,
   GetFileUrlData,
   GetFileUrlError,
   GetFileUrlResponse,
@@ -1422,6 +1425,39 @@ export const getOpenChatHitl = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/threads/{thread_id}/open-chat-hitl",
+    ...options,
+  });
+
+/**
+ * Get Extracted Table Download Url
+ *
+ * Returns a link that downloads the whole table of an extraction in the thread as CSV, valid for 24 hours.
+ *
+ * Events carry only a preview of the table; the link is signed for thread members only.
+ */
+export const getExtractedTableDownloadUrl = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetExtractedTableDownloadUrlResponse =
+    GetExtractedTableDownloadUrlResponse,
+>(
+  options: Options<
+    TComposable,
+    GetExtractedTableDownloadUrlData,
+    GetExtractedTableDownloadUrlResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetExtractedTableDownloadUrlResponse | DefaultT,
+    GetExtractedTableDownloadUrlError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/threads/{thread_id}/extracted-tables/{extraction_id}/download-url",
     ...options,
   });
 

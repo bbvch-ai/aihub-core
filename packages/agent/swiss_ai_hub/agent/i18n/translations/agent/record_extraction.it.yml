@@ -1,0 +1,113 @@
+---
+steps:
+  plan:
+    name: Pianificare la tabella
+    description: Determina i documenti selezionati e progetta le colonne della tabella
+  extract:
+    name: Estrarre da un documento
+    description: Legge un documento ed estrae le sue righe
+  assemble:
+    name: Comporre la tabella
+    description: Unisce le righe di tutti i documenti in un'unica tabella
+  extract_as_tool:
+    name: Estrarre una tabella come strumento
+    description: Esegue l'estrazione di tabella scelta dal modello
+  answer_tool_call:
+    name: Restituire la tabella al modello
+    description: Restituisce il riepilogo della tabella al ciclo di strumenti del
+      modello
+config:
+  extraction_model_name:
+    label: Modello di estrazione
+    help: Il modello che legge ogni documento ed estrae le sue righe. Vuoto usa il
+      modello principale.
+  max_documents_total:
+    label: Documenti al massimo per tabella
+    help: "Oltre questo numero di documenti corrispondenti non viene estratto nulla:\
+      \ l'utente vede un campione e gli viene chiesto di restringere la richiesta.\
+      \ Al di sotto, una risposta estrae ogni documento."
+  max_document_chars:
+    label: Documento più lungo letto per intero (caratteri)
+    help: I documenti più lunghi vengono letti solo nelle parti pertinenti, e le loro
+      righe sono segnate come lette in parte.
+  max_parallel_extractions:
+    label: Chiamate al modello contemporanee
+    help: Quante chiamate di estrazione un'istanza dell'agente fa allo stesso tempo.
+      Ridurre quando il gateway dei modelli è occupato.
+tools:
+  extract:
+    label: Estrai una tabella
+    approval: 'Estrarre una tabella con queste colonne dai documenti di conoscenza:
+      {fields}'
+    description: Estrae una tabella da molti documenti di conoscenza, una riga per
+      ogni record trovato, ogni riga con il suo file. Usalo quando l'utente vuole
+      record raccolti da più documenti, ad esempio ogni posizione hardware sulle fatture
+      2025 di un fornitore; non per una domanda a cui risponde un solo documento o
+      la ricerca nella conoscenza. Trova prima i documenti con gli strumenti di elenco
+      e ricerca e verificali con select_knowledge_documents; poi chiamalo con le stesse
+      condizioni. L'utente vede la tabella direttamente e può scaricarla per intero;
+      tu ricevi il suo riepilogo. Quando corrispondono più documenti di quanti una
+      risposta ne estrae senza chiedere, l'utente riceve un campione e decide; estraili
+      tutti solo se è d'accordo, con confirm_sample impostato a true.
+  select:
+    label: Seleziona documenti
+    approval: 'Selezionare documenti di conoscenza per una tabella con queste colonne:
+      {fields}'
+table:
+  match: Corrispondenza
+  match_yes: sì
+  match_unsure: incerto, da verificare
+  partly_read: (letto in parte)
+  collection: Raccolta
+  path: Percorso
+  filename: File
+summary:
+  no_rows: '**Nessuna riga da:** %{files}'
+  unsure: '**Incerto:** %{count} righe potrebbero non soddisfare la condizione; sono
+    mantenute e segnate nella colonna Corrispondenza perché possiate verificarle.'
+  partly_read: '**Letto in parte (alcune righe possono mancare):** %{files}'
+  counts: '**File:** %{files} · **Righe trovate:** %{rows} · **File non riusciti:**
+    %{failed}'
+  sample_counts: '**Campione:** %{files} di %{total} documenti corrispondenti · **Righe
+    trovate:** %{rows}'
+  sample_counts_ceiling: '**Campione:** %{files} di oltre %{total} documenti corrispondenti
+    · **Righe trovate:** %{rows}'
+  criteria: '**Selezione:** %{criteria}'
+  listed_more: e altri %{count}
+  failed_files: '**File che non è stato possibile estrarre:**'
+  failed_more: …e altri %{count} file che non è stato possibile estrarre.
+  no_documents: Nessun documento corrisponde alla selezione, quindi non è stato estratto
+    nulla.
+  not_started: 'Non è stato possibile estrarre la tabella: %{reason}'
+  too_broad: '**%{total} documenti corrispondono.** Estrarli tutti richiede circa
+    %{minutes} minuti; sopra ci sono le righe di un campione di essi.'
+  too_broad_ceiling: '**Più di %{total} documenti corrispondono.**'
+  options_narrow: 'Restringete la richiesta, per esempio a una delle cartelle o degli
+    anni sopra: così tanti documenti non vengono estratti parte per parte.'
+  scope_changed: Le raccolte da cui proviene il campione non sono più tutte disponibili
+    in questa conversazione, quindi non è stato estratto nulla. Chieda di nuovo per
+    estrarre da ciò che è disponibile ora.
+  preview: '**Mostrate qui:** le prime %{shown} di %{rows} righe; il file le contiene
+    tutte.'
+  every_row: ogni riga
+  interpretation: '**Colonne:** %{columns} · **Righe mantenute:** %{kept}'
+  options_confirm: Risponda *sì* per estrarre tutti i %{total} documenti in una risposta,
+    oppure restringa la richiesta, ad esempio a una delle cartelle o degli anni sopra.
+  nothing_awaiting: In questa conversazione non c'è alcuna estrazione di tabella con
+    campione da proseguire. Chieda di nuovo la tabella.
+facets:
+  folders: '**Per cartella:** %{entries}'
+  years: '**Per anno nel percorso:** %{entries}'
+  collections: '**Per collezione:** %{entries}'
+  first: Sono le cartelle e gli anni dei primi %{total} documenti per percorso; ce
+    ne sono altri.
+progress:
+  partial: '%{path} è lungo: vengono lette solo le parti pertinenti.'
+  plan: Estrazione di %{fields} da %{files} documenti, circa %{minutes} minuti (%{criteria}).
+  sample: '%{total} documenti corrispondono; estraggo un campione da %{files} di essi
+    (%{fields}).'
+  extracted: '%{done} di %{files} · %{path}: %{rows} righe'
+  failed: '%{done} di %{files} · %{path}: non riuscito, %{reason}'
+  reading: Leggo %{path}, un documento lungo.
+  still_reading: Sto ancora leggendo %{path} (%{minutes} min).
+  extracted_rows: '%{done} di %{files} · %{path}: %{rows} righe — %{first}'

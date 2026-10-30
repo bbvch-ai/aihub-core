@@ -14,6 +14,7 @@
         <InputText
           id="name"
           v-model="dataset.dataset_name"
+          :maxlength="nameMaxLength"
           class="flex-auto"
           autocomplete="off"
         />
@@ -28,6 +29,7 @@
         <Textarea
           id="description"
           v-model="dataset.description"
+          :maxlength="descriptionMaxLength"
           class="flex-auto"
           autocomplete="off"
         />
@@ -52,11 +54,15 @@
 </template>
 
 <script setup lang="ts">
+import { DatasetCreateSchema } from '@core/sdk/client/schemas.gen'
 import { useI18n } from 'vue-i18n'
 
 import type { DatasetCreate } from '@core/sdk/client'
 
 const { t } = useI18n()
+
+const nameMaxLength = schemaMaxLength(DatasetCreateSchema, 'dataset_name')
+const descriptionMaxLength = schemaMaxLength(DatasetCreateSchema, 'description')
 
 const dataset = ref<DatasetCreate>({
   dataset_name: '',

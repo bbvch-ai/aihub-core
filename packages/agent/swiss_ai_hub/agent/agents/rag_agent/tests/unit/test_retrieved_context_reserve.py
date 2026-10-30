@@ -1,6 +1,6 @@
 """The room a RAG profile keeps free for retrieved knowledge and the sufficiency guard when attached files are sized."""
 
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 from llama_index.core.utils import get_tokenizer
 from swiss_ai_hub.core.generative_ai import (
@@ -42,7 +42,7 @@ def _config(
 
 
 def test_reserve_covers_every_retrieved_node():
-    with patch.object(ConversationFields, "input_budget", return_value=1_000_000):
+    with patch.object(ConversationFields, "input_budget", new_callable=PropertyMock, return_value=1_000_000):
         assert (
             _config(retrieve_k=5).retrieved_context_reserve()
             == 5 * RAGAgentConfig.model_fields["retrieved_tokens_per_node"].default
@@ -50,7 +50,7 @@ def test_reserve_covers_every_retrieved_node():
 
 
 def test_reranking_narrows_the_reserve_to_its_top_n():
-    with patch.object(ConversationFields, "input_budget", return_value=1_000_000):
+    with patch.object(ConversationFields, "input_budget", new_callable=PropertyMock, return_value=1_000_000):
         assert (
             _config(retrieve_k=20, reranking_top_n=3).retrieved_context_reserve()
             == 3 * RAGAgentConfig.model_fields["retrieved_tokens_per_node"].default
@@ -58,7 +58,7 @@ def test_reranking_narrows_the_reserve_to_its_top_n():
 
 
 def test_reserve_never_exceeds_half_the_budget():
-    with patch.object(ConversationFields, "input_budget", return_value=10_000):
+    with patch.object(ConversationFields, "input_budget", new_callable=PropertyMock, return_value=10_000):
         assert _config(retrieve_k=100).retrieved_context_reserve() == 5_000
 
 
