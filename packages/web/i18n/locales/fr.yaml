@@ -1046,8 +1046,6 @@ lib:
       ne peut donc être proposée.
     empty: L'agent sélectionné n'est configuré pour interroger aucune collection.
     unavailable: Enregistrée, mais non interrogée par l'agent sélectionné
-  knowledgeDatabases:
-    unavailable: '{name} (supprimée ou non visible pour vous)'
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher
