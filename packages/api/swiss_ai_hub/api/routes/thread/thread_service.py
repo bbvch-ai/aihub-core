@@ -352,7 +352,8 @@ class ThreadService:
             for agent_info in run_data.get("participating_agents_in_run", []):
                 pa_class = agent_info.get("agent_class")
                 pa_id = agent_info.get("agent_id")
-                if pa_class and pa_id:
+                # A user's own messages are published as the "UserAgent", which is no agent instance to look up.
+                if pa_class and pa_id and pa_class != "UserAgent":
                     results.participating_agent_ids.add(AgentIdentifier(agent_class=pa_class, agent_id=pa_id))
 
         return results
