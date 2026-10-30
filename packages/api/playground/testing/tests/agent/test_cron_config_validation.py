@@ -6,6 +6,7 @@ here and reach storage, where the scheduler skipped it with an error log and the
 no feedback at all.
 """
 
+import asyncio
 from unittest.mock import patch
 
 import pytest
@@ -35,9 +36,11 @@ class _AcceptsAnything(BaseModel):
 
 
 def _validate(schedule: object) -> None:
-    InstanceConfigHelper.validate_config_for_create(
-        {"agent_id": "demo", "cron": schedule},
-        _AcceptsAnything,
+    asyncio.run(
+        InstanceConfigHelper.validate_config_for_create(
+            {"agent_id": "demo", "cron": schedule},
+            _AcceptsAnything,
+        )
     )
 
 
@@ -47,7 +50,7 @@ class TestAcceptsAWorkableSchedule:
 
     def test_no_schedule_at_all_passes(self) -> None:
         """Most agents are not schedulable, and a schedulable one need not be scheduled."""
-        InstanceConfigHelper.validate_config_for_create({"agent_id": "demo"}, _AcceptsAnything)
+        asyncio.run(InstanceConfigHelper.validate_config_for_create({"agent_id": "demo"}, _AcceptsAnything))
 
     def test_a_non_object_schedule_is_left_to_the_generated_model(self) -> None:
         """Shape is the generated model's job; this check only adds the validators it cannot carry."""
@@ -95,9 +98,11 @@ class TestRejectsAnUnfireableSchedule:
     def test_the_update_path_is_guarded_too(self) -> None:
         """An admin can just as easily break a working schedule as create a broken one."""
         with pytest.raises(HTTPException) as raised:
-            InstanceConfigHelper.validate_config_for_update(
-                {"agent_id": "demo", "cron": {**_VALID, "minute": "99"}},
-                _AcceptsAnything,
+            asyncio.run(
+                InstanceConfigHelper.validate_config_for_update(
+                    {"agent_id": "demo", "cron": {**_VALID, "minute": "99"}},
+                    _AcceptsAnything,
+                )
             )
 
         assert raised.value.status_code == 400
@@ -134,10 +139,12 @@ class TestRejectsASchedulePastTheDeploymentsCeiling:
             patch(f"{_ADMISSION}.AgentConfigEntityDocument.find_with_config_key", return_value=[]),
             patch(f"{_ADMISSION}.SchedulerSettings", return_value=settings or SchedulerSettings()),
         ):
-            InstanceConfigHelper.validate_config_for_create(
-                {"agent_id": "demo", "cron": schedule},
-                _AcceptsAnything,
-                AgentInstanceRef(agent_class="CronDemoAgent", agent_id="demo"),
+            asyncio.run(
+                InstanceConfigHelper.validate_config_for_create(
+                    {"agent_id": "demo", "cron": schedule},
+                    _AcceptsAnything,
+                    AgentInstanceRef(agent_class="CronDemoAgent", agent_id="demo"),
+                )
             )
 
     def test_the_default_ceiling_accepts_every_minute(self) -> None:

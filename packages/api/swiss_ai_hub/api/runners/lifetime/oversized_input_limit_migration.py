@@ -27,19 +27,19 @@ class OversizedInputLimitMigration:
     """
 
     @staticmethod
-    def run() -> list[str]:
+    async def run() -> list[str]:
         """Unsets every oversized limit; returns which profiles it rewrote."""
         forms: dict[str, list[FormkitElement]] = {}
         model_limits: dict[tuple[str, str], float | None] = {}
         migrated: list[str] = []
-        for document in AgentConfigEntityDocument.find_all():
+        for document in await AgentConfigEntityDocument.list_all():
             if document.agent_class not in forms:
                 class_entity = AgentClassEntity.get_by_agent_class(document.agent_class)
                 forms[document.agent_class] = class_entity.form_elements if class_entity else []
             config_data = document.config_data
             rewritten = OversizedInputLimitMigration.rewritten(config_data, forms[document.agent_class], model_limits)
-            if rewritten != config_data and AgentConfigEntityDocument.replace_config_data_if_unchanged(
-                document.pk, config_data, rewritten
+            if rewritten != config_data and await AgentConfigEntityDocument.replace_config_data_if_unchanged(
+                document.id, config_data, rewritten
             ):
                 migrated.append(f"agent {document.agent_class}/{document.agent_id}")
         return migrated

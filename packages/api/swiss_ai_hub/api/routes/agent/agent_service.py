@@ -56,13 +56,13 @@ class AgentService:
 
     @staticmethod
     @trace_fn
-    def get_minimal_agent_instance(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentInstanceDTO:
+    async def get_minimal_agent_instance(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentInstanceDTO:
         """Returns minimal details for an agent instance from database."""
         class_entity = AgentClassEntity.get_by_agent_class(agent_class=agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent config {agent_class}/{agent_id} not found.")
 
@@ -79,7 +79,7 @@ class AgentService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent instance {agent_class}/{agent_id} not found.")
 
@@ -108,7 +108,7 @@ class AgentService:
             if agent_class is not None and class_entity.agent_class != agent_class:
                 continue
 
-            configs = AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
+            configs = await AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
             for config_entity in configs:
                 dto = InstanceDtoBuilder.build_or_skip(
                     lambda class_entity=class_entity, config_entity=config_entity, is_online=is_online: (
@@ -346,12 +346,11 @@ class AgentService:
         Retrieve the current configuration data for a specific agent.
         Returns empty dict if no configuration has been saved.
 
-        Off the loop because `AgentConfigResponder` serves this over NATS RPC, and the requester
-        (`NCRequester`) gives it one 5 s shot with no retry. A blocking query here competes with every
-        other coroutine in this process, so a loop busy with event persistence can burn that budget
-        before the handler even runs — and the agent aborts its run on a timeout while NATS sits idle.
+        `AgentConfigResponder` serves this over NATS RPC, and the requester (`NCRequester`) gives it one 5 s shot
+        with no retry. The read is awaited rather than blocking, so it no longer competes with every other
+        coroutine in this process for that budget.
         """
-        config_entity = await asyncio.to_thread(AgentConfigEntityDocument.find_for_class_and_id, agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if config_entity and config_entity.config_data:
             return config_entity.config_data
         return {}
@@ -369,7 +368,7 @@ class AgentService:
         if not class_entity:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if not config_entity:
             raise HTTPException(status_code=404, detail=f"Agent config {agent_class}/{agent_id} not found.")
 
@@ -379,7 +378,7 @@ class AgentService:
         # Before the generated model, which only sees the schema's notion of required — a key being
         # present. A starred field submitted as "" or None satisfies that and is caught only here.
         InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, configuration)
-        config_instance = InstanceConfigHelper.validate_config_for_update(
+        config_instance = await InstanceConfigHelper.validate_config_for_update(
             configuration, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
         )
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
@@ -392,14 +391,14 @@ class AgentService:
             t=t,
         )
 
-        config_entity = InstanceConfigHelper.apply_metadata_to_entity(config_instance, config_entity)
+        config_entity = InstanceConfigHelper.apply_metadata_to_document(config_instance, config_entity)
 
         # Pin agent_id to the immutable instance key: the agent publishes under config_data["agent_id"]
         # while the SSE handler addresses it by the entity key, and a mismatch silently fails the
         # is_primary_agent stop check (stream never closes -> no title/follow-up). Mirrors create.
         configuration["agent_id"] = agent_id
         config_entity.config_data = configuration
-        config_entity.save()
+        await config_entity.save_changes()
 
         return configuration
 
@@ -436,7 +435,7 @@ class AgentService:
 
         is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
         instances = []
-        configs = AgentConfigEntityDocument.find_for_class(agent_class)
+        configs = await AgentConfigEntityDocument.find_for_class(agent_class)
         for config_entity in configs:
             instances.append(
                 FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
@@ -466,7 +465,7 @@ class AgentService:
                 detail=f"Agent class '{agent_class}' is not online. Make sure the agent is running.",
             )
 
-        existing_config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, request.agent_id)
+        existing_config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, request.agent_id)
         if existing_config:
             raise HTTPException(
                 status_code=409, detail=f"Agent instance '{agent_class}/{request.agent_id}' already exists."
@@ -478,7 +477,7 @@ class AgentService:
         # Before the generated model, which only sees the schema's notion of required — a key being
         # present. A starred field submitted as "" or None satisfies that and is caught only here.
         InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, config)
-        config_instance = InstanceConfigHelper.validate_config_for_create(
+        config_instance = await InstanceConfigHelper.validate_config_for_create(
             config, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=request.agent_id)
         )
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
@@ -510,10 +509,10 @@ class AgentService:
             icon=locale.icon,
             config_data=full_config_data,
         )
-        config_entity.save()
+        await config_entity.insert()
 
         if user.acting_within_tenant is not None:
-            AgentService._grant_instance_access(agent_class, request.agent_id, user, config_entity)
+            await AgentService._grant_instance_access(agent_class, request.agent_id, user, config_entity)
 
         return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=True)
 
@@ -521,11 +520,11 @@ class AgentService:
     @trace_fn
     async def delete_agent_instance(agent_class: str, agent_id: str) -> None:
         """Deletes an agent instance and the per-instance access it was granted on creation."""
-        config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if not config:
             raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found.")
 
-        AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class, agent_id)
+        await config.delete()
 
         rules = [
             AccessChecker.agent_instance_user_rule(agent_class, agent_id),
@@ -550,7 +549,7 @@ class AgentService:
         return f"{pascal_case}Admin"
 
     @staticmethod
-    def _grant_instance_access(
+    async def _grant_instance_access(
         agent_class: str, agent_id: str, user: UserIdentity, config_entity: AgentConfigEntityDocument
     ) -> None:
         """Grants the creating tenant and creator per-instance admin access, rolling back on failure.
@@ -581,7 +580,10 @@ class AgentService:
                     lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants([admin_rule]),
                     f"revoke {admin_rule}",
                 )
-            AgentService._best_effort(config_entity.delete, "delete config")
+            try:
+                await config_entity.delete()
+            except Exception:
+                logger.exception("Best-effort step failed: delete config")
             raise HTTPException(
                 status_code=500,
                 detail=(

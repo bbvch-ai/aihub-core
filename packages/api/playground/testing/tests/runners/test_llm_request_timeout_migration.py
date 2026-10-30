@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 from mongoengine import connect, disconnect, signals
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
@@ -64,26 +65,24 @@ def mongo_connection():
 
 
 @pytest.fixture
-def clean_configs(mongo_connection):
-    # Muted for the same reason as in `test_empty_namespace_scope_migration`: an earlier test may have connected
-    # `AgentConfigChangeHook`, whose receiver schedules an asyncio task, and these tests run without a loop.
+def clean_process_configs(mongo_connection):
+    # Muted for the same reason as in `test_empty_namespace_scope_migration`: process configs stay on MongoEngine,
+    # and an earlier test may have connected their change hook, whose receiver schedules an asyncio task.
     with signals.post_save.muted(), signals.post_delete.muted():
-        AgentConfigEntityDocument.objects.delete()
         ProcessConfigEntityDocument.objects.delete()
         yield
-        AgentConfigEntityDocument.objects.delete()
         ProcessConfigEntityDocument.objects.delete()
 
 
-def _agent(agent_id: str, config_data: dict[str, Any]) -> AgentConfigEntityDocument:
-    return AgentConfigEntityDocument(
+async def _agent(agent_id: str, config_data: dict[str, Any]) -> AgentConfigEntityDocument:
+    return await AgentConfigEntityDocument(
         agent_class="RAGAgent",
         agent_id=agent_id,
-        name=LocaleStringEntity(en=agent_id),
-        description=LocaleStringEntity(en=f"{agent_id} profile"),
+        name=LocaleString(en=agent_id),
+        description=LocaleString(en=f"{agent_id} profile"),
         icon="meteor-icons:robot",
         config_data=config_data,
-    ).save()
+    ).insert()
 
 
 def _process(process_id: str, config_data: dict[str, Any]) -> ProcessConfigEntityDocument:
@@ -97,23 +96,24 @@ def _process(process_id: str, config_data: dict[str, Any]) -> ProcessConfigEntit
     ).save()
 
 
-@pytest.mark.usefixtures("clean_configs")
+@pytest.mark.beanie
+@pytest.mark.usefixtures("clean_process_configs")
 class TestRun:
-    def test_stored_configs_at_the_old_default_are_rewritten_and_reported(self):
-        stale_agent = _agent("stale", {"llm": {"default_parameter": _llm_parameter(600.0)}})
+    async def test_stored_configs_at_the_old_default_are_rewritten_and_reported(self):
+        stale_agent = await _agent("stale", {"llm": {"default_parameter": _llm_parameter(600.0)}})
         stale_process = _process("stale", {"llm": {"default_parameter": _llm_parameter(600.0)}})
-        _agent("explicit", {"llm": {"default_parameter": _llm_parameter(120.0)}})
+        await _agent("explicit", {"llm": {"default_parameter": _llm_parameter(120.0)}})
 
-        migrated = LLMRequestTimeoutMigration.run()
+        migrated = await LLMRequestTimeoutMigration.run()
 
         assert migrated == ["agent RAGAgent/stale", "process ReviewProcess/stale"]
-        stale_agent.reload()
+        stale_agent = await AgentConfigEntityDocument.get(stale_agent.id)
         stale_process.reload()
         assert stale_agent.config_data["llm"]["default_parameter"]["timeout"] == 300.0
         assert stale_process.config_data["llm"]["default_parameter"]["timeout"] == 300.0
 
-    def test_a_second_boot_rewrites_nothing(self):
-        _agent("stale", {"llm": {"default_parameter": _llm_parameter(600.0)}})
-        LLMRequestTimeoutMigration.run()
+    async def test_a_second_boot_rewrites_nothing(self):
+        await _agent("stale", {"llm": {"default_parameter": _llm_parameter(600.0)}})
+        await LLMRequestTimeoutMigration.run()
 
-        assert LLMRequestTimeoutMigration.run() == []
+        assert await LLMRequestTimeoutMigration.run() == []

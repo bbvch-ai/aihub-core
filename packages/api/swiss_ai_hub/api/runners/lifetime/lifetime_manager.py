@@ -22,7 +22,12 @@ from swiss_ai_hub.core.infrastructure import (
     RedisSettings,
     S3StorageSettings,
 )
-from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook, KnowledgeChangeHook
+from swiss_ai_hub.core.persistence import (
+    AccessChangeHook,
+    AgentConfigChangeHook,
+    BeanieInitializer,
+    KnowledgeChangeHook,
+)
 from swiss_ai_hub.core.scheduling import CronScheduler, SchedulerSettings
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
@@ -114,6 +119,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
         uuidRepresentation="standard",
     )
+    # The entities already ported to Beanie (#1634); MongoEngine above keeps serving every other one.
+    beanie_client = BeanieInitializer.create_client()
+    await BeanieInitializer.initialize(beanie_client)
 
     # Connect to Redis
     redis = RedisSettings.create_client()
@@ -276,11 +284,11 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await finalize_role_setup(redis)
         await initialize_knowledge_buckets()
         await carry_over_bucket_model_columns()
-        strip_retired_agent_config_keys()
-        widen_empty_retriever_namespace_scopes()
-        carry_over_pre_pair_knowledge_collections()
-        lower_llm_request_timeouts()
-        unset_oversized_input_limits()
+        await strip_retired_agent_config_keys()
+        await widen_empty_retriever_namespace_scopes()
+        await carry_over_pre_pair_knowledge_collections()
+        await lower_llm_request_timeouts()
+        await unset_oversized_input_limits()
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.
         # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
@@ -335,6 +343,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             await app.state.process_discovery_service.stop()
 
         disconnect()
+        await beanie_client.close()
 
         # Close Redis connection
         await redis.aclose()

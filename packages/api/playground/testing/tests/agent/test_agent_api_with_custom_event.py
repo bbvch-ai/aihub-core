@@ -43,7 +43,7 @@ async def agent_api_client():
 
     async with LifespanManager(app) as lifespan:
         # Create agent config in database after lifespan starts (database is now connected)
-        runner.create_agent_config_in_db()
+        await runner.create_agent_config_in_db()
         async with AsyncClient(
             transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1/active"
         ) as client:

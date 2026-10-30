@@ -57,34 +57,39 @@ def mock_agent_config_document(sample_agent_config):
 class TestAgentConfigDatabaseOperations:
     """Test AgentConfig database operations."""
 
-    def test_agent_config_entity_document_find_for_class_and_id(self, sample_agent_config, mock_agent_config_document):
+    @pytest.mark.asyncio
+    async def test_agent_config_entity_document_find_for_class_and_id(
+        self, sample_agent_config, mock_agent_config_document
+    ):
         """Test that AgentConfigEntityDocument.find_for_class_and_id works correctly."""
         with patch.object(AgentConfigEntityDocument, "find_for_class_and_id") as mock_find:
             mock_find.return_value = mock_agent_config_document
 
-            result = AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "test_agent_1")
+            result = await AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "test_agent_1")
 
-            mock_find.assert_called_once_with("TestAgent", "test_agent_1")
+            mock_find.assert_awaited_once_with("TestAgent", "test_agent_1")
             assert result == mock_agent_config_document
 
-    def test_agent_config_entity_document_find_for_class_and_id_not_found(self):
+    @pytest.mark.asyncio
+    async def test_agent_config_entity_document_find_for_class_and_id_not_found(self):
         """Test that AgentConfigEntityDocument.find_for_class_and_id returns None when not found."""
         with patch.object(AgentConfigEntityDocument, "find_for_class_and_id") as mock_find:
             mock_find.return_value = None
 
-            result = AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "nonexistent_id")
+            result = await AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "nonexistent_id")
 
-            mock_find.assert_called_once_with("TestAgent", "nonexistent_id")
+            mock_find.assert_awaited_once_with("TestAgent", "nonexistent_id")
             assert result is None
 
-    def test_agent_config_entity_document_find_for_class(self, mock_agent_config_document):
+    @pytest.mark.asyncio
+    async def test_agent_config_entity_document_find_for_class(self, mock_agent_config_document):
         """Test that AgentConfigEntityDocument.find_for_class works correctly."""
         with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find:
             mock_find.return_value = [mock_agent_config_document]
 
-            result = AgentConfigEntityDocument.find_for_class("TestAgent")
+            result = await AgentConfigEntityDocument.find_for_class("TestAgent")
 
-            mock_find.assert_called_once_with("TestAgent")
+            mock_find.assert_awaited_once_with("TestAgent")
             assert result == [mock_agent_config_document]
 
     def test_agent_config_from_entity_conversion(self, sample_agent_config, mock_agent_config_document):
@@ -97,7 +102,8 @@ class TestAgentConfigDatabaseOperations:
             mock_from_entity.assert_called_once_with(mock_agent_config_document)
             assert result == sample_agent_config
 
-    def test_db_config_overrides_default_scenario(self, sample_agent_config, sample_default_config):
+    @pytest.mark.asyncio
+    async def test_db_config_overrides_default_scenario(self, sample_agent_config, sample_default_config):
         """Test scenario where DB config should override default config."""
         # Create different configs to test override
         db_config = AgentConfig(
@@ -131,7 +137,7 @@ class TestAgentConfigDatabaseOperations:
                 mock_from_entity.return_value = db_config
 
                 # When DB config exists, it should be used
-                result = AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "test_agent_1")
+                result = await AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "test_agent_1")
                 assert result == mock_doc
 
                 converted_config = AgentConfig.from_entity(result)
@@ -141,7 +147,8 @@ class TestAgentConfigDatabaseOperations:
                 # Verify it's not the default config
                 assert converted_config != default_config
 
-    def test_same_id_override_scenario(self, sample_default_config):
+    @pytest.mark.asyncio
+    async def test_same_id_override_scenario(self, sample_default_config):
         """Test that DB config with same ID as default overrides default."""
         # Create DB config with same ID as default
         db_config = AgentConfig(
@@ -168,7 +175,7 @@ class TestAgentConfigDatabaseOperations:
                 mock_from_entity.return_value = db_config
 
                 # When DB config exists for same ID, it should be used instead of default
-                result = AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "default_agent")
+                result = await AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "default_agent")
                 assert result == mock_doc
 
                 converted_config = AgentConfig.from_entity(result)
@@ -178,7 +185,8 @@ class TestAgentConfigDatabaseOperations:
                 # Verify it's not the default config
                 assert converted_config != sample_default_config
 
-    def test_multiple_configs_retrieval(self, sample_agent_config):
+    @pytest.mark.asyncio
+    async def test_multiple_configs_retrieval(self, sample_agent_config):
         """Test retrieving multiple configs for a class."""
         # Create multiple mock documents
         mock_doc1 = Mock()
@@ -218,7 +226,7 @@ class TestAgentConfigDatabaseOperations:
                 mock_from_entity.side_effect = [config1, config2]
 
                 # Retrieve all configs for class
-                docs = AgentConfigEntityDocument.find_for_class("TestAgent")
+                docs = await AgentConfigEntityDocument.find_for_class("TestAgent")
                 assert len(docs) == 2
 
                 # Convert each document to config
@@ -227,18 +235,20 @@ class TestAgentConfigDatabaseOperations:
                 assert converted_configs[0] == config1
                 assert converted_configs[1] == config2
 
-    def test_error_handling_db_exception(self):
+    @pytest.mark.asyncio
+    async def test_error_handling_db_exception(self):
         """Test handling of database exceptions."""
         with patch.object(AgentConfigEntityDocument, "find_for_class_and_id") as mock_find:
             mock_find.side_effect = Exception("Database connection failed")
 
             # Should propagate the exception
             with pytest.raises(Exception) as exc_info:
-                AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "test_agent")
+                await AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "test_agent")
 
             assert str(exc_info.value) == "Database connection failed"
 
-    def test_config_priority_logic(self, sample_default_config):
+    @pytest.mark.asyncio
+    async def test_config_priority_logic(self, sample_default_config):
         """Test the priority logic: DB config takes precedence over default."""
         # This test demonstrates the expected behavior for configuration resolution
 
@@ -262,7 +272,7 @@ class TestAgentConfigDatabaseOperations:
                 mock_from_entity.return_value = db_config
 
                 # Should use DB config
-                result = AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "test_agent")
+                result = await AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "test_agent")
                 assert result == mock_doc
 
                 config = AgentConfig.from_entity(result)
@@ -271,7 +281,7 @@ class TestAgentConfigDatabaseOperations:
                 # Scenario 2: DB config doesn't exist - should use default
                 mock_find.return_value = None
 
-                result = AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "nonexistent_agent")
+                result = await AgentConfigEntityDocument.find_for_class_and_id("TestAgent", "nonexistent_agent")
                 assert result is None
 
                 # In this case, the calling code would fall back to default_config

@@ -12,6 +12,7 @@ from swiss_ai_hub.core.testing.db_isolation import isolate_test_db  # noqa: E402
 # isort: split
 from beanie import Document  # noqa: E402
 
+from swiss_ai_hub.core.persistence.beanie_initializer import BeanieInitializer  # noqa: E402
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service  # noqa: E402, F401
 from swiss_ai_hub.core.testing.beanie_isolation import (  # noqa: E402, F401
     beanie_test_database,
@@ -25,7 +26,7 @@ from swiss_ai_hub.core.testing.tests.unit.beanie_probe_document import BeaniePro
 @pytest.fixture(scope="session")
 def beanie_document_models() -> list[type[Document]]:
     """The Beanie documents ``beanie`` tests in this package run against."""
-    return [BeanieProbeDocument]
+    return [*BeanieInitializer.DOCUMENT_MODELS, BeanieProbeDocument]
 
 
 @pytest.hookimpl(wrapper=True, tryfirst=True)

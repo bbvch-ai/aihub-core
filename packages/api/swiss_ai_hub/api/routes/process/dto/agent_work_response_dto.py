@@ -33,6 +33,7 @@ class AgentWorkResponseDTO(WorkResponseDTO):
         event_name: str,
         created_at: int,
         t: "LocaleHandler",
+        agent_configs: dict[tuple[str, str], AgentConfigEntityDocument],
     ) -> Self:
         """Creates an AgentWorkResponseDTO from raw event data."""
         # Try to get agent information from both class and config entities
@@ -41,7 +42,7 @@ class AgentWorkResponseDTO(WorkResponseDTO):
         agent_info: MinimalAgentInstanceDTO | None = None
 
         class_entity = AgentClassEntity.get_by_agent_class(agent_class)
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = agent_configs.get((agent_class, agent_id))
         if class_entity and config_entity:
             agent_info = MinimalAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
 

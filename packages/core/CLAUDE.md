@@ -496,7 +496,10 @@ membership check for sysadmins. See ADR `2026_04_15_sysadmin_implicit_admin_acce
 
 ## Persistence
 
-**Pattern**: MongoEngine `Document` + repository methods as `@classmethod`. Schema and data access in one class.
+**Pattern**: a `Document` + repository methods as `@classmethod`. Schema and data access in one class. MongoEngine is
+being replaced by Beanie (#1634): the entities in `BeanieInitializer.DOCUMENT_MODELS` are Beanie documents with `async`
+repository methods, every other one is still MongoEngine. How to port one, and how callers change:
+`persistence/README.md`.
 
 ```python
 class RoleEntity(Document):

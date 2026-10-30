@@ -47,10 +47,11 @@ def _agent_class(agent_class: str = "CronDemoAgent", last_discovered: datetime |
 
 
 def _snapshot_hops(to_thread: MagicMock) -> int:
-    """How many of the offloaded calls were the snapshot read. Mocked callables carry no `__name__`."""
-    return sum(
-        getattr(call.args[0], "__name__", "") == "_load_schedulable_snapshot" for call in to_thread.call_args_list
-    )
+    """How many of the offloaded calls were the snapshot's class read, the one synchronous Mongo read it does.
+
+    Profiles are Beanie and awaited on the loop. The patched class read is a mock, named in its repr.
+    """
+    return sum("get_all_schedulable" in repr(call.args[0]) for call in to_thread.call_args_list)
 
 
 def _snapshot(online: list | None = None) -> _SchedulableSnapshot:
@@ -580,7 +581,7 @@ class TestTheTickStaysOffTheEventLoop:
     HTTP and WebSocket request for its duration — and the stall grows with the profile count."""
 
     @pytest.mark.asyncio
-    async def test_the_snapshot_read_is_offloaded_to_a_thread(self, service: CronScheduler) -> None:
+    async def test_the_snapshot_class_read_is_offloaded_to_a_thread(self, service: CronScheduler) -> None:
         with patch(f"{_MODULE}.asyncio.to_thread", wraps=asyncio.to_thread) as to_thread:
             await _run_tick(service)
 
@@ -595,8 +596,8 @@ class TestTheTickStaysOffTheEventLoop:
         assert any(call.args[0] is scheduled_thread for call in to_thread.call_args_list)
 
     @pytest.mark.asyncio
-    async def test_the_whole_snapshot_is_one_hop_regardless_of_profile_count(self, service: CronScheduler) -> None:
-        """Reading classes and profiles separately would cost a hop each, every tick."""
+    async def test_the_snapshot_is_one_hop_regardless_of_profile_count(self, service: CronScheduler) -> None:
+        """Profiles are awaited, so only the class read crosses to a thread, once per tick however many there are."""
         with patch(f"{_MODULE}.asyncio.to_thread", wraps=asyncio.to_thread) as to_thread:
             await _run_tick(service, configs=[_config(agent_id="a"), _config(agent_id="b")])
 

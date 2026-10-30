@@ -292,8 +292,10 @@ buckets) → cron scheduler → Langfuse provisioning.
 All resources stored in `app.state`, accessible via the dependencies listed above.
 
 **One event loop**: MongoEngine is synchronous, so DB calls inside `async def` handlers stall HTTP, WebSocket and NATS
-callbacks. NATS RPC handlers and discovery rounds (`AgentService.get_agent_configuration`, agent and process endpoint
-discovery) wrap them in `asyncio.to_thread`; do the same in any new hot path. `ensure_active_tenant` takes
+callbacks. Entities already ported to Beanie (`BeanieInitializer.DOCUMENT_MODELS`, initialised in the lifespan next to
+MongoEngine) are awaited instead, which is how `AgentService.get_agent_configuration` serves the config RPC. Discovery
+rounds still wrap their MongoEngine reads in `asyncio.to_thread`; do the same in any new hot path that reads a
+MongoEngine entity. See `packages/core/swiss_ai_hub/core/persistence/README.md`. `ensure_active_tenant` takes
 `app.state.redis` so concurrent first requests do not write `active_tenant_id` to Keycloak several times.
 
 **`CronScheduler`**: Fires cron-scheduled agent runs. Lives in `swiss_ai_hub.core.scheduling` and is only *wired* here —
@@ -302,8 +304,9 @@ it takes no FastAPI objects and registers no routes, so the move into `aihub-dae
 watermark, per-occurrence claims, retention window) is in Redis and nowhere else. Tuned entirely through
 `SchedulerSettings` (`SCHEDULER_*`), including `SCHEDULER_EVENT_RETENTION_DAYS`, which is **0 (off)** by default —
 pruning a tenant's run history has to be switched on, never started by a deploy. Started *after*
-`initialize_startup_tenant()` so a first tick cannot outrun tenant and role setup. Its Mongo reads all go through one
-`asyncio.to_thread` hop per tick, because this process also serves every HTTP and WebSocket request.
+`initialize_startup_tenant()` so a first tick cannot outrun tenant and role setup. Its MongoEngine read (the schedulable
+classes) goes through one `asyncio.to_thread` hop per tick and the profiles are awaited from Beanie, because this
+process also serves every HTTP and WebSocket request.
 
 A schedule's cost is checked when the profile is **saved**, not metered while it runs: `InstanceConfigHelper`
 `.validate_cron_field` calls `ScheduleAdmission`, which computes how many runs the expression declares and rejects it

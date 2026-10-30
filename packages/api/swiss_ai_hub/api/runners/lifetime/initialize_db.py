@@ -321,13 +321,13 @@ async def carry_over_bucket_model_columns() -> None:
 # Profiles saved before that keep working without this — a config model ignores keys it does not declare —
 # so this only stops the retired key from being stored and echoed back by the edit form. Delete it, and the
 # entity method it calls, once deployments have upgraded past it.
-_RETIRED_CONFIG_KEYS = ["user_memory__enable_async_memory_storage"]
+_RETIRED_CONFIG_KEYS = ["user_memory.enable_async_memory_storage"]
 
 
-def strip_retired_agent_config_keys() -> None:
+async def strip_retired_agent_config_keys() -> None:
     """Removes config keys that no blueprint declares any more from the profiles still carrying them."""
     for config_key in _RETIRED_CONFIG_KEYS:
-        stripped = AgentConfigEntityDocument.unset_config_key(config_key)
+        stripped = await AgentConfigEntityDocument.unset_config_key(config_key)
         if stripped:
             logger.info(f"Stripped the retired '{config_key}' config key from {stripped} agent profile(s)")
 
@@ -336,9 +336,9 @@ def strip_retired_agent_config_keys() -> None:
 # which used to search everything, aborts every run (#1836). Saves now reject it, so no new one appears; this
 # rewrites the ones stored before. Delete it, `EmptyNamespaceScopeMigration` and the entities'
 # `replace_config_data_if_unchanged`, once deployments have upgraded past it.
-def widen_empty_retriever_namespace_scopes() -> None:
+async def widen_empty_retriever_namespace_scopes() -> None:
     """Gives every stored retriever with an empty namespace scope the all-namespaces scope it used to mean."""
-    migrated = EmptyNamespaceScopeMigration.run()
+    migrated = await EmptyNamespaceScopeMigration.run()
     if migrated:
         logger.info(f"Widened an empty retriever namespace scope to all namespaces in: {', '.join(migrated)}")
 
@@ -346,9 +346,9 @@ def widen_empty_retriever_namespace_scopes() -> None:
 # Transitional: mail categories name their collections as (database, collection) pairs, and the old keys left in a
 # profile narrowed a category back to its old collection after an admin switched the selection off
 # (aihub-core-private#299). Delete it and `PrePairKnowledgeCollectionMigration` once deployments have upgraded past it.
-def carry_over_pre_pair_knowledge_collections() -> None:
+async def carry_over_pre_pair_knowledge_collections() -> None:
     """Rewrites mail categories still in the pre-pair collection shape, and removes the old keys from every profile."""
-    migrated = PrePairKnowledgeCollectionMigration.run()
+    migrated = await PrePairKnowledgeCollectionMigration.run()
     if migrated:
         logger.info(f"Carried pre-pair knowledge collections over to pairs in: {', '.join(migrated)}")
 
@@ -356,9 +356,9 @@ def carry_over_pre_pair_knowledge_collections() -> None:
 # Transitional: the LLM request timeout default dropped from 600 s to 300 s (aihub-core-private#349), and the edit form
 # stores the default it showed, so profiles saved before keep 600 s until rewritten. Delete it and
 # `LLMRequestTimeoutMigration` once deployments have upgraded past it.
-def lower_llm_request_timeouts() -> None:
+async def lower_llm_request_timeouts() -> None:
     """Rewrites every stored LLM request timeout still at the old 600 s default to the new 300 s one."""
-    migrated = LLMRequestTimeoutMigration.run()
+    migrated = await LLMRequestTimeoutMigration.run()
     if migrated:
         logger.info(f"Lowered the LLM request timeout from 600 s to 300 s in: {', '.join(migrated)}")
 
@@ -367,9 +367,9 @@ def lower_llm_request_timeouts() -> None:
 # of the model's window, so such a profile on a smaller model could not be saved at all. Unset, the limit fills that
 # share, which is what it ran at already. Delete it and `OversizedInputLimitMigration` once deployments have upgraded
 # past it.
-def unset_oversized_input_limits() -> None:
+async def unset_oversized_input_limits() -> None:
     """Unsets every agent profile's input-token limit that lies above what its model allows."""
-    migrated = OversizedInputLimitMigration.run()
+    migrated = await OversizedInputLimitMigration.run()
     if migrated:
         logger.info(f"Unset an input-token limit above what the model allows in: {', '.join(migrated)}")
 
