@@ -227,12 +227,21 @@ structured:
         label: Excluded categories
         help: Optional. Pages in any of these categories are never synced, e.g. a
           category that marks pages to keep away from AI assistants.
-      sync_files:
+      sync_documents:
         label: Sync documents
         help: Also sync the documents the synced pages show or link to (PDF, Word,
-          PowerPoint, Excel and text files) into the collection File. Images, old Office
-          formats (doc, ppt) and archives are left out.
+          PowerPoint, Excel and text files) into the collection File. Old Office formats
+          (doc, ppt) and archives are left out.
+      sync_images:
+        label: Sync images
+        help: Also sync the images the synced pages show or link to (PNG, JPEG, GIF,
+          BMP, WebP, TIFF) into the collection File. Images a template shows, such
+          as logos and icons, are left out, and so are SVG files.
       max_file_size_mb:
         label: Maximum file size (MB)
-        help: Larger documents are left out. One document at a time is held in memory
-          while it is stored.
+        help: Larger files are left out. One file at a time is held in memory while
+          it is stored.
+      min_image_pixels:
+        label: Minimum image size (px)
+        help: Images narrower or lower than this are left out as icons. 0 keeps every
+          image.

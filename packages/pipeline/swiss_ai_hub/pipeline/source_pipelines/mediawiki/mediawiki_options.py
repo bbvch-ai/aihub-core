@@ -9,9 +9,11 @@ from swiss_ai_hub.core.form import Checkbox, ChipsInput, Form, InputNumber, Inpu
 _BASE_URL_PATTERN = r"^(https?://[^\s/@?#]+(/[^\s?#]*)?)?$"
 _CATEGORY_PREFIX = "category:"
 _MEGABYTE = 1_000_000
-# What the ingestion pipeline parses: MinerU (pdf), MarkItDown (Office), and plain text. Images and the old binary
-# Office formats (doc, ppt, pps) are not offered; neither are archives or videos, which nothing parses.
+# What the ingestion pipeline parses: MinerU (pdf and images), MarkItDown (Office), and plain text. The old binary
+# Office formats (doc, ppt, pps) are not offered; neither are archives, videos or SVG, which nothing parses. tif is not
+# an image type here: MinerU knows the extension tiff only.
 _DOCUMENT_TYPES = frozenset({"pdf", "docx", "pptx", "xlsx", "xls", "txt", "md", "csv", "rtf"})
+_IMAGE_TYPES = frozenset({"png", "jpg", "jpeg", "gif", "bmp", "webp", "tiff", "jp2"})
 _SIGNED_IN_WITH_PASSWORD = {"bot_password", "web_form"}
 
 
@@ -52,13 +54,20 @@ class MediaWikiOptions(Form):
     exclude_categories: Annotated[
         list[str] | ChipsInput | None, Field(description="Pages in one of these categories are never synced.")
     ] = None
-    sync_files: Annotated[
+    sync_documents: Annotated[
         bool | Checkbox, Field(description="Also sync the documents the synced pages show or link to.")
+    ] = False
+    sync_images: Annotated[
+        bool | Checkbox, Field(description="Also sync the images the synced pages show or link to.")
     ] = False
     max_file_size_mb: Annotated[
         Annotated[int, Field(ge=1, le=500)] | InputNumber,
         Field(description="Larger files are skipped; one file at a time is held in memory while it is written."),
     ] = 50
+    min_image_pixels: Annotated[
+        Annotated[int, Field(ge=0, le=2000)] | InputNumber,
+        Field(description="Images narrower or lower than this are skipped as icons; 0 keeps every image."),
+    ] = 100
 
     @field_validator("namespaces", "include_categories", "exclude_categories", mode="before")
     @classmethod
@@ -118,9 +127,18 @@ class MediaWikiOptions(Form):
     def max_file_bytes(self) -> int:
         return self.max_file_size_mb * _MEGABYTE
 
+    def syncs_files(self) -> bool:
+        return bool(self.sync_documents or self.sync_images)
+
+    def file_types(self) -> frozenset[str]:
+        """The extensions synced, after the switches for documents and images."""
+        return (_DOCUMENT_TYPES if self.sync_documents else frozenset()) | (
+            _IMAGE_TYPES if self.sync_images else frozenset()
+        )
+
     @staticmethod
-    def document_types() -> frozenset[str]:
-        return _DOCUMENT_TYPES
+    def image_types() -> frozenset[str]:
+        return _IMAGE_TYPES
 
     def oauth_token(self) -> str | None:
         """The token the client sends with every request; None unless the wiki is read through OAuth, so a token left

@@ -125,7 +125,7 @@ class TestPreflight:
     def test_an_unknown_namespace_or_one_without_pages_is_refused(
         self, wiki: FakeMediaWiki, guarded: list[str], wanted: str
     ):
-        with pytest.raises(ValueError, match=f"The wiki has no namespace {wanted}; it has 0, 1, 4, 6, 14, 100"):
+        with pytest.raises(ValueError, match=f"The wiki has no namespace {wanted}; it has 0, 1, 4, 6, 10, 14, 100"):
             _check(_options(namespaces=[wanted]))
 
     def test_an_excluded_category_that_does_not_exist_fails_instead_of_excluding_nothing(
@@ -149,16 +149,19 @@ class TestCollections:
         either would otherwise move every document."""
         wiki.local_names = {4: "Acme Wiki", 6: "Datei"}
 
-        collections = _collections(_options(namespaces=["Acme Wiki", "Main"], sync_files=True))
+        collections = _collections(_options(namespaces=["Acme Wiki", "Main"], sync_documents=True))
 
         assert collections == MediaWikiCollections(pages={4: "Project", 0: "Main"}, files="File")
 
     def test_files_are_not_given_a_collection_unless_they_are_synced(self, wiki: FakeMediaWiki, guarded: list[str]):
         assert _collections(_options()).files is None
 
+    def test_images_alone_are_given_the_file_collection(self, wiki: FakeMediaWiki, guarded: list[str]):
+        assert _collections(_options(sync_images=True)).files == "File"
+
     def test_the_file_namespaces_own_pages_may_share_the_file_collection(self, wiki: FakeMediaWiki, guarded: list[str]):
         """A page and a file are stored under different keys: File/Report.pdf.md next to File/Report.pdf."""
-        assert _collections(_options(namespaces=["File"], sync_files=True)).files == "File"
+        assert _collections(_options(namespaces=["File"], sync_documents=True)).files == "File"
 
     @pytest.mark.parametrize(
         ("custom", "wanted", "message"),
@@ -186,7 +189,7 @@ class TestCollections:
     ):
         """Pages of the same title in both would compete for one file, and one would be missing from the database."""
         wiki.extra_namespaces = custom
-        options = _options(namespaces=wanted, sync_files=True)
+        options = _options(namespaces=wanted, sync_documents=True)
 
         if message is None:
             _collections(options)

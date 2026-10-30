@@ -238,12 +238,22 @@ structured:
         help: Facultatif. Les pages de l'une de ces catégories ne sont jamais synchronisées,
           p. ex. une catégorie marquant les pages à tenir à l'écart des assistants
           IA.
-      sync_files:
+      sync_documents:
         label: Synchroniser les documents
         help: Synchronise aussi les documents affichés ou liés par les pages synchronisées
           (PDF, Word, PowerPoint, Excel et fichiers texte) dans l'espace de noms File.
-          Les images, les anciens formats Office (doc, ppt) et les archives sont exclus.
+          Les anciens formats Office (doc, ppt) et les archives sont exclus.
+      sync_images:
+        label: Synchroniser les images
+        help: Synchronise aussi les images affichées ou liées par les pages synchronisées
+          (PNG, JPEG, GIF, BMP, WebP, TIFF) dans l'espace de noms File. Les images
+          qu'un modèle affiche, comme les logos et les icônes, sont exclues, de même
+          que les fichiers SVG.
       max_file_size_mb:
         label: Taille de fichier maximale (Mo)
-        help: Les documents plus volumineux sont exclus. Un seul document à la fois
+        help: Les fichiers plus volumineux sont exclus. Un seul fichier à la fois
           est gardé en mémoire pendant son enregistrement.
+      min_image_pixels:
+        label: Taille d'image minimale (px)
+        help: Les images plus étroites ou moins hautes sont exclues comme icônes.
+          0 garde toutes les images.

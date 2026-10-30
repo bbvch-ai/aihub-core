@@ -238,13 +238,23 @@ structured:
         label: Ausgeschlossene Kategorien
         help: Optional. Seiten in einer dieser Kategorien werden nie synchronisiert,
           z. B. eine Kategorie für Seiten, die KI-Assistenten nicht sehen sollen.
-      sync_files:
+      sync_documents:
         label: Dokumente synchronisieren
         help: Synchronisiert auch die Dokumente, die auf den synchronisierten Seiten
           angezeigt oder verlinkt sind (PDF, Word, PowerPoint, Excel und Textdateien),
-          in den Namespace File. Bilder, alte Office-Formate (doc, ppt) und Archive werden
+          in den Namespace File. Alte Office-Formate (doc, ppt) und Archive werden
           ausgelassen.
+      sync_images:
+        label: Bilder synchronisieren
+        help: Synchronisiert auch die Bilder, die auf den synchronisierten Seiten
+          angezeigt oder verlinkt sind (PNG, JPEG, GIF, BMP, WebP, TIFF), in den Namespace
+          File. Bilder, die eine Vorlage anzeigt, etwa Logos und Icons, werden ausgelassen,
+          ebenso SVG-Dateien.
       max_file_size_mb:
         label: Maximale Dateigrösse (MB)
-        help: Grössere Dokumente werden ausgelassen. Beim Speichern wird jeweils ein
-          Dokument im Arbeitsspeicher gehalten.
+        help: Grössere Dateien werden ausgelassen. Beim Speichern wird jeweils eine
+          Datei im Arbeitsspeicher gehalten.
+      min_image_pixels:
+        label: Minimale Bildgrösse (px)
+        help: Schmalere oder niedrigere Bilder werden als Icons ausgelassen. 0 behält
+          alle Bilder.

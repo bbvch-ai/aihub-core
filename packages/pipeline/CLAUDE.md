@@ -701,14 +701,18 @@ type-level URL constraints, `problems()` and the `SourceHostGuard` check with
   its cells' content, because as data it would put the whole page in one cell. The remaining data tables are converted
   on their own through core's `HtmlTableConverter`, as Confluence does with its own copy of that code: the two kinds
   share no code, so each can change without the other.
-- **Files follow the pages** (`sync_files`, off by default). `MediaWikiScope.files` asks `generator=images` for the
-  files the in-scope pages show or link to, 50 pages per request, with `imageinfo` (URL, size, sha1). It keeps only
-  files of the wiki's own repository (a shared one such as Wikimedia Commons is another host's content), not in an
-  excluded category (a file page's own categories count; included categories do not, since files are in scope through
-  their pages), of a type ingestion parses (`MediaWikiOptions.document_types()`: pdf, Office 2007+, text; never images,
-  doc/ppt/pps, archives) and within `max_file_size_mb` (default 50). What is left out is counted in the run's log. A
-  file is stored once at `File/{name}.{extension in lower case}` and cites its description page. Changes are found by
-  `sha1|key` in `FILES_SEEN`.
+- **Files follow the pages** (`sync_documents` and `sync_images`, off by default). `MediaWikiScope.files` asks
+  `generator=images` for the files the in-scope pages show or link to, 50 pages per request, with `imageinfo` (URL,
+  size, sha1). It keeps only files of the wiki's own repository (a shared one such as Wikimedia Commons is another
+  host's content), not in an excluded category (a file page's own categories count; included categories do not, since
+  files are in scope through their pages), of a type switched on (`MediaWikiOptions.file_types()`: with `sync_documents`
+  pdf, Office 2007+, text; with `sync_images` the image types MinerU knows, `image_types()`, which is why `tif` and SVG
+  are not among them; never doc/ppt/pps, archives) and within `max_file_size_mb` (default 50). An image is also left out
+  when a page of the Template namespace shows it itself (`MediaWikiScope._template_images`: a template's logo or icon,
+  while an image passed as a template parameter is not on the template's page), or when its width or height is below
+  `min_image_pixels` (default 100, 0 keeps all). What is left out is counted in the run's log. A file is stored once at
+  `File/{name}.{extension in lower case}` and cites its description page. Changes are found by `sha1|key` in
+  `FILES_SEEN`.
 - **Downloads** (`MediaWikiClient.download`) use the sync's signed-in session (the adapter keeps the client of
   `dlt_source` for `read_file`), follow no redirect, stop reading at the size limit, and refuse an HTML answer: a single
   sign-on gateway answers an expired session with its login page and status 200, which would be stored as the document.

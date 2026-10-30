@@ -244,11 +244,11 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
 
 ## Amendment 2026-10-30: files next to records
 
-The MediaWiki kind syncs the documents its pages link (PDF and Office files on the wiki's `File:` pages), and
-Confluence's and Jira's attachments were left as follow-ups for the same reason (#1954, #1955). The decision above
-assumed records small enough to travel through dlt as rendered text, uploaded in one part and written by one run whose
-failure fails everything. A 90 MB PDF breaks the first assumption, and one file a source refuses to serve must not stop
-a database from syncing.
+The MediaWiki kind syncs the documents and, when switched on, the images its pages link (PDF, Office and image files on
+the wiki's `File:` pages), and Confluence's and Jira's attachments were left as follow-ups for the same reason (#1954,
+#1955). The decision above assumed records small enough to travel through dlt as rendered text, uploaded in one part and
+written by one run whose failure fails everything. A 90 MB PDF breaks the first assumption, and one file a source
+refuses to serve must not stop a database from syncing.
 
 **Decision.** A record is either a markdown file, as before, or a reference to a binary file.
 

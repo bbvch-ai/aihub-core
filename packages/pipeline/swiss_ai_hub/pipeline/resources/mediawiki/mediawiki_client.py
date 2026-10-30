@@ -143,7 +143,7 @@ class MediaWikiClient:
 
     def files_used_by(self, page_ids: Annotated[list[int], "Ids of the pages whose files are wanted"]) -> list[dict]:
         """Every file the pages show or link to (``[[File:…]]``, ``[[Media:…]]``), once each, with its latest version's
-        URL, size, checksum and MIME type in ``imageinfo``. A link to a file nobody uploaded has no ``imageinfo`` and
+        URL, size (an image's width and height too), checksum and MIME type in ``imageinfo``. A link to a file nobody uploaded has no ``imageinfo`` and
         is left out; ``imagerepository`` tells a file of this wiki from one of a shared repository."""
         files: dict[str, dict[str, Any]] = {}
         for start in range(0, len(page_ids), self.IDS_PER_QUERY):

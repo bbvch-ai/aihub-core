@@ -189,7 +189,7 @@ class TestFileSync:
         wiki.add_file(106, "Salaries.pdf", b"%PDF-1.7 salaries", used_by=[1], categories=["Hide From AI"])
         wiki.add_file(107, "Logo.pdf", b"%PDF-1.7 commons", used_by=[1], repository="shared")
         wiki.category_pages.add("Hide From AI")
-        _configure(world, sync_files=True)
+        _configure(world, sync_documents=True)
         return wiki
 
     def test_files_are_not_synced_unless_switched_on(self, world: World, wiki: FakeMediaWiki):
@@ -250,7 +250,7 @@ class TestFileSync:
 
     def test_a_file_above_the_size_limit_is_left_out(self, world: World, files: FakeMediaWiki):
         files.file("Rollout.pptx")["content"] = b"x" * 1_000_001
-        _configure(world, sync_files=True, max_file_size_mb=1)
+        _configure(world, sync_documents=True, max_file_size_mb=1)
 
         assert world.sync("wiki-db", asset=_ASSET).success
 
@@ -289,7 +289,7 @@ class TestFileSync:
         """The collection is the namespace's canonical name; Datei is only what that wiki calls it."""
         wiki.local_names = {6: "Datei"}
         wiki.add_file(101, "Handbuch.pdf", b"%PDF-1.7 Handbuch", used_by=[1])
-        _configure(world, sync_files=True)
+        _configure(world, sync_documents=True)
 
         assert world.sync("wiki-db", asset=_ASSET).success
 
@@ -297,3 +297,61 @@ class TestFileSync:
         assert (
             unquote(world.s3.objects[("wiki-db", "File/Handbuch.pdf")]["Metadata"]["document_title"]) == "Handbuch.pdf"
         )
+
+
+class TestImageSync:
+    @pytest.fixture
+    def images(self, world: World, wiki: FakeMediaWiki) -> FakeMediaWiki:
+        """A wiki whose pages show photos, a template's icon, a photo passed to a template, and a hand-placed icon."""
+        wiki.add_page(500, "Infobox", namespace=10)
+        wiki.add_file(201, "Team photo.jpg", b"JPEG team", used_by=[1])
+        wiki.add_file(202, "Info icon.png", b"PNG icon", used_by=[1, 10, 500], pixels=(400, 400))
+        wiki.add_file(203, "Office.png", b"PNG office", used_by=[10])
+        wiki.add_file(204, "Bullet.gif", b"GIF bullet", used_by=[2], pixels=(12, 12))
+        wiki.add_file(205, "Banner.png", b"PNG banner", used_by=[2], pixels=(1200, 60))
+        wiki.add_file(206, "Diagram.svg", b"<svg/>", used_by=[1])
+        wiki.add_file(207, "Scan.tif", b"TIFF scan", used_by=[1])
+        wiki.add_file(101, "Handbook 2026.pdf", b"%PDF-1.7 handbook", used_by=[1])
+        _configure(world, sync_images=True)
+        return wiki
+
+    def test_images_are_not_synced_unless_switched_on(self, world: World, images: FakeMediaWiki):
+        _configure(world, sync_documents=True)
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert [key for key in world.files("wiki-db") if key.startswith("File/")] == ["File/Handbook 2026.pdf"]
+
+    def test_only_content_images_land_in_the_file_collection(self, world: World, images: FakeMediaWiki):
+        """A template's own image, images below the minimum size on either side, SVG and tif stay out, and so do the
+        documents, which have a switch of their own."""
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert [key for key in world.files("wiki-db") if key.startswith("File/")] == [
+            "File/Office.png",
+            "File/Team photo.jpg",
+        ]
+        assert sorted(images.downloads) == ["Office.png", "Team photo.jpg"]
+
+    def test_a_minimum_size_of_zero_keeps_small_images(self, world: World, images: FakeMediaWiki):
+        _configure(world, sync_images=True, min_image_pixels=0)
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert {"File/Bullet.gif", "File/Banner.png"} <= set(world.files("wiki-db"))
+        assert "File/Info icon.png" not in world.files("wiki-db")
+
+    def test_documents_and_images_sync_together(self, world: World, images: FakeMediaWiki):
+        _configure(world, sync_documents=True, sync_images=True)
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert {"File/Handbook 2026.pdf", "File/Office.png", "File/Team photo.jpg"} <= set(world.files("wiki-db"))
+
+    def test_images_switched_off_again_are_removed(self, world: World, images: FakeMediaWiki):
+        world.sync("wiki-db", asset=_ASSET)
+        _configure(world)
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert not [key for key in world.files("wiki-db") if key.startswith("File/")]

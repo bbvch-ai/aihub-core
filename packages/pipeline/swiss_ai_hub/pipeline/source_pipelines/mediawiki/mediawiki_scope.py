@@ -14,6 +14,7 @@ from swiss_ai_hub.pipeline.source_pipelines.mediawiki.mediawiki_page import Medi
 logger = logging.getLogger(__name__)
 
 _LOCAL_REPOSITORY = "local"
+_TEMPLATE_NAMESPACE = 10
 
 
 class MediaWikiScope(BaseModel):
@@ -24,6 +25,10 @@ class MediaWikiScope(BaseModel):
     follow the pages: only those a page in scope shows or links to are synced, so a file used only on an excluded page
     stays out. A file's own excluded categories apply too; included categories do not, since files are rarely
     categorised and are already in scope through their pages.
+
+    An image a template shows on its own page is left out, wherever it is used: that is the logo, icon or flag a
+    template puts on every page using it. An image passed to a template as a parameter is not shown on the template's
+    page, so it stays in. Images smaller than the configured minimum are left out as the icons placed by hand.
     """
 
     namespaces: Annotated[dict[int, str], Field(description="Namespace numbers to sync, with their collection names.")]
@@ -62,18 +67,19 @@ class MediaWikiScope(BaseModel):
         options: Annotated[MediaWikiOptions, "The checked configuration"],
     ) -> list[MediaWikiFile]:
         """Every file in scope, none when files are not synced. Files of a shared repository (Wikimedia Commons on
-        many wikis) are left out, and so are types the ingestion pipeline cannot parse and files above the size limit;
-        the run's log says how many of each."""
+        many wikis) are left out, and so are types not synced, files above the size limit and images taken for
+        decoration; the run's log says how many of each."""
         if self.file_namespace is None:
             return []
         skipped: Counter[str] = Counter()
         files = []
+        template_images = self._template_images(client) if options.sync_images else set()
         for listed in client.files_used_by([page["pageid"] for page in self.pages(client)]):
             if listed.get("imagerepository") != _LOCAL_REPOSITORY:
                 skipped["from a shared repository"] += 1
                 continue
             file = MediaWikiFile.from_listing(listed, self.file_namespace)
-            reason = self._reason_to_skip(file, options)
+            reason = self._reason_to_skip(file, template_images, options)
             if reason:
                 skipped[reason] += 1
             else:
@@ -95,14 +101,30 @@ class MediaWikiScope(BaseModel):
             return False
         return self.included_ids is None or page_id in self.included_ids
 
-    def _reason_to_skip(self, file: MediaWikiFile, options: MediaWikiOptions) -> str | None:
+    def _reason_to_skip(self, file: MediaWikiFile, template_images: set[str], options: MediaWikiOptions) -> str | None:
         if file.page_id in self.excluded_ids:
             return "in an excluded category"
-        if file.extension not in options.document_types():
+        if file.extension not in options.file_types():
             return "of a type that is not synced"
         if file.size > options.max_file_bytes():
             return "larger than the limit"
+        if file.extension in options.image_types():
+            return self._reason_to_skip_image(file, template_images, options)
         return None
+
+    @staticmethod
+    def _reason_to_skip_image(file: MediaWikiFile, template_images: set[str], options: MediaWikiOptions) -> str | None:
+        if file.name in template_images:
+            return "shown by a template"
+        if min(file.width, file.height) < options.min_image_pixels:
+            return "smaller than the minimum image size"
+        return None
+
+    @staticmethod
+    def _template_images(client: MediaWikiClient) -> set[str]:
+        """Names, without the namespace prefix, of the files the template pages show themselves."""
+        template_ids = [page["pageid"] for batch in client.pages(_TEMPLATE_NAMESPACE) for page in batch]
+        return {file["title"].split(":", 1)[1] for file in client.files_used_by(template_ids)}
 
     @staticmethod
     def _members(client: MediaWikiClient, categories: list[str]) -> set[int]:

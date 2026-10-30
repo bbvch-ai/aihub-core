@@ -1,5 +1,6 @@
 import pytest
 from pydantic import ValidationError
+from swiss_ai_hub.core.infrastructure import MineruSettings
 
 from swiss_ai_hub.pipeline.source_pipelines.mediawiki.mediawiki_options import MediaWikiOptions
 from swiss_ai_hub.pipeline.source_pipelines.structured_sync_config import StructuredSyncConfig
@@ -90,7 +91,7 @@ class TestStructuredSyncConfig:
 
 class TestFileOptions:
     def test_files_are_not_synced_unless_switched_on(self):
-        assert _options().sync_files is False
+        assert _options().sync_documents is False
 
     def test_the_size_limit_is_in_megabytes(self):
         assert _options(max_file_size_mb=2).max_file_bytes() == 2_000_000
@@ -100,6 +101,31 @@ class TestFileOptions:
         with pytest.raises(ValidationError):
             _options(max_file_size_mb=size)
 
-    def test_images_and_old_office_formats_are_not_document_types(self):
-        assert {"pdf", "docx", "pptx", "xlsx"} <= MediaWikiOptions.document_types()
-        assert not {"png", "jpg", "doc", "ppt", "zip"} & MediaWikiOptions.document_types()
+    def test_nothing_is_synced_but_pages_by_default(self):
+        options = _options()
+
+        assert not options.syncs_files()
+        assert options.file_types() == frozenset()
+        assert options.min_image_pixels == 100
+
+    def test_documents_leave_out_images_and_old_office_formats(self):
+        types = _options(sync_documents=True).file_types()
+
+        assert {"pdf", "docx", "pptx", "xlsx"} <= types
+        assert not {"png", "jpg", "doc", "ppt", "zip"} & types
+
+    def test_images_alone_are_files_to_sync(self):
+        options = _options(sync_images=True)
+
+        assert options.syncs_files()
+        assert {"png", "jpg", "jpeg", "gif", "tiff"} <= options.file_types()
+        assert not {"pdf", "svg", "tif"} & options.file_types()
+
+    def test_images_are_the_types_the_parser_reads(self):
+        """A type MinerU does not know would fail the ingestion of every such image."""
+        assert MediaWikiOptions.image_types() <= set(MineruSettings().EXTENSIONS)
+
+    @pytest.mark.parametrize("pixels", [-1, 2001])
+    def test_a_minimum_image_size_out_of_range_is_refused_when_saved(self, pixels: int):
+        with pytest.raises(ValidationError):
+            _options(min_image_pixels=pixels)

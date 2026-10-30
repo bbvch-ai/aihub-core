@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 _I18N = "lib.source_pipelines.structured.config.mediawiki"
 _AUTH_METHOD_REF = "mediawiki_auth_method"
-_SYNC_FILES_REF = "mediawiki_sync_files"
+_SYNC_DOCUMENTS_REF = "mediawiki_sync_documents"
+_SYNC_IMAGES_REF = "mediawiki_sync_images"
 _SEEN = "seen"
 _ALLOW_LIST_VARIABLE = "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"
 # What a file download answers when the wiki will not serve that file: forbidden, missing, or deleted since listed.
@@ -35,8 +36,8 @@ _UNAVAILABLE = {403, 404, 410}
 
 class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
     """Syncs the pages of the configured MediaWiki namespaces, one markdown file per page at
-    ``{namespace}/{title, split into subpages}.md``, and with ``sync_files`` the documents those pages use, each as it
-    is at ``{file namespace}/{name}``.
+    ``{namespace}/{title, split into subpages}.md``, and with ``sync_documents`` and ``sync_images`` the documents and
+    images those pages use, each as it is at ``{file namespace}/{name}``.
 
     What changed is found by comparing every page's latest revision and path with the previous sync's, not by a
     last-modified cursor: a page renamed or moved into scope (a new category, a removed exclusion) keeps the revision it
@@ -55,6 +56,7 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
         shown = cls.shown_for(cls.kind)
         method = f"$get({_AUTH_METHOD_REF}).value"
         with_password = f"{shown} && ({method} === 'bot_password' || {method} === 'web_form')"
+        with_images = f"{shown} && $get({_SYNC_IMAGES_REF}).value"
         return MediaWikiOptions(
             base_url=InputText(
                 **cls._labels("base_url"),
@@ -89,13 +91,17 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
             namespaces=ChipsInput(**cls._labels("namespaces"), placeholder="Main", condition_if=shown),
             include_categories=ChipsInput(**cls._labels("include_categories"), condition_if=shown),
             exclude_categories=ChipsInput(**cls._labels("exclude_categories"), condition_if=shown),
-            sync_files=Checkbox(**cls._labels("sync_files"), ref=_SYNC_FILES_REF, condition_if=shown),
+            sync_documents=Checkbox(**cls._labels("sync_documents"), ref=_SYNC_DOCUMENTS_REF, condition_if=shown),
             max_file_size_mb=InputNumber(
                 **cls._labels("max_file_size_mb"),
                 min=1,
                 max=500,
                 use_grouping=False,
-                condition_if=f"{shown} && $get({_SYNC_FILES_REF}).value",
+                condition_if=f"{shown} && ($get({_SYNC_DOCUMENTS_REF}).value || $get({_SYNC_IMAGES_REF}).value)",
+            ),
+            sync_images=Checkbox(**cls._labels("sync_images"), ref=_SYNC_IMAGES_REF, condition_if=shown),
+            min_image_pixels=InputNumber(
+                **cls._labels("min_image_pixels"), min=0, max=2000, use_grouping=False, condition_if=with_images
             ),
         )
 
@@ -146,7 +152,7 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
                 for start in range(0, len(changed), MediaWikiClient.IDS_PER_QUERY):
                     yield [file.model_dump() for file in changed[start : start + MediaWikiClient.IDS_PER_QUERY]]
 
-            return [pages, files] if options.sync_files else [pages]
+            return [pages, files] if options.syncs_files() else [pages]
 
         return mediawiki()
 

@@ -104,7 +104,7 @@ class MediaWikiPreflight:
         pages = {
             number: cls._collection_of(number, known) for number in cls._namespaces(known, options.namespace_names())
         }
-        files = cls._collection_of(_FILE_NAMESPACE, known) if options.sync_files else None
+        files = cls._collection_of(_FILE_NAMESPACE, known) if options.syncs_files() else None
         cls._require_distinct(pages, files, known)
         return MediaWikiCollections(pages=pages, files=files)
 

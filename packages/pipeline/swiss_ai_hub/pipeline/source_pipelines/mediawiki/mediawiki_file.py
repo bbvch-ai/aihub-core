@@ -21,6 +21,8 @@ class MediaWikiFile(BaseModel):
     description_url: Annotated[str, Field(description="The file's description page, which citations link to.")]
     size: Annotated[int, Field(description="Size in bytes of the latest version.")]
     sha1: Annotated[str, Field(description="Checksum of the latest version; it changes with every upload.")]
+    width: Annotated[int, Field(description="Width in pixels of an image; 0 for a document.")] = 0
+    height: Annotated[int, Field(description="Height in pixels of an image; 0 for a document.")] = 0
 
     @classmethod
     def from_listing(
@@ -37,6 +39,8 @@ class MediaWikiFile(BaseModel):
             description_url=info["descriptionurl"],
             size=info["size"],
             sha1=info["sha1"],
+            width=info.get("width") or 0,
+            height=info.get("height") or 0,
         )
 
     @property

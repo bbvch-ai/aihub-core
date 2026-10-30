@@ -19,7 +19,7 @@ from requests import PreparedRequest, Response
 from requests.adapters import BaseAdapter
 
 SITE = "https://wiki.acme.test"
-NAMESPACES = {0: "", 1: "Talk", 4: "Project", 6: "File", 14: "Category", 100: "Process"}
+NAMESPACES = {0: "", 1: "Talk", 4: "Project", 6: "File", 10: "Template", 14: "Category", 100: "Process"}
 _REASONS = {
     200: "OK",
     302: "Found",
@@ -128,9 +128,10 @@ class FakeMediaWiki:
         categories: list[str] | None = None,
         repository: str = "local",
         served_with: int = 200,
+        pixels: tuple[int, int] = (800, 600),
     ) -> dict[str, Any]:
         """A file uploaded to the wiki and shown or linked on the given pages. ``served_with`` is the status its
-        download answers with, for a file the wiki lists but will not serve."""
+        download answers with, for a file the wiki lists but will not serve; ``pixels`` its width and height."""
         file = {
             "pageid": page_id,
             "name": name,
@@ -139,6 +140,7 @@ class FakeMediaWiki:
             "categories": list(categories or []),
             "repository": repository,
             "served_with": served_with,
+            "pixels": pixels,
         }
         self.files.append(file)
         return file
@@ -277,6 +279,8 @@ class FakeMediaWiki:
                 "imageinfo": [
                     {
                         "size": len(file["content"]),
+                        "width": file["pixels"][0],
+                        "height": file["pixels"][1],
                         "sha1": hashlib.sha1(file["content"], usedforsecurity=False).hexdigest(),
                         "mime": mimetypes.guess_type(file["name"])[0] or "application/octet-stream",
                         "url": f"{SITE}/images/{quote(file['name'])}",

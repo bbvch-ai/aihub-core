@@ -237,12 +237,21 @@ structured:
         help: Facoltativo. Le pagine di una di queste categorie non vengono mai sincronizzate,
           ad es. una categoria che contrassegna le pagine da tenere lontane dagli
           assistenti IA.
-      sync_files:
+      sync_documents:
         label: Sincronizza documenti
         help: Sincronizza anche i documenti mostrati o collegati dalle pagine sincronizzate
-          (PDF, Word, PowerPoint, Excel e file di testo) nel namespace File. Immagini,
-          vecchi formati Office (doc, ppt) e archivi sono esclusi.
+          (PDF, Word, PowerPoint, Excel e file di testo) nel namespace File. I vecchi
+          formati Office (doc, ppt) e gli archivi sono esclusi.
+      sync_images:
+        label: Sincronizza immagini
+        help: Sincronizza anche le immagini mostrate o collegate dalle pagine sincronizzate
+          (PNG, JPEG, GIF, BMP, WebP, TIFF) nel namespace File. Le immagini mostrate
+          da un template, come loghi e icone, sono escluse, così come i file SVG.
       max_file_size_mb:
         label: Dimensione massima del file (MB)
-        help: I documenti più grandi sono esclusi. Durante il salvataggio viene tenuto
-          in memoria un documento alla volta.
+        help: I file più grandi sono esclusi. Durante il salvataggio viene tenuto
+          in memoria un file alla volta.
+      min_image_pixels:
+        label: Dimensione minima dell'immagine (px)
+        help: Le immagini più strette o più basse sono escluse come icone. 0 mantiene
+          tutte le immagini.
