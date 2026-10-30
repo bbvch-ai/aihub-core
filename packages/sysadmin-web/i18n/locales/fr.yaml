@@ -19,6 +19,13 @@ tenant_admin:
     orphaned_label: Orphelin
     orphaned_tooltip: Ce tenant a des métadonnées mais aucun groupe Keycloak correspondant.
       Les utilisateurs n'y ont pas accès.
+    not_member_label: Non membre
+    not_member_tooltip: Votre compte ne fait pas partie du groupe Keycloak de ce tenant,
+      ses rôles et utilisateurs ne peuvent donc pas être chargés.
+    not_member_message: Votre compte n'est pas membre du groupe Keycloak /tenants/{tenantId},
+      les rôles et utilisateurs de ce tenant ne peuvent donc pas être chargés. Demandez
+      à un administrateur Keycloak d'ajouter à ce groupe le compte avec lequel vous êtes
+      connecté.
   card:
     more_rules: +{count} autres
   configure:

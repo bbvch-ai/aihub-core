@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.api.routes.health.api_health_controller import ApiHealthController
     from swiss_ai_hub.api.routes.knowledge.knowledge_controller import KnowledgeController
     from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
+    from swiss_ai_hub.api.routes.my_tenant.my_tenant_controller import MyTenantController
     from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
     from swiss_ai_hub.api.routes.process.process_controller import ProcessController
     from swiss_ai_hub.api.routes.role.role_controller import RoleController
@@ -44,6 +45,7 @@ __all__ = [
     "KnowledgeController",
     "ModelCreationService",
     "MyAccountController",
+    "MyTenantController",
     "OpenaiController",
     "ProcessController",
     "RoleController",
@@ -69,6 +71,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "KnowledgeController": "swiss_ai_hub.api.routes.knowledge.knowledge_controller",
     "ModelCreationService": "swiss_ai_hub.api.services.model_creation_service",
     "MyAccountController": "swiss_ai_hub.api.routes.my_account.my_account_controller",
+    "MyTenantController": "swiss_ai_hub.api.routes.my_tenant.my_tenant_controller",
     "OpenaiController": "swiss_ai_hub.api.routes.openai.openai_controller",
     "ProcessController": "swiss_ai_hub.api.routes.process.process_controller",
     "RoleController": "swiss_ai_hub.api.routes.role.role_controller",

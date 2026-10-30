@@ -19,6 +19,13 @@ tenant_admin:
     orphaned_label: Verwaist
     orphaned_tooltip: Dieser Tenant hat Metadaten, aber keine passende Keycloak-Gruppe.
       Benutzer können nicht darauf zugreifen.
+    not_member_label: Kein Mitglied
+    not_member_tooltip: Ihr Konto ist nicht in der Keycloak-Gruppe dieses Tenants,
+      daher können seine Rollen und Benutzer nicht geladen werden.
+    not_member_message: Ihr Konto ist kein Mitglied der Keycloak-Gruppe /tenants/{tenantId},
+      daher können die Rollen und Benutzer dieses Tenants nicht geladen werden. Bitten
+      Sie eine Keycloak-Administratorin oder einen Keycloak-Administrator, das Konto,
+      mit dem Sie angemeldet sind, dieser Gruppe hinzuzufügen.
   card:
     more_rules: +{count} weitere
   configure:

@@ -34,13 +34,16 @@ so sysadmin-web's inherited `@swiss-ai-hub/web` composables resolve same-origin 
 | Controller                                   | Powers (inherited composables / pages)                               |
 | -------------------------------------------- | -------------------------------------------------------------------- |
 | `MyAccountController.get_my_identity()` only | `sysadmin.global.ts` role gate (replaces the old `WhoamiController`) |
+| `MyTenantController.get_my_tenants()` only   | `useTenantMemberships` — "not a member" notice on tenant pages       |
 | `UserController`                             | `useUsers`, `useUser`                                                |
 | `RoleController`                             | `useRoles`, `useCreateRole`, `useUpdateRole`, `useDeleteRole`        |
 | `AuthProviderController`                     | `useAuthProviders` on inherited `/auth/login`                        |
 
 The controllers' own permission templates (`user_with_permission(aihub.admin.service.X)`) plus the sysadmin
 short-circuit (ADR `2026_04_15_sysadmin_implicit_admin_access`) keep the auth model coherent — sysadmins implicitly hold
-`ACCESS_ADMIN` in every tenant, so they can hit these endpoints on sysadmin-api just like on main API.
+`ACCESS_ADMIN` in every tenant they are a member of, so they can hit these endpoints on sysadmin-api just like on main
+API. Membership itself is not implied by the role: tenant-scoped routes reject a sysadmin whose Keycloak account is not
+in `/tenants/<tenant_id>`, which is why sysadmin-web checks `get_my_tenants()` before loading users or roles.
 
 `MyAccountController.get_my_account()` is deliberately NOT registered here: it returns an access matrix enumerated from
 `runner.controllers`, which on sysadmin-api would be a misleadingly narrow slice of the platform surface. The
