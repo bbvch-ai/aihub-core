@@ -77,7 +77,7 @@ uv run pytest packages/sysadmin-api/tests/tenant_admin/test_tenant_disclaimer.py
 ```
 
 The browser suite runs against a disposable stock OpenWebUI container using the same loader and Compose config mount. It
-needs ports 18081, 3335 and 3336, but no LLM or full AI Hub deployment:
+needs ports 18081, 3335, 3336 and 3337, but no LLM or full AI Hub deployment:
 
 ```bash
 docker compose -f e2e/disclaimer/compose.yml up -d --wait
@@ -104,3 +104,19 @@ In a full deployment:
 5. Leave chat open for over 30 seconds. Check that only the existing active-tenant poll recurs, without disclaimer
    requests.
 6. After recreating OpenWebUI, reload a browser that accessed it before the upgrade and check that the footer appears.
+
+## Interface language
+
+The loader also repairs the language OpenWebUI saved in the browser (`localStorage.locale`). OpenWebUI falls back from a
+saved language only to that same language, so a code it ships no translation for loads no translation at all. From
+v0.11.4 on, settings texts use code-name keys, and the Settings dialog and the chat's Controls panel then show raw keys
+such as `settings.personal.general.parameters.streamChatResponse.label`. Two kinds of browsers hit this: those where
+OpenWebUI v0.11.3 or earlier saved `de` from the former `DEFAULT_LOCALE`, and those whose own language is a regional
+code OpenWebUI does not ship, such as `de-CH` or `it-CH`, from their second visit on.
+
+Before OpenWebUI starts, the loader replaces a saved language that is not in OpenWebUI's locale list with `en-US`.
+French codes are kept, because OpenWebUI maps any of them to `fr-FR` itself. The repair runs in the AI Hub frame and on
+direct visits. `DEFAULT_LOCALE` is `en-US` for the same reason.
+
+The locale list in the loader is copied from OpenWebUI's `src/lib/i18n/locales/languages.json`. Recheck it after
+OpenWebUI upgrades. `e2e/disclaimer/locale.spec.ts` covers the repair in the browser suite above.
