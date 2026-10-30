@@ -7,9 +7,11 @@ MediaWiki returns them to an account without ``apihighlimits``. The fake holds o
 method, makes every later request read as the account.
 """
 
+import hashlib
 import json
+import mimetypes
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 import pytest
 from dlt.sources.helpers.requests.retry import Client
@@ -28,7 +30,7 @@ _REASONS = {
     500: "Internal Server Error",
 }
 
-type Answer = tuple[int, dict[str, Any] | str, dict[str, str]]
+type Answer = tuple[int, dict[str, Any] | str | bytes, dict[str, str]]
 
 
 class FakeMediaWikiTransport(BaseAdapter):
@@ -44,7 +46,11 @@ class FakeMediaWikiTransport(BaseAdapter):
         response.reason = _REASONS.get(status, "")
         content_type = "text/html; charset=UTF-8" if isinstance(body, str) else "application/json; charset=utf-8"
         response.headers.update({"Content-Type": content_type, **headers})
-        response._content = (body if isinstance(body, str) else json.dumps(body)).encode()
+        if isinstance(body, bytes):
+            response._content = body
+        else:
+            response._content = (body if isinstance(body, str) else json.dumps(body)).encode()
+        response._content_consumed = True
         response.encoding = "utf-8"
         response.url = request.url or ""
         response.request = request
@@ -72,6 +78,12 @@ class FakeMediaWiki:
         self.login_redirect = "/index.php/Main_Page"
         self.category_pages: set[str] = set()
         self.pages: list[dict[str, Any]] = []
+        self.files: list[dict[str, Any]] = []
+        self.local_names: dict[int, str] = {}
+        """Names that differ from the canonical one, as on a wiki in another language or with its own site name."""
+        self.extra_namespaces: dict[int, str] = {}
+        """Custom namespaces by number, with their canonical names."""
+        self.downloads: list[str] = []
         self.requests: list[PreparedRequest] = []
         self.queued_failures: list[Answer] = []
         self._next_revision = 1000
@@ -92,7 +104,7 @@ class FakeMediaWiki:
         categories: list[str] | None = None,
         hidden_categories: list[str] | None = None,
     ) -> dict[str, Any]:
-        prefix = f"{NAMESPACES[namespace]}:" if namespace else ""
+        prefix = f"{self.local_name(namespace)}:" if namespace else ""
         page = {
             "pageid": page_id,
             "ns": namespace,
@@ -106,6 +118,37 @@ class FakeMediaWiki:
         self._revise(page)
         return page
 
+    def add_file(
+        self,
+        page_id: int,
+        name: str,
+        content: bytes,
+        *,
+        used_by: list[int],
+        categories: list[str] | None = None,
+        repository: str = "local",
+        served_with: int = 200,
+    ) -> dict[str, Any]:
+        """A file uploaded to the wiki and shown or linked on the given pages. ``served_with`` is the status its
+        download answers with, for a file the wiki lists but will not serve."""
+        file = {
+            "pageid": page_id,
+            "name": name,
+            "content": content,
+            "used_by": list(used_by),
+            "categories": list(categories or []),
+            "repository": repository,
+            "served_with": served_with,
+        }
+        self.files.append(file)
+        return file
+
+    def local_name(self, namespace: int) -> str:
+        return self.local_names.get(namespace) or {-1: "Special", **NAMESPACES, **self.extra_namespaces}[namespace]
+
+    def file(self, name: str) -> dict[str, Any]:
+        return next(file for file in self.files if file["name"] == name)
+
     def page(self, page_id: int) -> dict[str, Any]:
         return next(page for page in self.pages if page["pageid"] == page_id)
 
@@ -117,7 +160,7 @@ class FakeMediaWiki:
     def rename(self, page_id: int, title: str) -> None:
         """A move keeps the page's id and, unlike an edit, its content."""
         page = self.page(page_id)
-        prefix = f"{NAMESPACES[page['ns']]}:" if page["ns"] else ""
+        prefix = f"{self.local_name(page['ns'])}:" if page["ns"] else ""
         page["title"] = f"{prefix}{title}"
 
     def categorize(self, page_id: int, categories: list[str]) -> None:
@@ -147,6 +190,8 @@ class FakeMediaWiki:
             return self._api(params, request.headers.get("Authorization"))
         if path.startswith("/index.php"):
             return self._login_page(request, params)
+        if path.startswith("/images/"):
+            return self._download(unquote(path.removeprefix("/images/")))
         return 404, "<html>Not found</html>", {}
 
     def _api(self, params: dict[str, str], authorization: str | None) -> Answer:
@@ -176,17 +221,21 @@ class FakeMediaWiki:
             return {"query": {"userinfo": user}}
         if params.get("meta") == "siteinfo":
             namespaces = {
-                str(number): {"id": number, "name": name, **({"canonical": name} if name else {})}
-                for number, name in {-1: "Special", **NAMESPACES}.items()
+                str(number): {"id": number, "name": self.local_name(number), **({"canonical": name} if name else {})}
+                for number, name in {-1: "Special", **NAMESPACES, **self.extra_namespaces}.items()
             }
             general = {"sitename": "Acme Wiki", "generator": self.version}
             return {"query": {"general": general, "namespaces": namespaces}}
         if params.get("generator") == "allpages":
             pages = [self._listed(page) for page in self.pages if page["ns"] == int(params["gapnamespace"])]
             return self._paged(params, "gapcontinue", "pages", sorted(pages, key=lambda page: page["title"]))
+        if params.get("generator") == "images":
+            return self._paged(params, "gimcontinue", "pages", self._files_used_by(params["pageids"]))
         if params.get("list") == "categorymembers":
             category = params["cmtitle"].removeprefix("Category:")
-            members = [{"pageid": page["pageid"]} for page in self.pages if category in page["categories"]]
+            members = [
+                {"pageid": entry["pageid"]} for entry in [*self.pages, *self.files] if category in entry["categories"]
+            ]
             return self._paged(params, "cmcontinue", "categorymembers", members)
         if params.get("prop") == "categoryinfo":
             return {"query": {"pages": [self._category(title) for title in params["titles"].split("|")]}}
@@ -215,9 +264,43 @@ class FakeMediaWiki:
             "canonicalurl": url,
         }
 
+    def _files_used_by(self, page_ids: str) -> list[dict[str, Any]]:
+        """As ``generator=images`` answers: a file of a shared repository has no page id here, and a file once per
+        request however many of the pages use it."""
+        wanted = {int(page_id) for page_id in page_ids.split("|")}
+        return [
+            {
+                **({"pageid": file["pageid"]} if file["repository"] == "local" else {}),
+                "ns": 6,
+                "title": f"{self.local_name(6)}:{file['name']}",
+                "imagerepository": file["repository"],
+                "imageinfo": [
+                    {
+                        "size": len(file["content"]),
+                        "sha1": hashlib.sha1(file["content"], usedforsecurity=False).hexdigest(),
+                        "mime": mimetypes.guess_type(file["name"])[0] or "application/octet-stream",
+                        "url": f"{SITE}/images/{quote(file['name'])}",
+                        "descriptionurl": f"{SITE}/index.php/File:{quote(file['name'].replace(' ', '_'))}",
+                    }
+                ],
+            }
+            for file in self.files
+            if wanted & set(file["used_by"])
+        ]
+
+    def _download(self, name: str) -> Answer:
+        self.downloads.append(name)
+        file = next((file for file in self.files if file["name"] == name), None)
+        if file is None:
+            return 404, "<html>Not found</html>", {}
+        if file["served_with"] != 200:
+            return file["served_with"], "<html>Refused</html>", {}
+        mime = mimetypes.guess_type(name)[0] or "application/octet-stream"
+        return 200, file["content"], {"Content-Type": mime}
+
     def _category(self, title: str) -> dict[str, Any]:
         name = title.removeprefix("Category:")
-        size = sum(name in page["categories"] for page in self.pages)
+        size = sum(name in entry["categories"] for entry in [*self.pages, *self.files])
         entry: dict[str, Any] = {"ns": 14, "title": title}
         if name not in self.category_pages:
             entry["missing"] = True

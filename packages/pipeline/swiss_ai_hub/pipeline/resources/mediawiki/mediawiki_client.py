@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from typing import Annotated, Any
+from urllib.parse import urlparse
 
 from dlt.sources.helpers.requests.retry import Client
 from dlt.sources.helpers.rest_client import RESTClient
@@ -10,6 +11,7 @@ from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_request_error import Me
 
 # A page deleted between the listing and the read answers with one of these instead of its content.
 _GONE = {"nosuchpageid", "missingtitle"}
+_DOWNLOAD_CHUNK_BYTES = 1 << 20
 
 
 class MediaWikiClient:
@@ -138,6 +140,61 @@ class MediaWikiClient:
                 for page in result.get("pages") or []:
                     times.update({revision["revid"]: revision["timestamp"] for revision in page.get("revisions") or []})
         return times
+
+    def files_used_by(self, page_ids: Annotated[list[int], "Ids of the pages whose files are wanted"]) -> list[dict]:
+        """Every file the pages show or link to (``[[File:…]]``, ``[[Media:…]]``), once each, with its latest version's
+        URL, size, checksum and MIME type in ``imageinfo``. A link to a file nobody uploaded has no ``imageinfo`` and
+        is left out; ``imagerepository`` tells a file of this wiki from one of a shared repository."""
+        files: dict[str, dict[str, Any]] = {}
+        for start in range(0, len(page_ids), self.IDS_PER_QUERY):
+            batch = "|".join(str(page_id) for page_id in page_ids[start : start + self.IDS_PER_QUERY])
+            for result in self.query(
+                {
+                    "generator": "images",
+                    "pageids": batch,
+                    "gimlimit": "max",
+                    "prop": "imageinfo",
+                    "iiprop": "url|size|sha1|mime",
+                }
+            ):
+                for file in result.get("pages") or []:
+                    if file.get("imageinfo"):
+                        files[file["title"]] = {**file, "imageinfo": file["imageinfo"][0]}
+        return list(files.values())
+
+    def download(
+        self,
+        url: Annotated[str, "A file's URL as imageinfo gave it"],
+        max_bytes: Annotated[int, "Largest content to hold; a larger file is not read to the end"],
+    ) -> bytes | None:
+        """The file's content, read with the session's sign-in, or None when it is larger than ``max_bytes``.
+
+        No redirect is followed, because the address guard checked this URL's host alone. A wiki behind a single
+        sign-on gateway answers an expired session with its login page; HTML is therefore refused, since it would be
+        stored and ingested as the document.
+        """
+        with self.session.get(
+            url, stream=True, allow_redirects=False, hooks={"response": [self._raise_for_download_error]}
+        ) as response:
+            chunks: list[bytes] = []
+            size = 0
+            for chunk in response.iter_content(_DOWNLOAD_CHUNK_BYTES):
+                size += len(chunk)
+                if size > max_bytes:
+                    return None
+                chunks.append(chunk)
+        return b"".join(chunks)
+
+    @staticmethod
+    def _raise_for_download_error(response: Response, *args: Any, **kwargs: Any) -> None:
+        if response.is_redirect or not response.ok:
+            raise MediaWikiRequestError.from_response(response)
+        if response.headers.get("Content-Type", "").startswith("text/html"):
+            raise MediaWikiRequestError(
+                f"MediaWiki answered {urlparse(response.url).path} with an HTML page instead of the file; the session "
+                "may have expired.",
+                response=response,
+            )
 
     def raise_for_error(self, response: Response, *args: Any, **kwargs: Any) -> None:
         """A response hook, so the error is raised inside the retrying ``send`` and a 429 is waited out.

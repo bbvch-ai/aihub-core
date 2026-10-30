@@ -133,3 +133,56 @@ class TestErrors:
 
         with pytest.raises(MediaWikiRequestError, match="instead of JSON; the wiki URL must be the folder"):
             MediaWikiClient(SITE).site_info()
+
+
+class TestFiles:
+    def test_each_file_the_pages_use_is_listed_once_with_its_checksum_and_urls(self, monkeypatch: pytest.MonkeyPatch):
+        wiki = _wiki(monkeypatch, pages=3)
+        wiki.add_file(101, "Handbook 2026.pdf", b"%PDF-1.7 handbook", used_by=[1, 2])
+        wiki.add_file(102, "Logo.png", b"PNG", used_by=[3], repository="shared")
+        wiki.add_file(103, "Unused.pdf", b"%PDF-1.7 unused", used_by=[])
+
+        files = {file["title"]: file for file in MediaWikiClient(SITE).files_used_by([1, 2, 3])}
+
+        assert sorted(files) == ["File:Handbook 2026.pdf", "File:Logo.png"]
+        handbook = files["File:Handbook 2026.pdf"]
+        assert handbook["pageid"] == 101
+        assert handbook["imagerepository"] == "local"
+        assert handbook["imageinfo"]["size"] == len(b"%PDF-1.7 handbook")
+        assert handbook["imageinfo"]["url"] == f"{SITE}/images/Handbook%202026.pdf"
+        assert files["File:Logo.png"]["imagerepository"] == "shared"
+
+    def test_a_file_is_downloaded_with_the_session(self, monkeypatch: pytest.MonkeyPatch):
+        wiki = _wiki(monkeypatch, pages=1)
+        wiki.add_file(101, "Handbook.pdf", b"%PDF-1.7 handbook", used_by=[1])
+
+        assert MediaWikiClient(SITE).download(f"{SITE}/images/Handbook.pdf", max_bytes=1_000) == b"%PDF-1.7 handbook"
+
+    def test_a_file_larger_than_the_limit_is_not_held(self, monkeypatch: pytest.MonkeyPatch):
+        wiki = _wiki(monkeypatch, pages=1)
+        wiki.add_file(101, "Handbook.pdf", b"%PDF-1.7 handbook", used_by=[1])
+
+        assert MediaWikiClient(SITE).download(f"{SITE}/images/Handbook.pdf", max_bytes=5) is None
+
+    def test_a_refused_download_names_its_status(self, monkeypatch: pytest.MonkeyPatch):
+        wiki = _wiki(monkeypatch, pages=1)
+        wiki.add_file(101, "Secret.pdf", b"%PDF-1.7 secret", used_by=[1], served_with=403)
+
+        with pytest.raises(MediaWikiRequestError) as refused:
+            MediaWikiClient(SITE).download(f"{SITE}/images/Secret.pdf", max_bytes=1_000)
+        assert refused.value.status_code == 403
+
+    def test_an_html_page_instead_of_the_file_is_refused(self, monkeypatch: pytest.MonkeyPatch):
+        """A single sign-on gateway answers an expired session with its login page and status 200."""
+        wiki = _wiki(monkeypatch, pages=1)
+        wiki.fail_next(200, "<html>Sign in</html>")
+
+        with pytest.raises(MediaWikiRequestError, match="HTML page instead of the file"):
+            MediaWikiClient(SITE).download(f"{SITE}/images/Handbook.pdf", max_bytes=1_000)
+
+    def test_a_download_does_not_follow_a_redirect(self, monkeypatch: pytest.MonkeyPatch):
+        wiki = _wiki(monkeypatch, pages=1)
+        wiki.queued_failures.append((302, "", {"Location": "https://elsewhere.test/Handbook.pdf"}))
+
+        with pytest.raises(MediaWikiRequestError, match="redirects to https://elsewhere.test/Handbook.pdf"):
+            MediaWikiClient(SITE).download(f"{SITE}/images/Handbook.pdf", max_bytes=1_000)

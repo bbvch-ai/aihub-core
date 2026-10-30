@@ -207,13 +207,17 @@ synced, which includes every release still supported.
 - **Categories** (optional): only pages in at least one of these categories are synced.
 - **Excluded categories** (optional): pages in any of these categories are never synced, such as a category that marks
   pages to keep away from AI assistants. A category a template assigns counts as well.
+- **Sync documents** (off by default): also sync the documents the synced pages show or link to, see *Documents* below.
+- **Maximum file size (MB)** (with documents only, 50 by default): larger documents are left out.
 
-Each namespace becomes a collection (`Main` for the main namespace) and each page one document. A subpage title is split
-into folders, so `Onboarding/Laptop` is `Onboarding/Laptop` in the `Main` collection. Redirects are skipped; their
-target is synced under its own title. The document is titled with the page title, links back to the page, and holds the
-page as the wiki renders it, with every template expanded: headings, lists, links and data tables keep their formatting,
-and tables used only for layout, such as a frame around a page or a message box, are replaced by their content. Images,
-files and talk pages are not synced, and the edit links and table of contents are left out.
+Each namespace becomes a collection and each page one document. A collection takes the namespace's canonical name, which
+stays the same when the wiki's language or site name changes: `Project` for the wiki's own project namespace, `File` for
+files even on a German wiki, and `Main` for the main namespace. A subpage title is split into folders, so
+`Onboarding/Laptop` is `Onboarding/Laptop` in the `Main` collection. Redirects are skipped; their target is synced under
+its own title. The document is titled with the page title, links back to the page, and holds the page as the wiki
+renders it, with every template expanded: headings, lists, links and data tables keep their formatting, and tables used
+only for layout, such as a frame around a page or a message box, are replaced by their content. Images and talk pages
+are not synced, and the edit links and table of contents are left out.
 
 The page's fields reach the document as [frontmatter](#markdown-files-with-frontmatter): a citation shows the page title
 and opens the page in the wiki, and the fields `categories`, `page_id`, `revision` and `updated` are metadata a
@@ -232,9 +236,24 @@ read again only when they are next edited themselves.
 
 A sync fails before it changes anything when the wiki refuses the sign-in or the access token, when the session still
 reads anonymously after signing in, when the wiki is older than MediaWiki 1.27, when a namespace or category does not
-exist, or when the wiki URL points to an internal address that no operator has allowed. An excluded category counts as
-existing when it has members or a page of its own: give it a page, so a sync keeps running while it is empty, rather
-than letting a mistyped name exclude nothing.
+exist, when two synced namespaces would be stored in the same collection, or when the wiki URL points to an internal
+address that no operator has allowed. An excluded category counts as existing when it has members or a page of its own:
+give it a page, so a sync keeps running while it is empty, rather than letting a mistyped name exclude nothing.
+
+**Documents.** With **Sync documents** on, the documents the synced pages show or link to are synced too: PDF, Word,
+PowerPoint and Excel files (docx, pptx, xlsx, xls) and text files. They follow the pages: a document used only on a page
+that is not synced, such as one in an excluded category, stays out, and so does a document whose own file page is in an
+excluded category. Images, the old Office formats doc, ppt and pps, archives and videos are left out, and so are files
+from a shared repository such as Wikimedia Commons; the sync's log says how many of each.
+
+Each document is stored once, in the collection `File`, whatever the wiki calls its file namespace, under its file name:
+`File/Handbook 2026.pdf`. It is processed like an uploaded file, and a citation shows its file name and opens its file
+page in the wiki. Later syncs download only documents that were uploaded again, and remove documents no synced page uses
+any more. A document the wiki refuses to serve (forbidden, or deleted in the meantime) is skipped and tried again at the
+next sync; the run shows how many there were.
+
+The first sync with documents can take long: every document is downloaded and then processed once. Try a small scope
+first, such as a single namespace.
 
 The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
 including deletions, into the Swiss AI Hub. Handing a database that already holds documents to a different source,

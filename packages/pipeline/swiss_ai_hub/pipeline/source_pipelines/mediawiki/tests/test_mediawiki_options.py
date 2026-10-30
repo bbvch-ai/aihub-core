@@ -86,3 +86,20 @@ class TestStructuredSyncConfig:
         options = StructuredSyncConfig.as_form().source_kind.options
 
         assert "mediawiki" in [option["value"] for option in options]
+
+
+class TestFileOptions:
+    def test_files_are_not_synced_unless_switched_on(self):
+        assert _options().sync_files is False
+
+    def test_the_size_limit_is_in_megabytes(self):
+        assert _options(max_file_size_mb=2).max_file_bytes() == 2_000_000
+
+    @pytest.mark.parametrize("size", [0, 501])
+    def test_a_size_limit_out_of_range_is_refused_when_saved(self, size: int):
+        with pytest.raises(ValidationError):
+            _options(max_file_size_mb=size)
+
+    def test_images_and_old_office_formats_are_not_document_types(self):
+        assert {"pdf", "docx", "pptx", "xlsx"} <= MediaWikiOptions.document_types()
+        assert not {"png", "jpg", "doc", "ppt", "zip"} & MediaWikiOptions.document_types()

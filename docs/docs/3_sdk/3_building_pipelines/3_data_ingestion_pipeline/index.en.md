@@ -241,7 +241,9 @@ other document.
 
 - **Source kinds**: one adapter class per system. Jira and Confluence, each Cloud and Data Center, and MediaWiki ship
   today: one document per Jira issue, with its fields, description and comments, one per Confluence page, filed under
-  its page tree, and one per wiki page, rendered with its templates expanded.
+  its page tree, and one per wiki page, rendered with its templates expanded. A kind may also offer binary files: the
+  MediaWiki kind syncs the PDF and Office documents its pages link, which reach the data lake as they are and are parsed
+  like uploads.
 - **Incremental**: a sync reads only the records changed since the previous one, and a listing of every record key in
   scope removes the files of records deleted at the source. Jira finds the changes with a cursor on each issue's last
   update; Confluence compares every page's version, place in the tree and labels with the previous sync's, because

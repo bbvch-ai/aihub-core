@@ -17,7 +17,7 @@ class MediaWikiPage(BaseModel):
 
     page_id: Annotated[int, Field(description="MediaWiki's page id, stable when the page is renamed.")]
     title: Annotated[str, Field(description="The full title, with its namespace prefix.")]
-    namespace: Annotated[str, Field(description="Name of the knowledge namespace, after the wiki's namespace.")]
+    namespace: Annotated[str, Field(description="Collection, after the canonical name of the page's namespace.")]
     path_segments: Annotated[list[str], Field(description="Folders below the namespace, then the file name.")]
     url: Annotated[str, Field(description="The page's canonical URL.")]
     revision: Annotated[int, Field(description="Id of the revision the body was rendered from.")]

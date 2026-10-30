@@ -4,6 +4,7 @@ from swiss_ai_hub.core.network import SourceHostGuard
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_client import MediaWikiClient
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_request_error import MediaWikiRequestError
 from swiss_ai_hub.pipeline.resources.mediawiki.tests.fake_mediawiki import SITE, FakeMediaWiki
+from swiss_ai_hub.pipeline.source_pipelines.mediawiki.mediawiki_collections import MediaWikiCollections
 from swiss_ai_hub.pipeline.source_pipelines.mediawiki.mediawiki_options import MediaWikiOptions
 from swiss_ai_hub.pipeline.source_pipelines.mediawiki.mediawiki_preflight import MediaWikiPreflight
 
@@ -37,8 +38,13 @@ def _options(**changes: object) -> MediaWikiOptions:
     return MediaWikiOptions.model_validate({**values, **changes})
 
 
-def _check(options: MediaWikiOptions) -> dict[int, str]:
+def _collections(options: MediaWikiOptions) -> MediaWikiCollections:
     return MediaWikiPreflight.check(MediaWikiClient(options.base_url), options)
+
+
+def _check(options: MediaWikiOptions) -> dict[int, str]:
+    """The namespaces to sync, with their collection names."""
+    return _collections(options).pages
 
 
 class TestPreflight:
@@ -63,7 +69,7 @@ class TestPreflight:
     def test_an_oauth_token_reads_as_its_account(self, wiki: FakeMediaWiki, guarded: list[str]):
         options = _options(auth_method="oauth", username="", password="", access_token="oauth-secret")
 
-        assert MediaWikiPreflight.check(MediaWikiClient(SITE, access_token=options.oauth_token()), options) == {
+        assert MediaWikiPreflight.check(MediaWikiClient(SITE, access_token=options.oauth_token()), options).pages == {
             0: "Main"
         }
 
@@ -133,3 +139,57 @@ class TestPreflight:
         wiki.category_pages.add("Archived")
 
         _check(_options(include_categories=["Archived"]))
+
+
+class TestCollections:
+    def test_collections_take_the_canonical_name_whatever_the_wiki_calls_its_namespaces(
+        self, wiki: FakeMediaWiki, guarded: list[str]
+    ):
+        """A German wiki calls its file namespace Datei, and the project namespace takes the site's name; a change of
+        either would otherwise move every document."""
+        wiki.local_names = {4: "Acme Wiki", 6: "Datei"}
+
+        collections = _collections(_options(namespaces=["Acme Wiki", "Main"], sync_files=True))
+
+        assert collections == MediaWikiCollections(pages={4: "Project", 0: "Main"}, files="File")
+
+    def test_files_are_not_given_a_collection_unless_they_are_synced(self, wiki: FakeMediaWiki, guarded: list[str]):
+        assert _collections(_options()).files is None
+
+    def test_the_file_namespaces_own_pages_may_share_the_file_collection(self, wiki: FakeMediaWiki, guarded: list[str]):
+        """A page and a file are stored under different keys: File/Report.pdf.md next to File/Report.pdf."""
+        assert _collections(_options(namespaces=["File"], sync_files=True)).files == "File"
+
+    @pytest.mark.parametrize(
+        ("custom", "wanted", "message"),
+        [
+            (
+                {3000: "Main"},
+                ["Main", "3000"],
+                r"namespaces Main \(0\) and Main \(3000\) would both be stored in the collection Main",
+            ),
+            ({3000: "Process_"}, ["Process", "3000"], None),
+            (
+                {3000: "Process_", 3002: "Process!"},
+                ["3000", "3002"],
+                r"Process_ \(3000\) and Process! \(3002\) would both be stored in the collection Process_",
+            ),
+            (
+                {3000: "File"},
+                ["Main", "3000"],
+                r"File \(6\) and File \(3000\) would both be stored in the collection File",
+            ),
+        ],
+    )
+    def test_two_namespaces_stored_in_one_collection_are_refused(
+        self, wiki: FakeMediaWiki, guarded: list[str], custom: dict[int, str], wanted: list[str], message: str | None
+    ):
+        """Pages of the same title in both would compete for one file, and one would be missing from the database."""
+        wiki.extra_namespaces = custom
+        options = _options(namespaces=wanted, sync_files=True)
+
+        if message is None:
+            _collections(options)
+        else:
+            with pytest.raises(ValueError, match=message):
+                _collections(options)

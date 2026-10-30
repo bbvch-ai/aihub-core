@@ -17,7 +17,8 @@ def reconcile_structured_bucket_op(
     runs in a row means the cursor is ahead of the data, after a source switch, a lost file or a sync slower than the
     cursor's overlap, which the cursor alone would never repair: the stored state is then discarded, so the next run
     reads everything again. Missing once is not enough, because a record created while a run is between its sync and
-    its listing is missing too, and the next run fetches it anyway.
+    its listing is missing too, and the next run fetches it anyway. A file the source would not serve this run is not
+    missing in that sense: the sync forgot it, so the next run tries it again without the whole source being re-read.
     """
 
     @op(name=f"{source}_reconcile_structured_bucket", code_version="v1")
@@ -32,7 +33,8 @@ def reconcile_structured_bucket_op(
                 f"The source listed no records while '{bucket}' holds {len(present)} files; refusing to empty the "
                 "database. Check the source's credentials and scope."
             )
-        missing = {key for key in listing.listed_keys if client.build_uri(key) not in present}
+        unread = set(listing.unread_file_keys)
+        missing = {key for key in listing.listed_keys if client.build_uri(key) not in present and key not in unread}
         missing_again = _settle_missing(context, StructuredSourceStateStore(source, bucket), bucket, missing)
         to_remove = sorted(present - listed - written)
         return Output(
@@ -43,6 +45,7 @@ def reconcile_structured_bucket_op(
                 "Missing in two runs in a row": len(missing_again),
                 "State discarded": bool(missing_again),
                 "Written but not listed": len(written - listed),
+                "Files not served by the source": len(unread),
             },
         )
 

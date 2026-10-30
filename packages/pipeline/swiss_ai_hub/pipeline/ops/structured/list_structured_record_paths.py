@@ -32,7 +32,9 @@ def list_structured_record_paths_op(
             )
         listed = sorted(config.adapter().list_record_paths(config.options()))
         return Output(
-            StructuredListing(listed_keys=listed, written_keys=outcome.written_keys),
+            StructuredListing(
+                listed_keys=listed, written_keys=outcome.written_keys, unread_file_keys=outcome.unread_file_keys
+            ),
             metadata={"Records at the source": len(listed)},
         )
 

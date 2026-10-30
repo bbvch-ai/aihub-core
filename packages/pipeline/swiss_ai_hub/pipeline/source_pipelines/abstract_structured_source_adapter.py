@@ -1,10 +1,11 @@
 import abc
-from typing import Any, ClassVar
+from typing import Annotated, Any, ClassVar
 
 from dlt.extract import DltSource
 from swiss_ai_hub.core.form import Form
 from swiss_ai_hub.core.i18n import LocaleString
 
+from swiss_ai_hub.pipeline.types.structured_file_reference import StructuredFileReference
 from swiss_ai_hub.pipeline.types.structured_record_file import StructuredRecordFile
 
 KIND_REF = "structured_source_kind"
@@ -20,6 +21,10 @@ class AbstractStructuredSourceAdapter[TOptions: Form](abc.ABC):
 
     OBJECT_KEY_COLUMN: ClassVar[str] = "_aihub_object_key"
     MARKDOWN_COLUMN: ClassVar[str] = "_aihub_markdown"
+    FILE_COLUMN: ClassVar[str] = "_aihub_file"
+    FILES_SEEN: ClassVar[str] = "files_seen"
+    """Resource-state key of an adapter's map from a file's object key to its fingerprint. A file the destination
+    could not read is removed from every such map before the state is saved, so the next run tries it again."""
 
     kind: ClassVar[str]
     display_name: ClassVar[LocaleString]
@@ -46,8 +51,18 @@ class AbstractStructuredSourceAdapter[TOptions: Form](abc.ABC):
         """
 
     @abc.abstractmethod
-    def to_record_file(self, record: dict[str, Any]) -> StructuredRecordFile:
-        """The file one record is written as; a pure function of the record, so an unchanged record is skipped."""
+    def to_record_file(self, record: dict[str, Any]) -> StructuredRecordFile | StructuredFileReference:
+        """The file one record is written as; a pure function of the record, so an unchanged record is skipped. A
+        reference to a binary file is downloaded by the destination through ``read_file``."""
+
+    def read_file(
+        self,
+        options: Annotated[TOptions, "The database's decrypted options"],
+        reference: Annotated[StructuredFileReference, "A file this adapter's source offered"],
+    ) -> bytes:
+        """The content of a file this adapter offered. Raises ``StructuredFileUnavailableError`` for a file the source
+        will not serve, which is skipped and tried again next run; any other error fails the load."""
+        raise NotImplementedError(f"The {self.kind} source offers no files.")
 
     @abc.abstractmethod
     def list_record_paths(self, options: TOptions) -> set[str]:
@@ -70,6 +85,12 @@ class AbstractStructuredSourceAdapter[TOptions: Form](abc.ABC):
 
     def _with_file(self, record: dict[str, Any]) -> dict[str, Any]:
         record_file = self.to_record_file(record)
+        if isinstance(record_file, StructuredFileReference):
+            return {
+                **record,
+                self.OBJECT_KEY_COLUMN: record_file.object_key,
+                self.FILE_COLUMN: record_file.model_dump_json(),
+            }
         return {
             **record,
             self.OBJECT_KEY_COLUMN: record_file.object_key,

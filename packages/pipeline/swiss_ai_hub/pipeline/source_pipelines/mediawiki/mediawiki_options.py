@@ -1,13 +1,17 @@
 from typing import Annotated, Literal
 
 from pydantic import Field, StringConstraints, field_validator
-from swiss_ai_hub.core.form import ChipsInput, Form, InputText, Password, Select
+from swiss_ai_hub.core.form import Checkbox, ChipsInput, Form, InputNumber, InputText, Password, Select
 
 # An http(s) URL with no credentials, query or fragment: a "?" or "#" would turn the API path appended to it into a
 # query, so the URL could name any path on any host. Empty is allowed, because a hidden option group validates as its
 # defaults. Which hosts it may name is checked on every run, against the deployment (SourceHostGuard).
 _BASE_URL_PATTERN = r"^(https?://[^\s/@?#]+(/[^\s?#]*)?)?$"
 _CATEGORY_PREFIX = "category:"
+_MEGABYTE = 1_000_000
+# What the ingestion pipeline parses: MinerU (pdf), MarkItDown (Office), and plain text. Images and the old binary
+# Office formats (doc, ppt, pps) are not offered; neither are archives or videos, which nothing parses.
+_DOCUMENT_TYPES = frozenset({"pdf", "docx", "pptx", "xlsx", "xls", "txt", "md", "csv", "rtf"})
 _SIGNED_IN_WITH_PASSWORD = {"bot_password", "web_form"}
 
 
@@ -48,6 +52,13 @@ class MediaWikiOptions(Form):
     exclude_categories: Annotated[
         list[str] | ChipsInput | None, Field(description="Pages in one of these categories are never synced.")
     ] = None
+    sync_files: Annotated[
+        bool | Checkbox, Field(description="Also sync the documents the synced pages show or link to.")
+    ] = False
+    max_file_size_mb: Annotated[
+        Annotated[int, Field(ge=1, le=500)] | InputNumber,
+        Field(description="Larger files are skipped; one file at a time is held in memory while it is written."),
+    ] = 50
 
     @field_validator("namespaces", "include_categories", "exclude_categories", mode="before")
     @classmethod
@@ -103,6 +114,13 @@ class MediaWikiOptions(Form):
         if self.auth_method == "oauth" and not self.access_token:
             found.append("the OAuth access token is missing")
         return found
+
+    def max_file_bytes(self) -> int:
+        return self.max_file_size_mb * _MEGABYTE
+
+    @staticmethod
+    def document_types() -> frozenset[str]:
+        return _DOCUMENT_TYPES
 
     def oauth_token(self) -> str | None:
         """The token the client sends with every request; None unless the wiki is read through OAuth, so a token left

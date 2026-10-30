@@ -238,3 +238,12 @@ structured:
         help: Facultatif. Les pages de l'une de ces catégories ne sont jamais synchronisées,
           p. ex. une catégorie marquant les pages à tenir à l'écart des assistants
           IA.
+      sync_files:
+        label: Synchroniser les documents
+        help: Synchronise aussi les documents affichés ou liés par les pages synchronisées
+          (PDF, Word, PowerPoint, Excel et fichiers texte) dans l'espace de noms File.
+          Les images, les anciens formats Office (doc, ppt) et les archives sont exclus.
+      max_file_size_mb:
+        label: Taille de fichier maximale (Mo)
+        help: Les documents plus volumineux sont exclus. Un seul document à la fois
+          est gardé en mémoire pendant son enregistrement.
