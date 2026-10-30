@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -19,6 +20,13 @@ from swiss_ai_hub.api.runners.simulation.process.events.human_start_work import 
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 enable_logging()
+
+
+@pytest.fixture(autouse=True)
+def online_threshold():
+    """The threshold is read from completed discovery rounds in Mongo; these tests run without one."""
+    with patch.object(ProcessClassEntity, "online_threshold", return_value=datetime(2026, 1, 1)) as threshold:
+        yield threshold
 
 
 @pytest.fixture
@@ -59,7 +67,7 @@ class TestProcessServiceUnit:
     async def test_get_process_classes_returns_all(self, mock_locale_handler):
         """Test get_process_classes returns all process classes from DB."""
         mock_entity = Mock(spec=ProcessClassEntity)
-        mock_entity.is_online = True
+        mock_entity.is_online_since.return_value = True
 
         with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
             mock_get_all.return_value = [mock_entity]
@@ -71,16 +79,16 @@ class TestProcessServiceUnit:
                 result = await ProcessService.get_process_classes(mock_locale_handler)
 
                 mock_get_all.assert_called_once()
-                mock_from_entity.assert_called_once_with(mock_entity, mock_locale_handler)
+                mock_from_entity.assert_called_once_with(mock_entity, mock_locale_handler, is_online=True)
                 assert result == [expected_dto]
 
     @pytest.mark.asyncio
     async def test_get_process_classes_filters_online(self, mock_locale_handler):
         """Test get_process_classes filters by online status."""
         mock_online = Mock(spec=ProcessClassEntity)
-        mock_online.is_online = True
+        mock_online.is_online_since.return_value = True
         mock_offline = Mock(spec=ProcessClassEntity)
-        mock_offline.is_online = False
+        mock_offline.is_online_since.return_value = False
 
         with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
             mock_get_all.return_value = [mock_online, mock_offline]
@@ -91,7 +99,7 @@ class TestProcessServiceUnit:
                 result = await ProcessService.get_process_classes(mock_locale_handler, online=True)
 
                 assert len(result) == 1
-                mock_from_entity.assert_called_once_with(mock_online, mock_locale_handler)
+                mock_from_entity.assert_called_once_with(mock_online, mock_locale_handler, is_online=True)
 
     @pytest.mark.asyncio
     async def test_get_process_class_not_found(self, mock_locale_handler):
@@ -170,7 +178,7 @@ class TestProcessServiceUnit:
     async def test_get_all_process_instances_skips_record_that_fails_to_build(self, mock_locale_handler):
         """A single instance whose DTO cannot be built must be skipped, not abort the whole sweep."""
         mock_class_entity = Mock(spec=ProcessClassEntity)
-        mock_class_entity.is_online = True
+        mock_class_entity.is_online_since.return_value = True
         mock_class_entity.process_class = "TestProcess"
         good_config = Mock(spec=ProcessConfigEntityDocument)
         good_config.process_id = "good"
@@ -226,7 +234,7 @@ class TestProcessSaveRejectsEmptyNamespaceScope:
     @staticmethod
     def _mock_save_dependencies(stack: ExitStack) -> tuple[Mock, AsyncMock]:
         class_entity = Mock()
-        class_entity.is_online = True
+        class_entity.is_online_since.return_value = True
         class_entity.process_config_specs.to_specs.return_value = ConfigSpecs(config_class="ReviewProcess")
         class_entity.form_elements = [
             Repeater(name="retrievers", children=[VectorStoreInput(label="Vector store", name="vector_store")])

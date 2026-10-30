@@ -61,7 +61,8 @@ request to LLM response.
 (application services), `data` (databases, caches, message broker), `storage` (SeaweedFS cluster), `egress` (outbound
 internet with inter-container communication disabled), `code-sandbox` (single-tenant zone for the `open-terminal`
 code-execution sandbox plus exactly its callers), `pii-detection` (the Presidio analyzer plus exactly its callers), and
-`browser` (the Playwright browser plus exactly its callers). Services are assigned only the networks they require.
+`browser` (the Playwright browser plus exactly its callers, and `browser-proxy`, the browser's only way to the internet,
+which refuses addresses that are not public). Services are assigned only the networks they require.
 
 ## Dev Stack Services
 
@@ -92,8 +93,8 @@ backup/restore
 **Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
 
 **Utility**: Open Terminal (:8200 in dev, code-execution sandbox for plain LLM chats and for agents' code tools, each
-user confined to their own home), SearXNG (:8881, web search), Playwright (:3036, browser automation), Attu (:3003,
-Milvus admin UI)
+user confined to their own home), SearXNG (:8881, web search), Playwright (:3036, browser automation), browser-proxy
+(Squid, Playwright's only way out), Attu (:3003, Milvus admin UI)
 
 ## Package Architecture
 
