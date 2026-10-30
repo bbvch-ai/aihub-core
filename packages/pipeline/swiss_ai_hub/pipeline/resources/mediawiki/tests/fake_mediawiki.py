@@ -193,7 +193,7 @@ class FakeMediaWiki:
         if path.startswith("/index.php"):
             return self._login_page(request, params)
         if path.startswith("/images/"):
-            return self._download(unquote(path.removeprefix("/images/")))
+            return self._download(unquote(path.removeprefix("/images/")), request.headers.get("Authorization"))
         return 404, "<html>Not found</html>", {}
 
     def _api(self, params: dict[str, str], authorization: str | None) -> Answer:
@@ -235,9 +235,7 @@ class FakeMediaWiki:
             return self._paged(params, "gimcontinue", "pages", self._files_used_by(params["pageids"]))
         if params.get("list") == "categorymembers":
             category = params["cmtitle"].removeprefix("Category:")
-            members = [
-                {"pageid": entry["pageid"]} for entry in [*self.pages, *self.files] if category in entry["categories"]
-            ]
+            members = [self._member(entry) for entry in [*self.pages, *self.files] if category in entry["categories"]]
             return self._paged(params, "cmcontinue", "categorymembers", members)
         if params.get("prop") == "categoryinfo":
             return {"query": {"pages": [self._category(title) for title in params["titles"].split("|")]}}
@@ -292,7 +290,18 @@ class FakeMediaWiki:
             if wanted & set(file["used_by"])
         ]
 
-    def _download(self, name: str) -> Answer:
+    def _member(self, entry: dict[str, Any]) -> dict[str, Any]:
+        """A category member as ``cmprop=ids|title|type`` answers: a category page placed in another category is its
+        subcategory."""
+        if "name" in entry:
+            return {"pageid": entry["pageid"], "title": f"{self.local_name(6)}:{entry['name']}", "type": "file"}
+        return {"pageid": entry["pageid"], "title": entry["title"], "type": "subcat" if entry["ns"] == 14 else "page"}
+
+    def _download(self, name: str, authorization: str | None) -> Answer:
+        """A private wiki serves its files only to a signed-in reader, through img_auth.php as the API does."""
+        reader = self.oauth_tokens.get(authorization.removeprefix("Bearer ")) if authorization else self.signed_in_as
+        if self.private and not reader:
+            return 403, "<html>Forbidden</html>", {}
         self.downloads.append(name)
         file = next((file for file in self.files if file["name"] == name), None)
         if file is None:

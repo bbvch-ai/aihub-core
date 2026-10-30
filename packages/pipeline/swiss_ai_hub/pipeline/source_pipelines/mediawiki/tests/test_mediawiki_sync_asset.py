@@ -1,7 +1,8 @@
 """Real syncs of the shipped structured asset against a fake MediaWiki, run after run, as the daily schedule does."""
 
+from collections import Counter
 from unittest.mock import MagicMock
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlsplit
 
 import pytest
 from dagster import AssetKey
@@ -166,6 +167,47 @@ class TestMediaWikiSync:
         assert world.files("wiki-db") == _FILES
         assert all("Bearer oauth-secret" == request.headers.get("Authorization") for request in wiki.requests)
 
+    def test_two_titles_sharing_a_path_keep_the_first_listed_page_in_sync_and_listing(
+        self, world: World, wiki: FakeMediaWiki
+    ):
+        """A//B and A__B are both stored as Main/A__B.md. The first one listed keeps it, however the ids sort, and an
+        edit of the other one does not take it over."""
+        wiki.add_page(1000, "A//B", html="<p>First listed</p>")
+        wiki.add_page(900, "A__B", html="<p>Listed second</p>")
+        world.sync("wiki-db", asset=_ASSET)
+        wiki.edit(900, "<p>Listed second, edited</p>")
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert "First listed" in world.body("wiki-db", "Main/A__B.md")
+        assert 900 not in wiki.parses()
+
+    def test_each_namespace_is_listed_once_per_step(self, world: World, wiki: FakeMediaWiki):
+        """The pages, their files and the listing step all work from one listing of the pages."""
+        _configure(world, sync_documents=True, sync_images=True)
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        first_pages = [
+            query
+            for request in wiki.requests
+            if (query := parse_qs(urlsplit(request.url or "").query)).get("generator") == ["allpages"]
+            and "gapcontinue" not in query
+        ]
+        listed = Counter(query["gapnamespace"][0] for query in first_pages)
+        assert listed == {"0": 2, "100": 2, "10": 2}
+
+    def test_an_excluded_category_reaches_its_subcategories_when_asked(self, world: World, wiki: FakeMediaWiki):
+        wiki.add_page(30, "Hide From AI/Drafts", namespace=14, categories=["Hide From AI"])
+        wiki.categorize(3, ["Hide From AI/Drafts"])
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+        assert "Main/Onboarding/Laptop.md" in world.files("wiki-db")
+
+        _configure(world, include_subcategories=True)
+        assert world.sync("wiki-db", asset=_ASSET).success
+        assert "Main/Onboarding/Laptop.md" not in world.files("wiki-db")
+
     def test_adding_a_namespace_reads_everything_again(self, world: World, wiki: FakeMediaWiki):
         world.sync("wiki-db", asset=_ASSET)
         parses = len(wiki.parses())
@@ -284,6 +326,16 @@ class TestFileSync:
         monkeypatch.setattr(files, "_download", original)
         assert not result.success
         assert not [key for key in world.files("wiki-db") if key.startswith("File/")]
+
+    def test_the_files_of_a_private_wiki_read_through_oauth_are_synced(self, world: World, files: FakeMediaWiki):
+        """The token signs in every download from the wiki, as it does every API request."""
+        _configure(
+            world, auth_method="oauth", username="", password="", access_token="oauth-secret", sync_documents=True
+        )
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert {"File/Handbook 2026.pdf", "File/Rollout.pptx"} <= set(world.files("wiki-db"))
 
     def test_files_of_a_german_wiki_land_in_the_file_collection_too(self, world: World, wiki: FakeMediaWiki):
         """The collection is the namespace's canonical name; Datei is only what that wiki calls it."""

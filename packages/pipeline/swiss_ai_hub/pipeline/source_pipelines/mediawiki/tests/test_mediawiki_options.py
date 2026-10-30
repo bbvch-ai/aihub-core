@@ -129,3 +129,14 @@ class TestFileOptions:
     def test_a_minimum_image_size_out_of_range_is_refused_when_saved(self, pixels: int):
         with pytest.raises(ValidationError):
             _options(min_image_pixels=pixels)
+
+
+class TestUserAgent:
+    def test_empty_keeps_the_default(self):
+        assert _options().user_agent == ""
+
+    @pytest.mark.parametrize("value", ["Sync/1.0\r\nX-Injected: 1", "Sync/1.0\n", "x" * 201])
+    def test_a_line_break_or_an_overlong_value_is_refused_when_saved(self, value: str):
+        """A line break would add headers of its own to every request."""
+        with pytest.raises(ValidationError):
+            _options(user_agent=value)

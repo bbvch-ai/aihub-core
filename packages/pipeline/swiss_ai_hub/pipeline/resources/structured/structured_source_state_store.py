@@ -76,12 +76,12 @@ class StructuredSourceStateStore:
         if stored is not None:
             self._put(stored.model_copy(update={"missing_keys": sorted(keys)}))
 
-    @staticmethod
-    def _forget_files(pipeline_state: dict[str, Any], keys: set[str]) -> None:
+    @classmethod
+    def _forget_files(cls, pipeline_state: dict[str, Any], keys: set[str]) -> None:
         """dlt keeps a resource's state at ``sources.<source>.resources.<resource>``; anything else in the state is
         dlt's own bookkeeping and left as it is."""
-        for source_state in _mappings((pipeline_state.get("sources") or {}).values()):
-            for resource_state in _mappings((source_state.get("resources") or {}).values()):
+        for source_state in cls._mappings((pipeline_state.get("sources") or {}).values()):
+            for resource_state in cls._mappings((source_state.get("resources") or {}).values()):
                 seen = resource_state.get(AbstractStructuredSourceAdapter.FILES_SEEN)
                 if isinstance(seen, dict):
                     for key in keys:
@@ -92,6 +92,11 @@ class StructuredSourceStateStore:
 
     def _put(self, state: StructuredSourceState) -> None:
         self._client().put_object(Bucket=self.bucket, Key=self.object_key, Body=state.model_dump_json())
+
+    @staticmethod
+    def _mappings(values: Iterable[Any]) -> Iterator[dict[str, Any]]:
+        """dlt's state is plain JSON; an entry that is not an object holds no resource state."""
+        return (value for value in values if isinstance(value, dict))
 
     def _load(self) -> StructuredSourceState | None:
         try:
@@ -104,7 +109,3 @@ class StructuredSourceStateStore:
 
     def _client(self) -> BaseClient:
         return build_s3_data_lake_client(self.bucket, ensure_bucket=False).raw_client
-
-
-def _mappings(values: Iterable[Any]) -> Iterator[dict[str, Any]]:
-    return (value for value in values if isinstance(value, dict))

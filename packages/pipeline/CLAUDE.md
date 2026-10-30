@@ -651,7 +651,8 @@ type-level URL constraints, `problems()` and the `SourceHostGuard` check with
 - **Four sign-in methods** (`MediaWikiSignIn`): `bot_password` (`action=login`, which takes bot passwords only),
   `web_form` (fills in `Special:UserLogin`), `oauth`, `anonymous`. `oauth` sends the access token of an owner-only OAuth
   2 consumer (Extension:OAuth) as `Bearer` through `RESTClient`'s `auth=`, on every request and never as a header dlt
-  could log; `MediaWikiOptions.oauth_token()` returns it only while `oauth` is selected, so a leftover token never
+  could log; a file download sends it as `auth=` too, but only to the wiki's own host (a separate upload host is another
+  party); `MediaWikiOptions.oauth_token()` returns it only while `oauth` is selected, so a leftover token never
   travels with a password sign-in. A refused token answers 401: Wikimedia's gateway with `{"httpCode", "httpReason"}`
   (observed 2026-10-30), a bare wiki with MediaWiki's `error` object; `MediaWikiRequestError.from_response` keeps either
   reason, and the preflight turns 401/403 into what to check. The web form exists for wikis whose sign-in an extension
@@ -675,7 +676,15 @@ type-level URL constraints, `problems()` and the `SourceHostGuard` check with
   excluded category whose last member leaves needs a page of its own.
 - **Scope is read as page ids** (`MediaWikiScope`): category members through `list=categorymembers`, so a category a
   template assigns counts, then `generator=allpages` per namespace without redirects, with `prop=info` for `lastrevid`
-  and the canonical URL. About six requests list 2,700 pages without `apihighlimits`.
+  and the canonical URL. About six requests list 2,700 pages without `apihighlimits`. With `include_subcategories`,
+  `category_member_ids` follows `type=subcat` members, each category once, since category trees can loop.
+- **One listing per step** (`MediaWikiScope.pages`, cached on the scope): the `pages` and `files` resources and the
+  listing step all work from it. Two titles stored at one path (`A//B` and `A__B` are both `Main/A__B.md`) give it to
+  the first one listed; the other is logged and left out of the sync as well as the listing, so the stored page cannot
+  flip between them with their edits.
+- **`user_agent`** (optional) replaces dlt's `User-Agent` on the client's session for every request, sign-in and
+  downloads included. Wikimedia's policy asks for a named client with a contact. One printable line only, so the value
+  cannot add headers.
 - **Changes are found by `lastrevid|object key`**, kept in the resource state like Confluence's `seen` map: a rename and
   a page entering scope keep their revision. Only changed pages are parsed; `created` comes from the oldest revision
   (one request per changed page), `updated` from their parsed revisions in batches of 50. Known gap: a template edit

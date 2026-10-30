@@ -75,8 +75,12 @@ def test_the_confluence_form_is_labelled_in_every_language(path: str):
                 "namespaces",
                 "include_categories",
                 "exclude_categories",
+                "include_subcategories",
                 "sync_documents",
+                "sync_images",
                 "max_file_size_mb",
+                "min_image_pixels",
+                "user_agent",
             )
             for part in ("label", "help")
         ),

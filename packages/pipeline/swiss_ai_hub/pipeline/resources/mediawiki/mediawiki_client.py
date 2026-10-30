@@ -34,12 +34,15 @@ class MediaWikiClient:
             str | None, "OAuth 2 access token of an owner-only consumer; None to use cookies"
         ] = None,
         session: Annotated[Session | None, "HTTP session; a retrying dlt session when omitted"] = None,
+        user_agent: Annotated[str | None, "User-Agent sent with every request; None keeps dlt's"] = None,
     ):
         self.site_url = base_url.rstrip("/")
         self.api_url = f"{self.site_url}/api.php"
         self.session = session or Client(raise_for_status=False).session
-        auth = BearerTokenAuth(token=access_token) if access_token else None
-        self._rest = RESTClient(base_url=self.site_url, auth=auth, session=self.session)
+        if user_agent:
+            self.session.headers["User-Agent"] = user_agent
+        self._auth = BearerTokenAuth(token=access_token) if access_token else None
+        self._rest = RESTClient(base_url=self.site_url, auth=self._auth, session=self.session)
 
     def query(self, params: Annotated[dict[str, Any], "Parameters of action=query"]) -> Iterator[dict[str, Any]]:
         """The ``query`` part of every answer, following MediaWiki's ``continue`` until it gives none.
@@ -84,15 +87,36 @@ class MediaWikiClient:
         ):
             yield result.get("pages") or []
 
-    def category_member_ids(self, category: Annotated[str, "Category name without its namespace prefix"]) -> set[int]:
-        """IDs of the pages placed in the category, directly or through a template; not those of its subcategories."""
-        return {
-            member["pageid"]
-            for result in self.query(
-                {"list": "categorymembers", "cmtitle": f"Category:{category}", "cmprop": "ids", "cmlimit": "max"}
-            )
-            for member in result.get("categorymembers") or []
-        }
+    def category_member_ids(
+        self,
+        category: Annotated[str, "Category name without its namespace prefix"],
+        with_subcategories: Annotated[bool, "Also the members of every category below it"] = False,
+    ) -> set[int]:
+        """IDs of the pages placed in the category, directly or through a template. Subcategories are followed once
+        each, since a wiki's categories can form a loop."""
+        ids: set[int] = set()
+        pending, visited = [category], {category}
+        while pending:
+            for member in self._category_members(pending.pop()):
+                ids.add(member["pageid"])
+                if not with_subcategories or member.get("type") != "subcat":
+                    continue
+                subcategory = member["title"].split(":", 1)[1]
+                if subcategory not in visited:
+                    visited.add(subcategory)
+                    pending.append(subcategory)
+        return ids
+
+    def _category_members(self, category: str) -> Iterator[dict[str, Any]]:
+        for result in self.query(
+            {
+                "list": "categorymembers",
+                "cmtitle": f"Category:{category}",
+                "cmprop": "ids|title|type",
+                "cmlimit": "max",
+            }
+        ):
+            yield from result.get("categorymembers") or []
 
     def categories(self, names: Annotated[list[str], "Category names without their namespace prefix"]) -> list[dict]:
         """The categories as pages, with their member counts: ``missing`` when the category has no page of its own,
@@ -143,8 +167,9 @@ class MediaWikiClient:
 
     def files_used_by(self, page_ids: Annotated[list[int], "Ids of the pages whose files are wanted"]) -> list[dict]:
         """Every file the pages show or link to (``[[File:…]]``, ``[[Media:…]]``), once each, with its latest version's
-        URL, size (an image's width and height too), checksum and MIME type in ``imageinfo``. A link to a file nobody uploaded has no ``imageinfo`` and
-        is left out; ``imagerepository`` tells a file of this wiki from one of a shared repository."""
+        URL, size (an image's width and height too), checksum and MIME type in ``imageinfo``. A link to a file nobody
+        uploaded has no ``imageinfo`` and is left out; ``imagerepository`` tells a file of this wiki from one of a
+        shared repository."""
         files: dict[str, dict[str, Any]] = {}
         for start in range(0, len(page_ids), self.IDS_PER_QUERY):
             batch = "|".join(str(page_id) for page_id in page_ids[start : start + self.IDS_PER_QUERY])
@@ -167,14 +192,16 @@ class MediaWikiClient:
         url: Annotated[str, "A file's URL as imageinfo gave it"],
         max_bytes: Annotated[int, "Largest content to hold; a larger file is not read to the end"],
     ) -> bytes | None:
-        """The file's content, read with the session's sign-in, or None when it is larger than ``max_bytes``.
+        """The file's content, read with the session's sign-in, or None when it is larger than ``max_bytes``. The OAuth
+        token goes along only to the wiki's own host: a separate upload host is another party.
 
         No redirect is followed, because the address guard checked this URL's host alone. A wiki behind a single
         sign-on gateway answers an expired session with its login page; HTML is therefore refused, since it would be
         stored and ingested as the document.
         """
+        auth = self._auth if urlparse(url).netloc == urlparse(self.site_url).netloc else None
         with self.session.get(
-            url, stream=True, allow_redirects=False, hooks={"response": [self._raise_for_download_error]}
+            url, auth=auth, stream=True, allow_redirects=False, hooks={"response": [self._raise_for_download_error]}
         ) as response:
             chunks: list[bytes] = []
             size = 0

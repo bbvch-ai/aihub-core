@@ -55,6 +55,24 @@ class TestListing:
 
         assert MediaWikiClient(SITE).category_member_ids("Hide From AI") == {1, 3, 5}
 
+    def test_subcategories_are_followed_only_when_asked_and_once_each(self, monkeypatch: pytest.MonkeyPatch):
+        """Category trees can loop: here Archive sits in Projects, and Projects in Archive."""
+        wiki = _wiki(monkeypatch)
+        wiki.add_page(20, "Projects", namespace=14, categories=["Archive"])
+        wiki.add_page(21, "Archive", namespace=14, categories=["Projects"])
+        wiki.categorize(1, ["Projects"])
+        wiki.categorize(2, ["Archive"])
+
+        assert MediaWikiClient(SITE).category_member_ids("Projects") == {1, 21}
+        assert MediaWikiClient(SITE).category_member_ids("Projects", with_subcategories=True) == {1, 2, 20, 21}
+
+    def test_a_user_agent_goes_with_every_request(self, monkeypatch: pytest.MonkeyPatch):
+        wiki = _wiki(monkeypatch, pages=1)
+
+        _listed_ids(MediaWikiClient(SITE, user_agent="AcmeKnowledgeSync/1.0 (it@acme.ch)"))
+
+        assert {request.headers["User-Agent"] for request in wiki.requests} == {"AcmeKnowledgeSync/1.0 (it@acme.ch)"}
+
 
 class TestRevisions:
     def test_the_creation_time_is_read_from_the_oldest_revision_without_paging_on(
@@ -157,6 +175,20 @@ class TestFiles:
         wiki.add_file(101, "Handbook.pdf", b"%PDF-1.7 handbook", used_by=[1])
 
         assert MediaWikiClient(SITE).download(f"{SITE}/images/Handbook.pdf", max_bytes=1_000) == b"%PDF-1.7 handbook"
+
+    def test_an_oauth_token_goes_with_a_download_from_the_wiki_but_not_to_another_host(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        """A private wiki serves its files to a signed-in reader only; a separate upload host is another party."""
+        wiki = _wiki(monkeypatch, pages=1)
+        wiki.private = True
+        wiki.add_file(101, "Handbook.pdf", b"%PDF-1.7 handbook", used_by=[1])
+        client = MediaWikiClient(SITE, access_token="oauth-secret")
+
+        assert client.download(f"{SITE}/images/Handbook.pdf", max_bytes=1_000) == b"%PDF-1.7 handbook"
+        with pytest.raises(MediaWikiRequestError):
+            client.download("https://upload.acme.test/images/Handbook.pdf", max_bytes=1_000)
+        assert wiki.requests[-1].headers.get("Authorization") is None
 
     def test_a_file_larger_than_the_limit_is_not_held(self, monkeypatch: pytest.MonkeyPatch):
         wiki = _wiki(monkeypatch, pages=1)

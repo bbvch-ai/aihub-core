@@ -15,6 +15,8 @@ _MEGABYTE = 1_000_000
 _DOCUMENT_TYPES = frozenset({"pdf", "docx", "pptx", "xlsx", "xls", "txt", "md", "csv", "rtf"})
 _IMAGE_TYPES = frozenset({"png", "jpg", "jpeg", "gif", "bmp", "webp", "tiff", "jp2"})
 _SIGNED_IN_WITH_PASSWORD = {"bot_password", "web_form"}
+# One printable line: a line break would let the value add headers of its own to every request.
+_USER_AGENT_PATTERN = r"^[^\x00-\x1f\x7f]*$"
 
 
 class MediaWikiOptions(Form):
@@ -54,6 +56,10 @@ class MediaWikiOptions(Form):
     exclude_categories: Annotated[
         list[str] | ChipsInput | None, Field(description="Pages in one of these categories are never synced.")
     ] = None
+    include_subcategories: Annotated[
+        bool | Checkbox,
+        Field(description="A category also holds the pages of the categories below it, for included and excluded."),
+    ] = False
     sync_documents: Annotated[
         bool | Checkbox, Field(description="Also sync the documents the synced pages show or link to.")
     ] = False
@@ -68,6 +74,13 @@ class MediaWikiOptions(Form):
         Annotated[int, Field(ge=0, le=2000)] | InputNumber,
         Field(description="Images narrower or lower than this are skipped as icons; 0 keeps every image."),
     ] = 100
+    user_agent: Annotated[
+        Annotated[str, StringConstraints(pattern=_USER_AGENT_PATTERN, max_length=200)] | InputText,
+        Field(
+            description="Sent as User-Agent with every request, e.g. a name and a contact address, as Wikimedia's "
+            "wikis ask for; empty keeps the default."
+        ),
+    ] = ""
 
     @field_validator("namespaces", "include_categories", "exclude_categories", mode="before")
     @classmethod

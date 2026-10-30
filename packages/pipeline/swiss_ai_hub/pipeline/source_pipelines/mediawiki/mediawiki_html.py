@@ -35,9 +35,10 @@ class MediaWikiHtml:
 
     @classmethod
     def to_markdown(cls, html: str | None, page_url: str) -> str:
-        """Links become absolute against the page, because the file is read away from the wiki. Images are dropped,
-        since files are not synced, and links to pages that do not exist keep only their text. Plain ``_`` and ``*``
-        stay unescaped, so an identifier such as ``ENG_CONFIG_PATH`` is indexed and found as written.
+        """Links become absolute against the page, because the file is read away from the wiki. Images are dropped:
+        an image is a file of its own, synced next to the page when images are synced. Links to pages that do not exist
+        keep only their text. Plain ``_`` and ``*`` stay unescaped, so an identifier such as ``ENG_CONFIG_PATH`` is
+        indexed and found as written.
         """
         if not html or not html.strip():
             return ""

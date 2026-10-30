@@ -3,7 +3,7 @@ from collections import Counter
 from collections.abc import Iterator
 from typing import Annotated, Any, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_client import MediaWikiClient
 from swiss_ai_hub.pipeline.source_pipelines.mediawiki.mediawiki_collections import MediaWikiCollections
@@ -24,7 +24,11 @@ class MediaWikiScope(BaseModel):
     category index says, including categories a template assigns, which its own listing entry does not show. Files
     follow the pages: only those a page in scope shows or links to are synced, so a file used only on an excluded page
     stays out. A file's own excluded categories apply too; included categories do not, since files are rarely
-    categorised and are already in scope through their pages.
+    categorised and are already in scope through their pages. With subcategories, a category holds the members of the
+    categories below it as well.
+
+    The pages are listed once per step, and every part of the step works from that listing: the sync, its files and the
+    listing step therefore agree on which page owns a path two titles share.
 
     An image a template shows on its own page is left out, wherever it is used: that is the logo, icon or flag a
     template puts on every page using it. An image passed to a template as a parameter is not shown on the template's
@@ -39,6 +43,7 @@ class MediaWikiScope(BaseModel):
     file_namespace: Annotated[
         str | None, Field(description="Knowledge namespace of the files; None when files are not synced.")
     ] = None
+    _listed: list[dict[str, Any]] | None = PrivateAttr(default=None)
 
     @classmethod
     def read(
@@ -48,18 +53,34 @@ class MediaWikiScope(BaseModel):
         options: Annotated[MediaWikiOptions, "The checked configuration"],
     ) -> Self:
         included = options.included_categories()
+        deep = bool(options.include_subcategories)
         return cls(
             namespaces=collections.pages,
-            included_ids=cls._members(client, included) if included else None,
-            excluded_ids=cls._members(client, options.excluded_categories()),
+            included_ids=cls._members(client, included, deep) if included else None,
+            excluded_ids=cls._members(client, options.excluded_categories(), deep),
             file_namespace=collections.files,
         )
 
-    def pages(self, client: Annotated[MediaWikiClient, "Signed-in client"]) -> Iterator[dict[str, Any]]:
-        """Every page in scope as the listing returns it: id, title, namespace, latest revision and canonical URL."""
-        for number in sorted(self.namespaces):
-            for batch in client.pages(number):
-                yield from (page for page in batch if self._in_scope(page["pageid"]))
+    def pages(self, client: Annotated[MediaWikiClient, "Signed-in client"]) -> list[dict[str, Any]]:
+        """Every page in scope as the listing returns it: id, title, namespace, latest revision and canonical URL.
+
+        Two titles can end up at one path: a title cut at the length a file name may have, or a ``/`` written as the
+        ``_`` of another title. The first one listed keeps the path; the other is named in the log and left out until
+        one of them is renamed.
+        """
+        if self._listed is None:
+            owners: dict[str, dict[str, Any]] = {}
+            for page in self._in_scope_pages(client):
+                path = self.object_key_of(page)
+                if path in owners:
+                    logger.warning(
+                        f"Wiki pages {owners[path]['pageid']} and {page['pageid']} share the file {path}; "
+                        f"page {page['pageid']} is left out."
+                    )
+                    continue
+                owners[path] = page
+            self._listed = list(owners.values())
+        return self._listed
 
     def files(
         self,
@@ -68,7 +89,7 @@ class MediaWikiScope(BaseModel):
     ) -> list[MediaWikiFile]:
         """Every file in scope, none when files are not synced. Files of a shared repository (Wikimedia Commons on
         many wikis) are left out, and so are types not synced, files above the size limit and images taken for
-        decoration; the run's log says how many of each."""
+        decoration; the run's log says how many of each. Files are looked up for the pages the listing kept."""
         if self.file_namespace is None:
             return []
         skipped: Counter[str] = Counter()
@@ -95,6 +116,11 @@ class MediaWikiScope(BaseModel):
 
     def object_key_of(self, page: dict[str, Any]) -> str:
         return MediaWikiPage.object_key_of(page, self.namespace_of(page))
+
+    def _in_scope_pages(self, client: MediaWikiClient) -> Iterator[dict[str, Any]]:
+        for number in sorted(self.namespaces):
+            for batch in client.pages(number):
+                yield from (page for page in batch if self._in_scope(page["pageid"]))
 
     def _in_scope(self, page_id: int) -> bool:
         if page_id in self.excluded_ids:
@@ -127,5 +153,9 @@ class MediaWikiScope(BaseModel):
         return {file["title"].split(":", 1)[1] for file in client.files_used_by(template_ids)}
 
     @staticmethod
-    def _members(client: MediaWikiClient, categories: list[str]) -> set[int]:
-        return {page_id for category in categories for page_id in client.category_member_ids(category)}
+    def _members(client: MediaWikiClient, categories: list[str], with_subcategories: bool) -> set[int]:
+        return {
+            page_id
+            for category in categories
+            for page_id in client.category_member_ids(category, with_subcategories=with_subcategories)
+        }

@@ -1,4 +1,3 @@
-import logging
 from collections.abc import Iterator
 from typing import Any
 from urllib.parse import urlsplit
@@ -22,8 +21,6 @@ from swiss_ai_hub.pipeline.source_pipelines.structured_file_unavailable_error im
 from swiss_ai_hub.pipeline.types.structured_file_reference import StructuredFileReference
 from swiss_ai_hub.pipeline.types.structured_record_file import StructuredRecordFile
 
-logger = logging.getLogger(__name__)
-
 _I18N = "lib.source_pipelines.structured.config.mediawiki"
 _AUTH_METHOD_REF = "mediawiki_auth_method"
 _SYNC_DOCUMENTS_REF = "mediawiki_sync_documents"
@@ -32,6 +29,7 @@ _SEEN = "seen"
 _ALLOW_LIST_VARIABLE = "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"
 # What a file download answers when the wiki will not serve that file: forbidden, missing, or deleted since listed.
 _UNAVAILABLE = {403, 404, 410}
+_FILES_PER_BATCH = 50
 
 
 class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
@@ -91,6 +89,7 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
             namespaces=ChipsInput(**cls._labels("namespaces"), placeholder="Main", condition_if=shown),
             include_categories=ChipsInput(**cls._labels("include_categories"), condition_if=shown),
             exclude_categories=ChipsInput(**cls._labels("exclude_categories"), condition_if=shown),
+            include_subcategories=Checkbox(**cls._labels("include_subcategories"), condition_if=shown),
             sync_documents=Checkbox(**cls._labels("sync_documents"), ref=_SYNC_DOCUMENTS_REF, condition_if=shown),
             max_file_size_mb=InputNumber(
                 **cls._labels("max_file_size_mb"),
@@ -102,6 +101,9 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
             sync_images=Checkbox(**cls._labels("sync_images"), ref=_SYNC_IMAGES_REF, condition_if=shown),
             min_image_pixels=InputNumber(
                 **cls._labels("min_image_pixels"), min=0, max=2000, use_grouping=False, condition_if=with_images
+            ),
+            user_agent=InputText(
+                **cls._labels("user_agent"), placeholder="AcmeKnowledgeSync/1.0 (it@acme.ch)", condition_if=shown
             ),
         )
 
@@ -149,8 +151,8 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
                 changed = [file for key, file in current.items() if seen.get(key) != file.fingerprint]
                 seen.clear()
                 seen.update({key: file.fingerprint for key, file in current.items()})
-                for start in range(0, len(changed), MediaWikiClient.IDS_PER_QUERY):
-                    yield [file.model_dump() for file in changed[start : start + MediaWikiClient.IDS_PER_QUERY]]
+                for start in range(0, len(changed), _FILES_PER_BATCH):
+                    yield [file.model_dump() for file in changed[start : start + _FILES_PER_BATCH]]
 
             return [pages, files] if options.syncs_files() else [pages]
 
@@ -179,18 +181,10 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
         return content
 
     def list_record_paths(self, options: MediaWikiOptions) -> set[str]:
-        """Two pages can end up at one path: a title cut at the length a file name may have, or a ``/`` written as the
-        ``_`` of another title. Only one of them is kept; the other is named in the log until one is renamed."""
+        """Built from the same listing as the sync, so a path two titles share belongs to the same page in both."""
         client, scope = self._checked(options)
-        owners: dict[str, int] = {}
-        for page in scope.pages(client):
-            path = scope.object_key_of(page)
-            if path in owners:
-                logger.warning(
-                    f"Wiki pages {owners[path]} and {page['pageid']} share the file {path}; one is left out."
-                )
-            owners.setdefault(path, page["pageid"])
-        return set(owners) | {file.object_key for file in scope.files(client, options)}
+        pages = {scope.object_key_of(page) for page in scope.pages(client)}
+        return pages | {file.object_key for file in scope.files(client, options)}
 
     @staticmethod
     def _read(
@@ -234,7 +228,9 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
         problems = options.problems()
         if problems:
             raise ValueError(f"The MediaWiki source cannot sync: {'; '.join(problems)}.")
-        client = MediaWikiClient(base_url=options.site_url(), access_token=options.oauth_token())
+        client = MediaWikiClient(
+            base_url=options.site_url(), access_token=options.oauth_token(), user_agent=options.user_agent or None
+        )
         collections = MediaWikiPreflight.check(client, options)
         return client, MediaWikiScope.read(client, collections, options)
 

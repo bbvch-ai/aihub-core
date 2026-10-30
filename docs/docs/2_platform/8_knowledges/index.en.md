@@ -207,6 +207,8 @@ synced, which includes every release still supported.
 - **Categories** (optional): only pages in at least one of these categories are synced.
 - **Excluded categories** (optional): pages in any of these categories are never synced, such as a category that marks
   pages to keep away from AI assistants. A category a template assigns counts as well.
+- **Include subcategories** (off by default): a category also counts the pages of every category below it, for the
+  included and the excluded categories.
 - **Sync documents** (off by default): also sync the documents the synced pages show or link to, see *Documents and
   images* below.
 - **Sync images** (off by default): also sync the images the synced pages show or link to, see *Documents and images*
@@ -214,6 +216,8 @@ synced, which includes every release still supported.
 - **Maximum file size (MB)** (with documents or images only, 50 by default): larger files are left out.
 - **Minimum image size (px)** (with images only, 100 by default): images narrower or lower than this are left out as
   icons; 0 keeps every image.
+- **User-Agent** (optional): sent with every request to the wiki, such as a name and a contact address. Wikimedia's
+  wikis ask for one and may block the default; empty keeps the default.
 
 Each namespace becomes a collection and each page one document. A collection takes the namespace's canonical name, which
 stays the same when the wiki's language or site name changes: `Project` for the wiki's own project namespace, `File` for
@@ -235,8 +239,8 @@ can find them. Sync with a dedicated read-only account that sees only what the d
 
 The first sync reads every page in scope. Later syncs list every page with its latest revision and title, and read only
 the pages that are new, edited, renamed or newly in scope. Pages deleted, moved out of the listed namespaces, put in an
-excluded category or taken out of every listed category are removed. Changing the namespaces or categories reads
-everything again. An edit to a template changes the pages that use it without giving them a new revision, so they are
+excluded category or taken out of every listed category are removed. Changing any setting other than a credential reads
+every page and file again; only those that changed are stored and processed again. An edit to a template changes the pages that use it without giving them a new revision, so they are
 read again only when they are next edited themselves.
 
 A sync fails before it changes anything when the wiki refuses the sign-in or the access token, when the session still
