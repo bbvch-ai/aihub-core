@@ -4,7 +4,6 @@ from typing import Annotated, Self
 from fastapi import Body, Query, Request, Response
 from llama_index.llms.openai import OpenAI
 from microsoft_agents.activity import Activity
-from microsoft_agents.hosting.aiohttp import CloudAdapter
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
@@ -48,9 +47,7 @@ class OpenaiChatController(Controller):
 
         path = RoutesService.get_path(request)
         chat_bot = bot_class(model_name=model_name, path=path, typing_timeout_seconds=typing_timeout_seconds)
-        adapter: CloudAdapter = RoutesService.get_adapter(path)
-
-        result = await adapter.process(request, chat_bot)
+        result = await RoutesService.process_activity(request, chat_bot)
         logger.info("Chat completion successful")
         return result
 

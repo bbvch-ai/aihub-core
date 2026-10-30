@@ -320,6 +320,8 @@ verify Steps 10-12 to confirm settings rather than manually configuring everythi
 4. Add the following scopes:
    - `chat:write` - Allows the bot to send messages
    - `assistant:write` - Allows the bot to interact with App Agents/Assistants
+   - `users:read` and `users:read.email` - Let the bot look up the sender's email in Slack, which is how it maps a Slack
+     user to their Swiss AI Hub account
 5. Under **"Redirect URLs"**, click **"Add New Redirect URL"**
 6. Paste the **Redirect URL** from Bot Framework (Step 9)
 7. Click **"Save URLs"**
@@ -481,7 +483,9 @@ create apps programmatically.
                 "im:history",
                 "mpim:history",
                 "chat:write",
-                "assistant:write"
+                "assistant:write",
+                "users:read",
+                "users:read.email"
             ]
         }
     },
@@ -514,7 +518,8 @@ create apps programmatically.
 - **redirect_urls**: Always `https://slack.botframework.com` for Bot Framework integration
 - **request_url**: Format is `https://slack.botframework.com/api/Events/{APP_ID}` where `{APP_ID}` is your Teams app
   client ID
-- **bot scopes**: All 6 scopes are required for full functionality (including `chat:write` and `assistant:write`)
+- **bot scopes**: All 8 scopes are required for full functionality (including `chat:write`, `assistant:write`,
+  `users:read` and `users:read.email`)
 - **bot_events**: All 6 events enable the bot to receive messages across all conversation types
 
 ### Teams App Manifest
@@ -646,7 +651,8 @@ After completing all steps, verify:
 - [ ] App Home configured: "Always show my bot as online" toggle ON
 - [ ] App Home configured: "Home Tab" toggle ON
 - [ ] App Home configured: "Messages Tab" is disabled (bot interacts through channels/DMs)
-- [ ] Bot token scopes `chat:write` and `assistant:write` are added in Slack OAuth settings
+- [ ] Bot token scopes `chat:write`, `assistant:write`, `users:read` and `users:read.email` are added in Slack OAuth
+  settings
 - [ ] Bot Framework Slack channel is configured with Client ID and Client Secret
 - [ ] Saved Bot Framework configuration and completed OAuth redirect to Slack
 - [ ] Redirect URL is added to Slack OAuth settings
@@ -684,6 +690,8 @@ ______________________________________________________________________
 - Check Slack app has necessary bot token scopes:
   - `chat:write` (required for sending messages)
   - `assistant:write` (required for App Agent interactions)
+  - `users:read`, `users:read.email` (required to identify the sender; without them every user gets the "cannot verify
+    who you are" reply)
   - `channels:history`, `groups:history`, `im:history`, `mpim:history` (for message events)
 - Verify App Home settings are configured:
   - "Always show my bot as online" should be ON

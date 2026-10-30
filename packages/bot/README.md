@@ -76,7 +76,7 @@ from swiss_ai_hub.bot.routes import AgentChatController, OpenaiChatController, B
 from swiss_ai_hub.bot.runners import BotRunner
 
 runner = BotRunner()
-auth = KeycloakAuthHandler()  # a fail-closed safety net; channel authenticity is verified per-endpoint (see below)
+auth = KeycloakAuthHandler()  # required by Controller; activity routes verify the Bot Service token (see below)
 
 runner.mount(
     HealthController(auth=auth).get_health(),
@@ -110,8 +110,13 @@ channel:
 3. The `PathEntity` for that path is seeded automatically by `setup_azure_bot` (or manually via `add_path_entity` for
    local development).
 
-`RoutesService.get_adapter(path)` then loads the credentials, builds a cached Bot Framework adapter per endpoint, and
-verifies the authenticity of every incoming activity.
+`RoutesService.get_adapter(path)` then loads the credentials and builds a cached Bot Framework adapter per endpoint.
+Every activity route goes through `RoutesService.process_activity()`, which validates the Azure Bot Service JWT against
+the path's credentials (signature via Microsoft's JWKS, audience = `APP_ID`, issuer, no agent-to-agent tokens,
+`serviceurl` claim = the activity's `serviceUrl`) and answers `401` otherwise. The bot then resolves the user from the
+channel itself — the Teams member roster or the Slack profile (`users.info`, needs `users:read` + `users:read.email`) —
+never from `from.name`, and checks that the user may use the endpoint's agent or model. Other channels (web chat, Direct
+Line, emulator) cannot be mapped to an account and get a "cannot verify who you are" reply.
 
 ______________________________________________________________________
 
@@ -134,7 +139,8 @@ uvicorn app:app --host 0.0.0.0 --port 8001
 The bot connects to NATS and MongoDB, subscribes for bot-in-the-loop requests, and is ready to receive activities. Two
 ways to drive messages locally:
 
-- **Bot Framework Emulator** — connect it to `http://localhost:8001/api/v1/messages` (leave App ID/Password empty).
+- **Bot Framework Emulator** — only through the testing playground (`playground/testing/main.py`), which skips the
+  inbound token check. The production app rejects every activity without a valid Azure Bot Service token.
 - **Real channels** — expose your local bot to the internet with a tunnel (Azure Dev Tunnels, ngrok, …) and set that URL
   as the channel's messaging endpoint, so Teams/Slack can reach it.
 

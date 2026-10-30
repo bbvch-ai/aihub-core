@@ -45,8 +45,9 @@ back to non-streaming (`super().on_message_activity()`).
 2. AgentChatController._process_agent_chat_request()
    ├─ RoutesService.get_path(request) → extract URL path
    ├─ bot = AgentChatBot(nc, distributor, agent_class, agent_id, path)
-   └─ adapter = RoutesService.get_adapter(path)  # Cached CloudAdapter
-3. adapter.process(request, bot)
+   └─ RoutesService.process_activity(request, bot)
+3. BotActivityAuthenticator.authenticate() → 401 unless a valid Bot Service JWT for this path
+   └─ RoutesService.get_adapter(path).process(request, bot)  # Cached CloudAdapter, verified claims
    └─ bot.on_message_activity(turn_context)
 4. BaseChatBot._process_message(turn_context)
    ├─ ConversationTracker.should_show_expiration_message()  # TTL check
@@ -404,6 +405,21 @@ The typing indicator runs **only while waiting for the agent to respond** — no
 4. During `send_response_stream`, no typing indicator is running — the user sees the message being built
 
 If the signal is never set (agent timeout), sends `bot.error.response_timeout` localized message.
+
+______________________________________________________________________
+
+## Inbound Authentication and User Identity
+
+Every activity route goes through `RoutesService.process_activity()`, which validates the Azure Bot Service JWT against
+the path's credentials (signature via Microsoft's JWKS, audience = `APP_ID`, issuer, no agent-to-agent tokens,
+`serviceurl` claim = the activity's `serviceUrl`) and answers `401` otherwise. The bot then resolves the user from the
+channel itself — the Teams member roster or the Slack profile (`users.info`, needs `users:read` + `users:read.email`) —
+never from `from.name`, and checks that the user may use the endpoint's agent or model. Other channels (web chat, Direct
+Line, emulator) cannot be mapped to an account and get a "cannot verify who you are" reply.
+
+Files: `routes/bot_activity_authenticator.py`, `CompletionHandler.resolve_user_email(turn_context, path)`,
+`UnverifiedBotUserError` / `BotAccessDeniedError` (mapped to `bot.error.unverified_user` / `bot.error.access_denied`).
+Tests mint tokens with `playground/testing/tests/bot_framework_token_factory.py`.
 
 ______________________________________________________________________
 
