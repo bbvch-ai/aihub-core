@@ -166,7 +166,8 @@ class AttachedFiles(Capability):
 
         # One cache for the turn: its S3 client is built once, not by every read at the same moment.
         cache = AttachedFileSectionCache()
-        outcomes = await AttachedFileReader.read_all(files, topic.agent_class, topic.agent_id, cache)
+        embedding_budget = await asyncio.to_thread(files_config.attached_files.embedding_model.token_budget)
+        outcomes = await AttachedFileReader.read_all(files, topic.agent_class, topic.agent_id, embedding_budget, cache)
         readable = {event.file_id: text for text, event in outcomes if text is not None}
         pages = AttachedFilePageRange.of(request.first_page, request.last_page)
         by_page = {file_id for file_id, text in readable.items() if pages and text.is_paged}

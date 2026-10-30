@@ -16,7 +16,7 @@ from swiss_ai_hub.core.events.agent import (
     AttachedFileStatus,
     UserUploadedFile,
 )
-from swiss_ai_hub.core.generative_ai import CitationId, ExtractedDocument, LLMConfig
+from swiss_ai_hub.core.generative_ai import CitationId, EmbeddingModelConfig, ExtractedDocument, LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
@@ -32,6 +32,18 @@ from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import Con
 
 READER_MODULE = "swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader"
 HISTORY = [ChatMessage(role=MessageRole.USER, content="Summarise section 4.")]
+DECLARED_EMBEDDER = {
+    "mode": "embedding",
+    "max_input_tokens": 8192,
+    "aihub_tokenizer": "bge-m3",
+    "aihub_input_overhead_tokens": 2,
+}
+
+
+@pytest.fixture(autouse=True)
+def declared_embedder(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Reading sizes sections for the embedding model; answered here, not by LiteLLM."""
+    monkeypatch.setattr(EmbeddingModelConfig, "get_model_info", lambda _self: {"model_info": DECLARED_EMBEDDER})
 
 
 def _config() -> LLMWrappingAgentConfig:
@@ -287,7 +299,7 @@ class TestAttachedFileSections:
     def test_a_file_is_split_along_its_headings_like_ingested_knowledge(self):
         document = _document("# Handbook\n\nIntro.\n\n## Vacation\n\n25 days.\n\n## Remote\n\nThree days.")
 
-        sections = AttachedFileSections.parse(document, "file-1", "handbook.pdf")
+        sections = AttachedFileSections.parse(document, "file-1", "handbook.pdf", "embedding/bge-m3")
 
         assert [(section.h1, section.h2) for section in sections] == [
             ("Handbook", None),
@@ -299,7 +311,7 @@ class TestAttachedFileSections:
 
     def test_fills_the_room_in_rank_order_and_keeps_document_order(self):
         document = _document("# A\n\n" + "alpha " * 50 + "\n\n# B\n\n" + "beta " * 50 + "\n\n# C\n\n" + "gamma " * 50)
-        alpha, beta, gamma = AttachedFileSections.parse(document, "file-1", "doc.pdf")
+        alpha, beta, gamma = AttachedFileSections.parse(document, "file-1", "doc.pdf", "embedding/bge-m3")
         picker = AttachedFileSections(AttachedFilesConfig(), self._counter, None)
 
         chosen = picker.fill([gamma, alpha, beta], room=110)
