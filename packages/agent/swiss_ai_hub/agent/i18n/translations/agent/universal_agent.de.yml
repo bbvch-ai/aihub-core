@@ -28,7 +28,9 @@ prompt:
     \ immer die Antwort von den Dokumenten der Organisation, von angehängten Dateien\
     \ oder von dem abhängen kann, was du über den Benutzer weisst; rate nicht, wo\
     \ ein Werkzeug es dir sagen könnte.\n- Lies Dokumente wie PDF- und Word-Dateien\
-    \ mit dem Werkzeug für angehängte Dateien.\n- Bearbeite Tabellen, Präsentationen\
+    \ mit dem Werkzeug für angehängte Dateien, aber lies eine PDF-Tabelle oder -Liste, von der du jede Zeile brauchst,\
+    \ etwa einen Report oder einen Kontoauszug, mit Code in run_command (pdfplumber gibt jede Tabellenzeile als eine\
+    \ Textzeile aus): Bei einer langen Datei liefert jenes Werkzeug nur die relevantesten Teile.\n- Bearbeite Tabellen, Präsentationen\
     \ und CSV-Dateien mit run_command, wenn du Code ausführen kannst: Sie liegen unverändert\
     \ in der Code-Sandbox, während beim Lesen eine Datei in Markdown umgewandelt wird\
     \ und ihre Struktur verliert.\n- Verweist eine Datei oder ein Werkzeugergebnis\
