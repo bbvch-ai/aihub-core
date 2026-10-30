@@ -40,6 +40,27 @@ class DiscoverySettings(EnvironmentSettings):
             "The same rule decides when its REST endpoints are removed.",
         ),
     ] = 3
+    MAX_SILENCE_SECONDS: Annotated[
+        int,
+        Field(
+            ge=1,
+            description="However the rounds went, a class that has not answered for this long reads offline. "
+            "Bounds how long dead classes keep reading online while every round fails, and how old the rounds "
+            "left over from before an API restart may be.",
+        ),
+    ] = 900
+
+    @model_validator(mode="after")
+    def max_silence_exceeds_the_missed_rounds(self) -> Self:
+        """A limit inside the missed-rounds span would take healthy classes offline between two rounds."""
+        if self.MAX_SILENCE_SECONDS <= self.cold_start_window.total_seconds():
+            msg = (
+                f"DISCOVERY_MAX_SILENCE_SECONDS ({self.MAX_SILENCE_SECONDS}) must exceed the "
+                f"{self.cold_start_window.total_seconds():.0f}s that "
+                "DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE rounds span."
+            )
+            raise ValueError(msg)
+        return self
 
     @model_validator(mode="after")
     def round_timeout_exceeds_response_wait(self) -> Self:
@@ -57,3 +78,12 @@ class DiscoverySettings(EnvironmentSettings):
         """The wall-clock stand-in for the missed-rounds rule until that many rounds have completed."""
         round_period = self.INTERVAL_SECONDS + self.RESPONSE_WAIT_SECONDS
         return timedelta(seconds=round_period * self.MISSED_ROUNDS_BEFORE_OFFLINE)
+
+    @property
+    def max_silence(self) -> timedelta:
+        return timedelta(seconds=self.MAX_SILENCE_SECONDS)
+
+    @property
+    def recorder_lease_ttl(self) -> int:
+        """Two of the slowest rounds, so the recording process keeps its lease across a stalled round."""
+        return 2 * (self.INTERVAL_SECONDS + self.ROUND_TIMEOUT_SECONDS)

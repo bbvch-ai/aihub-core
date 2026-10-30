@@ -12,7 +12,9 @@ class DiscoveryRoundEntity(Document):
 
     A round that fails or stalls is never written, so it moves no class towards offline. One document per
     round rather than a capped array keeps every write an insert, which needs no `$push`/`$slice` support
-    from FerretDB and stays correct if more than one API process runs a round.
+    from FerretDB. Rows are not tagged by writer, so only one API process may record rounds: with several,
+    "the last N rounds" would span a fraction of the configured time. The discovery service holds a Redis
+    lease for that.
 
     `started_at` is naive **local** time, the clock `last_discovered` is stamped with (see #1968). It is the
     round's start, not its end: a class that answered is stamped after the response wait, so it always
@@ -44,12 +46,17 @@ class DiscoveryRoundEntity(Document):
         That is the start of the round `MISSED_ROUNDS_BEFORE_OFFLINE` completed rounds back: a class stamped
         before it has missed every round since. Until that many rounds exist — a fresh install — the
         wall-clock window those rounds would span stands in.
+
+        It is never older than `MAX_SILENCE_SECONDS`: a fault that fails every round — NATS down for good, the
+        database rejecting the round — would otherwise freeze it and keep dead classes online indefinitely,
+        and so would the rounds left from before the API was down.
         """
         settings = settings or DiscoverySettings()
+        now = datetime.now()
         oldest_counted = cls._nth_most_recent(kind, settings.MISSED_ROUNDS_BEFORE_OFFLINE)
         if oldest_counted is None:
-            return datetime.now() - settings.cold_start_window
-        return oldest_counted.started_at
+            return now - settings.cold_start_window
+        return max(oldest_counted.started_at, now - settings.max_silence)
 
     @classmethod
     def _nth_most_recent(cls, kind: DiscoveryKind, n: int) -> "DiscoveryRoundEntity | None":

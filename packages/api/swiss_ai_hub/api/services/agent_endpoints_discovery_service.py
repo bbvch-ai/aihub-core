@@ -3,7 +3,7 @@ import logging
 from asyncio import sleep, to_thread
 from collections.abc import Awaitable, Callable
 from enum import StrEnum
-from functools import reduce
+from functools import partial, reduce
 from operator import or_
 from typing import Annotated, override
 
@@ -92,7 +92,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         redis: Redis,
         settings: DiscoverySettings | None = None,
     ):
-        super().__init__(nc, api_app, controller, locale_handler, settings)
+        super().__init__(nc, api_app, controller, locale_handler, redis, settings)
         self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
         self._redis = redis
@@ -168,13 +168,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         for response in discovery_responses:
             unique_key = response.agent_class
 
-            if unique_key not in unique_agents_dict:
-                agent_class_dto = AgentClassDTO.from_discovery_event(response)
-                unique_agents_dict[unique_key] = agent_class_dto
-
-                # Off the loop: one blocking write per responding class would serialize on the loop that also
-                # serves every request in this process, and could push the round past its timeout.
-                await to_thread(AgentClassEntity.create_or_update, response)
+            if unique_key not in unique_agents_dict and await self._stamp_answer(
+                unique_key, partial(AgentClassEntity.create_or_update, response)
+            ):
+                unique_agents_dict[unique_key] = AgentClassDTO.from_discovery_event(response)
 
         return list(unique_agents_dict.values())
 

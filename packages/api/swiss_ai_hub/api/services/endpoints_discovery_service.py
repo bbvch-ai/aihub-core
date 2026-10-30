@@ -1,6 +1,7 @@
 import abc
 import asyncio
 import logging
+from collections.abc import Callable
 from datetime import datetime
 from typing import ClassVar
 
@@ -8,10 +9,13 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
+from redis.asyncio import Redis
 from swiss_ai_hub.core.discovery import DiscoveryKind, DiscoverySettings
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence import DiscoveryRoundEntity
 from swiss_ai_hub.core.routes import Controller
+
+from swiss_ai_hub.api.services.discovery_recorder_lease import DiscoveryRecorderLease
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +26,10 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
     NATs and register dynamic fastapi endpoints accordingly.
 
     A class is online while it has answered one of the last `MISSED_ROUNDS_BEFORE_OFFLINE` *completed* rounds.
-    Only a round that broadcast and collected answers with NATS connected, stamped every answer and finished
-    within its timeout is recorded, so a broken round — the event loop starved, NATS reconnecting — changes no
-    class's status instead of taking every class offline at once.
+    Only a round that stayed connected to NATS from broadcast to the end of the wait and finished within its
+    timeout is recorded, so a broken round — the event loop starved, NATS reconnecting — changes no class's
+    status instead of taking every class offline at once. Every API process runs rounds for its own
+    endpoints, but only the holder of the `DiscoveryRecorderLease` records them.
     """
 
     discovery_kind: ClassVar[DiscoveryKind]
@@ -35,6 +40,7 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
         api_app: FastAPI,
         controller: Controller,
         locale_handler: LocaleHandler,
+        redis: Redis,
         settings: DiscoverySettings | None = None,
     ):
         self.nc: NATS = nc
@@ -42,6 +48,7 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
         self.controller: Controller = controller
         self.locale_handler: LocaleHandler = locale_handler
         self.settings: DiscoverySettings = settings or DiscoverySettings()
+        self._recorder_lease = DiscoveryRecorderLease(redis, self.discovery_kind, self.settings)
         # For instance-based tracking (used by ProcessEndpointsDiscoveryService)
         self.registered_entities: set[tuple[str, str]] = set()
         # For class-based tracking (used by AgentEndpointsDiscoveryService)
@@ -70,6 +77,7 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
         if self.task:
             self.task.cancel()
             await asyncio.gather(self.task, return_exceptions=True)
+        await self._recorder_lease.release()
         logger.info("Endpoint discovery service stopped")
         return True
 
@@ -107,15 +115,19 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
         started_at = datetime.now()
         if not self._nats_connected("before broadcasting"):
             return False
+        reconnects_before = self.nc.stats["reconnects"]
 
         discovered = await self._broadcast_discovery()
 
-        # nats-py does not raise while it reconnects: the request is buffered and no answer arrives. Counting
-        # that round would mark every class as having missed it.
-        if not self._nats_connected("while collecting answers"):
+        # nats-py does not raise while it reconnects: the request is buffered and answers are lost. Counting
+        # that round would mark every class as having missed it, even when the connection is back by now.
+        if not self._nats_connected("while collecting answers") or self._nats_reconnected_since(reconnects_before):
             return False
 
-        await asyncio.to_thread(DiscoveryRoundEntity.record_completed, self.discovery_kind, started_at, self.settings)
+        if await self._recorder_lease.held():
+            await asyncio.to_thread(
+                DiscoveryRoundEntity.record_completed, self.discovery_kind, started_at, self.settings
+            )
         discovered_names = {self._class_name_of(dto) for dto in discovered}
         online_class_names = await asyncio.to_thread(self._online_class_names) | discovered_names
 
@@ -141,6 +153,33 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
             "the round is not counted and no class status changed."
         )
         return False
+
+    def _nats_reconnected_since(self, reconnects_before: int) -> bool:
+        if self.nc.stats["reconnects"] == reconnects_before:
+            return False
+        logger.error(
+            f"NATS reconnected while the {self.discovery_kind} discovery round collected answers; "
+            "the round is not counted and no class status changed."
+        )
+        return True
+
+    async def _stamp_answer(self, class_name: str, stamp: Callable[[], object]) -> bool:
+        """Saves one class's answer off the loop; a class whose answer cannot be saved has not answered.
+
+        Isolated so that one class whose answer the database rejects cannot fail every round, which would
+        freeze every other class's status until `MAX_SILENCE_SECONDS` takes them all offline. Off the loop
+        because this process also serves every request, and a blocking write per class could push the round
+        past its timeout.
+        """
+        try:
+            await asyncio.to_thread(stamp)
+        except Exception as e:
+            logger.exception(
+                f"Could not save the {self.discovery_kind} discovery answer of {class_name}; "
+                f"it counts as not having answered this round: {e}"
+            )
+            return False
+        return True
 
     @abc.abstractmethod
     async def _broadcast_discovery(self) -> list[TClassDTO]:

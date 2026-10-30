@@ -1,11 +1,13 @@
 import logging
-from asyncio import sleep, to_thread
+from asyncio import sleep
+from functools import partial
 from typing import Annotated, override
 
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Path, Security
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
+from redis.asyncio import Redis
 from stringcase import snakecase
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.discovery import DiscoveryKind, DiscoverySettings
@@ -55,9 +57,10 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService[ProcessClassDTO
         api_app: FastAPI,
         controller: ProcessController,
         locale_handler: LocaleHandler,
+        redis: Redis,
         settings: DiscoverySettings | None = None,
     ):
-        super().__init__(nc, api_app, controller, locale_handler, settings)
+        super().__init__(nc, api_app, controller, locale_handler, redis, settings)
         self.controller: ProcessController = controller
         self.topic_manager: ProcessTopicManager = ProcessTopicManager()
 
@@ -111,25 +114,25 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService[ProcessClassDTO
         for response in discovery_responses:
             unique_key = response.process_class
 
-            if unique_key not in unique_classes_dict:
-                process_class_dto = ProcessClassDTO.from_discovery_event(response)
+            if unique_key in unique_classes_dict:
+                continue
+            process_class_dto = ProcessClassDTO.from_discovery_event(response)
+            # Persist the process class entity in database (updates last_discovered timestamp)
+            stamp = partial(
+                ProcessClassEntity.create_or_update,
+                process_class=process_class_dto.process_class,
+                name=process_class_dto.name,
+                description=process_class_dto.description,
+                icon=process_class_dto.icon,
+                form=process_class_dto.form,
+                process_config_specs=process_class_dto.process_config_specs,
+                human_inputs=process_class_dto.human_inputs,
+                program_inputs=process_class_dto.program_inputs,
+                agent_inputs=process_class_dto.agent_inputs,
+                templates=[t.model_dump() for t in response.templates],
+            )
+            if await self._stamp_answer(unique_key, stamp):
                 unique_classes_dict[unique_key] = process_class_dto
-
-                # Persist the process class entity in database (updates last_discovered timestamp), off the
-                # loop for the same reason as the agent discovery round.
-                await to_thread(
-                    ProcessClassEntity.create_or_update,
-                    process_class=process_class_dto.process_class,
-                    name=process_class_dto.name,
-                    description=process_class_dto.description,
-                    icon=process_class_dto.icon,
-                    form=process_class_dto.form,
-                    process_config_specs=process_class_dto.process_config_specs,
-                    human_inputs=process_class_dto.human_inputs,
-                    program_inputs=process_class_dto.program_inputs,
-                    agent_inputs=process_class_dto.agent_inputs,
-                    templates=[t.model_dump() for t in response.templates],
-                )
 
         return list(unique_classes_dict.values())
 

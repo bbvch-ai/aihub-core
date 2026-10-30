@@ -37,8 +37,9 @@ def _make_service[TService: EndpointsDiscoveryService](
     service.controller = SimpleNamespace(base_route=base_route)
     service.registered_classes = set(registered)
     service.registered_entities = set()
-    service.nc = SimpleNamespace(is_connected=True)
+    service.nc = SimpleNamespace(is_connected=True, stats={"reconnects": 0})
     service.settings = DiscoverySettings()
+    service._recorder_lease = SimpleNamespace(held=AsyncMock(return_value=True), release=AsyncMock())
     return service
 
 
@@ -186,6 +187,25 @@ class TestARoundThatDoesNotComplete:
         self._assert_nothing_changed(service, recorded_rounds)
 
     @pytest.mark.asyncio
+    async def test_a_round_during_which_nats_reconnected_is_not_counted(
+        self, recorded_rounds: MagicMock, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Connected at both checks, yet the answers sent while it was down are lost."""
+        service = self._service()
+
+        async def drops_and_reconnects_during_the_wait() -> list:
+            service.nc.stats["reconnects"] += 1
+            return []
+
+        service._broadcast_discovery = drops_and_reconnects_during_the_wait
+
+        with caplog.at_level(logging.ERROR):
+            assert await service._run_round() is False
+
+        assert "NATS reconnected while" in caplog.text
+        self._assert_nothing_changed(service, recorded_rounds)
+
+    @pytest.mark.asyncio
     async def test_no_request_is_broadcast_while_nats_is_down(self, recorded_rounds: MagicMock) -> None:
         service = self._service()
         service.nc.is_connected = False
@@ -207,6 +227,64 @@ class TestARoundThatDoesNotComplete:
             await service._run_after_round()
 
         assert "OpenWebUI down" in caplog.text
+
+
+class TestSeveralApiProcesses:
+    def _service(self, holds_lease: bool) -> AgentEndpointsDiscoveryService:
+        app = _app_with_a_mounted_controller("/agents")
+        service = _make_service(AgentEndpointsDiscoveryService, app, "/agents", {"Gone"})
+        _add_dynamic_endpoint(service, service._get_endpoint_base_path_for_class("Gone"))
+        service._recorder_lease.held = AsyncMock(return_value=holds_lease)
+        service._register_class_endpoints = MagicMock()
+        service._online_class_names = MagicMock(return_value={"Alive"})
+        service._broadcast_discovery = AsyncMock(return_value=[_agent_answer("Alive")])
+        return service
+
+    @pytest.mark.asyncio
+    async def test_only_the_lease_holder_records_its_rounds(self, recorded_rounds: MagicMock) -> None:
+        """Rounds from N processes would make the last N rounds span a fraction of the configured time."""
+        await self._service(holds_lease=True)._discover_and_register()
+        await self._service(holds_lease=False)._discover_and_register()
+
+        recorded_rounds.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_a_process_without_the_lease_still_reconciles_its_own_endpoints(self) -> None:
+        service = self._service(holds_lease=False)
+
+        assert await service._discover_and_register() is True
+
+        assert "/agents/classes/Gone/instances/{agent_id}/start" not in _paths(service.app)
+        assert service.registered_classes == {"Alive"}
+
+    @pytest.mark.asyncio
+    async def test_stopping_hands_the_lease_over(self) -> None:
+        service = self._service(holds_lease=True)
+        service.running = True
+        service.task = None
+
+        await service.stop()
+
+        service._recorder_lease.release.assert_awaited_once()
+
+
+class TestAnAnswerThatCannotBeSaved:
+    @pytest.mark.asyncio
+    async def test_it_counts_as_not_answered_without_failing_the_round(self, caplog: pytest.LogCaptureFixture) -> None:
+        """One class the database rejects would otherwise fail every round and freeze every other class."""
+        service = _make_service(
+            AgentEndpointsDiscoveryService, _app_with_a_mounted_controller("/agents"), "/agents", set()
+        )
+
+        def rejected() -> None:
+            raise ValueError("invalid config specs")
+
+        with caplog.at_level(logging.ERROR):
+            assert await service._stamp_answer("Broken", rejected) is False
+        assert await service._stamp_answer("Healthy", lambda: None) is True
+
+        assert "Broken" in caplog.text
+        assert "invalid config specs" in caplog.text
 
 
 class TestProcessClassGoingOffline:

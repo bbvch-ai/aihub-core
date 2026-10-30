@@ -227,9 +227,16 @@ the subclasses only broadcast, name and register classes.
 - **Rule**: a class is online while its `last_discovered` is at or after the *start* of the round
   `DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE` (3) completed rounds back (`DiscoveryRoundEntity.online_threshold`). The
   start, not the end, because answers are stamped after the response wait.
-- **What completes a round**: NATS connected before the broadcast and after the wait, every answer stamped, and all of
-  it inside `DISCOVERY_ROUND_TIMEOUT_SECONDS`. Anything else is logged as an error and not recorded, so it moves no
-  class towards offline. The NATS check matters because nats-py buffers a publish while reconnecting instead of raising.
+- **What completes a round**: NATS connected before the broadcast and after the wait with no reconnect in between
+  (`nc.stats["reconnects"]`), and all of it inside `DISCOVERY_ROUND_TIMEOUT_SECONDS`. Anything else is logged as an
+  error and not recorded, so it moves no class towards offline. The NATS check matters because nats-py buffers a publish
+  while reconnecting instead of raising. A class whose answer cannot be saved counts as not having answered
+  (`_stamp_answer`); it does not fail the round for every other class.
+- **Max silence**: the threshold is never older than `DISCOVERY_MAX_SILENCE_SECONDS` (900). Without it, a fault that
+  fails every round, or the rounds left from before an API restart, would keep dead classes online indefinitely.
+- **Several API processes**: every gunicorn worker or replica runs rounds, because each registers the dynamic endpoints
+  on its own app, but only the holder of the Redis `DiscoveryRecorderLease` (`discovery:{kind}:recorder`) records them.
+  Rounds from N processes would make "the last N rounds" span a fraction of the configured time.
 - **One rule everywhere**: `is_online_since(threshold)`, the scheduler, `get_online_conversational` and endpoint removal
   all use it. Services read the threshold once per request and pass `is_online` into the DTO factories.
 - **Cold start**: until that many rounds exist, the wall-clock window they would span stands in.

@@ -14,7 +14,8 @@ from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEn
 from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
 
 _SETTINGS = DiscoverySettings(MISSED_ROUNDS_BEFORE_OFFLINE=3)
-_ROUND_ZERO = datetime(2026, 10, 1, 12, 0, 0)
+# Recent enough that MAX_SILENCE_SECONDS does not cut in; the database keeps milliseconds only
+_ROUND_ZERO = datetime.now().replace(microsecond=0) - timedelta(minutes=10)
 
 
 @pytest.fixture(autouse=True)
@@ -74,6 +75,26 @@ class TestThreshold:
         assert DiscoveryRoundEntity.online_threshold(DiscoveryKind.PROCESS, _SETTINGS) == _round_start(1)
 
 
+class TestMaxSilence:
+    def test_when_rounds_stop_completing_a_dead_class_still_goes_offline(self) -> None:
+        """A fault that fails every round would otherwise keep the last threshold, and dead classes online, forever."""
+        long_ago = datetime.now() - _SETTINGS.max_silence - timedelta(hours=1)
+        for index in range(3):
+            DiscoveryRoundEntity.record_completed(DiscoveryKind.AGENT, long_ago + timedelta(minutes=index), _SETTINGS)
+        answered_last_round = AgentClassEntity(last_discovered=long_ago + timedelta(minutes=2, seconds=10))
+        before = datetime.now()
+
+        threshold = DiscoveryRoundEntity.online_threshold(DiscoveryKind.AGENT, _SETTINGS)
+
+        assert before - _SETTINGS.max_silence <= threshold <= datetime.now() - _SETTINGS.max_silence
+        assert not answered_last_round.is_online_since(threshold)
+
+    def test_it_does_not_cut_in_while_rounds_complete(self) -> None:
+        _complete_rounds(5)
+
+        assert DiscoveryRoundEntity.online_threshold(DiscoveryKind.AGENT, _SETTINGS) == _round_start(2)
+
+
 class TestColdStart:
     def test_without_enough_rounds_the_wall_clock_window_stands_in(self) -> None:
         _complete_rounds(2)
@@ -104,3 +125,10 @@ class TestSettings:
     def test_a_timeout_that_cannot_outlast_the_response_wait_is_rejected(self) -> None:
         with pytest.raises(ValueError, match="ROUND_TIMEOUT_SECONDS"):
             DiscoverySettings(RESPONSE_WAIT_SECONDS=10, ROUND_TIMEOUT_SECONDS=10)
+
+    def test_a_max_silence_inside_the_missed_rounds_span_is_rejected(self) -> None:
+        """It would take healthy classes offline between two rounds."""
+        with pytest.raises(ValueError, match="MAX_SILENCE_SECONDS"):
+            DiscoverySettings(
+                INTERVAL_SECONDS=60, RESPONSE_WAIT_SECONDS=10, MISSED_ROUNDS_BEFORE_OFFLINE=3, MAX_SILENCE_SECONDS=210
+            )

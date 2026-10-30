@@ -1,5 +1,6 @@
 import logging
 from typing import Self
+from unittest.mock import MagicMock
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -242,6 +243,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 api_app=self._api_app,
                 controller=self._api_app.state.process_controller,
                 locale_handler=ApiLocaleHandler(),
+                redis=MagicMock(),
             )
             process_class_dto = ProcessClassDTO(
                 process_class=self.process_class,

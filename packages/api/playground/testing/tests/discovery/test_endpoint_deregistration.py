@@ -43,7 +43,7 @@ def test_deregistration_removes_only_matching_dynamic_endpoints(kind: str, tenan
     controller_type = TenantScopedController if tenant_scoped else Controller
     controller = controller_type(auth=Mock(), route="/process" if kind == "process-class" else "/agent")
     service_type = ProcessEndpointsDiscoveryService if kind == "process-class" else DiscoveryServiceForTests
-    service = service_type(nc=Mock(), api_app=app, controller=controller, locale_handler=LocaleHandler())
+    service = service_type(nc=Mock(), api_app=app, controller=controller, locale_handler=LocaleHandler(), redis=Mock())
 
     if kind in {"instance", "legacy-instance"}:
         base_path = service._get_endpoint_base_path_for_instance("Example", "one")

@@ -264,6 +264,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 api_app=api_app,
                 controller=api_app.state.process_controller,
                 locale_handler=ApiLocaleHandler(),
+                redis=redis,
                 settings=discovery_settings,
             )
             await process_discovery_service.start()
