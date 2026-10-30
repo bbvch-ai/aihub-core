@@ -15,6 +15,7 @@ tenant_admin:
     users: Utenti
   keycloak_unreachable: Keycloak non è raggiungibile — l'elenco dei tenant potrebbe
     essere incompleto. Riprovare.
+  load_error: Non è stato possibile caricare i dati di questo tenant. Riprovare.
   state:
     orphaned_label: Orfano
     orphaned_tooltip: Questo tenant ha metadati ma nessun gruppo Keycloak corrispondente.

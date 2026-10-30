@@ -15,6 +15,7 @@ tenant_admin:
     users: Benutzer
   keycloak_unreachable: Keycloak ist nicht erreichbar — die Tenant-Liste ist möglicherweise
     unvollständig. Bitte erneut versuchen.
+  load_error: Die Daten dieses Tenants konnten nicht geladen werden. Bitte erneut versuchen.
   state:
     orphaned_label: Verwaist
     orphaned_tooltip: Dieser Tenant hat Metadaten, aber keine passende Keycloak-Gruppe.

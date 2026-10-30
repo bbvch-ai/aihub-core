@@ -7,6 +7,7 @@ export default defineQuery(() => {
   const {
     data: roles,
     isPending: rolesAreLoading,
+    error: rolesError,
   } = useQuery<RoleResponse[]>({
     key: () => ['tenant', tenantId.value, 'roles'],
     staleTime: minutesToMilliseconds(5),
@@ -21,5 +22,6 @@ export default defineQuery(() => {
   return {
     roles,
     rolesAreLoading,
+    rolesError,
   }
 })
