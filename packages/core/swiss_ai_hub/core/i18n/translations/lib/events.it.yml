@@ -344,3 +344,8 @@ extract_records_event:
 records_extracted_event:
   name: Record estratti
   description: La tabella estratta dai documenti selezionati
+hitl_questions_request_event:
+  name: Domande da confermare
+  description: L'agente chiede all'utente di confermare o correggere le parti di una
+    richiesta, come modulo dove il client ne mostra uno, altrimenti come messaggio di
+    chat.

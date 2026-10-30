@@ -43,6 +43,12 @@ from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_answer import ROWS_PER_CHUNK
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_answer import ExtractionRequestAnswer
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_form_request_event import (
+    ExtractionRequestFormRequestEvent,
+)
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_form_response_event import (
+    ExtractionRequestFormResponseEvent,
+)
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_plain_answer import (
     ExtractionRequestPlainAnswer,
 )
@@ -243,7 +249,13 @@ async def test_with_semantic_search_the_model_is_told_to_rank_first_and_judge_do
 async def test_without_a_readable_collection_the_agent_says_so_instead_of_looping():
     with patch(SCOPE_OF, return_value=_scope(empty=True)):
         answer = await KnowledgeExtractionAgent().discover_step(
-            _ctx(), _event(), agent_config=_config(), displayer=_displayer(), t=T, thread=_Thread()
+            _ctx(),
+            _event(),
+            agent_config=_config(),
+            displayer=_displayer(),
+            t=T,
+            thread=_Thread(),
+            run_context=_Thread(),
         )
 
     assert isinstance(answer, CompleteConversationEvent)
@@ -251,21 +263,14 @@ async def test_without_a_readable_collection_the_agent_says_so_instead_of_loopin
 
 
 @pytest.mark.asyncio
-async def test_with_discovery_the_loop_gathers_with_the_messages_references_without_reading_the_request():
-    ask, listing = AsyncMock(), AsyncMock()
-    with (
-        patch(SCOPE_OF, return_value=_scope()),
-        patch(f"{WHOLE}.ExtractionRequestReading.ask", ask),
-        patch(f"{WHOLE}.KnowledgeDocumentReader.list_documents", listing),
-    ):
-        request = await KnowledgeExtractionAgent().discover_step(
-            _ctx(), _event(), agent_config=_config(discovery=True), displayer=_displayer(), t=T, thread=_Thread()
-        )
+async def test_with_discovery_the_confirmed_request_gathers_with_the_messages_references():
+    loop, ask, _ = await _discover(_reading(), discovery=True)
 
-    assert (request.mode, request.knowledge_references) == (ToolLoopMode.GATHER, [CONTRACTS])
-    assert request.hands_back_results is False
-    ask.assert_not_awaited()
-    listing.assert_not_awaited()
+    assert (loop.mode, loop.knowledge_references) == (ToolLoopMode.GATHER, [CONTRACTS])
+    assert loop.hands_back_results is False
+    assert [message.role for message in loop.history[-2:]] == [MessageRole.ASSISTANT, MessageRole.USER]
+    assert "**Which rows:** only Hooli hardware" in loop.history[-1].content
+    ask.assert_awaited_once()
 
 
 def test_the_last_successful_selection_wins_by_the_loops_own_order():
@@ -579,6 +584,9 @@ async def _awaiting(thread: _Thread) -> None:
     await SampleAwaitingConfirmation.of(request, schema, 150).save(thread, "extraction-test")
 
 
+AS_UNDERSTOOD = json.dumps({key: {"type": "option", "option_index": 0} for key in ("where", "rows", "columns")})
+
+
 async def _discover(
     reading: ExtractionRequestAnswer | None,
     *,
@@ -587,25 +595,40 @@ async def _discover(
     listing: KnowledgeDocumentListing | None = None,
     scope: KnowledgeDocumentRunScope | None = None,
     message: str = "Hooli hardware",
+    answer: str | None = AS_UNDERSTOOD,
+    reread: ExtractionRequestAnswer | None = None,
 ) -> tuple[Any, AsyncMock, AsyncMock]:
-    ask = AsyncMock(return_value=reading)
+    """The discover step, and, when it asks the request form, the confirm step with the given answer."""
+    ask = AsyncMock(side_effect=[reading, reread])
     list_documents = AsyncMock(return_value=listing or _listing())
+    ctx = ConversationContextualizedEvent(history=[ChatMessage(role=MessageRole.USER, content=message)], query=message)
+    run_context = _Thread()
     with (
         patch(SCOPE_OF, return_value=scope or _scope()),
         patch(f"{WHOLE}.ExtractionRequestReading.ask", ask),
         patch(f"{WHOLE}.KnowledgeDocumentReader.list_documents", list_documents),
     ):
-        answer = await KnowledgeExtractionAgent().discover_step(
-            ConversationContextualizedEvent(
-                history=[ChatMessage(role=MessageRole.USER, content=message)], query=message
-            ),
+        step = await KnowledgeExtractionAgent().discover_step(
+            ctx,
             _event(),
             agent_config=_config(discovery=discovery),
             displayer=_displayer(),
             t=T,
             thread=thread or _Thread(),
+            run_context=run_context,
         )
-    return answer, ask, list_documents
+        if isinstance(step, ExtractionRequestFormRequestEvent) and answer is not None:
+            response = ExtractionRequestFormResponseEvent(response=answer, request_event=step)
+            step = await KnowledgeExtractionAgent().confirm_request_step(
+                response,
+                ctx,
+                _event(),
+                agent_config=_config(discovery=discovery),
+                displayer=_displayer(),
+                t=T,
+                run_context=run_context,
+            )
+    return step, ask, list_documents
 
 
 class TestWholeScope:
@@ -800,6 +823,102 @@ class TestWholeScope:
         assert request.selection is not None
 
 
+def _dialog(**answers: dict[str, Any]) -> str:
+    return json.dumps({"where": {"type": "option", "option_index": 0}, **answers})
+
+
+class TestRequestForm:
+    @pytest.mark.asyncio
+    async def test_the_request_is_asked_back_as_three_questions_and_as_text(self):
+        form, ask, _ = await _discover(_reading(), answer=None)
+
+        assert isinstance(form, ExtractionRequestFormRequestEvent)
+        assert form.hitl_type == "chat"
+        assert form.topic.event_name == "ExtractionRequestFormResponseEvent"
+        where, rows, columns = form.questions
+        assert [option.label for option in where.options] == ["All documents"]
+        assert [option.label for option in rows.options] == ["As understood", "Every row"]
+        assert rows.options[0].description == "only Hooli hardware"
+        assert [(option.label, option.description) for option in columns.options] == [("As understood", "item, amount")]
+        assert all(question.allow_other for question in form.questions)
+        assert "- **Which rows:** only Hooli hardware" in form.question
+        assert form.question.endswith("Reply *yes* to go ahead, or write what to change.")
+        ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_a_named_place_can_be_kept_or_dropped(self):
+        location = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+
+        form, _, _ = await _discover(_reading(location), answer=None)
+
+        assert [(option.label, option.description) for option in form.questions[0].options] == [
+            ("As understood", "invoices/2025/**"),
+            ("All documents", "Read every document in this agent's scope"),
+        ]
+
+    @pytest.mark.asyncio
+    async def test_as_understood_extracts_the_reading_without_reading_again(self):
+        request, ask, _ = await _discover(_reading())
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert request.instructions == "only Hooli hardware"
+        ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_the_second_options_drop_the_place_and_the_row_condition(self):
+        location = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        answer = json.dumps(
+            {"where": {"type": "option", "option_index": 1}, "rows": {"type": "option", "option_index": 1}}
+        )
+
+        request, ask, _ = await _discover(_reading(location), answer=answer)
+
+        assert request.selection == KnowledgeDocumentSelection(any_of=[KnowledgeDocumentCriteria()])
+        assert request.instructions is None
+        ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_a_written_answer_is_read_once_more_with_the_form_before_it(self):
+        reread = _reading().model_copy(update={"instructions": "only invoices dated June 2018"})
+        answer = _dialog(rows={"type": "other", "text": "only invoices dated June 2018"})
+
+        request, ask, _ = await _discover(_reading(), answer=answer, reread=reread)
+
+        assert request.instructions == "only invoices dated June 2018"
+        history = ask.await_args_list[1].args[0]
+        assert history[-2].role == MessageRole.ASSISTANT
+        assert "- **Which rows:** only Hooli hardware" in history[-2].content
+        assert history[-1].content.splitlines() == [
+            "**Where:** all documents in scope",
+            "**Which rows:** only invoices dated June 2018",
+            "**Columns:** item, amount",
+        ]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("reply", ["yes", "Ja!", " ok. "])
+    async def test_a_typed_yes_keeps_the_reading(self, reply: str):
+        request, ask, _ = await _discover(_reading(), answer=reply)
+
+        assert request.instructions == "only Hooli hardware"
+        ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_a_typed_correction_is_read_once_more(self):
+        reread = _reading().model_copy(update={"fields": "item, amount, date"})
+
+        request, ask, _ = await _discover(_reading(), answer="add the date column", reread=reread)
+
+        assert request.fields == "item, amount, date"
+        assert ask.await_args_list[1].args[0][-1].content == "add the date column"
+
+    @pytest.mark.asyncio
+    async def test_a_correction_the_model_cannot_read_asks_for_a_request(self):
+        answer, _, _ = await _discover(_reading(), answer="hmm", reread=None)
+
+        assert isinstance(answer, CompleteConversationEvent)
+        assert answer.stop.output_messages[-1].content == T("agent.knowledge_extraction_agent.messages.no_request")
+
+
 @pytest.mark.parametrize(
     ("message", "globs"),
     [
@@ -865,13 +984,14 @@ class TestDiscovery:
         ask.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_with_discovery_an_unreadable_message_while_a_sample_awaits_runs_the_loop(self):
+    async def test_with_discovery_an_unreadable_message_while_a_sample_awaits_asks_for_a_request(self):
         thread = _Thread()
         await _awaiting(thread)
 
-        loop, _, _ = await _discover(None, discovery=True, thread=thread)
+        answer, _, _ = await _discover(None, discovery=True, thread=thread)
 
-        assert loop.mode == ToolLoopMode.GATHER
+        assert isinstance(answer, CompleteConversationEvent)
+        assert answer.stop.output_messages[-1].content == T("agent.knowledge_extraction_agent.messages.no_request")
 
 
 class TestRequestReading:
