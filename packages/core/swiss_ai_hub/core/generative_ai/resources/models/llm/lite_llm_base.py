@@ -10,6 +10,7 @@ from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
+from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_token_budget import ModelTokenBudget
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 
 
@@ -47,3 +48,9 @@ class LiteLLMBase[OpenAILike](Form, abc.ABC):
             raise ValueError(f"Model {self.model_name} not found in LiteLLM Proxy.")
 
         return model_info
+
+    def token_budget(
+        self, max_input_tokens: Annotated[int | None, "An explicit window, winning over the declared one"] = None
+    ) -> ModelTokenBudget:
+        """Blocking on the first call per process (the model info is fetched once): async callers run it in a thread."""
+        return ModelTokenBudget.for_model(self.model_name, self.get_model_info()["model_info"], max_input_tokens)

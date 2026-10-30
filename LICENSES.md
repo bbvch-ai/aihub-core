@@ -36,6 +36,15 @@ See the **SDK Licensing** page in the documentation (Ecosystem → Certification
 | `packages/sysadmin-api` | GNU AGPL v3.0 (or later) | `AGPL-3.0-or-later` | Multi-tenant administration API. Network-copyleft: hosted modifications must publish source. Blocks hostile SaaS rehosts of the admin plane. |
 | `packages/sysadmin-web` | GNU AGPL v3.0 (or later) | `AGPL-3.0-or-later` | Multi-tenant administration UI. Network-copyleft: hosted modifications must publish source. Blocks hostile SaaS rehosts of the admin plane.  |
 
+## Vendored third-party files
+
+A few third-party files are committed inside an Apache-2.0 package and keep their upstream license. Each sits next to
+its own `LICENSE` file, which is authoritative for it, and a `SOURCE.json` recording where it was taken from.
+
+| Path                                                                                  | License | SPDX Identifier | Origin                                                                                      |
+| ------------------------------------------------------------------------------------- | ------- | --------------- | ------------------------------------------------------------------------------------------- |
+| `packages/core/swiss_ai_hub/core/generative_ai/resources/tokenizers/vendored/bge_m3/` | MIT     | `MIT`           | Tokenizer of BAAI/bge-m3 (FlagEmbedding, MIT), originating from XLM-RoBERTa (fairseq, MIT). |
+
 ## Third-party software
 
 The platform orchestrates third-party Docker images, Python packages and Node.js packages, each carrying its own license

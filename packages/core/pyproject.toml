@@ -11,7 +11,7 @@ authors = [
     { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
 license = "Apache-2.0"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "swiss_ai_hub/core/generative_ai/resources/tokenizers/vendored/*/LICENSE"]
 readme = "README.md"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -93,6 +93,7 @@ dependencies = [
     "openpyxl>=3.1.5",
     "beautifulsoup4>=4.14.3",
     "markdownify>=1.2.2",
+    "sentencepiece>=0.2.2",
 ]
 
 [dependency-groups]
