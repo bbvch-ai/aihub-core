@@ -3,7 +3,7 @@
 NOT part of a CI `make test` scope (see test_pii_anonymisation_guardrail.py). Run with the packages the LiteLLM image
 ships:
 
-    uv run --with "litellm==1.106.2" --with opentelemetry-exporter-otlp-proto-grpc \
+    uv run --with "litellm==1.106.4" --with opentelemetry-exporter-otlp-proto-grpc \
         pytest infra/deployment/templates/litellm_functions/test_pii_anonymisation_audit.py
 """
 
