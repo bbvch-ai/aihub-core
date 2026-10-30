@@ -114,7 +114,8 @@ Service Management, are left out.
 The issue's fields reach the document as [frontmatter](#markdown-files-with-frontmatter): a citation shows the key and
 summary and opens the issue in Jira, and the fields `key`, `project`, `issue_type`, `status`, `priority`, `labels`,
 `components`, `fix_versions`, `reporter`, `assignee` and `updated` are metadata a retriever can filter on once they are
-among its allowed filter fields.
+among its allowed filter fields. Agents see these fields with every issue they retrieve, so they can say which status,
+priority or assignee an issue has.
 
 ::: warning Use a dedicated account
 The database holds every issue and comment the token's account can read, and everyone with access to the database can
@@ -158,7 +159,7 @@ child pages, Jira issues or an included page, are left out.
 The page's fields reach the document as [frontmatter](#markdown-files-with-frontmatter): a citation shows the page title
 and opens the page in Confluence, and the fields `space`, `labels`, `ancestors`, `author`, `page_id`, `page_version` and
 `updated` are metadata a retriever can filter on once they are among its allowed filter fields, for example to search a
-single space or the pages with a given label.
+single space or the pages with a given label. Agents see these fields with every page they retrieve.
 
 ::: warning Use a dedicated account
 The database holds every page the token's account can read in the listed spaces, and everyone with access to the
@@ -268,8 +269,10 @@ Every other key is stored as metadata on the document and on each of its chunks,
   itself, such as `type`, `language`, `version`, `namespace`, `source` or `document_title`. Name such a field
   differently, for example `issue_type`. When two keys end up with the same name, the first one wins.
 - All of a file's metadata keys together are limited to 8 KiB; keys beyond that are skipped.
-- These keys are not embedded. They are there to filter on, and on a short record they would outweigh the text in the
-  search. The title is embedded as before.
+- These keys are not embedded: on a short record they would outweigh the text in the search. The title is embedded as
+  before.
+- Agents see these keys with every retrieved document, next to its title and source, so they can answer about a record's
+  fields, such as an issue's status, and not only about its text.
 
 Every skipped key is named, with the reason, in the ingestion run's logs. A block that is not valid YAML, or holds
 anything other than `key: value` pairs, does not stop ingestion: the file is ingested exactly as written, block
