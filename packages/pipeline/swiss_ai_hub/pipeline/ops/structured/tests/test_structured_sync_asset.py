@@ -21,6 +21,8 @@ from swiss_ai_hub.pipeline.resources.structured.tests.fake_s3_client import Fake
 from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter import AbstractStructuredSourceAdapter
 from swiss_ai_hub.pipeline.source_pipelines.structured_sync_config import StructuredSyncConfig
 from swiss_ai_hub.pipeline.source_pipelines.tests.fake_structured_source_adapter import (
+    FAKE_ATTACHMENTS,
+    FAKE_DOWNLOADS,
     FAKE_TRACKERS,
     FakeStructuredSyncConfig,
     FakeTrackerAdapter,
@@ -143,8 +145,8 @@ def world():
         patch(f"{_OPS}.structured.reconcile_structured_bucket.build_s3_data_lake_client", side_effect=client),
         patch(f"{_OPS}.source.routed.delete_data_lake_files_from_bucket.build_s3_data_lake_client", side_effect=client),
         patch(f"{_OPS}.source.routed.announce_removed_files.notify_source_updated", world.removed_events),
-        patch(f"{_STRUCTURED}.markdown_data_lake_destination.build_s3_data_lake_client", side_effect=client),
-        patch(f"{_STRUCTURED}.markdown_data_lake_destination.notify_source_updated", world.written_events),
+        patch(f"{_STRUCTURED}.structured_data_lake_destination.build_s3_data_lake_client", side_effect=client),
+        patch(f"{_STRUCTURED}.structured_data_lake_destination.notify_source_updated", world.written_events),
         patch(f"{_STRUCTURED}.structured_source_state_store.build_s3_data_lake_client", side_effect=client),
     ):
         bucket_entity.get_bucket_by_bucket_name.side_effect = row
@@ -431,3 +433,70 @@ class TestGuards:
         world.sync("db-a")
 
         assert world.state("db-a") == before
+
+
+class TestFiles:
+    """A source offering files next to its records, run after run."""
+
+    @pytest.fixture
+    def attachments(self, world: World):
+        world.database("db-files", [_issue("ABC", "ABC-1", 1)])
+        FAKE_ATTACHMENTS["https://tracker.test/db-files"] = {"handbook.pdf": b"%PDF-1.7 v1"}
+        FAKE_DOWNLOADS.clear()
+        yield FAKE_ATTACHMENTS["https://tracker.test/db-files"]
+        FAKE_ATTACHMENTS.pop("https://tracker.test/db-files")
+
+    def test_an_unchanged_file_is_not_downloaded_again(self, world: World, attachments):
+        assert world.sync("db-files").success
+        downloads = len(FAKE_DOWNLOADS)
+
+        assert world.sync("db-files").success
+
+        assert world.files("db-files") == ["ABC/ABC-1.md", "Attachments/handbook.pdf"]
+        assert len(FAKE_DOWNLOADS) == downloads == 1
+
+    def test_a_changed_file_is_downloaded_and_rewritten(self, world: World, attachments):
+        world.sync("db-files")
+        attachments["handbook.pdf"] = b"%PDF-1.7 v2"
+
+        assert world.sync("db-files").success
+
+        assert world.s3.objects[("db-files", "Attachments/handbook.pdf")]["Body"] == b"%PDF-1.7 v2"
+
+    def test_a_file_deleted_at_the_source_is_removed(self, world: World, attachments):
+        world.sync("db-files")
+        attachments.pop("handbook.pdf")
+
+        assert world.sync("db-files").success
+
+        assert world.files("db-files") == ["ABC/ABC-1.md"]
+        assert world.announced(world.removed_events) == ["Attachments/handbook.pdf"]
+
+    def test_a_file_the_source_refuses_is_tried_each_run_without_the_state_being_discarded(
+        self, world: World, attachments
+    ):
+        """Counted as missing, it would discard the state after two runs and re-read the whole source."""
+        attachments["secret.pdf"] = None
+
+        results = [world.sync("db-files") for _ in range(3)]
+
+        assert all(result.success for result in results)
+        assert FAKE_DOWNLOADS.count("https://tracker.test/db-files/files/secret.pdf") == 3
+        assert "Attachments/secret.pdf" not in world.files("db-files")
+        assert [
+            world.step_metadata(result, "reconcile_structured_bucket")["State discarded"] for result in results
+        ] == [
+            False,
+            False,
+            False,
+        ]
+        assert world.step_metadata(results[-1], "sync_structured_records")["Files not served by the source"] == 1
+
+    def test_a_refused_file_is_written_once_the_source_serves_it(self, world: World, attachments):
+        attachments["secret.pdf"] = None
+        world.sync("db-files")
+        attachments["secret.pdf"] = b"%PDF-1.7 released"
+
+        assert world.sync("db-files").success
+
+        assert "Attachments/secret.pdf" in world.files("db-files")

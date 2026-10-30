@@ -1,10 +1,12 @@
 import json
+from collections.abc import Iterable, Iterator
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
+from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter import AbstractStructuredSourceAdapter
 from swiss_ai_hub.pipeline.types.structured_source_state import StructuredSourceState
 from swiss_ai_hub.pipeline.util.store_builders import build_s3_data_lake_client
 
@@ -43,15 +45,24 @@ class StructuredSourceStateStore:
         (pipeline_dir / _STATE_FILE).write_text(json.dumps(stored.pipeline_state))
         return True
 
-    def save(self, pipeline_dir: Path, scope_fingerprint: str) -> None:
+    def save(
+        self,
+        pipeline_dir: Path,
+        scope_fingerprint: str,
+        unread_files: Annotated[set[str], "Keys of files the source would not serve this run"] = frozenset(),
+    ) -> None:
         """Keeps the keys the previous run listed without a file, which the listing after this sync compares
-        against; a changed scope drops them, since that run re-reads everything anyway."""
+        against; a changed scope drops them, since that run re-reads everything anyway.
+
+        A file that could not be read was already recorded as seen while dlt extracted, before it was loaded, so it is
+        removed from every resource's file map here and the next run tries it again.
+        """
         stored = self._load()
         missing_keys = stored.missing_keys if stored and stored.scope_fingerprint == scope_fingerprint else []
+        pipeline_state = json.loads((pipeline_dir / _STATE_FILE).read_text())
+        self._forget_files(pipeline_state, unread_files)
         state = StructuredSourceState(
-            scope_fingerprint=scope_fingerprint,
-            pipeline_state=json.loads((pipeline_dir / _STATE_FILE).read_text()),
-            missing_keys=missing_keys,
+            scope_fingerprint=scope_fingerprint, pipeline_state=pipeline_state, missing_keys=missing_keys
         )
         self._put(state)
 
@@ -65,11 +76,27 @@ class StructuredSourceStateStore:
         if stored is not None:
             self._put(stored.model_copy(update={"missing_keys": sorted(keys)}))
 
+    @classmethod
+    def _forget_files(cls, pipeline_state: dict[str, Any], keys: set[str]) -> None:
+        """dlt keeps a resource's state at ``sources.<source>.resources.<resource>``; anything else in the state is
+        dlt's own bookkeeping and left as it is."""
+        for source_state in cls._mappings((pipeline_state.get("sources") or {}).values()):
+            for resource_state in cls._mappings((source_state.get("resources") or {}).values()):
+                seen = resource_state.get(AbstractStructuredSourceAdapter.FILES_SEEN)
+                if isinstance(seen, dict):
+                    for key in keys:
+                        seen.pop(key, None)
+
     def delete(self) -> None:
         self._client().delete_object(Bucket=self.bucket, Key=self.object_key)
 
     def _put(self, state: StructuredSourceState) -> None:
         self._client().put_object(Bucket=self.bucket, Key=self.object_key, Body=state.model_dump_json())
+
+    @staticmethod
+    def _mappings(values: Iterable[Any]) -> Iterator[dict[str, Any]]:
+        """dlt's state is plain JSON; an entry that is not an object holds no resource state."""
+        return (value for value in values if isinstance(value, dict))
 
     def _load(self) -> StructuredSourceState | None:
         try:

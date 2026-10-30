@@ -65,9 +65,9 @@ as a safety net, catching anything a missed notification would otherwise have le
 
 Instead of uploading, a database can be given a **Source** when it is created, or later through **Edit source** on the
 database. Two kinds of source are offered: **Cloud storage sync (rclone)** keeps files in sync, and **Business
-application sync** keeps records such as Jira issues and Confluence pages in sync, each record as one document.
-Credentials are stored encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the
-stored ones, so a rotation is a matter of editing the source. Either way, the system then:
+application sync** keeps records such as Jira issues, Confluence pages and wiki pages in sync, each record as one
+document. Credentials are stored encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps
+the stored ones, so a rotation is a matter of editing the source. Either way, the system then:
 
 - Syncs from the source on a daily schedule; until the first sync has filled it, the database shows **Nothing synced
   yet**
@@ -182,6 +182,94 @@ is not visible to the account, when a parent page lies outside the listed spaces
 an internal address, such as a Docker service, `localhost` or a private network address, that no operator has allowed.
 The reason is shown on the failed run in the Dagster UI, and in the failure notification when notifications are
 configured.
+
+#### MediaWiki pages
+
+Pick **MediaWiki** as the source system and enter the settings below. Any MediaWiki from version 1.27 (2016) on can be
+synced, which includes every release still supported.
+
+- **Wiki URL**: the folder holding the wiki's `api.php`, such as `https://wiki.acme.ch` or `https://acme.ch/w` for a
+  wiki installed like Wikipedia. As for Jira, it must be a public address, without `?` or `#`, and a redirect is not
+  followed. An operator can allow a wiki reachable only on the company network with
+  `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`.
+- **Sign-in**:
+  - **Bot password** (`Special:BotPasswords`) for wikis that sign in with MediaWiki's own accounts. The user name is
+    `User@BotName`.
+  - **Login page** for wikis whose sign-in goes through an extension such as LDAP or single sign-on (PluggableAuth),
+    which the API cannot sign in through. The pipeline fills in the wiki's own login page with the account's user name
+    and password.
+  - **OAuth access token** for wikis with the OAuth extension, such as Wikimedia's. Register an owner-only OAuth 2
+    consumer on `Special:OAuthConsumerRegistration` with the *Basic rights* grant; it is usable at once, and its access
+    token is what you enter.
+  - **No sign-in** for a public wiki.
+- **Namespaces** (optional): the names or numbers of the namespaces to sync, such as `Main`, `Project` or `100`. Only
+  the main namespace when empty.
+- **Categories** (optional): only pages in at least one of these categories are synced.
+- **Excluded categories** (optional): pages in any of these categories are never synced, such as a category that marks
+  pages to keep away from AI assistants. A category a template assigns counts as well.
+- **Include subcategories** (off by default): a category also counts the pages of every category below it, for the
+  included and the excluded categories.
+- **Sync documents** (off by default): also sync the documents the synced pages show or link to, see *Documents and
+  images* below.
+- **Sync images** (off by default): also sync the images the synced pages show or link to, see *Documents and images*
+  below.
+- **Maximum file size (MB)** (with documents or images only, 50 by default): larger files are left out.
+- **Minimum image size (px)** (with images only, 100 by default): images narrower or lower than this are left out as
+  icons; 0 keeps every image.
+- **User-Agent** (optional): sent with every request to the wiki, such as a name and a contact address. Wikimedia's
+  wikis ask for one and may block the default; empty keeps the default.
+
+Each namespace becomes a collection and each page one document. A collection takes the namespace's canonical name, which
+stays the same when the wiki's language or site name changes: `Project` for the wiki's own project namespace, `File` for
+files even on a German wiki, and `Main` for the main namespace. A subpage title is split into folders, so
+`Onboarding/Laptop` is `Onboarding/Laptop` in the `Main` collection. Redirects are skipped; their target is synced under
+its own title. The document is titled with the page title, links back to the page, and holds the page as the wiki
+renders it, with every template expanded: headings, lists, links and data tables keep their formatting, and tables used
+only for layout, such as a frame around a page or a message box, are replaced by their content. Images are not part of
+the page's document, talk pages are not synced, and the edit links and table of contents are left out.
+
+The page's fields reach the document as [frontmatter](#markdown-files-with-frontmatter): a citation shows the page title
+and opens the page in the wiki, and the fields `categories`, `page_id`, `revision` and `updated` are metadata a
+retriever can filter on once they are among its allowed filter fields.
+
+::: warning Use a dedicated account
+The database holds every page the account can read in the listed namespaces, and everyone with access to the database
+can find them. Sync with a dedicated read-only account that sees only what the database's readers may see.
+:::
+
+The first sync reads every page in scope. Later syncs list every page with its latest revision and title, and read only
+the pages that are new, edited, renamed or newly in scope. Pages deleted, moved out of the listed namespaces, put in an
+excluded category or taken out of every listed category are removed. Changing any setting other than a credential reads
+every page and file again; only those that changed are stored and processed again. An edit to a template changes the
+pages that use it without giving them a new revision, so they are read again only when they are next edited themselves.
+
+A sync fails before it changes anything when the wiki refuses the sign-in or the access token, when the session still
+reads anonymously after signing in, when the wiki is older than MediaWiki 1.27, when a namespace or category does not
+exist, when two synced namespaces would be stored in the same collection, or when the wiki URL points to an internal
+address that no operator has allowed. An excluded category counts as existing when it has members or a page of its own:
+give it a page, so a sync keeps running while it is empty, rather than letting a mistyped name exclude nothing.
+
+**Documents and images.** With **Sync documents** on, the documents the synced pages show or link to are synced too:
+PDF, Word, PowerPoint and Excel files (docx, pptx, xlsx, xls) and text files. With **Sync images** on, so are their
+images: PNG, JPEG, GIF, BMP, WebP and TIFF (`.tiff`; `.tif` and SVG are left out). Files follow the pages: one used only
+on a page that is not synced, such as one in an excluded category, stays out, and so does one whose own file page is in
+an excluded category. The old Office formats doc, ppt and pps, archives and videos are left out, and so are files from a
+shared repository such as Wikimedia Commons; the sync's log says how many of each.
+
+Images that only decorate pages are left out. An image a template shows on its own page, such as the logo of a message
+box or the icon of an infobox, is left out wherever it is used; an image an author passes to a template, such as an
+infobox's photo, is not on the template's page and is kept. Images narrower or lower than the minimum image size are
+left out as well, for icons placed by hand. An image becomes a document of the text the ingestion reads in it, so
+screenshots and labelled diagrams are worth more than photos.
+
+Each file is stored once, in the collection `File`, whatever the wiki calls its file namespace, under its file name:
+`File/Handbook 2026.pdf`. It is processed like an uploaded file, and a citation shows its file name and opens its file
+page in the wiki. Later syncs download only documents that were uploaded again, and remove documents no synced page uses
+any more. A document the wiki refuses to serve (forbidden, or deleted in the meantime) is skipped and tried again at the
+next sync; the run shows how many there were.
+
+The first sync with documents can take long: every document is downloaded and then processed once. Try a small scope
+first, such as a single namespace.
 
 The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
 including deletions, into the Swiss AI Hub. Handing a database that already holds documents to a different source,

@@ -102,12 +102,12 @@ namespace, and every synced file is announced to the ingestion pipeline the way 
 
 Records that are not files, such as Jira issues or Confluence pages, come through the `structured_pipeline`
 (`structured_pipeline_definitions()`). It runs a [dlt](https://dlthub.com/) source per database and writes each record
-as a markdown file with YAML frontmatter, one folder (namespace) per project or space, so the same ingestion pipeline
-parses and embeds it. Each source system is one adapter class; Jira and Confluence (each Cloud and Data Center) ship
-today, one document per Jira issue with its description and comments, and one per Confluence page under its page tree.
-`make structured-pipeline` runs it next to the ingestion pipeline, and `playground/jira_seed` fills a Jira test site
-with the cases to check. `make structured-demo` runs the playground's demo source instead, which reads a local JSON
-file.
+as a markdown file with YAML frontmatter, one folder (namespace) per project, space or wiki namespace, so the same
+ingestion pipeline parses and embeds it. Each source system is one adapter class; Jira and Confluence (each Cloud and
+Data Center) and MediaWiki ship today, one document per Jira issue with its description and comments, one per Confluence
+page under its page tree, and one per wiki page as the wiki renders it. `make structured-pipeline` runs it next to the
+ingestion pipeline, and `playground/jira_seed` fills a Jira test site with the cases to check. `make structured-demo`
+runs the playground's demo source instead, which reads a local JSON file.
 
 ______________________________________________________________________
 

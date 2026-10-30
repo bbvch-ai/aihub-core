@@ -232,20 +232,24 @@ token, so the factory rejects a reserved id when the definitions are built. See 
 
 ## 2. The Structured Source Pipeline (records from business applications)
 
-Records that are not files, such as Jira issues and Confluence pages, come through the structured source pipeline. Like
-the rclone one, it is configured per knowledge database from the UI: one deployed `structured_pipeline` code location
-serves every database whose source is `structured`. For each database it reads the records through a
+Records that are not files, such as Jira issues, Confluence pages and wiki pages, come through the structured source
+pipeline. Like the rclone one, it is configured per knowledge database from the UI: one deployed `structured_pipeline`
+code location serves every database whose source is `structured`. For each database it reads the records through a
 [dlt](https://dlthub.com/) source and writes each one as a markdown file with YAML frontmatter into the database's data
-lake, one folder (namespace) per project or space, so the Stage 2 pipeline parses and embeds it like any other document.
+lake, one folder (namespace) per project, space or wiki namespace, so the Stage 2 pipeline parses and embeds it like any
+other document.
 
-- **Source kinds**: one adapter class per system. Jira and Confluence, each Cloud and Data Center, ship today: one
-  document per Jira issue, with its fields, description and comments, and one per Confluence page, filed under its page
-  tree.
+- **Source kinds**: one adapter class per system. Jira and Confluence, each Cloud and Data Center, and MediaWiki ship
+  today: one document per Jira issue, with its fields, description and comments, one per Confluence page, filed under
+  its page tree, and one per wiki page, rendered with its templates expanded. A kind may also offer binary files: the
+  MediaWiki kind syncs the PDF and Office documents its pages link, which reach the data lake as they are and are parsed
+  like uploads.
 - **Incremental**: a sync reads only the records changed since the previous one, and a listing of every record key in
   scope removes the files of records deleted at the source. Jira finds the changes with a cursor on each issue's last
   update; Confluence compares every page's version, place in the tree and labels with the previous sync's, because
   renaming or moving a page moves the pages below it without changing their versions, and a label change gives the page
-  no new version.
+  no new version. MediaWiki compares every page's latest revision and file path, and reads its category filters as page
+  ids, so a page a template puts in an excluded category leaves the database without a new revision of its own.
 - **Fails before it removes**: an adapter checks its credentials and scope before reading, and a failing listing, or an
   empty one while the database holds files, fails the run, so a wrong token or a typo never empties a database.
 
@@ -260,8 +264,8 @@ The platform ships the pipeline as the `structured_pipeline` compose service (Da
 | `STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR` / `_MINUTE` | Time of the daily per-database sync                   |
 
 The pipeline calls each business application's API itself, so unlike the rclone pipeline it joins the `egress` network
-as well as `backend`, `data` and `storage`. A Jira or Confluence Data Center inside the company network must be
-reachable from the Docker host.
+as well as `backend`, `data` and `storage`. A Jira or Confluence Data Center, or a wiki, inside the company network must
+be reachable from the Docker host.
 
 ### Adding a Source Kind
 
