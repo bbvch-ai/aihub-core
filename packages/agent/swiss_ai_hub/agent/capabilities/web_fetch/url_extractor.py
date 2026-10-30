@@ -68,7 +68,8 @@ class UrlExtractor:
 
     @staticmethod
     def _is_valid_host(hostname: str) -> bool:
-        """Checks shape only; whether the host may be fetched at all is `UrlSafetyPolicy`'s decision."""
+        """Checks shape only; whether the host may be fetched at all is decided by `UrlSafetyPolicy` and
+        `browser-proxy`."""
         try:
             ipaddress.ip_address(hostname)
             return True

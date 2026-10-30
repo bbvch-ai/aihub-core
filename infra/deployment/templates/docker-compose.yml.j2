@@ -70,6 +70,8 @@
 {%- set OPEN_TERMINAL_BASE_URL = "http://open-terminal:8000" %}
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
+{#- Resolved by the Playwright server, on the browser network, so the same name works in every stage, dev included. #}
+{%- set PLAYWRIGHT_PROXY_URL = "http://browser-proxy:3128" %}
 {%- set SEARXNG_QUERY_URL = "http://localhost:8881/search?q=<query>&format=json" if stage == 'dev' else "http://searxng:8080/search?q=<query>&format=json" %}
 {%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
 {%- set NOTIFICATION_DAGSTER_UI_BASE_URL = "http://localhost:3000" if stage == 'dev' else "https://dagster.${DOMAIN}" %}
@@ -2114,8 +2116,27 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - browser  # Reached only by its callers, never by the rest of backend
-      - egress   # Outbound internet access for web browsing
+      - browser  # Its only network: the internet only through browser-proxy
+
+  {{ service_license('browser-proxy') }}
+  browser-proxy:
+    container_name: browser-proxy
+    image: {{ global.registry_prefix }}{{ image_tags.browser_proxy }}
+    restart: always
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "127.0.0.1", "3128" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - browser  # Reached by the Playwright browser, whose only way out it is
+      - egress   # Outbound internet; refuses every destination whose address is not public
 
   {{ service_license('searxng') }}
   searxng:
@@ -3514,6 +3535,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -3612,6 +3634,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -3736,6 +3759,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -3906,6 +3930,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -4005,6 +4030,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -5248,7 +5274,7 @@ services:
 # - egress:  Outbound internet only, ICC disabled (containers isolated)
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
-# - browser:       The Playwright browser plus only its callers (open-webui, the web-fetching agents)
+# - browser:       The Playwright browser, browser-proxy (its only way out) and its callers (open-webui, the web-fetching agents)
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -5288,9 +5314,9 @@ networks:
     {%- if stage != 'dev' %}
     internal: true
     {%- endif %}
-  # Single-purpose zone: the Playwright browser plus only its callers (open-webui, the web-fetching agents).
-  # Keeps a page the browser loads from reaching the rest of backend, which a URL check alone cannot
-  # guarantee (DNS rebinding). Outbound internet comes from egress.
+  # Single-purpose zone: the Playwright browser, browser-proxy and the browser's callers (open-webui, the
+  # web-fetching agents). Playwright has no other network: it reaches the internet only through browser-proxy,
+  # which refuses every address that is not public, so a page reaches neither the platform, the host nor the LAN.
   browser:
     name: browser
     driver: bridge

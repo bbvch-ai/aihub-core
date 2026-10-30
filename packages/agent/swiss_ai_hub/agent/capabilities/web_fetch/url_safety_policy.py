@@ -1,6 +1,4 @@
-import asyncio
 import ipaddress
-import socket
 from urllib.parse import urlsplit
 
 from swiss_ai_hub.core.events.agent import WebFetchFailureReason
@@ -17,30 +15,27 @@ AMBIGUOUS_NETLOC_CHARACTERS = ("\\", "@", "%")
 
 
 class UrlSafetyPolicy:
-    """Keeps user-supplied URLs away from the platform itself.
+    """Refuses what the URL alone shows must not leave the platform: internal names, non-public addresses, and URLs
+    Python and the browser could read as different hosts. Applied to the pasted URL and to every request the page
+    makes, redirects included.
 
-    The browser runs on the `backend` network, so without this a pasted `http://litellm:4000/…` would be fetched
-    from inside the deployment (SSRF). It is applied to the pasted URL and again to every request the page makes,
-    redirects included. Verdicts are cached per host, so one instance must live no longer than one fetch: DNS can
-    change, and a cached verdict would outlive it.
+    Where a name leads is not judged here. Agents have no DNS for outside names (they sit on internal networks
+    only), and the Playwright server would resolve the name again anyway. `browser-proxy`, the browser's only way
+    out, refuses non-public addresses for the address it actually connects to.
     """
 
-    def __init__(self) -> None:
-        self._verdicts_by_host: dict[str, WebFetchFailureReason | None] = {}
-
-    async def check(self, url: str) -> WebFetchFailureReason | None:
+    @classmethod
+    def check(cls, url: str) -> WebFetchFailureReason | None:
         """Returns why the URL must not be requested, or None when it may be."""
         parts = urlsplit(url)
         scheme = parts.scheme.lower()
         if scheme in LOCAL_ONLY_SCHEMES:
             return None
-        if scheme not in NETWORK_SCHEMES or self._is_ambiguous(url, parts.netloc):
+        if scheme not in NETWORK_SCHEMES or cls._is_ambiguous(url, parts.netloc):
             return WebFetchFailureReason.BLOCKED_HOST
         if not parts.hostname:
             return WebFetchFailureReason.MALFORMED_URL
-        if parts.hostname not in self._verdicts_by_host:
-            self._verdicts_by_host[parts.hostname] = await self._judge_host(parts.hostname)
-        return self._verdicts_by_host[parts.hostname]
+        return cls._judge_host(parts.hostname)
 
     @staticmethod
     def _is_ambiguous(url: str, netloc: str) -> bool:
@@ -60,18 +55,11 @@ class UrlSafetyPolicy:
         )
 
     @classmethod
-    async def _judge_host(cls, hostname: str) -> WebFetchFailureReason | None:
+    def _judge_host(cls, hostname: str) -> WebFetchFailureReason | None:
         literal = cls._as_ip_address(hostname)
         if literal is not None:
             return None if cls._is_public(literal) else WebFetchFailureReason.BLOCKED_HOST
         if cls._is_internal_name(hostname):
-            return WebFetchFailureReason.BLOCKED_HOST
-        try:
-            addresses = await cls._resolve(hostname)
-        except socket.gaierror:
-            # Fail closed: a name the agent cannot resolve must not be handed to a browser that might.
-            return WebFetchFailureReason.NOT_FOUND
-        if not addresses or not all(cls._is_public(address) for address in addresses):
             return WebFetchFailureReason.BLOCKED_HOST
         return None
 
@@ -80,11 +68,6 @@ class UrlSafetyPolicy:
         """Docker service names (`litellm`, `api`) are single labels; a public site always has a dot."""
         name = hostname.rstrip(".").lower()
         return "." not in name or name == "localhost" or name.endswith(BLOCKED_HOST_SUFFIXES)
-
-    @staticmethod
-    async def _resolve(hostname: str) -> list[IpAddress]:
-        infos = await asyncio.get_running_loop().getaddrinfo(hostname, None, type=socket.SOCK_STREAM)
-        return [ipaddress.ip_address(str(info[4][0]).split("%")[0]) for info in infos]
 
     @staticmethod
     def _as_ip_address(hostname: str) -> IpAddress | None:
