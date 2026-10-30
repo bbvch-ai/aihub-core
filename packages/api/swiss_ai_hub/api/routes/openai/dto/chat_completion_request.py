@@ -17,7 +17,7 @@ from openai.types.chat import (
     ChatCompletionToolParam,
     completion_create_params,
 )
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError
 from swiss_ai_hub.core.events.agent import ChatFeature, InlineFile, UserUploadedFile
 
 
@@ -164,18 +164,30 @@ class ChatCompletionRequest(BaseModel):
     top_logprobs: int | None = None
     top_p: float | None = None
 
+    _message_dicts: list[dict[str, Any]] | None = PrivateAttr(None)
+
+    def message_dicts(self) -> list[dict[str, Any]]:
+        """The messages with every content read once and kept: pydantic hands list contents over as one-shot
+        iterators, and the files, the images and the conversion to llama-index messages each read them."""
+        if self._message_dicts is None:
+            self._message_dicts = [
+                {**message, "content": list(message["content"])}
+                if not isinstance(message.get("content"), str | None)
+                else dict(message)
+                for message in self.messages or []
+            ]
+        return self._message_dicts
+
     def inline_files(self) -> list[InlineFile]:
         """The files sent as `file` content parts of the last user message, the one this turn answers.
 
         Earlier messages are history: their files were attached on their own turn, and with `reconstruct_history`
-        the API discards them anyway. The message's content is resolved in place, since pydantic hands it over as an
-        iterator that the conversion to llama-index messages has to read again.
+        the API discards them anyway.
         """
-        user_indices = [index for index, message in enumerate(self.messages or []) if message.get("role") == "user"]
-        if not user_indices:
+        user_messages = [message for message in self.message_dicts() if message.get("role") == "user"]
+        if not user_messages:
             return []
-        message = resolve_message_content(dict(self.messages[user_indices[-1]]))
-        self.messages[user_indices[-1]] = message
+        message = user_messages[-1]
         content = message.get("content")
         if isinstance(content, str) or content is None:
             return []
@@ -205,21 +217,5 @@ class ChatCompletionRequest(BaseModel):
             raise RequestValidationError(validation_error.errors(include_url=False)) from validation_error
 
     @property
-    def llama_index_messages(self):
-        """
-        Processes a list of OpenAI messages into llama-index ChatMessage objects.
-        Handles any message format (dict, model, etc.) and any content format.
-        """
-        result = []
-
-        for msg in self.messages:
-            if hasattr(msg, "model_dump"):
-                msg_dict = msg.model_dump(exclude_unset=False)
-            elif hasattr(msg, "dict"):
-                msg_dict = msg.dict()
-            else:
-                msg_dict = dict(msg)
-
-            result.append(openai_message_to_llama_index(msg_dict))
-
-        return result
+    def llama_index_messages(self) -> list[ChatMessage]:
+        return [openai_message_to_llama_index(message) for message in self.message_dicts()]

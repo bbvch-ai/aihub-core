@@ -88,12 +88,12 @@ a question back. Because of that, an agent call honours less of the request than
 
 **Content parts**
 
-| Part        | Agents                                                                         |
-| ----------- | ------------------------------------------------------------------------------ |
-| `text`      | Passed to the agent                                                            |
-| `image_url` | Passed to the agent, which shows it to its model if that model accepts images  |
-| `file`      | Stored and attached to the agent's run, from the last user message (see below) |
-| Others      | Ignored, for example `input_audio`                                             |
+| Part        | Agents                                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `text`      | Passed to the agent                                                                                                             |
+| `image_url` | Passed to the agent, which shows it to its model if that model accepts images; images sent as data are stored first (see below) |
+| `file`      | Stored and attached to the agent's run, from the last user message (see below)                                                  |
+| Others      | Ignored, for example `input_audio`                                                                                              |
 
 **Files.** A `file` part sends a document with the question, the way the OpenAI SDKs attach PDFs:
 
@@ -110,6 +110,12 @@ turn. References to files hosted by OpenAI (`file_id`) are refused. The limits a
 [agent endpoints](../4_dynamic_endpoints/#sending-files-to-an-agent): 25 MB per file and 10 files per request by
 default, `413` above them, `415` for types agents cannot read and for images (send those as `image_url`), and nothing is
 stored when a request is refused. A JSON request body may not exceed 64 MB.
+
+**Images.** An `image_url` holding a `data:` URL is stored in the agent's file bucket, and the agent receives a
+reference in the image's place, which it turns into a URL its model can read when it calls it. Images of any message
+count, since a client without `reconstruct_history` sends the whole conversation each turn; an image sent again is
+stored once. An image must be PNG, JPEG, GIF or WebP and may have 5 MB (`AGENT_INLINE_IMAGE_MAX_BYTES`), a larger one is
+refused with `413`. Links to images on the web are passed on as they are.
 
 **Parameters.** Agents choose their own model and its settings, so `temperature`, `top_p`, `max_tokens`, `stop`, `seed`,
 `n`, `response_format`, `tools`, `tool_choice` and `logprobs` have no effect on an agent call. The answer always ends

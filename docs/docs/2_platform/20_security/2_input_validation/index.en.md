@@ -43,7 +43,11 @@ stored:
   `AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST` (10) files.
 - The filename may not contain path separators, the content must be valid base64, and the type must be one the agents'
   document readers support. Images are refused, since they belong in the message itself.
-- All files of a request are checked before the first is stored, so a refused request leaves nothing behind.
+- Images inside a message are limited to `AGENT_INLINE_IMAGE_MAX_BYTES` (5 MB) and must be PNG, JPEG, GIF or WebP, so no
+  stored image can carry script the way an SVG can. A message may not name a file path for an image, nor reference an
+  image stored for another agent: stored images are named by the digest of their content, so only someone who holds an
+  image can reference it.
+- All files and images of a request are checked before the first is stored, so a refused request leaves nothing behind.
 
 ## Namespace and database name validation
 

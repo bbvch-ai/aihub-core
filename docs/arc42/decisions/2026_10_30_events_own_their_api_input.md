@@ -63,5 +63,7 @@ Rejected alternatives:
   within a minute of an agent starting.
 - Process events still use `ProcessStartEvent.from_raw_data` and the API's own exclusion list. They can move to the same
   pattern when one of them needs it.
-- Images sent as `image_url` `data:` URLs still travel inside the event. Moving them to the bucket needs agents to sign
-  their references at the LLM boundary, and is tracked separately.
+- Images inside messages follow the same path (#2360). They are stored content-addressed under the agent's `images/`
+  prefix, and the message keeps an `s3://agent-files/…` reference. That reference is signed per call in
+  `ResilientOpenAILike` and never when stored, because events are persisted and replayed as history and a signature
+  would expire. A caller may reference only images under the called agent's prefix, and never a file path.

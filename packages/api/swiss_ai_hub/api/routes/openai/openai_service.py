@@ -9,12 +9,13 @@ from functools import partial
 from typing import Annotated, Any, ClassVar, Literal
 
 from fastapi import HTTPException, UploadFile
+from llama_index.core.base.llms.types import ChatMessage
 from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from openai import APIStatusError, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
-from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
+from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice as JsonChoice
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from opentelemetry.propagate import inject
@@ -26,7 +27,7 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.usage import ResourceType, UsageLimits
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.events import ApiPayloadContext
-from swiss_ai_hub.core.events.agent import InlineFile
+from swiss_ai_hub.core.events.agent import InlineFile, StoredImage
 from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
 from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
 from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event import HumanInTheLoopRequestEvent
@@ -39,7 +40,11 @@ from swiss_ai_hub.core.routes import ChatService, JsonResources, StreamingResour
 
 from swiss_ai_hub.api.audio.audio_chunking_service import AudioChunkingService, TranscriptionChunk
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
-from swiss_ai_hub.api.routes.openai.dto.chat_completion_request import ChatCompletionRequest, UserUploadedFile
+from swiss_ai_hub.api.routes.openai.dto.chat_completion_request import (
+    ChatCompletionRequest,
+    UserUploadedFile,
+    openai_message_to_llama_index,
+)
 from swiss_ai_hub.api.routes.openai.dto.embeddings import Embeddings
 from swiss_ai_hub.api.routes.openai.dto.embeddings_response import EmbeddingsResponse
 from swiss_ai_hub.api.routes.openai.dto.image_generation_request import ImageGenerationRequest
@@ -411,17 +416,10 @@ class OpenaiService:
         aihub_headers: dict[str, str] | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
-        if thread_id and chat_completion_request.metadata.reconstruct_history:
-            chat_completion_request.messages = await OpenaiService._reconstruct_history(
-                chat_completion_request,
-                thread_id,
-                primary_agent_class=agent_class,
-                primary_agent_id=agent_id,
-            )
         requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
-        files = await OpenaiService._files(
+        messages, files = await OpenaiService._agent_turn(
             chat_completion_request,
             ApiPayloadContext(
                 user=user,
@@ -437,7 +435,7 @@ class OpenaiService:
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=chat_completion_request.llama_index_messages,
+            messages=messages,
             nc=nc,
             external_agent_event_distributor=external_agent_event_distributor,
             thread_id=str_to_object_id(thread_id),
@@ -493,17 +491,10 @@ class OpenaiService:
         aihub_headers: dict[str, str] | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
-        if thread_id and chat_completion_request.metadata.reconstruct_history:
-            chat_completion_request.messages = await OpenaiService._reconstruct_history(
-                chat_completion_request,
-                thread_id,
-                primary_agent_class=agent_class,
-                primary_agent_id=agent_id,
-            )
         requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
-        files = await OpenaiService._files(
+        messages, files = await OpenaiService._agent_turn(
             chat_completion_request,
             ApiPayloadContext(
                 user=user,
@@ -519,7 +510,7 @@ class OpenaiService:
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=chat_completion_request.llama_index_messages,
+            messages=messages,
             nc=nc,
             external_agent_event_distributor=external_agent_event_distributor,
             thread_id=str_to_object_id(thread_id),
@@ -802,35 +793,40 @@ class OpenaiService:
         return thread_id, display_id
 
     @staticmethod
-    async def _files(
+    async def _agent_turn(
         chat_completion_request: ChatCompletionRequest, context: ApiPayloadContext
-    ) -> list[UserUploadedFile] | None:
-        """The files uploaded beforehand and named in the metadata, then those sent inline as `file` parts, stored
-        first so the event carries only their references."""
+    ) -> tuple[list[ChatMessage], list[UserUploadedFile] | None]:
+        """The messages and files the agent receives, with everything sent inline stored first.
+
+        Images inside the messages and files sent as `file` parts are all checked before any is stored, so a refused
+        request leaves nothing behind. Only what this request sent is checked and stored: with `reconstruct_history`
+        the earlier messages come from the thread, where their images were stored on their own turn.
+        """
+        messages = chat_completion_request.llama_index_messages
+        reconstruct = bool(context.thread_id and chat_completion_request.metadata.reconstruct_history)
+        if reconstruct and not messages:
+            raise HTTPException(
+                status_code=400, detail="At least one message is required when reconstruct_history is enabled."
+            )
+        sent = messages[-1:] if reconstruct else messages
+        images = StoredImage.checked_all(sent, context)
+        inline_files = await InlineFile.store_all(chat_completion_request.inline_files(), context)
+        await StoredImage.store_all(images, context)
+
         uploaded = chat_completion_request.metadata.files if chat_completion_request.metadata else None
-        inline = await InlineFile.store_all(chat_completion_request.inline_files(), context)
-        return [*(uploaded or []), *inline] or None
+        files = [*(uploaded or []), *inline_files] or None
+        if reconstruct:
+            return [*await OpenaiService._thread_history(context), *sent], files
+        return messages, files
 
     @staticmethod
-    async def _reconstruct_history(
-        chat_completion_request: ChatCompletionRequest,
-        thread_id: str,
-        *,
-        primary_agent_class: str,
-        primary_agent_id: str,
-    ) -> list[ChatCompletionMessageParam]:
-        if not chat_completion_request.messages:
-            raise HTTPException(
-                status_code=400,
-                detail="At least one message is required when reconstruct_history is enabled.",
-            )
-        normalized_thread_id = str(str_to_object_id(thread_id))
+    async def _thread_history(context: ApiPayloadContext) -> list[ChatMessage]:
         history = await ThreadService.thread_as_message_history(
-            normalized_thread_id,
-            primary_agent_class=primary_agent_class,
-            primary_agent_id=primary_agent_id,
+            str(str_to_object_id(context.thread_id)),
+            primary_agent_class=context.agent_class,
+            primary_agent_id=context.agent_id,
         )
-        return [*history.messages, chat_completion_request.messages[-1]]
+        return [openai_message_to_llama_index(dict(message)) for message in history.messages]
 
     @staticmethod
     def _filter_kwargs(
