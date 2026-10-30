@@ -88,7 +88,7 @@ def refine_document_tables_with_metadata(
 
         table_for_llm = format_for_llm(df)
         # A token is never fewer than one character, so a table shorter than the budget is under it without
-        # spending a LiteLLM round trip to find out.
+        # being counted.
         if len(table_for_llm) > prompt_budget:
             table_tokens = len(llm_config.token_counter(table_for_llm))
             if table_tokens > prompt_budget:

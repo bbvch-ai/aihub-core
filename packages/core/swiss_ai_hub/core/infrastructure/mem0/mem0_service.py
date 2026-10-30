@@ -1,3 +1,5 @@
+import asyncio
+
 from mem0.configs.base import MemoryConfig
 
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import EmbeddingQueryClamp
@@ -142,7 +144,7 @@ class Mem0Service:
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
-        query = self._clamp_query(query)
+        query = await asyncio.to_thread(self._clamp_query, query)
         scalar_filters = {
             "_type": memory_type.value,
             "_user_id": user_id,

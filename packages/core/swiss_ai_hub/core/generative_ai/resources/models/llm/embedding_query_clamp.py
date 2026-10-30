@@ -1,20 +1,19 @@
 import logging
 from collections.abc import Callable
+from typing import Annotated
 
 from llama_index.core.utils import get_tokenizer
 
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.tokenizers.measured_text_cut import MeasuredTextCut
+from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_token_budget import ModelTokenBudget
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EMBEDDING_MAX_INPUT_TOKENS = 8192
-
-# We can only count tiktoken tokens locally, but the budget is spent in the embedder's own tokenizer, and
-# tiktoken undercounts. Measured against a live bge-m3: English 1.60x (8101 -> 12963), French 1.00x, German
-# and Chinese below 1. The factor has to cover the worst case, so it tolerates a 2x undercount. Deliberately
-# not the 0.85 that markdown_structural_node_parser uses for chunking: at the measured English ratio 0.85
-# leaves a full-size input at ~1.9x its real budget. Raising this needs the same measurement against
-# whatever model the deployment runs.
+# Only for a model that declares no tokenizer: its budget is counted in tiktoken, which undercounts bge-m3 by up to
+# 1.45x on code and 1.31x on whitespace-heavy text, while real English measures 1.00-1.12x (the 1.6x once quoted
+# here came from a synthetic sample). Half the window covers that worst case with room to spare. A model that
+# declares its tokenizer is counted exactly and gets its whole window.
 QUERY_BUDGET_SAFETY_FACTOR = 0.5
 
 # Smallest window we assume any deployed embedder accepts. Only used to decide when a query is short enough
@@ -27,66 +26,48 @@ class EmbeddingQueryClamp:
     Fits a query into the embedding model's window. Chat clients inline whole attached documents into the
     user message, and an embedding model rejects an oversized input with a 400 instead of truncating it.
 
-    Also guards rerank calls: the window is resolved by model name, and a reranker spends its own window on
-    the query plus one document per pair, so the clamped query must leave room for a chunk.
+    Counting a long query costs tens of milliseconds and resolving the window may go over the network once per
+    process, so async callers run `clamp` in a thread.
     """
 
     @staticmethod
-    def token_limit(model_name: str, max_input_tokens: int | None = None) -> int:
-        """An explicit window wins, so a deployment can override a model whose LiteLLM entry is wrong."""
-        window = max_input_tokens or (
-            EmbeddingModelConfig(model_name=model_name).get_model_info()["model_info"].get("max_input_tokens")
-            or DEFAULT_EMBEDDING_MAX_INPUT_TOKENS
-        )
-        return max(1, int(window * QUERY_BUDGET_SAFETY_FACTOR))
-
-    @staticmethod
-    def longest_fitting_tail(query: str, limit: int, tokenizer: Callable[[str], list[int]]) -> str:
-        """
-        Keep a long suffix within the budget: chat clients inline documents before the user's question, so
-        the tail is where the question lives.
-
-        Safety does not rest on suffix token counts being monotonic — under BPE they are not
-        ("unbelievable" measures [3, 3, 2, 3, ...]). It rests on `high` only ever being assigned an index
-        that measured as fitting, so the returned suffix was measured, never inferred. Non-monotonicity
-        costs optimality alone: a slightly longer suffix may also have fit.
-
-        Chosen over a sentence splitter because sentence boundaries buy an embedding vector nothing while
-        this hits the budget exactly. It also avoids NLTK punkt, whose corpus loader rejects files with
-        st_nlink > 1 — which is what a `uv` venv installs by default, though not what the images ship
-        (every app Dockerfile sets UV_LINK_MODE=copy), so that failure is a dev-machine one.
-        """
-        low, high = 0, len(query)
-        while low < high:
-            middle = (low + high) // 2
-            if len(tokenizer(query[middle:])) <= limit:
-                high = middle
-            else:
-                low = middle + 1
-        return query[low:] or query[-1:]
+    def token_limit(budget: ModelTokenBudget) -> int:
+        if budget.exact:
+            return budget.usable_input_tokens
+        return max(1, int(budget.max_input_tokens * QUERY_BUDGET_SAFETY_FACTOR))
 
     @classmethod
-    def clamp(cls, query: str, model_name: str, max_input_tokens: int | None = None) -> str:
+    def clamp(
+        cls,
+        query: str,
+        model_name: str,
+        max_input_tokens: Annotated[int | None, "An explicit window, winning over the declared one"] = None,
+    ) -> str:
         """
-        The cheap check counts tokens rather than characters: a character is not an upper bound on tokens
-        (a ZWJ emoji sequence costs 7). It compares against the smallest window we support so a query that
-        fits any model returns without resolving the real, possibly remote, limit.
+        The cheap check counts tiktoken tokens rather than characters: a character is not an upper bound on tokens
+        (a ZWJ emoji sequence costs 7). It compares against half the smallest window we support, which even the
+        worst tiktoken undercount measured (1.65x) keeps inside any model's window, so a query that fits it returns
+        without resolving the model.
         """
-        tokenizer = get_tokenizer()
-        original_tokens = len(tokenizer(query))
         resolution_free_budget = int(
             (max_input_tokens or MINIMUM_EMBEDDING_MAX_INPUT_TOKENS) * QUERY_BUDGET_SAFETY_FACTOR
         )
-        if original_tokens <= resolution_free_budget:
+        if len(get_tokenizer()(query)) <= resolution_free_budget:
             return query
-        limit = cls.token_limit(model_name, max_input_tokens)
+        budget = EmbeddingModelConfig(model_name=model_name).token_budget(max_input_tokens)
+        return cls.clamp_to(query, cls.token_limit(budget), budget.tokenizer.count)
+
+    @staticmethod
+    def clamp_to(query: str, limit: int, count: Callable[[str], int]) -> str:
+        """The tail is kept: chat clients inline documents before the user's question, so that is where it lives."""
+        original_tokens = count(query)
         if original_tokens <= limit:
             return query
-        clamped = cls.longest_fitting_tail(query, limit, tokenizer)
+        clamped = MeasuredTextCut.longest_fitting_tail(query, limit, count)
         logger.warning(
             "Query exceeds the embedding budget, truncating: %d -> %d tokens (%d -> %d characters, limit %d)",
             original_tokens,
-            len(tokenizer(clamped)),
+            count(clamped),
             len(query),
             len(clamped),
             limit,
