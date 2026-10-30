@@ -74,41 +74,13 @@ class FullAgentInstanceDTO(MinimalAgentInstanceDTO):
         """
         agent_config_dto = AgentConfigDTO.from_class_and_config(class_entity, config_entity, t)
 
-        start_events = [
-            EventSpecs(
-                event_name=event.event_name,
-                event_schema=event.event_schema,
-                event_parents=event.event_parents,
-            )
-            for event in class_entity.start_events
-        ]
+        start_events = [event.to_specs() for event in class_entity.start_events]
 
-        stop_events = [
-            EventSpecs(
-                event_name=event.event_name,
-                event_schema=event.event_schema,
-                event_parents=event.event_parents,
-            )
-            for event in class_entity.stop_events
-        ]
+        stop_events = [event.to_specs() for event in class_entity.stop_events]
 
-        hitl_request_events = [
-            EventSpecs(
-                event_name=event.event_name,
-                event_schema=event.event_schema,
-                event_parents=event.event_parents,
-            )
-            for event in class_entity.hitl_request_events
-        ]
+        hitl_request_events = [event.to_specs() for event in class_entity.hitl_request_events]
 
-        hitl_response_events = [
-            EventSpecs(
-                event_name=event.event_name,
-                event_schema=event.event_schema,
-                event_parents=event.event_parents,
-            )
-            for event in class_entity.hitl_response_events
-        ]
+        hitl_response_events = [event.to_specs() for event in class_entity.hitl_response_events]
 
         network_graph = WorkflowGraph.model_validate(class_entity.network_graph)
 

@@ -38,6 +38,7 @@ packages/api/
 │   │   ├── i18n/               # Locale endpoints
 │   │   └── parsing/            # Document parsing (MinerU)
 │   ├── services/               # Dynamic endpoint discovery (NATS-based)
+│   ├── request_limits/         # JSON body-size middleware (API_REQUEST_* settings)
 │   ├── events/                 # EventModelCreationService (Jambo)
 │   ├── rpc/                    # NATS RPC responders (agent/process config)
 │   ├── sockets/                # WebSocket manager, sender, event wrapping
@@ -221,10 +222,23 @@ are removed and the OpenAPI schema is invalidated.
 **`ProcessEndpointsDiscoveryService`**: Same pattern for processes. Registers form GET/POST endpoints for human input
 steps and data POST endpoints for programmatic input.
 
-**`ModelCreationService`** + **`EventModelCreationService`**: Convert agent event JSON schemas into Pydantic models at
-runtime using `jambo.SchemaConverter.build()`. Input models exclude framework fields (`event_id`, `created_at`, `user`,
-`locale`). Output models exclude internal fields (`_event_name`, `_parent_event_names`). These models power the dynamic
-endpoint request/response validation and OpenAPI documentation.
+**`ModelCreationService`** + **`EventModelCreationService`**: Convert announced JSON schemas into Pydantic models at
+runtime using `jambo.SchemaConverter.build()`. Agent input models are built from `EventSpecs.api_input_schema`, which
+the event itself defines (`BaseEvent.api_input_model()`): no server-filled fields, and the shapes the event converts
+itself, such as inline files. Output models exclude internal fields (`_event_name`, `_parent_event_names`). These models
+power the dynamic endpoint request/response validation and OpenAPI documentation. Process endpoints
+(`EventModelCreationService`) still strip their own list of fields.
+
+**Events own their API input**: the dynamic agent endpoints pass the validated body to
+`expected_type.from_api_payload(payload, event_name=…, event_parents=…, context=ApiPayloadContext(…))`. It resolves the
+registered class (or its closest parent), validates against the real input model, runs the class's conversion hook (e.g.
+`UserMessageEvent` stores inline `files` in the `agent-files` bucket via `InlineFile.store_all`) and fills in the caller
+and locale. Never add field- or event-specific logic to the API for this; see ADR
+`2026_10_30_events_own_their_api_input`.
+
+**Request size**: `request_limits/JsonBodySizeLimitMiddleware` refuses JSON bodies over
+`API_REQUEST_MAX_JSON_BODY_BYTES` (64 MB) while they arrive. It is registered first in `ApiRunner._get_api_app`, so CORS
+still wraps its 413. Multipart and binary endpoints bound their bodies themselves.
 
 ## Agent-API Communication
 

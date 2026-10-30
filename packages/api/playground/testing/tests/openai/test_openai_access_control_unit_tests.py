@@ -111,6 +111,7 @@ class TestChatCompletionWithAssistantsBranching:
             usage_limits=Mock(),
             external_agent_event_distributor=Mock(),
             t=Mock(),
+            s3_client=Mock(),
         )
 
     @pytest.mark.asyncio

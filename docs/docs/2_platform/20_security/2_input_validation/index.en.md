@@ -32,6 +32,19 @@ Filenames must start with alphanumeric characters and are validated to block:
 Files must be larger than 0 bytes. Empty files are rejected. Maximum size limits are enforced at the application or
 reverse proxy level.
 
+### Files sent inline to agents
+
+API callers can send files to an agent as base64 inside the request. These are checked separately before anything is
+stored:
+
+- A JSON request body larger than `API_REQUEST_MAX_JSON_BODY_BYTES` (64 MB) is refused with `413` while it arrives,
+  before it is parsed.
+- Each file is limited to `AGENT_INLINE_FILE_MAX_FILE_BYTES` (25 MB), and a request to
+  `AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST` (10) files.
+- The filename may not contain path separators, the content must be valid base64, and the type must be one the agents'
+  document readers support. Images are refused, since they belong in the message itself.
+- All files of a request are checked before the first is stored, so a refused request leaves nothing behind.
+
 ## Namespace and database name validation
 
 Database and namespace names follow similar validation rules to prevent path traversal in logical storage paths.

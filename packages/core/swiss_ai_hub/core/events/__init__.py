@@ -3,17 +3,20 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.core.events.api_payload_context import ApiPayloadContext
     from swiss_ai_hub.core.events.base_event import BaseEvent
     from swiss_ai_hub.core.events.discovery.class_discovery_request_event import ClassDiscoveryRequestEvent
     from swiss_ai_hub.core.events.discovery.event_specs import EventSpecs
 
 __all__ = [
+    "ApiPayloadContext",
     "BaseEvent",
     "ClassDiscoveryRequestEvent",
     "EventSpecs",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "ApiPayloadContext": "swiss_ai_hub.core.events.api_payload_context",
     "BaseEvent": "swiss_ai_hub.core.events.base_event",
     "ClassDiscoveryRequestEvent": "swiss_ai_hub.core.events.discovery.class_discovery_request_event",
     "EventSpecs": "swiss_ai_hub.core.events.discovery.event_specs",

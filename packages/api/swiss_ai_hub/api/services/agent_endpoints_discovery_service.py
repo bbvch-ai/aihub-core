@@ -10,6 +10,7 @@ from typing import Annotated, override
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Security
 from mongoengine import DoesNotExist
+from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from redis.asyncio import Redis
@@ -24,7 +25,7 @@ from swiss_ai_hub.core.auth.usage import (
 )
 from swiss_ai_hub.core.dependencies import use_nats
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
-from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
+from swiss_ai_hub.core.events import ApiPayloadContext, ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
     ExceptionEvent,
@@ -32,7 +33,7 @@ from swiss_ai_hub.core.events.agent import (
     StartEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.infrastructure import LangfuseProvisioner, OnlineAgent, OpenWebuiProvisioner
+from swiss_ai_hub.core.infrastructure import LangfuseProvisioner, OnlineAgent, OpenWebuiProvisioner, use_s3
 from swiss_ai_hub.core.persistence import (
     AgentClassEntity,
     AgentConfigEntityDocument,
@@ -411,6 +412,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
+            s3_client: Annotated[S3Client, Depends(use_s3)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
@@ -452,17 +454,24 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 nc=nc,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                input_event_parents=start_event_parents,
-                input_event_name=start_event_name,
-                # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
-                # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
-                raw_event_data=start_event_input.model_dump(mode="json", exclude_none=True),
+                input_event=await AgentEndpointsDiscoveryService._input_event(
+                    start_event_input,
+                    expected_type=expected_type,
+                    event_name=start_event_name,
+                    event_parents=start_event_parents,
+                    context=ApiPayloadContext(
+                        user=user,
+                        locale=t.locale,
+                        agent_class=agent_class,
+                        agent_id=agent_id,
+                        thread_id=thread_id,
+                        s3_client=s3_client,
+                    ),
+                ),
                 external_agent_event_distributor=external_agent_event_distributor,
                 thread_id=thread_id,
                 display_id=display_id,
                 user=user,
-                t=t,
-                expected_type=expected_type,
                 subscribe_to_thread=True,
             )
 
@@ -472,6 +481,24 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             return response_event
 
         return send_event
+
+    @staticmethod
+    async def _input_event(
+        start_event_input: BaseModel,
+        *,
+        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
+        event_name: str,
+        event_parents: list[str],
+        context: ApiPayloadContext,
+    ) -> StartEvent | HumanInTheLoopResponseEvent:
+        return await expected_type.from_api_payload(
+            # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
+            # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
+            start_event_input.model_dump(mode="json", exclude_none=True),
+            event_name=event_name,
+            event_parents=event_parents,
+            context=context,
+        )
 
     @staticmethod
     def _create_streaming_endpoint(
@@ -494,6 +521,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
+            s3_client: Annotated[S3Client, Depends(use_s3)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
@@ -537,17 +565,24 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 nc=nc,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                input_event_parents=start_event_parents,
-                input_event_name=start_event_name,
-                # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
-                # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
-                raw_event_data=start_event_input.model_dump(mode="json", exclude_none=True),
+                input_event=await AgentEndpointsDiscoveryService._input_event(
+                    start_event_input,
+                    expected_type=expected_type,
+                    event_name=start_event_name,
+                    event_parents=start_event_parents,
+                    context=ApiPayloadContext(
+                        user=user,
+                        locale=t.locale,
+                        agent_class=agent_class,
+                        agent_id=agent_id,
+                        thread_id=thread_id,
+                        s3_client=s3_client,
+                    ),
+                ),
                 external_agent_event_distributor=external_agent_event_distributor,
                 thread_id=thread_id,
                 display_id=display_id,
                 user=user,
-                t=t,
-                expected_type=expected_type,
                 subscribe_to_thread=True,
             )
 

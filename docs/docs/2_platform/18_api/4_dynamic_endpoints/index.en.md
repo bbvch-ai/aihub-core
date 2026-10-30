@@ -23,14 +23,16 @@ Instead of pre-defining static API routes, the Swiss AI Hub employs **intelligen
 
 This system leverages two core discovery services:
 
-- **`AgentEndpointsDiscoveryService`**: Creates endpoints like `/agents/{agent_class}/{agent_id}/{event_name}` for
-  sending events to specific agents
+- **`AgentEndpointsDiscoveryService`**: Creates endpoints like
+  `/agents/classes/{AgentClass}/instances/{agent_id}/{EventName}` for sending events to specific agents
 - **`ProcessEndpointsDiscoveryService`**: Generates endpoints like `/processes/{process_class}/{process_id}/{route}` for
   human and program interaction with processes
 
-The discovery process uses **NATS-based service discovery** to query running components about their capabilities, then
-uses the **Jambo SchemaConverter** to transform event schemas into Pydantic models that power fully-typed, documented
-API endpoints.
+The discovery process uses **NATS-based service discovery** to query running components about their capabilities. Each
+agent announces, for every event it accepts, the schema of what an API caller sends: the event without the fields the
+server fills in (the caller, the locale, ids and timestamps), and with the inputs the event converts itself, such as
+files sent inline. The **Jambo SchemaConverter** turns that schema into the Pydantic model that powers the fully-typed,
+documented endpoint.
 
 ## Why This is a Game-Changer for Your AI Strategy :trophy:
 
@@ -65,13 +67,17 @@ Dynamic endpoints are enabled automatically when you start the Swiss AI Hub with
 For each discovered agent, the system creates endpoints following this pattern:
 
 ```
-POST /api/v1/{tenant_id}/agents/{agent_class}/{agent_id}/{event_name}
+POST /api/v1/{tenant_id}/agents/classes/{AgentClass}/instances/{agent_id}/{EventName}
+POST /api/v1/{tenant_id}/agents/classes/{AgentClass}/instances/{agent_id}/{EventName}/stream
 ```
 
-**Example**: An agent with class `rag_agent` and ID `customer_support` that accepts `UserMessageEvent` would get:
+The first waits for the run to finish and returns its stop event; the second streams every event of the run as
+server-sent events.
+
+**Example**: An instance `customer-support` of the `RAGAgent` class, which accepts `UserMessageEvent`, gets:
 
 ```
-POST /api/v1/{tenant_id}/agents/rag_agent/customer_support/user_message_event
+POST /api/v1/{tenant_id}/agents/classes/RAGAgent/instances/customer-support/UserMessageEvent
 ```
 
 ## Process Endpoint Generation
@@ -90,7 +96,8 @@ POST /api/v1/{tenant_id}/processes/{process_class}/{process_id}/{walkthrough_id}
 Dynamic endpoints provide:
 
 - **Full OpenAPI Documentation**: Every endpoint appears in `/docs` with complete request/response schemas
-- **Type Validation**: Automatic request validation based on event specifications
+- **Type Validation**: The whole request is validated before anything happens with it. Only then does the event convert
+  what it accepts in another shape, such as storing files sent inline
 - **Authentication**: Inherited from the base controller security model
 - **Error Handling**: Standardized error responses and HTTP status codes
 - **Caching**: Built-in response caching for discovery-related operations
@@ -121,3 +128,35 @@ To begin using dynamic endpoints in your Swiss AI Hub:
 
 The dynamic endpoint system transforms the Swiss AI Hub from a static API into a living, adaptive integration layer that
 grows with your AI capabilities.
+
+## Sending Files to an Agent
+
+Events that carry files, such as `UserMessageEvent`, accept each entry of `files` in one of two forms, and both can be
+mixed in one request:
+
+- **Inline**: `filename`, `file_type` (the MIME type) and `content`, the file encoded as base64. The API stores the file
+  in the agent's file bucket before the agent is called, and the agent receives its reference like any uploaded file.
+- **Uploaded beforehand**: `filename`, `file_type` and the `file_id` returned by the agent's file upload endpoints.
+
+```bash
+curl -X POST "https://<host>/api/v1/active/agents/classes/UniversalAgent/instances/assistant/UserMessageEvent" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{"role": "user", "blocks": [{"block_type": "text", "text": "What is the total due?"}]}],
+    "files": [{"filename": "invoice.pdf", "file_type": "application/pdf", "content": "'"$(base64 -w0 invoice.pdf)"'"}]
+  }'
+```
+
+A request is checked as a whole before any of its files is stored, so a rejected request leaves nothing behind:
+
+| Rejected with | When                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------- |
+| `413`         | A file exceeds `AGENT_INLINE_FILE_MAX_FILE_BYTES` (25 MB by default)                    |
+| `413`         | A request carries more than `AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST` (10) inline files |
+| `413`         | A JSON body exceeds `API_REQUEST_MAX_JSON_BODY_BYTES` (64 MB), checked as it arrives    |
+| `415`         | Agents cannot read the file type, or the file is an image (send images in the message)  |
+| `422`         | The content is not valid base64                                                         |
+
+Files sent inline never travel inside the event itself, which keeps events small enough for the message bus and the
+event history. The [OpenAI-compatible API](../1_openai_compatible_api/) accepts files for agents the same way, as `file`
+content parts.

@@ -107,41 +107,13 @@ class AgentClassDTO(BaseModel):
     @classmethod
     def from_entity(cls, entity: "AgentClassEntity", t: LocaleHandler) -> Self:
         """Creates an AgentClassDTO from a database entity (for offline classes)."""
-        start_events = [
-            EventSpecs(
-                event_name=event.event_name,
-                event_schema=event.event_schema,
-                event_parents=event.event_parents,
-            )
-            for event in entity.start_events
-        ]
+        start_events = [event.to_specs() for event in entity.start_events]
 
-        stop_events = [
-            EventSpecs(
-                event_name=event.event_name,
-                event_schema=event.event_schema,
-                event_parents=event.event_parents,
-            )
-            for event in entity.stop_events
-        ]
+        stop_events = [event.to_specs() for event in entity.stop_events]
 
-        hitl_request_events = [
-            EventSpecs(
-                event_name=event.event_name,
-                event_schema=event.event_schema,
-                event_parents=event.event_parents,
-            )
-            for event in entity.hitl_request_events
-        ]
+        hitl_request_events = [event.to_specs() for event in entity.hitl_request_events]
 
-        hitl_response_events = [
-            EventSpecs(
-                event_name=event.event_name,
-                event_schema=event.event_schema,
-                event_parents=event.event_parents,
-            )
-            for event in entity.hitl_response_events
-        ]
+        hitl_response_events = [event.to_specs() for event in entity.hitl_response_events]
 
         network_graph = WorkflowGraph.model_validate(entity.network_graph)
 

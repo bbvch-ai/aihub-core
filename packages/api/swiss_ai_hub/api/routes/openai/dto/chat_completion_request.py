@@ -1,6 +1,9 @@
+import mimetypes
 from collections.abc import Iterable
 from typing import Annotated, Any, Literal
 
+from fastapi import HTTPException, status
+from fastapi.exceptions import RequestValidationError
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from openai.types import ChatModel
 from openai.types.chat import (
@@ -14,8 +17,8 @@ from openai.types.chat import (
     ChatCompletionToolParam,
     completion_create_params,
 )
-from pydantic import BaseModel, ConfigDict, Field
-from swiss_ai_hub.core.events.agent import ChatFeature, UserUploadedFile
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from swiss_ai_hub.core.events.agent import ChatFeature, InlineFile, UserUploadedFile
 
 
 def _resolve_dict_part(part: dict[str, Any]) -> dict[str, Any] | None:
@@ -24,6 +27,8 @@ def _resolve_dict_part(part: dict[str, Any]) -> dict[str, Any] | None:
         return {"type": "text", "text": part.get("text", "")}
     if part_type == "image_url":
         return {"type": "image_url", "image_url": part.get("image_url", {})}
+    if part_type == "file":
+        return {"type": "file", "file": part.get("file", {})}
     return None
 
 
@@ -48,10 +53,7 @@ def resolve_message_content(message: dict[str, Any]) -> dict[str, Any]:
 
     content = message["content"]
 
-    if isinstance(content, str):
-        return message
-
-    if not hasattr(content, "schema"):
+    if isinstance(content, str) or not isinstance(content, Iterable):
         return message
 
     resolved_content = [resolved for resolved in (_resolve_content_part(p) for p in content) if resolved is not None]
@@ -161,6 +163,46 @@ class ChatCompletionRequest(BaseModel):
     tools: Iterable[ChatCompletionToolParam] | None = None
     top_logprobs: int | None = None
     top_p: float | None = None
+
+    def inline_files(self) -> list[InlineFile]:
+        """The files sent as `file` content parts of the last user message, the one this turn answers.
+
+        Earlier messages are history: their files were attached on their own turn, and with `reconstruct_history`
+        the API discards them anyway. The message's content is resolved in place, since pydantic hands it over as an
+        iterator that the conversion to llama-index messages has to read again.
+        """
+        user_indices = [index for index, message in enumerate(self.messages or []) if message.get("role") == "user"]
+        if not user_indices:
+            return []
+        message = resolve_message_content(dict(self.messages[user_indices[-1]]))
+        self.messages[user_indices[-1]] = message
+        content = message.get("content")
+        if isinstance(content, str) or content is None:
+            return []
+        return [
+            ChatCompletionRequest._inline_file(part.get("file", {}))
+            for part in content
+            if isinstance(part, dict) and part.get("type") == "file"
+        ]
+
+    @staticmethod
+    def _inline_file(file: dict[str, Any]) -> InlineFile:
+        file_data, filename = file.get("file_data"), file.get("filename")
+        if not file_data or not filename:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "A file content part needs file_data and filename. References to files hosted by OpenAI (file_id) "
+                "are not supported.",
+            )
+        header, separator, content = file_data.partition(",")
+        if separator and header.startswith("data:") and header.endswith(";base64"):
+            file_type = header.removeprefix("data:").removesuffix(";base64")
+        else:
+            content, file_type = file_data, mimetypes.guess_type(filename)[0] or "application/octet-stream"
+        try:
+            return InlineFile(filename=filename, file_type=file_type, content=content)
+        except ValidationError as validation_error:
+            raise RequestValidationError(validation_error.errors(include_url=False)) from validation_error
 
     @property
     def llama_index_messages(self):

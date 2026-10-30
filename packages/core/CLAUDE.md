@@ -30,9 +30,10 @@ packages/core/swiss_ai_hub/core/
 ├── distributor/                     # External event distributors (agent + process)
 ├── exceptions/                      # HTTP-boundary exception handlers (ModelGatewayErrorHandler)
 ├── events/                          # Event type hierarchy (~100 event types)
-│   ├── base_event.py                 # Root: auto-registry, polymorphic deserialization
+│   ├── base_event.py                 # Root: auto-registry, polymorphic deserialization, API input
+│   ├── api_payload_context.py        # What an event may need to convert API input (user, agent, S3)
 │   ├── utils.py                     # Event utility functions
-│   ├── discovery/                   # Shared discovery (ClassDiscoveryRequestEvent, EventSpecs)
+│   ├── discovery/                   # Shared discovery (ClassDiscoveryRequestEvent, EventSpecs incl. api_input_schema)
 │   ├── agent/                       # Agent-scoped events
 │   │   ├── control_and_display_event.py
 │   │   ├── aitl/                    # Agent-in-the-loop delegation events
@@ -47,7 +48,7 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── memory/                  # Memory operation events (retrieve, store, history)
 │   │   ├── router/                  # LLM routing events
 │   │   ├── semantic/                # SemanticEvent + OpenInference tracing subtypes
-│   │   └── user/                    # UserMessageEvent
+│   │   └── user/                    # UserMessageEvent, UserUploadedFile, InlineFile (+ settings)
 │   ├── process/                     # Process-scoped events
 │   │   ├── process_event.py          # Process orchestration base
 │   │   ├── start/, stop/, exception/ # Process lifecycle events
@@ -229,6 +230,23 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
 └── Discovery events                                               [events/agent/discovery/, events/process/discovery/]
 ```
+
+### Events Own Their API Input
+
+What an API caller sends for an event is defined by the event, not by the API (ADR
+`2026_10_30_events_own_their_api_input`):
+
+- `BaseEvent.api_input_model()` is the event without `_api_server_fields` (ids, timestamps, `user`, `locale`, display
+  fields, `agent_config`). Agents announce its schema as `EventSpecs.api_input_schema`, and the API builds the endpoint
+  body from it.
+- A field the caller sends in another shape is overridden in `api_input_field_overrides()` and converted back in
+  `_api_input_to_event_data()`. `UserMessageEvent` and `RAGStartEvent` accept `files` as `UserUploadedFile | InlineFile`
+  and store the inline ones with `InlineFile.store_all`, which checks every file before storing any.
+- `from_api_payload()` resolves the registered class for the event name (falling back to the closest parent, so
+  agent-only subclasses inherit the conversion), validates the whole payload, converts it, and adds `_api_server_data()`
+  (`StartEvent`: the caller and locale).
+- Never put bytes in an event: NATS refuses messages over 1 MB (2 MB in production) and every event is persisted. Store
+  them and carry a reference.
 
 ### Event Directory Scoping
 
@@ -791,7 +809,7 @@ acceptance criteria against sites seeded with `packages/pipeline/playground/jira
 
 **Event system**:
 
-- `core/events/base_event.py` — event foundation (auto-registry, deserialization)
+- `core/events/base_event.py` — event foundation (auto-registry, deserialization, API input)
 - `core/events/agent/control/control_event.py` — workflow control base
 - `core/events/agent/display/display_event.py` — UI observability base
 - `core/events/agent/control_and_display_event.py` — dual-purpose base
