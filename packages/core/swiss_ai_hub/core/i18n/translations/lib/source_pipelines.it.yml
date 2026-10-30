@@ -239,7 +239,8 @@ structured:
           assistenti IA.
       include_subcategories:
         label: Includi sottocategorie
-        help: Una categoria conta anche le pagine di tutte le categorie sotto di essa, per le categorie incluse ed escluse.
+        help: Una categoria conta anche le pagine di tutte le categorie sotto di essa,
+          per le categorie incluse ed escluse.
       sync_documents:
         label: Sincronizza documenti
         help: Sincronizza anche i documenti mostrati o collegati dalle pagine sincronizzate
@@ -260,4 +261,6 @@ structured:
           tutte le immagini.
       user_agent:
         label: User-Agent
-        help: Facoltativo. Inviato con ogni richiesta al wiki, ad es. un nome e un indirizzo di contatto. I wiki di Wikimedia ne richiedono uno e possono bloccare il valore predefinito. Vuoto mantiene il valore predefinito.
+        help: Facoltativo. Inviato con ogni richiesta al wiki, ad es. un nome e un
+          indirizzo di contatto. I wiki di Wikimedia ne richiedono uno e possono bloccare
+          il valore predefinito. Vuoto mantiene il valore predefinito.

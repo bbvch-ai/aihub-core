@@ -118,8 +118,8 @@ class MediaWikiPreflight:
     @staticmethod
     def _require_distinct(pages: dict[int, str], files: str | None, known: dict[int, dict[str, Any]]) -> None:
         """Collections are compared as the platform stores them, every character other than a letter, digit, ``_``
-        or ``-`` written as ``_``. The file namespace's own pages may share the file collection: a page and a file are
-        stored under different keys."""
+        or ``-`` written as ``_``. The file namespace's own pages may share the file collection: a page and its file are
+        stored under different keys, and a file whose key a page takes after all is left out by the scope."""
         targets = dict(pages)
         if files is not None and _FILE_NAMESPACE not in targets:
             targets[_FILE_NAMESPACE] = files

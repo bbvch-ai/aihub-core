@@ -229,7 +229,8 @@ structured:
           category that marks pages to keep away from AI assistants.
       include_subcategories:
         label: Include subcategories
-        help: A category also counts the pages of every category below it, for the included and the excluded categories.
+        help: A category also counts the pages of every category below it, for the
+          included and the excluded categories.
       sync_documents:
         label: Sync documents
         help: Also sync the documents the synced pages show or link to (PDF, Word,
@@ -250,4 +251,6 @@ structured:
           image.
       user_agent:
         label: User-Agent
-        help: Optional. Sent with every request to the wiki, e.g. a name and a contact address. Wikimedia's wikis ask for one and may block the default. Empty keeps the default.
+        help: Optional. Sent with every request to the wiki, e.g. a name and a contact
+          address. Wikimedia's wikis ask for one and may block the default. Empty
+          keeps the default.

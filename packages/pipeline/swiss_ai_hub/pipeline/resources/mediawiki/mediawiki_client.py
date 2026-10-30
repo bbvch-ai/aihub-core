@@ -35,7 +35,7 @@ class MediaWikiClient:
         ] = None,
         session: Annotated[Session | None, "HTTP session; a retrying dlt session when omitted"] = None,
         user_agent: Annotated[str | None, "User-Agent sent with every request; None keeps dlt's"] = None,
-    ):
+    ) -> None:
         self.site_url = base_url.rstrip("/")
         self.api_url = f"{self.site_url}/api.php"
         self.session = session or Client(raise_for_status=False).session
@@ -43,6 +43,7 @@ class MediaWikiClient:
             self.session.headers["User-Agent"] = user_agent
         self._auth = BearerTokenAuth(token=access_token) if access_token else None
         self._rest = RESTClient(base_url=self.site_url, auth=self._auth, session=self.session)
+        self._site: dict[str, Any] | None = None
 
     def query(self, params: Annotated[dict[str, Any], "Parameters of action=query"]) -> Iterator[dict[str, Any]]:
         """The ``query`` part of every answer, following MediaWiki's ``continue`` until it gives none.
@@ -63,7 +64,10 @@ class MediaWikiClient:
             continuation = following
 
     def site_info(self) -> dict[str, Any]:
-        return next(self.query({"meta": "siteinfo", "siprop": "general|namespaces"}))
+        """Read once per client: it does not change while a step runs."""
+        if self._site is None:
+            self._site = next(self.query({"meta": "siteinfo", "siprop": "general|namespaces"}))
+        return self._site
 
     def user_info(self) -> dict[str, Any]:
         """The account the session reads as; ``anon`` is set when it reads anonymously."""
@@ -184,8 +188,19 @@ class MediaWikiClient:
             ):
                 for file in result.get("pages") or []:
                     if file.get("imageinfo"):
-                        files[file["title"]] = {**file, "imageinfo": file["imageinfo"][0]}
+                        info = file["imageinfo"][0]
+                        files[file["title"]] = {**file, "imageinfo": {**info, "url": self._reached(info["url"])}}
         return list(files.values())
+
+    def _reached(self, url: str) -> str:
+        """A file URL as the pipeline reaches the wiki. MediaWiki builds it from its configured server, which can be
+        another name than the one the pipeline uses, or http behind a TLS proxy; the session's cookies and token belong
+        to the configured address, and the guard checked that one. A file on another host keeps its URL."""
+        server = str((self.site_info().get("general") or {}).get("server") or "")
+        if not server or urlparse(url).netloc != urlparse(server if "//" in server else f"//{server}").netloc:
+            return url
+        site = urlparse(self.site_url)
+        return urlparse(url)._replace(scheme=site.scheme, netloc=site.netloc).geturl()
 
     def download(
         self,

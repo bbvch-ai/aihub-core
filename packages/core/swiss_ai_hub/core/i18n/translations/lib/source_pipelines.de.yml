@@ -240,7 +240,8 @@ structured:
           z. B. eine Kategorie für Seiten, die KI-Assistenten nicht sehen sollen.
       include_subcategories:
         label: Unterkategorien einbeziehen
-        help: Eine Kategorie umfasst auch die Seiten aller Kategorien unter ihr, für die einbezogenen und die ausgeschlossenen Kategorien.
+        help: Eine Kategorie umfasst auch die Seiten aller Kategorien unter ihr, für
+          die einbezogenen und die ausgeschlossenen Kategorien.
       sync_documents:
         label: Dokumente synchronisieren
         help: Synchronisiert auch die Dokumente, die auf den synchronisierten Seiten
@@ -263,4 +264,6 @@ structured:
           alle Bilder.
       user_agent:
         label: User-Agent
-        help: Optional. Wird bei jeder Anfrage an das Wiki mitgesendet, z. B. ein Name und eine Kontaktadresse. Die Wikis von Wikimedia verlangen einen und sperren den Standardwert unter Umständen. Leer behält den Standardwert.
+        help: Optional. Wird bei jeder Anfrage an das Wiki mitgesendet, z. B. ein
+          Name und eine Kontaktadresse. Die Wikis von Wikimedia verlangen einen und
+          sperren den Standardwert unter Umständen. Leer behält den Standardwert.

@@ -97,3 +97,14 @@ def test_a_single_row_table_is_layout_and_its_cells_become_blocks():
     )
 
     assert _markdown(html) == "**Note**\n\n- Kept up to date by HR"
+
+
+def test_a_page_mentioning_the_table_marker_keeps_its_text_and_its_tables():
+    """A fixed marker in the page's own text would crash the conversion or put a table in the wrong place."""
+    markdown = _markdown(
+        "<p>See MEDIAWIKITABLE3 and MEDIAWIKITABLE0.</p>"
+        "<table><tr><th>Step</th><th>Owner</th></tr><tr><td>Plan</td><td>PM</td></tr></table>"
+    )
+
+    assert "See MEDIAWIKITABLE3 and MEDIAWIKITABLE0." in markdown
+    assert markdown.count("Plan") == 1

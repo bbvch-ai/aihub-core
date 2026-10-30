@@ -68,4 +68,6 @@ class MediaWikiFile(BaseModel):
         )
 
     def _stem(self) -> str:
-        return self.name.rsplit(".", 1)[0]
+        """A name of dots alone before its extension (``..pdf``) cannot be a file name and is written as the id."""
+        stem = self.name.rsplit(".", 1)[0]
+        return stem if stem.strip(" .") else f"file {self.page_id}"

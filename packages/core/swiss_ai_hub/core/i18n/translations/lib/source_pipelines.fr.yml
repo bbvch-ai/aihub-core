@@ -240,7 +240,8 @@ structured:
           IA.
       include_subcategories:
         label: Inclure les sous-catégories
-        help: Une catégorie compte aussi les pages de toutes les catégories en dessous d'elle, pour les catégories incluses et exclues.
+        help: Une catégorie compte aussi les pages de toutes les catégories en dessous
+          d'elle, pour les catégories incluses et exclues.
       sync_documents:
         label: Synchroniser les documents
         help: Synchronise aussi les documents affichés ou liés par les pages synchronisées
@@ -262,4 +263,6 @@ structured:
           0 garde toutes les images.
       user_agent:
         label: User-Agent
-        help: Facultatif. Envoyé avec chaque requête au wiki, p. ex. un nom et une adresse de contact. Les wikis de Wikimedia en demandent un et peuvent bloquer la valeur par défaut. Vide garde la valeur par défaut.
+        help: Facultatif. Envoyé avec chaque requête au wiki, p. ex. un nom et une
+          adresse de contact. Les wikis de Wikimedia en demandent un et peuvent bloquer
+          la valeur par défaut. Vide garde la valeur par défaut.

@@ -17,7 +17,7 @@ class MediaWikiRequestError(HTTPError):
     names the status, the path and MediaWiki's message; never the query string, which can carry a token.
     """
 
-    def __init__(self, message: str, *, response: Response, code: str | None = None):
+    def __init__(self, message: str, *, response: Response, code: str | None = None) -> None:
         super().__init__(message, response=response)
         self.code = code
 

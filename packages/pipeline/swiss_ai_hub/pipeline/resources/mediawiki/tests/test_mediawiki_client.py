@@ -2,7 +2,7 @@ import pytest
 
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_client import MediaWikiClient
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_request_error import MediaWikiRequestError
-from swiss_ai_hub.pipeline.resources.mediawiki.tests.fake_mediawiki import SITE, FakeMediaWiki
+from swiss_ai_hub.pipeline.resources.mediawiki.tests.fake_mediawiki import SHARED, SITE, FakeMediaWiki
 
 
 def _wiki(monkeypatch: pytest.MonkeyPatch, pages: int = 5) -> FakeMediaWiki:
@@ -189,6 +189,19 @@ class TestFiles:
         with pytest.raises(MediaWikiRequestError):
             client.download("https://upload.acme.test/images/Handbook.pdf", max_bytes=1_000)
         assert wiki.requests[-1].headers.get("Authorization") is None
+
+    def test_a_file_of_the_wiki_is_reached_at_the_configured_address(self, monkeypatch: pytest.MonkeyPatch):
+        """MediaWiki builds file URLs from its own server setting: another name, or http behind a TLS proxy. The
+        session and the token belong to the address the pipeline uses."""
+        wiki = _wiki(monkeypatch, pages=1)
+        wiki.server = "http://wiki.public.test"
+        wiki.add_file(101, "Handbook.pdf", b"%PDF-1.7 handbook", used_by=[1])
+        wiki.add_file(102, "Logo.png", b"PNG", used_by=[1], repository="shared")
+
+        urls = {file["title"]: file["imageinfo"]["url"] for file in MediaWikiClient(SITE).files_used_by([1])}
+
+        assert urls["File:Handbook.pdf"] == f"{SITE}/images/Handbook.pdf"
+        assert urls["File:Logo.png"] == f"{SHARED}/images/Logo.png"
 
     def test_a_file_larger_than_the_limit_is_not_held(self, monkeypatch: pytest.MonkeyPatch):
         wiki = _wiki(monkeypatch, pages=1)

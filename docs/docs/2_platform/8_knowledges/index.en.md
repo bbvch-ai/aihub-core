@@ -240,8 +240,8 @@ can find them. Sync with a dedicated read-only account that sees only what the d
 The first sync reads every page in scope. Later syncs list every page with its latest revision and title, and read only
 the pages that are new, edited, renamed or newly in scope. Pages deleted, moved out of the listed namespaces, put in an
 excluded category or taken out of every listed category are removed. Changing any setting other than a credential reads
-every page and file again; only those that changed are stored and processed again. An edit to a template changes the pages that use it without giving them a new revision, so they are
-read again only when they are next edited themselves.
+every page and file again; only those that changed are stored and processed again. An edit to a template changes the
+pages that use it without giving them a new revision, so they are read again only when they are next edited themselves.
 
 A sync fails before it changes anything when the wiki refuses the sign-in or the access token, when the session still
 reads anonymously after signing in, when the wiki is older than MediaWiki 1.27, when a namespace or category does not

@@ -337,6 +337,21 @@ class TestFileSync:
 
         assert {"File/Handbook 2026.pdf", "File/Rollout.pptx"} <= set(world.files("wiki-db"))
 
+    def test_a_file_whose_path_is_taken_is_left_out_and_the_owner_kept(self, world: World, wiki: FakeMediaWiki):
+        """The page File:Notes and the file Notes.md are both File/Notes.md; Logo.PNG and Logo.png are both
+        File/Logo.png. The page, and the file first by name, keep the path, so nothing flips from run to run."""
+        wiki.add_page(60, "Notes", namespace=6, html="<p>The page</p>")
+        wiki.add_file(301, "Notes.md", b"# The file", used_by=[1])
+        wiki.add_file(302, "Logo.PNG", b"PNG upper", used_by=[1])
+        wiki.add_file(303, "Logo.png", b"PNG lower", used_by=[1])
+        _configure(world, namespaces=["Main", "Process", "File"], sync_documents=True, sync_images=True)
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert "The page" in world.body("wiki-db", "File/Notes.md")
+        assert world.s3.objects[("wiki-db", "File/Logo.png")]["Body"] == b"PNG upper"
+        assert "Notes.md" not in wiki.downloads and "Logo.png" not in wiki.downloads
+
     def test_files_of_a_german_wiki_land_in_the_file_collection_too(self, world: World, wiki: FakeMediaWiki):
         """The collection is the namespace's canonical name; Datei is only what that wiki calls it."""
         wiki.local_names = {6: "Datei"}

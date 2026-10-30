@@ -31,3 +31,10 @@ def test_its_reference_cites_the_description_page_and_downloads_the_file():
         "document_title": "Handbook 2026.PDF",
         "source_origin": "https://wiki.acme.test/index.php/File:Handbook_2026.PDF",
     }
+
+
+def test_a_name_of_dots_before_its_extension_is_stored_under_its_id():
+    """``..pdf`` is a valid wiki title but no file name; failing on it would stop every sync of the database."""
+    file = MediaWikiFile.from_listing({**_LISTED, "title": "File:..pdf"}, "File")
+
+    assert file.object_key == "File/file 101.pdf"

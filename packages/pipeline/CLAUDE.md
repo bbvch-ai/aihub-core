@@ -652,12 +652,12 @@ type-level URL constraints, `problems()` and the `SourceHostGuard` check with
   `web_form` (fills in `Special:UserLogin`), `oauth`, `anonymous`. `oauth` sends the access token of an owner-only OAuth
   2 consumer (Extension:OAuth) as `Bearer` through `RESTClient`'s `auth=`, on every request and never as a header dlt
   could log; a file download sends it as `auth=` too, but only to the wiki's own host (a separate upload host is another
-  party); `MediaWikiOptions.oauth_token()` returns it only while `oauth` is selected, so a leftover token never
-  travels with a password sign-in. A refused token answers 401: Wikimedia's gateway with `{"httpCode", "httpReason"}`
-  (observed 2026-10-30), a bare wiki with MediaWiki's `error` object; `MediaWikiRequestError.from_response` keeps either
-  reason, and the preflight turns 401/403 into what to check. The web form exists for wikis whose sign-in an extension
-  handles: on wiki.bbv.ch PluggableAuth answers `clientlogin` with a browser redirect the API cannot follow, so only the
-  login page works. It sends back every field the form renders (token, provider button) and fills in whichever of
+  party); `MediaWikiOptions.oauth_token()` returns it only while `oauth` is selected, so a leftover token never travels
+  with a password sign-in. A refused token answers 401: Wikimedia's gateway with `{"httpCode", "httpReason"}` (observed
+  2026-10-30), a bare wiki with MediaWiki's `error` object; `MediaWikiRequestError.from_response` keeps either reason,
+  and the preflight turns 401/403 into what to check. The web form exists for wikis whose sign-in an extension handles:
+  on wiki.bbv.ch PluggableAuth answers `clientlogin` with a browser redirect the API cannot follow, so only the login
+  page works. It sends back every field the form renders (token, provider button) and fills in whichever of
   `wpName`/`username` and `wpPassword`/`password` it has. Redirects are followed by hand, only on the wiki's host and
   never from https to http, because the guard checked that host alone and the session's cookies must not travel.
 - **Credentials go through the bare session, never through `RESTClient`**, which logs a POST's form data at DEBUG. The
@@ -696,8 +696,9 @@ type-level URL constraints, `problems()` and the `SourceHostGuard` check with
   site name, and a change would move every document of that namespace and re-ingest it. Two synced namespaces whose
   collections would be stored under one name (after `NamespaceEntity.sanitize_namespace_name`) are refused: pages of the
   same title would compete for one file. The file namespace's own pages may share the file collection, since a page
-  (`File/Report.pdf.md`) and a file (`File/Report.pdf`) never share a key. `layout_version` 2 marks the switch from
-  local names.
+  (`File/Report.pdf.md`) and a file (`File/Report.pdf`) normally share no key. A file whose key is taken all the same
+  (the page `File:Notes` and the file `Notes.md`, or two extensions that differ only in case) is left out with a
+  warning; the page, or the file first by name, keeps it. `layout_version` 2 marks the switch from local names.
 - **File and listing keys come from `MediaWikiPage.path_of`**: the collection, then the title without its prefix split
   at `/` (subpages). A split giving an empty or dots-only folder keeps the title as one file name; a title of dots alone
   is written as `page {id}`.

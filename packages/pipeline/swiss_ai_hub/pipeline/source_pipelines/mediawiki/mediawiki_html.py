@@ -1,5 +1,6 @@
 import re
 from urllib.parse import urljoin
+from uuid import uuid4
 
 from bs4 import BeautifulSoup, Comment, Tag
 from markdownify import ATX, MarkdownConverter
@@ -22,8 +23,7 @@ _DROPPED = [
 # A template parameter its caller left unset renders as its own name in triple braces.
 _UNSET_TEMPLATE_PARAMETER = re.compile(r"\{\{\{[^{}]*\}\}\}")
 _BLANK_LINES = re.compile(r"\n{3,}")
-_TABLE_MARKER = "MEDIAWIKITABLE{}"
-_TABLE_MARKERS = re.compile(_TABLE_MARKER.format(r"(\d+)"))
+_TABLE_MARKER = "MEDIAWIKITABLE{nonce}N{index}"
 
 
 class MediaWikiHtml:
@@ -49,8 +49,11 @@ class MediaWikiHtml:
             element.decompose()
         cls._rewrite_links(soup, page_url)
         cls._unwrap_layout_tables(soup)
-        tables = cls._take_tables(soup)
-        markdown = _TABLE_MARKERS.sub(lambda marker: tables[int(marker.group(1))], _CONVERTER.convert_soup(soup))
+        # A marker of this call alone: a page may well contain the text of a fixed one.
+        nonce = uuid4().hex
+        tables = cls._take_tables(soup, nonce)
+        markers = re.compile(_TABLE_MARKER.format(nonce=nonce, index=r"(\d+)"))
+        markdown = markers.sub(lambda marker: tables[int(marker.group(1))], _CONVERTER.convert_soup(soup))
         markdown = _UNSET_TEMPLATE_PARAMETER.sub("", markdown).replace("\xa0", " ")
         return _BLANK_LINES.sub("\n\n", markdown).strip()
 
@@ -78,7 +81,7 @@ class MediaWikiHtml:
         return [row for row in table.find_all("tr") if row.find_parent("table") is table]
 
     @staticmethod
-    def _take_tables(soup: BeautifulSoup) -> list[str]:
+    def _take_tables(soup: BeautifulSoup, nonce: str) -> list[str]:
         """Each data table, converted on its own and replaced by a marker, because markdownify would otherwise turn the
         converter's ``<table>`` wrapper back into a table of its own. The table refiner and the chunker recognise a
         table only inside that wrapper, and would otherwise split it like running text. No table holds another one
@@ -90,7 +93,7 @@ class MediaWikiHtml:
             table.attrs = {}
             converted = HtmlTableConverter.convert(str(table))
             marker = soup.new_tag("p")
-            marker.string = _TABLE_MARKER.format(len(tables))
+            marker.string = _TABLE_MARKER.format(nonce=nonce, index=len(tables))
             table.replace_with(marker)
             tables.append(converted)
         return tables

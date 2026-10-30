@@ -19,6 +19,7 @@ from requests import PreparedRequest, Response
 from requests.adapters import BaseAdapter
 
 SITE = "https://wiki.acme.test"
+SHARED = "https://upload.shared.test"
 NAMESPACES = {0: "", 1: "Talk", 4: "Project", 6: "File", 10: "Template", 14: "Category", 100: "Process"}
 _REASONS = {
     200: "OK",
@@ -86,6 +87,8 @@ class FakeMediaWiki:
         self.downloads: list[str] = []
         self.requests: list[PreparedRequest] = []
         self.queued_failures: list[Answer] = []
+        self.server = SITE
+        """The server the wiki builds its URLs from (``$wgServer``), which need not be the address it is reached at."""
         self._next_revision = 1000
 
     def install(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -226,7 +229,7 @@ class FakeMediaWiki:
                 str(number): {"id": number, "name": self.local_name(number), **({"canonical": name} if name else {})}
                 for number, name in {-1: "Special", **NAMESPACES, **self.extra_namespaces}.items()
             }
-            general = {"sitename": "Acme Wiki", "generator": self.version}
+            general = {"sitename": "Acme Wiki", "generator": self.version, "server": self.server}
             return {"query": {"general": general, "namespaces": namespaces}}
         if params.get("generator") == "allpages":
             pages = [self._listed(page) for page in self.pages if page["ns"] == int(params["gapnamespace"])]
@@ -281,7 +284,7 @@ class FakeMediaWiki:
                         "height": file["pixels"][1],
                         "sha1": hashlib.sha1(file["content"], usedforsecurity=False).hexdigest(),
                         "mime": mimetypes.guess_type(file["name"])[0] or "application/octet-stream",
-                        "url": f"{SITE}/images/{quote(file['name'])}",
+                        "url": f"{self._host_of(file)}/images/{quote(file['name'])}",
                         "descriptionurl": f"{SITE}/index.php/File:{quote(file['name'].replace(' ', '_'))}",
                     }
                 ],
@@ -296,6 +299,9 @@ class FakeMediaWiki:
         if "name" in entry:
             return {"pageid": entry["pageid"], "title": f"{self.local_name(6)}:{entry['name']}", "type": "file"}
         return {"pageid": entry["pageid"], "title": entry["title"], "type": "subcat" if entry["ns"] == 14 else "page"}
+
+    def _host_of(self, file: dict[str, Any]) -> str:
+        return self.server if file["repository"] == "local" else SHARED
 
     def _download(self, name: str, authorization: str | None) -> Answer:
         """A private wiki serves its files only to a signed-in reader, through img_auth.php as the API does."""

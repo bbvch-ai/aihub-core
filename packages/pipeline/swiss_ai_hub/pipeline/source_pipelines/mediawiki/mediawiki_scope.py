@@ -95,12 +95,15 @@ class MediaWikiScope(BaseModel):
         skipped: Counter[str] = Counter()
         files = []
         template_images = self._template_images(client) if options.sync_images else set()
-        for listed in client.files_used_by([page["pageid"] for page in self.pages(client)]):
+        pages = self.pages(client)
+        taken = {self.object_key_of(page) for page in pages}
+        used = client.files_used_by([page["pageid"] for page in pages])
+        for listed in sorted(used, key=lambda file: file["title"]):
             if listed.get("imagerepository") != _LOCAL_REPOSITORY:
                 skipped["from a shared repository"] += 1
                 continue
             file = MediaWikiFile.from_listing(listed, self.file_namespace)
-            reason = self._reason_to_skip(file, template_images, options)
+            reason = self._reason_to_skip(file, template_images, options) or self._reason_to_skip_key(file, taken)
             if reason:
                 skipped[reason] += 1
             else:
@@ -136,6 +139,19 @@ class MediaWikiScope(BaseModel):
             return "larger than the limit"
         if file.extension in options.image_types():
             return self._reason_to_skip_image(file, template_images, options)
+        return None
+
+    @staticmethod
+    def _reason_to_skip_key(file: MediaWikiFile, taken: set[str]) -> str | None:
+        """A file's key is taken by a page of the file namespace (``File:Notes`` is ``File/Notes.md``, as the file
+        ``Notes.md`` is) or by a file whose extension differs only in case (``Logo.PNG``, ``Logo.png``). The page, or
+        the file first by name, keeps it."""
+        if file.object_key in taken:
+            logger.warning(
+                f"Wiki file {file.name} would be stored at {file.object_key}, which is taken; it is left out."
+            )
+            return "stored at a path that is taken"
+        taken.add(file.object_key)
         return None
 
     @staticmethod

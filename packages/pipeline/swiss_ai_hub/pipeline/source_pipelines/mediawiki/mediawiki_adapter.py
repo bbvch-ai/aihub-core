@@ -54,7 +54,6 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
         shown = cls.shown_for(cls.kind)
         method = f"$get({_AUTH_METHOD_REF}).value"
         with_password = f"{shown} && ({method} === 'bot_password' || {method} === 'web_form')"
-        with_images = f"{shown} && $get({_SYNC_IMAGES_REF}).value"
         return MediaWikiOptions(
             base_url=InputText(
                 **cls._labels("base_url"),
@@ -90,22 +89,34 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
             include_categories=ChipsInput(**cls._labels("include_categories"), condition_if=shown),
             exclude_categories=ChipsInput(**cls._labels("exclude_categories"), condition_if=shown),
             include_subcategories=Checkbox(**cls._labels("include_subcategories"), condition_if=shown),
-            sync_documents=Checkbox(**cls._labels("sync_documents"), ref=_SYNC_DOCUMENTS_REF, condition_if=shown),
-            max_file_size_mb=InputNumber(
-                **cls._labels("max_file_size_mb"),
-                min=1,
-                max=500,
-                use_grouping=False,
-                condition_if=f"{shown} && ($get({_SYNC_DOCUMENTS_REF}).value || $get({_SYNC_IMAGES_REF}).value)",
-            ),
-            sync_images=Checkbox(**cls._labels("sync_images"), ref=_SYNC_IMAGES_REF, condition_if=shown),
-            min_image_pixels=InputNumber(
-                **cls._labels("min_image_pixels"), min=0, max=2000, use_grouping=False, condition_if=with_images
-            ),
+            **cls._file_fields(shown),
             user_agent=InputText(
                 **cls._labels("user_agent"), placeholder="AcmeKnowledgeSync/1.0 (it@acme.ch)", condition_if=shown
             ),
         )
+
+    @classmethod
+    def _file_fields(cls, shown: str) -> dict[str, Any]:
+        """The switches for documents and images, and the limits shown once either is on."""
+        documents, images = f"$get({_SYNC_DOCUMENTS_REF}).value", f"$get({_SYNC_IMAGES_REF}).value"
+        return {
+            "sync_documents": Checkbox(**cls._labels("sync_documents"), ref=_SYNC_DOCUMENTS_REF, condition_if=shown),
+            "sync_images": Checkbox(**cls._labels("sync_images"), ref=_SYNC_IMAGES_REF, condition_if=shown),
+            "max_file_size_mb": InputNumber(
+                **cls._labels("max_file_size_mb"),
+                min=1,
+                max=500,
+                use_grouping=False,
+                condition_if=f"{shown} && ({documents} || {images})",
+            ),
+            "min_image_pixels": InputNumber(
+                **cls._labels("min_image_pixels"),
+                min=0,
+                max=2000,
+                use_grouping=False,
+                condition_if=f"{shown} && {images}",
+            ),
+        }
 
     def dlt_source(self, options: MediaWikiOptions) -> DltSource:
         """The pages that are new, edited, renamed or newly in scope since the last successful sync, all of them on the
@@ -126,11 +137,9 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
                 seen: dict[str, str] = dlt.current.resource_state().setdefault(_SEEN, {})
                 listed = {str(page["pageid"]): page for page in scope.pages(client)}
                 current = {page_id: self._fingerprint(scope, page) for page_id, page in listed.items()}
-                changed = sorted(
-                    page_id for page_id, fingerprint in current.items() if seen.get(page_id) != fingerprint
-                )
+                changed = {page_id for page_id, fingerprint in current.items() if seen.get(page_id) != fingerprint}
                 read: set[str] = set()
-                for batch in self._read(client, scope, [listed[page_id] for page_id in changed]):
+                for batch in self._read(client, scope, [listed[page_id] for page_id in sorted(changed)]):
                     read.update(str(page["page_id"]) for page in batch)
                     yield batch
                 seen.clear()
