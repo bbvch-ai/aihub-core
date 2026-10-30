@@ -1,13 +1,16 @@
-from typing import Annotated, ClassVar
+from typing import Annotated, Any, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pydantic import Field
+from pydantic import BaseModel, Field
+from pydantic.fields import FieldInfo
 
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
 from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
+from swiss_ai_hub.core.events.agent.user.inline_file import InlineFile
 from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
+from swiss_ai_hub.core.events.api_payload_context import ApiPayloadContext
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
@@ -89,6 +92,14 @@ class UserMessageEvent(StartEvent):
             "the message.",
         ),
     ] = []
+
+    @classmethod
+    def api_input_field_overrides(cls) -> dict[str, tuple[Any, FieldInfo]]:
+        return {**super().api_input_field_overrides(), "files": InlineFile.accepting_field(cls.model_fields["files"])}
+
+    @classmethod
+    async def _api_input_to_event_data(cls, api_input: BaseModel, context: ApiPayloadContext) -> dict[str, Any]:
+        return await InlineFile.event_data_with_stored_files(api_input, context)
 
     @property
     def user_query(self) -> str:

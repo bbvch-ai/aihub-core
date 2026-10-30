@@ -80,7 +80,7 @@ def event_specs() -> EventSpecs:
 def input_model_factory(request, event_specs):
     """Factory that creates input models using both methods"""
     if request.param == "class":
-        return lambda: ModelCreationService.create_input_model_from_event_class(TestEvent), "class"
+        return lambda: TestEvent.api_input_model(), "class"
     else:
         return lambda: ModelCreationService.create_input_model_from_event_specs(event_specs), "specs"
 
@@ -725,7 +725,7 @@ class TestSchemaValidation:
         # Step 4: Create input model instance from original event data
         original_data = original_event.model_dump()
         # Remove fields that are excluded from input models
-        excluded_fields = ModelCreationService._input_excluded_fields
+        excluded_fields = TestEvent._api_server_fields
         input_data = {k: v for k, v in original_data.items() if k not in excluded_fields}
 
         input_instance = input_model(**input_data)

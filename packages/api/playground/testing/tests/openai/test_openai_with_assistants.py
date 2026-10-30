@@ -80,18 +80,16 @@ async def test_chat_completions_stream(api_client):
     async for chunk in response.aiter_text():
         chunk_aggregate += chunk
 
-    data_lines = [line for line in chunk_aggregate.split("\n") if line]
+    *data_lines, end = [line for line in chunk_aggregate.split("\n") if line]
+    assert end == "data: [DONE]"
     data_jsons = [json.loads(line.strip()[len("data: ") :]) for line in data_lines]
 
     expected_content = ["First chunk.\n", "Second chunk", ""]
-    for index, data in enumerate(data_jsons):
-        assert data.get("object") == "chat.completion.chunk", f"Unexpected object type: {data.get('object')}"
-        assert data.get("choices"), "No choices returned in the response"
-        delta = data.get("choices")[0].get("delta", {})
-        assert delta.get("content") == expected_content[index], (
-            f"Expected message content '{expected_content[index]}' but got '{delta.get('content')}'"
-        )
-        assert delta.get("role") == "assistant", f"Expected role 'assistant' but got '{delta.get('role')}'"
+    assert [data["choices"][0]["delta"].get("content") for data in data_jsons] == expected_content
+    assert [data["choices"][0]["delta"].get("role") for data in data_jsons] == ["assistant", None, None]
+    assert {data["object"] for data in data_jsons} == {"chat.completion.chunk"}
+    assert len({data["id"] for data in data_jsons}) == 1
+    assert {data["model"] for data in data_jsons} == {f"{AGENT_CLASS}/{AGENT_ID}"}
 
 
 @pytest.mark.asyncio(loop_scope="module")

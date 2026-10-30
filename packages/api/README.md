@@ -31,11 +31,12 @@ What you get out of the box:
 
 - **Dynamic agent & process endpoints** — for every online agent, the API auto-registers
   `POST …/agents/classes/<Class>/instances/<id>/UserMessageEvent` (and a `/stream` variant). No code, no redeploy when
-  agents come and go.
+  agents come and go. Files can travel inline with the message.
 - **Real-time WebSocket** — clients subscribe to a thread and receive agent display events (chunks, thoughts, LLM
   output) live.
 - **OpenAI-compatible endpoints** — `/openai/chat/completions`, `/embeddings`, `/audio/*`, `/images/generations` — point
-  any OpenAI client at the platform.
+  any OpenAI client at the platform. Agents are models named `<Class>/<id>` and accept documents as `file` content
+  parts.
 - **MCP server** — `runner.create_app()` also mounts a [Model Context Protocol](https://modelcontextprotocol.io/) server
   at `/mcp`.
 - **Management endpoints** — agents, threads, knowledge bases, models, roles, tokens, memory, dashboards — via the
@@ -124,6 +125,19 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/jso
 
 The API publishes a `StartEvent` to the agent over NATS, the agent runs, and the response streams back (use the
 `/stream` variant for token-by-token SSE, or subscribe over the WebSocket for the full event timeline).
+
+A document goes in the same request, base64-encoded. The API stores it in the agent's file bucket before publishing, so
+the event carries only its reference:
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  http://localhost:8000/api/v1/default/agents/classes/UniversalAgent/instances/assistant/UserMessageEvent \
+  -d '{"messages":[{"role":"user","blocks":[{"block_type":"text","text":"What is the total due?"}]}],
+       "files":[{"filename":"invoice.pdf","file_type":"application/pdf","content":"'"$(base64 -w0 invoice.pdf)"'"}]}'
+```
+
+Each file may have 25 MB and a request 10 files (`AGENT_INLINE_FILE_*`); a JSON body above 64 MB
+(`API_REQUEST_MAX_JSON_BODY_BYTES`) is refused before it is parsed.
 
 ______________________________________________________________________
 

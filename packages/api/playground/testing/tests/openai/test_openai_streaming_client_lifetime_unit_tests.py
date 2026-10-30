@@ -54,7 +54,9 @@ def _rejecting_client(status_code: int) -> openai.AsyncOpenAI:
 
 
 def _streamed_contents(response) -> list[str]:
-    return [json.loads(chunk.removeprefix("data: "))["choices"][0]["delta"]["content"] for chunk in response]
+    *chunks, end = response
+    assert end == OpenaiService.STREAM_END
+    return [json.loads(chunk.removeprefix("data: "))["choices"][0]["delta"]["content"] for chunk in chunks]
 
 
 @pytest.mark.asyncio

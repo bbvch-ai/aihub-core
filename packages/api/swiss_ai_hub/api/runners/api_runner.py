@@ -17,6 +17,8 @@ from swiss_ai_hub.core.runners import OpenApiSchemaService, Runner
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.i18n.middleware.i18n_middleware import I18nMiddleware
+from swiss_ai_hub.api.request_limits.api_request_limit_settings import ApiRequestLimitSettings
+from swiss_ai_hub.api.request_limits.json_body_size_limit_middleware import JsonBodySizeLimitMiddleware
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
 from swiss_ai_hub.api.routes.process.process_controller import ProcessController
 from swiss_ai_hub.api.runners.lifetime.lifetime_manager import lifetime_manager
@@ -138,6 +140,9 @@ class ApiRunner(Runner):
             return app.openapi_schema
 
         app.openapi = custom_openapi  # type: ignore[method-assign]
+
+        # Added first so it runs innermost: CORS still wraps its 413, which a browser could not read otherwise.
+        app.add_middleware(JsonBodySizeLimitMiddleware, max_bytes=ApiRequestLimitSettings().MAX_JSON_BODY_BYTES)
 
         origins = self.origins or ["http://localhost:8080"]
         if AIHubSettings().FRONTEND_ORIGIN:

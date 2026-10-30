@@ -5,9 +5,11 @@ import logging
 import uuid
 from collections.abc import AsyncGenerator, Callable
 from datetime import UTC, datetime
-from typing import Annotated, Any, Literal
+from functools import partial
+from typing import Annotated, Any, ClassVar, Literal
 
 from fastapi import HTTPException, UploadFile
+from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from openai import APIStatusError, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, ImagesResponse
@@ -23,6 +25,8 @@ from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.usage import ResourceType, UsageLimits
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.events import ApiPayloadContext
+from swiss_ai_hub.core.events.agent import InlineFile
 from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
 from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
 from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event import HumanInTheLoopRequestEvent
@@ -61,6 +65,8 @@ class OpenaiService:
     By abstracting these operations, the service ensures consistency with OpenAI's API semantics,
     allowing the underlying implementation to be used seamlessly by the OpenaiController.
     """
+
+    STREAM_END: ClassVar[str] = "data: [DONE]\n\n"
 
     @staticmethod
     @trace_fn
@@ -137,7 +143,7 @@ class OpenaiService:
             # (e.g. a future 403) must propagate rather than be masked as an assistant lookup.
             if model_lookup_error.status_code != 404:
                 raise
-        agent_class, agent_id = model_name.split("/")
+        agent_class, agent_id = OpenaiService._agent_of(model_name)
         agent_dto = await AgentService.get_agent_instance(agent_class, agent_id, t)
 
         if not agent_dto.is_conversational:
@@ -149,6 +155,14 @@ class OpenaiService:
             agent_class=agent_dto.agent_class,
             agent_id=agent_dto.agent_id,
         )
+
+    @staticmethod
+    def _agent_of(model_name: str) -> tuple[str, str]:
+        """An agent is addressed as `AgentClass/agent_id`; any other name that is no model is unknown."""
+        agent_class, separator, agent_id = model_name.partition("/")
+        if not separator or not agent_class or not agent_id or "/" in agent_id:
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
+        return agent_class, agent_id
 
     @staticmethod
     def _has_model_access(access_checker: AccessChecker, model_name: str) -> bool:
@@ -290,6 +304,7 @@ class OpenaiService:
                     async for chunk in response:
                         yield f"data: {chunk.model_dump_json()}\n\n"
                         await asyncio.sleep(0)
+                yield OpenaiService.STREAM_END
 
             return StreamingResponse(
                 stream_chat_completion(),
@@ -323,6 +338,7 @@ class OpenaiService:
         usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         t: LocaleHandler,
+        s3_client: S3Client,
         aihub_headers: dict[str, str] | None = None,
     ) -> ChatCompletion | StreamingResponse:
         """
@@ -340,7 +356,7 @@ class OpenaiService:
             if e.status_code != 404:
                 raise
 
-        agent_class, agent_id = model_name.split("/")
+        agent_class, agent_id = OpenaiService._agent_of(model_name)
         if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
             raise HTTPException(
                 status_code=403,
@@ -354,6 +370,7 @@ class OpenaiService:
 
         if chat_completion_request.stream:
             return await OpenaiService.stream_assistant(
+                s3_client=s3_client,
                 agent_class=agent_class,
                 agent_id=agent_id,
                 chat_completion_request=chat_completion_request,
@@ -366,6 +383,7 @@ class OpenaiService:
             )
 
         return await OpenaiService.json_assistant(
+            s3_client=s3_client,
             agent_class=agent_class,
             agent_id=agent_id,
             chat_completion_request=chat_completion_request,
@@ -388,6 +406,7 @@ class OpenaiService:
         nc: NATS,
         usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
+        s3_client: S3Client,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
     ):
@@ -399,10 +418,20 @@ class OpenaiService:
                 primary_agent_class=agent_class,
                 primary_agent_id=agent_id,
             )
-        files = OpenaiService._extract_files(chat_completion_request)
         requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
+        files = await OpenaiService._files(
+            chat_completion_request,
+            ApiPayloadContext(
+                user=user,
+                locale=locale or LocaleHandler.DEFAULT_LOCALE,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                thread_id=thread_id,
+                s3_client=s3_client,
+            ),
+        )
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
@@ -459,6 +488,7 @@ class OpenaiService:
         nc: NATS,
         usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
+        s3_client: S3Client,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
     ):
@@ -470,10 +500,20 @@ class OpenaiService:
                 primary_agent_class=agent_class,
                 primary_agent_id=agent_id,
             )
-        files = OpenaiService._extract_files(chat_completion_request)
         requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
+        files = await OpenaiService._files(
+            chat_completion_request,
+            ApiPayloadContext(
+                user=user,
+                locale=locale or LocaleHandler.DEFAULT_LOCALE,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                thread_id=thread_id,
+                s3_client=s3_client,
+            ),
+        )
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
@@ -491,7 +531,7 @@ class OpenaiService:
         )
 
         return StreamingResponse(
-            OpenaiService._sse_event_generator(resources),
+            OpenaiService._sse_event_generator(resources, model=f"{agent_class}/{agent_id}"),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
@@ -502,7 +542,16 @@ class OpenaiService:
         )
 
     @staticmethod
-    async def _sse_event_generator(resources: StreamingResources) -> AsyncGenerator[str]:
+    async def _sse_event_generator(resources: StreamingResources, model: str) -> AsyncGenerator[str]:
+        """Every chunk of the answer carries the same id, creation time and model, the role only the first, and the
+        stream ends with `[DONE]`, as OpenAI streams it."""
+        chunk = partial(
+            OpenaiService._build_chunk_sse,
+            completion_id=f"chatcmpl-{uuid.uuid4().hex}",
+            created=int(datetime.now(UTC).timestamp()),
+            model=model,
+        )
+        role: Literal["assistant"] | None = "assistant"
         streamed_parts: list[str] = []
         downloads: list[str] = []
         async for chunk_event in ChatService.iter_streamed_display_events(resources):
@@ -510,13 +559,15 @@ class OpenaiService:
                 downloads.append(chunk_event.content)
                 continue
             streamed_parts.append(chunk_event.content)
-            yield OpenaiService._build_chunk_sse(content=chunk_event.content, model=chunk_event.model_name)
+            yield chunk(content=chunk_event.content, role=role)
+            role = None
 
         # Download links end the answer, also after the part of it an agent did not stream.
         final = OpenaiService._resolve_final_content(
             resources.stop_event, streamed=ChatService.answer_text(streamed_parts)
         )
-        yield OpenaiService._build_chunk_sse(content=final + "".join(downloads), model="", finish_reason="stop")
+        yield chunk(content=final + "".join(downloads), role=role, finish_reason="stop")
+        yield OpenaiService.STREAM_END
 
     @staticmethod
     def _resolve_final_content(
@@ -531,16 +582,24 @@ class OpenaiService:
         return ChatService.missing_suffix(streamed, full_answer)
 
     @staticmethod
-    def _build_chunk_sse(*, content: str, model: str, finish_reason: str | None = None) -> str:
+    def _build_chunk_sse(
+        *,
+        content: str,
+        completion_id: str,
+        created: int,
+        model: str,
+        role: Literal["assistant"] | None,
+        finish_reason: Literal["stop"] | None = None,
+    ) -> str:
         chunk = ChatCompletionChunk(
-            id=str(uuid.uuid4()),
+            id=completion_id,
             object="chat.completion.chunk",
-            created=int(datetime.now(UTC).timestamp()),
+            created=created,
             model=model,
             choices=[
                 Choice(
                     index=0,
-                    delta=ChoiceDelta(content=content, role="assistant"),
+                    delta=ChoiceDelta(content=content, role=role),
                     finish_reason=finish_reason,
                 ),
             ],
@@ -743,10 +802,14 @@ class OpenaiService:
         return thread_id, display_id
 
     @staticmethod
-    def _extract_files(
-        chat_completion_request: ChatCompletionRequest,
+    async def _files(
+        chat_completion_request: ChatCompletionRequest, context: ApiPayloadContext
     ) -> list[UserUploadedFile] | None:
-        return chat_completion_request.metadata.files if chat_completion_request.metadata else None
+        """The files uploaded beforehand and named in the metadata, then those sent inline as `file` parts, stored
+        first so the event carries only their references."""
+        uploaded = chat_completion_request.metadata.files if chat_completion_request.metadata else None
+        inline = await InlineFile.store_all(chat_completion_request.inline_files(), context)
+        return [*(uploaded or []), *inline] or None
 
     @staticmethod
     async def _reconstruct_history(

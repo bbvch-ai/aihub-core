@@ -6,9 +6,10 @@ title: OpenAI-Compatible REST API
 
 ## Concept and Purpose
 
-The OpenAI-Compatible REST API provides a standards-based HTTP interface built on FastAPI that mirrors the OpenAI API
-specification exactly. This design enables organizations to migrate existing AI-powered applications to the Swiss AI Hub
-platform without modifying application code - only the API endpoint URL and authentication token need to change.
+The OpenAI-Compatible REST API provides a standards-based HTTP interface built on FastAPI that follows the OpenAI API
+specification. Applications built on the OpenAI SDKs call language models on the Swiss AI Hub by changing only the API
+endpoint URL and the authentication token. Agents are called through the same interface; how much of the OpenAI request
+they honour is described in [Calling Agents](#calling-agents).
 
 The strategic value of this compatibility layer lies in reducing migration friction and protecting existing technology
 investments. Organizations can adopt Swiss AI Hub infrastructure for data sovereignty, cost control, or compliance
@@ -18,14 +19,14 @@ reasons while preserving their application ecosystem built on OpenAI SDKs and li
 
 ### Seamless Migration and Integration
 
-The API implements complete compatibility with OpenAI's interface, supporting all major capabilities including
-conversational AI (chat completions), semantic search (embeddings), image generation, and audio processing
-(speech-to-text and text-to-speech). Applications developed using OpenAI's Python or JavaScript SDKs function without
-modification, enabling rapid platform adoption and reducing implementation risk.
+The API covers the major OpenAI capabilities: conversational AI (chat completions), semantic search (embeddings), image
+generation, and audio processing (speech-to-text and text-to-speech). Requests to language models are forwarded to the
+model gateway with their parameters, so applications developed with OpenAI's Python or JavaScript SDKs keep working,
+within what the configured model supports.
 
-This compatibility extends to both request and response formats, streaming behaviors, and error handling patterns.
-Organizations can validate the platform using existing test suites and migration scripts, accelerating evaluation and
-deployment timelines.
+Responses follow the OpenAI formats, including server-sent events ending in `data: [DONE]` for streamed chat
+completions. Errors raised by the model gateway carry OpenAI's `error` object; errors raised by the platform itself,
+such as a missing permission, carry a `detail` field instead.
 
 ### Vendor-Neutral Model Access
 
@@ -52,9 +53,10 @@ sophisticated agents without architectural changes - the same API interface serv
 
 The API provides full-spectrum AI functionality compatible with modern LLM applications:
 
-**Conversational AI**: Complete chat completion support with both synchronous and streaming response modes, enabling
-interactive applications and progressive UI updates. The interface supports multi-turn conversations, function calling,
-and multimodal inputs (text and images) for vision-capable models.
+**Conversational AI**: Chat completions with both synchronous and streaming response modes, enabling interactive
+applications and progressive UI updates. For language models the interface supports multi-turn conversations, function
+calling and multimodal inputs (text and images) for vision-capable models. Agents additionally accept documents as
+`file` content parts.
 
 **Semantic Search**: Embedding generation converts text into vector representations for semantic search, similarity
 matching, and retrieval-augmented generation workflows. This capability supports batch processing and multiple embedding
@@ -64,8 +66,68 @@ model configurations.
 transcription (supporting multiple audio formats and languages) and text-to-speech synthesis with configurable voices
 and streaming output.
 
-**Model Discovery**: Dynamic model listing enables applications to discover available LLM models and Swiss AI Hub
-assistants at runtime, supporting adaptive interfaces and centralized model governance.
+**Model Discovery**: The model listing returns the language models a user may access. An agent does not appear in the
+listing, but can be looked up and called by its id (`AgentClass/agent_id`).
+
+## Calling Agents
+
+An agent is called like a model, on the chat completions endpoint, with its class and instance as the model id:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="https://<host>/api/v1/active/openai", api_key="<token>")
+response = client.chat.completions.create(
+    model="UniversalAgent/assistant",
+    messages=[{"role": "user", "content": "What is the total due?"}],
+)
+```
+
+The messages become a user message to the agent, which decides how to answer: it may search knowledge, call tools or ask
+a question back. Because of that, an agent call honours less of the request than a model call does.
+
+**Content parts**
+
+| Part        | Agents                                                                         |
+| ----------- | ------------------------------------------------------------------------------ |
+| `text`      | Passed to the agent                                                            |
+| `image_url` | Passed to the agent, which shows it to its model if that model accepts images  |
+| `file`      | Stored and attached to the agent's run, from the last user message (see below) |
+| Others      | Ignored, for example `input_audio`                                             |
+
+**Files.** A `file` part sends a document with the question, the way the OpenAI SDKs attach PDFs:
+
+```python
+content = [
+    {"type": "text", "text": "What is the total due?"},
+    {"type": "file", "file": {"filename": "invoice.pdf", "file_data": f"data:application/pdf;base64,{pdf_base64}"}},
+]
+```
+
+`file_data` is the content encoded as base64, as a `data:` URL or plain (the type is then taken from the filename). Only
+the files of the last user message are attached: earlier messages are history, whose files were attached on their own
+turn. References to files hosted by OpenAI (`file_id`) are refused. The limits and errors are the same as for the
+[agent endpoints](../4_dynamic_endpoints/#sending-files-to-an-agent): 25 MB per file and 10 files per request by
+default, `413` above them, `415` for types agents cannot read and for images (send those as `image_url`), and nothing is
+stored when a request is refused. A JSON request body may not exceed 64 MB.
+
+**Parameters.** Agents choose their own model and its settings, so `temperature`, `top_p`, `max_tokens`, `stop`, `seed`,
+`n`, `response_format`, `tools`, `tool_choice` and `logprobs` have no effect on an agent call. The answer always ends
+with `finish_reason: "stop"`, and a streamed answer reports no token usage.
+
+**Streaming.** A streamed answer is a sequence of `chat.completion.chunk` events with one id, the agent's id as `model`,
+the role on the first chunk only, and `data: [DONE]` at the end. An error the agent raises during a streamed answer is
+sent as part of the answer text.
+
+**Platform extensions.** The `metadata` object of the request carries options OpenAI does not have:
+
+| Field                 | Effect                                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| `thread_id`           | Continues the conversation in this thread, or starts one with this id                                    |
+| `display_id`          | Sets the id the run is displayed under                                                                   |
+| `reconstruct_history` | With `thread_id`: the agent gets the thread's stored history plus your last message, not your `messages` |
+| `files`               | Files uploaded beforehand through the agent's upload endpoints, attached like `file` parts               |
+| `features`            | Features the user asked for, such as `web_search`; the agent serves those it supports                    |
 
 ## Business Value
 

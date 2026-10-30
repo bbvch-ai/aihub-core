@@ -26,6 +26,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `ACME_EMAIL` |  | `traefik` |  |
 | `ADMIN_EMAIL` |  | `open-webui` |  |
 | `ADMIN_PASSWORD_HASH` |  | `traefik` |  |
+| `AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST` | `InlineFileSettings.MAX_FILES_PER_REQUEST` | `api` | How many inline files one request may carry. |
+| `AGENT_INLINE_FILE_MAX_FILE_BYTES` | `InlineFileSettings.MAX_FILE_BYTES` | `api` | Largest decoded file accepted, in bytes. |
 | `AIHUB_CONFIG_ENCRYPTION_KEY` | `ConfigEncryptionSettings.ENCRYPTION_KEY` | `api`, `document_ingestion_pipeline`, `rclone_pipeline`, `structured_pipeline` | Fernet key (url-safe base64, 32 bytes) encrypting secret configuration fields at rest. |
 | `AIHUB_CREATE_DEFAULT_BUCKETS` | `AIHubSettings.CREATE_DEFAULT_BUCKETS` | `api`, `seaweedfs-init` | Creates default knowledge buckets and namespaces |
 | `AIHUB_DEFAULT_BUCKET_NAME` | `AIHubSettings.DEFAULT_BUCKET_NAME` | `api`, `default_rag_pipeline`, `seaweedfs-init` | Name of the default knowledge bucket |
@@ -42,6 +44,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES` | `UserSignupSettings.FIRST_ADMIN_USER_ROLES` | `api` | Comma-separated list of roles assigned to the very first user. This user is typically the initial platform administrator. |
 | `AIHUB_USER_SIGNUP_REGULAR_USER_ROLES` | `UserSignupSettings.REGULAR_USER_ROLES` | `api` | Comma-separated list of roles assigned to regular users (not the first user). These users typically have standard platform access. |
 | `AIHUB_VERSION` | `AIHubSettings.VERSION` | `anonymiser_agent`, `api`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `structured_pipeline`, `sysadmin-api`, `universal_agent`, `web_fetch_agent` | Version of the app |
+| `API_REQUEST_MAX_JSON_BODY_BYTES` | `ApiRequestLimitSettings.MAX_JSON_BODY_BYTES` | `api` | Largest JSON request body accepted, in bytes. It bounds base64 files sent inline too, which grow by a third when encoded. |
 | `AUTH_OPEN_WEBUI_SIGNING_SECRET` | `AuthSettings.OPEN_WEBUI_SIGNING_SECRET` | `api`, `open-webui`, `sysadmin-api` | OpenWebUI signing secret |
 | `BACKUP_MINIMUM_KEEP` | `BackupSettings.MINIMUM_KEEP` | `backup-code` |  |
 | `BACKUP_POSTGRES_SUBPROCESS_TIMEOUT_SECONDS` | `BackupSettings.POSTGRES_SUBPROCESS_TIMEOUT_SECONDS` | `backup-code` |  |
