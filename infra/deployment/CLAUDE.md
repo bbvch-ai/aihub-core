@@ -438,6 +438,11 @@ logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symli
 - `local`/`build`: mkcert self-signed certs — generate with `make local-cert`
 - `nightly`/`latest`: Let's Encrypt ACME auto-renewal
 - Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth
+- `security-headers@file` sends `X-Frame-Options: DENY`, except on the `web-auth` and `sysadmin-web-auth` routers
+  (`/{locale}/auth/*`), which use `auth-route-security-headers@file` with `SAMEORIGIN`. The frontend loads
+  `/{locale}/auth/renew` in a hidden same-origin iframe for its SSO session probe and silent renew; under `DENY` the
+  probe always times out, users with an expired Keycloak session keep a stale login, and the OpenWebUI iframe then
+  signs in through Entra inside the frame, where OpenWebUI loses its OAuth state (`mismatching_state`).
 
 ## Adding a New Service
 
