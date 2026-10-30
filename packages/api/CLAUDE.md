@@ -144,6 +144,11 @@ model name this deployment got wrong. Log level is the narrower signal — `ERRO
 must fix, `WARNING` for the three statuses they cannot act on (413/422/429), which also keeps a rate-limit storm from
 flooding the log pipeline.
 
+On the OpenAI-compatible routes (`/openai/`), `OpenaiErrorHandler` (`routes/openai/openai_error_handler.py`, registered
+in `ApiRunner._get_api_app`) gives the platform's own `HTTPException`s and validation errors the same shape: an OpenAI
+`error` object next to the unchanged `detail`, and `400` instead of `422` for a request it cannot accept. Every other
+route keeps FastAPI's default responses. A streamed agent answer that fails ends with an `error` event, not answer text.
+
 New upstream integrations that raise their own SDK exception types belong in the same place — do not wrap service calls
 in try/except to compensate.
 

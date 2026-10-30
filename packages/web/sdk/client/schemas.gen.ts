@@ -4468,7 +4468,7 @@ export const ChatCompletionRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["auto", "default"],
+          enum: ["auto", "default", "flex", "scale", "priority"],
         },
         {
           type: "null",
@@ -9064,15 +9064,23 @@ export const EmbeddingsSchema = {
       type: "string",
       title: "Object",
       description: "The type of object.",
-      default: "embeddings",
+      default: "embedding",
     },
     embedding: {
-      items: {
-        type: "number",
-      },
-      type: "array",
+      anyOf: [
+        {
+          items: {
+            type: "number",
+          },
+          type: "array",
+        },
+        {
+          type: "string",
+        },
+      ],
       title: "Embedding",
-      description: "The list of embeddings.",
+      description:
+        "The embedding vector, or the vector's float32 bytes as base64 when requested so.",
     },
     index: {
       type: "integer",
@@ -9189,6 +9197,17 @@ export const EmbeddingsResponseSchema = {
       type: "array",
       title: "Data",
       description: "The list of embeddings.",
+    },
+    usage: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/openai__types__create_embedding_response__Usage",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Tokens the request used.",
     },
   },
   type: "object",
@@ -12849,7 +12868,7 @@ export const ImageGenerationRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["standard", "hd"],
+          enum: ["standard", "hd", "low", "medium", "high", "auto"],
         },
         {
           type: "null",
@@ -12873,7 +12892,16 @@ export const ImageGenerationRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"],
+          enum: [
+            "auto",
+            "256x256",
+            "512x512",
+            "1024x1024",
+            "1536x1024",
+            "1024x1536",
+            "1792x1024",
+            "1024x1792",
+          ],
         },
         {
           type: "null",
@@ -28267,6 +28295,7 @@ export const TextToSpeechRequestSchema = {
       enum: [
         "alloy",
         "ash",
+        "ballad",
         "coral",
         "echo",
         "fable",
@@ -28274,6 +28303,9 @@ export const TextToSpeechRequestSchema = {
         "nova",
         "sage",
         "shimmer",
+        "verse",
+        "marin",
+        "cedar",
       ],
       title: "Voice",
       description: "The voice to use when generating audio.",
@@ -32496,6 +32528,24 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
   type: "object",
   required: ["name"],
   title: "Function",
+} as const;
+
+export const openai__types__create_embedding_response__UsageSchema = {
+  properties: {
+    prompt_tokens: {
+      type: "integer",
+      title: "Prompt Tokens",
+    },
+    total_tokens: {
+      type: "integer",
+      title: "Total Tokens",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["prompt_tokens", "total_tokens"],
+  title: "Usage",
+  description: "The usage information for the request.",
 } as const;
 
 export const openai__types__images_response__UsageSchema = {

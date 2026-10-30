@@ -164,7 +164,7 @@ class TestGetModelsControllerFilter:
                 return_value=_checker(["aihub.user.model.text-generation.*"]),
             ),
         ):
-            result = await endpoint(user=fake_user())
+            result = await endpoint(user=fake_user(), t=Mock())
 
         assert [m.id for m in result.data] == ["text-generation/gemma-4-31B-it"]
 
@@ -189,9 +189,7 @@ class TestGetModelWithAssistantsControllerAccess:
 
     @pytest.mark.asyncio
     async def test_denies_unpermitted_assistant_with_403(self):
-        model = SimpleNamespace(
-            id="ResearchAgent/inst1", object="assistant", agent_class="ResearchAgent", agent_id="inst1"
-        )
+        model = SimpleNamespace(id="ResearchAgent/inst1", object="model", agent_class="ResearchAgent", agent_id="inst1")
         with pytest.raises(HTTPException) as exc:
             await self._call(model, user_rules=[])
         assert exc.value.status_code == 403
@@ -226,5 +224,5 @@ class TestGetModelWithAssistantsServiceFallback:
         ):
             result = await OpenaiService.get_model_with_assistants(model_name="ResearchAgent/inst1", t=Mock())
 
-        assert result.object == "assistant"
+        assert result.agent_class == "ResearchAgent"
         assert result.agent_id == "inst1"

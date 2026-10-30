@@ -133,6 +133,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_example import FewShotExample
     from swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_guard_example import FewShotGuardExample
     from swiss_ai_hub.core.generative_ai.rerank.rerank_nodes import rerank_nodes
+    from swiss_ai_hub.core.generative_ai.resources.costs.llm_costs import LLMCosts
     from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
     from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import EmbeddingQueryClamp
     from swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails import GatewayGuardrails
@@ -254,6 +255,7 @@ __all__ = [
     "IngestedNode",
     "KnowledgeRetrieverConfig",
     "LLMConfig",
+    "LLMCosts",
     "LLMParameter",
     "ReasoningFreeChat",
     "ResilientOpenAILike",
@@ -378,6 +380,7 @@ _LAZY_IMPORTS = {
     "KnowledgeRetrieverConfig": "swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config",
     "GatewayGuardrails": "swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails",
     "LLMConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
+    "LLMCosts": "swiss_ai_hub.core.generative_ai.resources.costs.llm_costs",
     "LLMParameter": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "ReasoningFreeChat": "swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat",
     "ResilientOpenAILike": "swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like",

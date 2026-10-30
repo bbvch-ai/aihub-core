@@ -21,7 +21,21 @@ class TextToSpeechRequest(BaseModel):
     ]
 
     voice: Annotated[
-        Literal["alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer"],
+        Literal[
+            "alloy",
+            "ash",
+            "ballad",
+            "coral",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "sage",
+            "shimmer",
+            "verse",
+            "marin",
+            "cedar",
+        ],
         Field(description="The voice to use when generating audio."),
     ]
 
