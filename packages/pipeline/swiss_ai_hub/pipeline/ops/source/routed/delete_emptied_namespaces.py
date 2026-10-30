@@ -8,19 +8,22 @@ from swiss_ai_hub.pipeline.util.run_routing import bucket_from_run_tag
 from swiss_ai_hub.pipeline.util.store_builders import build_s3_data_lake_client
 
 
-@op(code_version="v2", ins={"removed_uris": In(), "source_files": In(default_value=[])})
-def mark_emptied_namespaces_deleting(
+@op(code_version="v1", ins={"removed_uris": In(), "source_files": In(default_value=[])})
+def delete_emptied_namespaces(
     context: OpExecutionContext, removed_uris: list[str], source_files: list[MinimalSourceFile]
 ) -> Output[list[str]]:
-    """Flags for teardown every namespace of this run's database whose folder holds no file any more.
+    """Deletes the namespace row of every folder of this run's database that holds no file any more.
 
     The source pipeline creates a namespace per top-level folder but only ever removes files, and a sourced database
     refuses manual namespace deletion, so a folder deleted or emptied at the source would otherwise linger forever.
-    Flagging rather than deleting hands vectors, records and the row to the teardown sensor, which retries until done.
+    Only the row goes: the folder's documents, figures and vectors are removed per file by the ingestion pipeline,
+    which finds them by the namespace name each document carries. Nothing is torn down, so a folder re-created at the
+    source simply gets a fresh row from the next observation. A row flagged ``deleting`` is a manual deletion in
+    progress and stays with the teardown, which still has its files to remove.
 
     A folder the source still lists counts as occupied even while the data lake has none of its files: rclone writes
-    each file in a run of its own, which a file replacing the folder's last one may not have finished yet, and the
-    teardown would delete it once it lands. The structured pipeline writes within this run and passes no files.
+    each file in a run of its own, which a file replacing the folder's last one may not have finished yet. The
+    structured pipeline writes within this run and passes no files.
     """
     bucket = bucket_from_run_tag(context)
     client = build_s3_data_lake_client(bucket, ensure_bucket=False)
@@ -35,7 +38,7 @@ def mark_emptied_namespaces_deleting(
         if not namespace.deleting and namespace.folder_name not in occupied_folders
     ]
     for namespace in emptied:
-        context.log.info(f"'{bucket}': folder '{namespace.folder_name}' is empty, flagging its namespace for teardown")
-        NamespaceEntity.mark_deleting(str(namespace.id))
+        context.log.info(f"'{bucket}': folder '{namespace.folder_name}' is empty, deleting its namespace")
+        NamespaceEntity.delete_namespace(str(namespace.id))
 
     return Output(removed_uris, metadata={"emptied_namespaces": [namespace.namespace_name for namespace in emptied]})

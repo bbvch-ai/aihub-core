@@ -6,7 +6,7 @@ from swiss_ai_hub.pipeline.ops.source.routed.announce_removed_files import annou
 from swiss_ai_hub.pipeline.ops.source.routed.delete_data_lake_files_from_bucket import (
     delete_data_lake_files_from_bucket,
 )
-from swiss_ai_hub.pipeline.ops.source.routed.mark_emptied_namespaces_deleting import mark_emptied_namespaces_deleting
+from swiss_ai_hub.pipeline.ops.source.routed.delete_emptied_namespaces import delete_emptied_namespaces
 from swiss_ai_hub.pipeline.ops.structured.list_structured_record_paths import list_structured_record_paths_op
 from swiss_ai_hub.pipeline.ops.structured.reconcile_structured_bucket import reconcile_structured_bucket_op
 from swiss_ai_hub.pipeline.ops.structured.sync_structured_records import sync_structured_records_op
@@ -21,7 +21,7 @@ def structured_sync_factory(
     config_type: Annotated[type[StructuredSyncConfig], "Config class a database's source configuration is read as"],
 ) -> AssetsDefinition:
     """One sync of the database the run's ``aihub/bucket`` tag names: write what changed, remove what is gone, then
-    flag the namespaces left without files for teardown.
+    delete the namespaces left without files.
 
     Sync, listing and removal are steps of one asset rather than assets of their own: values handed between steps are
     stored per run, while an asset's value is stored under its key, which every database shares. The asset's own
@@ -39,6 +39,6 @@ def structured_sync_factory(
     )
     def structured_records() -> list[str]:
         removed = announce_removed_files(delete_data_lake_files_from_bucket(reconcile(list_record_paths(sync()))))
-        return mark_emptied_namespaces_deleting(removed)
+        return delete_emptied_namespaces(removed)
 
     return structured_records
