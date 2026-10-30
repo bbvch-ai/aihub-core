@@ -105,7 +105,7 @@ then starts without the guardrail and drops the requested anonymisation too. The
 key as external; `generate_compose.py` rejects a missing or unknown location anyway, so a typo cannot silently anonymise
 a local model. Each handled call also leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`,
 mounted next to the guardrail, sent to `OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
-`uv run --with "litellm==1.106.2" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
+`uv run --with "litellm==1.106.4" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
 (unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
 on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. LiteLLM follows its plain release tags (no
 more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollback path are in ADR
@@ -285,6 +285,20 @@ Alpine patched, so Trivy and Grype reported that image clean despite 11 publishe
 
 > **Deployment checklist:** publish `browser-proxy:7.6-1` to ghcr **before any non-dev stage pulls it**. Without it the
 > pull fails and with it the whole `docker compose up`.
+
+### Images rebuilt for a current CA bundle
+
+Upstream images freeze their CA bundles at build time. After the eMudhra intermediate CA compromise (2026-10), releases
+built earlier still trust `emSign ECC Root CA - G3`, so three images refresh their bundles in our own Dockerfile:
+
+- `docker/rclone/` (`rclone:1.71.2-1`, `make -C infra/deployment build-and-push-rclone-image`): Alpine
+  `ca-certificates`. Drop it for the plain mirror once an upstream rclone release ships a clean bundle.
+- `docker/playwright/` (`build-and-push-playwright-image`): Ubuntu `ca-certificates` and `libnss3`. Chromium and Firefox
+  compile their own root stores in, which change only with a Playwright release.
+- `docker/open-webui/` (`build-and-push-openwebui-image`): Debian `ca-certificates`, `certifi`, and
+  `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` pointing gRPC at the system bundle instead of its bundled root list.
+
+Keep these lines when bumping the base tag, and publish the new tag **before** pinning it in `compose-config.yml`.
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
