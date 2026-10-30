@@ -185,8 +185,9 @@ class CronScheduler:
     async def _load_schedulable_snapshot(self, now: datetime, watermark: datetime) -> _SchedulableSnapshot:
         """Reads every schedulable class and its profiles in one pass.
 
-        The classes are still MongoEngine entities, synchronous calls in a process also serving all HTTP and
-        WebSocket traffic, so they are read in a worker thread; the profiles are Beanie and awaited on the loop.
+        The classes and the discovery rounds are still MongoEngine entities, synchronous calls in a process also
+        serving all HTTP and WebSocket traffic, so they are read in a worker thread; the profiles are Beanie and
+        awaited on the loop.
 
         The online/offline split is judged against completed discovery rounds, not `now`: a discovery round
         that stalls must not make this tick drop every scheduled run as if all agents had gone away.
@@ -195,7 +196,7 @@ class CronScheduler:
         if not entities:
             return _SchedulableSnapshot(window_start=self._clamp_window_start(watermark, now))
 
-        online_threshold = AgentClassEntity.online_threshold()
+        online_threshold = await asyncio.to_thread(AgentClassEntity.online_threshold)
         offline_last_seen = {
             entity.agent_class: entity.last_discovered
             for entity in entities
