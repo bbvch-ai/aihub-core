@@ -217,5 +217,6 @@ class TestFiles:
             )
             pipeline.config.restore_from_destination = False
 
+            source = config.adapter().file_source(config.options())
             with pytest.raises(Exception, match="nothing reads this source's files"):
-                pipeline.run(config.adapter().file_source(config.options())).raise_on_failed_jobs()
+                pipeline.run(source)

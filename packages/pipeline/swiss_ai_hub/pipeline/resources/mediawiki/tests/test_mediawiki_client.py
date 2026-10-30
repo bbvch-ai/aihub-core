@@ -45,8 +45,9 @@ class TestListing:
         stuck = {"continue": {"gapcontinue": "2", "continue": "gapcontinue||"}, "query": {"pages": []}}
         wiki.fail_next(200, stuck, times=2)
 
+        client = MediaWikiClient(SITE)
         with pytest.raises(ValueError, match="repeated its continuation"):
-            _listed_ids(MediaWikiClient(SITE))
+            _listed_ids(client)
 
     def test_category_members_are_collected_across_pages(self, monkeypatch: pytest.MonkeyPatch):
         wiki = _wiki(monkeypatch)
@@ -115,10 +116,11 @@ class TestErrors:
         wiki = _wiki(monkeypatch)
         wiki.private = True
 
+        client = MediaWikiClient(SITE)
         with pytest.raises(
             MediaWikiRequestError, match=r"refused GET /api.php \(readapidenied\): You need read"
         ) as error:
-            MediaWikiClient(SITE).site_info()
+            client.site_info()
         assert error.value.code == "readapidenied"
 
     def test_an_error_status_carries_mediawikis_own_error(self, monkeypatch: pytest.MonkeyPatch):
@@ -126,8 +128,9 @@ class TestErrors:
         wiki = _wiki(monkeypatch)
         wiki.fail_next(403, {"error": {"code": "mwoauth-invalid-authorization", "info": "Invalid access token"}})
 
+        client = MediaWikiClient(SITE)
         with pytest.raises(MediaWikiRequestError, match="403 Forbidden to GET /api.php: Invalid access token") as error:
-            MediaWikiClient(SITE).site_info()
+            client.site_info()
         assert error.value.code == "mwoauth-invalid-authorization"
 
     def test_a_rate_limited_request_is_retried(self, monkeypatch: pytest.MonkeyPatch):
@@ -140,8 +143,9 @@ class TestErrors:
         wiki = _wiki(monkeypatch)
         wiki.queued_failures.append((302, "", {"Location": "https://elsewhere.test/api.php"}))
 
+        client = MediaWikiClient(SITE)
         with pytest.raises(MediaWikiRequestError, match="redirects to https://elsewhere.test/api.php"):
-            MediaWikiClient(SITE).site_info()
+            client.site_info()
         assert len(wiki.requests) == 1
 
     def test_an_html_answer_points_at_the_wiki_url(self, monkeypatch: pytest.MonkeyPatch):
@@ -149,8 +153,9 @@ class TestErrors:
         wiki = _wiki(monkeypatch)
         wiki.fail_next(200, "<html>Sign in</html>")
 
+        client = MediaWikiClient(SITE)
         with pytest.raises(MediaWikiRequestError, match="instead of JSON; the wiki URL must be the folder"):
-            MediaWikiClient(SITE).site_info()
+            client.site_info()
 
 
 class TestFiles:
@@ -213,8 +218,9 @@ class TestFiles:
         wiki = _wiki(monkeypatch, pages=1)
         wiki.add_file(101, "Secret.pdf", b"%PDF-1.7 secret", used_by=[1], served_with=403)
 
+        client = MediaWikiClient(SITE)
         with pytest.raises(MediaWikiRequestError) as refused:
-            MediaWikiClient(SITE).download(f"{SITE}/images/Secret.pdf", max_bytes=1_000)
+            client.download(f"{SITE}/images/Secret.pdf", max_bytes=1_000)
         assert refused.value.status_code == 403
 
     def test_an_html_page_instead_of_the_file_is_refused(self, monkeypatch: pytest.MonkeyPatch):
@@ -222,12 +228,14 @@ class TestFiles:
         wiki = _wiki(monkeypatch, pages=1)
         wiki.fail_next(200, "<html>Sign in</html>")
 
+        client = MediaWikiClient(SITE)
         with pytest.raises(MediaWikiRequestError, match="HTML page instead of the file"):
-            MediaWikiClient(SITE).download(f"{SITE}/images/Handbook.pdf", max_bytes=1_000)
+            client.download(f"{SITE}/images/Handbook.pdf", max_bytes=1_000)
 
     def test_a_download_does_not_follow_a_redirect(self, monkeypatch: pytest.MonkeyPatch):
         wiki = _wiki(monkeypatch, pages=1)
         wiki.queued_failures.append((302, "", {"Location": "https://elsewhere.test/Handbook.pdf"}))
 
+        client = MediaWikiClient(SITE)
         with pytest.raises(MediaWikiRequestError, match="redirects to https://elsewhere.test/Handbook.pdf"):
-            MediaWikiClient(SITE).download(f"{SITE}/images/Handbook.pdf", max_bytes=1_000)
+            client.download(f"{SITE}/images/Handbook.pdf", max_bytes=1_000)

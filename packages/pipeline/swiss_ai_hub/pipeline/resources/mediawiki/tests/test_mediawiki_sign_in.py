@@ -29,8 +29,9 @@ class TestBotPassword:
         assert client.user_info()["name"] == "Sync bot"
 
     def test_a_refused_bot_password_names_the_account_and_the_alternative(self, wiki: FakeMediaWiki):
+        client = _client()
         with pytest.raises(ValueError, match="refused the bot password of Sync bot@pipeline: Incorrect.*web form"):
-            MediaWikiSignIn.sign_in(_client(), "bot_password", "Sync bot@pipeline", "wrong")
+            MediaWikiSignIn.sign_in(client, "bot_password", "Sync bot@pipeline", "wrong")
 
     def test_the_password_is_never_logged(self, wiki: FakeMediaWiki, caplog: pytest.LogCaptureFixture):
         """dlt's REST client logs form data at debug level; the credentials go through the bare session."""
@@ -60,28 +61,32 @@ class TestWebForm:
         assert FakeMediaWiki._params(posted)["wpLoginToken"] == "abc+\\"
 
     def test_a_page_that_still_shows_the_form_refused_the_credentials(self, wiki: FakeMediaWiki):
+        client = _client()
         with pytest.raises(ValueError, match="refused the user name or password of Sync bot"):
-            MediaWikiSignIn.sign_in(_client(), "web_form", "Sync bot", "wrong")
+            MediaWikiSignIn.sign_in(client, "web_form", "Sync bot", "wrong")
 
     def test_a_redirect_to_another_host_is_not_followed(self, wiki: FakeMediaWiki):
         """The session's cookies, and the address guard's check, are for the wiki's host alone."""
         wiki.login_redirect = "https://elsewhere.test/collect"
 
+        client = _client()
         with pytest.raises(ValueError, match="redirected to https://elsewhere.test/collect"):
-            MediaWikiSignIn.sign_in(_client(), "web_form", "Sync bot", "form-secret")
+            MediaWikiSignIn.sign_in(client, "web_form", "Sync bot", "form-secret")
         assert all("elsewhere" not in (request.url or "") for request in wiki.requests)
 
     def test_a_downgrade_to_http_is_not_followed(self, wiki: FakeMediaWiki):
         wiki.login_redirect = "http://wiki.acme.test/index.php/Main_Page"
 
+        client = _client()
         with pytest.raises(ValueError, match="only the wiki's host is followed"):
-            MediaWikiSignIn.sign_in(_client(), "web_form", "Sync bot", "form-secret")
+            MediaWikiSignIn.sign_in(client, "web_form", "Sync bot", "form-secret")
 
     def test_a_page_without_a_login_form_is_named(self, wiki: FakeMediaWiki):
         wiki.fail_next(200, "<html><body>Maintenance</body></html>")
 
+        client = _client()
         with pytest.raises(ValueError, match="shows no login form"):
-            MediaWikiSignIn.sign_in(_client(), "web_form", "Sync bot", "form-secret")
+            MediaWikiSignIn.sign_in(client, "web_form", "Sync bot", "form-secret")
 
 
 class TestOAuth:
@@ -94,8 +99,9 @@ class TestOAuth:
         assert wiki.requests[0].headers["Authorization"] == "Bearer oauth-secret"
 
     def test_an_unknown_token_fails_with_the_gateways_reason(self, wiki: FakeMediaWiki):
+        client = MediaWikiClient(SITE, access_token="expired")
         with pytest.raises(MediaWikiRequestError, match="401 Unauthorized to GET /api.php: Jwt is not in the form"):
-            MediaWikiClient(SITE, access_token="expired").user_info()
+            client.user_info()
 
     def test_the_token_is_never_logged(self, wiki: FakeMediaWiki, caplog: pytest.LogCaptureFixture):
         """dlt's REST client logs a request's headers at debug level; the token goes in through ``auth``."""

@@ -54,8 +54,9 @@ class TestPreflight:
 
     def test_an_address_inside_the_platform_is_refused_before_any_request(self, wiki: FakeMediaWiki):
         """The sign-in sends the credentials, so nothing may be sent before the guard has passed the host."""
+        options = _options(base_url="http://ferretdb:27017")
         with pytest.raises(ValueError, match="points at ferretdb, a name only an internal network resolves"):
-            _check(_options(base_url="http://ferretdb:27017"))
+            _check(options)
         assert wiki.requests == []
 
     def test_a_session_that_still_reads_anonymously_is_refused(self, wiki: FakeMediaWiki, guarded: list[str]):
@@ -63,8 +64,9 @@ class TestPreflight:
         wiki.private = False
         wiki.keeps_session = False
 
+        options = _options()
         with pytest.raises(ValueError, match="still reads anonymously after signing in with Sync bot@pipeline"):
-            _check(_options())
+            _check(options)
 
     def test_an_oauth_token_reads_as_its_account(self, wiki: FakeMediaWiki, guarded: list[str]):
         options = _options(auth_method="oauth", username="", password="", access_token="oauth-secret")
@@ -76,8 +78,9 @@ class TestPreflight:
     def test_a_refused_oauth_token_says_what_to_check(self, wiki: FakeMediaWiki, guarded: list[str]):
         options = _options(auth_method="oauth", username="", password="", access_token="revoked")
 
+        client = MediaWikiClient(SITE, access_token=options.oauth_token())
         with pytest.raises(ValueError, match=r"refused the OAuth access token \(401\)\. Check that it is the access"):
-            MediaWikiPreflight.check(MediaWikiClient(SITE, access_token=options.oauth_token()), options)
+            MediaWikiPreflight.check(client, options)
 
     @pytest.mark.parametrize("version", ["MediaWiki 1.27.0", "MediaWiki 1.43.11", "MediaWiki 1.48.0-wmf.1"])
     def test_every_version_since_1_27_is_accepted(self, wiki: FakeMediaWiki, guarded: list[str], version: str):
@@ -98,14 +101,16 @@ class TestPreflight:
     ):
         wiki.version = version
 
+        options = _options()
         with pytest.raises(ValueError, match=message):
-            _check(_options())
+            _check(options)
 
     def test_a_private_wiki_read_anonymously_fails_with_the_wikis_message(
         self, wiki: FakeMediaWiki, guarded: list[str]
     ):
+        options = _options(auth_method="anonymous")
         with pytest.raises(MediaWikiRequestError, match="readapidenied"):
-            _check(_options(auth_method="anonymous"))
+            _check(options)
 
     @pytest.mark.parametrize(
         ("wanted", "resolved"),
@@ -125,15 +130,17 @@ class TestPreflight:
     def test_an_unknown_namespace_or_one_without_pages_is_refused(
         self, wiki: FakeMediaWiki, guarded: list[str], wanted: str
     ):
+        options = _options(namespaces=[wanted])
         with pytest.raises(ValueError, match=f"The wiki has no namespace {wanted}; it has 0, 1, 4, 6, 10, 14, 100"):
-            _check(_options(namespaces=[wanted]))
+            _check(options)
 
     def test_an_excluded_category_that_does_not_exist_fails_instead_of_excluding_nothing(
         self, wiki: FakeMediaWiki, guarded: list[str]
     ):
         """A typo would otherwise let in exactly the pages the category was meant to keep out."""
+        options = _options(exclude_categories=["Hide From A"])
         with pytest.raises(ValueError, match="Category:Hide From A does not exist on the wiki, or Sync bot cannot"):
-            _check(_options(exclude_categories=["Hide From A"]))
+            _check(options)
 
     def test_a_category_with_a_page_but_no_members_exists(self, wiki: FakeMediaWiki, guarded: list[str]):
         wiki.category_pages.add("Archived")
