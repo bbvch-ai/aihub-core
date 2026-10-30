@@ -15,8 +15,9 @@ prompt:
     \ il n'a donc pas été lu comme texte : en Markdown, il perdrait sa structure,\
     \ et d'un gros fichier seule une partie tiendrait. Il se trouve tel quel dans\
     \ le dossier de la conversation du bac à sable de code (list_files montre son\
-    \ nom exact). Traite-le avec run_command, par exemple avec pandas ; ce que tu\
-    \ y calcules couvre tout le fichier."
+    \ nom exact). Traite-le avec run_command, par exemple avec pandas, ou avec openpyxl\
+    \ ou python-pptx lorsque le résultat doit garder sa structure ; ce que tu y calcules\
+    \ couvre tout le fichier."
   context: |
     {% chat role="system" %}
     L'utilisateur a joint les fichiers suivants à cette conversation. Lorsque la question s'y rapporte, répondez à partir de leur contenu et nommez le fichier utilisé. Chaque fichier est un bloc `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, ses sections sous leurs titres.
