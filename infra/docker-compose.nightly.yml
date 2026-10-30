@@ -1584,7 +1584,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
     container_name: open-terminal
-    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-3
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-4
     restart: always
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
     environment:
@@ -1597,7 +1597,15 @@ services:
       OPEN_TERMINAL_SYSTEM_PROMPT: >-
         You have access to a sandboxed Linux computer with Python and common
         document libraries (pandas, openpyxl, python-docx, reportlab, fpdf2,
-        weasyprint, matplotlib). Use your tools to run commands, read and write
+        weasyprint, matplotlib), headless LibreOffice (soffice) with UNO for
+        Excel pivot tables, LaTeX, pandoc and pdftoppm. Run Python with python3
+        as usual. Only a script that imports uno needs /usr/bin/python3, which
+        has uno but none of the libraries above: prepare data with python3 and
+        keep the UNO step in its own script. A pivot table is a DataPilot
+        (sheet.getDataPilotTables(), createDataPilotDescriptor(),
+        insertNewByName()); save it as xlsx with the filter "Calc Office Open
+        XML". When the user uploads a file as a template, edit a copy of it
+        instead of rebuilding it. Use your tools to run commands, read and write
         files, and search the filesystem. Verify the current state before making
         changes and check command output to confirm success. Files you create in
         your working directory automatically appear in the user's Files panel,
