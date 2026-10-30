@@ -146,17 +146,17 @@ with the probe above, these are the paths that log the user out of the parent ap
 
 **Context.** The probe runs once per tab, so a Keycloak session that ends on the server while the tab stays open (idle
 timeout, revocation, a logout through OpenWebUI or another client) went unnoticed until the next token renewal, up to
-the access token lifespan later. Entering the chat in that window sent the OpenWebUI iframe to Keycloak's login form.
-An Entra sign-in inside that frame then fails OpenWebUI's OAuth callback with `mismatching_state`, which OpenWebUI shows
-as "The email or password provided is incorrect" (bbvch-ai/aihub-core-private#307).
+the access token lifespan later. Entering the chat in that window sent the OpenWebUI iframe to Keycloak's login form. An
+Entra sign-in inside that frame then fails OpenWebUI's OAuth callback with `mismatching_state`, which OpenWebUI shows as
+"The email or password provided is incorrect" (bbvch-ai/aihub-core-private#307).
 
-**Change.** Pages whose iframe signs in through the SSO cookie declare `definePageMeta({ embedsSsoIframe: true })`.
-When a protected navigation enters such a page from one without it, `middleware/auth.global.ts` renews the session with
-the refresh token, through the same branch as an expired token: Keycloak rejects the refresh token of an ended session,
-so the parent removes its stored user and redirects to login before the iframe is created. A renewal that gets no
-answer keeps the session, as before. It costs one token request per entry; moving within the page (opening a chat side
-panel) does not renew again. The probe is still needed: after a browser restart the server-side session is alive and
-the renewal succeeds, while the cookie the iframe needs is gone.
+**Change.** Pages whose iframe signs in through the SSO cookie declare `definePageMeta({ embedsSsoIframe: true })`. When
+a protected navigation enters such a page from one without it, `middleware/auth.global.ts` renews the session with the
+refresh token, through the same branch as an expired token: Keycloak rejects the refresh token of an ended session, so
+the parent removes its stored user and redirects to login before the iframe is created. A renewal that gets no answer
+keeps the session, as before. It costs one token request per entry; moving within the page (opening a chat side panel)
+does not renew again. The probe is still needed: after a browser restart the server-side session is alive and the
+renewal succeeds, while the cookie the iframe needs is gone.
 
 **Effect on this decision.** After an OpenWebUI logout, the parent now logs out the next time the user enters the chat
 rather than at its next token renewal. That is the moment the preserved session would otherwise put Keycloak's login

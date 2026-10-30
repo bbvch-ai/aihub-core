@@ -245,6 +245,10 @@ What an API caller sends for an event is defined by the event, not by the API (A
 - `from_api_payload()` resolves the registered class for the event name (falling back to the closest parent, so
   agent-only subclasses inherit the conversion), validates the whole payload, converts it, and adds `_api_server_data()`
   (`StartEvent`: the caller and locale).
+- Images inside messages go the same way: `ApiAttachments.event_data` checks and stores them with `StoredImage`
+  (content-addressed under `agent-files/{class}/{id}/images/`) and leaves an `s3://agent-files/…` reference in the
+  `ImageBlock`. `ResilientOpenAILike` signs such references just before every chat call (`StoredImageSigner`), so no
+  agent handles them, and the API serves them to the UI from `…/instances/{id}/images/{name}`.
 - Never put bytes in an event: NATS refuses messages over 1 MB (2 MB in production) and every event is persisted. Store
   them and carry a reference.
 

@@ -175,6 +175,8 @@ import type {
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetImageData,
+  GetImageError,
   GetIncidentAvailabilityData,
   GetIncidentAvailabilityResponse,
   GetIncidentFormData,
@@ -1813,6 +1815,33 @@ export const validateFileUpload = <
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Get Image
+ *
+ * An image sent in a message to the agent, which the message references instead of carrying it.
+ *
+ * Its name is the digest of its content, so it never changes and may be cached for as long as it is kept.
+ */
+export const getImage = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, GetImageData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    unknown | DefaultT,
+    GetImageError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/images/{name}",
+    ...options,
   });
 
 /**

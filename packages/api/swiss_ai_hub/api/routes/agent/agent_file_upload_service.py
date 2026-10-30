@@ -4,8 +4,9 @@ import uuid
 from collections.abc import Sequence
 
 from botocore.exceptions import ClientError
+from fastapi import HTTPException
 from mypy_boto3_s3 import S3Client
-from swiss_ai_hub.core.events.agent import UserUploadedFile
+from swiss_ai_hub.core.events.agent import StoredImage, UserUploadedFile
 from swiss_ai_hub.core.infrastructure import trace_fn
 
 from swiss_ai_hub.api.routes.agent.dto.agent_file_validation_item import AgentFileValidationItem
@@ -55,7 +56,7 @@ class AgentFileUploadService:
 
     @staticmethod
     def s3_key(agent_class: str, agent_id: str, file_id: str, filename: str) -> str:
-        sanitize = UserUploadedFile._sanitize_path_segment
+        sanitize = UserUploadedFile.sanitize_path_segment
         safe_class = sanitize(agent_class)
         safe_id = sanitize(agent_id)
         safe_file_id = sanitize(file_id)
@@ -81,6 +82,18 @@ class AgentFileUploadService:
     def read_file(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> bytes:
         key = self.s3_key(agent_class, agent_id, file_id, filename)
         return self._s3_client.get_object(Bucket=self.BUCKET_NAME, Key=key)["Body"].read()
+
+    @trace_fn
+    def read_image(self, agent_class: str, agent_id: str, name: str) -> tuple[bytes, str]:
+        """A stored image of a message, with its content type; a missing one is a 404, as an expired file is."""
+        key = f"{StoredImage.folder(agent_class, agent_id)}/{name}"
+        try:
+            image = self._s3_client.get_object(Bucket=self.BUCKET_NAME, Key=key)
+        except ClientError as missing:
+            if missing.response.get("Error", {}).get("Code", "") in ["404", "NoSuchKey"]:
+                raise HTTPException(status_code=404, detail="Image not found.") from missing
+            raise
+        return image["Body"].read(), image["ContentType"]
 
     @trace_fn
     def verify_file_exists(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> bool:

@@ -6,7 +6,7 @@ from pydantic.fields import FieldInfo
 
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
-from swiss_ai_hub.core.events.agent.user.inline_file import InlineFile
+from swiss_ai_hub.core.events.agent.user.api_attachments import ApiAttachments
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 from swiss_ai_hub.core.events.api_payload_context import ApiPayloadContext
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters import BucketMetadataFilters
@@ -84,11 +84,11 @@ class RAGStartEvent(StartEvent):
 
     @classmethod
     def api_input_field_overrides(cls) -> dict[str, tuple[Any, FieldInfo]]:
-        return {**super().api_input_field_overrides(), "files": InlineFile.accepting_field(cls.model_fields["files"])}
+        return {**super().api_input_field_overrides(), "files": ApiAttachments.files_field(cls.model_fields["files"])}
 
     @classmethod
     async def _api_input_to_event_data(cls, api_input: BaseModel, context: ApiPayloadContext) -> dict[str, Any]:
-        return await InlineFile.event_data_with_stored_files(api_input, context)
+        return await ApiAttachments.event_data(api_input, context)
 
     @property
     def user_query(self) -> str:

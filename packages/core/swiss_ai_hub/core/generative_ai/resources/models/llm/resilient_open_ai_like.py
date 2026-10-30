@@ -3,13 +3,14 @@ from collections.abc import Sequence
 from typing import Annotated, Any, ClassVar, override
 
 import httpx
-from llama_index.core.base.llms.types import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.llms.openai_like import OpenAILike
 from openai import BadRequestError
 from pydantic import Field, ValidationError
 
 from swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails import GatewayGuardrails
 from swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat import ReasoningFreeChat
+from swiss_ai_hub.core.generative_ai.resources.models.llm.stored_image_signer import StoredImageSigner
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,24 @@ class ResilientOpenAILike(OpenAILike):
             await self._aclient.close()
         if self._client is not None:
             self._client.close()
+
+    @override
+    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        """Every chat request, plain, streamed, with tools or structured, passes one of these four methods, so stored
+        images are signed for each of them in one place."""
+        return super()._chat(StoredImageSigner.signed(messages), **kwargs)
+
+    @override
+    def _stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
+        return super()._stream_chat(StoredImageSigner.signed(messages), **kwargs)
+
+    @override
+    async def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        return await super()._achat(StoredImageSigner.signed(messages), **kwargs)
+
+    @override
+    async def _astream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseAsyncGen:
+        return await super()._astream_chat(StoredImageSigner.signed(messages), **kwargs)
 
     @override
     def _get_model_kwargs(self, **kwargs: Any) -> dict[str, Any]:

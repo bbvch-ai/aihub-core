@@ -31,14 +31,14 @@ class UserUploadedFile(BaseModel):
     AGENT_FILES_BUCKET: ClassVar[str] = "agent-files"
 
     @staticmethod
-    def _sanitize_path_segment(value: str) -> str:
+    def sanitize_path_segment(value: str) -> str:
         return value.replace("/", "_").replace("\\", "_").replace("..", "_")
 
     def resolve_s3_location(self, agent_class: str, agent_id: str) -> tuple[str, str]:
         """Derive the S3 bucket and key from the agent identity."""
-        safe_class = self._sanitize_path_segment(agent_class)
-        safe_id = self._sanitize_path_segment(agent_id)
-        safe_file_id = self._sanitize_path_segment(self.file_id)
-        safe_name = self._sanitize_path_segment(self.filename)
+        safe_class = self.sanitize_path_segment(agent_class)
+        safe_id = self.sanitize_path_segment(agent_id)
+        safe_file_id = self.sanitize_path_segment(self.file_id)
+        safe_name = self.sanitize_path_segment(self.filename)
         key = f"{safe_class}/{safe_id}/{safe_file_id}/{safe_name}"
         return self.AGENT_FILES_BUCKET, key

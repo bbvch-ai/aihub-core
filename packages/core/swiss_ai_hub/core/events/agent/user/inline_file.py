@@ -3,11 +3,10 @@ import base64
 import binascii
 import math
 import uuid
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
-from pydantic.fields import FieldInfo
 
 from swiss_ai_hub.core.events.agent.user.inline_file_settings import InlineFileSettings
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
@@ -37,27 +36,6 @@ class InlineFile(BaseModel):
         str,
         Field(description="The file content, base64-encoded.", json_schema_extra={"contentEncoding": "base64"}),
     ]
-
-    @staticmethod
-    def accepting_field(files_field: FieldInfo) -> tuple[Any, FieldInfo]:
-        """The API input shape of an event's `files`: uploaded references and inline files, mixed freely."""
-        return list[UserUploadedFile | InlineFile] | None, FieldInfo.merge_field_infos(
-            files_field,
-            description="Files for the agent. Each is either the reference of a file uploaded beforehand, or a "
-            "file sent inline as base64, which the API stores before the agent receives its reference.",
-        )
-
-    @staticmethod
-    async def event_data_with_stored_files(api_input: BaseModel, context: ApiPayloadContext) -> dict[str, Any]:
-        """An event's data with its inline files stored and replaced by their references, in the caller's order."""
-        event_data = api_input.model_dump(mode="json", exclude_unset=True, exclude={"files"})
-        files: list[UserUploadedFile | InlineFile] | None = getattr(api_input, "files", None)
-        if files is not None:
-            stored = iter(await InlineFile.store_all([file for file in files if isinstance(file, InlineFile)], context))
-            event_data["files"] = [
-                (next(stored) if isinstance(file, InlineFile) else file).model_dump(mode="json") for file in files
-            ]
-        return event_data
 
     @staticmethod
     async def store_all(files: list["InlineFile"], context: ApiPayloadContext) -> list[UserUploadedFile]:

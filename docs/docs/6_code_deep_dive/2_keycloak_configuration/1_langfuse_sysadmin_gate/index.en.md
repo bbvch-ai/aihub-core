@@ -46,12 +46,12 @@ Keycloak's built-in `browser` flow is immutable (`builtIn: true`), and flows hav
 to add anything, the whole flow tree must be recreated and bound as the realm browser flow (realm key
 `"browserFlow": "browser-aihub"`). That is what the `browser-aihub*` aliases are:
 
-| Flow                            | Role                                                                       |
-| ------------------------------- | -------------------------------------------------------------------------- |
+| Flow                            | Role                                                                                                                 |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `browser-aihub`                 | Top level: `[REQUIRED authenticate] → [CONDITIONAL aihub-access-gate-browser] → [CONDITIONAL langfuse-gate-browser]` |
-| `browser-aihub-authenticate`    | The built-in alternatives: cookie SSO, IdP redirector, forms               |
-| `browser-aihub-forms`           | Username/password form (replica of built-in `forms`)                       |
-| `browser-aihub-conditional-2fa` | Conditional OTP (replica of built-in `Browser - Conditional 2FA`)          |
+| `browser-aihub-authenticate`    | The built-in alternatives: cookie SSO, IdP redirector, forms                                                         |
+| `browser-aihub-forms`           | Username/password form (replica of built-in `forms`)                                                                 |
+| `browser-aihub-conditional-2fa` | Conditional OTP (replica of built-in `Browser - Conditional 2FA`)                                                    |
 
 The aliases carry a `browser-aihub-` prefix because flow aliases are realm-unique and the built-in names (`forms`, …)
 are already taken. This mirrors what the admin console's *Copy flow* action would produce — the realm JSON just declares

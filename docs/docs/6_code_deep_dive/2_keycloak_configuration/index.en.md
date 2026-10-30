@@ -103,8 +103,8 @@ Two custom mechanisms extend the built-in flows:
 - **`browser-aihub` + its gates** — the realm's browser flow. After authentication it runs two conditional denies: the
   `aihub-access-gate-browser` sub-flow denies users without `AIHubAccess` (the post-broker flow never runs for local
   realm users, so this is their only check), then the Langfuse sysadmin gate restricts Langfuse logins to
-  `AIHubSysAdmin`. The mechanism, the reasons for replicating the built-in browser flow, and the
-  structural pitfalls are documented in [Langfuse Sysadmin Gate](1_langfuse_sysadmin_gate/).
+  `AIHubSysAdmin`. The mechanism, the reasons for replicating the built-in browser flow, and the structural pitfalls are
+  documented in [Langfuse Sysadmin Gate](1_langfuse_sysadmin_gate/).
 
 ## How configuration reaches running instances
 

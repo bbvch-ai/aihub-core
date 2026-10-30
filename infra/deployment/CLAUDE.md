@@ -101,10 +101,10 @@ literal-number rule.
 when the call sends `"guardrails": ["pii-anonymisation"]` (profiles with the checkbox do), and, only where
 `PII_ANONYMISE_EXTERNAL_MODELS=true` (off in `.env.dev` and `.env.prod`), on every call to a model that is not `local`.
 Any other value of the switch counts as `true`: never make the guardrail's constructor raise, because LiteLLM v1.106.2
-then starts without the guardrail and drops the requested anonymisation too. The guardrail treats a model without the key as external; `generate_compose.py`
-rejects a missing or unknown location anyway, so a typo cannot silently anonymise a local model. Each handled call also
-leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`, mounted next to the guardrail, sent to
-`OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
+then starts without the guardrail and drops the requested anonymisation too. The guardrail treats a model without the
+key as external; `generate_compose.py` rejects a missing or unknown location anyway, so a typo cannot silently anonymise
+a local model. Each handled call also leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`,
+mounted next to the guardrail, sent to `OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
 `uv run --with "litellm==1.106.2" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
 (unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
 on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. LiteLLM follows its plain release tags (no
@@ -441,8 +441,8 @@ logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symli
 - `security-headers@file` sends `X-Frame-Options: DENY`, except on the `web-auth` and `sysadmin-web-auth` routers
   (`/{locale}/auth/*`), which use `auth-route-security-headers@file` with `SAMEORIGIN`. The frontend loads
   `/{locale}/auth/renew` in a hidden same-origin iframe for its SSO session probe and silent renew; under `DENY` the
-  probe always times out, users with an expired Keycloak session keep a stale login, and the OpenWebUI iframe then
-  signs in through Entra inside the frame, where OpenWebUI loses its OAuth state (`mismatching_state`).
+  probe always times out, users with an expired Keycloak session keep a stale login, and the OpenWebUI iframe then signs
+  in through Entra inside the frame, where OpenWebUI loses its OAuth state (`mismatching_state`).
 
 ## Adding a New Service
 

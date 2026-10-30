@@ -44,12 +44,12 @@ Keycloaks eingebauter `browser`-Flow ist unveränderlich (`builtIn: true`), und 
 Include-Mechanismus — um etwas hinzuzufügen, muss der gesamte Flow-Baum neu aufgebaut und als Realm-Browser-Flow
 gebunden werden (Realm-Schlüssel `"browserFlow": "browser-aihub"`). Genau das sind die `browser-aihub*`-Aliase:
 
-| Flow                            | Rolle                                                                          |
-| ------------------------------- | ------------------------------------------------------------------------------ |
+| Flow                            | Rolle                                                                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `browser-aihub`                 | Oberste Ebene: `[REQUIRED authenticate] → [CONDITIONAL aihub-access-gate-browser] → [CONDITIONAL langfuse-gate-browser]` |
-| `browser-aihub-authenticate`    | Die eingebauten Alternativen: Cookie-SSO, IdP-Redirector, Formulare            |
-| `browser-aihub-forms`           | Benutzername/Passwort-Formular (Replikat des eingebauten `forms`)              |
-| `browser-aihub-conditional-2fa` | Bedingtes OTP (Replikat des eingebauten `Browser - Conditional 2FA`)           |
+| `browser-aihub-authenticate`    | Die eingebauten Alternativen: Cookie-SSO, IdP-Redirector, Formulare                                                      |
+| `browser-aihub-forms`           | Benutzername/Passwort-Formular (Replikat des eingebauten `forms`)                                                        |
+| `browser-aihub-conditional-2fa` | Bedingtes OTP (Replikat des eingebauten `Browser - Conditional 2FA`)                                                     |
 
 Die Aliase tragen das Präfix `browser-aihub-`, weil Flow-Aliase Realm-weit eindeutig sind und die eingebauten Namen
 (`forms`, …) bereits vergeben sind. Das entspricht dem, was die Aktion *Copy flow* der Admin-Konsole erzeugen würde —

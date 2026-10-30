@@ -36096,6 +36096,48 @@ export type ValidateFileUploadResponses = {
 export type ValidateFileUploadResponse =
   ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
 
+export type GetImageData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Agent Class
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     */
+    agent_id: string;
+    /**
+     * Name
+     */
+    name: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/images/{name}";
+};
+
+export type GetImageErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetImageError = GetImageErrors[keyof GetImageErrors];
+
+export type GetImageResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
 export type GetProcessClassesData = {
   body?: never;
   path: {
