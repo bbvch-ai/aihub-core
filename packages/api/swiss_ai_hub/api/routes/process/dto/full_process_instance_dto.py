@@ -61,6 +61,8 @@ class FullProcessInstanceDTO(MinimalProcessInstanceDTO):
         class_entity: "ProcessClassEntity",
         config_entity: "ProcessConfigEntityDocument",
         t: LocaleHandler,
+        *,
+        is_online: bool,
     ) -> Self:
         """
         Creates a FullProcessInstanceDTO from a class entity and a config entity.
@@ -83,7 +85,7 @@ class FullProcessInstanceDTO(MinimalProcessInstanceDTO):
             process_class=class_entity.process_class,
             process_id=config_entity.process_id,
             process_config=process_config_dto,
-            is_online=class_entity.is_online,
+            is_online=is_online,
             human_inputs=[specs.to_specs() for specs in class_entity.human_inputs],
             program_inputs=[specs.to_specs() for specs in class_entity.program_inputs],
             agent_inputs=[specs.to_specs() for specs in class_entity.agent_inputs],

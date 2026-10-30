@@ -188,19 +188,18 @@ class CronScheduler:
     def _load_schedulable_snapshot(self, now: datetime, watermark: datetime) -> _SchedulableSnapshot:
         """Reads every schedulable class and its profiles in one pass. Synchronous — runs in a thread.
 
-        `now` is passed in rather than read here so the online/offline split uses the same instant as the
-        window this tick is computing. It stays aware — `AgentClassEntity.is_online_at` owns the
-        conversion to the local wall clock `last_discovered` is stored in, which is not the same as
-        stripping the tzinfo off a UTC value.
+        The online/offline split is judged against completed discovery rounds, not `now`: a discovery round
+        that stalls must not make this tick drop every scheduled run as if all agents had gone away.
         """
         entities = AgentClassEntity.get_all_schedulable()
         if not entities:
             return _SchedulableSnapshot(window_start=self._clamp_window_start(watermark, now))
 
+        online_threshold = AgentClassEntity.online_threshold()
         offline_last_seen = {
             entity.agent_class: entity.last_discovered
             for entity in entities
-            if not AgentClassEntity.is_online_at(entity, now)
+            if not AgentClassEntity.is_online_since(entity, online_threshold)
         }
 
         online: list[_ScheduledProfile] = []

@@ -54,6 +54,11 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DAGSTER_MAX_CONCURRENT_RUNS` |  | `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `rclone_pipeline`, `shared_rag_pipeline`, `structured_pipeline` |  |
 | `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_WARNING_LOG_RETENTION_DAYS` |  | `backup-code` |  |
+| `DISCOVERY_INTERVAL_SECONDS` | `DiscoverySettings.INTERVAL_SECONDS` | `api` | Pause between the end of one discovery round and the start of the next. |
+| `DISCOVERY_MAX_SILENCE_SECONDS` | `DiscoverySettings.MAX_SILENCE_SECONDS` | `api` | However the rounds went, a class that has not answered for this long reads offline. Bounds how long dead classes keep reading online while every round fails, and how old the rounds left over from before an API restart may be. Empty: 2.5 times the longest the missed rounds can take (900 with the defaults), so it follows the interval and the round timeout. |
+| `DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE` | `DiscoverySettings.MISSED_ROUNDS_BEFORE_OFFLINE` | `api` | Completed rounds in a row a class may fail to answer and still count as online. The same rule decides when its REST endpoints are removed. |
+| `DISCOVERY_RESPONSE_WAIT_SECONDS` | `DiscoverySettings.RESPONSE_WAIT_SECONDS` | `api` | How long a round collects answers after broadcasting its request. |
+| `DISCOVERY_ROUND_TIMEOUT_SECONDS` | `DiscoverySettings.ROUND_TIMEOUT_SECONDS` | `api` | Longest a round may take before it is abandoned as stalled and logged as an error. Covers the response wait plus stamping every class that answered. |
 | `DOCUMENT_INGESTION_EMBEDDING_MODEL` | `DocumentIngestionPipelineSettings.EMBEDDING_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used to embed chunks. |
 | `DOCUMENT_INGESTION_LLM_MODEL` | `DocumentIngestionPipelineSettings.LLM_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used for summaries and table refinement, and for figure descriptions when no vision model is set. Must support response schemas, which table refinement relies on. |
 | `DOCUMENT_INGESTION_OBSERVE_JOB_HOUR` | `DocumentIngestionPipelineSettings.OBSERVE_JOB_HOUR` | `document_ingestion_pipeline` | Hour of the daily per-bucket observation schedule. |
