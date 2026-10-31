@@ -66,8 +66,9 @@ KNOWLEDGE_COLLECTION_TYPE = "collection"
 # a file forwarded again on a later turn is not copied into the agent bucket a second time.
 AGENT_UPLOADS_FILE_META_KEY = "aihub_agent_uploads"
 
-# A temporary chat's text item and a note have no file in Open WebUI, so the pipe remembers the agent's upload of each,
-# by the item's id (a note's with its version), in Open WebUI's Redis; for as long as the agent-files bucket keeps it.
+# A temporary chat's text item, a note and an attached chat have no file in Open WebUI, so the pipe remembers the agent's
+# upload of each, by the item's id (a note's or chat's with its version), in Open WebUI's Redis; for as long as the
+# agent-files bucket keeps it.
 # A temporary chat's id comes from the browser, so the key also names the user the upload belongs to.
 AIHUB_TEMPORARY_UPLOAD_REDIS_KEY = "aihub:temp-upload:{user_id}:{thread_id}:{item_id}"
 AIHUB_TEMPORARY_UPLOAD_REDIS_TTL_SECONDS = 7 * 24 * 60 * 60
@@ -2364,7 +2365,7 @@ class FileProcessingService:
         scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
     ) -> Annotated[AgentAttachment | None, "The file with its known upload, or None when Open WebUI lacks it"]:
         """A temporary chat's text, which only carries content, is uploaded as a plain-text file for the agent to read
-        like any other attachment, and a note as a markdown file."""
+        like any other attachment, and a note or an attached chat as a markdown file."""
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
         if file.get("type") == "text" and file.get("content") is not None:
             name = file.get("name") or "attachment"
@@ -2378,6 +2379,8 @@ class FileProcessingService:
             )
         if file.get("type") == "note":
             return await self._resolve_note(file, scope)
+        if file.get("type") == "chat":
+            return await self._resolve_chat(file, scope)
 
         file_obj = await Files.get_file_by_id(file.get("id", ""))
         if not file_obj:
@@ -2420,6 +2423,62 @@ class FileProcessingService:
             file_id=await scope.recall(upload_key),
             text=((note.data or {}).get("content") or {}).get("md") or "",
             upload_key=upload_key,
+        )
+
+    @staticmethod
+    async def _resolve_chat(
+        file: Annotated[dict[str, Any], "A chat the user attached"],
+        scope: Annotated[TemporaryUploadScope, "Where the chat's upload is remembered, for the user it belongs to"],
+    ) -> Annotated[
+        AgentAttachment | None, "The chat's transcript, or None when it is gone or the user may not read it"
+    ]:
+        """Agent models run without Open WebUI's file context, so the pipe turns an attached chat into its transcript
+        itself, in Open WebUI's own format. It repeats Open WebUI's read check, since a chat id comes from the browser,
+        and remembers the upload per version of the chat, so a chat that grew reaches the agent again."""
+        chat = await Chats.get_chat_by_id(file.get("id", ""))
+        if not chat:
+            logger.warning(f"Could not retrieve chat with ID: {file.get('id', '')}")
+            return None
+        if not await FileProcessingService._may_read_chat(chat, scope.user_id):
+            logger.warning(f"User {scope.user_id} may not read chat {chat.id}")
+            return None
+        upload_key = f"chat:{chat.id}:{chat.updated_at}"
+        return AgentAttachment(
+            source=file,
+            filename=f"{chat.title or 'chat'}.md",
+            content_type="text/markdown",
+            file_id=await scope.recall(upload_key),
+            text=FileProcessingService._chat_transcript(chat),
+            upload_key=upload_key,
+        )
+
+    @staticmethod
+    async def _may_read_chat(
+        chat: Annotated[Any, "The attached chat"], user_id: Annotated[str, "The user attaching it"]
+    ) -> Annotated[bool, "Whether Open WebUI lets the user read the chat"]:
+        """The owner, a user it was shared with, or a user who may read the folder it lies in."""
+        from open_webui.models.access_grants import AccessGrants
+        from open_webui.models.folders import Folders
+        from open_webui.utils.access_control.folders import has_folder_access
+
+        if chat.user_id == user_id or await AccessGrants.has_access(
+            user_id=user_id, resource_type="shared_chat", resource_id=chat.id, permission="read"
+        ):
+            return True
+        folder = await Folders.get_folder_by_id(chat.folder_id) if chat.folder_id else None
+        return bool(folder) and await has_folder_access(user_id, folder, "read", db=None)
+
+    @staticmethod
+    def _chat_transcript(chat: Annotated[Any, "The attached chat"]) -> Annotated[str, "Its current branch as markdown"]:
+        from open_webui.utils.misc import get_content_from_message, get_message_list
+
+        history = (chat.chat or {}).get("history") or {}
+        messages_map, current_id = history.get("messages") or {}, history.get("currentId")
+        if not messages_map or not current_id:
+            return ""
+        return "\n".join(
+            f"#### {message.get('role', 'user').capitalize()}\n{get_content_from_message(message) or ''}\n"
+            for message in get_message_list(messages_map, current_id)
         )
 
     async def _upload_all(
