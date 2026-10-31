@@ -6,7 +6,9 @@ ODMs serve them while #1634 moves the platform from MongoEngine (synchronous) to
 - **Beanie** serves the entities listed in `BeanieInitializer.DOCUMENT_MODELS`: `AgentConfigEntityDocument` and
   `NotificationEntity` (#1961), `AgentClassEntity`, `ThreadEntity` and `DiscoveryRoundEntity` (#1962), and the access,
   user and OpenWebUI entities (#1963): `RoleEntity`, `BearerToken`, `TenantMetadataEntity`, `UserTenantRoleEntity`,
-  `UserDashboardEntity`, `OpenWebuiAccountEntity` and `OpenWebuiKnowledgeEntryEntity`.
+  `UserDashboardEntity`, `OpenWebuiAccountEntity` and `OpenWebuiKnowledgeEntryEntity`. The bot's own
+  `ConversationEntity`, `ConversationTracker` and `PathEntity` (#1966) live in `packages/bot` and are listed in its
+  `BotDocumentModels.DOCUMENT_MODELS`.
 - **MongoEngine** serves every other entity, including `ProcessConfigEntityDocument` and `ProcessClassEntity`, which
   stay until it is decided whether Process is kept.
 
@@ -45,7 +47,9 @@ and the previous release can still read what the new one writes.
    `DuplicateKeyError`, not `NotUniqueError`.
 6. **Register** the document in `BeanieInitializer.DOCUMENT_MODELS`. Every runtime that reads it must initialise that
    list next to its MongoEngine connection: today the API lifespan, the sysadmin API, the process runner, the bot
-   lifetime manager and the agent runner.
+   lifetime manager and the agent runner. A document only one service owns stays in that service and is passed as
+   `BeanieInitializer.initialize(client, service_document_models)`, as the bot does with `BotDocumentModels`; that
+   service's `beanie_document_models` test fixture adds it too.
 7. **Tests.** Mark them `beanie` (see `swiss_ai_hub.core.testing.beanie_isolation`). The package's
    `beanie_document_models` fixture already returns `DOCUMENT_MODELS`. Keep a readback test that reads what the port
    writes through a replica of the old MongoEngine class, as `agents/tests/unit/test_agent_config_entity_document.py`
@@ -84,16 +88,17 @@ Pitfalls found in the first port:
 
 Measured from the diffs. Wall-clock time was not measured.
 
-| What                                        | #1961: `agent_configs`, `notifications` | #1962: `agent_classes`, `threads`, `discovery_rounds` | #1963: access, user, OpenWebUI (7 collections) |
-| ------------------------------------------- | --------------------------------------- | ----------------------------------------------------- | ---------------------------------------------- |
-| Production files changed                    | 32                                      | 33                                                    | 57                                             |
-| Entity call sites now awaited               | 41                                      | 62                                                    | 114                                            |
-| Synchronous chains given a prefetch instead | 1                                       | 1 (the same Process walkthrough chain)                | 0                                              |
-| Test files changed or added                 | 26                                      | 18                                                    | 52                                             |
-| Runtimes that start Beanie                  | 1 (API)                                 | 3 (API, process runner, bot)                          | 5 (adds agent runner, sysadmin API)            |
+| What                                        | #1961: `agent_configs`, `notifications` | #1962: `agent_classes`, `threads`, `discovery_rounds` | #1963: access, user, OpenWebUI (7 collections) | #1966: bot conversations, trackers, paths |
+| ------------------------------------------- | --------------------------------------- | ----------------------------------------------------- | ---------------------------------------------- | ----------------------------------------- |
+| Production files changed                    | 32                                      | 33                                                    | 57                                             | 15                                        |
+| Entity call sites now awaited               | 41                                      | 62                                                    | 114                                            | 42                                        |
+| Synchronous chains given a prefetch instead | 1                                       | 1 (the same Process walkthrough chain)                | 0                                              | 0                                         |
+| Test files changed or added                 | 26                                      | 18                                                    | 52                                             | 5                                         |
+| Runtimes that start Beanie                  | 1 (API)                                 | 3 (API, process runner, bot)                          | 5 (adds agent runner, sysadmin API)            | 5 (the bot also binds its own documents)  |
 
 Most of the work was not in the entities but in their callers: the save-path validators, the startup migrations shared
 with Process, and DTO factories that read entities. Expect the waves whose entities sit behind many synchronous helpers
 (threads, events) to cost more per collection than this one. #1963 bears that out: `AccessChecker.from_user` reads
 `RoleEntity`, so going async rippled through every permission check and auth handler, and most of its test changes are
-BDD scenarios rewritten as async tests.
+BDD scenarios rewritten as async tests. #1966 was the opposite case: the bot was already async throughout, so its port
+is mostly `await` added along one call chain (`BaseChatBot` → `CompletionHandler` → the entities), with no prefetches.

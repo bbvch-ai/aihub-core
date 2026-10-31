@@ -8,8 +8,6 @@ import pytest_asyncio
 import requests
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from mongoengine import connect, disconnect
-from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.routes import HealthController
 from swiss_ai_hub.core.testing import ASGIAdapter
 from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
@@ -35,37 +33,6 @@ SERVICE_ENDPOINT = f"{BASE_URL}/service"
 TTL_DAYS = 1 / 86400  # 1 second TTL in days
 
 
-@pytest.fixture(scope="module")
-def setup_test_credentials():
-    """Set up PathEntity credentials for test endpoints and mock CloudAdapter"""
-    # Connect to MongoDB
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-        uuidRepresentation="standard",
-    )
-
-    # Create credentials for JSON endpoint
-    json_path = f"/api/v1/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/json"
-
-    # Clean up any existing test credentials
-    PathEntity.objects(path=json_path).delete()
-
-    # Create test credentials
-    test_credentials = Credentials(
-        APP_TYPE="MultiTenant", APP_ID="test_app_id", APP_PASSWORD="test_app_password", APP_TENANTID="test_tenant_id"
-    )
-
-    # Create PathEntity record
-    PathEntity(path=json_path, credentials=test_credentials, system_message="Test system message").save()
-
-    yield
-
-    # Clean up test data
-    PathEntity.objects(path=json_path).delete()
-    disconnect()
-
-
 @pytest.fixture
 def patch_requests_adapter(monkeypatch, test_runner):
     """Patch the request.Session to forward all calls to our test application"""
@@ -79,19 +46,6 @@ def patch_requests_adapter(monkeypatch, test_runner):
 
     monkeypatch.setattr(requests, "Session", session_factory)
     yield
-
-
-@pytest.fixture(scope="function")
-def mongodb_direct_connection():
-    """Direct MongoDB connection for basic tests"""
-    # Use a different alias to avoid conflicts
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-        uuidRepresentation="standard",
-    )
-    yield
-    disconnect()
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
@@ -114,15 +68,29 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
             yield client
 
 
-@pytest.mark.asyncio
-async def test_ttl_index_setup(mongodb_direct_connection):
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
+async def setup_test_credentials(client: AsyncClient):
+    """Stores the endpoint's PathEntity through the Beanie client the bot's lifespan started."""
+    json_path = f"/api/v1/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/json"
+    await PathEntity.find({"path": json_path}).delete()
+    test_credentials = Credentials(
+        APP_TYPE="MultiTenant", APP_ID="test_app_id", APP_PASSWORD="test_app_password", APP_TENANTID="test_tenant_id"
+    )
+    await PathEntity(path=json_path, credentials=test_credentials, system_message="Test system message").insert()
+
+    yield
+
+    await PathEntity.find({"path": json_path}).delete()
+
+
+@pytest.mark.beanie
+async def test_ttl_index_setup():
     """Test that the TTL index is correctly set up with the right TTL value"""
     # Update the TTL index with our test value
-    ConversationEntity.update_ttl_index(TTL_DAYS)
+    await ConversationEntity.update_ttl_index(TTL_DAYS)
 
     # Get index information
-    collection = ConversationEntity._get_collection()
-    indexes = collection.index_information()
+    indexes = await ConversationEntity.get_pymongo_collection().index_information()
 
     # Look for the TTL index on last_activity
     ttl_index_found = False
@@ -139,79 +107,63 @@ async def test_ttl_index_setup(mongodb_direct_connection):
     assert ttl_index_found, "TTL index not found on last_activity field"
 
 
-@pytest.mark.asyncio
-async def test_conversation_tracker_expired_detection(mongodb_direct_connection):
+@pytest.mark.beanie
+async def test_conversation_tracker_expired_detection():
     """Test that ConversationTracker correctly identifies expired conversations"""
-    # Clean up any existing data with our test IDs
     conversation_id = "test_expired_conversation"
-    ConversationEntity.objects(conversation_id=conversation_id).delete()
-    ConversationTracker.objects(conversation_id=conversation_id).delete()
 
     # 1. Create a conversation entity
     messages = [
         Message(user_id="test_user", content=[Content(text="Test", type="text")], role="user", name="Test User")
     ]
     bot_id = "test_bot_id"
-    conversation = ConversationEntity.create_conversation(conversation_id, bot_id, messages)
+    conversation = await ConversationEntity.create_conversation(conversation_id, bot_id, messages)
 
     # 2. Create a tracker entry
-    ConversationTracker.track_conversation(conversation_id, bot_id)
+    await ConversationTracker.track_conversation(conversation_id, bot_id)
 
     # 3. Delete the conversation entity (simulating TTL expiration)
-    conversation.delete()
+    await conversation.delete()
 
     # 4. Verify should_show_expiration_message returns True (conversation expired)
-    should_show = ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
+    should_show = await ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
     assert should_show is True, "should_show_expiration_message should return True for expired conversation"
 
     # 5. Mark the conversation as explicitly deleted
-    ConversationTracker.mark_explicitly_deleted(conversation_id, bot_id)
+    await ConversationTracker.mark_explicitly_deleted(conversation_id, bot_id)
 
     # 6. Verify should_show_expiration_message returns False (explicitly deleted)
-    should_show = ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
+    should_show = await ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
     assert should_show is False, (
         "should_show_expiration_message should return False for explicitly deleted conversation"
     )
 
-    # Clean up
-    ConversationTracker.objects(conversation_id=conversation_id).delete()
 
-
-@pytest.mark.asyncio
-async def test_conversation_tracker_explicitly_deleted_vs_expired(mongodb_direct_connection):
+@pytest.mark.beanie
+async def test_conversation_tracker_explicitly_deleted_vs_expired():
     """Test ConversationTracker distinguishes between explicitly deleted and expired conversations"""
     # Test IDs
     expired_id = "test_expired_conversation"
     deleted_id = "test_deleted_conversation"
     bot_id = "test_bot_id"
 
-    # Clean up any existing data
-    ConversationEntity.objects(conversation_id=expired_id).delete()
-    ConversationEntity.objects(conversation_id=deleted_id).delete()
-    ConversationTracker.objects(conversation_id=expired_id).delete()
-    ConversationTracker.objects(conversation_id=deleted_id).delete()
-
     # Create tracker entries for both
     expired_tracker = ConversationTracker(conversation_id=expired_id, bot_id=bot_id, explicitly_deleted=False)
-    expired_tracker.save()
+    await expired_tracker.insert()
 
     deleted_tracker = ConversationTracker(conversation_id=deleted_id, bot_id=bot_id, explicitly_deleted=True)
-    deleted_tracker.save()
+    await deleted_tracker.insert()
 
     # No conversation entities exist for either ID (both are "absent")
 
     # Verify should_show_expiration_message results
-    should_show_expired = ConversationTracker.should_show_expiration_message(expired_id, bot_id)
-    should_show_deleted = ConversationTracker.should_show_expiration_message(deleted_id, bot_id)
+    should_show_expired = await ConversationTracker.should_show_expiration_message(expired_id, bot_id)
+    should_show_deleted = await ConversationTracker.should_show_expiration_message(deleted_id, bot_id)
 
     assert should_show_expired is True, "should_show_expiration_message should return True for expired conversation"
     assert should_show_deleted is False, (
         "should_show_expiration_message should return False for explicitly deleted conversation"
     )
-
-    # Clean up
-    ConversationTracker.objects(conversation_id=expired_id).delete()
-    ConversationTracker.objects(conversation_id=deleted_id).delete()
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -235,10 +187,6 @@ async def test_conversation_ttl_with_bot(
     payload["id"] = "test_activity_id"
     payload["channelId"] = "emulator"  # Required by Bot Framework
 
-    # Clean up any existing data
-    ConversationEntity.objects(conversation_id=conversation_id).delete()
-    ConversationTracker.objects(conversation_id=conversation_id).delete()
-
     # Send a message via the bot to create a conversation
     response = await client.post(
         url=JSON_ENDPOINT,
@@ -247,24 +195,23 @@ async def test_conversation_ttl_with_bot(
     assert response.status_code == 200
 
     # Verify the conversation was created
-    conversation = ConversationEntity.get_conversation_by_conversation_id(conversation_id, bot_id)
+    conversation = await ConversationEntity.get_conversation_by_conversation_id(conversation_id, bot_id)
     assert conversation is not None, "Conversation was not created in the database"
 
     # Verify the conversation tracker was created
-    tracker = ConversationTracker.objects(conversation_id=conversation_id, bot_id=bot_id).first()
+    tracker = await ConversationTracker.get_tracker(conversation_id, bot_id)
     assert tracker is not None, "Conversation tracker was not created"
     assert tracker.explicitly_deleted is False
 
     for _ in range(10):
         await asyncio.sleep(10)
         # Check if the conversation still exists
-        conversation = ConversationEntity.get_conversation_by_conversation_id(conversation_id, bot_id)
+        conversation = await ConversationEntity.get_conversation_by_conversation_id(conversation_id, bot_id)
         if conversation is None:
             break
 
     # Verify the expiration detection works correctly
-    should_show = ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
+    should_show = await ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
     assert should_show is True, "should_show_expiration_message should return True for expired conversation"
 
-    # Clean up
-    ConversationTracker.objects(conversation_id=conversation_id).delete()
+    await ConversationTracker.delete_tracker(conversation_id, bot_id)
