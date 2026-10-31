@@ -93,6 +93,7 @@ dependencies = [
     "openpyxl>=3.1.5",
     "beautifulsoup4>=4.14.3",
     "markdownify>=1.2.2",
+    "beanie>=2.2.0",
 ]
 
 [dependency-groups]
@@ -158,6 +159,7 @@ markers = [
     "unit: hermetic test using fakes; safe to run anywhere",
     "integration: requires real external services; opt-in",
     "flaky: mark a test as flaky (may fail intermittently)",
+    "beanie: runs on the shared session loop against the Beanie test database (see swiss_ai_hub.core.testing.beanie_isolation)",
 ]
 addopts = "--strict-markers"
 pythonpath = ["."]
