@@ -205,11 +205,8 @@ class OpenWebuiProvisioner:
         return LocaleHandler(self.model_name_locale).extract(name)
 
     async def _get_known_online_agents(self) -> list[OnlineAgent]:
-        """Queries the DB for agent instances whose class was recently discovered.
-
-        The classes are still MongoEngine entities and are read in a worker thread; the profiles are Beanie.
-        """
-        class_entities = await asyncio.to_thread(AgentClassEntity.get_online_conversational)
+        """Queries the DB for agent instances whose class was recently discovered."""
+        class_entities = await AgentClassEntity.get_online_conversational()
         if not class_entities:
             return []
 

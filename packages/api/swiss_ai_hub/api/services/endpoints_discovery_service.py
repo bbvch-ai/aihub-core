@@ -1,7 +1,7 @@
 import abc
 import asyncio
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 from typing import ClassVar
 
@@ -125,11 +125,9 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
             return False
 
         if await self._recorder_lease.held():
-            await asyncio.to_thread(
-                DiscoveryRoundEntity.record_completed, self.discovery_kind, started_at, self.settings
-            )
+            await DiscoveryRoundEntity.record_completed(self.discovery_kind, started_at, self.settings)
         discovered_names = {self._class_name_of(dto) for dto in discovered}
-        online_class_names = await asyncio.to_thread(self._online_class_names) | discovered_names
+        online_class_names = await self._online_class_names() | discovered_names
 
         for entity_class in list(self.registered_classes):
             if entity_class not in online_class_names:
@@ -163,16 +161,16 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
         )
         return True
 
-    async def _stamp_answer(self, class_name: str, stamp: Callable[[], object]) -> bool:
-        """Saves one class's answer off the loop; a class whose answer cannot be saved has not answered.
+    async def _stamp_answer(self, class_name: str, stamp: Callable[[], Awaitable[object]]) -> bool:
+        """Saves one class's answer; a class whose answer cannot be saved has not answered.
 
         Isolated so that one class whose answer the database rejects cannot fail every round, which would
-        freeze every other class's status until `MAX_SILENCE_SECONDS` takes them all offline. Off the loop
-        because this process also serves every request, and a blocking write per class could push the round
-        past its timeout.
+        freeze every other class's status until `MAX_SILENCE_SECONDS` takes them all offline. A synchronous
+        write must reach here already offloaded to a thread: this process also serves every request, and a
+        blocking write per class could push the round past its timeout.
         """
         try:
-            await asyncio.to_thread(stamp)
+            await stamp()
         except Exception as e:
             logger.exception(
                 f"Could not save the {self.discovery_kind} discovery answer of {class_name}; "
@@ -193,8 +191,8 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
     def _register_discovered_class(self, dto: TClassDTO) -> None: ...
 
     @abc.abstractmethod
-    def _online_class_names(self) -> set[str]:
-        """Classes online under the completed-rounds rule. Synchronous — runs in a thread."""
+    async def _online_class_names(self) -> set[str]:
+        """Classes online under the completed-rounds rule."""
         ...
 
     async def _after_round(self) -> None:

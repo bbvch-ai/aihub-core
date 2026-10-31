@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Annotated, Self
 
+from beanie.exceptions import DocumentNotFound
 from fastapi import Depends, HTTPException, Path, Query, Security
-from mongoengine import DoesNotExist
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -52,7 +52,7 @@ class ThreadController(TenantScopedController):
     async def _get_thread_or_404(thread_id: str, t: LocaleHandler) -> ThreadDTO:
         try:
             return await ThreadService.get_thread_by_id(thread_id, t=t)
-        except DoesNotExist:
+        except DocumentNotFound:
             raise ThreadController.thread_not_found_exception
 
     @staticmethod

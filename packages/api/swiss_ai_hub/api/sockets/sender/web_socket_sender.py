@@ -1,6 +1,6 @@
 import logging
 
-from cachetools import TTLCache, cached
+from cachetools import TTLCache
 from swiss_ai_hub.core.events.agent import DisplayEvent
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
 from swiss_ai_hub.core.topics.agents import AgentInstanceTopic
@@ -8,6 +8,8 @@ from swiss_ai_hub.core.topics.agents import AgentInstanceTopic
 from swiss_ai_hub.api.sockets.manager.web_socket_manager import WebSocketManager
 
 logger = logging.getLogger(__name__)
+
+_USERS_IN_THREAD_CACHE: TTLCache = TTLCache(maxsize=128, ttl=60)
 
 
 class WebSocketSender:
@@ -33,11 +35,17 @@ class WebSocketSender:
         self.ws_manager = ws_manager
 
     @staticmethod
-    @cached(TTLCache(maxsize=128, ttl=60))
-    def get_users_in_thread(thread_id: str) -> list[str]:
-        """Retrieves the users associated with a thread ID. This is cached."""
-        thread = ThreadEntity.get_thread_by_id(thread_id)
-        return [user.user_id for user in thread.users]
+    async def get_users_in_thread(thread_id: str) -> list[str]:
+        """Retrieves the users associated with a thread ID.
+
+        Cached by hand: cachetools' `cached` decorator would store the coroutine, which can be awaited only once.
+        """
+        if thread_id in _USERS_IN_THREAD_CACHE:
+            return _USERS_IN_THREAD_CACHE[thread_id]
+        thread = await ThreadEntity.get_thread_by_id(thread_id)
+        users = [user.user_id for user in thread.users]
+        _USERS_IN_THREAD_CACHE[thread_id] = users
+        return users
 
     async def send_event(self, event: DisplayEvent, topic: AgentInstanceTopic):
         """
@@ -47,6 +55,6 @@ class WebSocketSender:
         - Send the event to each user via WebSocketManager.
         """
         logger.debug(f"Sending event {event.event_name} to thread {topic.thread_id}")
-        users = self.get_users_in_thread(topic.thread_id)
+        users = await self.get_users_in_thread(topic.thread_id)
         for user in users:
             await self.ws_manager.send_agent_event(event, topic, user)

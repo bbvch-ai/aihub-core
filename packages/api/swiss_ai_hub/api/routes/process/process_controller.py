@@ -152,7 +152,7 @@ class ProcessController(TenantScopedController):
             if not class_entity or not config_entity:
                 raise HTTPException(status_code=404, detail=f"Process instance {process_class}/{process_id} not found.")
 
-            is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
+            is_online = class_entity.is_online_since(await ProcessClassEntity.online_threshold())
             return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
         return self

@@ -1,58 +1,76 @@
 import hashlib
+import re
 from datetime import datetime
-from typing import Self
+from typing import Any, Self
 
+from beanie import Document
+from beanie.exceptions import DocumentNotFound
 from bson import ObjectId
-from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
+from pydantic import BaseModel, ConfigDict, Field
+from pymongo import ASCENDING, DESCENDING, IndexModel
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
 
 
-class User(EmbeddedDocument):
-    user_id = StringField(required=True)
+class User(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    user_id: str
 
 
-class AgentInstanceRef(EmbeddedDocument):
+class AgentInstanceRef(BaseModel):
     """Reference to an agent instance participating in a thread."""
 
-    agent_id = StringField(required=True)
-    agent_class = StringField(required=True)
+    model_config = ConfigDict(extra="allow")
+
+    agent_id: str
+    agent_class: str
 
 
 class ThreadEntity(Document):
-    meta = {
-        "collection": "threads",
-        "strict": False,
-        "indexes": [
-            {"fields": ["created_at"]},
-            {"fields": ["process_walkthrough_id"]},
-            {"fields": ["agents.agent_id", "agents.agent_class"]},
-            {"fields": ["users.user_id", "-created_at"]},
-            {"fields": ["users.user_id", "name"]},
-        ],
-    }
-    name = StringField(required=True)
-    created_at = DateTimeField(required=True)
-    process_class = StringField(required=False)
-    process_id = StringField(required=False)
-    process_walkthrough_id = StringField(required=False)
-    users = ListField(EmbeddedDocumentField(User))
-    agents = ListField(EmbeddedDocumentField(AgentInstanceRef))
+    """A conversation: the users and agent instances in it, and the process walkthrough it belongs to, if any.
+
+    Unknown fields are kept (`extra="allow"`): the MongoEngine document ran `strict: False`, so stored rows may
+    carry fields this model does not declare, and a full rewrite must not drop them. `created_at` stays naive
+    local time, as MongoEngine wrote it (see #1971).
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str
+    created_at: datetime
+    process_class: str | None = None
+    process_id: str | None = None
+    process_walkthrough_id: str | None = None
+    users: list[User] = Field(default_factory=list)
+    agents: list[AgentInstanceRef] = Field(default_factory=list)
+
+    class Settings:
+        name = "threads"
+        keep_nulls = False
+        use_state_management = True
+        state_management_replace_objects = True
+        indexes = [
+            IndexModel([("created_at", ASCENDING)]),
+            IndexModel([("process_walkthrough_id", ASCENDING)]),
+            IndexModel([("agents.agent_id", ASCENDING), ("agents.agent_class", ASCENDING)]),
+            IndexModel([("users.user_id", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("users.user_id", ASCENDING), ("name", ASCENDING)]),
+        ]
 
     @classmethod
     @trace_fn
-    def create_thread(
+    async def create_thread(
         cls, name: str, users: list[User], agents: list[AgentInstanceRef], thread_id: ObjectId | None = None
     ) -> Self:
         thread = cls(id=thread_id or ObjectId(), name=name, users=users, agents=agents, created_at=datetime.now())
-        thread.save()
-        return thread
+        return await thread.insert()
 
     @classmethod
     @trace_fn
-    def get_or_create_scheduled_thread(cls, name: str, agent: AgentInstanceRef) -> Self:
+    async def get_or_create_scheduled_thread(cls, name: str, agent: AgentInstanceRef) -> Self:
         """The one thread every scheduled run of a given profile fires into.
 
         One thread per occurrence would leave a profile running every five minutes with ~105k
@@ -65,10 +83,10 @@ class ThreadEntity(Document):
         handover converge on the same document instead of creating a second thread.
         """
         thread_id = cls.scheduled_thread_id(agent)
-        existing = cls.objects(id=thread_id).first()
+        existing = await cls.get(thread_id)
         if existing:
             return existing
-        return cls.create_thread(name, users=[], agents=[agent], thread_id=thread_id)
+        return await cls.create_thread(name, users=[], agents=[agent], thread_id=thread_id)
 
     @staticmethod
     def scheduled_thread_id(agent: AgentInstanceRef) -> ObjectId:
@@ -82,7 +100,7 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def create_process_thread(
+    async def create_process_thread(
         cls,
         name: str,
         agent: AgentInstanceRef,
@@ -101,54 +119,59 @@ class ThreadEntity(Document):
             process_walkthrough_id=process_walkthrough_id,
             created_at=datetime.now(),
         )
-        thread.save()
+        return await thread.insert()
+
+    @classmethod
+    @trace_fn
+    async def get_thread_by_id(cls, thread_id: str) -> Self:
+        """The thread with `thread_id`; raises `DocumentNotFound` when there is none."""
+        thread = await cls.get(ObjectId(thread_id))
+        if thread is None:
+            raise DocumentNotFound(f"Thread {thread_id} not found")
         return thread
 
     @classmethod
     @trace_fn
-    def get_thread_by_id(cls, thread_id: str) -> Self:
-        return cls.objects().get(id=ObjectId(thread_id))
-
-    @classmethod
-    @trace_fn
-    def get_threads_by_user(cls, user_id: str) -> list["ThreadEntity"]:
-        return cls.objects().filter(users__user_id=user_id)
+    async def get_threads_by_user(cls, user_id: str) -> list[Self]:
+        return await cls.find({"users.user_id": user_id}).to_list()
 
     @staticmethod
-    def _apply_filters(query, filters: ThreadFilters | None):
+    def _filter_criteria(filters: ThreadFilters | None) -> dict[str, Any]:
         if not filters:
-            return query
+            return {}
+        criteria: dict[str, Any] = {}
         if filters.search:
-            query = query.filter(name__icontains=filters.search)
+            criteria["name"] = {"$regex": re.escape(filters.search), "$options": "i"}
         if filters.agent_id:
-            query = query.filter(agents__agent_id=filters.agent_id)
+            criteria["agents.agent_id"] = filters.agent_id
         if filters.user_search_id:
-            query = query.filter(users__user_id=filters.user_search_id)
+            criteria["$and"] = [{"users.user_id": filters.user_search_id}]
         if filters.status_thread_ids is not None:
-            query = query.filter(id__in=filters.status_thread_ids)
+            criteria["_id"] = {"$in": [ObjectId(thread_id) for thread_id in filters.status_thread_ids]}
+        created_at: dict[str, datetime] = {}
         if filters.from_date is not None:
-            query = query.filter(created_at__gte=filters.from_date)
+            created_at["$gte"] = filters.from_date
         if filters.to_date is not None:
-            query = query.filter(created_at__lte=filters.to_date)
-        return query
+            created_at["$lte"] = filters.to_date
+        if created_at:
+            criteria["created_at"] = created_at
+        return criteria
 
     @classmethod
     @trace_fn
-    def count_threads_by_user(cls, user_id: str, filters: ThreadFilters | None = None) -> int:
+    async def count_threads_by_user(cls, user_id: str, filters: ThreadFilters | None = None) -> int:
         """Count the total number of threads that include the specified user."""
-        query = cls.objects().filter(users__user_id=user_id)
-        query = cls._apply_filters(query, filters)
-        return query.count()
+        return await cls.find({"users.user_id": user_id, **cls._filter_criteria(filters)}).count()
 
     @classmethod
     @trace_fn
-    def count_threads_by_agent(cls, agent_class: str, agent_id: str) -> int:
+    async def count_threads_by_agent(cls, agent_class: str, agent_id: str) -> int:
         """Count the total number of threads that include the specified agent."""
-        return cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class).count()
+        return await cls.find(cls._agent_criteria(agent_class, agent_id)).count()
 
     @classmethod
     @trace_fn
-    def get_paginated_threads_by_user(
+    async def get_paginated_threads_by_user(
         cls,
         user_id: str,
         skip: int = 0,
@@ -156,12 +179,10 @@ class ThreadEntity(Document):
         sort_by: str = "created_at",
         sort_order: SortOrder = SortOrder.DESCENDING,
         filters: ThreadFilters | None = None,
-    ) -> list["ThreadEntity"]:
+    ) -> list[Self]:
         """Get a paginated list of threads that include the specified user."""
-        order_by = cls.get_order_by(sort_by, sort_order)
-        query = cls.objects().filter(users__user_id=user_id)
-        query = cls._apply_filters(query, filters)
-        return query.order_by(order_by).skip(skip).limit(limit)
+        query = cls.find({"users.user_id": user_id, **cls._filter_criteria(filters)})
+        return await query.sort(cls.get_order_by(sort_by, sort_order)).skip(skip).limit(limit).to_list()
 
     @staticmethod
     def get_order_by(sort_by: str, sort_order: int) -> str:
@@ -175,88 +196,94 @@ class ThreadEntity(Document):
             return f"{prefix}{field_mapping[sort_by]}"
         return "-created_at"
 
+    @staticmethod
+    def _agent_criteria(agent_class: str, agent_id: str) -> dict[str, Any]:
+        """Matches what MongoEngine's `agents__agent_id=..., agents__agent_class=...` did: each on any member."""
+        return {"agents.agent_id": agent_id, "agents.agent_class": agent_class}
+
     @classmethod
     @trace_fn
-    def get_paginated_threads_by_agent(
+    async def get_paginated_threads_by_agent(
         cls, agent_class: str, agent_id: str, user_id: str | None = None, skip: int = 0, limit: int = 20
-    ) -> list["ThreadEntity"]:
+    ) -> list[Self]:
         """
         Get a paginated list of threads that include the specified agent.
         If a user_id is provided, it also filters for threads containing that user.
         """
-        query = cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
+        criteria = cls._agent_criteria(agent_class, agent_id)
         if user_id:
-            query = query.filter(users__user_id=user_id)
-        return query.order_by("-created_at").skip(skip).limit(limit)
+            criteria["users.user_id"] = user_id
+        return await cls.find(criteria).sort("-created_at").skip(skip).limit(limit).to_list()
 
     @classmethod
     @trace_fn
-    def get_threads_by_users(cls, user_ids: list[str]) -> list["ThreadEntity"]:
-        return cls.objects().filter(users__user_id__in=user_ids)
+    async def get_threads_by_users(cls, user_ids: list[str]) -> list[Self]:
+        return await cls.find({"users.user_id": {"$in": user_ids}}).to_list()
 
     @classmethod
     @trace_fn
-    def get_threads_by_agent(cls, agent_class: str, agent_id: str) -> list["ThreadEntity"]:
-        return cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
+    async def get_threads_by_agent(cls, agent_class: str, agent_id: str) -> list[Self]:
+        return await cls.find(cls._agent_criteria(agent_class, agent_id)).to_list()
 
     @classmethod
     @trace_fn
-    def get_thread_ids_for_user(cls, user_id: str) -> list[str]:
-        return [str(thread.id) for thread in cls.objects(users__user_id=user_id).only("id")]
+    async def get_thread_ids_for_user(cls, user_id: str) -> list[str]:
+        collection = cls.get_pymongo_collection()
+        return [str(row["_id"]) async for row in collection.find({"users.user_id": user_id}, {"_id": 1})]
 
     @classmethod
     @trace_fn
-    def update_thread_name(cls, thread_id: str, name: str) -> Self:
-        thread = cls.get_thread_by_id(thread_id)
+    async def update_thread_name(cls, thread_id: str, name: str) -> Self:
+        thread = await cls.get_thread_by_id(thread_id)
         thread.name = name
-        thread.save()
+        await thread.save_changes()
         return thread
 
     @classmethod
     @trace_fn
-    def add_user_to_thread(cls, thread_id: str, user: User) -> Self:
-        thread = cls.get_thread_by_id(thread_id)
+    async def add_user_to_thread(cls, thread_id: str, user: User) -> Self:
+        thread = await cls.get_thread_by_id(thread_id)
         thread.users.append(user)
-        thread.save()
+        await thread.save_changes()
         return thread
 
     @classmethod
     @trace_fn
-    def add_agent_to_thread(cls, thread_id: str, agent: AgentInstanceRef) -> Self:
-        thread = cls.get_thread_by_id(thread_id)
+    async def add_agent_to_thread(cls, thread_id: str, agent: AgentInstanceRef) -> Self:
+        thread = await cls.get_thread_by_id(thread_id)
         thread.agents.append(agent)
-        thread.save()
+        await thread.save_changes()
         return thread
 
     @classmethod
     @trace_fn
-    def remove_user_from_thread(cls, thread_id: str, user_id: str) -> Self:
-        thread = cls.get_thread_by_id(thread_id)
+    async def remove_user_from_thread(cls, thread_id: str, user_id: str) -> Self:
+        thread = await cls.get_thread_by_id(thread_id)
         thread.users = [user for user in thread.users if user.user_id != user_id]
-        thread.save()
+        await thread.save_changes()
         return thread
 
     @classmethod
     @trace_fn
-    def remove_agent_from_thread(cls, thread_id: str, agent_class: str, agent_id: str) -> Self:
-        thread = cls.get_thread_by_id(thread_id)
+    async def remove_agent_from_thread(cls, thread_id: str, agent_class: str, agent_id: str) -> Self:
+        thread = await cls.get_thread_by_id(thread_id)
         thread.agents = [
             agent for agent in thread.agents if agent.agent_id != agent_id and agent.agent_class != agent_class
         ]
-        thread.save()
+        await thread.save_changes()
         return thread
 
     @trace_fn
-    def claim_for_process(self, process_class: str, process_id: str, process_walkthrough_id: str) -> Self:
+    async def claim_for_process(self, process_class: str, process_id: str, process_walkthrough_id: str) -> Self:
         self.process_class = process_class
         self.process_id = process_id
         self.process_walkthrough_id = process_walkthrough_id
-        self.save()
+        await self.save_changes()
         return self
 
     @classmethod
     @trace_fn
-    def delete_thread(cls, thread_id: str) -> Self:
-        thread = cls.get_thread_by_id(thread_id)
-        thread.delete()
+    async def delete_thread(cls, thread_id: str) -> Self:
+        thread = await cls.get_thread_by_id(thread_id)
+        await thread.delete()
         return thread

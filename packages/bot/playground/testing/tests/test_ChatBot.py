@@ -6,8 +6,9 @@ import pytest
 import pytest_asyncio
 import requests
 from asgi_lifespan import LifespanManager
+from bson import ObjectId
 from httpx import ASGITransport, AsyncClient
-from mongoengine import connect, disconnect
+from mongoengine import connect, disconnect, get_db
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
 from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
@@ -134,14 +135,14 @@ def cleanup_conversation():
     # Clean up before test (connection may not exist yet)
     try:
         ConversationEntity.objects(conversation_id=CONVERSATION_ID).delete()
-        ThreadEntity.objects(id=thread_id).delete()
+        get_db()[ThreadEntity.Settings.name].delete_one({"_id": ObjectId(thread_id)})
     except Exception:
         pass
     yield
     # Clean up after test (connection may be closed)
     try:
         ConversationEntity.objects(conversation_id=CONVERSATION_ID).delete()
-        ThreadEntity.objects(id=thread_id).delete()
+        get_db()[ThreadEntity.Settings.name].delete_one({"_id": ObjectId(thread_id)})
     except Exception:
         pass
 

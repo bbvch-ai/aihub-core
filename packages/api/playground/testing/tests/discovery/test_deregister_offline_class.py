@@ -58,8 +58,8 @@ def _agent_answer(agent_class: str) -> SimpleNamespace:
 
 
 @pytest.fixture(autouse=True)
-def recorded_rounds() -> Iterator[MagicMock]:
-    with patch.object(DiscoveryRoundEntity, "record_completed") as record_completed:
+def recorded_rounds() -> Iterator[AsyncMock]:
+    with patch.object(DiscoveryRoundEntity, "record_completed", new_callable=AsyncMock) as record_completed:
         yield record_completed
 
 
@@ -72,7 +72,7 @@ class TestAgentClassGoingOffline:
         service._sync_agent_instances_to_provisioners = AsyncMock()
         service._sync_knowledge_to_openwebui = AsyncMock()
         service._register_class_endpoints = MagicMock()
-        service._online_class_names = MagicMock(return_value=online_by_rule)
+        service._online_class_names = AsyncMock(return_value=online_by_rule)
         return service
 
     def test_only_the_offline_class_loses_its_endpoints(self) -> None:
@@ -106,7 +106,7 @@ class TestAgentClassGoingOffline:
         assert service.registered_classes == {"Alive"}
 
     @pytest.mark.asyncio
-    async def test_the_round_registers_new_classes_records_itself_and_syncs(self, recorded_rounds: MagicMock) -> None:
+    async def test_the_round_registers_new_classes_records_itself_and_syncs(self, recorded_rounds: AsyncMock) -> None:
         service = self._service(online_by_rule={"Alive"})
         service._broadcast_discovery = AsyncMock(return_value=[_agent_answer("Alive"), _agent_answer("Fresh")])
 
@@ -115,7 +115,7 @@ class TestAgentClassGoingOffline:
 
         assert service.registered_classes == {"Alive", "Fresh"}
         assert service._register_class_endpoints.call_args.kwargs["agent_class"] == "Fresh"
-        recorded_rounds.assert_called_once()
+        recorded_rounds.assert_awaited_once()
         service._sync_agent_instances_to_provisioners.assert_awaited_once()
         service._sync_knowledge_to_openwebui.assert_awaited_once()
 
@@ -126,17 +126,17 @@ class TestARoundThatDoesNotComplete:
             AgentEndpointsDiscoveryService, _app_with_a_mounted_controller("/agents"), "/agents", {"Alive"}
         )
         _add_dynamic_endpoint(service, service._get_endpoint_base_path_for_class("Alive"))
-        service._online_class_names = MagicMock(return_value=set())
+        service._online_class_names = AsyncMock(return_value=set())
         return service
 
-    def _assert_nothing_changed(self, service: AgentEndpointsDiscoveryService, recorded_rounds: MagicMock) -> None:
-        recorded_rounds.assert_not_called()
+    def _assert_nothing_changed(self, service: AgentEndpointsDiscoveryService, recorded_rounds: AsyncMock) -> None:
+        recorded_rounds.assert_not_awaited()
         assert service.registered_classes == {"Alive"}
         assert "/agents/classes/Alive/instances/{agent_id}/start" in _paths(service.app)
 
     @pytest.mark.asyncio
     async def test_a_round_that_raises_is_logged_and_not_counted(
-        self, recorded_rounds: MagicMock, caplog: pytest.LogCaptureFixture
+        self, recorded_rounds: AsyncMock, caplog: pytest.LogCaptureFixture
     ) -> None:
         service = self._service()
         service._broadcast_discovery = AsyncMock(side_effect=RuntimeError("event loop starved"))
@@ -149,7 +149,7 @@ class TestARoundThatDoesNotComplete:
 
     @pytest.mark.asyncio
     async def test_a_stalled_round_is_abandoned_logged_and_not_counted(
-        self, recorded_rounds: MagicMock, caplog: pytest.LogCaptureFixture
+        self, recorded_rounds: AsyncMock, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Before #1970 a round that never returned logged nothing at all."""
         service = self._service()
@@ -169,7 +169,7 @@ class TestARoundThatDoesNotComplete:
 
     @pytest.mark.asyncio
     async def test_a_round_while_nats_reconnects_is_not_counted(
-        self, recorded_rounds: MagicMock, caplog: pytest.LogCaptureFixture
+        self, recorded_rounds: AsyncMock, caplog: pytest.LogCaptureFixture
     ) -> None:
         """nats-py buffers the request instead of raising, so the round would otherwise see zero answers."""
         service = self._service()
@@ -188,7 +188,7 @@ class TestARoundThatDoesNotComplete:
 
     @pytest.mark.asyncio
     async def test_a_round_during_which_nats_reconnected_is_not_counted(
-        self, recorded_rounds: MagicMock, caplog: pytest.LogCaptureFixture
+        self, recorded_rounds: AsyncMock, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Connected at both checks, yet the answers sent while it was down are lost."""
         service = self._service()
@@ -206,7 +206,7 @@ class TestARoundThatDoesNotComplete:
         self._assert_nothing_changed(service, recorded_rounds)
 
     @pytest.mark.asyncio
-    async def test_no_request_is_broadcast_while_nats_is_down(self, recorded_rounds: MagicMock) -> None:
+    async def test_no_request_is_broadcast_while_nats_is_down(self, recorded_rounds: AsyncMock) -> None:
         service = self._service()
         service.nc.is_connected = False
         service._broadcast_discovery = AsyncMock()
@@ -236,17 +236,17 @@ class TestSeveralApiProcesses:
         _add_dynamic_endpoint(service, service._get_endpoint_base_path_for_class("Gone"))
         service._recorder_lease.held = AsyncMock(return_value=holds_lease)
         service._register_class_endpoints = MagicMock()
-        service._online_class_names = MagicMock(return_value={"Alive"})
+        service._online_class_names = AsyncMock(return_value={"Alive"})
         service._broadcast_discovery = AsyncMock(return_value=[_agent_answer("Alive")])
         return service
 
     @pytest.mark.asyncio
-    async def test_only_the_lease_holder_records_its_rounds(self, recorded_rounds: MagicMock) -> None:
+    async def test_only_the_lease_holder_records_its_rounds(self, recorded_rounds: AsyncMock) -> None:
         """Rounds from N processes would make the last N rounds span a fraction of the configured time."""
         await self._service(holds_lease=True)._discover_and_register()
         await self._service(holds_lease=False)._discover_and_register()
 
-        recorded_rounds.assert_called_once()
+        recorded_rounds.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_a_process_without_the_lease_still_reconciles_its_own_endpoints(self) -> None:
@@ -276,12 +276,15 @@ class TestAnAnswerThatCannotBeSaved:
             AgentEndpointsDiscoveryService, _app_with_a_mounted_controller("/agents"), "/agents", set()
         )
 
-        def rejected() -> None:
+        async def rejected() -> None:
             raise ValueError("invalid config specs")
+
+        async def accepted() -> None:
+            return None
 
         with caplog.at_level(logging.ERROR):
             assert await service._stamp_answer("Broken", rejected) is False
-        assert await service._stamp_answer("Healthy", lambda: None) is True
+        assert await service._stamp_answer("Healthy", accepted) is True
 
         assert "Broken" in caplog.text
         assert "invalid config specs" in caplog.text
@@ -293,7 +296,7 @@ class TestProcessClassGoingOffline:
         service = _make_service(ProcessEndpointsDiscoveryService, app, "/processes", {"Gone"})
         _add_dynamic_endpoint(service, service._get_endpoint_base_path_for_process_class("Gone"))
         service._register_class_endpoints = MagicMock()
-        service._online_class_names = MagicMock(return_value=online_by_rule)
+        service._online_class_names = AsyncMock(return_value=online_by_rule)
         service._broadcast_discovery = AsyncMock(return_value=[SimpleNamespace(process_class="Fresh")])
         return service
 
