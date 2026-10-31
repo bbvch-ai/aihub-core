@@ -28,7 +28,7 @@ class MyTenantService:
         if not tenant_ids:
             return MyTenantsResponse(tenants=[], is_sys_admin=user.is_sys_admin)
 
-        tenant_entities = TenantMetadataEntity.objects(id__in=list(tenant_ids))
+        tenant_entities = await TenantMetadataEntity.get_metadata_for_tenant_ids(list(tenant_ids))
         tenants = [TenantMembershipDTO.from_entity(entity) for entity in tenant_entities]
         return MyTenantsResponse(tenants=tenants, is_sys_admin=user.is_sys_admin)
 
@@ -48,7 +48,7 @@ class MyTenantService:
             await KeycloakAdminService.clear_active_tenant(user_id)
             raise HTTPException(status_code=404, detail="Active tenant no longer exists.")
 
-        entity = TenantMetadataEntity.get_metadata_by_tenant_id(active_tenant_id)
+        entity = await TenantMetadataEntity.get_metadata_by_tenant_id(active_tenant_id)
         if not entity:
             raise HTTPException(status_code=404, detail="Active tenant metadata not configured.")
 
@@ -64,7 +64,7 @@ class MyTenantService:
         if not await KeycloakAdminService.is_user_member_of_tenant(user_id, tenant_id):
             raise HTTPException(status_code=403, detail="You are not a member of this tenant.")
 
-        entity = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
+        entity = await TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not entity:
             raise HTTPException(status_code=404, detail="Tenant metadata not configured.")
 

@@ -138,9 +138,11 @@ async def api_client() -> AsyncGenerator[AsyncClient]:
 @pytest.fixture(autouse=True)
 def _rules_and_users(monkeypatch: pytest.MonkeyPatch) -> None:
     """Rules come from the callers' roles alone, and members resolve without Keycloak."""
-    monkeypatch.setattr(
-        RoleEntity, "get_access_rules_for_roles", lambda roles, tenant_id: set().union(*(_ROLE_RULES[r] for r in roles))
-    )
+
+    async def _rules(roles: list[str], tenant_id: str) -> set[str]:
+        return set().union(*(_ROLE_RULES[r] for r in roles))
+
+    monkeypatch.setattr(RoleEntity, "get_access_rules_for_roles", _rules)
 
     async def _user(user_oid: str) -> MinimalUserDTO:
         return MinimalUserDTO(id=user_oid, name=user_oid, email=f"{user_oid}@example.com")

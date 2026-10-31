@@ -17,9 +17,9 @@ if TYPE_CHECKING:
 class SuiteService:
     @staticmethod
     @trace_fn
-    def get_suite(user: UserIdentity, runner: "Runner", t: LocaleHandler) -> SuiteDTO:
+    async def get_suite(user: UserIdentity, runner: "Runner", t: LocaleHandler) -> SuiteDTO:
         services: list[ServiceDTO] = []
-        access_checker = AccessChecker.from_user(user)
+        access_checker = await AccessChecker.from_user(user)
         for controller in runner.controllers:
             if not isinstance(controller, TenantScopedController):
                 continue

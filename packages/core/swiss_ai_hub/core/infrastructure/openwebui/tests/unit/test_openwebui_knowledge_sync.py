@@ -38,7 +38,7 @@ async def _sync(listing: dict, entries: list[MagicMock], existing: list[dict]) -
     client = _client(existing)
     with (
         patch.object(OpenWebuiKnowledgeSync, "listing", return_value=listing),
-        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity") as entity,
+        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity", new_callable=AsyncMock) as entity,
     ):
         entity.all_entries.return_value = entries
         await OpenWebuiKnowledgeSync(client, "en").sync(MagicMock(), [HR_GROUP, SALES_GROUP], TENANT_RULES, ROLE_RULES)
@@ -106,7 +106,7 @@ async def test_the_entry_of_a_deleted_collection_is_removed_even_when_creating_a
 
     with (
         patch.object(OpenWebuiKnowledgeSync, "listing", return_value={("hr", "reports"): ("HR / Reports", "")}),
-        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity") as entity,
+        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity", new_callable=AsyncMock) as entity,
     ):
         entity.all_entries.return_value = [_entry("k1", *POLICIES)]
         with pytest.raises(RuntimeError):
@@ -136,7 +136,7 @@ async def test_the_sys_admin_group_may_reference_every_collection_its_tenant_all
             "listing",
             return_value={POLICIES: ("HR / Policies", "Company policies"), ("legal", "contracts"): ("Legal", "")},
         ),
-        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity") as entity,
+        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity", new_callable=AsyncMock) as entity,
     ):
         entity.all_entries.return_value = []
         await OpenWebuiKnowledgeSync(client, "en").sync(

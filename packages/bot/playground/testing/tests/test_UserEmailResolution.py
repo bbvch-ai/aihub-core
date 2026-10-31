@@ -129,7 +129,7 @@ def slack_users_info(monkeypatch: pytest.MonkeyPatch) -> SlackUsersInfo:
 def provisioned_user(monkeypatch: pytest.MonkeyPatch) -> None:
     register_fake_keycloak_user(user_id="agent-user-oid", name=DISPLAY_NAME, email=RESOLVED_EMAIL)
     monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", AsyncMock(return_value=fake_tenant_identity()))
-    monkeypatch.setattr(UserTenantRoleEntity, "get_roles_for_user_in_tenant", MagicMock(return_value=["member"]))
+    monkeypatch.setattr(UserTenantRoleEntity, "get_roles_for_user_in_tenant", AsyncMock(return_value=["member"]))
 
 
 @pytest.fixture
@@ -139,7 +139,7 @@ def no_conversation_history(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _grant_rules(monkeypatch: pytest.MonkeyPatch, rules: list[str]) -> None:
-    monkeypatch.setattr(RoleEntity, "get_access_rules_for_roles", MagicMock(return_value=rules))
+    monkeypatch.setattr(RoleEntity, "get_access_rules_for_roles", AsyncMock(return_value=rules))
 
 
 @pytest.mark.asyncio

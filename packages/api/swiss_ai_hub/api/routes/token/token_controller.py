@@ -36,7 +36,7 @@ class TokenController(TenantScopedController):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> CreateTokenResponse:
             try:
-                return TokenService.create_token(
+                return await TokenService.create_token(
                     name=token_data.name,
                     expiry_date=token_data.expiry_date,
                     user=user,
@@ -56,7 +56,7 @@ class TokenController(TenantScopedController):
         async def list_tokens_endpoint(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> list[TokenResponse]:
-            return TokenService.list_tokens(user)
+            return await TokenService.list_tokens(user)
 
         return self
 
@@ -72,7 +72,7 @@ class TokenController(TenantScopedController):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> RevokeTokenResponse:
             try:
-                TokenService.revoke_token(token_id, user)
+                await TokenService.revoke_token(token_id, user)
                 return RevokeTokenResponse(detail="Token revoked successfully.")
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))

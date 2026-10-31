@@ -1,4 +1,5 @@
 import re
+from typing import Self
 
 from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -74,7 +75,7 @@ class AccessChecker:
         return self.user_valid_access_rules
 
     @classmethod
-    def from_user(cls, user: UserIdentity):
+    async def from_user(cls, user: UserIdentity) -> Self:
         """
         Creates an AccessChecker from a UserIdentity.
 
@@ -94,7 +95,9 @@ class AccessChecker:
             return cls(user_access_rules=[], tenant_access_rules=[], is_sys_admin=user.is_sys_admin)
 
         # User roles are already resolved for the acting tenant
-        user_access_rules = RoleEntity.get_access_rules_for_roles(user.roles, tenant_id=user.acting_within_tenant.id)
+        user_access_rules = await RoleEntity.get_access_rules_for_roles(
+            user.roles, tenant_id=user.acting_within_tenant.id
+        )
         if user.openwebui_sys_admin:
             user_access_rules = {*user_access_rules, *SYS_ADMIN_OPENWEBUI_ACCESS_RULES}
 

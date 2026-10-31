@@ -89,10 +89,11 @@ class ProcessController(TenantScopedController):
         ) -> list[FullProcessInstanceDTO]:
             """Retrieve all instances of a specific process class."""
             instances = await ProcessService.get_process_class_instances(process_class, t)
+            access_checker = await AccessChecker.from_user(user)
             return [
                 instance
                 for instance in instances
-                if AccessChecker.from_user(user).has_access_to_process(instance.process_class, instance.process_id)
+                if access_checker.has_access_to_process(instance.process_class, instance.process_id)
             ]
 
         return self
@@ -187,10 +188,11 @@ class ProcessController(TenantScopedController):
             Use `?online=true` for online instances only, `?online=false` for offline only.
             """
             instances = await ProcessService.get_all_process_instances(t, online=online)
+            access_checker = await AccessChecker.from_user(user)
             return [
                 instance
                 for instance in instances
-                if AccessChecker.from_user(user).has_access_to_process(instance.process_class, instance.process_id)
+                if access_checker.has_access_to_process(instance.process_class, instance.process_id)
             ]
 
         return self

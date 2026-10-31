@@ -459,21 +459,24 @@ class TestSyncAccessGrantsLlm:
             patch.object(provisioner._openwebui, "list_groups", return_value=[_group("aihub:T1:R1", "grp-1")]),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
         ):
             tenant = MagicMock()
             tenant.id = "T1"
             tenant.name = "T1"
             tenant.access_rules = ["aihub.user.model.>"]
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
 
             role = MagicMock()
             role.name = "R1"
             role.tenant_id = "T1"
             role.access_rules = ["aihub.user.model.text-generation.*"]
-            mock_role.objects.return_value = [role]
+            mock_role.list_all.return_value = [role]
 
             await provisioner._sync_access_grants(mock_client)
 

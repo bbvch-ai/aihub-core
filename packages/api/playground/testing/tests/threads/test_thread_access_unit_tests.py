@@ -50,36 +50,40 @@ def _checker(user_rules: list[str], tenant_rules: list[str] = BROAD_TENANT_RULES
     return AccessChecker(user_rules, tenant_access_rules=tenant_rules)
 
 
+@pytest.mark.asyncio
 class TestCanView:
-    def test_member_can_view(self):
-        with patch(FROM_USER, return_value=_checker([])):
-            assert ThreadAccess.can_view(_thread(), _user(MEMBER_ID))
+    async def test_member_can_view(self):
+        with patch(FROM_USER, new=AsyncMock(return_value=_checker([]))):
+            assert await ThreadAccess.can_view(_thread(), _user(MEMBER_ID))
 
-    def test_non_member_with_broad_rules_cannot_view_a_thread_without_process(self):
+    async def test_non_member_with_broad_rules_cannot_view_a_thread_without_process(self):
         """A missing process must not turn into a `process.None.None` permission that `aihub.user.>` matches."""
-        with patch(FROM_USER, return_value=_checker(BROAD_USER_RULES)):
-            assert not ThreadAccess.can_view(_thread(), _user(OUTSIDER_ID))
+        with patch(FROM_USER, new=AsyncMock(return_value=_checker(BROAD_USER_RULES))):
+            assert not await ThreadAccess.can_view(_thread(), _user(OUTSIDER_ID))
 
-    def test_non_member_of_another_tenant_cannot_view_a_thread_without_process(self):
-        with patch(FROM_USER, return_value=_checker(BROAD_USER_RULES)):
-            assert not ThreadAccess.can_view(_thread(), _user(OUTSIDER_ID, tenant_id="tenant-b"))
+    async def test_non_member_of_another_tenant_cannot_view_a_thread_without_process(self):
+        with patch(FROM_USER, new=AsyncMock(return_value=_checker(BROAD_USER_RULES))):
+            assert not await ThreadAccess.can_view(_thread(), _user(OUTSIDER_ID, tenant_id="tenant-b"))
 
-    def test_sys_admin_can_view_a_thread_without_process(self):
-        assert ThreadAccess.can_view(_thread(), _user(OUTSIDER_ID, is_sys_admin=True))
+    async def test_sys_admin_can_view_a_thread_without_process(self):
+        assert await ThreadAccess.can_view(_thread(), _user(OUTSIDER_ID, is_sys_admin=True))
 
-    def test_non_member_with_access_to_the_process_can_view_its_thread(self):
+    async def test_non_member_with_access_to_the_process_can_view_its_thread(self):
         thread = _thread(process_class="InvoiceProcess", process_id="p1")
-        with patch(FROM_USER, return_value=_checker(["aihub.user.process.InvoiceProcess.p1"])):
-            assert ThreadAccess.can_view(thread, _user(OUTSIDER_ID))
+        with patch(FROM_USER, new=AsyncMock(return_value=_checker(["aihub.user.process.InvoiceProcess.p1"]))):
+            assert await ThreadAccess.can_view(thread, _user(OUTSIDER_ID))
 
-    def test_non_member_without_access_to_the_process_cannot_view_its_thread(self):
+    async def test_non_member_without_access_to_the_process_cannot_view_its_thread(self):
         thread = _thread(process_class="InvoiceProcess", process_id="p1")
-        with patch(FROM_USER, return_value=_checker(["aihub.user.process.InvoiceProcess.p2"])):
-            assert not ThreadAccess.can_view(thread, _user(OUTSIDER_ID))
+        with patch(FROM_USER, new=AsyncMock(return_value=_checker(["aihub.user.process.InvoiceProcess.p2"]))):
+            assert not await ThreadAccess.can_view(thread, _user(OUTSIDER_ID))
 
-    def test_ensure_can_view_answers_403(self):
-        with patch(FROM_USER, return_value=_checker(BROAD_USER_RULES)), pytest.raises(HTTPException) as raised:
-            ThreadAccess.ensure_can_view(_thread(), _user(OUTSIDER_ID))
+    async def test_ensure_can_view_answers_403(self):
+        with (
+            patch(FROM_USER, new=AsyncMock(return_value=_checker(BROAD_USER_RULES))),
+            pytest.raises(HTTPException) as raised,
+        ):
+            await ThreadAccess.ensure_can_view(_thread(), _user(OUTSIDER_ID))
         assert raised.value.status_code == 403
 
 
@@ -115,14 +119,14 @@ class TestProcessThreadFromEntity:
     async def test_a_user_with_access_to_the_process_can_view_its_thread(self):
         thread = await self._process_thread()
 
-        with patch(FROM_USER, return_value=_checker(["aihub.user.process.InvoiceProcess.p1"])):
-            assert ThreadAccess.can_view(thread, _user(OUTSIDER_ID))
+        with patch(FROM_USER, new=AsyncMock(return_value=_checker(["aihub.user.process.InvoiceProcess.p1"]))):
+            assert await ThreadAccess.can_view(thread, _user(OUTSIDER_ID))
 
     async def test_a_user_without_access_to_the_process_cannot_view_its_thread(self):
         thread = await self._process_thread()
 
-        with patch(FROM_USER, return_value=_checker(["aihub.user.process.InvoiceProcess.p2"])):
-            assert not ThreadAccess.can_view(thread, _user(OUTSIDER_ID))
+        with patch(FROM_USER, new=AsyncMock(return_value=_checker(["aihub.user.process.InvoiceProcess.p2"]))):
+            assert not await ThreadAccess.can_view(thread, _user(OUTSIDER_ID))
 
 
 class TestEnsureCanPost:

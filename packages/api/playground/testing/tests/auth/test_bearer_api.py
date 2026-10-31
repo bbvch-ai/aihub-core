@@ -6,9 +6,7 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from mongoengine import connect, disconnect
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
-from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
@@ -25,60 +23,35 @@ EXPECTED_USER_FIELDS = ["id", "name", "email", "roles", "profile_image"]
 pytestmark = pytest.mark.beanie
 
 
-@pytest.fixture
-def mongo_db():
-    """Set up and tear down the MongoDB connection for tests."""
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-        uuidRepresentation="standard",
-    )
-    yield
-    disconnect()
-
-
-@pytest.fixture
-def valid_token(mongo_db):
+@pytest_asyncio.fixture(loop_scope="session")
+async def valid_token(clean_beanie_collections: None) -> str:
     """Insert a valid token document and return its token string."""
     config = SimpleNamespace(OID=TEST_USER_OID, NAME=TEST_USER_NAME, EMAIL=TEST_USER_EMAIL, ROLES=TEST_USER_ROLES)
     user_oid = os.getenv("OID", config.OID)
 
     # Create the test role on the default tenant so AccessChecker can resolve access rules
-    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
-    role: RoleEntity | None = None
-    created_role = False
+    default_tenant = await TenantMetadataEntity.get_startup_tenant_metadata()
     if default_tenant:
         tenant_id = str(default_tenant.id)
-        # Reuse the role if a prior test run left it behind; only track `created_role`
-        # when we actually insert so teardown doesn't delete rows we didn't create.
-        role = RoleEntity.objects(name=config.ROLES[0], tenant_id=tenant_id).first()
-        if not role:
-            role = RoleEntity.create_tenant_role(
+        if not await RoleEntity.get_role(config.ROLES[0], tenant_id):
+            await RoleEntity.create_tenant_role(
                 name=config.ROLES[0],
                 description="Full admin access for testing",
                 access_rules=["aihub.admin.>"],
                 tenant_id=tenant_id,
             )
-            created_role = True
 
-    # Assign roles to user in default tenant (required for multi-tenant auth)
-    user_tenant_role = None
-    if default_tenant:
-        user_tenant_role = UserTenantRoleEntity.create_or_update(
+        # Assign roles to user in default tenant (required for multi-tenant auth)
+        await UserTenantRoleEntity.create_or_update(
             user_id=user_oid,
-            tenant_id=str(default_tenant.id),
+            tenant_id=tenant_id,
             roles=config.ROLES,
             validate_roles=False,
         )
 
     expiry = datetime.now(UTC) + timedelta(hours=1)
-    token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user_oid)
-    yield token_obj.token
-    token_obj.delete()
-    if user_tenant_role:
-        user_tenant_role.delete()
-    if created_role:
-        role.delete()
+    token_obj = await BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user_oid)
+    return token_obj.token
 
 
 @pytest.fixture

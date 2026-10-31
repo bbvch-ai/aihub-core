@@ -38,7 +38,7 @@ class UserFilesTools(BaseToolSpec):
         refers to one of their files that is not attached to this message, to find its exact name; files attached
         to this conversation are read with the tool for attached files instead. Chat attachments lie under
         conversations/<conversation>/."""
-        client = SandboxWorkspace.of(self.context).client
+        client = (await SandboxWorkspace.of(self.context)).client
         listing = await client.list_files(SandboxHomePath.shown(folder))
         entries = [entry for entry in listing.get("entries", []) if not entry["name"].startswith(".")]
         return json.dumps(entries, ensure_ascii=False)
@@ -58,7 +58,7 @@ class UserFilesTools(BaseToolSpec):
         To read certain pages of a PDF, give first_page and last_page instead of lines: line numbers say nothing
         about pages. A spreadsheet, presentation or CSV file loses its structure as text; when the code tool is
         offered, work on it with run_command instead, where the user's files lie under ~/."""
-        client = SandboxWorkspace.of(self.context).client
+        client = (await SandboxWorkspace.of(self.context)).client
         shown = SandboxHomePath.shown(path)
         if first_page is not None:
             return await UserFilePages.read(client, shown, first_page, last_page)

@@ -54,13 +54,13 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         tenant.name = "Default"
         return tenant
 
-    def mock_sync_tenant_memberships(user_id: str, tenants_claim: list[str]) -> None:
+    async def mock_sync_tenant_memberships(user_id: str, tenants_claim: list[str]) -> None:
         pass
 
     async def mock_ensure_active_tenant(user_id: str, redis: object) -> None:
         pass
 
-    def mock_get_roles(user_id: str, tenant_id: str) -> list[str]:
+    async def mock_get_roles(user_id: str, tenant_id: str) -> list[str]:
         return []
 
     monkeypatch.setattr(

@@ -11,7 +11,7 @@ from starlette.routing import Mount
 from swiss_ai_hub.api.i18n.middleware.i18n_middleware import I18nMiddleware
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, NatsSettings, RedisSettings
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
-from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
+from swiss_ai_hub.core.persistence import AccessChangeHook, BeanieInitializer
 from swiss_ai_hub.core.routes import Controller
 from swiss_ai_hub.core.runners import OpenApiSchemaService
 
@@ -129,13 +129,16 @@ class SysadminApiRunner:
                 host=MongoSettings().CONNECTION_STRING.get_secret_value(),
                 uuidRepresentation="standard",
             )
+            # Tenant metadata, roles and memberships are Beanie (#1963).
+            beanie_client = BeanieInitializer.create_client()
+            await BeanieInitializer.initialize(beanie_client)
             redis = RedisSettings.create_client()
             nc = await NatsSettings.create_client()
             api_app.state.nc = nc
             api_app.state.redis = redis
 
-            # MongoEngine signals are per-process — mutations through sysadmin-api
-            # need their own listener to mirror access changes to OpenWebUI.
+            # The access entities notify the hook in the process that writes them, so mutations through
+            # sysadmin-api need their own connected hook to mirror access changes to OpenWebUI.
             AccessChangeHook.connect(OpenWebuiProvisioner(redis=redis))
 
             try:
@@ -145,6 +148,7 @@ class SysadminApiRunner:
                 await nc.drain()
                 await redis.close()
                 disconnect()
+                await beanie_client.close()
 
         return Starlette(
             routes=[Mount(self.api_path, app=api_app)],
