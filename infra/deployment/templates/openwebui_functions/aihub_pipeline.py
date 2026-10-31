@@ -66,6 +66,9 @@ KNOWLEDGE_COLLECTION_TYPE = "collection"
 # a file forwarded again on a later turn is not copied into the agent bucket a second time.
 AGENT_UPLOADS_FILE_META_KEY = "aihub_agent_uploads"
 
+# Must stay in sync with the filename limit of the API's ``AgentFileUploadRequest``.
+AGENT_UPLOAD_FILENAME_MAX_LENGTH = 255
+
 # A temporary chat's text item, a note and an attached chat have no file in Open WebUI, so the pipe remembers the agent's
 # upload of each, by the item's id (a note's or chat's with its version), in Open WebUI's Redis; for as long as the
 # agent-files bucket keeps it.
@@ -2418,7 +2421,7 @@ class FileProcessingService:
         upload_key = f"note:{note.id}:{note.updated_at}"
         return AgentAttachment(
             source=file,
-            filename=f"{note.title or 'note'}.md",
+            filename=FileProcessingService._markdown_filename(note.title or "note"),
             content_type="text/markdown",
             file_id=await scope.recall(upload_key),
             text=((note.data or {}).get("content") or {}).get("md") or "",
@@ -2442,15 +2445,24 @@ class FileProcessingService:
         if not await FileProcessingService._may_read_chat(chat, scope.user_id):
             logger.warning(f"User {scope.user_id} may not read chat {chat.id}")
             return None
+        transcript = FileProcessingService._chat_transcript(chat)
+        if not transcript:
+            return None
         upload_key = f"chat:{chat.id}:{chat.updated_at}"
         return AgentAttachment(
             source=file,
-            filename=f"{chat.title or 'chat'}.md",
+            filename=FileProcessingService._markdown_filename(chat.title or "chat"),
             content_type="text/markdown",
             file_id=await scope.recall(upload_key),
-            text=FileProcessingService._chat_transcript(chat),
+            text=transcript,
             upload_key=upload_key,
         )
+
+    @staticmethod
+    def _markdown_filename(title: Annotated[str, "A note's or chat's title"]) -> Annotated[str, "Its upload's name"]:
+        """A title may hold a path separator, which the agent upload API refuses in a filename."""
+        stem = title.replace("/", "-").replace("\\", "-")
+        return f"{stem[: AGENT_UPLOAD_FILENAME_MAX_LENGTH - len('.md')]}.md"
 
     @staticmethod
     async def _may_read_chat(

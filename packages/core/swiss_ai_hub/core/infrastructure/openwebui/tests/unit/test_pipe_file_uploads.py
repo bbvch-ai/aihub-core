@@ -477,6 +477,38 @@ async def test_another_user_s_chat_reaches_the_agent_only_when_the_user_may_read
 
 
 @pytest.mark.asyncio
+async def test_a_chat_titled_with_a_path_separator_still_reaches_the_agent(
+    pipe: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The agent upload API refuses a filename with a path separator, which a chat's title may hold."""
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    chat = _chat(("user", "Plan?"))
+    chat.title = "Q1/Q2 plan\\" + "x" * 300
+    _chats(chat, pipe=pipe)
+
+    files, _ = await _turn(service, [{"type": "chat", "id": "chat-1"}])
+
+    assert files[0]["filename"].startswith("Q1-Q2 plan-x")
+    assert files[0]["filename"].endswith(".md")
+    assert len(files[0]["filename"]) == 255
+
+
+@pytest.mark.asyncio
+async def test_a_chat_without_messages_is_left_out_of_the_turn(pipe: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    empty = _chat(("user", "x"))
+    empty.chat = {"history": {"messages": {}, "currentId": None}}
+    _chats(empty, pipe=pipe)
+
+    files, _ = await _turn(service, [{"type": "chat", "id": "chat-1"}])
+
+    assert files == []
+    assert api.uploads == []
+
+
+@pytest.mark.asyncio
 async def test_a_deleted_chat_is_left_out_of_the_turn(pipe: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     api = _AgentFilesApi(pipe.httpx.HTTPError)
     service = _service(pipe, monkeypatch, api)
