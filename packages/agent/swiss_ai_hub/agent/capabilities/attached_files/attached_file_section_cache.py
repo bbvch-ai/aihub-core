@@ -11,7 +11,12 @@ from typing import ClassVar
 
 from botocore.exceptions import BotoCoreError, ClientError
 from pydantic import TypeAdapter
-from swiss_ai_hub.core.generative_ai import IngestedNode, MarkdownStructuralNodeParser, ParseCacheBucket
+from swiss_ai_hub.core.generative_ai import (
+    MAX_NODE_TOKENS,
+    IngestedNode,
+    MarkdownStructuralNodeParser,
+    ParseCacheBucket,
+)
 from swiss_ai_hub.core.infrastructure import get_tracer
 
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_record import AttachedFileRecord
@@ -38,7 +43,7 @@ class AttachedFileSectionCache:
     a later question needs them.
     """
 
-    FORMAT: ClassVar[int] = 1
+    FORMAT: ClassVar[int] = 2
     PREFIX: ClassVar[str] = "attached-files"
 
     def __init__(self) -> None:
@@ -51,13 +56,13 @@ class AttachedFileSectionCache:
     async def put_record(self, bucket: str, key: str, record: AttachedFileRecord) -> None:
         await self._write(self.record_key(bucket, key), record.model_dump_json().encode(), JSON)
 
-    async def sections(self, content_sha256: str) -> list[IngestedNode] | None:
-        content = await self._read(self.sections_key(content_sha256))
+    async def sections(self, content_sha256: str, tokenizer_id: str) -> list[IngestedNode] | None:
+        content = await self._read(self.sections_key(content_sha256, tokenizer_id))
         return await asyncio.to_thread(self._parse, content, SECTIONS.validate_json)
 
-    async def put_sections(self, content_sha256: str, sections: list[IngestedNode]) -> None:
+    async def put_sections(self, content_sha256: str, tokenizer_id: str, sections: list[IngestedNode]) -> None:
         encoded = await asyncio.to_thread(SECTIONS.dump_json, sections)
-        await self._write(self.sections_key(content_sha256), encoded, JSON)
+        await self._write(self.sections_key(content_sha256, tokenizer_id), encoded, JSON)
 
     async def embeddings(self, content_sha256: str, model: str, sections_digest: str) -> dict[int, array]:
         content = await self._read(self.embeddings_key(content_sha256, model))
@@ -75,8 +80,10 @@ class AttachedFileSectionCache:
         return f"{cls.PREFIX}/by-upload/{hashlib.sha256(f'{bucket}/{key}'.encode()).hexdigest()}.json"
 
     @classmethod
-    def sections_key(cls, content_sha256: str) -> str:
-        return f"{cls.PREFIX}/{cls.settings_fingerprint()}/{content_sha256}/sections.json"
+    def sections_key(cls, content_sha256: str, tokenizer_id: str) -> str:
+        """Sections are sized in the embedding model's tokens, so agents ranking with models that count differently
+        keep apart sections cut differently from the same content."""
+        return f"{cls.PREFIX}/{cls.settings_fingerprint()}/{content_sha256}/sections/{tokenizer_id}.json"
 
     @classmethod
     def embeddings_key(cls, content_sha256: str, model: str) -> str:
@@ -90,6 +97,7 @@ class AttachedFileSectionCache:
         relevant = {
             "chunk_size": defaults["chunk_size"].default,
             "chunk_overlap": defaults["chunk_overlap"].default,
+            "max_node_tokens": MAX_NODE_TOKENS,
             "format": cls.FORMAT,
         }
         return hashlib.sha256(json.dumps(relevant, sort_keys=True).encode()).hexdigest()[:16]

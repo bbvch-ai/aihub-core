@@ -7,15 +7,19 @@ where the user's question lives) and logs a warning; queries within the budget p
 """
 
 import logging
+from collections.abc import Iterator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from llama_index.core.utils import get_tokenizer
 
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import (
     MINIMUM_EMBEDDING_MAX_INPUT_TOKENS,
     QUERY_BUDGET_SAFETY_FACTOR,
 )
+from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config import RerankingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_tokenizer import ModelTokenizer
 from swiss_ai_hub.core.infrastructure.mem0.mem0_service import Mem0Service
 from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import MemorySearchResult
@@ -37,12 +41,21 @@ def _build_service(max_search_query_tokens: int | None) -> Mem0Service:
         mock_memory = MagicMock()
         mock_memory.search = AsyncMock(return_value={"results": [], "relations": []})
         mock_memory_cls.return_value = mock_memory
-        return Mem0Service(config=MagicMock(), t=MagicMock(), max_search_query_tokens=max_search_query_tokens)
+        config = MagicMock()
+        config.embedder.config = {"model": "embedding/bge-m3"}
+        config.reranker.config = {"model": "reranker/bge"}
+        return Mem0Service(config=config, t=MagicMock(), max_search_query_tokens=max_search_query_tokens)
 
 
 @pytest.fixture
-def mem0_service() -> Mem0Service:
-    return _build_service(max_search_query_tokens=LIMIT)
+def mem0_service() -> Iterator[Mem0Service]:
+    """An embedder without a declared tokenizer, the case these tests pin: counted in tiktoken at half the window."""
+    with _resolving_model_info({"mode": "embedding", "max_input_tokens": 8192}):
+        yield _build_service(max_search_query_tokens=LIMIT)
+
+
+def _resolving_model_info(model_info: dict):
+    return patch.object(EmbeddingModelConfig, "get_model_info", return_value={"model_info": model_info})
 
 
 def _forwarded_query(service: Mem0Service) -> str:
@@ -148,8 +161,7 @@ async def test_query_under_the_default_window_is_clamped_to_a_smaller_resolved_w
     small_window = 512
     query = "Document content sentence. " * 200
 
-    with patch(f"{CLAMP_MODULE}.EmbeddingModelConfig") as config_cls:
-        config_cls.return_value.get_model_info.return_value = {"model_info": {"max_input_tokens": small_window}}
+    with _resolving_model_info({"mode": "embedding", "max_input_tokens": small_window}):
         await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
 
     forwarded = _forwarded_query(service)
@@ -166,9 +178,8 @@ async def test_query_within_the_minimum_window_budget_skips_resolution():
     while len(get_tokenizer()(query)) > budget:
         query = query[:-5]
 
-    with patch(f"{CLAMP_MODULE}.EmbeddingModelConfig") as config_cls:
+    with patch.object(EmbeddingModelConfig, "get_model_info", side_effect=AssertionError("resolved")):
         await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
-        config_cls.assert_not_called()
 
     assert _forwarded_query(service) is query
 
@@ -182,3 +193,67 @@ def test_settings_field_parses_from_env(monkeypatch):
     monkeypatch.setenv("MEM0_SEARCH_QUERY_EMBEDDING_WINDOW", "4096")
     settings = Mem0Settings(LLM_NAME="llm", EMBEDDING_MODEL_NAME="embed", RERANKING_MODEL_NAME="rerank")
     assert settings.SEARCH_QUERY_EMBEDDING_WINDOW == 4096
+
+
+@pytest.mark.asyncio
+async def test_declared_embedder_counts_the_query_in_its_own_tokens():
+    service = _build_service(max_search_query_tokens=LIMIT)
+    query = "Document content sentence. " * 200
+    declared = {"mode": "embedding", "aihub_tokenizer": "bge-m3", "aihub_input_overhead_tokens": 2}
+
+    with _resolving_model_info(declared):
+        await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
+
+    assert ModelTokenizer.shared("bge-m3").count(_forwarded_query(service)) <= LIMIT - 2
+
+
+DECLARED_EMBEDDER = {
+    "mode": "embedding",
+    "max_input_tokens": 8192,
+    "aihub_tokenizer": "bge-m3",
+    "aihub_input_overhead_tokens": 2,
+}
+DECLARED_RERANKER = {
+    "mode": "rerank",
+    "max_input_tokens": 8192,
+    "aihub_tokenizer": "bge-m3",
+    "aihub_input_overhead_tokens": 4,
+}
+MEMORY = "The user prefers concise answers in German."
+QUESTION = "What did I say about the notice period?"
+
+
+def _declared_embedder_and_reranker():
+    return (
+        patch.object(EmbeddingModelConfig, "get_model_info", return_value={"model_info": DECLARED_EMBEDDER}),
+        patch.object(RerankingModelConfig, "get_model_info", return_value={"model_info": DECLARED_RERANKER}),
+    )
+
+
+@pytest.mark.asyncio
+async def test_a_reranked_search_leaves_the_reranker_room_for_the_memory():
+    """mem0 reranks each memory with the query in one window, through its own reranker rather than rerank_nodes; a
+    query filling the embedder's window left no room for the memory, and every long search lost its reranking."""
+    service = _build_service(max_search_query_tokens=None)
+    query = ("Clause text from the attached contract. " * 2600) + QUESTION
+    embedder, reranker = _declared_embedder_and_reranker()
+
+    with embedder, reranker:
+        await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
+
+    count = ModelTokenizer.shared("bge-m3").count
+    forwarded = _forwarded_query(service)
+    assert count(forwarded) + DECLARED_RERANKER["aihub_input_overhead_tokens"] + count(MEMORY) <= 8192
+    assert forwarded.endswith(QUESTION)
+
+
+@pytest.mark.asyncio
+async def test_a_search_without_reranking_keeps_the_embedders_whole_window():
+    service = _build_service(max_search_query_tokens=None)
+    query = "Clause text from the attached contract. " * 2600
+    embedder, reranker = _declared_embedder_and_reranker()
+
+    with embedder, reranker:
+        await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY, rerank=False)
+
+    assert ModelTokenizer.shared("bge-m3").count(_forwarded_query(service)) > 8192 - 100

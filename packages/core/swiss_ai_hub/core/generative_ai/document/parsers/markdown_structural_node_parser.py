@@ -15,6 +15,7 @@ from pydantic import ConfigDict, Field, model_validator
 
 from swiss_ai_hub.core.generative_ai.document.extractors import MetadataExtractor
 from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import PAGE_BREAK
+from swiss_ai_hub.core.generative_ai.document.parsers.node_embedding_window import NodeEmbeddingWindow
 from swiss_ai_hub.core.generative_ai.document.parsers.split import Split
 from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk import TextChunk
 from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk_size_limiter import TextChunkSizeLimiter
@@ -22,7 +23,9 @@ from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import (
     parse_markdown_table,
     split_dataframe_into_chunks,
 )
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
+from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_token_budget import ModelTokenBudget
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA,
@@ -39,9 +42,14 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
 
 DEFAULT_EMBEDDING_MAX_INPUT_TOKENS = 8192
 
-# Absorbs two unknowns the chunker cannot measure: the MetadataMode.EMBED prefix that embed_nodes prepends
-# (~150 tokens of metadata that no chunk budget sees), and the tokenizer mismatch — LiteLLM's token counter
-# reports tiktoken counts for bge-m3, not its real XLM-R tokenizer.
+# Content cap of a node, in the embedding model's own tokens, when the model declares its tokenizer. Well inside
+# bge-m3's 8192 so that a node, its metadata and a reranker query all fit one window, and the size a large table
+# is split to anyway.
+MAX_NODE_TOKENS = 2048
+
+# Only for an embedding model that declares no tokenizer: its ceiling is then counted in tiktoken, which undercounts
+# bge-m3 by 1.32-1.54x on code, 1.31x on whitespace-heavy text and 1.15x on markdown, and leaves the MetadataMode.EMBED
+# prefix that embed_nodes prepends uncounted. A declared model is counted exactly, metadata included, instead.
 EMBEDDING_BUDGET_SAFETY_FACTOR = 0.85
 
 
@@ -167,7 +175,7 @@ class NodeCreatorFromSplits:
         chunk_size: int = 512,
         chunk_overlap: int = 20,
         llm_config: LLMConfig | None = None,
-        max_embedding_tokens: int = DEFAULT_EMBEDDING_MAX_INPUT_TOKENS,
+        ceiling_budget: ModelTokenBudget | None = None,
     ):
         self.include_metadata = True
         self.metadata = {}
@@ -176,14 +184,27 @@ class NodeCreatorFromSplits:
         self.current_index = 0  # Initialize the index counter
         self.header_references = {}
         self.llm_config = llm_config
-        self.size_limiter = TextChunkSizeLimiter(
-            max_tokens=int(max_embedding_tokens * EMBEDDING_BUDGET_SAFETY_FACTOR),
-            token_counter=self._count_tokens,
+        self.ceiling_budget = ceiling_budget or ModelTokenBudget.tiktoken_fallback(DEFAULT_EMBEDDING_MAX_INPUT_TOKENS)
+        self.size_limiter = self._size_limiter(self.ceiling_budget)
+        self.embedding_window = NodeEmbeddingWindow(budget=self.ceiling_budget) if self.ceiling_budget.exact else None
+
+    @staticmethod
+    def _size_limiter(budget: ModelTokenBudget) -> TextChunkSizeLimiter:
+        if budget.exact:
+            return TextChunkSizeLimiter(
+                max_tokens=min(MAX_NODE_TOKENS, budget.usable_input_tokens),
+                token_counter=budget.tokenizer.count,
+                encode=budget.tokenizer.encode_without_specials,
+            )
+        return TextChunkSizeLimiter(
+            max_tokens=int(budget.max_input_tokens * EMBEDDING_BUDGET_SAFETY_FACTOR),
+            token_counter=budget.tokenizer.count,
         )
 
     def _count_tokens(self, text: str) -> int:
         """
-        Count tokens in text using the configured LLM's tokenizer, or estimate based on characters.
+        The 512-token text splits and table splits are sized with this count, not the embedding model's, so
+        chunk boundaries stay where existing indexes have them; only the ceiling is counted in the model's tokens.
         """
         if not self.llm_config:
             # according to OpenAI 1 token is around 4 characters
@@ -262,9 +283,8 @@ class NodeCreatorFromSplits:
             for page_offset, page_content in enumerate(split.content.split(PAGE_BREAK)):
                 text_chunks = self.size_limiter.enforce(self._chunk_content(page_content))
                 page_metadata = split.metadata | {PAGE: page + page_offset}
-                split_nodes.extend(
-                    self._build_node_from_split(text_chunk, node, page_metadata) for text_chunk in text_chunks
-                )
+                for text_chunk in text_chunks:
+                    split_nodes.extend(self._build_fitting_nodes(text_chunk, node, page_metadata))
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
             nodes.extend(split_nodes)
@@ -305,6 +325,23 @@ class NodeCreatorFromSplits:
                 ]
             )
         return text_chunks
+
+    def _build_fitting_nodes(self, text_chunk: TextChunk, node: BaseNode, metadata: dict) -> list[TextNode]:
+        """
+        A node whose metadata pushes its EMBED text past the window has its content split again to the room left.
+
+        Its index is given back first, so the nodes that replace it number on without a gap.
+        """
+        built = self._build_node_from_split(text_chunk, node, metadata)
+        if self.embedding_window is None or self.embedding_window.fits(built):
+            return [built]
+        room = self.embedding_window.content_room(built)
+        self.current_index -= 1
+        tokenizer = self.ceiling_budget.tokenizer
+        limiter = TextChunkSizeLimiter(room, tokenizer.count, encode=tokenizer.encode_without_specials)
+        rebuilt = [self._build_node_from_split(piece, node, metadata) for piece in limiter.enforce([text_chunk])]
+        self.embedding_window.require_fit(rebuilt)
+        return rebuilt
 
     def _build_node_from_split(self, text_chunk: TextChunk, node: BaseNode, metadata: dict) -> TextNode:
         node = build_nodes_from_splits([text_chunk.content], node, id_func=self.id_func)[0]
@@ -394,9 +431,17 @@ class MarkdownStructuralNodeParser(NodeParser):
     chunk_overlap: Annotated[int, Field(description="Number of overlapping tokens between chunks.")] = 20
     include_prev_next_rel: Annotated[bool, Field(description="Include prev/next node relationships.")] = False
 
+    embedding_model_name: Annotated[
+        str | None,
+        Field(
+            description="Embedding model that will consume these nodes. Its LiteLLM entry gives the window and, when "
+            "it declares one, the tokenizer that counts the nodes exactly."
+        ),
+    ] = None
+
     max_embedding_tokens: Annotated[
         int,
-        Field(description="Input limit of the embedding model that will consume these nodes."),
+        Field(description="Input limit assumed when no embedding model is named."),
     ] = DEFAULT_EMBEDDING_MAX_INPUT_TOKENS
 
     llm_config: Annotated[
@@ -431,9 +476,19 @@ class MarkdownStructuralNodeParser(NodeParser):
                 chunk_size=values.get("chunk_size", 512),
                 chunk_overlap=values.get("chunk_overlap", 20),
                 llm_config=values.get("llm_config", None),
-                max_embedding_tokens=values.get("max_embedding_tokens", DEFAULT_EMBEDDING_MAX_INPUT_TOKENS),
+                ceiling_budget=cls._ceiling_budget(
+                    values.get("embedding_model_name"),
+                    values.get("max_embedding_tokens", DEFAULT_EMBEDDING_MAX_INPUT_TOKENS),
+                ),
             )
         return values
+
+    @staticmethod
+    def _ceiling_budget(embedding_model_name: str | None, max_embedding_tokens: int) -> ModelTokenBudget:
+        """Resolved when the parser is built, per document, so a code location still loads while LiteLLM is down."""
+        if embedding_model_name is None:
+            return ModelTokenBudget.tiktoken_fallback(max_embedding_tokens)
+        return EmbeddingModelConfig(model_name=embedding_model_name).token_budget()
 
     @classmethod
     def from_defaults(
@@ -443,6 +498,7 @@ class MarkdownStructuralNodeParser(NodeParser):
         chunk_size: int = 512,
         chunk_overlap: int = 0,
         callback_manager: CallbackManager | None = None,
+        embedding_model_name: str | None = None,
     ) -> Self:
         return cls(
             include_metadata=include_metadata,
@@ -450,6 +506,7 @@ class MarkdownStructuralNodeParser(NodeParser):
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             callback_manager=callback_manager or CallbackManager([]),
+            embedding_model_name=embedding_model_name,
         )
 
     @classmethod

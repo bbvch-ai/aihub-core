@@ -70,8 +70,11 @@ class AttachedFileSections:
         self._cache = cache or AttachedFileSectionCache()
 
     @staticmethod
-    def parse(document: ExtractedDocument, file_id: str, filename: str) -> list[IngestedNode]:
-        """Text only: an upload's image links point nowhere the model could open."""
+    def parse(
+        document: ExtractedDocument, file_id: str, filename: str, embedding_model_name: str
+    ) -> list[IngestedNode]:
+        """Text only: an upload's image links point nowhere the model could open. Sized for the embedding model that
+        ranks the sections, as ingestion sizes nodes for the one that indexes them."""
         now = int(time.time())
         metadata = {
             **DEFAULT_METADATA,
@@ -83,7 +86,9 @@ class AttachedFileSections:
             UPDATED_AT: now,
             INSERTED_AT: now,
         }
-        parser = MarkdownStructuralNodeParser.from_defaults(metadata=metadata)
+        parser = MarkdownStructuralNodeParser.from_defaults(
+            metadata=metadata, embedding_model_name=embedding_model_name
+        )
         nodes = parser.get_nodes_from_documents([Document(id_=file_id, text=document.content)])
         return [
             IngestedNode.from_llama_index_node(node).model_copy(update={"content_type": NODE_CONTENT_TYPE_TEXT})
@@ -117,7 +122,9 @@ class AttachedFileSections:
         are kept for the next question about it. When embedding fails, the sections sharing the query's words are
         still reranked: the reranker is another model, and an embedding group in cooldown would otherwise cost the
         turn every exact match and leave it with the file's beginning."""
-        relevance_query = EmbeddingQueryClamp.clamp(query, model_name=self._config.embedding_model.model_name)
+        relevance_query = await asyncio.to_thread(
+            EmbeddingQueryClamp.clamp, query, model_name=self._config.embedding_model.model_name
+        )
         lexical = await asyncio.to_thread(AttachedFileLexicalRanking.rank, sections, relevance_query)
         try:
             dense, keep_embeddings = await self._dense(sections, lexical, relevance_query, content_sha256)
