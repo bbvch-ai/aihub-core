@@ -39,7 +39,8 @@ See the **SDK Licensing** page in the documentation (Ecosystem → Certification
 ## Vendored third-party files
 
 A few third-party files are committed inside an Apache-2.0 package and keep their upstream license. Each sits next to
-its own `LICENSE` file, which is authoritative for it, and a `SOURCE.json` recording where it was taken from.
+its own `LICENSE` file, which is authoritative for it, and a `SOURCE.json` recording where it was taken from. The
+package metadata names both licenses (`license = "Apache-2.0 AND MIT"` in `packages/core/pyproject.toml`).
 
 | Path                                                                                  | License | SPDX Identifier | Origin                                                                                      |
 | ------------------------------------------------------------------------------------- | ------- | --------------- | ------------------------------------------------------------------------------------------- |

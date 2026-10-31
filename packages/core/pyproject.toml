@@ -10,7 +10,7 @@ authors = [
     { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
     { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
-license = "Apache-2.0"
+license = "Apache-2.0 AND MIT"
 license-files = ["LICENSE", "swiss_ai_hub/core/generative_ai/resources/tokenizers/vendored/*/LICENSE"]
 readme = "README.md"
 classifiers = [
