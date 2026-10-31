@@ -148,3 +148,17 @@ def test_short_query_keeps_room_from_the_longest_document():
     assert request.query == QUESTION
     assert request.documents_cut == 1
     assert PAIR_OVERHEAD + tokenizer.count(QUESTION) + sent <= WINDOW
+
+
+def _node_with_oversized_metadata() -> IngestedNode:
+    """Indexed before metadata was counted: its heading alone is past the window, so no cut of its text can fit."""
+    return _node("heading-only", "Short body.").model_copy(update={"h1": "Paragraph heading " * 3000})
+
+
+@pytest.mark.asyncio
+async def test_a_node_whose_metadata_alone_is_over_the_window_is_left_out_of_the_request():
+    result, captured = await _rerank([_node("notice"), _node_with_oversized_metadata()], QUESTION, DECLARED)
+
+    assert max(_sent_pair_tokens(captured)) <= WINDOW
+    assert [node.node.node_id for node in captured["nodes"]] == ["notice"]
+    assert [node.id for node in result] == ["notice"]

@@ -21,7 +21,8 @@ class RerankRequest(BaseModel):
 
     The reranker scores each pair in one window, and rejects the whole request with a 400 when one pair is over it,
     which costs the turn its reranking. Each document counts as it is actually sent, its metadata included, and
-    nodes indexed before the ceiling was counted exactly (up to ~8.2k tokens) are cut for this request only.
+    nodes indexed before the ceiling was counted exactly (up to ~8.2k tokens) are cut for this request only; one whose
+    metadata alone is over the limit is left out of it.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
@@ -44,8 +45,10 @@ class RerankRequest(BaseModel):
             return cls(query=EmbeddingQueryClamp.clamp_to(query, room - longest_document, count), nodes=nodes)
         fitted_query = EmbeddingQueryClamp.clamp_to(query, MIN_QUERY_TOKENS, count)
         document_limit = room - count(fitted_query)
-        fitted_nodes = [cls._cut(node, document_limit, count) for node in nodes]
-        documents_cut = sum(1 for node, fitted in zip(nodes, fitted_nodes, strict=True) if fitted is not node)
+        cut = [(node, cls._cut(node, document_limit, count)) for node in nodes]
+        fitted_nodes = [fitted for _, fitted in cut if fitted is not None]
+        documents_cut = sum(1 for node, fitted in cut if fitted is not None and fitted is not node)
+        documents_left_out = [node.node.node_id for node, fitted in cut if fitted is None]
         if documents_cut:
             logger.warning(
                 "Cut %d of %d documents to %d tokens for this rerank: the longest measured %d of the %d-token window",
@@ -55,6 +58,13 @@ class RerankRequest(BaseModel):
                 longest_document,
                 budget.max_input_tokens,
             )
+        if documents_left_out:
+            logger.warning(
+                "Left %d documents out of this rerank, their metadata alone over the %d tokens a document may take: %s",
+                len(documents_left_out),
+                document_limit,
+                ", ".join(documents_left_out),
+            )
         return cls(query=fitted_query, nodes=fitted_nodes, documents_cut=documents_cut)
 
     @staticmethod
@@ -63,7 +73,9 @@ class RerankRequest(BaseModel):
         return node.node.get_content(metadata_mode=MetadataMode.EMBED)
 
     @classmethod
-    def _cut(cls, node: NodeWithScore, limit: int, count: Callable[[str], int]) -> NodeWithScore:
+    def _cut(cls, node: NodeWithScore, limit: int, count: Callable[[str], int]) -> NodeWithScore | None:
+        """None for a node no cut of its text can fit, because its metadata alone is over the limit: sending it would
+        cost every other document its ranking."""
         if count(cls.document_text(node)) <= limit:
             return node
         original = node.node
@@ -71,5 +83,9 @@ class RerankRequest(BaseModel):
         def sent_tokens(content: str) -> int:
             return count(original.model_copy(update={"text": content}).get_content(metadata_mode=MetadataMode.EMBED))
 
+        if sent_tokens("") > limit:
+            return None
         head = MeasuredTextCut.longest_fitting_head(original.get_content(), limit, sent_tokens)
+        if sent_tokens(head) > limit:
+            return None
         return NodeWithScore(node=original.model_copy(update={"text": head}), score=node.score)
