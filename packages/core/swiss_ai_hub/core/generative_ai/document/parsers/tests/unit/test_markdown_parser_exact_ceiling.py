@@ -2,7 +2,6 @@
 embed_nodes sends it: content within MAX_NODE_TOKENS and the EMBED text, metadata included, within the window. An
 oversized node is otherwise rejected by bge-m3 and skipped, leaving a hole in the index (a code figure did, #1856)."""
 
-from collections.abc import Iterator
 from pathlib import Path
 from time import time
 
@@ -37,7 +36,7 @@ PARSERS_SOURCE = Path(__file__).resolve().parents[2]
 
 
 @pytest.fixture
-def parser(monkeypatch) -> Iterator[MarkdownStructuralNodeParser]:
+def parser(monkeypatch) -> MarkdownStructuralNodeParser:
     monkeypatch.setattr(EmbeddingModelConfig, "get_model_info", lambda self: {"model_info": DECLARED})
     metadata = {
         NAMESPACE: "test",
@@ -46,7 +45,7 @@ def parser(monkeypatch) -> Iterator[MarkdownStructuralNodeParser]:
         UPDATED_AT: int(time()),
         INSERTED_AT: int(time()),
     }
-    yield MarkdownStructuralNodeParser(metadata=metadata, embedding_model_name="embedding/bge-m3")
+    return MarkdownStructuralNodeParser(metadata=metadata, embedding_model_name="embedding/bge-m3")
 
 
 def _count(text: str) -> int:
@@ -100,9 +99,10 @@ def test_metadata_leaving_no_room_for_content_raises_naming_document_and_keys(
     parser: MarkdownStructuralNodeParser,
 ) -> None:
     heading = " ".join(f"Paragraph{number}" for number in range(3000))
+    document = Document(text=f"# {heading}\nShort body.")
 
     with pytest.raises(ValueError, match=r"contract\.md.*h1 \(\d+ tokens\)"):
-        parser.get_nodes_from_node(Document(text=f"# {heading}\nShort body."))
+        parser.get_nodes_from_node(document)
 
 
 def test_ordinary_text_keeps_its_512_token_splits(parser: MarkdownStructuralNodeParser) -> None:
