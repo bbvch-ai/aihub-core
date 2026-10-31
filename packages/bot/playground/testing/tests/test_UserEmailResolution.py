@@ -84,12 +84,12 @@ def bot_tenant(monkeypatch: pytest.MonkeyPatch) -> None:
     credentials = Credentials(
         APP_TYPE="SingleTenant", APP_ID="app-id", APP_PASSWORD="secret", APP_TENANTID=BOT_TENANT_ID
     )
-    monkeypatch.setattr(PathEntity, "get_credentials_by_path", MagicMock(return_value=credentials))
+    monkeypatch.setattr(PathEntity, "get_credentials_by_path", AsyncMock(return_value=credentials))
 
 
 @pytest.fixture
 def slack_lookup(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
-    monkeypatch.setattr(PathEntity, "get_slack_token_by_path", MagicMock(return_value="xoxb-token"))
+    monkeypatch.setattr(PathEntity, "get_slack_token_by_path", AsyncMock(return_value="xoxb-token"))
     workspace = SlackIds(bot_id="B0123", team_id=SLACK_TEAM_ID)
     monkeypatch.setattr(SlackUtils, "get_slack_ids", AsyncMock(return_value=workspace))
     lookup = AsyncMock(return_value=SlackUser(id=SLACK_USER_ID, team_id=SLACK_TEAM_ID, email=RESOLVED_EMAIL))
@@ -100,7 +100,7 @@ def slack_lookup(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
 @pytest.fixture
 def slack_users_info(monkeypatch: pytest.MonkeyPatch) -> SlackUsersInfo:
     """Answers `users.info` with a given body and `auth.test` with our workspace, so the real lookups run."""
-    monkeypatch.setattr(PathEntity, "get_slack_token_by_path", MagicMock(return_value="xoxb-token"))
+    monkeypatch.setattr(PathEntity, "get_slack_token_by_path", AsyncMock(return_value="xoxb-token"))
     monkeypatch.setattr(SlackUtils, "_slack_ids_cache", TTLCache(maxsize=100, ttl=60))
 
     def answer_with(body: dict) -> list[httpx.Request]:
@@ -134,8 +134,8 @@ def provisioned_user(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def no_conversation_history(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(CompletionHandler, "get_messages_by_conversation_id", lambda *a, **k: [])
-    monkeypatch.setattr(CompletionHandler, "get_system_message", lambda *a, **k: None)
+    monkeypatch.setattr(CompletionHandler, "get_messages_by_conversation_id", AsyncMock(return_value=[]))
+    monkeypatch.setattr(CompletionHandler, "get_system_message", AsyncMock(return_value=None))
 
 
 def _grant_rules(monkeypatch: pytest.MonkeyPatch, rules: list[str]) -> None:
@@ -198,7 +198,7 @@ async def test_teams_member_of_another_tenant_is_rejected():
 @pytest.mark.asyncio
 async def test_teams_is_refused_on_a_path_without_a_tenant(monkeypatch: pytest.MonkeyPatch):
     credentials = Credentials(APP_TYPE="MultiTenant", APP_ID="app-id", APP_PASSWORD="secret")
-    monkeypatch.setattr(PathEntity, "get_credentials_by_path", MagicMock(return_value=credentials))
+    monkeypatch.setattr(PathEntity, "get_credentials_by_path", AsyncMock(return_value=credentials))
     turn_context = _make_turn_context(connector_client=_teams_connector(RESOLVED_EMAIL))
 
     with pytest.raises(UnverifiedBotUserError, match="no tenant is configured"):
@@ -234,7 +234,7 @@ async def test_slack_malformed_sender_id_is_rejected(slack_lookup: AsyncMock):
 
 @pytest.mark.asyncio
 async def test_slack_without_token_is_rejected(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(PathEntity, "get_slack_token_by_path", MagicMock(return_value=None))
+    monkeypatch.setattr(PathEntity, "get_slack_token_by_path", AsyncMock(return_value=None))
     turn_context = _make_turn_context(channel_id=Channels.slack, from_id=SLACK_SENDER_ID)
 
     with pytest.raises(UnverifiedBotUserError):
