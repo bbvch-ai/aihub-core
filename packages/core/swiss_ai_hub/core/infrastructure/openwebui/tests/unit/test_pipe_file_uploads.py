@@ -17,7 +17,12 @@ REPO_ROOT = Path(__file__).resolve().parents[8]
 TEMPLATE_PIPE = REPO_ROOT / "infra/deployment/templates/openwebui_functions/aihub_pipeline.py"
 OPEN_WEBUI_MODULES = ["open_webui", "open_webui.models", "open_webui.models.chats", "open_webui.models.files"]
 OPEN_WEBUI_MODULES += ["open_webui.models.users", "open_webui.utils", "open_webui.utils.chat_id"]
-OPEN_WEBUI_MODULES += ["open_webui.models.notes", "open_webui.models.access_grants"]
+OPEN_WEBUI_MODULES += ["open_webui.models.notes", "open_webui.models.access_grants", "open_webui.models.folders"]
+OPEN_WEBUI_MODULES += [
+    "open_webui.utils.misc",
+    "open_webui.utils.access_control",
+    "open_webui.utils.access_control.folders",
+]
 
 AGENT_CLASS, AGENT_ID = "RAGAgent", "hr"
 THREAD = "65f1c0ffee00000000000001"
@@ -378,6 +383,140 @@ async def test_a_deleted_note_is_left_out_of_the_turn(pipe: Any, monkeypatch: py
     _notes()
 
     files, _ = await _turn(service, [{"type": "note", "id": "note-1"}])
+
+    assert files == []
+    assert api.uploads == []
+
+
+def _message_list(messages_map: dict[str, dict[str, Any]], message_id: str) -> list[dict[str, Any]]:
+    """Open WebUI 0.11.3's walk from the current message up to the first, since the transcript follows that branch."""
+    branch = []
+    while message_id:
+        branch.append(messages_map[message_id])
+        message_id = messages_map[message_id].get("parentId")
+    return branch[::-1]
+
+
+def _chats(*chats: MagicMock, pipe: Any, shared_with: str | None = None, folder_readers: tuple[str, ...] = ()) -> None:
+    """Open WebUI's chats, the read grants on them and their folders' readers, as the pipe sees them."""
+    by_id = {chat.id: chat for chat in chats}
+    pipe.Chats.get_chat_by_id = AsyncMock(side_effect=by_id.get)
+    sys.modules["open_webui.models.access_grants"].AccessGrants.has_access = AsyncMock(
+        side_effect=lambda user_id, **_: user_id == shared_with
+    )
+    sys.modules["open_webui.models.folders"].Folders.get_folder_by_id = AsyncMock(
+        side_effect=lambda folder_id: MagicMock(id=folder_id)
+    )
+    sys.modules["open_webui.utils.access_control.folders"].has_folder_access = AsyncMock(
+        side_effect=lambda user_id, *_, **__: user_id in folder_readers
+    )
+    misc = sys.modules["open_webui.utils.misc"]
+    misc.get_message_list = _message_list
+    misc.get_content_from_message = lambda message: message.get("content")
+
+
+def _chat(*turns: tuple[str, str], updated_at: int = 1, owner: str = USER, folder_id: str | None = None) -> MagicMock:
+    messages = {
+        f"m{index}": {"id": f"m{index}", "parentId": f"m{index - 1}" if index else None, "role": role, "content": text}
+        for index, (role, text) in enumerate(turns)
+    }
+    history = {"messages": messages, "currentId": f"m{len(turns) - 1}"}
+    chat = MagicMock(id="chat-1", user_id=owner, updated_at=updated_at, folder_id=folder_id, chat={"history": history})
+    chat.title = "Inquiry About Tuan"
+    return chat
+
+
+@pytest.mark.asyncio
+async def test_an_attached_chat_reaches_the_agent_as_its_transcript_once_per_version(
+    pipe: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    redis = _Redis()
+    item = {"type": "chat", "id": "chat-1", "name": "Inquiry About Tuan"}
+    asked = (("user", "Who is Tuan?"), ("assistant", "Tuan leads the QC team."))
+
+    _chats(_chat(*asked), pipe=pipe)
+    first, owui_file_ids = await _turn(service, [item], redis)
+    second, _ = await _turn(service, [item], redis)
+    _chats(_chat(*asked, ("user", "And his email?"), updated_at=2), pipe=pipe)
+    grown, _ = await _turn(service, [item], redis)
+
+    transcript = "#### User\nWho is Tuan?\n\n#### Assistant\nTuan leads the QC team.\n"
+    assert api.uploads == [transcript.encode(), f"{transcript}\n#### User\nAnd his email?\n".encode()]
+    assert first == second
+    assert first == [
+        {"filename": "Inquiry About Tuan.md", "file_type": "text/markdown", "file_id": first[0]["file_id"]}
+    ]
+    assert grown[0]["file_id"] != first[0]["file_id"]
+    assert owui_file_ids == {}
+    assert redis.values[f"aihub:temp-upload:{USER}:{THREAD}:chat:chat-1:1"] == first[0]["file_id"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("shared_with", "folder_readers", "read"),
+    [(USER, (), True), (None, (USER,), True), (None, (), False)],
+    ids=["shared", "in-a-readable-folder", "neither"],
+)
+async def test_another_user_s_chat_reaches_the_agent_only_when_the_user_may_read_it(
+    pipe: Any,
+    monkeypatch: pytest.MonkeyPatch,
+    shared_with: str | None,
+    folder_readers: tuple[str, ...],
+    read: bool,
+) -> None:
+    """The pipe reads Open WebUI's database with its own rights, so a chat id alone must not reveal the chat."""
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    secret = _chat(("user", "secret"), owner="user-2", folder_id="folder-1")
+    _chats(secret, pipe=pipe, shared_with=shared_with, folder_readers=folder_readers)
+
+    files, _ = await _turn(service, [{"type": "chat", "id": "chat-1"}])
+
+    assert api.uploads == ([b"#### User\nsecret\n"] if read else [])
+    assert len(files) == int(read)
+
+
+@pytest.mark.asyncio
+async def test_a_chat_titled_with_a_path_separator_still_reaches_the_agent(
+    pipe: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The agent upload API refuses a filename with a path separator, which a chat's title may hold."""
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    chat = _chat(("user", "Plan?"))
+    chat.title = "Q1/Q2 plan\\" + "x" * 300
+    _chats(chat, pipe=pipe)
+
+    files, _ = await _turn(service, [{"type": "chat", "id": "chat-1"}])
+
+    assert files[0]["filename"].startswith("Q1-Q2 plan-x")
+    assert files[0]["filename"].endswith(".md")
+    assert len(files[0]["filename"]) == 255
+
+
+@pytest.mark.asyncio
+async def test_a_chat_without_messages_is_left_out_of_the_turn(pipe: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    empty = _chat(("user", "x"))
+    empty.chat = {"history": {"messages": {}, "currentId": None}}
+    _chats(empty, pipe=pipe)
+
+    files, _ = await _turn(service, [{"type": "chat", "id": "chat-1"}])
+
+    assert files == []
+    assert api.uploads == []
+
+
+@pytest.mark.asyncio
+async def test_a_deleted_chat_is_left_out_of_the_turn(pipe: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    _chats(pipe=pipe)
+
+    files, _ = await _turn(service, [{"type": "chat", "id": "chat-1"}])
 
     assert files == []
     assert api.uploads == []
