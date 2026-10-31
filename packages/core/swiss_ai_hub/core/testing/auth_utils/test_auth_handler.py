@@ -52,10 +52,10 @@ class TestAuthHandler(AuthHandler):
     async def authenticate_token(self, token_str: str, request: Request | None = None) -> UserIdentity:
         logger.warning("TestAuthHandler is active — no authentication performed. Do not use in production.")
 
-        default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
+        default_tenant = await TenantMetadataEntity.get_startup_tenant_metadata()
         if default_tenant:
-            self._seed_test_role(str(default_tenant.id))
-            UserTenantRoleEntity.create_or_update(
+            await self._seed_test_role(str(default_tenant.id))
+            await UserTenantRoleEntity.create_or_update(
                 user_id=TEST_USER_OID,
                 tenant_id=str(default_tenant.id),
                 roles=list(TEST_USER_ROLES),
@@ -70,7 +70,7 @@ class TestAuthHandler(AuthHandler):
         )
 
     @staticmethod
-    def _seed_test_role(tenant_id: str) -> None:
+    async def _seed_test_role(tenant_id: str) -> None:
         """Ensures the role the test identity claims actually grants something.
 
         Seeding only the user-to-role assignment left the role itself undefined, so
@@ -78,10 +78,10 @@ class TestAuthHandler(AuthHandler):
         concealed it by mocking the role lookup; interactively the server authenticated fine and then
         refused every request. The name is deliberately unmistakable in a role list.
         """
-        if RoleEntity.tenant_role_exists(TEST_USER_ROLE_NAME, tenant_id):
+        if await RoleEntity.tenant_role_exists(TEST_USER_ROLE_NAME, tenant_id):
             return
 
-        RoleEntity.create_tenant_role(
+        await RoleEntity.create_tenant_role(
             name=TEST_USER_ROLE_NAME,
             description="Full access for the bypass-auth test handler. Never create this by hand.",
             access_rules=list(TEST_TENANT_ACCESS_RULES),
@@ -102,7 +102,7 @@ class TestAuthHandler(AuthHandler):
         """
         requested = (request.path_params.get("tenant_id") or "").strip()
         if requested and requested != AuthHandler.ACTIVE_TENANT_SLUG:
-            tenant = TenantMetadataEntity.get_metadata_by_tenant_id(requested)
+            tenant = await TenantMetadataEntity.get_metadata_by_tenant_id(requested)
             if tenant:
                 return TenantIdentity.from_tenant_metadata_entity(tenant)
         return await TestAuthHandler.get_active_tenant_for_user(user_id)
@@ -110,7 +110,7 @@ class TestAuthHandler(AuthHandler):
     @staticmethod
     async def get_active_tenant_for_user(user_id: str) -> TenantIdentity:
         """The startup tenant stands in for the active one, which Keycloak would otherwise own."""
-        tenant = TenantMetadataEntity.get_startup_tenant_metadata()
+        tenant = await TenantMetadataEntity.get_startup_tenant_metadata()
         if not tenant:
             raise HTTPException(status_code=400, detail="No startup tenant exists to act within")
         return TenantIdentity.from_tenant_metadata_entity(tenant)

@@ -83,7 +83,7 @@ class UsageLimits:
 
     @staticmethod
     @trace_fn
-    def get_effective_limits_for_roles(
+    async def get_effective_limits_for_roles(
         role_names: list[str],
         tenant_id: str,
         resource_path: str | None = None,
@@ -96,7 +96,7 @@ class UsageLimits:
         """
         from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
-        all_role_limits = RoleEntity.get_usage_limits_for_roles(role_names, tenant_id)
+        all_role_limits = await RoleEntity.get_usage_limits_for_roles(role_names, tenant_id)
 
         # A role without limits means unlimited access — if any role grants unlimited, the user is unlimited
         if not all_role_limits or any(not role_limits for role_limits in all_role_limits):
@@ -126,7 +126,7 @@ class UsageLimits:
     ) -> list[RoleUsageLimit]:
         """Collect matching limits, taking the most permissive (highest) per (pattern, period).
 
-        RoleEntity.clean() guarantees no duplicate (pattern, period) within a role,
+        RoleEntity's validator guarantees no duplicate (pattern, period) within a role,
         so we only need to merge across roles — highest limit wins.
         """
         merged: dict[tuple[str, str], RoleUsageLimit] = {}
@@ -141,13 +141,13 @@ class UsageLimits:
 
     @staticmethod
     @trace_fn
-    def get_effective_limit_for_roles(
+    async def get_effective_limit_for_roles(
         role_names: list[str],
         tenant_id: str,
         resource_path: str | None = None,
     ) -> RoleUsageLimit | None:
         """Return the most specific matching limit across all roles."""
-        limits = UsageLimits.get_effective_limits_for_roles(role_names, tenant_id, resource_path)
+        limits = await UsageLimits.get_effective_limits_for_roles(role_names, tenant_id, resource_path)
         if not limits:
             return None
         return max(limits, key=lambda effective_limit: UsageLimits._specificity(effective_limit.pattern))
@@ -161,7 +161,7 @@ class UsageLimits:
         resource_path: str | None = None,
     ) -> UsageStatus:
         """Get current usage status without incrementing any counter."""
-        effective_limits = self.get_effective_limits_for_roles(role_names, tenant_id, resource_path)
+        effective_limits = await self.get_effective_limits_for_roles(role_names, tenant_id, resource_path)
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 
@@ -190,7 +190,7 @@ class UsageLimits:
         Uses a single Lua script so the check-then-increment is atomic within Redis,
         preventing race conditions under concurrent requests.
         """
-        effective_limits = self.get_effective_limits_for_roles(role_names, tenant_id, resource_path)
+        effective_limits = await self.get_effective_limits_for_roles(role_names, tenant_id, resource_path)
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 

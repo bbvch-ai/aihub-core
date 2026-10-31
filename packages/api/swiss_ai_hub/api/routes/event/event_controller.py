@@ -72,7 +72,7 @@ class EventController(TenantScopedController):
 
             thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
             user_in_thread = user.id in [u.id for u in thread.users]
-            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+            thread_belongs_to_users_process = (await AccessChecker.from_user(user)).has_access_to_process(
                 thread.process_class, thread.process_id
             )
             if not (user_in_thread or thread_belongs_to_users_process):
@@ -112,7 +112,7 @@ class EventController(TenantScopedController):
 
             thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
             user_in_thread = user.id in [u.id for u in thread.users]
-            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+            thread_belongs_to_users_process = (await AccessChecker.from_user(user)).has_access_to_process(
                 thread.process_class, thread.process_id
             )
             if not (user_in_thread or thread_belongs_to_users_process):
@@ -150,7 +150,7 @@ class EventController(TenantScopedController):
             - 30d: 1 day resolution
             - 365d: 1 week resolution
             """
-            access_checker = AccessChecker.from_user(user)
+            access_checker = await AccessChecker.from_user(user)
 
             if agent_id and not agent_class:
                 raise HTTPException(
@@ -174,7 +174,7 @@ class EventController(TenantScopedController):
             if thread_id:
                 thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
                 user_in_thread = user.id in [u.id for u in thread.users]
-                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                thread_belongs_to_users_process = (await AccessChecker.from_user(user)).has_access_to_process(
                     thread.process_class, thread.process_id
                 )
                 if not (user_in_thread or thread_belongs_to_users_process):

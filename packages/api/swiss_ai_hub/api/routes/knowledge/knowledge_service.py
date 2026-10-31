@@ -1,7 +1,8 @@
+import asyncio
 import logging
 import re
 import uuid
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
 from fastapi import HTTPException
@@ -288,7 +289,7 @@ class KnowledgeService:
         return [root, f"{root}.>"]
 
     @staticmethod
-    def _grant_knowledge_access(
+    async def _grant_knowledge_access(
         admin_rules: Annotated[list[str], "Admin rules for the resource just created"],
         role_name: Annotated[str, "Per-resource admin role to bind the creator to"],
         role_description: Annotated[str, "Human-readable description stored on the role"],
@@ -307,38 +308,40 @@ class KnowledgeService:
         try:
             for admin_rule in admin_rules:
                 if not AccessChecker.rules_grant_admin(tenant.access_rules, admin_rule):
-                    TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
+                    await TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
                     granted_tenant_rules.append(admin_rule)
-            created_role = KnowledgeService._ensure_admin_role(role_name, admin_rules, tenant.id, role_description)
-            UserTenantRoleEntity.add_roles(user.id, tenant.id, [role_name])
+            created_role = await KnowledgeService._ensure_admin_role(
+                role_name, admin_rules, tenant.id, role_description
+            )
+            await UserTenantRoleEntity.add_roles(user.id, tenant.id, [role_name])
         except Exception as error:
             if created_role:
-                KnowledgeService._best_effort(
+                await KnowledgeService._best_effort(
                     lambda: RoleEntity.delete_role_from_all_tenants(role_name), f"delete role {role_name}"
                 )
             if granted_tenant_rules:
-                KnowledgeService._best_effort(
+                await KnowledgeService._best_effort(
                     lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(granted_tenant_rules),
                     f"revoke {granted_tenant_rules}",
                 )
-            KnowledgeService._best_effort(rollback, f"roll back {resource_label}")
+            await KnowledgeService._best_effort(lambda: asyncio.to_thread(rollback), f"roll back {resource_label}")
             raise HTTPException(
                 status_code=500,
                 detail=(f"{resource_label} was created but access could not be granted; the creation was rolled back."),
             ) from error
 
     @staticmethod
-    def _ensure_admin_role(role_name: str, admin_rules: list[str], tenant_id: str, description: str) -> bool:
+    async def _ensure_admin_role(role_name: str, admin_rules: list[str], tenant_id: str, description: str) -> bool:
         """Creates the per-resource admin role if absent. Returns whether it was created."""
-        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
+        if await RoleEntity.get_role(role_name, tenant_id):
             return False
-        RoleEntity.create_tenant_role(
+        await RoleEntity.create_tenant_role(
             name=role_name, description=description, access_rules=admin_rules, tenant_id=tenant_id
         )
         return True
 
     @staticmethod
-    def _revoke_knowledge_access(
+    async def _revoke_knowledge_access(
         rules: Annotated[list[str], "User and admin rules to revoke from every tenant"],
         role_names: Annotated[list[str], "Per-resource admin roles to delete"],
     ) -> None:
@@ -347,19 +350,19 @@ class KnowledgeService:
         Best-effort throughout: teardown is already under way by the time this runs, and a stale rule
         must not block it.
         """
-        KnowledgeService._best_effort(
+        await KnowledgeService._best_effort(
             lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(rules), f"revoke {rules}"
         )
         for role_name in role_names:
-            KnowledgeService._best_effort(
+            await KnowledgeService._best_effort(
                 lambda name=role_name: RoleEntity.delete_role_from_all_tenants(name), f"delete role {role_name}"
             )
 
     @staticmethod
-    def _best_effort(action: Callable[[], Any], description: str) -> None:
+    async def _best_effort(action: Callable[[], Awaitable[Any]], description: str) -> None:
         """Runs a compensating action, swallowing and logging any failure so it cannot mask the outcome."""
         try:
-            action()
+            await action()
         except Exception:
             logger.exception("Best-effort step failed: %s", description)
 
@@ -548,7 +551,7 @@ class KnowledgeService:
             raise
 
         if user.acting_within_tenant is not None:
-            KnowledgeService._grant_knowledge_access(
+            await KnowledgeService._grant_knowledge_access(
                 admin_rules=KnowledgeService._database_admin_rules(database),
                 role_name=KnowledgeService._knowledge_admin_role_name(database),
                 role_description=f"Admin access to knowledge database {database}",
@@ -727,7 +730,7 @@ class KnowledgeService:
             ) from None
 
         if user.acting_within_tenant is not None:
-            KnowledgeService._grant_knowledge_access(
+            await KnowledgeService._grant_knowledge_access(
                 admin_rules=[AccessChecker.knowledge_namespace_admin_rule(database, namespace)],
                 role_name=KnowledgeService._knowledge_admin_role_name(database, namespace),
                 role_description=f"Admin access to knowledge folder {database}/{namespace}",
@@ -1095,7 +1098,7 @@ class KnowledgeService:
 
     @staticmethod
     @trace_fn
-    def delete_database(database: str) -> None:
+    async def delete_database(database: str) -> None:
         """Flag a knowledge database (and its namespaces) for teardown; the pipeline does the heavy purge.
 
         The synchronous work is O(1): flip the ``deleting`` flag, which excludes the rows from every
@@ -1114,7 +1117,7 @@ class KnowledgeService:
         # Revoke first, while the namespace rows are still enumerable: once the flags are set the
         # teardown job may hard-delete them, and their rules would then have nothing left to name.
         namespaces = NamespaceEntity.get_namespaces_by_bucket(str(bucket.id))
-        KnowledgeService._revoke_knowledge_access(
+        await KnowledgeService._revoke_knowledge_access(
             rules=[
                 AccessChecker.knowledge_database_user_rule(database),
                 f"{AccessChecker.knowledge_database_user_rule(database)}.>",
@@ -1142,7 +1145,7 @@ class KnowledgeService:
 
     @staticmethod
     @trace_fn
-    def delete_namespace(database: str, namespace: str) -> None:
+    async def delete_namespace(database: str, namespace: str) -> None:
         """Flag a single namespace for teardown; the bucket and its other namespaces survive.
 
         Same flag-as-request shape as ``delete_database``. The teardown job deletes the namespace's S3
@@ -1165,7 +1168,7 @@ class KnowledgeService:
                 status_code=404, detail=f"Folder '{namespace}' not found in database '{database}'"
             ) from None
 
-        KnowledgeService._revoke_knowledge_access(
+        await KnowledgeService._revoke_knowledge_access(
             rules=[
                 AccessChecker.knowledge_namespace_user_rule(database, namespace_entity.namespace_name),
                 AccessChecker.knowledge_namespace_admin_rule(database, namespace_entity.namespace_name),

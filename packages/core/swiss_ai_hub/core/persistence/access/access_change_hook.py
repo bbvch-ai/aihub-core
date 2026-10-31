@@ -2,13 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
-
-from mongoengine import signals
-
-from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
-from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
+from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
@@ -19,13 +13,19 @@ _DEBOUNCE_SECONDS = 2.0
 
 
 class AccessChangeHook:
+    """Reflects access changes into OpenWebUI groups and grants.
+
+    `RoleEntity`, `TenantMetadataEntity` and `UserTenantRoleEntity` call `notify` after every insert, save and
+    delete through a document (Beanie has no global signals), and the sync is debounced.
+    """
+
     _connected: ClassVar[bool] = False
     _debounce_task: ClassVar[asyncio.Task | None] = None
     _provisioner: ClassVar[OpenWebuiProvisioner | None] = None
 
     @classmethod
     def connect(cls, provisioner: OpenWebuiProvisioner) -> None:
-        """Wires MongoEngine signals to sync OpenWebUI access on any access entity save/delete.
+        """Starts syncing OpenWebUI access on access changes; until then `notify` does nothing.
 
         Rapid mutations are debounced: only the last change in a 2-second quiet window triggers sync.
         """
@@ -33,30 +33,15 @@ class AccessChangeHook:
             return
 
         cls._provisioner = provisioner
-
-        def _on_change(sender: type, document: Any, **kwargs: Any) -> None:
-            logger.info("Access entity changed (%s), scheduling OpenWebUI sync", sender.__name__)
-            cls._schedule_sync()
-
-        # weak=False is required: ``_on_change`` is a local closure with no other strong reference, so
-        # blinker's default weak ref would let it be garbage-collected the moment ``connect`` returns,
-        # silently dropping the subscription so no access change ever triggers an OpenWebUI re-sync.
-        for entity_cls in [RoleEntity, TenantMetadataEntity, UserTenantRoleEntity]:
-            signals.post_save.connect(_on_change, sender=entity_cls, weak=False)
-            signals.post_delete.connect(_on_change, sender=entity_cls, weak=False)
-
-        logger.info(
-            "AccessChangeHook connected for %s",
-            [cls.__name__ for cls in [RoleEntity, TenantMetadataEntity, UserTenantRoleEntity]],
-        )
+        logger.info("AccessChangeHook connected")
         cls._connected = True
 
     @classmethod
     def notify(cls) -> None:
-        """Explicitly schedule an OpenWebUI sync from outside the signal system."""
+        """Schedules an OpenWebUI access sync after an access entity changed."""
         if not cls._connected:
             return
-        logger.info("Explicit access change notification, scheduling OpenWebUI sync")
+        logger.info("Access entity changed, scheduling OpenWebUI sync")
         cls._schedule_sync()
 
     @classmethod

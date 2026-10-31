@@ -91,7 +91,7 @@ class OpenaiController(TenantScopedController):
         async def get_models(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ModelResponse:
-            access_checker = AccessChecker.from_user(user)
+            access_checker = await AccessChecker.from_user(user)
             model_response = await OpenaiService.get_models()
 
             model_response.data = [
@@ -119,7 +119,7 @@ class OpenaiController(TenantScopedController):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ModelResponse:
             model_response = await OpenaiService.get_models_with_assistants(t=t)
-            access_checker = AccessChecker.from_user(user)
+            access_checker = await AccessChecker.from_user(user)
             model_response.data = [
                 m
                 for m in model_response.data
@@ -159,7 +159,7 @@ class OpenaiController(TenantScopedController):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ModelDetails:
             model = await OpenaiService.get_model_with_assistants(model_name=full_path, t=t)
-            access_checker = AccessChecker.from_user(user)
+            access_checker = await AccessChecker.from_user(user)
             if model.object == "assistant":
                 permitted = access_checker.has_access_to_agent(model.agent_class, model.agent_id)
             else:

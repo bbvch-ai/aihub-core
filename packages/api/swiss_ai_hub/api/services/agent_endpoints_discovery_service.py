@@ -424,7 +424,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
                 user_in_thread = user.id in [u.id for u in thread.users]
-                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                thread_belongs_to_users_process = (await AccessChecker.from_user(user)).has_access_to_process(
                     thread.process_class, thread.process_id
                 )
                 if not (user_in_thread or thread_belongs_to_users_process):
@@ -509,7 +509,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
 
                 user_in_thread = user.id in [u.id for u in thread.users]
-                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                thread_belongs_to_users_process = (await AccessChecker.from_user(user)).has_access_to_process(
                     thread.process_class, thread.process_id
                 )
                 if not (user_in_thread or thread_belongs_to_users_process):

@@ -24,7 +24,7 @@ class ConfigAuthorizationService:
         ConfigAuthorizationService.validate_config_authorization_or_raise(
             form_elements=form_elements,
             config=config,
-            access_checker=AccessChecker.from_user(user),
+            access_checker=await AccessChecker.from_user(user),
             accessible_tenant_ids=accessible_tenant_ids,
             t=t,
         )

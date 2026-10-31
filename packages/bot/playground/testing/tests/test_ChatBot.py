@@ -73,30 +73,12 @@ def setup_test_credentials():
     PathEntity(path=json_path, credentials=test_credentials, system_message="Test system message").save()
     PathEntity(path=stream_path, credentials=test_credentials, system_message="Test system message").save()
 
-    # Create default tenant and assign test user
-    default_tenant = TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
-        tenant_id=StartupTenantSettings().ID, name=StartupTenantSettings().NAME, access_rules=["aihub.admin.>"]
-    )
-    tenant_id = str(default_tenant.id)
-
-    # Assign test user to default tenant with admin role. Use the OID that
-    # ``KeycloakAdminService.find_user_by_email`` resolves to in tests (the fake
-    # admin returns a single stub user keyed by this OID).
-    dev_oid = TEST_USER_OID
-    UserTenantRoleEntity.create_or_update(
-        user_id=dev_oid,
-        tenant_id=tenant_id,
-        roles=["admin"],
-        validate_roles=False,
-    )
-
     yield
 
     # Clean up test data
     try:
         PathEntity.objects(path=json_path).delete()
         PathEntity.objects(path=stream_path).delete()
-        UserTenantRoleEntity.objects(user_id=dev_oid).delete()
     except Exception:
         # Connection may already be closed, ignore cleanup errors
         pass
@@ -168,9 +150,31 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
             yield client
 
 
+@pytest_asyncio.fixture(scope="function")
+async def tenant_membership(client: AsyncClient) -> None:
+    """Assigns the test user to the default tenant, through the Beanie client the bot's lifespan started.
+
+    Use the OID that ``KeycloakAdminService.find_user_by_email`` resolves to in tests (the fake admin returns a
+    single stub user keyed by this OID).
+    """
+    default_tenant = await TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
+        tenant_id=StartupTenantSettings().ID, name=StartupTenantSettings().NAME, access_rules=["aihub.admin.>"]
+    )
+    await UserTenantRoleEntity.create_or_update(
+        user_id=TEST_USER_OID,
+        tenant_id=str(default_tenant.id),
+        roles=["admin"],
+        validate_roles=False,
+    )
+
+
 @pytest.mark.asyncio
 async def test_send_message(
-    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials
+    test_runner: SimulatedAgentBotTestRunner,
+    client: AsyncClient,
+    tenant_membership: None,
+    patch_requests_adapter,
+    setup_test_credentials,
 ):
     with open(Path(__file__).parent / "user_message.json") as file:
         payload: dict = json.loads(file.read())
@@ -199,7 +203,11 @@ async def test_send_message(
 
 @pytest.mark.asyncio
 async def test_unprovisioned_user_is_prompted_to_log_in(
-    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials
+    test_runner: SimulatedAgentBotTestRunner,
+    client: AsyncClient,
+    tenant_membership: None,
+    patch_requests_adapter,
+    setup_test_credentials,
 ):
     """Issue #1315: a Teams/bot-first user with no Keycloak account gets an actionable message.
 
@@ -239,7 +247,11 @@ async def test_unprovisioned_user_is_prompted_to_log_in(
 @pytest.mark.flaky
 @pytest.mark.asyncio
 async def test_stream_response(
-    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials
+    test_runner: SimulatedAgentBotTestRunner,
+    client: AsyncClient,
+    tenant_membership: None,
+    patch_requests_adapter,
+    setup_test_credentials,
 ):
     with open(Path(__file__).parent / "user_message.json") as file:
         payload: dict = json.loads(file.read())

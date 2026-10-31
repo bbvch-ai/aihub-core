@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
 from bson import ObjectId
@@ -531,10 +531,10 @@ class AgentService:
             AccessChecker.agent_instance_admin_rule(agent_class, agent_id),
         ]
         role_name = AgentService._instance_admin_role_name(agent_id)
-        AgentService._best_effort(
+        await AgentService._best_effort(
             lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(rules), f"revoke {rules}"
         )
-        AgentService._best_effort(
+        await AgentService._best_effort(
             lambda: RoleEntity.delete_role_from_all_tenants(role_name), f"delete role {role_name}"
         )
 
@@ -564,19 +564,19 @@ class AgentService:
         created_role = False
         try:
             if not AccessChecker.rules_grant_admin_to_agent_instance(tenant.access_rules, agent_class, agent_id):
-                TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
+                await TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
                 granted_tenant_rule = True
-            created_role = AgentService._ensure_instance_admin_role(
+            created_role = await AgentService._ensure_instance_admin_role(
                 role_name, admin_rule, tenant.id, agent_class, agent_id
             )
-            UserTenantRoleEntity.add_roles(user.id, tenant.id, [role_name])
+            await UserTenantRoleEntity.add_roles(user.id, tenant.id, [role_name])
         except Exception as error:
             if created_role:
-                AgentService._best_effort(
+                await AgentService._best_effort(
                     lambda: RoleEntity.delete_role_from_all_tenants(role_name), f"delete role {role_name}"
                 )
             if granted_tenant_rule:
-                AgentService._best_effort(
+                await AgentService._best_effort(
                     lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants([admin_rule]),
                     f"revoke {admin_rule}",
                 )
@@ -593,25 +593,25 @@ class AgentService:
             ) from error
 
     @staticmethod
-    def _best_effort(action: Callable[[], Any], description: str) -> None:
+    async def _best_effort(action: Callable[[], Awaitable[Any]], description: str) -> None:
         """Runs a compensating/cleanup action, swallowing and logging any failure.
 
         Used for rollback and post-delete cleanup so a secondary failure never masks the
         primary outcome or aborts a delete whose instance is already gone.
         """
         try:
-            action()
+            await action()
         except Exception:
             logger.exception("Best-effort step failed: %s", description)
 
     @staticmethod
-    def _ensure_instance_admin_role(
+    async def _ensure_instance_admin_role(
         role_name: str, admin_rule: str, tenant_id: str, agent_class: str, agent_id: str
     ) -> bool:
         """Creates the per-instance admin role if absent. Returns whether it was created."""
-        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
+        if await RoleEntity.get_role(role_name, tenant_id):
             return False
-        RoleEntity.create_tenant_role(
+        await RoleEntity.create_tenant_role(
             name=role_name,
             description=f"Admin access to agent instance {agent_class}/{agent_id}",
             access_rules=[admin_rule],

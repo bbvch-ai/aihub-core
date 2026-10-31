@@ -31,7 +31,7 @@ class TenantResponse(BaseModel):
             description=entity.description or "",
             access_rules=entity.access_rules or [],
             chat_disclaimer=(
-                entity.chat_disclaimer.to_locale_string()
+                entity.chat_disclaimer
                 if entity.chat_disclaimer is not None
                 else ApiLocaleString.from_i18n_path("api.common.default_chat_disclaimer")
             ),

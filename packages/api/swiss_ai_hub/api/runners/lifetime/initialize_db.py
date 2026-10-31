@@ -112,7 +112,7 @@ async def initialize_startup_tenant() -> TenantMetadataEntity | None:
     """
     settings = StartupTenantSettings()
 
-    existing_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
+    existing_tenant = await TenantMetadataEntity.get_startup_tenant_metadata()
     if existing_tenant:
         logger.info(
             f"Startup tenant '{existing_tenant.name}' (id={existing_tenant.id}) already exists, skipping creation"
@@ -126,7 +126,7 @@ async def initialize_startup_tenant() -> TenantMetadataEntity | None:
     # outage, and naming the rules explicitly opts out of the lookup altogether.
     access_rules = settings.access_rules_list or await DefaultTenantAccessRulesService.derive()
 
-    tenant = TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
+    tenant = await TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
         tenant_id=settings.ID,
         name=settings.NAME,
         description=settings.DESCRIPTION,
@@ -149,7 +149,7 @@ async def initialize_startup_tenant() -> TenantMetadataEntity | None:
     return tenant
 
 
-def _reconcile_default_role_rules(existing: RoleEntity, role_def: _DefaultRoleDefinition, tenant_id: str) -> None:
+async def _reconcile_default_role_rules(existing: RoleEntity, role_def: _DefaultRoleDefinition, tenant_id: str) -> None:
     """Adds access rules a default role definition gained since the role row was seeded.
 
     Purely additive: rules an admin added by hand are kept, because the platform cannot tell a
@@ -163,7 +163,7 @@ def _reconcile_default_role_rules(existing: RoleEntity, role_def: _DefaultRoleDe
         logger.info(f"Role '{role_def.name}' already exists for tenant '{tenant_id}', skipping creation")
         return
     existing.access_rules = list(existing.access_rules) + missing
-    existing.save()
+    await existing.save_changes()
     logger.info(f"Added missing access rules {missing} to existing role '{role_def.name}' for tenant '{tenant_id}'")
 
 
@@ -183,12 +183,12 @@ async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
         return
 
     for role_def in _DEFAULT_ROLE_DEFINITIONS:
-        existing = RoleEntity.objects(name=role_def.name, tenant_id=tenant_id).first()
+        existing = await RoleEntity.get_role(role_def.name, tenant_id)
         if existing:
-            _reconcile_default_role_rules(existing, role_def, tenant_id)
+            await _reconcile_default_role_rules(existing, role_def, tenant_id)
             continue
         try:
-            RoleEntity.create_tenant_role(
+            await RoleEntity.create_tenant_role(
                 name=role_def.name,
                 description=role_def.description,
                 access_rules=role_def.access_rules,
@@ -211,10 +211,10 @@ async def _validate_signup_roles() -> None:
     settings = UserSignupSettings()
     all_configured_roles = set(settings.regular_user_roles_list + settings.first_admin_user_roles_list)
 
-    startup_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
+    startup_tenant = await TenantMetadataEntity.get_startup_tenant_metadata()
     tenant_id = str(startup_tenant.id) if startup_tenant else ""
 
-    existing_roles = set(RoleEntity.filter_existing_roles(list(all_configured_roles), tenant_id))
+    existing_roles = set(await RoleEntity.filter_existing_roles(list(all_configured_roles), tenant_id))
     missing_roles = all_configured_roles - existing_roles
 
     if missing_roles:
@@ -263,7 +263,7 @@ async def initialize_superuser_token(redis: Redis) -> None:
             "Ensure the realm import creates a user with this email."
         )
 
-    BearerToken.upsert_static_token(
+    await BearerToken.upsert_static_token(
         name=_SUPERUSER_TOKEN_NAME,
         token_value=settings.TOKEN.get_secret_value(),
         expiry_date=datetime.now(UTC) + _SUPERUSER_TOKEN_TTL,

@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -17,25 +17,32 @@ def mock_role_entity_methods():
     original_filter_existing_roles = RoleEntity.filter_existing_roles
     original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
 
-    def mock_filter_existing_roles(role_names, tenant_id=None):
-        filtered_roles = original_filter_existing_roles(role_names, tenant_id)
+    async def mock_filter_existing_roles(role_names, tenant_id=None):
+        filtered_roles = await original_filter_existing_roles(role_names, tenant_id)
         if "TestOnlyFullAdminAccess" in role_names and "TestOnlyFullAdminAccess" not in filtered_roles:
             filtered_roles.append("TestOnlyFullAdminAccess")
         return filtered_roles
 
-    def mock_get_access_rules_for_roles(role_names, tenant_id=None):
-        access_rules = original_get_access_rules_for_roles(role_names, tenant_id)
+    async def mock_get_access_rules_for_roles(role_names, tenant_id=None):
+        access_rules = await original_get_access_rules_for_roles(role_names, tenant_id)
         if "TestOnlyFullAdminAccess" in role_names:
             access_rules.add("aihub.admin.>")
         return access_rules
 
     # ``TestAuthHandler`` seeds the role on every call. Reporting it as already present keeps that
     # seeding out of the database entirely, so suites that never boot the API lifespan (and therefore
-    # never call ``mongoengine.connect``) can still mount the handler.
+    # never initialise Beanie) can still mount the handler.
     with (
-        patch.object(RoleEntity, "filter_existing_roles", side_effect=mock_filter_existing_roles),
-        patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles),
-        patch.object(RoleEntity, "tenant_role_exists", return_value=True),
+        patch.object(
+            RoleEntity, "filter_existing_roles", new_callable=AsyncMock, side_effect=mock_filter_existing_roles
+        ),
+        patch.object(
+            RoleEntity,
+            "get_access_rules_for_roles",
+            new_callable=AsyncMock,
+            side_effect=mock_get_access_rules_for_roles,
+        ),
+        patch.object(RoleEntity, "tenant_role_exists", new_callable=AsyncMock, return_value=True),
     ):
         yield
 
@@ -48,11 +55,13 @@ def mock_role_entity_admin_only():
     """
     original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles
 
-    def mock_get_access_rules_for_roles(role_names, tenant_id=None):
-        access_rules = original_get_access_rules_for_roles(role_names, tenant_id)
+    async def mock_get_access_rules_for_roles(role_names, tenant_id=None):
+        access_rules = await original_get_access_rules_for_roles(role_names, tenant_id)
         if "TestOnlyFullAdminAccess" in role_names:
             access_rules.add("aihub.admin.>")
         return access_rules
 
-    with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
+    with patch.object(
+        RoleEntity, "get_access_rules_for_roles", new_callable=AsyncMock, side_effect=mock_get_access_rules_for_roles
+    ):
         yield

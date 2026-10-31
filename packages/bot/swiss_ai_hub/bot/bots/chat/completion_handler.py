@@ -113,7 +113,7 @@ class CompletionHandler:
             id=keycloak_user.id,
             name=keycloak_user.name,
             email=keycloak_user.email,
-            roles=UserTenantRoleEntity.get_roles_for_user_in_tenant(keycloak_user.id, tenant.id),
+            roles=await UserTenantRoleEntity.get_roles_for_user_in_tenant(keycloak_user.id, tenant.id),
             acting_within_tenant=tenant,
             is_sys_admin=SYS_ADMIN_ROLE in realm_roles,
         )

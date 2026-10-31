@@ -37,7 +37,7 @@ async def _sync(listing: dict, entries: list[MagicMock], existing: list[dict]) -
     client = _client(existing)
     with (
         patch.object(OpenWebuiKnowledgeSync, "listing", return_value=listing),
-        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity") as entity,
+        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity", new_callable=AsyncMock) as entity,
     ):
         entity.all_entries.return_value = entries
         await OpenWebuiKnowledgeSync(client, "en").sync(MagicMock(), [HR_GROUP, SALES_GROUP], TENANT_RULES, ROLE_RULES)

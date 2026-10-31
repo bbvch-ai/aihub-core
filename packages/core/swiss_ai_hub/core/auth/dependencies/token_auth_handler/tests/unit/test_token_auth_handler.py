@@ -1,87 +1,33 @@
 import secrets
-from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
+import pytest_asyncio
 from bson import ObjectId
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPBearer
-from mongoengine import connect, disconnect
-from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
-from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
-from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import TOKEN_PREFIX, BearerToken
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
-pytestmark = pytest.mark.usefixtures("mongo_connection")
-
-# --- MongoDB Connection Fixture ---
+pytestmark = pytest.mark.beanie
 
 
-@pytest.fixture
-def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
-    """Set up a MongoDB connection for testing and disconnect after."""
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-    )
+class SeededToken:
+    """A token in the database, owned by a fake Keycloak user who is a member of the startup tenant."""
 
-    # Ensure the startup tenant exists for multi-tenant auth tests. Use the
-    # configured startup-tenant id (not a hardcoded "default") so the row
-    # matches ``StartupTenantSettings().ID`` — which the production code
-    # queries — regardless of whether CI has ``AIHUB_STARTUP_TENANT_ID`` set.
-    TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
-        tenant_id=StartupTenantSettings().ID,
-        name=StartupTenantSettings().NAME,
-        description="Startup tenant for testing",
-        access_rules=["aihub.admin.>"],
-    )
-
-    yield
-    disconnect()
-
-
-# --- Scenario Declarations ---
-
-
-scenarios("features/token_auth_handler.feature")
-
-
-# --- Common Fixtures and Helpers ---
-
-
-@pytest.fixture
-def token_context() -> dict[str, Any]:
-    """Store token values (e.g. token string and expected user id) across steps."""
-    return {}
-
-
-@pytest.fixture
-def token_context_result() -> dict[str, Any]:
-    """Store the authenticated user returned by TokenAuthHandler."""
-    return {}
-
-
-@pytest.fixture
-def error_context() -> dict[str, Any]:
-    """Store error information when TokenAuthHandler rejects a token."""
-    return {}
-
-
-@pytest.fixture
-def cleanup_document() -> Generator[list[Any]]:
-    """Collect inserted token documents for cleanup after the test."""
-    inserted_documents: list[Any] = []
-    yield inserted_documents
-    for doc in inserted_documents:
-        doc.delete()
+    def __init__(self, document: BearerToken, user_oid: str, tenant_id: str) -> None:
+        self.document = document
+        self.user_oid = user_oid
+        self.tenant_id = tenant_id
 
 
 def create_dummy_request(headers: dict[str, str], path_params: dict[str, str] | None = None) -> Request:
@@ -102,169 +48,86 @@ def generate_dummy_valid_token() -> str:
     return f"{TOKEN_PREFIX}{secrets.token_urlsafe(48)}"
 
 
-# --- Given Steps ---
-
-
-@given(
-    parsers.parse(
-        'a token exists in the database with user details: name "{name}", email "{email}", and roles "{roles}"'
+async def seed_token(name: str, email: str, roles: list[str]) -> SeededToken:
+    """Insert a token for a fake Keycloak user holding the given roles in the startup tenant."""
+    default_tenant = await TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
+        tenant_id=StartupTenantSettings().ID,
+        name=StartupTenantSettings().NAME,
+        description="Startup tenant for testing",
+        access_rules=["aihub.admin.>"],
     )
-)
-def insert_token_document(
-    token_context: dict[str, Any], cleanup_document: list[Any], name: str, email: str, roles: str
-) -> None:
-    """Insert a token document in the database with the given user details."""
-    roles_list = [r.strip() for r in roles.split(",")]
     user_oid = str(ObjectId())
-
-    # Seed the fake Keycloak admin store so get_user_by_id returns this user's data.
     register_fake_keycloak_user(user_id=user_oid, name=name, email=email)
-
-    # Assign user to default tenant (skip role validation for test data)
-    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
-    if default_tenant:
-        user_tenant_role = UserTenantRoleEntity.create_or_update(
-            user_id=user_oid,
-            tenant_id=str(default_tenant.id),
-            roles=roles_list,
-            validate_roles=False,
-        )
-        cleanup_document.append(user_tenant_role)
-        token_context["tenant_id"] = str(default_tenant.id)
-
-    expiry = datetime.now(UTC) + timedelta(hours=1)
-    token_doc = BearerToken.create_new_token(
+    await UserTenantRoleEntity.create_or_update(
+        user_id=user_oid,
+        tenant_id=str(default_tenant.id),
+        roles=roles,
+        validate_roles=False,
+    )
+    document = await BearerToken.create_new_token(
         name="token-name",
-        expiry_date=expiry,
+        expiry_date=datetime.now(UTC) + timedelta(hours=1),
         user_oid=user_oid,
     )
-    token_context["token_str"] = token_doc.token
-    token_context["expected_user_oid"] = user_oid
-    token_context["token_doc"] = token_doc
-    token_context["user_roles"] = roles_list
-    cleanup_document.append(token_doc)
+    return SeededToken(document, user_oid, str(default_tenant.id))
 
 
-@given(parsers.parse('an invalid token format "{token}"'))
-def invalid_token_format(token_context: dict[str, Any], token: str) -> None:
-    """Store an invalid token format in the context."""
-    token_context["token_str"] = token
+async def authenticate(token_str: str, tenant_id: str | None = None) -> UserIdentity:
+    request = create_dummy_request(
+        {"Authorization": f"Bearer {token_str}"},
+        path_params={"tenant_id": tenant_id} if tenant_id else None,
+    )
+    security = await HTTPBearer()(request)
+    return await TokenAuthHandler()(request, security)
 
 
-@given(parsers.parse('a token does not exist in the database with token "{token}"'))
-def token_not_found(token_context: dict[str, Any], token: str) -> None:
-    """Store a properly-prefixed token that is not present in the database."""
-    if not token.startswith(TOKEN_PREFIX):
-        token = generate_dummy_valid_token()
-    token_context["token_str"] = token
+async def rejection_detail(token_str: str) -> str:
+    with pytest.raises(HTTPException) as excinfo:
+        await authenticate(token_str)
+    return excinfo.value.detail
 
 
-@given("I modify the token to cause a mismatch")
-def modify_token_for_mismatch(token_context: dict[str, Any]) -> None:
-    """Replace the stored token with a well-formed one that won't match any row."""
-    token_context["token_str"] = generate_dummy_valid_token()
+@pytest_asyncio.fixture(loop_scope="session")
+async def seeded_token(clean_beanie_collections: None) -> SeededToken:
+    return await seed_token("Token User", "token@example.com", ["user", "editor"])
 
 
-@given("I set the token expiry to a past time")
-def set_token_expired(token_context: dict[str, Any]) -> None:
-    """Set the token's expiry date to a past time."""
-    token_doc = token_context.get("token_doc")
-    if token_doc:
-        token_doc.expiry_date = datetime.now(UTC) - timedelta(hours=1)
-        token_doc.save()
+async def test_valid_token_returns_authenticated_user(seeded_token: SeededToken) -> None:
+    user = await authenticate(seeded_token.document.token, seeded_token.tenant_id)
+
+    assert user.name == "Token User"
+    assert user.email == "token@example.com"
+    assert user.id == seeded_token.user_oid
+    assert set(user.roles) == {"user", "editor"}
 
 
-# --- When Steps ---
+async def test_token_with_invalid_format_is_rejected() -> None:
+    assert await rejection_detail("not_a_valid_token") == "Malformed token: missing 'sk-' prefix"
 
 
-@when("I invoke the TokenAuthHandler with an Authorization header using the token")
-@async_test
-async def invoke_token_auth_handler(token_context: dict[str, Any], token_context_result: dict[str, Any]) -> None:
-    """Invoke the TokenAuthHandler with the token and store the authenticated user."""
-    token_str = token_context["token_str"]
-    headers = {"Authorization": f"Bearer {token_str}"}
-    path_params = {"tenant_id": token_context["tenant_id"]} if "tenant_id" in token_context else None
-    request = create_dummy_request(headers, path_params=path_params)
-    handler = TokenAuthHandler()
-    try:
-        security = await HTTPBearer()(request)
-        user = await handler(request, security)
-    except HTTPException as e:
-        pytest.fail(f"TokenAuthHandler raised an unexpected exception: {e.detail}")
-    token_context_result["user"] = user
+async def test_token_not_found_in_database_is_rejected() -> None:
+    detail = await rejection_detail(generate_dummy_valid_token())
+
+    assert detail == "Unknown token: no matching row (revoked or never issued)"
 
 
-@when("I invoke the TokenAuthHandler with an Authorization header using the token expecting error")
-@async_test
-async def invoke_token_auth_handler_expect_error(token_context: dict[str, Any], error_context: dict[str, Any]) -> None:
-    """Invoke the TokenAuthHandler with the token and capture the error."""
-    token_str = token_context["token_str"]
-    headers = {"Authorization": f"Bearer {token_str}"}
-    request = create_dummy_request(headers)
-    handler = TokenAuthHandler()
-    try:
-        security = await HTTPBearer()(request)
-        await handler(request, security)
-        pytest.fail("TokenAuthHandler did not raise an exception")
-    except HTTPException as e:
-        error_context["error"] = e.detail
+async def test_modified_token_is_rejected_as_not_found(seeded_token: SeededToken) -> None:
+    detail = await rejection_detail(generate_dummy_valid_token())
+
+    assert detail == "Unknown token: no matching row (revoked or never issued)"
 
 
-# --- Then Steps ---
+async def test_expired_token_is_rejected(seeded_token: SeededToken) -> None:
+    seeded_token.document.expiry_date = datetime.now(UTC) - timedelta(hours=1)
+    await seeded_token.document.save_changes()
+
+    assert await rejection_detail(seeded_token.document.token) == "Expired token: expiry is in the past"
 
 
-@then(parsers.parse('the returned user should have name "{expected_name}"'))
-def check_name(token_context_result: dict[str, Any], expected_name: str) -> None:
-    """Check that the authenticated user has the expected name."""
-    user = token_context_result.get("user")
-    assert user is not None, "No user was returned by TokenAuthHandler"
-    assert user.name == expected_name, f"Expected name '{expected_name}', got '{user.name}'"
-
-
-@then(parsers.parse('the returned user should have preferred_username "{expected_email}"'))
-def check_preferred_username(token_context_result: dict[str, Any], expected_email: str) -> None:
-    """Check that the authenticated user has the expected preferred username."""
-    user = token_context_result.get("user")
-    assert user is not None, "No user was returned by TokenAuthHandler"
-    assert user.email == expected_email, f"Expected email '{expected_email}', got '{user.email}'"
-
-
-@then("the returned user should have oid matching the token's user id")
-def check_user_oid(token_context_result: dict[str, Any], token_context: dict[str, Any]) -> None:
-    """Check that the authenticated user's oid matches the expected user id."""
-    user = token_context_result.get("user")
-    expected_oid = token_context.get("expected_user_oid")
-    assert user is not None, "No user was returned by TokenAuthHandler"
-    assert user.id == expected_oid, f"Expected user oid '{expected_oid}', got '{user.id}'"
-
-
-@then(parsers.parse('the returned user should have roles "{role1}" and "{role2}"'))
-def check_roles(token_context_result: dict[str, Any], role1: str, role2: str) -> None:
-    """Check that the authenticated user has the expected roles."""
-    user = token_context_result.get("user")
-    assert user is not None, "No user was returned by TokenAuthHandler"
-    expected_roles = {role1, role2}
-    assert set(user.roles) == expected_roles, f"Expected roles {expected_roles}, got {set(user.roles)}"
-
-
-@then(parsers.parse('I should receive an HTTP error with detail "{expected_detail}"'))
-def check_error_detail(error_context: dict[str, Any], expected_detail: str) -> None:
-    """Check that the error detail matches the expected detail."""
-    error = error_context.get("error")
-    assert error == expected_detail, f"Expected error detail '{expected_detail}', got '{error}'"
-
-
-# --- Plain pytest tests for verify_token ---
-
-
-def test_verify_token_returns_bearer_token_without_keycloak_or_tenant_resolution(
+async def test_verify_token_returns_bearer_token_without_keycloak_or_tenant_resolution(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """``verify_token`` must NOT call Keycloak or tenant resolution — superuser tokens with no tenant must succeed."""
-    from unittest.mock import AsyncMock
-
-    from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
-
     fail = AsyncMock(side_effect=AssertionError("verify_token must not call Keycloak or tenant resolution"))
     monkeypatch.setattr(KeycloakAdminService, "get_user_by_id", fail)
     monkeypatch.setattr(KeycloakAdminService, "get_user_realm_roles", fail)
@@ -273,22 +136,20 @@ def test_verify_token_returns_bearer_token_without_keycloak_or_tenant_resolution
 
     user_oid = str(ObjectId())
     expiry = datetime.now(UTC) + timedelta(hours=1)
-    token_doc = BearerToken.create_new_token(name="svc-token", expiry_date=expiry, user_oid=user_oid)
-    try:
-        result = TokenAuthHandler.verify_token(token_doc.token)
+    token_doc = await BearerToken.create_new_token(name="svc-token", expiry_date=expiry, user_oid=user_oid)
 
-        assert result.user_oid == user_oid
-    finally:
-        token_doc.delete()
+    result = await TokenAuthHandler.verify_token(token_doc.token)
+
+    assert result.user_oid == user_oid
 
 
-def test_verify_token_rejects_empty_token() -> None:
+async def test_verify_token_rejects_empty_token() -> None:
     with pytest.raises(HTTPException) as excinfo:
-        TokenAuthHandler.verify_token("")
+        await TokenAuthHandler.verify_token("")
     assert excinfo.value.status_code == 401
 
 
-def test_verify_token_rejects_unknown_token() -> None:
+async def test_verify_token_rejects_unknown_token() -> None:
     with pytest.raises(HTTPException) as excinfo:
-        TokenAuthHandler.verify_token(generate_dummy_valid_token())
+        await TokenAuthHandler.verify_token(generate_dummy_valid_token())
     assert excinfo.value.status_code == 401

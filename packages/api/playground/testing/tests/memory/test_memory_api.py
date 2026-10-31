@@ -16,13 +16,15 @@ from swiss_ai_hub.api.routes.memory.organization_memory_controller import Organi
 from swiss_ai_hub.api.routes.memory.user_memory_controller import UserMemoryController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
+pytestmark = pytest.mark.beanie
+
 BASE_URL = "http://test"
 USER_MEMORIES_ENDPOINT = "/api/v1/active/user-memories"
 ORG_MEMORIES_ENDPOINT = "/api/v1/active/organization-memories"
 
 
-@pytest_asyncio.fixture(scope="module")
-async def user_memory_client():
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def user_memory_client(beanie_test_database):
     """Create a test client for the API with UserMemoryController mounted."""
     runner = ApiTestRunner()
     auth = TestAuthHandler()
@@ -35,8 +37,8 @@ async def user_memory_client():
             yield client
 
 
-@pytest_asyncio.fixture(scope="module")
-async def org_memory_client():
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def org_memory_client(beanie_test_database):
     """Create a test client for the API with OrganizationMemoryController mounted."""
     runner = ApiTestRunner()
     auth = TestAuthHandler()
@@ -137,7 +139,6 @@ def mock_org_search_response(mock_org_memory_dto, mock_relation_dto):
 class TestGetUserMemories:
     """Test suite for GET /user-memories endpoint."""
 
-    @pytest.mark.asyncio
     async def test_get_user_memories_success(self, user_memory_client, mock_user_memories_response):
         """Test successful retrieval of user memories."""
         with patch(
@@ -156,7 +157,6 @@ class TestGetUserMemories:
             assert isinstance(data["relations"], list)
             assert data["total"] == 1
 
-    @pytest.mark.asyncio
     async def test_get_user_memories_with_limit(self, user_memory_client, mock_user_memories_response):
         """Test user memories endpoint with limit parameter."""
         with patch(
@@ -171,7 +171,6 @@ class TestGetUserMemories:
             call_kwargs = mock_service.call_args[1]
             assert call_kwargs["limit"] == 50
 
-    @pytest.mark.asyncio
     async def test_get_user_memories_invalid_limit(self, user_memory_client):
         """Test user memories endpoint with invalid limit parameters."""
         # Test limit < 1
@@ -186,7 +185,6 @@ class TestGetUserMemories:
 class TestSearchUserMemories:
     """Test suite for GET /user-memories/search endpoint."""
 
-    @pytest.mark.asyncio
     async def test_search_user_memories_success(self, user_memory_client, mock_user_search_response):
         """Test successful user memory search."""
         with patch(
@@ -205,13 +203,11 @@ class TestSearchUserMemories:
             assert data["query"] == "Python programming"
             assert data["total"] == 1
 
-    @pytest.mark.asyncio
     async def test_search_user_memories_missing_query(self, user_memory_client):
         """Test search without required query parameter."""
         response = await user_memory_client.get(f"{USER_MEMORIES_ENDPOINT}/search")
         assert response.status_code == 422
 
-    @pytest.mark.asyncio
     async def test_search_user_memories_with_filters(self, user_memory_client, mock_user_search_response):
         """Test search with filters."""
         with patch(
@@ -231,7 +227,6 @@ class TestSearchUserMemories:
             assert call_kwargs["thread_id"] == "thread123"
             assert call_kwargs["limit"] == 50
 
-    @pytest.mark.asyncio
     async def test_search_user_memories_empty_results(self, user_memory_client):
         """Test search with no results."""
         empty_response = MemorySearchResponse(
@@ -257,7 +252,6 @@ class TestSearchUserMemories:
 class TestDeleteUserMemory:
     """Test suite for DELETE /user-memories/{memory_id} endpoint."""
 
-    @pytest.mark.asyncio
     async def test_delete_user_memory_success(self, user_memory_client):
         """Test successful deletion of a single user memory."""
         with patch(
@@ -273,7 +267,6 @@ class TestDeleteUserMemory:
             assert data["memory_id"] == "mem123"
             mock_service.assert_called_once()
 
-    @pytest.mark.asyncio
     async def test_delete_user_memory_calls_service(self, user_memory_client):
         """Test that delete_memory calls service with correct parameters."""
         with patch(
@@ -292,7 +285,6 @@ class TestDeleteUserMemory:
 class TestDeleteAllUserMemories:
     """Test suite for DELETE /user-memories endpoint."""
 
-    @pytest.mark.asyncio
     async def test_delete_all_user_memories_success(self, user_memory_client):
         """Test successful deletion of all user memories."""
         with patch(
@@ -311,7 +303,6 @@ class TestDeleteAllUserMemories:
 class TestUpdateUserMemory:
     """Test suite for PATCH /user-memories/{memory_id} endpoint."""
 
-    @pytest.mark.asyncio
     async def test_update_user_memory_success(self, user_memory_client):
         """Test successful update of a user memory."""
         with patch(
@@ -328,7 +319,6 @@ class TestUpdateUserMemory:
             assert data["memory_id"] == "mem123"
             mock_service.assert_called_once()
 
-    @pytest.mark.asyncio
     async def test_update_user_memory_calls_service(self, user_memory_client):
         """Test that update_memory calls service with correct parameters."""
         with patch(
@@ -345,7 +335,6 @@ class TestUpdateUserMemory:
             assert call_kwargs["memory_id"] == "mem456"
             assert call_kwargs["data"] == "New memory content"
 
-    @pytest.mark.asyncio
     async def test_update_user_memory_missing_data(self, user_memory_client):
         """Test update without required data field."""
         response = await user_memory_client.patch(f"{USER_MEMORIES_ENDPOINT}/mem123", json={})
@@ -360,7 +349,6 @@ class TestUpdateUserMemory:
 class TestGetOrganizationMemories:
     """Test suite for GET /organization-memories endpoint."""
 
-    @pytest.mark.asyncio
     async def test_get_organization_memories_success(self, org_memory_client, mock_org_memories_response):
         """Test successful retrieval of organization memories."""
         with patch(
@@ -379,7 +367,6 @@ class TestGetOrganizationMemories:
             assert isinstance(data["relations"], list)
             assert data["total"] == 1
 
-    @pytest.mark.asyncio
     async def test_get_organization_memories_with_limit(self, org_memory_client, mock_org_memories_response):
         """Test organization memories endpoint with limit parameter."""
         with patch(
@@ -394,7 +381,6 @@ class TestGetOrganizationMemories:
             call_kwargs = mock_service.call_args[1]
             assert call_kwargs["limit"] == 50
 
-    @pytest.mark.asyncio
     async def test_get_organization_memories_invalid_limit(self, org_memory_client):
         """Test organization memories endpoint with invalid limit parameters."""
         # Test limit < 1
@@ -409,7 +395,6 @@ class TestGetOrganizationMemories:
 class TestSearchOrganizationMemories:
     """Test suite for GET /organization-memories/search endpoint."""
 
-    @pytest.mark.asyncio
     async def test_search_organization_memories_success(self, org_memory_client, mock_org_search_response):
         """Test successful organization memory search."""
         with patch(
@@ -428,13 +413,11 @@ class TestSearchOrganizationMemories:
             assert data["query"] == "Python backend"
             assert data["total"] == 1
 
-    @pytest.mark.asyncio
     async def test_search_organization_memories_missing_query(self, org_memory_client):
         """Test search without required query parameter."""
         response = await org_memory_client.get(f"{ORG_MEMORIES_ENDPOINT}/search")
         assert response.status_code == 422
 
-    @pytest.mark.asyncio
     async def test_search_organization_memories_with_filters(self, org_memory_client, mock_org_search_response):
         """Test search with filters."""
         with patch(
@@ -454,7 +437,6 @@ class TestSearchOrganizationMemories:
             assert call_kwargs["thread_id"] == "thread456"
             assert call_kwargs["limit"] == 50
 
-    @pytest.mark.asyncio
     async def test_search_organization_memories_empty_results(self, org_memory_client):
         """Test search with no results."""
         empty_response = MemorySearchResponse(
@@ -480,7 +462,6 @@ class TestSearchOrganizationMemories:
 class TestDeleteOrganizationMemory:
     """Test suite for DELETE /organization-memories/{memory_id} endpoint."""
 
-    @pytest.mark.asyncio
     async def test_delete_organization_memory_success(self, org_memory_client):
         """Test successful deletion of a single organization memory."""
         with patch(
@@ -496,7 +477,6 @@ class TestDeleteOrganizationMemory:
             assert data["memory_id"] == "org_mem456"
             mock_service.assert_called_once()
 
-    @pytest.mark.asyncio
     async def test_delete_organization_memory_calls_service(self, org_memory_client):
         """Test that delete_memory calls service with correct parameters."""
         with patch(
@@ -515,7 +495,6 @@ class TestDeleteOrganizationMemory:
 class TestDeleteAllOrganizationMemories:
     """Test suite for DELETE /organization-memories endpoint."""
 
-    @pytest.mark.asyncio
     async def test_delete_all_organization_memories_success(self, org_memory_client):
         """Test successful deletion of all organization memories."""
         with patch(
@@ -534,7 +513,6 @@ class TestDeleteAllOrganizationMemories:
 class TestUpdateOrganizationMemory:
     """Test suite for PATCH /organization-memories/{memory_id} endpoint."""
 
-    @pytest.mark.asyncio
     async def test_update_organization_memory_success(self, org_memory_client):
         """Test successful update of an organization memory."""
         with patch(
@@ -551,7 +529,6 @@ class TestUpdateOrganizationMemory:
             assert data["memory_id"] == "org_mem456"
             mock_service.assert_called_once()
 
-    @pytest.mark.asyncio
     async def test_update_organization_memory_calls_service(self, org_memory_client):
         """Test that update_memory calls service with correct parameters."""
         with patch(
@@ -568,7 +545,6 @@ class TestUpdateOrganizationMemory:
             assert call_kwargs["memory_id"] == "org_mem789"
             assert call_kwargs["data"] == "New organization memory content"
 
-    @pytest.mark.asyncio
     async def test_update_organization_memory_missing_data(self, org_memory_client):
         """Test update without required data field."""
         response = await org_memory_client.patch(f"{ORG_MEMORIES_ENDPOINT}/org_mem456", json={})
@@ -583,7 +559,6 @@ class TestUpdateOrganizationMemory:
 class TestMemoryDTOStructure:
     """Integration tests for memory DTO structure."""
 
-    @pytest.mark.asyncio
     async def test_user_memory_dto_structure(self, user_memory_client, mock_user_memories_response):
         """Test that user MemoryDTO has the expected structure."""
         with patch(
@@ -601,7 +576,6 @@ class TestMemoryDTOStructure:
                 assert all(field in memory for field in expected_fields)
                 assert memory["user_id"] is not None
 
-    @pytest.mark.asyncio
     async def test_organization_memory_dto_structure(self, org_memory_client, mock_org_memories_response):
         """Test that organization MemoryDTO has the expected structure."""
         with patch(
@@ -618,7 +592,6 @@ class TestMemoryDTOStructure:
                 expected_fields = ["id", "memory", "score", "created_at", "user_id", "agent_id", "thread_id"]
                 assert all(field in memory for field in expected_fields)
 
-    @pytest.mark.asyncio
     async def test_relation_dto_structure(self, user_memory_client, mock_user_memories_response):
         """Test that MemoryRelationDTO has the expected structure."""
         with patch(
@@ -635,7 +608,6 @@ class TestMemoryDTOStructure:
                 expected_fields = ["source", "relation", "target"]
                 assert all(field in relation for field in expected_fields)
 
-    @pytest.mark.asyncio
     async def test_search_response_structure(self, user_memory_client, mock_user_search_response):
         """Test that MemorySearchResponse has the expected structure."""
         with patch(
@@ -666,7 +638,6 @@ class TestUserMemoryIntegration:
     They test the full stack: UserMemory → Mem0Service → Vector DB → API → Service
     """
 
-    @pytest.mark.asyncio
     @pytest.mark.slow
     @pytest.mark.flaky
     async def test_add_search_update_delete_workflow(self, user_memory_client):
@@ -744,7 +715,6 @@ class TestUserMemoryIntegration:
         assert final_response.status_code == 200
         # Memory count should be less than before (some might remain from extraction)
 
-    @pytest.mark.asyncio
     @pytest.mark.slow
     @pytest.mark.flaky
     async def test_user_isolation(self, user_memory_client):

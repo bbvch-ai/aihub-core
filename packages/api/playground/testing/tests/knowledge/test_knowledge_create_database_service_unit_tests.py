@@ -717,13 +717,13 @@ class TestCreateGrantsAccess:
         user = _tenant_user()
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
-            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity") as user_role_cls,
-            patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
+            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity", new_callable=AsyncMock) as tenant_cls,
+            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity", new_callable=AsyncMock) as user_role_cls,
+            patch(f"{_SERVICE_MODULE}.RoleEntity", new_callable=AsyncMock) as role_cls,
         ):
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
             bucket_cls.create_bucket.return_value = _created_bucket()
-            role_cls.objects.return_value.first.return_value = None
+            role_cls.get_role.return_value = None
 
             await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, user)
 
@@ -743,13 +743,13 @@ class TestCreateGrantsAccess:
         user.acting_within_tenant.access_rules = ["aihub.admin.knowledge.>"]
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
-            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity"),
-            patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
+            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity", new_callable=AsyncMock) as tenant_cls,
+            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity", new_callable=AsyncMock),
+            patch(f"{_SERVICE_MODULE}.RoleEntity", new_callable=AsyncMock) as role_cls,
         ):
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
             bucket_cls.create_bucket.return_value = _created_bucket()
-            role_cls.objects.return_value.first.return_value = None
+            role_cls.get_role.return_value = None
 
             await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, user)
 
@@ -761,13 +761,13 @@ class TestCreateGrantsAccess:
         user = _tenant_user()
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
-            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity"),
-            patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
+            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity", new_callable=AsyncMock) as tenant_cls,
+            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity", new_callable=AsyncMock),
+            patch(f"{_SERVICE_MODULE}.RoleEntity", new_callable=AsyncMock) as role_cls,
         ):
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
             bucket_cls.create_bucket.return_value = _created_bucket()
-            role_cls.objects.return_value.first.return_value = None
+            role_cls.get_role.return_value = None
             tenant_cls.grant_access_rule.side_effect = RuntimeError("tenant store unavailable")
 
             with pytest.raises(HTTPException) as exc_info:
@@ -784,13 +784,13 @@ class TestCreateGrantsAccess:
         user = _tenant_user()
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
-            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity"),
-            patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
+            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity", new_callable=AsyncMock) as tenant_cls,
+            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity", new_callable=AsyncMock),
+            patch(f"{_SERVICE_MODULE}.RoleEntity", new_callable=AsyncMock) as role_cls,
         ):
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
             bucket_cls.create_bucket.return_value = _created_bucket()
-            role_cls.objects.return_value.first.return_value = None
+            role_cls.get_role.return_value = None
             tenant_cls.grant_access_rule.side_effect = [None, RuntimeError("tenant store unavailable")]
 
             with pytest.raises(HTTPException):
@@ -810,9 +810,9 @@ class TestCreateGrantsAccess:
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
             patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
-            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
-            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity") as user_role_cls,
-            patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
+            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity", new_callable=AsyncMock) as tenant_cls,
+            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity", new_callable=AsyncMock) as user_role_cls,
+            patch(f"{_SERVICE_MODULE}.RoleEntity", new_callable=AsyncMock) as role_cls,
         ):
             bucket_cls.get_bucket_by_db_name.return_value = MagicMock(id="abc123", source=None)
             namespace_cls.get_namespace_by_bucket_and_name.side_effect = DoesNotExist
@@ -820,7 +820,7 @@ class TestCreateGrantsAccess:
             namespace_cls.create_namespace.return_value = MagicMock(
                 id="ns1", bucket_id="abc123", namespace_name="policies", folder_name="policies"
             )
-            role_cls.objects.return_value.first.return_value = None
+            role_cls.get_role.return_value = None
 
             await KnowledgeService.create_namespace(
                 DATABASE, "policies", CreateNamespaceRequest(folder_name="policies"), locale_handler, user
@@ -836,8 +836,8 @@ class TestCreateGrantsAccess:
     async def test_a_sysadmin_without_tenant_context_creates_without_a_grant(self, locale_handler, s3_service):
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
-            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
-            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity") as user_role_cls,
+            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity", new_callable=AsyncMock) as tenant_cls,
+            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity", new_callable=AsyncMock) as user_role_cls,
         ):
             bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
             bucket_cls.create_bucket.return_value = _created_bucket()

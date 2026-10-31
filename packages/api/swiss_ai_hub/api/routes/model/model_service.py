@@ -26,7 +26,7 @@ class ModelService:
         ModelService._raise_for_gateway_error(response)
         data = response.json()["data"]
         models: list[ModelDTO] = []
-        access_checker = AccessChecker.from_user(user)
+        access_checker = await AccessChecker.from_user(user)
 
         for model_data in data:
             model = ModelDTO.model_validate(model_data)
