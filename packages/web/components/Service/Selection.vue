@@ -104,6 +104,8 @@
 </template>
 
 <script setup lang="ts">
+import { useEventListener } from '@vueuse/core'
+
 import type { MenuItem } from 'primevue/menuitem'
 
 const router = useRouter()
@@ -144,6 +146,14 @@ const op = ref()
 const toggle = (event: Event) => {
   op.value.toggle(event)
 }
+
+// A click into an embedded iframe (the OpenWebUI chat) never reaches this document, so the
+// Popover's outside-click handler misses it; the window losing focus to the iframe is the signal.
+useEventListener(window, 'blur', () => {
+  if (document.activeElement instanceof HTMLIFrameElement) {
+    op.value?.hide()
+  }
+})
 
 const onEnter = (event: Event) => {
   if (shownApps.value.length > 0) {
