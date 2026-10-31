@@ -18,6 +18,7 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp 
     MINIMUM_EMBEDDING_MAX_INPUT_TOKENS,
     QUERY_BUDGET_SAFETY_FACTOR,
 )
+from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config import RerankingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_tokenizer import ModelTokenizer
 from swiss_ai_hub.core.infrastructure.mem0.mem0_service import Mem0Service
 from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
@@ -42,6 +43,7 @@ def _build_service(max_search_query_tokens: int | None) -> Mem0Service:
         mock_memory_cls.return_value = mock_memory
         config = MagicMock()
         config.embedder.config = {"model": "embedding/bge-m3"}
+        config.reranker.config = {"model": "reranker/bge"}
         return Mem0Service(config=config, t=MagicMock(), max_search_query_tokens=max_search_query_tokens)
 
 
@@ -203,3 +205,55 @@ async def test_declared_embedder_counts_the_query_in_its_own_tokens():
         await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
 
     assert ModelTokenizer.shared("bge-m3").count(_forwarded_query(service)) <= LIMIT - 2
+
+
+DECLARED_EMBEDDER = {
+    "mode": "embedding",
+    "max_input_tokens": 8192,
+    "aihub_tokenizer": "bge-m3",
+    "aihub_input_overhead_tokens": 2,
+}
+DECLARED_RERANKER = {
+    "mode": "rerank",
+    "max_input_tokens": 8192,
+    "aihub_tokenizer": "bge-m3",
+    "aihub_input_overhead_tokens": 4,
+}
+MEMORY = "The user prefers concise answers in German."
+QUESTION = "What did I say about the notice period?"
+
+
+def _declared_embedder_and_reranker():
+    return (
+        patch.object(EmbeddingModelConfig, "get_model_info", return_value={"model_info": DECLARED_EMBEDDER}),
+        patch.object(RerankingModelConfig, "get_model_info", return_value={"model_info": DECLARED_RERANKER}),
+    )
+
+
+@pytest.mark.asyncio
+async def test_a_reranked_search_leaves_the_reranker_room_for_the_memory():
+    """mem0 reranks each memory with the query in one window, through its own reranker rather than rerank_nodes; a
+    query filling the embedder's window left no room for the memory, and every long search lost its reranking."""
+    service = _build_service(max_search_query_tokens=None)
+    query = ("Clause text from the attached contract. " * 2600) + QUESTION
+    embedder, reranker = _declared_embedder_and_reranker()
+
+    with embedder, reranker:
+        await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
+
+    count = ModelTokenizer.shared("bge-m3").count
+    forwarded = _forwarded_query(service)
+    assert count(forwarded) + DECLARED_RERANKER["aihub_input_overhead_tokens"] + count(MEMORY) <= 8192
+    assert forwarded.endswith(QUESTION)
+
+
+@pytest.mark.asyncio
+async def test_a_search_without_reranking_keeps_the_embedders_whole_window():
+    service = _build_service(max_search_query_tokens=None)
+    query = "Clause text from the attached contract. " * 2600
+    embedder, reranker = _declared_embedder_and_reranker()
+
+    with embedder, reranker:
+        await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY, rerank=False)
+
+    assert ModelTokenizer.shared("bge-m3").count(_forwarded_query(service)) > 8192 - 100

@@ -14,6 +14,9 @@ from swiss_ai_hub.core.infrastructure.mem0.types.memory_added import MemoryAdded
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import MemorySearchResult
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
 
+# Memories are single facts, a sentence or two each; a reranked search leaves each this much room next to the query.
+MEMORY_ROOM_TOKENS = 512
+
 
 class Mem0Service:
     def __init__(
@@ -39,9 +42,14 @@ class Mem0Service:
     def config(self):
         return self._config
 
-    def _clamp_query(self, query: str) -> str:
-        return EmbeddingQueryClamp.clamp(
+    def _clamp_query(self, query: str, rerank: bool) -> str:
+        clamped = EmbeddingQueryClamp.clamp(
             query, model_name=self._config.embedder.config["model"], max_input_tokens=self._max_search_query_tokens
+        )
+        if not rerank or self._config.reranker is None:
+            return clamped
+        return EmbeddingQueryClamp.clamp_for_rerank(
+            clamped, reranking_model_name=self._config.reranker.config["model"], document_room=MEMORY_ROOM_TOKENS
         )
 
     async def add_memory(
@@ -144,7 +152,7 @@ class Mem0Service:
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
-        query = await asyncio.to_thread(self._clamp_query, query)
+        query = await asyncio.to_thread(self._clamp_query, query, rerank)
         scalar_filters = {
             "_type": memory_type.value,
             "_user_id": user_id,
