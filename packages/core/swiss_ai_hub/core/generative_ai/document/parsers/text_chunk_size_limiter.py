@@ -20,8 +20,9 @@ SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER = 2
 MAX_CHARACTERS_PER_TOKEN = 4
 
 # SentenceSplitter sums the counts of pieces it encoded one by one, and a piece encoded alone gets the word-initial
-# vocabulary the joined text does not: with the exact bge-m3 count, Python code came out at 2113 tokens for a
-# chunk size of 2048. A piece over budget is therefore split again, smaller by the measured overshoot plus this.
+# vocabulary the joined text does not. At a chunk size of 2048 this repository's dense import modules came out at up
+# to 2166 bge-m3 tokens (core/infrastructure/__init__.py; prose, tables and LaTeX stay under 2048). A piece over budget
+# is therefore split again, smaller by the measured overshoot plus this, and cut by measured characters if it still is.
 RESPLIT_MARGIN_TOKENS = 8
 MAX_RESPLIT_ROUNDS = 3
 
