@@ -15,10 +15,17 @@ tenant_admin:
     users: Users
   keycloak_unreachable: Keycloak is unreachable — the tenant list may be incomplete.
     Please retry.
+  load_error: This tenant's data could not be loaded. Please retry.
   state:
     orphaned_label: Orphaned
     orphaned_tooltip: This tenant has metadata but no matching Keycloak group. Users
       cannot access it.
+    not_member_label: Not a member
+    not_member_tooltip: Your account is not in this tenant's Keycloak group, so its
+      roles and users cannot be loaded.
+    not_member_message: Your account is not a member of the Keycloak group /tenants/{tenantId},
+      so this tenant's roles and users cannot be loaded. Ask a Keycloak administrator
+      to add the account you are signed in with to that group.
   card:
     more_rules: +{count} more
   configure:

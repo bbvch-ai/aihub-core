@@ -52,6 +52,7 @@ export default defineQuery(() => {
   return {
     users,
     usersAreLoading,
+    usersError: usersQuery.error,
     pagination,
     currentPage,
     pageSize,

@@ -623,6 +623,26 @@ export type LoginOptionsResponse = {
 };
 
 /**
+ * MyTenantsResponse
+ *
+ * Response for the GET /my-tenants endpoint, including sysadmin status.
+ */
+export type MyTenantsResponse = {
+  /**
+   * Tenants
+   *
+   * Tenants the user making the call belongs to
+   */
+  tenants: Array<TenantMembershipDto>;
+  /**
+   * Is Sys Admin
+   *
+   * Whether the user has system administrator privileges
+   */
+  is_sys_admin?: boolean;
+};
+
+/**
  * PaginatedUsersResponse
  *
  * Represents a paginated response containing a list of users.
@@ -728,6 +748,32 @@ export type RoleResponse = {
    * Tenant ID this role belongs to.
    */
   tenant_id: string;
+};
+
+/**
+ * TenantMembershipDTO
+ *
+ * A tenant the current user belongs to.
+ */
+export type TenantMembershipDto = {
+  /**
+   * Id
+   *
+   * Tenant identifier
+   */
+  id: string;
+  /**
+   * Name
+   *
+   * Tenant display name
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * Tenant description
+   */
+  description: string;
 };
 
 /**
@@ -1298,6 +1344,23 @@ export type GetMyIdentityResponses = {
 
 export type GetMyIdentityResponse =
   GetMyIdentityResponses[keyof GetMyIdentityResponses];
+
+export type GetMyTenantsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/my-tenants";
+};
+
+export type GetMyTenantsResponses = {
+  /**
+   * Successful Response
+   */
+  200: MyTenantsResponse;
+};
+
+export type GetMyTenantsResponse =
+  GetMyTenantsResponses[keyof GetMyTenantsResponses];
 
 export type GetUserData = {
   body?: never;

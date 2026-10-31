@@ -121,6 +121,8 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handl
             handlers.append(DummySuccessAuth())
         elif behavior == "failure_401":
             handlers.append(DummyFailureAuth(detail=detail, status_code=401))
+        elif behavior == "failure_403":
+            handlers.append(DummyFailureAuth(detail=detail, status_code=403))
         elif behavior == "failure_non_401":
             handlers.append(DummyFailureNon401(detail=detail))
     return TokenAndOauth2Handler(bearer_handlers=handlers, oauth2_handlers=[])
@@ -147,6 +149,19 @@ async def invoke_multi_auth(
         pytest.fail(f"MultiAuthHandler raised an unexpected exception: {e.detail}")
 
 
+@when("I invoke the multi auth handler expecting a rejection")
+@async_test
+async def invoke_multi_auth_expecting_rejection(
+    multi_auth_instance: "TokenAndOauth2Handler",  # type: ignore[name-defined] # noqa: F821
+    multi_auth_error: dict[str, Any],
+    dummy_request: Request,
+) -> None:
+    """Invoke the multi auth handler and store the HTTPException it raises."""
+    with pytest.raises(HTTPException) as raised:
+        await multi_auth_instance(dummy_request, None, None)
+    multi_auth_error["error"] = raised.value
+
+
 # --- Then steps ---
 
 
@@ -156,3 +171,21 @@ def check_multi_auth_user_name(multi_auth_result: dict[str, Any], expected_name:
     user = multi_auth_result.get("user")
     assert user is not None, "No user was returned"
     assert user.name == expected_name, f'Expected user name "{expected_name}", got "{user.name}"'
+
+
+@then(parsers.parse("the rejection should have status {expected_status:d}"))
+def check_rejection_status(multi_auth_error: dict[str, Any], expected_status: int) -> None:
+    """Check the status code of the raised HTTPException."""
+    assert multi_auth_error["error"].status_code == expected_status
+
+
+@then(parsers.parse('the rejection detail should be "{expected_detail}"'))
+def check_rejection_detail(multi_auth_error: dict[str, Any], expected_detail: str) -> None:
+    """Check the detail of the raised HTTPException verbatim."""
+    assert multi_auth_error["error"].detail == expected_detail
+
+
+@then(parsers.parse('the rejection detail should mention "{expected_fragment}"'))
+def check_rejection_detail_mentions(multi_auth_error: dict[str, Any], expected_fragment: str) -> None:
+    """Check that the combined 401 detail still names each handler's failure."""
+    assert expected_fragment in multi_auth_error["error"].detail
