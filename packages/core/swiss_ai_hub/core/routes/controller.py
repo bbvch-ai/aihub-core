@@ -114,13 +114,13 @@ class Controller(abc.ABC):
         return check_sys_admin
 
     def user_with_permission(self, permission_template: str):
-        def check_access(
+        async def check_access(
             request: Request,
             user: Annotated[UserIdentity, Depends(self.auth)],
         ) -> UserIdentity:
             required_permission = permission_template.format(**request.path_params)
 
-            access_checker = AccessChecker.from_user(user)
+            access_checker = await AccessChecker.from_user(user)
 
             if not access_checker.has_access_to_service(self.service_name):
                 logger.warning(

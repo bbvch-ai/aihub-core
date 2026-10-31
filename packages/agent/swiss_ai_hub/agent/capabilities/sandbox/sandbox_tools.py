@@ -205,7 +205,7 @@ class SandboxTools(BaseToolSpec):
         )
 
     async def _workspace(self) -> SandboxWorkspace:
-        workspace = SandboxWorkspace.of(self.context)
+        workspace = await SandboxWorkspace.of(self.context)
         await workspace.prepare()
         return workspace
 

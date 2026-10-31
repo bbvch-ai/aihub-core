@@ -21,12 +21,14 @@ from swiss_ai_hub.api.routes.user_knowledge import user_knowledge_service
 from swiss_ai_hub.api.routes.user_knowledge.user_knowledge_controller import UserKnowledgeController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
+pytestmark = pytest.mark.beanie
+
 ENDPOINT = "/api/v1/active/user-knowledge"
 THREAD = "65f1c0ffee00000000000001"
 
 
-@pytest_asyncio.fixture(scope="module")
-async def client():
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def client(beanie_test_database):
     runner = ApiTestRunner()
     controller = UserKnowledgeController(auth=TestAuthHandler())
     (
@@ -73,7 +75,6 @@ def sandbox() -> Any:
         yield fake
 
 
-@pytest.mark.asyncio
 async def test_the_listing_is_the_user_s_own_home_without_dotfiles(client: AsyncClient, sandbox: Any) -> None:
     response = await client.get(ENDPOINT)
 
@@ -86,7 +87,6 @@ async def test_the_listing_is_the_user_s_own_home_without_dotfiles(client: Async
     ]
 
 
-@pytest.mark.asyncio
 async def test_conversation_folders_carry_the_chat_title(client: AsyncClient, sandbox: Any) -> None:
     sandbox.list_files.return_value = {"entries": [{"name": THREAD, "type": "directory", "modified": 1.0}]}
     with patch.object(
@@ -98,7 +98,6 @@ async def test_conversation_folders_carry_the_chat_title(client: AsyncClient, sa
     assert response.json()["entries"][0]["conversation_title"] == "Q1 sales"
 
 
-@pytest.mark.asyncio
 async def test_a_conversation_folder_carries_its_own_chat_title(client: AsyncClient, sandbox: Any) -> None:
     sandbox.list_files.return_value = {"entries": [{"name": "brief.md", "type": "file", "size": 9, "modified": 1.0}]}
     with patch.object(
@@ -109,7 +108,6 @@ async def test_a_conversation_folder_carries_its_own_chat_title(client: AsyncCli
     assert response.json()["folder_title"] == "Q1 sales"
 
 
-@pytest.mark.asyncio
 async def test_an_own_conversation_without_files_yet_is_empty_and_titled(client: AsyncClient, sandbox: Any) -> None:
     sandbox.list_files.side_effect = OpenTerminalError("404: Directory not found", 404)
     with patch.object(
@@ -121,7 +119,6 @@ async def test_an_own_conversation_without_files_yet_is_empty_and_titled(client:
     assert (response.json()["entries"], response.json()["folder_title"]) == ([], "Q1 sales")
 
 
-@pytest.mark.asyncio
 async def test_a_missing_folder_that_is_not_an_own_conversation_stays_missing(
     client: AsyncClient, sandbox: Any
 ) -> None:
@@ -132,7 +129,6 @@ async def test_a_missing_folder_that_is_not_an_own_conversation_stays_missing(
     assert response.status_code == 404
 
 
-@pytest.mark.asyncio
 async def test_a_download_returns_the_bytes_as_an_attachment(client: AsyncClient, sandbox: Any) -> None:
     response = await client.get(f"{ENDPOINT}/content", params={"path": "reports/Q1 report.pdf", "download": True})
 
@@ -142,7 +138,6 @@ async def test_a_download_returns_the_bytes_as_an_attachment(client: AsyncClient
     sandbox.view.assert_awaited_once_with("reports/Q1 report.pdf")
 
 
-@pytest.mark.asyncio
 async def test_a_pdf_is_shown_in_place(client: AsyncClient, sandbox: Any) -> None:
     response = await client.get(f"{ENDPOINT}/content", params={"path": "report.pdf"})
 
@@ -150,7 +145,6 @@ async def test_a_pdf_is_shown_in_place(client: AsyncClient, sandbox: Any) -> Non
     assert response.headers["content-disposition"].startswith("inline;")
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "content_type", ["text/html", "image/svg+xml", "application/xhtml+xml", "text/html; charset=utf-8"]
 )
@@ -176,7 +170,6 @@ def _extracted(markdown: str) -> ExtractedDocument:
     )
 
 
-@pytest.mark.asyncio
 async def test_an_office_document_is_previewed_as_the_markdown_an_agent_reads(
     client: AsyncClient, sandbox: Any
 ) -> None:
@@ -207,7 +200,6 @@ def _deck_with_a_picture() -> bytes:
     return content.getvalue()
 
 
-@pytest.mark.asyncio
 async def test_a_real_document_is_previewed_without_its_images(client: AsyncClient, sandbox: Any) -> None:
     pptx = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     sandbox.view.return_value = (_deck_with_a_picture(), pptx)
@@ -224,7 +216,6 @@ async def test_a_real_document_is_previewed_without_its_images(client: AsyncClie
     assert "data:image" not in markdown
 
 
-@pytest.mark.asyncio
 async def test_a_long_preview_is_cut_at_a_whole_line_and_says_so(client: AsyncClient, sandbox: Any) -> None:
     limit = user_knowledge_service.UserKnowledgeService.MAX_PREVIEW_CHARS
     line = "x" * 99 + "\n"
@@ -240,7 +231,6 @@ async def test_a_long_preview_is_cut_at_a_whole_line_and_says_so(client: AsyncCl
     assert response.json()["truncated"] is True
 
 
-@pytest.mark.asyncio
 async def test_a_table_the_cut_lands_in_is_closed_after_its_last_whole_row(client: AsyncClient, sandbox: Any) -> None:
     limit = user_knowledge_service.UserKnowledgeService.MAX_PREVIEW_CHARS
     rows = "".join(f"| {index:08d} |\n" for index in range(limit // 13 + 1))
@@ -256,7 +246,6 @@ async def test_a_table_the_cut_lands_in_is_closed_after_its_last_whole_row(clien
     assert len(markdown) <= limit + len("</table>")
 
 
-@pytest.mark.asyncio
 async def test_a_file_too_large_to_preview_is_refused_before_it_is_converted(client: AsyncClient, sandbox: Any) -> None:
     limit = user_knowledge_service.UserKnowledgeService.MAX_PREVIEW_BYTES
     sandbox.view.return_value = (b"x" * (limit + 1), "application/vnd.ms-excel")
@@ -267,7 +256,6 @@ async def test_a_file_too_large_to_preview_is_refused_before_it_is_converted(cli
     extract.assert_not_awaited()
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("path", ["report.pdf", "notes.txt", "page.html", "mail.eml", "archive"])
 async def test_a_file_without_a_markdown_preview_is_refused_before_it_is_read(
     client: AsyncClient, sandbox: Any, path: str
@@ -278,7 +266,6 @@ async def test_a_file_without_a_markdown_preview_is_refused_before_it_is_read(
     sandbox.view.assert_not_awaited()
 
 
-@pytest.mark.asyncio
 async def test_an_upload_lands_in_the_chosen_folder(client: AsyncClient, sandbox: Any) -> None:
     response = await client.post(f"{ENDPOINT}/files", params={"folder": "notes"}, files={"file": ("a.txt", b"hi")})
 
@@ -286,7 +273,6 @@ async def test_an_upload_lands_in_the_chosen_folder(client: AsyncClient, sandbox
     sandbox.upload.assert_awaited_once_with("notes", "a.txt", b"hi")
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("method", "url", "kwargs"),
     [
@@ -312,7 +298,6 @@ async def test_a_path_outside_the_home_or_the_top_itself_is_refused(
     sandbox.delete.assert_not_awaited()
 
 
-@pytest.mark.asyncio
 async def test_an_upload_over_the_limit_is_refused_before_it_reaches_the_sandbox(
     client: AsyncClient, sandbox: Any
 ) -> None:
@@ -323,7 +308,6 @@ async def test_an_upload_over_the_limit_is_refused_before_it_reaches_the_sandbox
     sandbox.upload.assert_not_awaited()
 
 
-@pytest.mark.asyncio
 async def test_a_rename_moves_within_the_folder(client: AsyncClient, sandbox: Any) -> None:
     response = await client.post(f"{ENDPOINT}/move", json={"source": "notes/a.txt", "destination": "notes/b.txt"})
 
@@ -331,7 +315,6 @@ async def test_a_rename_moves_within_the_folder(client: AsyncClient, sandbox: An
     sandbox.move.assert_awaited_once_with("notes/a.txt", "notes/b.txt")
 
 
-@pytest.mark.asyncio
 async def test_a_user_without_a_chat_account_has_no_file_space_yet(client: AsyncClient, sandbox: Any) -> None:
     sandbox.id_of.return_value = None
 
@@ -341,7 +324,6 @@ async def test_a_user_without_a_chat_account_has_no_file_space_yet(client: Async
     sandbox.list_files.assert_not_awaited()
 
 
-@pytest.mark.asyncio
 async def test_a_sandbox_refusal_is_passed_on_and_a_failure_is_a_bad_gateway(client: AsyncClient, sandbox: Any) -> None:
     sandbox.delete.side_effect = OpenTerminalError("404: Path not found", 404)
     missing = await client.delete(ENDPOINT, params={"path": "gone.txt"})
@@ -370,7 +352,6 @@ def _read(file_id: str, filename: str) -> bytes:
     return f"{file_id}/{filename}".encode()
 
 
-@pytest.mark.asyncio
 async def test_a_turn_s_attachments_are_placed_in_its_conversation_folder_together(sandbox: Any) -> None:
     _record(sandbox, None)
 
@@ -389,7 +370,6 @@ async def test_a_turn_s_attachments_are_placed_in_its_conversation_folder_togeth
     ]
 
 
-@pytest.mark.asyncio
 async def test_an_attachment_already_placed_is_not_placed_again_on_a_later_turn(sandbox: Any) -> None:
     _record(sandbox, {FILE_ID: "report.pdf"})
 
@@ -402,7 +382,6 @@ async def test_an_attachment_already_placed_is_not_placed_again_on_a_later_turn(
     )
 
 
-@pytest.mark.asyncio
 async def test_a_user_without_a_file_space_gets_no_attachment_placed(sandbox: Any) -> None:
     sandbox.id_of.return_value = None
 

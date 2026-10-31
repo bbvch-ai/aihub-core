@@ -68,5 +68,8 @@ def provisioner(mock_settings: MagicMock, mock_redis: MagicMock) -> OpenWebuiPro
 @pytest.fixture(autouse=True)
 def recorded_accounts() -> Iterator[MagicMock]:
     """The group sync records each user's matched account; the tests have no database to record it in."""
-    with patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.OpenWebuiAccountEntity") as entity:
+    with patch(
+        "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.OpenWebuiAccountEntity",
+        new_callable=AsyncMock,
+    ) as entity:
         yield entity

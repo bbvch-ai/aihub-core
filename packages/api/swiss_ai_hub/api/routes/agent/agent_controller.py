@@ -77,7 +77,7 @@ class AgentController(TenantScopedController):
             # Filtered per class because the route guard is an existence query that any single agent rule
             # satisfies, so without this a tenant curated down to a subset still sees every blueprint and
             # learns of the block only on click-through.
-            access_checker = AccessChecker.from_user(user)
+            access_checker = await AccessChecker.from_user(user)
             return [
                 agent_class
                 for agent_class in agent_classes
@@ -112,10 +112,11 @@ class AgentController(TenantScopedController):
             Retrieve all instances of a specific agent class.
             """
             instances = await AgentService.get_agent_class_instances(agent_class, t)
+            access_checker = await AccessChecker.from_user(user)
             return [
                 instance
                 for instance in instances
-                if AccessChecker.from_user(user).has_access_to_agent(instance.agent_class, instance.agent_id)
+                if access_checker.has_access_to_agent(instance.agent_class, instance.agent_id)
             ]
 
         return self
@@ -218,7 +219,7 @@ class AgentController(TenantScopedController):
             """
             Retrieve all threads that a specific agent instance is part of.
             """
-            access_level = AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)
+            access_level = (await AccessChecker.from_user(user)).has_access_to_agent(agent_class, agent_id)
             total, threads = await AgentService.get_agent_instance_threads(
                 agent_class=agent_class,
                 agent_id=agent_id,
@@ -253,11 +254,8 @@ class AgentController(TenantScopedController):
             agents = await AgentService.get_all_agent_instances(
                 t, online=online, search=search, agent_class=agent_class
             )
-            return [
-                agent
-                for agent in agents
-                if AccessChecker.from_user(user).has_access_to_agent(agent.agent_class, agent.agent_id)
-            ]
+            access_checker = await AccessChecker.from_user(user)
+            return [agent for agent in agents if access_checker.has_access_to_agent(agent.agent_class, agent.agent_id)]
 
         return self
 

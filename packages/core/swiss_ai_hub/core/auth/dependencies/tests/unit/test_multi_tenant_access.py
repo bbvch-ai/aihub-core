@@ -1,148 +1,62 @@
-from collections.abc import Generator
-from typing import Any
+"""Multi-tenant access control: a user's roles differ per tenant, and each tenant's rules cap them."""
 
 import pytest
-from mongoengine import connect, disconnect
-from pytest_bdd import given, parsers, scenarios, then, when
+import pytest_asyncio
 
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker, AccessLevel
-from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
-pytestmark = pytest.mark.usefixtures("mongo_connection")
+pytestmark = pytest.mark.beanie
 
-scenarios("features/multi_tenant_access.feature")
-
-
-@pytest.fixture
-def mongo_connection() -> Generator[None]:
-    """Set up a MongoDB connection for testing and disconnect after."""
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-    )
-    yield
-    disconnect()
+ALPHA = "alpha-corp"
+BETA = "beta-inc"
+AGENT = "aihub.user.agent.class-a.id-1"
+PROCESS = "aihub.user.process.class-a.id-1"
 
 
-@pytest.fixture
-def context() -> dict[str, Any]:
-    """A dictionary to hold state between BDD steps."""
-    return {"tenants": {}, "users": {}}
+@pytest_asyncio.fixture(loop_scope="session", autouse=True)
+async def tenants_with_default_roles(clean_beanie_collections: None) -> None:
+    await TenantMetadataEntity.create_tenant_metadata(ALPHA, "Alpha Corp", "Tenant Alpha Corp", ["aihub.admin.>"])
+    await TenantMetadataEntity.create_tenant_metadata(BETA, "Beta Inc", "Tenant Beta Inc", ["aihub.user.agent.>"])
+    for tenant_id in (ALPHA, BETA):
+        await RoleEntity.create_tenant_role("AIHubAdmin", "Role AIHubAdmin", ["aihub.admin.>"], tenant_id)
+        await RoleEntity.create_tenant_role("AIHubUser", "Role AIHubUser", ["aihub.user.>"], tenant_id)
 
 
-@pytest.fixture
-def cleanup_documents() -> Generator[list[Any]]:
-    """Collect inserted documents for cleanup after the test."""
-    inserted_documents: list[Any] = []
-    yield inserted_documents
-    for doc in inserted_documents:
-        try:
-            doc.delete()
-        except Exception:
-            pass
-
-
-# --- Background Steps ---
-
-
-@given(parsers.parse('tenant "{name}" exists with access rules "{access_rules}"'))
-def create_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: str, access_rules: str) -> None:
-    """Create a tenant with the given access rules."""
-    rules_list = [r.strip() for r in access_rules.split(",")]
-    tenant = TenantMetadataEntity.create_tenant_metadata(
-        tenant_id=name.lower().replace(" ", "-"),
-        name=name,
-        description=f"Tenant {name} for testing",
-        access_rules=rules_list,
-    )
-    context["tenants"][name] = tenant
-    cleanup_documents.append(tenant)
-
-
-@given(parsers.parse('the default role "{role_name}" exists with access rules "{access_rules}"'))
-def ensure_default_role(
-    cleanup_documents: list[Any],
-    context: dict[str, Any],
-    role_name: str,
-    access_rules: str,
-) -> None:
-    """Seed a role with the given access rules in every tenant already registered in the context."""
-    rules_list = [r.strip() for r in access_rules.split(",")]
-    for tenant in context["tenants"].values():
-        tenant_id = str(tenant.id)
-        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
-            continue
-        role = RoleEntity.create_tenant_role(
-            name=role_name,
-            description=f"Role {role_name} for testing",
-            access_rules=rules_list,
-            tenant_id=tenant_id,
-        )
-        cleanup_documents.append(role)
-
-
-# --- Given Steps ---
-
-
-@given(parsers.parse('user "{user_id}" has role "{role_name}" in tenant "{tenant_name}"'))
-def assign_role_to_user(
-    cleanup_documents: list[Any], context: dict[str, Any], user_id: str, role_name: str, tenant_name: str
-) -> None:
-    """Assign a role to a user in a specific tenant."""
-    tenant = context["tenants"][tenant_name]
-    tenant_id_str = str(tenant.id)
-    association = UserTenantRoleEntity.create_or_update(
-        user_id=user_id,
-        tenant_id=tenant_id_str,
-        roles=[role_name],
-    )
-    cleanup_documents.append(association)
-
-    # Store user info in context for later use
-    if user_id not in context["users"]:
-        context["users"][user_id] = {}
-    context["users"][user_id][tenant_name] = {
-        "tenant_id": tenant_id_str,
-        "roles": [role_name],
-    }
-
-
-# --- When Steps ---
-
-
-@when(parsers.parse('checking access for user "{user_id}" in tenant "{tenant_name}" to "{permission_template}"'))
-def check_access(context: dict[str, Any], user_id: str, tenant_name: str, permission_template: str) -> None:
-    """Check access for a user in a specific tenant."""
-    tenant = context["tenants"][tenant_name]
-
-    # Get user's roles in this tenant
-    tenant_id_str = str(tenant.id)
-    user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id_str)
-
-    # Get access rules from the user's roles
-    user_access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant_id_str)
-
-    # Create access checker with both user and tenant access rules
+async def access_level(user_id: str, tenant_id: str, permission_template: str) -> AccessLevel:
+    tenant = await TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
+    user_roles = await UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id)
+    user_access_rules = await RoleEntity.get_access_rules_for_roles(user_roles, tenant_id)
     checker = AccessChecker(list(user_access_rules), tenant_access_rules=tenant.access_rules)
-    access_level = checker.access_level(permission_template)
-
-    context["last_access_level"] = access_level
+    return checker.access_level(permission_template)
 
 
-# --- Then Steps ---
+async def test_user_with_admin_in_one_tenant_and_user_in_another_gets_correct_access_levels() -> None:
+    await UserTenantRoleEntity.create_or_update("multi-tenant-user", ALPHA, ["AIHubAdmin"])
+    await UserTenantRoleEntity.create_or_update("multi-tenant-user", BETA, ["AIHubUser"])
+
+    assert await access_level("multi-tenant-user", ALPHA, AGENT) is AccessLevel.ACCESS_ADMIN
+    assert await access_level("multi-tenant-user", BETA, AGENT) is AccessLevel.ACCESS_USER
 
 
-@then(parsers.parse("the access level should be {expected_level}"))
-def verify_access_level(context: dict[str, Any], expected_level: str) -> None:
-    """Verify the access level matches the expected value."""
-    try:
-        expected = AccessLevel[expected_level]
-    except KeyError:
-        pytest.fail(f"Invalid expected level '{expected_level}' in feature file.")
+async def test_tenant_access_rules_cap_user_permissions() -> None:
+    await UserTenantRoleEntity.create_or_update("capped-user", BETA, ["AIHubAdmin"])
 
-    actual = context.get("last_access_level")
-    assert actual is expected, f"Expected {expected}, but got {actual}"
+    assert await access_level("capped-user", BETA, AGENT) is AccessLevel.ACCESS_USER
+    assert await access_level("capped-user", BETA, PROCESS) is AccessLevel.ACCESS_DENIED
+
+
+async def test_user_gets_denied_for_resource_outside_tenants_access_rules() -> None:
+    await UserTenantRoleEntity.create_or_update("limited-user", BETA, ["AIHubUser"])
+
+    assert await access_level("limited-user", BETA, PROCESS) is AccessLevel.ACCESS_DENIED
+
+
+async def test_same_user_has_different_implicit_access_across_tenants() -> None:
+    await UserTenantRoleEntity.create_or_update("implicit-user", ALPHA, ["AIHubUser"])
+    await UserTenantRoleEntity.create_or_update("implicit-user", BETA, ["AIHubUser"])
+
+    assert await access_level("implicit-user", ALPHA, "aihub.user.process.?>") is AccessLevel.ACCESS_USER
+    assert await access_level("implicit-user", BETA, "aihub.user.process.?>") is AccessLevel.ACCESS_DENIED

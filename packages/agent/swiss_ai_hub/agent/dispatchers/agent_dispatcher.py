@@ -638,7 +638,7 @@ class AgentDispatcher(BaseDispatcher):
             user_data = await run_context.get("user")
             if not user_data:
                 return None
-            return await asyncio.to_thread(AccessChecker.from_user, UserIdentity.model_validate(user_data))
+            return await AccessChecker.from_user(UserIdentity.model_validate(user_data))
 
         # Matched through the union members too: the programmatically-started agents annotate this
         # `UserIdentity | None`, and an equality check against the bare class silently misses them —

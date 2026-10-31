@@ -54,7 +54,7 @@ class MyAccountController(TenantScopedController):
             (TenantScopedController prefix); the response does not depend on it, so any
             value resolves — sysadmin-web's role-gate middleware passes ``"active"``.
             """
-            return MyAccountService.get_my_identity(user)
+            return await MyAccountService.get_my_identity(user)
 
         return self
 
@@ -64,7 +64,7 @@ class MyAccountController(TenantScopedController):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> DashboardDTO | None:
             """Returns the user's dashboard settings, or null if none exist."""
-            return MyAccountService.get_user_dashboard(user)
+            return await MyAccountService.get_user_dashboard(user)
 
         return self
 

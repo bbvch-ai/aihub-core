@@ -129,7 +129,7 @@ async def test_resolve_user_identity_builds_identity_from_keycloak(monkeypatch):
     """``resolve_user_identity`` turns a resolved email into a Keycloak-backed identity."""
     register_fake_keycloak_user(user_id="agent-user-oid", name=DISPLAY_NAME, email=RESOLVED_EMAIL)
     monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", AsyncMock(return_value=fake_tenant_identity()))
-    monkeypatch.setattr(UserTenantRoleEntity, "get_roles_for_user_in_tenant", MagicMock(return_value=["admin"]))
+    monkeypatch.setattr(UserTenantRoleEntity, "get_roles_for_user_in_tenant", AsyncMock(return_value=["admin"]))
 
     turn_context = _make_turn_context(from_name=DISPLAY_NAME, connector_client=_teams_connector(RESOLVED_EMAIL))
 
@@ -165,7 +165,7 @@ async def test_agent_completion_handler_resolves_display_name_via_connector(monk
     monkeypatch.setattr(CompletionHandler, "get_messages_by_conversation_id", lambda *a, **k: [])
     monkeypatch.setattr(CompletionHandler, "get_system_message", lambda *a, **k: None)
     monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", AsyncMock(return_value=fake_tenant_identity()))
-    monkeypatch.setattr(UserTenantRoleEntity, "get_roles_for_user_in_tenant", MagicMock(return_value=["admin"]))
+    monkeypatch.setattr(UserTenantRoleEntity, "get_roles_for_user_in_tenant", AsyncMock(return_value=["admin"]))
 
     captured: dict = {}
 

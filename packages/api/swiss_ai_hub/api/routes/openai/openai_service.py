@@ -65,10 +65,10 @@ class OpenaiService:
     @staticmethod
     @trace_fn
     async def get_chat_disclaimer(tenant_id: str, t: LocaleHandler) -> str:
-        tenant = await asyncio.to_thread(TenantMetadataEntity.get_metadata_by_tenant_id, tenant_id)
+        tenant = await TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if tenant is None or tenant.chat_disclaimer is None:
             return t("api.common.default_chat_disclaimer")
-        return t.extract(tenant.chat_disclaimer.to_locale_string()) or ""
+        return t.extract(tenant.chat_disclaimer) or ""
 
     @staticmethod
     @trace_fn
@@ -158,10 +158,10 @@ class OpenaiService:
         return bool(name) and access_checker.has_access_to_model(capability, name)
 
     @staticmethod
-    def _assert_model_access(user: UserIdentity, model_name: str) -> None:
+    async def _assert_model_access(user: UserIdentity, model_name: str) -> None:
         """Enforces per-model access for a direct model invocation. Lives on the service, not the
         controller, so internal (non-HTTP) callers cannot bypass it."""
-        if not OpenaiService._has_model_access(AccessChecker.from_user(user), model_name):
+        if not OpenaiService._has_model_access(await AccessChecker.from_user(user), model_name):
             raise HTTPException(
                 status_code=403, detail=f"User {user.id} does not have permission to access model {model_name}"
             )
@@ -214,7 +214,7 @@ class OpenaiService:
         Generate text embeddings using the specified embedding model.
         Identifies the model, prepares parameters, and returns embeddings for the input text.
         """
-        OpenaiService._assert_model_access(user, model_name)
+        await OpenaiService._assert_model_access(user, model_name)
 
         embedding_model_names = await OpenaiService._model_names_by_type("embedding", model_name)
 
@@ -249,7 +249,7 @@ class OpenaiService:
         Delegates to the underlying chat model; supports both synchronous and streaming responses.
         """
         await OpenaiService.get_model(model_name)  # Ensures model exists
-        OpenaiService._assert_model_access(user, model_name)
+        await OpenaiService._assert_model_access(user, model_name)
         # Must stay after get_model: its 404 is what routes an assistant to chat_completion_with_assistants'
         # agent branch, and agents own their identity (ADR 2026_06_04). Injecting before it would hand every
         # agent a contradicting persona.
@@ -341,7 +341,7 @@ class OpenaiService:
                 raise
 
         agent_class, agent_id = model_name.split("/")
-        if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
+        if not (await AccessChecker.from_user(user)).has_access_to_agent(agent_class, agent_id):
             raise HTTPException(
                 status_code=403,
                 detail=f"User {user.id} does not have permission to access assistant {model_name}",
@@ -560,7 +560,7 @@ class OpenaiService:
         Generate an image using the specified image model.
         Routes the generation request to the corresponding Azure image model client.
         """
-        OpenaiService._assert_model_access(user, model_name)
+        await OpenaiService._assert_model_access(user, model_name)
 
         image_model_names = await OpenaiService._model_names_by_type("image_generation", model_name)
         if len(image_model_names) == 0:
@@ -588,7 +588,7 @@ class OpenaiService:
         Utilizes the specified speech-to-text model and parameters to convert audio into transcription.
         Handles chunking of large audio files to comply with API size limits.
         """
-        OpenaiService._assert_model_access(user, model_name)
+        await OpenaiService._assert_model_access(user, model_name)
 
         stt_model_names = await OpenaiService._model_names_by_type("audio_transcription", model_name)
         if len(stt_model_names) == 0:
@@ -723,7 +723,7 @@ class OpenaiService:
         Convert text to speech and return the audio content.
         Sends a TTS request to the designated model and streams the resulting audio bytes.
         """
-        OpenaiService._assert_model_access(user, model_name)
+        await OpenaiService._assert_model_access(user, model_name)
 
         tts_model_names = await OpenaiService._model_names_by_type("audio_speech", model_name)
         if len(tts_model_names) == 0:

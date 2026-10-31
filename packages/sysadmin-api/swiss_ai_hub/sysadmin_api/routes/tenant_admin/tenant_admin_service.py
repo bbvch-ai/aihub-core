@@ -34,7 +34,7 @@ class TenantAdminService:
         keycloak_groups = await KeycloakAdminService.get_all_tenant_groups()
         keycloak_ids = {g.name for g in keycloak_groups}
         result: list[TenantResponse] = []
-        for entity in TenantMetadataEntity.objects.all():
+        for entity in await TenantMetadataEntity.get_all_metadata():
             state = TenantState.ACTIVE if entity.id in keycloak_ids else TenantState.ORPHANED
             result.append(TenantResponse.from_entity(entity, state=state))
         return result
@@ -45,7 +45,7 @@ class TenantAdminService:
         """Keycloak tenant IDs that don't yet have MongoDB metadata."""
         keycloak_groups = await KeycloakAdminService.get_all_tenant_groups()
         keycloak_ids = {g.name for g in keycloak_groups}
-        configured_ids = {t.id for t in TenantMetadataEntity.objects.only("id")}
+        configured_ids = {t.id for t in await TenantMetadataEntity.get_all_metadata()}
         return sorted(keycloak_ids - configured_ids)
 
     @staticmethod
@@ -56,7 +56,7 @@ class TenantAdminService:
         ``KeycloakGetError`` is used here as control flow: its absence means the group
         exists (ACTIVE), its presence means the group is gone (ORPHANED).
         """
-        entity = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
+        entity = await TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not entity:
             raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
 
@@ -88,13 +88,13 @@ class TenantAdminService:
                 detail=f"Keycloak tenant group '{data.tenant_id}' does not exist.",
             )
 
-        if TenantMetadataEntity.get_metadata_by_tenant_id(data.tenant_id):
+        if await TenantMetadataEntity.get_metadata_by_tenant_id(data.tenant_id):
             raise HTTPException(
                 status_code=409,
                 detail=f"Tenant '{data.tenant_id}' is already configured.",
             )
 
-        if TenantMetadataEntity.get_metadata_by_tenant_name(data.name):
+        if await TenantMetadataEntity.get_metadata_by_tenant_name(data.name):
             raise HTTPException(
                 status_code=409,
                 detail=f"Tenant with name '{data.name}' already exists.",
@@ -103,7 +103,7 @@ class TenantAdminService:
         await initialize_default_roles_for_tenant(data.tenant_id)
         await KeycloakAdminService.assign_superuser_to_tenant(data.tenant_id)
 
-        entity = TenantMetadataEntity.create_tenant_metadata(
+        entity = await TenantMetadataEntity.create_tenant_metadata(
             tenant_id=data.tenant_id,
             name=data.name,
             description=data.description,
@@ -118,7 +118,7 @@ class TenantAdminService:
 
         Orphaned tenants are read-only (409). ``KeycloakGetError`` signals the orphan.
         """
-        existing = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
+        existing = await TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not existing:
             raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
 
@@ -130,7 +130,7 @@ class TenantAdminService:
                 detail=f"Tenant '{tenant_id}' is orphaned (Keycloak group missing) and cannot be edited.",
             )
 
-        entity = TenantMetadataEntity.update_tenant_metadata(
+        entity = await TenantMetadataEntity.update_tenant_metadata(
             tenant_id=tenant_id,
             name=data.name,
             description=data.description,
@@ -163,11 +163,11 @@ class TenantAdminService:
         otherwise be impossible. The invariant ``count >= 1`` holds after all
         concurrent deletes resolve.
         """
-        tenant = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
+        tenant = await TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not tenant:
             raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
 
-        if TenantMetadataEntity.count_tenants() <= 1:
+        if await TenantMetadataEntity.count_tenants() <= 1:
             raise HTTPException(
                 status_code=409,
                 detail="Cannot delete the last remaining tenant; the platform must always have at least one.",
@@ -178,17 +178,17 @@ class TenantAdminService:
             "name": tenant.name,
             "description": tenant.description,
             "access_rules": list(tenant.access_rules),
-            "chat_disclaimer": tenant.chat_disclaimer.to_locale_string() if tenant.chat_disclaimer else None,
+            "chat_disclaimer": tenant.chat_disclaimer.model_copy() if tenant.chat_disclaimer else None,
         }
 
-        if not TenantMetadataEntity.delete_tenant_metadata(tenant_id):
+        if not await TenantMetadataEntity.delete_tenant_metadata(tenant_id):
             raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
 
-        if TenantMetadataEntity.count_tenants() == 0:
-            TenantMetadataEntity.create_tenant_metadata(**snapshot)
+        if await TenantMetadataEntity.count_tenants() == 0:
+            await TenantMetadataEntity.create_tenant_metadata(**snapshot)
             raise HTTPException(
                 status_code=409,
                 detail="Cannot delete the last remaining tenant; a concurrent delete already removed the other.",
             )
 
-        TenantMetadataEntity.cascade_delete_tenant_data(tenant_id)
+        await TenantMetadataEntity.cascade_delete_tenant_data(tenant_id)

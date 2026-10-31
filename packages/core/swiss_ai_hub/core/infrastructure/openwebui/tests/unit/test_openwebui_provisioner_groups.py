@@ -98,10 +98,16 @@ class TestSyncGroupsOrchestration:
     async def test_sync_creates_missing_groups(self, provisioner: OpenWebuiProvisioner) -> None:
         with (
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity"),
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity",
+                new_callable=AsyncMock,
+            ),
             patch(
                 "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.KeycloakAdminService"
             ) as mock_keycloak,
@@ -115,7 +121,7 @@ class TestSyncGroupsOrchestration:
             tenant.name = "T1"
             tenant.id = "tid-1"
             tenant.access_rules = []
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
             mock_tenant.get_startup_tenant_metadata.return_value = tenant
 
             role = MagicMock()
@@ -137,10 +143,16 @@ class TestSyncGroupsOrchestration:
     async def test_sync_deletes_orphaned_groups(self, provisioner: OpenWebuiProvisioner) -> None:
         with (
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity"),
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity",
+                new_callable=AsyncMock,
+            ),
             patch(
                 "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.KeycloakAdminService"
             ) as mock_keycloak,
@@ -150,7 +162,7 @@ class TestSyncGroupsOrchestration:
             patch.object(provisioner._openwebui, "list_users", return_value=[]),
             patch.object(provisioner._openwebui, "update_group_members"),
         ):
-            mock_tenant.objects.return_value = []
+            mock_tenant.get_all_metadata.return_value = []
             mock_tenant.get_startup_tenant_metadata.return_value = None
             mock_role.get_roles_for_tenant.return_value = []
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
@@ -166,10 +178,16 @@ class TestSyncGroupsOrchestration:
     async def test_sync_ignores_non_aihub_groups(self, provisioner: OpenWebuiProvisioner) -> None:
         with (
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity"),
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity",
+                new_callable=AsyncMock,
+            ),
             patch(
                 "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.KeycloakAdminService"
             ) as mock_keycloak,
@@ -179,7 +197,7 @@ class TestSyncGroupsOrchestration:
             patch.object(provisioner._openwebui, "list_users", return_value=[]),
             patch.object(provisioner._openwebui, "update_group_members"),
         ):
-            mock_tenant.objects.return_value = []
+            mock_tenant.get_all_metadata.return_value = []
             mock_tenant.get_startup_tenant_metadata.return_value = None
             mock_role.get_roles_for_tenant.return_value = []
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
@@ -197,10 +215,16 @@ class TestSyncGroupsOrchestration:
     ) -> None:
         with (
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity") as mock_utr,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity",
+                new_callable=AsyncMock,
+            ) as mock_utr,
             patch(
                 "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.KeycloakAdminService"
             ) as mock_keycloak,
@@ -214,7 +238,7 @@ class TestSyncGroupsOrchestration:
             tenant.name = "T1"
             tenant.id = "tid-1"
             tenant.access_rules = []
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
             mock_tenant.get_startup_tenant_metadata.return_value = tenant
 
             role = MagicMock()
@@ -228,9 +252,7 @@ class TestSyncGroupsOrchestration:
             kc_user.email = "alice@example.com"
             mock_keycloak.get_all_users = AsyncMock(return_value=[kc_user])
 
-            utr = MagicMock()
-            utr.user_id = "ah-user-1"
-            mock_utr.objects.return_value = [utr]
+            mock_utr.get_user_ids_with_role.return_value = ["ah-user-1"]
 
             mock_list_groups.return_value = [_group("aihub:T1:R1", "grp-1")]
             mock_list_users.return_value = [_user("alice@example.com", "owui-1")]
@@ -245,10 +267,16 @@ class TestSyncGroupsOrchestration:
         """User has role in tenant but active_tenant_id points to a different tenant -- excluded from group."""
         with (
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity") as mock_utr,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity",
+                new_callable=AsyncMock,
+            ) as mock_utr,
             patch(
                 "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.KeycloakAdminService"
             ) as mock_keycloak,
@@ -262,7 +290,7 @@ class TestSyncGroupsOrchestration:
             tenant.name = "T1"
             tenant.id = "tid-1"
             tenant.access_rules = []
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
             mock_tenant.get_startup_tenant_metadata.return_value = tenant
 
             role = MagicMock()
@@ -273,9 +301,7 @@ class TestSyncGroupsOrchestration:
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
             mock_keycloak.get_all_users = AsyncMock(return_value=[])
 
-            utr = MagicMock()
-            utr.user_id = "ah-user-1"
-            mock_utr.objects.return_value = [utr]
+            mock_utr.get_user_ids_with_role.return_value = ["ah-user-1"]
 
             mock_list_groups.return_value = [_group("aihub:T1:R1", "grp-1")]
             mock_list_users.return_value = [_user("alice@example.com", "owui-1")]
@@ -288,10 +314,16 @@ class TestSyncGroupsOrchestration:
     async def test_sync_idempotent(self, provisioner: OpenWebuiProvisioner) -> None:
         with (
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity") as mock_utr,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity",
+                new_callable=AsyncMock,
+            ) as mock_utr,
             patch(
                 "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.KeycloakAdminService"
             ) as mock_keycloak,
@@ -305,7 +337,7 @@ class TestSyncGroupsOrchestration:
             tenant.name = "T1"
             tenant.id = "tid-1"
             tenant.access_rules = []
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
             mock_tenant.get_startup_tenant_metadata.return_value = tenant
 
             role = MagicMock()
@@ -315,7 +347,7 @@ class TestSyncGroupsOrchestration:
 
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
             mock_keycloak.get_all_users = AsyncMock(return_value=[])
-            mock_utr.objects.return_value = []
+            mock_utr.get_user_ids_with_role.return_value = []
 
             mock_list_groups.return_value = [_group("aihub:T1:R1", "grp-1")]
 
@@ -332,15 +364,21 @@ class TestSyncGroupsLocking:
     ) -> None:
         with (
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity"),
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity",
+                new_callable=AsyncMock,
+            ),
             patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.KeycloakAdminService") as mock_kc,
             patch.object(provisioner._openwebui, "list_groups", return_value=[]),
             patch.object(provisioner._openwebui, "list_users", return_value=[]),
         ):
-            mock_tenant.objects.return_value = []
+            mock_tenant.get_all_metadata.return_value = []
             mock_role.get_roles_for_tenant.return_value = []
             mock_kc.get_all_users = AsyncMock(return_value=[])
 

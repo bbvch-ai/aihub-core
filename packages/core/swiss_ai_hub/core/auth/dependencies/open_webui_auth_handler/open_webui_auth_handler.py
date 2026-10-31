@@ -38,7 +38,7 @@ class OpenWebuiAuthHandler(AuthHandler):
     async def __call__(
         self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
     ) -> UserIdentity:
-        self.base_auth_handler.verify_token(bearer_token.credentials)
+        await self.base_auth_handler.verify_token(bearer_token.credentials)
 
         user_name = request.headers.get("X-OpenWebUI-User-Name")
         user_email = request.headers.get("X-OpenWebUI-User-Email")

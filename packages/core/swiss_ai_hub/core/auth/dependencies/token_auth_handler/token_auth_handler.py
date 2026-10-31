@@ -36,7 +36,7 @@ class TokenAuthHandler(BearerAuthHandler):
         Resolves tenant context from the optional request parameter, falling back to
         the user's active tenant when the request carries none.
         """
-        access_token = self.verify_token(token_str)
+        access_token = await self.verify_token(token_str)
         keycloak_user, realm_roles = await asyncio.gather(
             KeycloakAdminService.get_user_by_id(access_token.user_oid),
             KeycloakAdminService.get_user_realm_roles(access_token.user_oid),
@@ -51,11 +51,11 @@ class TokenAuthHandler(BearerAuthHandler):
         )
 
     @staticmethod
-    def verify_token(token_str: str) -> BearerToken:
+    async def verify_token(token_str: str) -> BearerToken:
         if not token_str:
             raise HTTPException(status_code=401, detail="Token missing.")
         try:
-            return BearerToken.verify_token(token_str)
+            return await BearerToken.verify_token(token_str)
         except ValueError as e:
             logger.warning(f"Token authentication failed: {e}")
             raise HTTPException(status_code=401, detail=str(e))

@@ -78,7 +78,7 @@ class AuthHandler(ABC):
                 detail=_ACTIVE_TENANT_NOT_ACCESSIBLE,
             )
 
-        tenant = TenantMetadataEntity.get_metadata_by_tenant_id(active_tenant_id)
+        tenant = await TenantMetadataEntity.get_metadata_by_tenant_id(active_tenant_id)
         if not tenant:
             await KeycloakAdminService.clear_active_tenant(user_id)
             raise HTTPException(
@@ -115,7 +115,7 @@ class AuthHandler(ABC):
             logger.warning(f"User {user_id} attempted to access tenant {tenant_id} without membership")
             raise HTTPException(status_code=403, detail=_ACCESS_DENIED)
 
-        tenant_entity = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
+        tenant_entity = await TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not tenant_entity:
             logger.warning(f"Tenant {tenant_id} exists in Keycloak but has no metadata")
             raise HTTPException(status_code=403, detail=_ACCESS_DENIED)
@@ -173,7 +173,7 @@ class AuthHandler(ABC):
             tenant = await self.resolve_tenant_for_user(request, user_id)
         else:
             tenant = await self.get_active_tenant_for_user(user_id)
-        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
+        roles = await UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
         return UserIdentity(
             id=user_id,
             name=name,

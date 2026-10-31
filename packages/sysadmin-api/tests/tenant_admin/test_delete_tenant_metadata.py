@@ -1,10 +1,9 @@
 from datetime import UTC, datetime
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import HTTPException
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.persistence import LocaleStringEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.tenant_admin_service import TenantAdminService
@@ -16,7 +15,7 @@ def _fake_tenant(tenant_id: str = "my-tenant") -> MagicMock:
     tenant.name = "My Tenant"
     tenant.description = "desc"
     tenant.access_rules = ["aihub.admin.>"]
-    tenant.chat_disclaimer = LocaleStringEntity(en="Verify answers.")
+    tenant.chat_disclaimer = LocaleString(en="Verify answers.")
     tenant.created_at = datetime.now(UTC)
     tenant.updated_at = datetime.now(UTC)
     return tenant
@@ -34,19 +33,19 @@ def _stub_entity(
     ``counts`` and ``delete_returns`` are consumed in order across calls so a single
     test can simulate the pre-check / post-check race without hand-wiring state.
     """
-    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_id", lambda tenant_id: tenant)
+    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_id", AsyncMock(return_value=tenant))
 
     count_iter = iter(counts)
-    monkeypatch.setattr(TenantMetadataEntity, "count_tenants", lambda: next(count_iter))
+    monkeypatch.setattr(TenantMetadataEntity, "count_tenants", AsyncMock(side_effect=lambda: next(count_iter)))
 
     delete_iter = iter(delete_returns)
-    delete_mock = MagicMock(side_effect=lambda tenant_id: next(delete_iter))
+    delete_mock = AsyncMock(side_effect=lambda tenant_id: next(delete_iter))
     monkeypatch.setattr(TenantMetadataEntity, "delete_tenant_metadata", delete_mock)
 
-    cascade_mock = MagicMock()
+    cascade_mock = AsyncMock()
     monkeypatch.setattr(TenantMetadataEntity, "cascade_delete_tenant_data", cascade_mock)
 
-    create_mock = MagicMock(return_value=tenant)
+    create_mock = AsyncMock(return_value=tenant)
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
 
     return {"delete": delete_mock, "cascade": cascade_mock, "create": create_mock}
@@ -165,7 +164,7 @@ async def test_delete_tenant_snapshots_before_delete_so_restore_survives_entity_
         delete_returns=[True],
     )
 
-    def mutate_access_rules_on_delete(tenant_id: str) -> bool:
+    async def mutate_access_rules_on_delete(tenant_id: str) -> bool:
         tenant.access_rules.clear()
         tenant.chat_disclaimer.en = "Changed after deletion"
         return True

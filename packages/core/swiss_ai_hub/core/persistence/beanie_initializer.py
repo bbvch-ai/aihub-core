@@ -5,11 +5,18 @@ from pymongo import AsyncMongoClient
 
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
+from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
 from swiss_ai_hub.core.persistence.notification.notification_entity import NotificationEntity
+from swiss_ai_hub.core.persistence.openwebui.openwebui_account_entity import OpenWebuiAccountEntity
+from swiss_ai_hub.core.persistence.openwebui.openwebui_knowledge_entry_entity import OpenWebuiKnowledgeEntryEntity
+from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
 
 
 class BeanieInitializer:
@@ -25,6 +32,13 @@ class BeanieInitializer:
         AgentClassEntity,
         DiscoveryRoundEntity,
         ThreadEntity,
+        RoleEntity,
+        BearerToken,
+        TenantMetadataEntity,
+        UserTenantRoleEntity,
+        UserDashboardEntity,
+        OpenWebuiAccountEntity,
+        OpenWebuiKnowledgeEntryEntity,
     ]
 
     @staticmethod

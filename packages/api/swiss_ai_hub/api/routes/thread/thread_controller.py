@@ -56,10 +56,10 @@ class ThreadController(TenantScopedController):
             raise ThreadController.thread_not_found_exception
 
     @staticmethod
-    def _check_view_access(thread: ThreadDTO, user: UserIdentity) -> None:
+    async def _check_view_access(thread: ThreadDTO, user: UserIdentity) -> None:
         """Raise 403 if user is not a member of the thread and has no process access."""
         user_in_thread = user.id in [u.id for u in thread.users]
-        has_process_access = AccessChecker.from_user(user).has_access_to_process(
+        has_process_access = (await AccessChecker.from_user(user)).has_access_to_process(
             thread.process_class, thread.process_id
         )
         if not (user_in_thread or has_process_access):
@@ -169,7 +169,7 @@ class ThreadController(TenantScopedController):
             Raises 403 if the user is not a member of that thread.
             """
             thread = await ThreadController._get_thread_or_404(thread_id, t)
-            ThreadController._check_view_access(thread, user)
+            await ThreadController._check_view_access(thread, user)
             return thread
 
         return self
@@ -212,7 +212,7 @@ class ThreadController(TenantScopedController):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> HistoryResponse:
             thread = await ThreadController._get_thread_or_404(thread_id, t)
-            ThreadController._check_view_access(thread, user)
+            await ThreadController._check_view_access(thread, user)
             return await ThreadService.thread_as_message_history(thread_id)
 
     def remove_agent_from_thread(self, route: str = "/{thread_id}/agents/{agent_class}/{agent_id}") -> Self:
@@ -306,7 +306,7 @@ class ThreadController(TenantScopedController):
             and the user responds by typing a normal chat message (not via popup dialog).
             """
             thread = await ThreadController._get_thread_or_404(thread_id, t)
-            ThreadController._check_view_access(thread, user)
+            await ThreadController._check_view_access(thread, user)
             return ThreadService.get_open_chat_hitl(thread_id)
 
         return self
@@ -334,7 +334,7 @@ class ThreadController(TenantScopedController):
             Events carry only a preview of the table; the link is signed for thread members only.
             """
             thread = await ThreadController._get_thread_or_404(thread_id, t)
-            ThreadController._check_view_access(thread, user)
+            await ThreadController._check_view_access(thread, user)
             return await ThreadService.extracted_table_download_url(thread_id, extraction_id)
 
         return self

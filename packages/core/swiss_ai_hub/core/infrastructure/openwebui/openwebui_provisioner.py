@@ -303,8 +303,8 @@ class OpenWebuiProvisioner:
                 if group_name not in aihub_groups:
                     continue
 
-                all_utr = UserTenantRoleEntity.objects(tenant_id=tenant_id, roles=role_data["name"])
-                desired[group_name] = [utr.user_id for utr in all_utr if utr.user_id in active_user_ids]
+                member_ids = await UserTenantRoleEntity.get_user_ids_with_role(tenant_id, role_data["name"])
+                desired[group_name] = [user_id for user_id in member_ids if user_id in active_user_ids]
         return desired
 
     async def _provision_missing_accounts(
@@ -361,12 +361,13 @@ class OpenWebuiProvisioner:
 
     async def _sync_groups_locked(self) -> None:
         tenants = [
-            {"name": t.name, "id": str(t.id), "access_rules": t.access_rules} for t in TenantMetadataEntity.objects()
+            {"name": t.name, "id": str(t.id), "access_rules": t.access_rules}
+            for t in await TenantMetadataEntity.get_all_metadata()
         ]
 
         roles_by_tenant: dict[str, list[dict[str, Any]]] = {}
         for tenant in tenants:
-            roles = RoleEntity.get_roles_for_tenant(tenant["id"])
+            roles = await RoleEntity.get_roles_for_tenant(tenant["id"])
             roles_by_tenant[tenant["name"]] = [{"name": r.name, "access_rules": r.access_rules} for r in roles]
 
         desired = self._build_desired_groups(tenants, roles_by_tenant)
@@ -395,7 +396,7 @@ class OpenWebuiProvisioner:
             user_id_mapping |= await self._provision_missing_accounts(
                 keycloak_users, group_member_ids, user_id_mapping, scim=scim
             )
-            OpenWebuiAccountEntity.record_all(user_id_mapping)
+            await OpenWebuiAccountEntity.record_all(user_id_mapping)
 
             await self._sync_group_memberships(desired_members, aihub_groups, user_id_mapping, scim=scim)
 
@@ -696,14 +697,14 @@ class OpenWebuiProvisioner:
         return self._compute_access_for_llm_model(*parsed, groups, tenant_rules, role_rules) if parsed else None
 
     @staticmethod
-    def _build_role_rules() -> RoleAccessRules:
+    async def _build_role_rules() -> RoleAccessRules:
         """Keys rules by (tenant display name, role name) so same-named roles in different tenants
         stay distinct. The tenant display name matches the ``aihub:{tenant}:{role}`` group naming and
         the ``tenant_rules`` keying, so the lookup in ``_compute_access_for_*`` lines up."""
-        tenant_name_by_id = {str(tenant.id): tenant.name for tenant in TenantMetadataEntity.objects()}
+        tenant_name_by_id = {str(tenant.id): tenant.name for tenant in await TenantMetadataEntity.get_all_metadata()}
         return {
             (tenant_name_by_id[role.tenant_id], role.name): list(role.access_rules)
-            for role in RoleEntity.objects()
+            for role in await RoleEntity.list_all()
             if role.tenant_id in tenant_name_by_id
         }
 
@@ -730,8 +731,10 @@ class OpenWebuiProvisioner:
         async with self._openwebui.scim_session() as scim:
             all_groups = await self._openwebui.list_groups(scim=scim)
         aihub_groups = [g for g in all_groups if (g.display_name or "").startswith(AIHUB_GROUP_PREFIX)]
-        tenant_rules: TenantAccessRules = {t.name: t.access_rules for t in TenantMetadataEntity.objects()}
-        await self._knowledge.sync(http, aihub_groups, tenant_rules, self._build_role_rules())
+        tenant_rules: TenantAccessRules = {
+            t.name: t.access_rules for t in await TenantMetadataEntity.get_all_metadata()
+        }
+        await self._knowledge.sync(http, aihub_groups, tenant_rules, await self._build_role_rules())
 
     async def _sync_access_grants(self, http: httpx.AsyncClient) -> None:
         """Recomputes and pushes access grants for every managed base-registry row.
@@ -753,8 +756,10 @@ class OpenWebuiProvisioner:
         if not aihub_groups:
             return
 
-        tenant_rules: TenantAccessRules = {t.name: t.access_rules for t in TenantMetadataEntity.objects()}
-        role_rules = self._build_role_rules()
+        tenant_rules: TenantAccessRules = {
+            t.name: t.access_rules for t in await TenantMetadataEntity.get_all_metadata()
+        }
+        role_rules = await self._build_role_rules()
 
         # Limit concurrent HTTP requests to avoid overwhelming OpenWebUI
         semaphore = asyncio.Semaphore(5)

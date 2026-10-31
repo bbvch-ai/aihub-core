@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -18,8 +18,8 @@ from swiss_ai_hub.core.testing.auth_utils.test_identity import (
 def _create_mock_tenant() -> MagicMock:
     """Create a mock TenantMetadataEntity that behaves like a default tenant.
 
-    Does NOT use spec=TenantMetadataEntity because MongoEngine Document defines __len__,
-    which makes MagicMock evaluate as falsy (len=0), breaking `if not tenant:` checks.
+    Does NOT use spec=TenantMetadataEntity: a spec'd MagicMock of a document class can evaluate as falsy,
+    breaking `if not tenant:` checks.
     """
     tenant = MagicMock()
     tenant.id = TEST_TENANT_ID
@@ -49,17 +49,17 @@ def mock_tenant_entity():
     """
     mock_tenant = _create_mock_tenant()
 
-    def mock_get_roles(user_id, tenant_id):
+    async def mock_get_roles(user_id, tenant_id):  # noqa: S7503
         return list(TEST_USER_ROLES)
 
-    def mock_create_or_update(user_id, tenant_id, roles, validate_roles=True):
+    async def mock_create_or_update(user_id, tenant_id, roles, validate_roles=True):  # noqa: S7503
         association = MagicMock()
         association.user_id = user_id
         association.tenant_id = tenant_id
         association.roles = roles
         return association
 
-    def mock_get_user_ids_in_tenant(tenant_id):
+    async def mock_get_user_ids_in_tenant(tenant_id):  # noqa: S7503
         return [TEST_USER_OID]
 
     # The five mocks below patch real `async def` methods. The signature must
@@ -82,16 +82,34 @@ def mock_tenant_entity():
         return True
 
     with (
-        patch.object(TenantMetadataEntity, "get_startup_tenant_metadata", return_value=mock_tenant),
-        patch.object(TenantMetadataEntity, "get_metadata_by_tenant_id", return_value=mock_tenant),
-        patch.object(TenantMetadataEntity, "ensure_startup_tenant_metadata_exists", return_value=mock_tenant),
+        patch.object(
+            TenantMetadataEntity, "get_startup_tenant_metadata", new_callable=AsyncMock, return_value=mock_tenant
+        ),
+        patch.object(
+            TenantMetadataEntity, "get_metadata_by_tenant_id", new_callable=AsyncMock, return_value=mock_tenant
+        ),
+        patch.object(
+            TenantMetadataEntity,
+            "ensure_startup_tenant_metadata_exists",
+            new_callable=AsyncMock,
+            return_value=mock_tenant,
+        ),
         patch.object(KeycloakAdminService, "tenant_exists", side_effect=mock_tenant_exists),
         patch.object(KeycloakAdminService, "filter_existing_tenant_ids", side_effect=mock_filter_existing_tenant_ids),
         patch.object(KeycloakAdminService, "get_user_tenant_ids", side_effect=mock_get_user_tenant_ids),
         patch.object(KeycloakAdminService, "is_user_member_of_tenant", side_effect=mock_is_user_member_of_tenant),
-        patch.object(UserTenantRoleEntity, "get_roles_for_user_in_tenant", side_effect=mock_get_roles),
-        patch.object(UserTenantRoleEntity, "create_or_update", side_effect=mock_create_or_update),
-        patch.object(UserTenantRoleEntity, "get_user_ids_in_tenant", side_effect=mock_get_user_ids_in_tenant),
+        patch.object(
+            UserTenantRoleEntity, "get_roles_for_user_in_tenant", new_callable=AsyncMock, side_effect=mock_get_roles
+        ),
+        patch.object(
+            UserTenantRoleEntity, "create_or_update", new_callable=AsyncMock, side_effect=mock_create_or_update
+        ),
+        patch.object(
+            UserTenantRoleEntity,
+            "get_user_ids_in_tenant",
+            new_callable=AsyncMock,
+            side_effect=mock_get_user_ids_in_tenant,
+        ),
         patch.object(AuthHandler, "_resolve_active_tenant", side_effect=mock_resolve_active_tenant),
     ):
         yield

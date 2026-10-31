@@ -46,8 +46,7 @@ class OpenWebuiKnowledgeSync:
     ) -> None:
         listing = await asyncio.to_thread(self.listing)
         entries = {
-            (entry.database, entry.namespace): entry
-            for entry in await asyncio.to_thread(OpenWebuiKnowledgeEntryEntity.all_entries)
+            (entry.database, entry.namespace): entry for entry in await OpenWebuiKnowledgeEntryEntity.all_entries()
         }
         existing = {knowledge["id"]: knowledge for knowledge in await self._openwebui.list_own_knowledge(http)}
 
@@ -65,7 +64,7 @@ class OpenWebuiKnowledgeSync:
             current = existing.get(entry.openwebui_id) if entry else None
             if current is None:
                 created = await self._openwebui.create_knowledge(http, name, description, grants)
-                await asyncio.to_thread(OpenWebuiKnowledgeEntryEntity.record, created["id"], reference)
+                await OpenWebuiKnowledgeEntryEntity.record(created["id"], reference)
                 logger.info("OpenWebUI: Created knowledge entry '%s'", name)
             elif self._differs(current, name, description, grants):
                 await self._openwebui.update_knowledge(http, current["id"], name, description, grants)
@@ -88,7 +87,7 @@ class OpenWebuiKnowledgeSync:
         for key, entry in entries.items():
             if key not in listing:
                 await self._openwebui.delete_knowledge(http, entry.openwebui_id)
-                await asyncio.to_thread(OpenWebuiKnowledgeEntryEntity.forget, entry.openwebui_id)
+                await OpenWebuiKnowledgeEntryEntity.forget(entry.openwebui_id)
                 logger.info("OpenWebUI: Removed knowledge entry for '%s/%s'", *key)
         for knowledge_id in set(existing) - {entry.openwebui_id for entry in entries.values()}:
             await self._openwebui.delete_knowledge(http, knowledge_id)

@@ -6,6 +6,8 @@ blueprint catalog. Asserted through the HTTP response rather than against ``Acce
 refactor that moves the filter out of the controller cannot quietly drop it.
 """
 
+from unittest.mock import AsyncMock
+
 import pytest
 from fastapi import Request
 from fastapi.testclient import TestClient
@@ -102,7 +104,7 @@ class _AuthHandler(AuthHandler):
 @pytest.fixture(autouse=True)
 def _stub_catalog_and_roles(monkeypatch: pytest.MonkeyPatch) -> None:
     """The role grants everything, so whatever is denied below is denied by the ceiling alone."""
-    monkeypatch.setattr(RoleEntity, "get_access_rules_for_roles", lambda roles, tenant_id: {"aihub.admin.>"})
+    monkeypatch.setattr(RoleEntity, "get_access_rules_for_roles", AsyncMock(return_value={"aihub.admin.>"}))
 
     async def _classes(t: LocaleHandler, online: bool | None = None) -> list[AgentClassDTO]:
         return [_agent_class(agent_class) for agent_class in _ALL_DISCOVERED]

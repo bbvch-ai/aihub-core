@@ -471,7 +471,8 @@ and the `AIHubSysAdmin` realm role. Selected methods:
 
 **Key methods**:
 
-- `AccessChecker.from_user(user)` — create checker from UserIdentity (carries `is_sys_admin` through)
+- `await AccessChecker.from_user(user)` — create checker from UserIdentity (carries `is_sys_admin` through; reads the
+  user's roles, so it is async)
 - `.has_access_to_agent(agent_class, agent_id)` → bool
 - `.has_access_to_process(process_class, process_id)` → bool
 - `.has_access_to_service(service_name)` → bool

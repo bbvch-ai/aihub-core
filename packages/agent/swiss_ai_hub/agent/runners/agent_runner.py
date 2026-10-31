@@ -6,6 +6,7 @@ from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from pymilvus import MilvusClient
+from pymongo import AsyncMongoClient
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import ANONYMISE_CONFIG_KEY, CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
@@ -17,6 +18,7 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.form import ConfigSpecs, FormkitElement
 from swiss_ai_hub.core.form.template_data import TemplateData
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MilvusSettings, MongoSettings, NatsSettings, RedisSettings
+from swiss_ai_hub.core.persistence import BeanieInitializer
 from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.routes import HealthCheckProvider, HealthServer
 from swiss_ai_hub.core.routes.health.dto.health_response import AgentHealthChecks
@@ -97,6 +99,7 @@ class AgentRunner(HealthCheckProvider):
         self.js: JetStreamContext | None = None
         self.redis: Redis | None = None
         self.milvus_client: MilvusClient | None = None
+        self._beanie_client: AsyncMongoClient | None = None
 
         self.dispatcher: AgentDispatcher | None = None
 
@@ -233,6 +236,9 @@ class AgentRunner(HealthCheckProvider):
                 host=MongoSettings().CONNECTION_STRING.get_secret_value(),
                 uuidRepresentation="standard",
             )
+        # The ported entities are Beanie (#1634); the sandbox reads OpenWebUI accounts, retrievers read access rules.
+        self._beanie_client = BeanieInitializer.create_client()
+        await BeanieInitializer.initialize(self._beanie_client)
 
         self.dispatcher = AgentDispatcher(
             self.agent_type,
@@ -308,6 +314,9 @@ class AgentRunner(HealthCheckProvider):
 
         if self.milvus_client:
             self.milvus_client.close()
+
+        if self._beanie_client:
+            await self._beanie_client.close()
 
         disconnect()
 

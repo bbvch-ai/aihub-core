@@ -2,7 +2,7 @@ import logging
 from typing import Annotated, Self
 
 from fastapi import HTTPException, Request, Security, status
-from mongoengine.errors import NotUniqueError
+from pymongo.errors import DuplicateKeyError
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.routes import Controller
@@ -92,7 +92,7 @@ class TenantAdminController(Controller):
                 data = data.model_copy(update={"access_rules": await self._fetch_default_access_rules(http_request)})
             try:
                 return await TenantAdminService.create_tenant_metadata(data)
-            except NotUniqueError:
+            except DuplicateKeyError:
                 raise HTTPException(status_code=409, detail=f"Tenant with name '{data.name}' already exists.")
 
         return self
@@ -107,7 +107,7 @@ class TenantAdminController(Controller):
             """Updates a tenant's name, description, or access rules. Not allowed on orphaned tenants."""
             try:
                 return await TenantAdminService.update_tenant_metadata(tenant_id, data)
-            except NotUniqueError:
+            except DuplicateKeyError:
                 raise HTTPException(status_code=409, detail=f"Tenant with name '{data.name}' already exists.")
 
         return self

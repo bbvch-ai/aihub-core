@@ -1,24 +1,20 @@
 import asyncio
-import gc
+from unittest.mock import patch
 
 import pytest
-from mongoengine import signals
 
 from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
-_WATCHED_ENTITIES = [RoleEntity, TenantMetadataEntity, UserTenantRoleEntity]
 
+class TestDocumentEventsNotify:
+    """Beanie has no global signals: each access entity notifies the hook from its own document events. A
+    connected hook must schedule a sync for every insert, save and delete through a document."""
 
-class TestSignalSubscriptionSurvives:
-    """Regression for the weak-ref GC bug: ``connect`` wired a local closure with blinker's
-    default weak reference, so it was garbage-collected the instant ``connect`` returned and no
-    access change ever triggered a sync. The debounce tests below never caught this because they
-    call ``_schedule_sync`` directly, bypassing the signal connection."""
-
-    def test_connect_subscription_survives_gc(self):
+    @pytest.mark.beanie
+    async def test_writes_through_access_documents_schedule_a_sync(self) -> None:
         was_connected = AccessChangeHook._connected
         AccessChangeHook._connected = False
 
@@ -28,20 +24,20 @@ class TestSignalSubscriptionSurvives:
 
         try:
             AccessChangeHook.connect(_DummyProvisioner())
-            gc.collect()  # a weakly-referenced local closure would be collected here
+            with patch.object(AccessChangeHook, "_schedule_sync") as schedule_sync:
+                tenant = await TenantMetadataEntity.create_tenant_metadata("hook-tenant", "Hook Tenant")
+                role = await RoleEntity.create_tenant_role("HookRole", "Role", ["aihub.user.>"], "hook-tenant")
+                membership = await UserTenantRoleEntity.create_or_update("hook-user", "hook-tenant", ["HookRole"])
+                assert schedule_sync.call_count == 3
 
-            for entity in _WATCHED_ENTITIES:
-                assert list(signals.post_save.receivers_for(entity)), (
-                    f"post_save receiver for {entity.__name__} was dropped — connect must use weak=False"
-                )
-                assert list(signals.post_delete.receivers_for(entity)), (
-                    f"post_delete receiver for {entity.__name__} was dropped — connect must use weak=False"
-                )
+                membership.roles = []
+                await membership.save_changes()
+                assert schedule_sync.call_count == 4
+
+                for document in (membership, role, tenant):
+                    await document.delete()
+                assert schedule_sync.call_count == 7
         finally:
-            for sig in (signals.post_save, signals.post_delete):
-                for entity in _WATCHED_ENTITIES:
-                    for receiver in list(sig.receivers_for(entity)):
-                        sig.disconnect(receiver, sender=entity)
             AccessChangeHook._connected = was_connected
             AccessChangeHook._provisioner = None
 

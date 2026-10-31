@@ -63,8 +63,8 @@ class ThreadService:
             if not await KeycloakAdminService.is_user_member_of_tenant(user_id, tenant.id):
                 raise HTTPException(status_code=404, detail=f"User {user_id} not found in tenant")
 
-            user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
-            access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
+            user_roles = await UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
+            access_rules = await RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
             access_checker = AccessChecker(
                 list(access_rules),
                 tenant_access_rules=tenant.access_rules,

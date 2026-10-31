@@ -24,15 +24,15 @@ class MyAccountService:
         return await UserWithAccessDTO.from_user_identity(user, user.acting_within_tenant, runner, nc, t)
 
     @staticmethod
-    def get_my_identity(user: UserIdentity) -> UserDTO:
+    async def get_my_identity(user: UserIdentity) -> UserDTO:
         """Identity-only counterpart to ``get_my_account``: no access-rules enumeration.
 
         Skips the agent/process discovery walk that ``get_my_account`` performs, so
         this path needs no NATS or locale handler. Suitable for mounting on runners
         that don't wire those dependencies (e.g., sysadmin-api).
         """
-        dashboard = UserDashboardEntity.get_dashboard(user.id)
-        dashboard_dto = DashboardDTO(**dashboard.to_mongo()) if dashboard else None
+        dashboard = await UserDashboardEntity.get_dashboard(user.id)
+        dashboard_dto = DashboardDTO(**dashboard.model_dump()) if dashboard else None
         return UserDTO(
             id=user.id,
             name=user.name,
@@ -44,11 +44,11 @@ class MyAccountService:
         )
 
     @staticmethod
-    def get_user_dashboard(user: UserIdentity) -> DashboardDTO | None:
+    async def get_user_dashboard(user: UserIdentity) -> DashboardDTO | None:
         """Retrieves the dashboard settings for the authenticated user."""
-        dashboard = UserDashboardEntity.get_dashboard(user.id)
+        dashboard = await UserDashboardEntity.get_dashboard(user.id)
         if dashboard:
-            dashboard_data = dashboard.to_mongo()
+            dashboard_data = dashboard.model_dump()
             return DashboardDTO(**dashboard_data)
         return None
 
@@ -61,7 +61,7 @@ class MyAccountService:
         dashboard_items = [DashboardItem(**item_data) for item_data in children_data]
 
         dashboard = Dashboard(children=dashboard_items, **dashboard_data_dict)
-        UserDashboardEntity.set_dashboard(user.id, dashboard)
+        await UserDashboardEntity.set_dashboard(user.id, dashboard)
 
     @staticmethod
     async def update_user_locale(user: UserIdentity, locale: str) -> None:
