@@ -25,9 +25,11 @@ packages/bot/                              # SDK framework
 │   │   │       └── stream_openai_chat_bot.py  # Streaming variant (disabled for webchat)
 │   │   └── bot_in_the_loop/
 │   │       └── bot_in_the_loop_bot.py          # Inbound handler: human replies from Slack/Teams threads
-│   ├── persistence/entities/
-│   │   ├── conversation_entity.py           # MongoDB: conversation history + TTL + ConversationTracker
-│   │   └── path_entity.py                   # MongoDB: per-endpoint credentials + system message + Slack token
+│   ├── persistence/
+│   │   ├── bot_document_models.py           # The bot's Beanie documents, bound at startup next to core's
+│   │   └── entities/
+│   │       ├── conversation_entity.py       # Beanie: conversation history + TTL + ConversationTracker
+│   │       └── path_entity.py               # Beanie: per-endpoint credentials + system message + Slack token
 │   ├── routes/
 │   │   ├── routes_service.py                # CloudAdapter factory (cached), path resolution, credential lookup
 │   │   ├── agent/agent_chat_controller.py    # POST /completions/{class}/{id}/{json|stream}
@@ -163,8 +165,10 @@ Slack IDs cached via `TTLCache(maxsize=100, ttl=30d)` from `SlackUtils.get_slack
 
 `runners/lifetime/lifetime_manager.py` — FastAPI `asynccontextmanager` lifespan:
 
-1. MongoDB connect (`MongoSettings`)
-2. TTL index on `ConversationEntity`
+1. MongoDB connect: MongoEngine for the persisted agent events the distributor reads, and Beanie
+   (`BeanieInitializer.initialize(client, BotDocumentModels.DOCUMENT_MODELS)`) for threads, roles and the bot's own
+   conversations, trackers and paths (#1966)
+2. TTL index on `ConversationEntity` (awaited)
 3. NATS connect + JetStream
 4. Create `BotInTheLoopHandler` + subscribe via `AgentNCSubscriber.for_all_agent_events`
 5. Create `ExternalAgentEventDistributor`
@@ -189,7 +193,10 @@ Tests live in `playground/testing/tests/` (NOT a top-level `tests/` dir). Plain 
 - `mock_aiohttp_requests`: Patches `aiohttp.ClientSession.{post,get,put}` → captures outbound bot messages
 - `ASGIAdapter` from `swiss_ai_hub.core.testing` routes Bot Framework HTTP callbacks to test app
 
-**Test markers**: `flaky` (streaming tests with polling)
+**Test markers**: `flaky` (streaming tests with polling), `beanie` (runs on the shared session loop against the Beanie
+test database; see `swiss_ai_hub.core.testing.beanie_isolation`). Tests that go through the bot's lifespan don't need
+`beanie`: the lifespan binds Beanie to the test's own loop, so their fixtures write entities only after `client` has
+started.
 
 ## Playground
 

@@ -52,9 +52,9 @@ class BaseChatBot(ActivityHandler):
         ):
             conversation_id = turn_context.activity.conversation.id
             bot_id = turn_context.activity.recipient.id
-            ConversationTracker.mark_explicitly_deleted(conversation_id, bot_id)
+            await ConversationTracker.mark_explicitly_deleted(conversation_id, bot_id)
 
-            self.completion_handler.delete_conversation_if_exists(turn_context=turn_context)
+            await self.completion_handler.delete_conversation_if_exists(turn_context=turn_context)
 
         return await super().on_conversation_update_activity(turn_context)
 
@@ -76,7 +76,7 @@ class BaseChatBot(ActivityHandler):
         bot_id = turn_context.activity.recipient.id
 
         if (
-            ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
+            await ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
             and turn_context.activity.type == "message"
         ):
             await turn_context.send_activity(
@@ -88,20 +88,20 @@ class BaseChatBot(ActivityHandler):
             )
 
         # Always track this conversation ID
-        ConversationTracker.track_conversation(conversation_id, bot_id)
+        await ConversationTracker.track_conversation(conversation_id, bot_id)
 
-        self.completion_handler.add_user_message_to_conversation(
+        await self.completion_handler.add_user_message_to_conversation(
             path=self.path,
             turn_context=turn_context,
         )
 
         if turn_context.activity.channel_id == Channels.slack:
-            turn_context = self.completion_handler.handle_slack_message(turn_context)
+            turn_context = await self.completion_handler.handle_slack_message(turn_context)
             if turn_context is None:
                 return
 
         if turn_context.activity.channel_id == Channels.ms_teams:
-            turn_context = self.completion_handler.handle_teams_message(turn_context)
+            turn_context = await self.completion_handler.handle_teams_message(turn_context)
             if turn_context is None:
                 return
 
@@ -132,7 +132,7 @@ class BaseChatBot(ActivityHandler):
                 t=locale_handler,
             )
 
-        self.completion_handler.add_bot_message_to_conversation(
+        await self.completion_handler.add_bot_message_to_conversation(
             path=self.path,
             turn_context=turn_context,
             message=response,

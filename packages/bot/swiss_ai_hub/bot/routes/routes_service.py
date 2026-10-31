@@ -35,7 +35,7 @@ class RoutesService(ChatService):
         return str(request.url).replace(str(request.base_url), "/")
 
     @staticmethod
-    def get_adapter(path: str) -> CloudAdapter:
+    async def get_adapter(path: str) -> CloudAdapter:
         """
         ### What
         - Returns a cached CloudAdapter for the given path, or creates a new one if not cached.
@@ -50,7 +50,7 @@ class RoutesService(ChatService):
             return RoutesService._adapter_cache[path]
 
         logger.debug(f"Creating new CloudAdapter for path: {path}")
-        credentials = RoutesService.get_credentials(path)
+        credentials = await RoutesService.get_credentials(path)
         if credentials is None:
             raise ValueError(f"No credentials found for path: {path}")
         auth_config = AgentAuthConfiguration(**RoutesService._create_auth_configuration_dict(credentials))
@@ -85,5 +85,5 @@ class RoutesService(ChatService):
         return config_params
 
     @staticmethod
-    def get_credentials(path: str) -> Credentials | None:
-        return PathEntity.get_credentials_by_path(path)
+    async def get_credentials(path: str) -> Credentials | None:
+        return await PathEntity.get_credentials_by_path(path)

@@ -123,11 +123,11 @@ class AgentCompletionHandler(CompletionHandler):
         - The messages must be converted to the correct format to send them to the Agent.
         - The context is needed to generate the completion.
         """
-        persisted_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(
+        persisted_messages: list[Message] = await CompletionHandler.get_messages_by_conversation_id(
             conversation_id=turn_context.activity.conversation.id,
             bot_id=turn_context.activity.recipient.id,
         )
-        system_message: Message = CompletionHandler.get_system_message(
+        system_message: Message | None = await CompletionHandler.get_system_message(
             turn_context=turn_context,
             path=path,
         )

@@ -48,7 +48,7 @@ class OpenaiChatController(Controller):
 
         path = RoutesService.get_path(request)
         chat_bot = bot_class(model_name=model_name, path=path, typing_timeout_seconds=typing_timeout_seconds)
-        adapter: CloudAdapter = RoutesService.get_adapter(path)
+        adapter: CloudAdapter = await RoutesService.get_adapter(path)
 
         result = await adapter.process(request, chat_bot)
         logger.info("Chat completion successful")

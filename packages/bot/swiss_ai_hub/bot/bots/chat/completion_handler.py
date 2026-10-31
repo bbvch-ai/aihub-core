@@ -42,7 +42,7 @@ class CompletionHandler:
         raise NotImplementedError("Subclasses must implement this method")
 
     @staticmethod
-    def get_system_message(turn_context: TurnContext, path: str) -> Message | None:
+    async def get_system_message(turn_context: TurnContext, path: str) -> Message | None:
         """
         ### What
         - Returns the configured system message for the given path.
@@ -54,7 +54,7 @@ class CompletionHandler:
         - The LLM and Agents should get instructions on how to interact with the user.
         - The instructions should be personalized with the user's name.
         """
-        system_message: str | None = PathEntity.get_system_message_by_path(path)
+        system_message: str | None = await PathEntity.get_system_message_by_path(path)
         if system_message is None:
             return None
         username = turn_context.activity.from_property.name
@@ -119,9 +119,9 @@ class CompletionHandler:
         )
 
     @staticmethod
-    def handle_teams_message(turn_context: TurnContext) -> TurnContext | None:
+    async def handle_teams_message(turn_context: TurnContext) -> TurnContext | None:
         is_direct_message: bool = CompletionHandler._is_teams_direct_message(turn_context)
-        return CompletionHandler._handle_message(turn_context, is_direct_message)
+        return await CompletionHandler._handle_message(turn_context, is_direct_message)
 
     @staticmethod
     def _is_teams_direct_message(turn_context: TurnContext) -> bool:
@@ -130,14 +130,14 @@ class CompletionHandler:
         return channel_data is None or channel_data.get("channel") is None
 
     @staticmethod
-    def handle_slack_message(turn_context: TurnContext) -> TurnContext | None:
+    async def handle_slack_message(turn_context: TurnContext) -> TurnContext | None:
         is_channel_message = CompletionHandler._is_slack_channel_message(turn_context)
 
         if is_channel_message:
-            turn_context = CompletionHandler._update_slack_turn_context(turn_context)
+            turn_context = await CompletionHandler._update_slack_turn_context(turn_context)
 
         is_direct_message = CompletionHandler._is_slack_direct_message(turn_context)
-        return CompletionHandler._handle_message(turn_context, is_direct_message)
+        return await CompletionHandler._handle_message(turn_context, is_direct_message)
 
     @staticmethod
     def _is_slack_channel_message(turn_context: TurnContext) -> bool:
@@ -152,11 +152,11 @@ class CompletionHandler:
         return dm_id_regex.match(conversation_id) is not None
 
     @staticmethod
-    def _handle_message(turn_context: TurnContext, is_direct_message: bool) -> TurnContext | None:
+    async def _handle_message(turn_context: TurnContext, is_direct_message: bool) -> TurnContext | None:
         is_mentioned: bool = CompletionHandler._is_bot_mentioned(turn_context)
-        is_bot_thread: bool = CompletionHandler._is_mentioned_in_conversation(turn_context)
+        is_bot_thread: bool = await CompletionHandler._is_mentioned_in_conversation(turn_context)
         if not is_direct_message and is_mentioned:
-            CompletionHandler._mark_conversation_as_mentioned(turn_context)
+            await CompletionHandler._mark_conversation_as_mentioned(turn_context)
         if not is_direct_message and not is_mentioned and not is_bot_thread:
             return None
         return turn_context
@@ -170,7 +170,7 @@ class CompletionHandler:
         )
 
     @staticmethod
-    def _update_slack_turn_context(turn_context: TurnContext):
+    async def _update_slack_turn_context(turn_context: TurnContext) -> TurnContext:
         """
         ### What
         1. Change the conversation id to refer to the message *thread* in Slack.
@@ -185,34 +185,34 @@ class CompletionHandler:
         channel_data = turn_context.activity.channel_data
         ts: str = channel_data["SlackMessage"]["event"]["ts"]
         turn_context.activity.conversation.id = channel_conversation_id + f":{ts}"
-        parent_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(
+        parent_messages: list[Message] = await CompletionHandler.get_messages_by_conversation_id(
             channel_conversation_id, bot_id
         )
-        CompletionHandler._add_messages_to_conversation(turn_context, parent_messages)
+        await CompletionHandler._add_messages_to_conversation(turn_context, parent_messages)
         return turn_context
 
     @staticmethod
-    def _mark_conversation_as_mentioned(turn_context: TurnContext):
+    async def _mark_conversation_as_mentioned(turn_context: TurnContext) -> None:
         conversation_id: str = turn_context.activity.conversation.id
         bot_id: str = turn_context.activity.recipient.id
-        ConversationEntity.set_conversation_is_mentioned(
+        await ConversationEntity.set_conversation_is_mentioned(
             conversation_id=conversation_id, bot_id=bot_id, is_mentioned=True
         )
 
     @staticmethod
-    def _is_mentioned_in_conversation(turn_context: TurnContext) -> bool:
+    async def _is_mentioned_in_conversation(turn_context: TurnContext) -> bool:
         conversation_id: str = turn_context.activity.conversation.id
         bot_id: str = turn_context.activity.recipient.id
-        return ConversationEntity.get_conversation_is_mentioned(conversation_id, bot_id)
+        return await ConversationEntity.get_conversation_is_mentioned(conversation_id, bot_id)
 
     @staticmethod
-    def delete_conversation_if_exists(turn_context: TurnContext):
+    async def delete_conversation_if_exists(turn_context: TurnContext) -> None:
         conversation_id: str = turn_context.activity.conversation.id
         bot_id: str = turn_context.activity.recipient.id
-        ConversationEntity.delete_conversation_if_exists(conversation_id, bot_id)
+        await ConversationEntity.delete_conversation_if_exists(conversation_id, bot_id)
 
     @staticmethod
-    def add_user_message_to_conversation(path: str, turn_context: TurnContext) -> ConversationEntity:
+    async def add_user_message_to_conversation(path: str, turn_context: TurnContext) -> ConversationEntity:
         """
         ### What
         - Add the user message to the persisted conversation.
@@ -222,14 +222,14 @@ class CompletionHandler:
         """
         user_message = Message(
             user_id=turn_context.activity.from_property.id,
-            content=ContentExtractor.extract_content_from_activity(path=path, activity=turn_context.activity),
+            content=await ContentExtractor.extract_content_from_activity(path=path, activity=turn_context.activity),
             role=turn_context.activity.from_property.role or "user",
             name=turn_context.activity.from_property.name,
         )
-        return CompletionHandler._add_messages_to_conversation(turn_context, user_message)
+        return await CompletionHandler._add_messages_to_conversation(turn_context, user_message)
 
     @staticmethod
-    def add_bot_message_to_conversation(
+    async def add_bot_message_to_conversation(
         path: str,
         turn_context: TurnContext,
         message: str,
@@ -243,16 +243,16 @@ class CompletionHandler:
         """
         bot_message = Message(
             user_id=turn_context.activity.recipient.id,
-            content=ContentExtractor.extract_content_from_activity(
+            content=await ContentExtractor.extract_content_from_activity(
                 path=path, activity=Activity(text=message, type=ActivityTypes.message)
             ),
             role=turn_context.activity.recipient.role or "bot",
             name=turn_context.activity.recipient.name,
         )
-        return CompletionHandler._add_messages_to_conversation(turn_context, bot_message)
+        return await CompletionHandler._add_messages_to_conversation(turn_context, bot_message)
 
     @staticmethod
-    def _add_messages_to_conversation(
+    async def _add_messages_to_conversation(
         turn_context: TurnContext,
         messages: list[Message] | Message,
     ) -> ConversationEntity:
@@ -267,14 +267,14 @@ class CompletionHandler:
         conversation_id = turn_context.activity.conversation.id
         bot_id = turn_context.activity.recipient.id
         messages = messages if isinstance(messages, list) else [messages]
-        return ConversationEntity.add_messages_to_conversation(
+        return await ConversationEntity.add_messages_to_conversation(
             conversation_id=conversation_id,
             bot_id=bot_id,
             messages=messages,
         )
 
     @staticmethod
-    def get_messages_by_conversation_id(
+    async def get_messages_by_conversation_id(
         conversation_id: str,
         bot_id: str,
     ) -> list[Message]:
@@ -285,7 +285,7 @@ class CompletionHandler:
         ### Why
         - To add the messages to the context of the conversation.
         """
-        return list(ConversationEntity.get_messages_by_conversation_id(conversation_id, bot_id) or [])
+        return list(await ConversationEntity.get_messages_by_conversation_id(conversation_id, bot_id) or [])
 
     @staticmethod
     async def send_response_stream(

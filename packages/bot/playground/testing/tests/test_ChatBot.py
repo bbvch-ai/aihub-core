@@ -6,11 +6,9 @@ import pytest
 import pytest_asyncio
 import requests
 from asgi_lifespan import LifespanManager
-from bson import ObjectId
 from httpx import ASGITransport, AsyncClient
-from mongoengine import connect, disconnect, get_db
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
+from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
@@ -46,49 +44,6 @@ USER_EMAIL = "test@example.com"
 ACTIVITY_ID = "test_activity_id"
 
 
-@pytest.fixture(scope="module")
-def setup_test_credentials():
-    """Set up PathEntity credentials for test endpoints"""
-    # Connect to MongoDB
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-        uuidRepresentation="standard",
-    )
-
-    # Create credentials for JSON endpoint
-    json_path = f"/api/v1/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/json"
-    stream_path = f"/api/v1/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/stream"
-
-    # Clean up any existing test credentials
-    PathEntity.objects(path=json_path).delete()
-    PathEntity.objects(path=stream_path).delete()
-
-    # Create test credentials
-    test_credentials = Credentials(
-        APP_TYPE="MultiTenant", APP_ID="test_app_id", APP_PASSWORD="test_app_password", APP_TENANTID="test_tenant_id"
-    )
-
-    # Create PathEntity records for both endpoints
-    PathEntity(path=json_path, credentials=test_credentials, system_message="Test system message").save()
-    PathEntity(path=stream_path, credentials=test_credentials, system_message="Test system message").save()
-
-    yield
-
-    # Clean up test data
-    try:
-        PathEntity.objects(path=json_path).delete()
-        PathEntity.objects(path=stream_path).delete()
-    except Exception:
-        # Connection may already be closed, ignore cleanup errors
-        pass
-    finally:
-        try:
-            disconnect()
-        except Exception:
-            pass
-
-
 @pytest.fixture(autouse=True)
 def seed_test_user(mock_keycloak_admin_service):
     """The fake Keycloak store is cleared per test, so its user must be seeded per test."""
@@ -110,25 +65,6 @@ def patch_requests_adapter(monkeypatch, test_runner):
     yield
 
 
-@pytest.fixture
-def cleanup_conversation():
-    """Clean up conversation and thread state before each test."""
-    thread_id = str(str_to_object_id(CONVERSATION_ID))
-    # Clean up before test (connection may not exist yet)
-    try:
-        ConversationEntity.objects(conversation_id=CONVERSATION_ID).delete()
-        get_db()[ThreadEntity.Settings.name].delete_one({"_id": ObjectId(thread_id)})
-    except Exception:
-        pass
-    yield
-    # Clean up after test (connection may be closed)
-    try:
-        ConversationEntity.objects(conversation_id=CONVERSATION_ID).delete()
-        get_db()[ThreadEntity.Settings.name].delete_one({"_id": ObjectId(thread_id)})
-    except Exception:
-        pass
-
-
 @pytest_asyncio.fixture(scope="function")
 async def test_runner(captured_responses):
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
@@ -148,6 +84,36 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
+
+
+@pytest_asyncio.fixture(scope="function")
+async def setup_test_credentials(client: AsyncClient):
+    """Stores the PathEntity of both endpoints, through the Beanie client the bot's lifespan started."""
+    paths = [
+        f"/api/v1/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/json",
+        f"/api/v1/agent/chat/completions/{AGENT_CLASS}/{AGENT_ID}/stream",
+    ]
+    await PathEntity.find({"path": {"$in": paths}}).delete()
+    test_credentials = Credentials(
+        APP_TYPE="MultiTenant", APP_ID="test_app_id", APP_PASSWORD="test_app_password", APP_TENANTID="test_tenant_id"
+    )
+    for path in paths:
+        await PathEntity(path=path, credentials=test_credentials, system_message="Test system message").insert()
+
+    yield
+
+    await PathEntity.find({"path": {"$in": paths}}).delete()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def cleanup_conversation(client: AsyncClient):
+    """Clean up conversation and thread state before and after each test."""
+    thread_id = str_to_object_id(CONVERSATION_ID)
+    await ConversationEntity.find({"conversation_id": CONVERSATION_ID}).delete()
+    await ThreadEntity.find({"_id": thread_id}).delete()
+    yield
+    await ConversationEntity.find({"conversation_id": CONVERSATION_ID}).delete()
+    await ThreadEntity.find({"_id": thread_id}).delete()
 
 
 @pytest_asyncio.fixture(scope="function")

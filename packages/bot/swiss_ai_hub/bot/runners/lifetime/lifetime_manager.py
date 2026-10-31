@@ -10,6 +10,7 @@ from swiss_ai_hub.core.persistence import BeanieInitializer
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 
+from swiss_ai_hub.bot.persistence.bot_document_models import BotDocumentModels
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import ConversationEntity
 from swiss_ai_hub.bot.routes.bot_in_the_loop.bot_in_the_loop_handler import BotInTheLoopHandler
 
@@ -25,15 +26,16 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
         uuidRepresentation="standard",
     )
-    # Threads are Beanie (#1962), read here by the agent event distributor.
+    # MongoEngine still serves the persisted agent events the distributor reads; threads, roles and the bot's own
+    # conversations and paths are Beanie.
     beanie_client = BeanieInitializer.create_client()
-    await BeanieInitializer.initialize(beanie_client)
+    await BeanieInitializer.initialize(beanie_client, BotDocumentModels.DOCUMENT_MODELS)
 
     # Configure TTL index after connection is established
     if hasattr(app.state, "conversation_ttl_days"):
         conversation_ttl_days = app.state.conversation_ttl_days
         logging.info(f"Configuring TTL index with {conversation_ttl_days} days")
-        ConversationEntity.update_ttl_index(conversation_ttl_days)
+        await ConversationEntity.update_ttl_index(conversation_ttl_days)
 
     try:
         # Connect to NATS and setup JetStream

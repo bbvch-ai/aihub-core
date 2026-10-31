@@ -61,12 +61,12 @@ class BotInTheLoopHandler:
         else:
             return
 
-    def _get_slack_ids(self, path: str) -> SlackIds:
+    async def _get_slack_ids(self, path: str) -> SlackIds:
         """Get bot_id and team_id using the Slack auth.test API."""
         if path in self.slack_ids_cache:
             return self.slack_ids_cache[path]
 
-        slack_token = PathEntity.get_slack_token_by_path(path)
+        slack_token = await PathEntity.get_slack_token_by_path(path)
         if not slack_token:
             raise ValueError(f"No Slack token found for path {path}")
 
@@ -124,8 +124,8 @@ class BotInTheLoopHandler:
         question: str,
         thread: BotInTheLoopThread,
     ):
-        adapter = RoutesService.get_adapter(self.path)
-        credentials = RoutesService.get_credentials(self.path)
+        adapter = await RoutesService.get_adapter(self.path)
+        credentials = await RoutesService.get_credentials(self.path)
         if credentials is None:
             raise ValueError(f"No credentials found for path: {self.path}")
 
@@ -174,7 +174,7 @@ class BotInTheLoopHandler:
     ):
         logger.info(f"[BITL-Handler] Handling Slack BITL request: thread_id={thread_id}, question={question!r}")
 
-        slack_ids = self._get_slack_ids(self.path)
+        slack_ids = await self._get_slack_ids(self.path)
         base_conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.channel_config.channel_id}"
 
         logger.info(

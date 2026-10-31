@@ -162,8 +162,8 @@ async def test_agent_completion_handler_resolves_display_name_via_connector(monk
     """
     register_fake_keycloak_user(user_id="agent-user-oid", name=DISPLAY_NAME, email=RESOLVED_EMAIL)
 
-    monkeypatch.setattr(CompletionHandler, "get_messages_by_conversation_id", lambda *a, **k: [])
-    monkeypatch.setattr(CompletionHandler, "get_system_message", lambda *a, **k: None)
+    monkeypatch.setattr(CompletionHandler, "get_messages_by_conversation_id", AsyncMock(return_value=[]))
+    monkeypatch.setattr(CompletionHandler, "get_system_message", AsyncMock(return_value=None))
     monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", AsyncMock(return_value=fake_tenant_identity()))
     monkeypatch.setattr(UserTenantRoleEntity, "get_roles_for_user_in_tenant", AsyncMock(return_value=["admin"]))
 
