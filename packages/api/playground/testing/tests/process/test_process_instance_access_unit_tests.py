@@ -62,17 +62,18 @@ class TestNamesAreLiteralRuleSegments:
         ("process_class", "process_id"),
         [("Onboarding", "x.>"), ("Onboarding", ">"), ("Onboarding", "a*"), ("On.boarding", "id"), ("*", "id")],
     )
-    def test_the_grant_refuses_a_name_that_would_widen_the_rule(
+    @pytest.mark.asyncio
+    async def test_the_grant_refuses_a_name_that_would_widen_the_rule(
         self, creator_user: Mock, process_class: str, process_id: str
     ):
-        rollback = Mock()
+        rollback = AsyncMock()
         with (
-            patch.object(TenantMetadataEntity, "grant_access_rule") as grant_rule,
-            patch.object(RoleEntity, "create_tenant_role") as create_role,
-            patch.object(UserTenantRoleEntity, "add_roles") as add_roles,
+            patch.object(TenantMetadataEntity, "grant_access_rule", new_callable=AsyncMock) as grant_rule,
+            patch.object(RoleEntity, "create_tenant_role", new_callable=AsyncMock) as create_role,
+            patch.object(UserTenantRoleEntity, "add_roles", new_callable=AsyncMock) as add_roles,
             pytest.raises(HTTPException) as raised,
         ):
-            ProcessInstanceAccessGrant.grant(process_class, process_id, creator_user, rollback)
+            await ProcessInstanceAccessGrant.grant(process_class, process_id, creator_user, rollback)
 
         assert raised.value.status_code == 500
         grant_rule.assert_not_called()
@@ -83,19 +84,18 @@ class TestNamesAreLiteralRuleSegments:
 
 class TestExistingRole:
     @staticmethod
-    def _existing_role(*rules: str) -> Mock:
+    def _existing_role(*rules: str) -> AsyncMock:
         role = Mock()
         role.access_rules = list(rules)
-        query = Mock()
-        query.first.return_value = role
-        return query
+        return AsyncMock(return_value=role)
 
-    def test_a_role_granting_exactly_the_instance_is_reused(self):
+    @pytest.mark.asyncio
+    async def test_a_role_granting_exactly_the_instance_is_reused(self):
         with (
-            patch.object(RoleEntity, "objects", return_value=self._existing_role(_ADMIN_RULE)),
-            patch.object(RoleEntity, "create_tenant_role") as create_role,
+            patch.object(RoleEntity, "get_role", new=self._existing_role(_ADMIN_RULE)),
+            patch.object(RoleEntity, "create_tenant_role", new_callable=AsyncMock) as create_role,
         ):
-            created = ProcessInstanceAccessGrant._ensure_admin_role(
+            created = await ProcessInstanceAccessGrant._ensure_admin_role(
                 _ROLE_NAME, _ADMIN_RULE, "tenant_1", "Onboarding", "q3-onboarding"
             )
 
@@ -103,17 +103,18 @@ class TestExistingRole:
         create_role.assert_not_called()
 
     @pytest.mark.parametrize("rules", [("aihub.admin.process.>",), (_ADMIN_RULE, "aihub.admin.agent.>"), ()])
-    def test_a_role_with_any_other_scope_fails_the_grant(self, creator_user: Mock, rules: tuple[str, ...]):
-        rollback = Mock()
+    @pytest.mark.asyncio
+    async def test_a_role_with_any_other_scope_fails_the_grant(self, creator_user: Mock, rules: tuple[str, ...]):
+        rollback = AsyncMock()
         with (
-            patch.object(TenantMetadataEntity, "grant_access_rule"),
-            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants"),
-            patch.object(RoleEntity, "objects", return_value=self._existing_role(*rules)),
-            patch.object(RoleEntity, "delete_role") as delete_role,
-            patch.object(UserTenantRoleEntity, "add_roles") as add_roles,
+            patch.object(TenantMetadataEntity, "grant_access_rule", new_callable=AsyncMock),
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants", new_callable=AsyncMock),
+            patch.object(RoleEntity, "get_role", new=self._existing_role(*rules)),
+            patch.object(RoleEntity, "delete_role", new_callable=AsyncMock) as delete_role,
+            patch.object(UserTenantRoleEntity, "add_roles", new_callable=AsyncMock) as add_roles,
             pytest.raises(HTTPException) as raised,
         ):
-            ProcessInstanceAccessGrant.grant("Onboarding", "q3-onboarding", creator_user, rollback)
+            await ProcessInstanceAccessGrant.grant("Onboarding", "q3-onboarding", creator_user, rollback)
 
         assert raised.value.status_code == 500
         add_roles.assert_not_called()
@@ -122,28 +123,32 @@ class TestExistingRole:
 
 
 class TestGrant:
-    def test_grants_the_tenant_rule_and_a_creator_role(self, creator_user: Mock):
-        rollback = Mock()
+    @pytest.mark.asyncio
+    async def test_grants_the_tenant_rule_and_a_creator_role(self, creator_user: Mock):
+        rollback = AsyncMock()
         with (
-            patch.object(TenantMetadataEntity, "grant_access_rule") as grant_rule,
-            patch.object(ProcessInstanceAccessGrant, "_ensure_admin_role", return_value=True) as ensure_role,
-            patch.object(UserTenantRoleEntity, "add_roles") as add_roles,
+            patch.object(TenantMetadataEntity, "grant_access_rule", new_callable=AsyncMock) as grant_rule,
+            patch.object(
+                ProcessInstanceAccessGrant, "_ensure_admin_role", new_callable=AsyncMock, return_value=True
+            ) as ensure_role,
+            patch.object(UserTenantRoleEntity, "add_roles", new_callable=AsyncMock) as add_roles,
         ):
-            ProcessInstanceAccessGrant.grant("Onboarding", "q3-onboarding", creator_user, rollback)
+            await ProcessInstanceAccessGrant.grant("Onboarding", "q3-onboarding", creator_user, rollback)
 
         grant_rule.assert_called_once_with("tenant_1", _ADMIN_RULE)
         ensure_role.assert_called_once_with(_ROLE_NAME, _ADMIN_RULE, "tenant_1", "Onboarding", "q3-onboarding")
         add_roles.assert_called_once_with("user_123", "tenant_1", [_ROLE_NAME])
         rollback.assert_not_called()
 
-    def test_skips_the_tenant_rule_when_a_broader_rule_covers_it(self, creator_user: Mock):
+    @pytest.mark.asyncio
+    async def test_skips_the_tenant_rule_when_a_broader_rule_covers_it(self, creator_user: Mock):
         creator_user.acting_within_tenant.access_rules = ["aihub.admin.>"]
         with (
-            patch.object(TenantMetadataEntity, "grant_access_rule") as grant_rule,
-            patch.object(ProcessInstanceAccessGrant, "_ensure_admin_role", return_value=True),
-            patch.object(UserTenantRoleEntity, "add_roles") as add_roles,
+            patch.object(TenantMetadataEntity, "grant_access_rule", new_callable=AsyncMock) as grant_rule,
+            patch.object(ProcessInstanceAccessGrant, "_ensure_admin_role", new_callable=AsyncMock, return_value=True),
+            patch.object(UserTenantRoleEntity, "add_roles", new_callable=AsyncMock) as add_roles,
         ):
-            ProcessInstanceAccessGrant.grant("Onboarding", "q3-onboarding", creator_user, Mock())
+            await ProcessInstanceAccessGrant.grant("Onboarding", "q3-onboarding", creator_user, AsyncMock())
 
         grant_rule.assert_not_called()
         add_roles.assert_called_once()
@@ -151,17 +156,18 @@ class TestGrant:
     def test_the_root_alone_does_not_count_as_covering_the_instance(self):
         assert not AccessChecker.rules_grant_admin(["aihub.admin.process"], _ADMIN_RULE)
 
-    def test_a_failed_grant_undoes_the_grant_and_the_creation(self, creator_user: Mock):
-        rollback = Mock()
+    @pytest.mark.asyncio
+    async def test_a_failed_grant_undoes_the_grant_and_the_creation(self, creator_user: Mock):
+        rollback = AsyncMock()
         with (
-            patch.object(TenantMetadataEntity, "grant_access_rule"),
-            patch.object(ProcessInstanceAccessGrant, "_ensure_admin_role", return_value=True),
-            patch.object(UserTenantRoleEntity, "add_roles", side_effect=RuntimeError("boom")),
-            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as revoke,
-            patch.object(RoleEntity, "delete_role") as delete_role,
+            patch.object(TenantMetadataEntity, "grant_access_rule", new_callable=AsyncMock),
+            patch.object(ProcessInstanceAccessGrant, "_ensure_admin_role", new_callable=AsyncMock, return_value=True),
+            patch.object(UserTenantRoleEntity, "add_roles", new_callable=AsyncMock, side_effect=RuntimeError("boom")),
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants", new_callable=AsyncMock) as revoke,
+            patch.object(RoleEntity, "delete_role", new_callable=AsyncMock) as delete_role,
             pytest.raises(HTTPException) as raised,
         ):
-            ProcessInstanceAccessGrant.grant("Onboarding", "q3-onboarding", creator_user, rollback)
+            await ProcessInstanceAccessGrant.grant("Onboarding", "q3-onboarding", creator_user, rollback)
 
         assert raised.value.status_code == 500
         revoke.assert_called_once_with([_ADMIN_RULE])
@@ -176,7 +182,7 @@ class TestCreateGrantsTheInstance:
         class_entity.is_online_since.return_value = True
         class_entity.process_config_specs.to_specs.return_value = ConfigSpecs(config_class="Onboarding")
         config_entity = Mock()
-        grant = stack.enter_context(patch.object(ProcessInstanceAccessGrant, "grant"))
+        grant = stack.enter_context(patch.object(ProcessInstanceAccessGrant, "grant", new_callable=AsyncMock))
         stack.enter_context(patch(f"{_MODULE}.ProcessClassEntity.get_by_process_class", return_value=class_entity))
         stack.enter_context(patch(f"{_MODULE}.ProcessClassEntity.online_threshold", return_value=datetime(2026, 1, 1)))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
@@ -222,7 +228,11 @@ class TestCreateGrantsTheInstance:
             grant, config_entity = self._mock_create_dependencies(stack)
             await ProcessService.create_process_instance("Onboarding", request, Mock(spec=LocaleHandler), user=user)
 
-        grant.assert_called_once_with("Onboarding", "q3-onboarding", user, config_entity.delete)
+        grant.assert_awaited_once()
+        process_class, process_id, granted_user, rollback = grant.await_args.args
+        assert (process_class, process_id, granted_user) == ("Onboarding", "q3-onboarding", user)
+        await rollback()
+        config_entity.delete.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_skips_the_grant_for_a_sysadmin_outside_any_tenant(self):
@@ -243,8 +253,8 @@ class TestDeleteRevokesTheInstance:
         with (
             patch.object(ProcessConfigEntityDocument, "find_for_class_and_id", return_value=Mock()),
             patch.object(ProcessConfigEntityDocument, "delete_if_exists_for_class_and_id") as delete_config,
-            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as revoke,
-            patch.object(ProcessInstanceAccessGrant, "_delete_instance_roles") as delete_roles,
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants", new_callable=AsyncMock) as revoke,
+            patch.object(ProcessInstanceAccessGrant, "_delete_instance_roles", new_callable=AsyncMock) as delete_roles,
         ):
             await ProcessService.delete_process_instance("Onboarding", "q3-onboarding")
 
@@ -252,24 +262,26 @@ class TestDeleteRevokesTheInstance:
         revoke.assert_called_once_with([_USER_RULE, _ADMIN_RULE])
         delete_roles.assert_called_once_with(_ROLE_NAME, _ADMIN_RULE)
 
-    def test_a_same_named_role_with_other_rules_survives(self):
+    @pytest.mark.asyncio
+    async def test_a_same_named_role_with_other_rules_survives(self):
         instance_role = Mock(tenant_id="tenant_1", access_rules=[_ADMIN_RULE])
         authored_role = Mock(tenant_id="tenant_2", access_rules=[_ADMIN_RULE, "aihub.admin.agent.>"])
         roles = Mock()
-        roles.only.return_value = [instance_role, authored_role]
+        roles.to_list = AsyncMock(return_value=[instance_role, authored_role])
         with (
-            patch.object(RoleEntity, "objects", return_value=roles),
-            patch.object(RoleEntity, "delete_role") as delete_role,
+            patch.object(RoleEntity, "find", return_value=roles) as find,
+            patch.object(RoleEntity, "delete_role", new_callable=AsyncMock) as delete_role,
         ):
-            ProcessInstanceAccessGrant._delete_instance_roles(_ROLE_NAME, _ADMIN_RULE)
+            await ProcessInstanceAccessGrant._delete_instance_roles(_ROLE_NAME, _ADMIN_RULE)
 
+        find.assert_called_once_with({"name": _ROLE_NAME})
         delete_role.assert_called_once_with(_ROLE_NAME, "tenant_1")
 
     @pytest.mark.asyncio
     async def test_a_missing_instance_revokes_nothing(self):
         with (
             patch.object(ProcessConfigEntityDocument, "find_for_class_and_id", return_value=None),
-            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as revoke,
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants", new_callable=AsyncMock) as revoke,
             pytest.raises(HTTPException) as raised,
         ):
             await ProcessService.delete_process_instance("Onboarding", "missing")
@@ -298,32 +310,41 @@ class TestProcessRootRuleMigration:
     def _holder(*rules: str) -> Mock:
         holder = Mock()
         holder.access_rules = list(rules)
+        holder.save = AsyncMock()
         return holder
 
-    def test_adds_the_root_next_to_the_wildcard(self):
+    @staticmethod
+    def _query(*holders: Mock) -> Mock:
+        query = Mock()
+        query.to_list = AsyncMock(return_value=list(holders))
+        return query
+
+    @pytest.mark.asyncio
+    async def test_adds_the_root_next_to_the_wildcard(self):
         tenant = self._holder("aihub.admin.process.>")
         role = self._holder("aihub.admin.process.>", "aihub.user.>")
         with (
-            patch.object(TenantMetadataEntity, "objects", return_value=[tenant]) as tenants,
-            patch.object(RoleEntity, "objects", return_value=[role]) as roles,
+            patch.object(TenantMetadataEntity, "find", return_value=self._query(tenant)) as tenants,
+            patch.object(RoleEntity, "find", return_value=self._query(role)) as roles,
         ):
-            migrated = ProcessRootRuleMigration.run()
+            migrated = await ProcessRootRuleMigration.run()
 
-        tenants.assert_called_once_with(access_rules="aihub.admin.process.>")
-        roles.assert_called_once_with(access_rules="aihub.admin.process.>")
+        tenants.assert_called_once_with({"access_rules": "aihub.admin.process.>"})
+        roles.assert_called_once_with({"access_rules": "aihub.admin.process.>"})
         assert tenant.access_rules == ["aihub.admin.process.>", "aihub.admin.process"]
         assert role.access_rules == ["aihub.admin.process.>", "aihub.user.>", "aihub.admin.process"]
         tenant.save.assert_called_once()
         role.save.assert_called_once()
         assert len(migrated) == 2
 
-    def test_leaves_a_holder_that_already_has_the_root_alone(self):
+    @pytest.mark.asyncio
+    async def test_leaves_a_holder_that_already_has_the_root_alone(self):
         tenant = self._holder("aihub.admin.process.>", "aihub.admin.process")
         with (
-            patch.object(TenantMetadataEntity, "objects", return_value=[tenant]),
-            patch.object(RoleEntity, "objects", return_value=[]),
+            patch.object(TenantMetadataEntity, "find", return_value=self._query(tenant)),
+            patch.object(RoleEntity, "find", return_value=self._query()),
         ):
-            migrated = ProcessRootRuleMigration.run()
+            migrated = await ProcessRootRuleMigration.run()
 
         tenant.save.assert_not_called()
         assert migrated == []

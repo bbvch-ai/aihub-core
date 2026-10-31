@@ -105,9 +105,9 @@ class TestProvisioningDuringGroupSync:
         self, provisioner: OpenWebuiProvisioner, *, active_user_ids: set[str], role_holders: list[str]
     ) -> Iterator[tuple[MagicMock, MagicMock]]:
         with (
-            patch(f"{_MODULE}.TenantMetadataEntity") as mock_tenant,
-            patch(f"{_MODULE}.RoleEntity") as mock_role,
-            patch(f"{_MODULE}.UserTenantRoleEntity") as mock_utr,
+            patch(f"{_MODULE}.TenantMetadataEntity", new_callable=AsyncMock) as mock_tenant,
+            patch(f"{_MODULE}.RoleEntity", new_callable=AsyncMock) as mock_role,
+            patch(f"{_MODULE}.UserTenantRoleEntity", new_callable=AsyncMock) as mock_utr,
             patch(f"{_MODULE}.KeycloakAdminService") as mock_keycloak,
             patch.object(
                 provisioner._openwebui,
@@ -120,14 +120,14 @@ class TestProvisioningDuringGroupSync:
         ):
             tenant = MagicMock()
             tenant.name, tenant.id, tenant.access_rules = "T1", "tid-1", []
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
             role = MagicMock()
             role.name, role.access_rules = "R1", []
             mock_role.get_roles_for_tenant.return_value = [role]
             mock_keycloak.get_all_users = AsyncMock(return_value=[_keycloak_user("kc-a", "a@x")])
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=active_user_ids)
             mock_keycloak.get_user_ids_with_realm_role = AsyncMock(return_value=set())
-            mock_utr.objects.return_value = [MagicMock(user_id=uid) for uid in role_holders]
+            mock_utr.get_user_ids_with_role.return_value = list(role_holders)
             yield create, update_members
 
     @pytest.mark.asyncio

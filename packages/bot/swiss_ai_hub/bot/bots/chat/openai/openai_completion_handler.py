@@ -111,7 +111,7 @@ class OpenaiCompletionHandler(CompletionHandler):
 
         user = await CompletionHandler.resolve_user_identity(turn_context, path)
         model_capability, _, model_id = model_name.partition("/")
-        if not model_id or not AccessChecker.from_user(user).has_access_to_model(model_capability, model_id):
+        if not model_id or not (await AccessChecker.from_user(user)).has_access_to_model(model_capability, model_id):
             raise BotAccessDeniedError(user.id, f"model {model_name}")
 
         logger.debug(f"Using user identity: {user}")

@@ -110,7 +110,7 @@ class KeycloakAuthHandler(AuthHandler):
 
             # Sync tenant memberships from JWT tenants claim
             tenants_claim = decoded_token.get("tenants", [])
-            self._sync_tenant_memberships(sub, tenants_claim)
+            await self._sync_tenant_memberships(sub, tenants_claim)
             await KeycloakAdminService.ensure_active_tenant(sub, self._app_redis(request))
 
             return await self.build_identity(
@@ -153,13 +153,13 @@ class KeycloakAuthHandler(AuthHandler):
         return [path.split("/")[-1] for path in tenants_claim if path.startswith("/tenants/")]
 
     @staticmethod
-    def _needs_membership_sync(user_id: str, tenant_ids: list[str]) -> bool:
+    async def _needs_membership_sync(user_id: str, tenant_ids: list[str]) -> bool:
         """Fast path: returns False if the user already has memberships for all tenants in the claim."""
-        db_tenant_ids = set(UserTenantRoleEntity.get_tenant_ids_for_user(user_id))
+        db_tenant_ids = set(await UserTenantRoleEntity.get_tenant_ids_for_user(user_id))
         return not set(tenant_ids).issubset(db_tenant_ids)
 
     @staticmethod
-    def _resolve_roles_for_new_member(tenant_id: str) -> list[str]:
+    async def _resolve_roles_for_new_member(tenant_id: str) -> list[str]:
         """Returns the roles to assign when creating a new user-tenant association.
 
         The first user to join a tenant gets admin roles; subsequent users get
@@ -167,14 +167,14 @@ class KeycloakAuthHandler(AuthHandler):
         they log in during initial platform setup.
         """
         settings = UserSignupSettings()
-        existing_user_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant_id)
+        existing_user_ids = await UserTenantRoleEntity.get_user_ids_in_tenant(tenant_id)
         if not existing_user_ids:
             logger.info("First user signup in tenant %s, assigning admin roles", tenant_id)
             return settings.first_admin_user_roles_list
         return settings.regular_user_roles_list
 
     @staticmethod
-    def _ensure_membership_for_tenant(user_id: str, tenant_id: str) -> None:
+    async def _ensure_membership_for_tenant(user_id: str, tenant_id: str) -> None:
         """Creates a `UserTenantRoleEntity` for the user in the given tenant if missing.
 
         The tenant_id originates from the JWT ``tenants`` claim, which is issued by
@@ -182,17 +182,17 @@ class KeycloakAuthHandler(AuthHandler):
         membership is legitimate, regardless of whether MongoDB metadata exists
         for the tenant. Skips silently only if the membership already has roles.
         """
-        if UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id):
+        if await UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id):
             return
 
-        if not TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id):
+        if not await TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id):
             logger.info(
                 "Tenant '%s' from JWT claim has no metadata yet; membership created without display data",
                 tenant_id,
             )
 
-        roles_to_assign = KeycloakAuthHandler._resolve_roles_for_new_member(tenant_id)
-        UserTenantRoleEntity.create_or_update(user_id=user_id, tenant_id=tenant_id, roles=roles_to_assign)
+        roles_to_assign = await KeycloakAuthHandler._resolve_roles_for_new_member(tenant_id)
+        await UserTenantRoleEntity.create_or_update(user_id=user_id, tenant_id=tenant_id, roles=roles_to_assign)
         logger.info(
             "Created tenant association for user %s in tenant %s with roles: %s",
             user_id,
@@ -201,7 +201,7 @@ class KeycloakAuthHandler(AuthHandler):
         )
 
     @staticmethod
-    def _sync_tenant_memberships(user_id: str, tenants_claim: list[str]) -> None:
+    async def _sync_tenant_memberships(user_id: str, tenants_claim: list[str]) -> None:
         """Syncs tenant memberships from the JWT `tenants` claim to `UserTenantRoleEntity`.
 
         Fast path: if the user's existing memberships already cover all tenants in the JWT
@@ -213,8 +213,8 @@ class KeycloakAuthHandler(AuthHandler):
         if not tenant_ids:
             return
 
-        if not KeycloakAuthHandler._needs_membership_sync(user_id, tenant_ids):
+        if not await KeycloakAuthHandler._needs_membership_sync(user_id, tenant_ids):
             return
 
         for tenant_id in tenant_ids:
-            KeycloakAuthHandler._ensure_membership_for_tenant(user_id, tenant_id)
+            await KeycloakAuthHandler._ensure_membership_for_tenant(user_id, tenant_id)

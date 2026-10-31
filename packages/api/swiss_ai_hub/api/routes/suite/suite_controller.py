@@ -28,6 +28,6 @@ class SuiteController(TenantScopedController):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> SuiteDTO:
-            return SuiteService.get_suite(user, self._runner, t)
+            return await SuiteService.get_suite(user, self._runner, t)
 
         return self

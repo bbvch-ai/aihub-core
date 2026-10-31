@@ -30,7 +30,7 @@ def _run_context(cached: str | None = None) -> AsyncMock:
 
 def _stub_tenant(monkeypatch: pytest.MonkeyPatch, lcdm_tenant_id: int | None) -> None:
     entity = MagicMock(lcdm_tenant_id=lcdm_tenant_id)
-    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_id", lambda tenant_id: entity)
+    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_id", AsyncMock(return_value=entity))
 
 
 class TestApply:

@@ -7,6 +7,8 @@ the platform endpoint it proxies to was not, which is how the broader guard slip
 place.
 """
 
+from unittest.mock import AsyncMock
+
 import pytest
 from fastapi import Request
 from fastapi.testclient import TestClient
@@ -60,7 +62,7 @@ class _AuthHandler(AuthHandler):
 @pytest.fixture(autouse=True)
 def _stub_roster_and_roles(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS", "")
-    monkeypatch.setattr(RoleEntity, "get_access_rules_for_roles", lambda roles, tenant_id: {"aihub.admin.>"})
+    monkeypatch.setattr(RoleEntity, "get_access_rules_for_roles", AsyncMock(return_value={"aihub.admin.>"}))
 
     async def _roster() -> dict[str, list[str]]:
         return _ROSTER

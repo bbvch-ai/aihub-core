@@ -2,7 +2,7 @@ import logging
 from typing import Annotated, Self
 
 from fastapi import HTTPException, Security, status
-from mongoengine.errors import NotUniqueError
+from pymongo.errors import DuplicateKeyError
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.routes import TenantScopedController
@@ -49,8 +49,8 @@ class RoleController(TenantScopedController):
             ],
         ) -> RoleResponse:
             try:
-                return RoleService.create_role(role_data, user.acting_within_tenant.id)
-            except NotUniqueError:
+                return await RoleService.create_role(role_data, user.acting_within_tenant.id)
+            except DuplicateKeyError:
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
             except HTTPException:
                 raise
@@ -72,7 +72,7 @@ class RoleController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
             ],
         ) -> list[RoleResponse]:
-            return RoleService.list_roles(user.acting_within_tenant.id)
+            return await RoleService.list_roles(user.acting_within_tenant.id)
 
         return self
 
@@ -89,7 +89,7 @@ class RoleController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
             ],
         ) -> RoleResponse:
-            return RoleService.get_role_by_id(role_id, user.acting_within_tenant.id)
+            return await RoleService.get_role_by_id(role_id, user.acting_within_tenant.id)
 
         return self
 
@@ -108,8 +108,8 @@ class RoleController(TenantScopedController):
             ],
         ) -> RoleResponse:
             try:
-                return RoleService.update_role(role_id, role_data, user.acting_within_tenant.id)
-            except NotUniqueError:
+                return await RoleService.update_role(role_id, role_data, user.acting_within_tenant.id)
+            except DuplicateKeyError:
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
             except HTTPException:
                 raise
@@ -132,7 +132,7 @@ class RoleController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
             ],
         ) -> DeleteRoleResponse:
-            RoleService.delete_role(role_id, user.acting_within_tenant.id)
+            await RoleService.delete_role(role_id, user.acting_within_tenant.id)
             return DeleteRoleResponse()
 
         return self

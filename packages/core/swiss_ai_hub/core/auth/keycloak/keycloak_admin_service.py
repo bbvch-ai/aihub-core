@@ -414,7 +414,7 @@ class KeycloakAdminService:
             return next(iter(existing_tenant_ids))
         if default_id in existing_tenant_ids:
             return default_id
-        earliest = TenantMetadataEntity.objects(id__in=list(existing_tenant_ids)).order_by("created_at").first()
+        earliest = await TenantMetadataEntity.get_earliest_created(list(existing_tenant_ids))
         return earliest.id if earliest else min(existing_tenant_ids)
 
     @staticmethod

@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
 from fastapi import HTTPException
@@ -28,11 +28,11 @@ class ProcessInstanceAccessGrant:
         return f"ProcessAdmin.{process_class}.{process_id}"
 
     @staticmethod
-    def grant(
+    async def grant(
         process_class: str,
         process_id: str,
         user: UserIdentity,
-        rollback: Annotated[Callable[[], Any], "Undoes the instance creation if the grant fails"],
+        rollback: Annotated[Callable[[], Awaitable[Any]], "Undoes the instance creation if the grant fails"],
     ) -> None:
         """Adds the instance admin rule to the creating tenant's ceiling, unless a broader rule already covers
         it, and binds the creator to a per-instance admin role. Any failure undoes what was granted and the
@@ -45,23 +45,23 @@ class ProcessInstanceAccessGrant:
             AccessChecker.require_literal_segments(process_class, process_id)
             admin_rule = AccessChecker.process_admin_rule(process_class, process_id)
             if not AccessChecker.rules_grant_admin(tenant.access_rules, admin_rule):
-                TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
+                await TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
                 granted_tenant_rule = True
-            created_role = ProcessInstanceAccessGrant._ensure_admin_role(
+            created_role = await ProcessInstanceAccessGrant._ensure_admin_role(
                 role_name, admin_rule, tenant.id, process_class, process_id
             )
-            UserTenantRoleEntity.add_roles(user.id, tenant.id, [role_name])
+            await UserTenantRoleEntity.add_roles(user.id, tenant.id, [role_name])
         except Exception as error:
             if created_role:
-                ProcessInstanceAccessGrant._best_effort(
+                await ProcessInstanceAccessGrant._best_effort(
                     lambda: RoleEntity.delete_role(role_name, tenant.id), f"delete role {role_name}"
                 )
             if granted_tenant_rule:
-                ProcessInstanceAccessGrant._best_effort(
+                await ProcessInstanceAccessGrant._best_effort(
                     lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants([admin_rule]),
                     f"revoke {admin_rule}",
                 )
-            ProcessInstanceAccessGrant._best_effort(rollback, f"roll back {process_class}/{process_id}")
+            await ProcessInstanceAccessGrant._best_effort(rollback, f"roll back {process_class}/{process_id}")
             raise HTTPException(
                 status_code=500,
                 detail=(
@@ -71,7 +71,7 @@ class ProcessInstanceAccessGrant:
             ) from error
 
     @staticmethod
-    def revoke(process_class: str, process_id: str) -> None:
+    async def revoke(process_class: str, process_id: str) -> None:
         """Removes the instance rules from every tenant and deletes its admin role, so a later instance with
         the same id does not reappear in tenants that held the old one. Best-effort: the instance is already
         gone when this runs."""
@@ -80,23 +80,23 @@ class ProcessInstanceAccessGrant:
             AccessChecker.process_admin_rule(process_class, process_id),
         ]
         role_name = ProcessInstanceAccessGrant.role_name(process_class, process_id)
-        ProcessInstanceAccessGrant._best_effort(
+        await ProcessInstanceAccessGrant._best_effort(
             lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(rules), f"revoke {rules}"
         )
-        ProcessInstanceAccessGrant._best_effort(
+        await ProcessInstanceAccessGrant._best_effort(
             lambda: ProcessInstanceAccessGrant._delete_instance_roles(role_name, rules[1]), f"delete role {role_name}"
         )
 
     @staticmethod
-    def _delete_instance_roles(role_name: str, admin_rule: str) -> None:
+    async def _delete_instance_roles(role_name: str, admin_rule: str) -> None:
         """Deletes the role in every tenant where it still grants exactly this instance; a tenant may have authored
         a role of the same name with other rules, and that one stays."""
-        for role in RoleEntity.objects(name=role_name).only("tenant_id", "access_rules"):
+        for role in await RoleEntity.find({"name": role_name}).to_list():
             if list(role.access_rules) == [admin_rule]:
-                RoleEntity.delete_role(role_name, role.tenant_id)
+                await RoleEntity.delete_role(role_name, role.tenant_id)
 
     @staticmethod
-    def _ensure_admin_role(
+    async def _ensure_admin_role(
         role_name: str, admin_rule: str, tenant_id: str, process_class: str, process_id: str
     ) -> bool:
         """Creates the per-instance admin role if absent. Returns whether it was created.
@@ -104,12 +104,12 @@ class ProcessInstanceAccessGrant:
         An existing role is reused only when it still grants exactly this instance, so binding the creator to it
         can never hand them more.
         """
-        existing = RoleEntity.objects(name=role_name, tenant_id=tenant_id).first()
+        existing = await RoleEntity.get_role(role_name, tenant_id)
         if existing:
             if list(existing.access_rules) != [admin_rule]:
                 raise ValueError(f"Role '{role_name}' exists with other access rules than {admin_rule}.")
             return False
-        RoleEntity.create_tenant_role(
+        await RoleEntity.create_tenant_role(
             name=role_name,
             description=f"Admin access to process instance {process_class}/{process_id}",
             access_rules=[admin_rule],
@@ -118,9 +118,9 @@ class ProcessInstanceAccessGrant:
         return True
 
     @staticmethod
-    def _best_effort(action: Callable[[], Any], description: str) -> None:
+    async def _best_effort(action: Callable[[], Awaitable[Any]], description: str) -> None:
         """Runs a compensating action, swallowing and logging any failure so it cannot mask the outcome."""
         try:
-            action()
+            await action()
         except Exception:
             logger.exception("Best-effort step failed: %s", description)

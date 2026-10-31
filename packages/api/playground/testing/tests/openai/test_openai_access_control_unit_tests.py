@@ -34,24 +34,27 @@ def _route_endpoint(builder_method: str):
 class TestAssertModelAccessHelper:
     """Covers the shared guard, now on the service so internal callers (not just HTTP) enforce it."""
 
-    def test_allows_granted_capability(self):
+    @pytest.mark.asyncio
+    async def test_allows_granted_capability(self):
         with patch(
             f"{_SERVICE}.AccessChecker.from_user", return_value=_checker(["aihub.user.model.text-generation.*"])
         ):
-            OpenaiService._assert_model_access(fake_user(), "text-generation/gemma-4-31B-it")  # no raise
+            await OpenaiService._assert_model_access(fake_user(), "text-generation/gemma-4-31B-it")  # no raise
 
-    def test_denies_other_capability(self):
+    @pytest.mark.asyncio
+    async def test_denies_other_capability(self):
         with patch(
             f"{_SERVICE}.AccessChecker.from_user", return_value=_checker(["aihub.user.model.text-generation.*"])
         ):
             with pytest.raises(HTTPException) as exc:
-                OpenaiService._assert_model_access(fake_user(), "embedding/bge-m3")
+                await OpenaiService._assert_model_access(fake_user(), "embedding/bge-m3")
         assert exc.value.status_code == 403
 
-    def test_denies_bare_name_without_capability(self):
+    @pytest.mark.asyncio
+    async def test_denies_bare_name_without_capability(self):
         with patch(f"{_SERVICE}.AccessChecker.from_user", return_value=_checker(["aihub.user.model.>"])):
             with pytest.raises(HTTPException) as exc:
-                OpenaiService._assert_model_access(fake_user(), "transcription")  # no slash -> empty name
+                await OpenaiService._assert_model_access(fake_user(), "transcription")  # no slash -> empty name
         assert exc.value.status_code == 403
 
 

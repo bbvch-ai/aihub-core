@@ -15,8 +15,8 @@ INIT_ROLES_PATH = (
 
 
 def _stub_metadata_lookups(monkeypatch: pytest.MonkeyPatch, by_id=None, by_name=None) -> None:
-    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_id", lambda tenant_id: by_id)
-    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_name", lambda name: by_name)
+    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_id", AsyncMock(return_value=by_id))
+    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_name", AsyncMock(return_value=by_name))
 
 
 def _fake_entity() -> MagicMock:
@@ -53,8 +53,8 @@ async def test_provision_new_tenant_creates_group_then_metadata(monkeypatch: pyt
     monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
 
-    create_mock = MagicMock(return_value=_fake_entity())
-    update_mock = MagicMock()
+    create_mock = AsyncMock(return_value=_fake_entity())
+    update_mock = AsyncMock()
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
     monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", update_mock)
 
@@ -74,8 +74,8 @@ async def test_provision_existing_tenant_updates_metadata_idempotently(monkeypat
     monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
 
-    create_mock = MagicMock()
-    update_mock = MagicMock(return_value=_fake_entity())
+    create_mock = AsyncMock()
+    update_mock = AsyncMock(return_value=_fake_entity())
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
     monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", update_mock)
 
@@ -94,9 +94,9 @@ async def test_provision_passes_lcdm_tenant_id_through_on_create(monkeypatch: py
     monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
 
-    create_mock = MagicMock(return_value=_fake_entity())
+    create_mock = AsyncMock(return_value=_fake_entity())
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
-    monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", MagicMock())
+    monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", AsyncMock())
 
     result = await TenantAdminService.provision_tenant(_make_request(lcdm_tenant_id=5))
 
@@ -112,8 +112,8 @@ async def test_provision_passes_lcdm_tenant_id_through_on_update(monkeypatch: py
     monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
 
-    update_mock = MagicMock(return_value=_fake_entity())
-    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", MagicMock())
+    update_mock = AsyncMock(return_value=_fake_entity())
+    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", AsyncMock())
     monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", update_mock)
 
     await TenantAdminService.provision_tenant(_make_request(lcdm_tenant_id=5))
@@ -129,9 +129,9 @@ async def test_provision_new_tenant_stores_the_rules_it_was_given(monkeypatch: p
     monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
 
-    create_mock = MagicMock(return_value=_fake_entity())
+    create_mock = AsyncMock(return_value=_fake_entity())
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
-    monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", MagicMock())
+    monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", AsyncMock())
 
     await TenantAdminService.provision_tenant(_make_request(access_rules=["aihub.admin.agent.>"]))
 
@@ -146,8 +146,8 @@ async def test_provision_existing_tenant_omitted_rules_preserve_ceiling(monkeypa
     monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
 
-    update_mock = MagicMock(return_value=_fake_entity())
-    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", MagicMock())
+    update_mock = AsyncMock(return_value=_fake_entity())
+    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", AsyncMock())
     monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", update_mock)
 
     await TenantAdminService.provision_tenant(_make_request())

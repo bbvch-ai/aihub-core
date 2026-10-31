@@ -139,7 +139,7 @@ class AgentCompletionHandler(CompletionHandler):
             AgentCompletionHandler._message_to_chat_message(message) for message in persisted_messages
         ]
         user = await CompletionHandler.resolve_user_identity(turn_context, path)
-        if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
+        if not (await AccessChecker.from_user(user)).has_access_to_agent(agent_class, agent_id):
             raise BotAccessDeniedError(user.id, f"agent {agent_class}/{agent_id}")
         if stream:
             return await ChatService.start_stream_chat_interaction(

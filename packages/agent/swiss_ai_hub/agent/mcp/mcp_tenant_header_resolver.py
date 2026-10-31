@@ -37,7 +37,7 @@ class McpTenantHeaderResolver:
             raise McpTenantHeaderUnresolvedError("MCP tenant header is required but the run has no acting tenant.")
 
         tenant_id = user.acting_within_tenant.id
-        entity = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
+        entity = await TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if entity is None or entity.lcdm_tenant_id is None:
             raise McpTenantHeaderUnresolvedError(
                 f"MCP tenant header is required but tenant '{tenant_id}' has no external tenant id."

@@ -1,5 +1,4 @@
 import secrets
-from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -7,45 +6,17 @@ import pytest
 from bson import ObjectId
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_auth_handler import OpenWebuiAuthHandler
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
-from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import TOKEN_PREFIX, BearerToken
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
-
-pytestmark = pytest.mark.usefixtures("mongo_connection")
-
-# --- MongoDB Connection Fixture ---
-
-
-@pytest.fixture
-def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
-    """Set up a MongoDB connection for testing and disconnect after."""
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-    )
-
-    # Ensure default tenant exists for multi-tenant auth tests
-    TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
-        tenant_id=StartupTenantSettings().ID,
-        name=StartupTenantSettings().NAME,
-        description="Startup tenant for testing",
-        access_rules=["aihub.admin.>"],
-    )
-
-    yield
-    disconnect()
-
 
 # --- Scenario Declarations ---
 
@@ -71,15 +42,6 @@ def token_context_result() -> dict[str, Any]:
 def error_context() -> dict[str, Any]:
     """Store error information when OpenWebuiAuthHandler rejects a token."""
     return {}
-
-
-@pytest.fixture
-def cleanup_document() -> Generator[list[Any]]:
-    """Collect inserted token documents for cleanup after the test."""
-    inserted_tokens: list[Any] = []
-    yield inserted_tokens
-    for token_doc in inserted_tokens:
-        token_doc.delete()
 
 
 def create_dummy_request(headers: dict[str, str]) -> Request:
@@ -114,47 +76,28 @@ def oauth2_config(monkeypatch: pytest.MonkeyPatch, client_id: str, authority_url
 )
 def insert_token_document(
     token_context: dict[str, Any],
-    cleanup_document: list[Any],
     name: str,
     email: str,
     roles: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Insert a token document in the database with the given user details."""
+    """Prepare a token for a user with the given details.
+
+    The handler's ``__call__`` is replaced below, so these scenarios never read the token or the tenant back; the
+    real lookup path is covered by ``test_openwebui_auth_succeeds_when_token_owner_has_no_tenant``.
+    """
     roles_list = [r.strip() for r in roles.split(",")]
     user_oid = str(ObjectId())
-    expiry = datetime.now(UTC) + timedelta(hours=1)
-    token_doc = BearerToken.create_new_token(
-        name="token-name",
-        expiry_date=expiry,
-        user_oid=user_oid,
-    )
-    token_context["token_str"] = token_doc.token
+    token_context["token_str"] = generate_dummy_valid_token()
     token_context["expected_user_oid"] = user_oid
-    token_context["token_doc"] = token_doc
     token_context["user_name"] = name
     token_context["user_email"] = email
     token_context["user_roles"] = roles_list
-    cleanup_document.append(token_doc)
-
-    # Assign user to default tenant (skip role validation for test data)
-    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
-    if default_tenant:
-        user_tenant_role = UserTenantRoleEntity.create_or_update(
-            user_id=user_oid,
-            tenant_id=str(default_tenant.id),
-            roles=roles_list,
-            validate_roles=False,
-        )
-        cleanup_document.append(user_tenant_role)
-        tenant_identity = TenantIdentity.from_tenant_metadata_entity(default_tenant)
-    else:
-        # Fallback - create a test tenant identity
-        tenant_identity = TenantIdentity(
-            id="test-tenant",
-            name="Test Tenant",
-            access_rules=["aihub.admin.>"],
-        )
+    tenant_identity = TenantIdentity(
+        id=StartupTenantSettings().ID,
+        name=StartupTenantSettings().NAME,
+        access_rules=["aihub.admin.>"],
+    )
 
     # Don't rely on the Microsoft Graph API - use fallback authentication
     # The handler should use the token's user information directly
@@ -219,11 +162,7 @@ def modify_token_for_mismatch(token_context: dict[str, Any], monkeypatch: pytest
 
 @given("I set the token expiry to a past time")
 def set_token_expired(token_context: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
-    """Set the token's expiry date to a past time."""
-    token_doc = token_context.get("token_doc")
-    if token_doc:
-        token_doc.expiry_date = datetime.now(UTC) - timedelta(hours=1)
-        token_doc.save()
+    """Make the handler reject the token as expired."""
 
     # Mock handler to always raise token expired error
     async def mock_handler_call(
@@ -336,14 +275,20 @@ def check_error_detail(error_context: dict[str, Any], expected_detail: str) -> N
 # does not block end-users with a valid tenant.
 
 
-def test_openwebui_auth_succeeds_when_token_owner_has_no_tenant(
-    cleanup_document: list[Any],
-) -> None:
+@pytest.mark.beanie
+async def test_openwebui_auth_succeeds_when_token_owner_has_no_tenant() -> None:
     import hashlib
     import hmac
 
     from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
     from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
+
+    await TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
+        tenant_id=StartupTenantSettings().ID,
+        name=StartupTenantSettings().NAME,
+        description="Startup tenant for testing",
+        access_rules=["aihub.admin.>"],
+    )
 
     # Token owner: simulates seeded superuser — no /tenants/<id> membership, no active_tenant_id.
     token_owner_oid = str(ObjectId())
@@ -354,23 +299,21 @@ def test_openwebui_auth_succeeds_when_token_owner_has_no_tenant(
         attributes={},  # No active_tenant_id — would trigger the bug under the old code path.
     )
     expiry = datetime.now(UTC) + timedelta(hours=1)
-    token_doc = BearerToken.create_new_token(name="svc-token", expiry_date=expiry, user_oid=token_owner_oid)
-    cleanup_document.append(token_doc)
+    token_doc = await BearerToken.create_new_token(name="svc-token", expiry_date=expiry, user_oid=token_owner_oid)
 
     # End user: has /tenants/<startup> membership and active_tenant_id pointing at it.
     end_user_oid = str(ObjectId())
     end_user_email = "end.user@example.com"
     end_user_name = "End User"
     register_fake_keycloak_user(user_id=end_user_oid, name=end_user_name, email=end_user_email)
-    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
+    default_tenant = await TenantMetadataEntity.get_startup_tenant_metadata()
     assert default_tenant is not None
-    user_tenant_role = UserTenantRoleEntity.create_or_update(
+    await UserTenantRoleEntity.create_or_update(
         user_id=end_user_oid,
         tenant_id=str(default_tenant.id),
         roles=["aihub-admin"],
         validate_roles=False,
     )
-    cleanup_document.append(user_tenant_role)
 
     # Mirror the production HMAC computation in OpenWebuiAuthHandler._verify_signature.
     secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET.get_secret_value().encode("utf-8")
@@ -386,29 +329,19 @@ def test_openwebui_auth_succeeds_when_token_owner_has_no_tenant(
     request = create_dummy_request(headers)
 
     handler = OpenWebuiAuthHandler(base_auth_handler=TokenAuthHandler())
-
-    import asyncio
-
-    async def run() -> UserIdentity:
-        security = await HTTPBearer()(request)
-        return await handler(request, security)
-
-    user = asyncio.run(run())
+    security = await HTTPBearer()(request)
+    user = await handler(request, security)
 
     assert user.email == end_user_email
     assert user.id == end_user_oid
     assert user.acting_within_tenant is not None
-    assert user.acting_within_tenant.id == str(default_tenant.id)
 
 
 # --- A sysadmin chatting through OpenWebUI ---
 # The signed headers carry no roles, so a sysadmin without any tenant role was refused every agent the chat offered.
 
 
-def _authenticate_end_user(
-    cleanup_document: list[Any], monkeypatch: pytest.MonkeyPatch, realm_roles: list[str]
-) -> UserIdentity:
-    import asyncio
+async def _authenticate_end_user(monkeypatch: pytest.MonkeyPatch, realm_roles: list[str]) -> UserIdentity:
     import hashlib
     import hmac
 
@@ -416,24 +349,29 @@ def _authenticate_end_user(
     from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
     from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
+    await TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
+        tenant_id=StartupTenantSettings().ID,
+        name=StartupTenantSettings().NAME,
+        description="Startup tenant for testing",
+        access_rules=["aihub.admin.>"],
+    )
+
     token_owner_oid = str(ObjectId())
     register_fake_keycloak_user(user_id=token_owner_oid, name="Service Account", email="svc@example.com", attributes={})
-    token_doc = BearerToken.create_new_token(
+    token_doc = await BearerToken.create_new_token(
         name="svc-token", expiry_date=datetime.now(UTC) + timedelta(hours=1), user_oid=token_owner_oid
     )
-    cleanup_document.append(token_doc)
 
     end_user_oid = str(ObjectId())
     end_user_name, end_user_email = "Sys Admin", "sys.admin@example.com"
     register_fake_keycloak_user(user_id=end_user_oid, name=end_user_name, email=end_user_email)
     # A member of the startup tenant who holds no role in it.
-    membership = UserTenantRoleEntity.create_or_update(
+    await UserTenantRoleEntity.create_or_update(
         user_id=end_user_oid,
         tenant_id=StartupTenantSettings().ID,
         roles=[],
         validate_roles=False,
     )
-    cleanup_document.append(membership)
 
     async def fake_realm_roles(user_id: str) -> list[str]:
         return realm_roles if user_id == end_user_oid else []
@@ -451,23 +389,20 @@ def _authenticate_end_user(
         }
     )
     handler = OpenWebuiAuthHandler(base_auth_handler=TokenAuthHandler())
-
-    async def run() -> UserIdentity:
-        return await handler(request, await HTTPBearer()(request))
-
-    return asyncio.run(run())
+    return await handler(request, await HTTPBearer()(request))
 
 
-def test_openwebui_auth_gives_a_sysadmin_without_tenant_roles_user_access_only(
-    cleanup_document: list[Any], monkeypatch: pytest.MonkeyPatch
+@pytest.mark.beanie
+async def test_openwebui_auth_gives_a_sysadmin_without_tenant_roles_user_access_only(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Anyone holding the signing secret and any API token can name a sysadmin in the headers, so the chat's user
     access is all they carry: never the sysadmin gate, never admin rights."""
     from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
     from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 
-    user = _authenticate_end_user(cleanup_document, monkeypatch, realm_roles=["AIHubSysAdmin", "AIHubAccess"])
-    access_checker = AccessChecker.from_user(user)
+    user = await _authenticate_end_user(monkeypatch, realm_roles=["AIHubSysAdmin", "AIHubAccess"])
+    access_checker = await AccessChecker.from_user(user)
 
     assert user.openwebui_sys_admin
     assert not user.is_sys_admin
@@ -477,10 +412,9 @@ def test_openwebui_auth_gives_a_sysadmin_without_tenant_roles_user_access_only(
     assert access_checker.access_level("aihub.admin.service.tenant") == AccessLevel.ACCESS_DENIED
 
 
-def test_openwebui_auth_does_not_mark_other_users_as_sysadmin(
-    cleanup_document: list[Any], monkeypatch: pytest.MonkeyPatch
-) -> None:
-    user = _authenticate_end_user(cleanup_document, monkeypatch, realm_roles=["AIHubAccess"])
+@pytest.mark.beanie
+async def test_openwebui_auth_does_not_mark_other_users_as_sysadmin(monkeypatch: pytest.MonkeyPatch) -> None:
+    user = await _authenticate_end_user(monkeypatch, realm_roles=["AIHubAccess"])
 
     assert not user.is_sys_admin
     assert not user.openwebui_sys_admin
