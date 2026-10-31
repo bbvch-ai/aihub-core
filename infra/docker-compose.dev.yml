@@ -916,7 +916,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   rclone:
     container_name: rclone
-    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2-1
     restart: unless-stopped
     command:
       - rcd
@@ -944,7 +944,7 @@ services:
   # License: MIT — rclone (see LICENSES.md)
   sandbox-mirror:
     container_name: sandbox-mirror
-    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2-1
     restart: unless-stopped
     depends_on:
       seaweedfs-s3:
@@ -1209,7 +1209,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.106.2
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.106.4
     restart: always
     ports: [4000:4000]
     environment:
@@ -1336,7 +1336,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy-1
     restart: always
     ports: [3036:3000]
     environment:
@@ -1353,13 +1353,32 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - browser  # Reached only by its callers, never by the rest of backend
-      - egress  # Outbound internet access for web browsing
+      - browser  # Its only network: the internet only through browser-proxy
+
+  # License: GPL-2.0-or-later — third-party (see LICENSE_REPORT.md)
+  browser-proxy:
+    container_name: browser-proxy
+    image: ghcr.io/bbvch-ai/aihub-core/browser-proxy:7.6-1
+    restart: always
+    healthcheck:
+      test: [CMD, nc, -z, 127.0.0.1, '3128']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - browser  # Reached by the Playwright browser, whose only way out it is
+      - egress  # Outbound internet; refuses every destination whose address is not public
 
   # License: AGPL-3.0 — third-party (see LICENSE_REPORT.md)
   searxng:
     container_name: searxng
-    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.9.5-c7f3080aa
+    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.10.27-cb74e7f81
     restart: always
     ports: [8881:8080]
     volumes: [./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro]
@@ -1444,7 +1463,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   otel-collector:
     container_name: otel-collector
-    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.154.0
+    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.164.0
     restart: always
     command: [--config=/etc/otel-config.yml]
     environment:
@@ -1509,7 +1528,7 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
     restart: always
     network_mode: host
     volumes:
@@ -1539,7 +1558,7 @@ services:
     environment:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
-      DEFAULT_LOCALE: de
+      DEFAULT_LOCALE: en-US
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: false
       ENABLE_COMMUNITY_SHARING: false
@@ -1813,7 +1832,7 @@ services:
 # - egress:  Outbound internet only, ICC disabled (containers isolated)
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
-# - browser:       The Playwright browser plus only its callers (open-webui, the web-fetching agents)
+# - browser:       The Playwright browser, browser-proxy (its only way out) and its callers (open-webui, the web-fetching agents)
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -1841,9 +1860,9 @@ networks:
   code-sandbox:
     name: code-sandbox
     driver: bridge
-  # Single-purpose zone: the Playwright browser plus only its callers (open-webui, the web-fetching agents).
-  # Keeps a page the browser loads from reaching the rest of backend, which a URL check alone cannot
-  # guarantee (DNS rebinding). Outbound internet comes from egress.
+  # Single-purpose zone: the Playwright browser, browser-proxy and the browser's callers (open-webui, the
+  # web-fetching agents). Playwright has no other network: it reaches the internet only through browser-proxy,
+  # which refuses every address that is not public, so a page reaches neither the platform, the host nor the LAN.
   browser:
     name: browser
     driver: bridge

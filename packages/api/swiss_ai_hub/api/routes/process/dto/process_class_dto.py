@@ -76,6 +76,8 @@ class ProcessClassDTO(BaseModel):
         cls,
         entity: "ProcessClassEntity",
         t: "LocaleHandler",
+        *,
+        is_online: bool,
     ) -> Self:
         """Converts a ProcessClassEntity to a ProcessClassDTO."""
         return cls(
@@ -90,6 +92,6 @@ class ProcessClassDTO(BaseModel):
             human_inputs=[],
             program_inputs=[],
             agent_inputs=[],
-            is_online=entity.is_online,
+            is_online=is_online,
             templates=[TemplateData.model_validate(td) for td in entity.templates] if entity.templates else [],
         )

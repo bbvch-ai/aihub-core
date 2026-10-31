@@ -35,11 +35,15 @@ config:
       \ in the form of structured documents. Each document follows a\nconsistent format,\
       \ beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`.\
       \ These documents contain\nessential details that should be utilized to accurately\
-      \ understand and respond to the user's query.\n\nEach document includes metadata\
-      \ such as source, namespace, type, language, version, and timestamps. The content\n\
-      within these documents provides crucial insights relevant to the given context.\n\
-      \nBelow are the relevant documents:\n\n<context_documents>\n{% for block in\
-      \ context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+      \ understand and respond to the user's query.\n\nEach document's metadata gives\
+      \ its source, title, version and timestamps: created_at is when the record or\
+      \ file\nwas created, updated_at and inserted_at are when the platform last processed\
+      \ it. A document synced from a business\napplication, such as a Jira issue or\
+      \ a Confluence page, also carries that record's own fields, e.g. its status,\n\
+      priority, issue_type, project, labels or space, and its own updated time. The\
+      \ content\nwithin these documents provides crucial insights relevant to the\
+      \ given context.\n\nBelow are the relevant documents:\n\n<context_documents>\n\
+      {% for block in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
       {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url | string | image}}\n\
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction: Using the information\
       \ from the provided documents, generate a detailed and well-structured response\n\

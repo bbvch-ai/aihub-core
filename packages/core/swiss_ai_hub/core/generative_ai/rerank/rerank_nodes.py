@@ -1,7 +1,5 @@
 import asyncio
 
-from llama_index.core.schema import NodeWithScore
-
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.rerank.rerank_request import RerankRequest
@@ -20,7 +18,8 @@ async def rerank_nodes(
 
     The request is sized here, not by the callers, so a chat message that inlines an attached document, or a node
     indexed under an older ceiling, cannot reach the reranker past its window: it rejects the pair with a 400 instead
-    of truncating it. A document cut to fit is cut for the request only; the result carries the node as retrieved.
+    of truncating it. The reranker only orders and scores: each result is the node that went in, so a document cut to
+    fit is cut for the request only and nothing a llama-index node cannot carry is lost on the way.
     """
     if not nodes:
         return []
@@ -35,11 +34,7 @@ async def rerank_nodes(
     reranked = await asyncio.to_thread(
         reranking_service.postprocess_nodes, query_str=request.query, nodes=request.nodes
     )
-    as_retrieved = {node.node.node_id: node.node for node in nodes_with_scores}
     # slicing the reranked nodes manually, as the endpoint returns all nodes regardless of top_n
-    return [
-        IngestedNode.from_llama_index_node_with_score(
-            NodeWithScore(node=as_retrieved[node.node.node_id], score=node.score)
-        )
-        for node in reranked[: reranking_model.top_n]
-    ]
+    reranked_nodes = reranked[: reranking_model.top_n]
+    by_id = {node.id: node for node in nodes}
+    return [by_id[ranked.node.node_id].model_copy(update={"score": ranked.score}) for ranked in reranked_nodes]

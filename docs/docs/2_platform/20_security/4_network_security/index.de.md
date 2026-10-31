@@ -1,6 +1,6 @@
 ---
 title: Netzwerksicherheit
-source_sha: bf2dad22a8f1d0a4db59a167e1cb2af431640d88f91557654ec5155b705f7f02
+source_sha: 620c78dd605c8ae40d284c6841f058383cfeaf90fcfa5a8e87d2363bf17ca7fb
 ---
 
 # Netzwerksicherheit
@@ -76,11 +76,13 @@ nur den Netzwerken zugewiesen, die sie benötigen:
 - **Interne Netzwerke** (`backend`, `data`, `storage`) haben keinen externen Internetzugang
 - **Egress-Netzwerk** erlaubt nur ausgehenden Internetzugang, wobei die Inter-Container Communication (ICC) deaktiviert
   ist
-- Services, die externe Websites durchsuchen müssen (z.B. Playwright), verwenden das `egress`-Netzwerk, ohne Ingress
-  offenzulegen
+- Services, die externe Websites erreichen müssen (z.B. searxng), verwenden das `egress`-Netzwerk, ohne Ingress
+  offenzulegen. Der Headless-Browser hat kein eigenes `egress`: Sein einziger Weg nach draussen ist `browser-proxy`, der
+  jedes nicht-öffentliche Ziel ablehnt
 - **Caller-only-Zonen** enthalten jeweils einen riskanten Service, den sie nur mit den Services teilen, die ihn
   aufrufen: `code-sandbox` für die Code-Execution-Sandbox, `browser` für den Headless-Browser, der die von Benutzern
-  verlinkten Webseiten lädt. Keine der beiden kann `backend`, `data` oder `storage` erreichen
+  verlinkten Webseiten lädt (plus sein filternder Proxy). Keine der beiden kann `backend`, `data` oder `storage`
+  erreichen
 
 Siehe [Netzwerk-Isolation](../../2_architecture/4_network_isolation/) für detaillierte Netzwerktopologie und
 Service-Zuweisungen.

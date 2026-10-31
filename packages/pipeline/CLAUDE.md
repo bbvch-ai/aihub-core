@@ -47,9 +47,10 @@ packages/pipeline/                        # SDK framework
 │   │   ├── llm/                           # EmbeddingModelResource, LanguageModelResource
 │   │   ├── share_point/                   # SharePointResource (MS Graph API)
 │   │   ├── rclone/                        # RcloneClient (RC API; stateless, built per run)
-│   │   ├── structured/                    # Structured sources: markdown dlt destination, per-database dlt state store
+│   │   ├── structured/                    # Structured sources: dlt destination (markdown records + referenced files), per-database dlt state store
 │   │   ├── jira/                          # JiraClient (dlt RESTClient: Cloud + Data Center search, comments, preflight calls)
 │   │   ├── confluence/                    # ConfluenceClient (dlt RESTClient: REST v1 CQL search), next-link paginator, error
+│   │   ├── mediawiki/                     # MediaWikiClient (dlt RESTClient: action API, continue paging), sign-in, error
 │   │   ├── local_file_system/             # LocalFileSystemResource
 │   │   └── factory.py                     # Resource factory functions (assembles resource dicts)
 │   ├── sensors/
@@ -75,7 +76,9 @@ packages/pipeline/                        # SDK framework
 │   │   ├── structured_sync_config.py      # StructuredSyncConfig: source kind + one option group per kind
 │   │   ├── jira/                          # The Jira kind: options form, preflight, issue → markdown file
 │   │   ├── confluence/                    # The Confluence kind: options, preflight, page → markdown file, storage → markdown
-│   │   └── abstract_structured_source_adapter.py  # Contract per structured source kind: dlt source, record → file
+│   │   ├── mediawiki/                     # The MediaWiki kind: options, preflight, scope, page → markdown file, file → reference, HTML → markdown
+│   │   ├── structured_file_unavailable_error.py  # A file the source will not serve: skipped, tried again next run
+│   │   └── abstract_structured_source_adapter.py  # Contract per structured source kind: dlt source, record → file, read_file
 │   ├── services/
 │   │   ├── knowledge_teardown_service.py  # Destroys a database/namespace across every store
 │   │   ├── default_partition_repair_service.py # Provisions the collection, moves nodes stranded in `_default`
@@ -96,6 +99,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
 │   │   ├── rclone_remote.py               # How a run addresses one database's remote (name, fs, patterns)
 │   │   ├── structured_record_file.py      # One API record as a markdown file: namespace, frontmatter, body
+│   │   ├── structured_file_reference.py   # A binary file a source offers: key, download URL, title and link
 │   │   ├── structured_source_state.py     # dlt state + scope fingerprint kept per database between syncs
 │   │   ├── structured_sync_outcome.py     # Sync → listing handover: written keys + fingerprint, never secrets
 │   │   ├── structured_listing.py          # Listing → reconcile handover: listed keys + written keys
@@ -425,8 +429,9 @@ defs = structured_pipeline_definitions(
 ```
 
 A pipeline whose config offers no source kind is built but not announced, so the create-database dialog never offers a
-source nothing can be configured for. The shipped pipeline offers two kinds, Jira and Confluence (see
-[The Jira adapter](#the-jira-adapter) and [The Confluence adapter](#the-confluence-adapter)).
+source nothing can be configured for. The shipped pipeline offers three kinds, Jira, Confluence and MediaWiki (see
+[The Jira adapter](#the-jira-adapter), [The Confluence adapter](#the-confluence-adapter) and
+[The MediaWiki adapter](#the-mediawiki-adapter)).
 
 **Adding a source kind** takes:
 
@@ -443,7 +448,9 @@ The adapter declares:
   never through dlt's configuration providers, which are shared by the whole process.
 - `to_record_file(record)` → `StructuredRecordFile`: the namespace (first folder), the path segments, frontmatter using
   #1953's reserved keys (`title`, `url`, `created`; the record's `updated` is kept as ordinary metadata) and the body.
-  It must be a pure function of the record.
+  It must be a pure function of the record. A record may also be a binary file the source offers: it returns a
+  `StructuredFileReference` (path with the file's own extension, download URL, size, title, link) instead, and the
+  adapter implements `read_file(options, reference)`, which the destination calls while loading.
 - `list_record_paths(options)`: the key of every record in scope, built with `StructuredRecordFile.object_key_for` and
   never through the incremental state. It raises rather than returning a partial set.
 - `layout_version`: raise it when `to_record_file` changes where or how records are written.
@@ -455,7 +462,7 @@ The adapter declares:
 database, tagged `aihub/bucket`. The single asset `[{source}_source_to_datalake, records]` chains, inside that run:
 
 1. **sync**: config through `source_config_for_bucket` (decrypted) → restore the state → `DagsterDltResource.run` with
-   the adapter's `file_source` into `MarkdownDataLakeDestination` → save the state
+   the adapter's `file_source` into `StructuredDataLakeDestination` → save the state
 2. **list**: the adapter's listing. It takes the sync's output as input, so it always runs after the sync.
 3. **reconcile**: files to remove = present − listed − written this run
 4. **delete** and **announce**: the routed ops the rclone pipeline uses, unchanged
@@ -463,13 +470,22 @@ database, tagged `aihub/bucket`. The single asset `[{source}_source_to_datalake,
 Steps hand their values over per run (`storage/{run_id}/…`). Never split them into assets: an asset's value is stored
 under its key, which every database shares.
 
-**Writes.** `MarkdownDataLakeDestination` writes a file only when the MD5 of its content differs from the stored
+**Writes.** `StructuredDataLakeDestination` writes a file only when the MD5 of its content differs from the stored
 object's ETag, then announces the batch through `notify_source_updated`. dlt delivers at least once, so this is what
 keeps a run with no changes from writing or announcing anything. Don't replace it with a hash kept as object metadata:
 ingestion copies every metadata key of a file into its document and embeds it with each chunk.
 
 Records become files in the extract step (`add_map` in `file_source`), because dlt coerces ISO timestamps into datetimes
 before loading. The mapped rows keep every field of the record, so the cursor and the primary key still resolve.
+
+**Files.** A binary file travels as a reference (`FILE_COLUMN`, JSON of a `StructuredFileReference`), never as content
+through dlt. The destination downloads it through `read_file`, one at a time, and writes it on the markdown path:
+`DataLakeFile.from_content` and one `put_object`, whose ETag is the content's MD5 at any size, so the comparison above
+covers files too. Its only object metadata are `document_title` and `source_origin`, which ingestion reads as the
+document's title and citation link. Adapters keep a file's fingerprint (the source's checksum and the key) in their
+resource state under `FILES_SEEN`, so an unchanged file is never downloaded. The dlt destination keeps its name
+`markdown_data_lake` from before files: dlt stores it in every database's state. See the 2026-10-30 amendment of ADR
+`2026_10_01_structured_sources_synced_with_dlt`.
 
 **State.** dlt cannot restore state from a custom destination, so each database's ~1 KB `state.json` is kept at
 `s3://{database}/.{source}_dagster/state.json`:
@@ -483,26 +499,32 @@ everything, while a rotated credential keeps the cursor.
 
 **Rules.** Each one guards a failure that would otherwise be silent.
 
-1. **`restore_from_destination = False`** on every pipeline. Otherwise `DagsterDltResource` drops the restored state,
-   and every run re-reads everything.
-2. **Save the state only after the whole sync succeeded**, and only if the database still uses this source and isn't
-   `deleting`. dlt advances the cursor before it writes.
-3. **Deactivate dlt's pipeline after the sync** (`Container()[PipelineContext].deactivate()`). Every step of a run
-   shares one process (`in_process_executor`), and a listing must never read the sync's cursor.
-4. **List after the sync, never before.** A failing listing raises, and an empty listing while the bucket holds files
-   raises.
-5. **Never remove a file the same run wrote.**
-6. **A record listed without a file in two runs in a row means the cursor is ahead of the data.** The state is
-   discarded, and the next run re-reads everything. Missing once is remembered in the state (`missing_keys`), not acted
-   on: a record created while a run is between its sync and its listing is missing too, and the next incremental run
-   fetches it. Discarding at once made a busy source re-read everything night after night.
-7. **One sync per database at a time.** A run that finds another sync of the same database running gives way, whichever
-   was created first. "Another sync" is a run of the sync job or one launched from the asset page (`__ASSET_JOB` with
-   the asset selected); never match on the bucket tag alone, because the database's ingestion runs carry it too.
-8. **dlt telemetry stays off.** `structured_pipeline_definitions` sets `RUNTIME__DLTHUB_TELEMETRY=false`, and so does
-   the Dockerfile.
-9. **Values passed between steps carry no config or secret** (`StructuredSyncOutcome`, `StructuredListing`), because
-   step outputs are pickled into the `dagster` bucket.
+01. **`restore_from_destination = False`** on every pipeline. Otherwise `DagsterDltResource` drops the restored state,
+    and every run re-reads everything.
+02. **Save the state only after the whole sync succeeded**, and only if the database still uses this source and isn't
+    `deleting`. dlt advances the cursor before it writes.
+03. **Deactivate dlt's pipeline after the sync** (`Container()[PipelineContext].deactivate()`). Every step of a run
+    shares one process (`in_process_executor`), and a listing must never read the sync's cursor.
+04. **List after the sync, never before.** A failing listing raises, and an empty listing while the bucket holds files
+    raises.
+05. **Never remove a file the same run wrote.**
+06. **A record listed without a file in two runs in a row means the cursor is ahead of the data.** The state is
+    discarded, and the next run re-reads everything. Missing once is remembered in the state (`missing_keys`), not acted
+    on: a record created while a run is between its sync and its listing is missing too, and the next incremental run
+    fetches it. Discarding at once made a busy source re-read everything night after night.
+07. **One sync per database at a time.** A run that finds another sync of the same database running gives way, whichever
+    was created first. "Another sync" is a run of the sync job or one launched from the asset page (`__ASSET_JOB` with
+    the asset selected); never match on the bucket tag alone, because the database's ingestion runs carry it too.
+08. **dlt telemetry stays off.** `structured_pipeline_definitions` sets `RUNTIME__DLTHUB_TELEMETRY=false`, and so does
+    the Dockerfile.
+09. **Values passed between steps carry no config or secret** (`StructuredSyncOutcome`, `StructuredListing`), because
+    step outputs are pickled into the `dagster` bucket.
+10. **A file the source will not serve is skipped, never fatal, and never counted as missing.** `read_file` raises
+    `StructuredFileUnavailableError` for it (gone, forbidden, too large); any other error fails the load, which dlt
+    retries. The destination names it in `failed_keys`; the state store removes it from every `FILES_SEEN` map before
+    saving, so the next run tries it again; and it travels to reconcile as `unread_file_keys`, which rule 6 skips.
+    Counted as missing, a file that stays unavailable would discard the state every second run and re-read the whole
+    source.
 
 **Try it locally.** `make structured-pipeline` runs the ingestion pipeline and `app.structured_pipeline` (Jira,
 Confluence) in one `dagster dev`; `playground/jira_seed` fills a Jira Cloud or Data Center test site with the cases to
@@ -612,6 +634,101 @@ an `HTTPError`, so 429 and 5xx are retried), type-level URL constraints and `pro
   `MarkdownStructuralNodeParser` recognise a table only by that wrapper. An element replaced by an empty string makes
   markdownify strip the whitespace on both sides, so empty elements are removed instead.
 
+### The MediaWiki adapter
+
+`source_pipelines/mediawiki/` holds the kind: options, preflight, scope, page model and rendered HTML → markdown.
+`resources/mediawiki/` holds the action API client, the sign-in and the error. It reads the API (`api.php`), never
+crawls the HTML pages: the API gives namespace and category scope, revision ids and a complete listing for deletions,
+and `action=parse` returns the page with every template expanded but without the skin's navigation. It keeps the
+Confluence adapter's rules on the error hook (`MediaWikiRequestError`, an `HTTPError`, so 429 and 5xx are retried),
+type-level URL constraints, `problems()` and the `SourceHostGuard` check with
+`STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`. In addition:
+
+- **API errors arrive with status 200.** The response hook raises on an `error` object (its `code`, such as
+  `readapidenied`, is kept on the exception) and on a non-JSON answer, which is what a single sign-on gateway sends for
+  an expired session. `parse` alone turns `nosuchpageid` / `missingtitle` into None: a page deleted between listing and
+  read is skipped and compared again next run.
+- **Four sign-in methods** (`MediaWikiSignIn`): `bot_password` (`action=login`, which takes bot passwords only),
+  `web_form` (fills in `Special:UserLogin`), `oauth`, `anonymous`. `oauth` sends the access token of an owner-only OAuth
+  2 consumer (Extension:OAuth) as `Bearer` through `RESTClient`'s `auth=`, on every request and never as a header dlt
+  could log; a file download sends it as `auth=` too, but only to the wiki's own host (a separate upload host is another
+  party); `MediaWikiOptions.oauth_token()` returns it only while `oauth` is selected, so a leftover token never travels
+  with a password sign-in. A refused token answers 401: Wikimedia's gateway with `{"httpCode", "httpReason"}` (observed
+  2026-10-30), a bare wiki with MediaWiki's `error` object; `MediaWikiRequestError.from_response` keeps either reason,
+  and the preflight turns 401/403 into what to check. The web form exists for wikis whose sign-in an extension handles:
+  on wiki.bbv.ch PluggableAuth answers `clientlogin` with a browser redirect the API cannot follow, so only the login
+  page works. It sends back every field the form renders (token, provider button) and fills in whichever of
+  `wpName`/`username` and `wpPassword`/`password` it has. Redirects are followed by hand, only on the wiki's host and
+  never from https to http, because the guard checked that host alone and the session's cookies must not travel.
+- **Credentials go through the bare session, never through `RESTClient`**, which logs a POST's form data at DEBUG. The
+  signed-in session is then handed to `RESTClient`; its cookies are added when a request is prepared, after dlt logged
+  it.
+- **No API version to choose.** `api.php` is versioned with MediaWiki itself and deprecates with response warnings
+  before removing anything. Every call the client makes exists since MediaWiki 1.27 (bot passwords, the AuthManager
+  login form and `meta=tokens` are the newest), so the preflight reads `siteinfo`'s `generator` and refuses an older or
+  unrecognisable wiki by name. Checked on 2026-10-30 against 1.43.11 (wiki.bbv.ch), 1.46.2 (wiki.archlinux.org) and
+  1.48.0-wmf.1 (mediawiki.org, en.wikipedia.org): no deprecation warnings.
+- **The guard runs before the sign-in**, inside `MediaWikiPreflight.check`, so no credential is sent to an internal
+  address. The preflight then refuses a session that still reads anonymously (an anonymous listing shrinks to public
+  pages and removes the rest), resolves namespaces by number, local or canonical name or `Main` (negative ones refused),
+  and checks that every included **and excluded** category exists: a mistyped excluded category would exclude nothing
+  and let in exactly the pages it was meant to keep out. A category exists when it has a page or any member, so an
+  excluded category whose last member leaves needs a page of its own.
+- **Scope is read as page ids** (`MediaWikiScope`): category members through `list=categorymembers`, so a category a
+  template assigns counts, then `generator=allpages` per namespace without redirects, with `prop=info` for `lastrevid`
+  and the canonical URL. About six requests list 2,700 pages without `apihighlimits`. With `include_subcategories`,
+  `category_member_ids` follows `type=subcat` members, each category once, since category trees can loop.
+- **One listing per step** (`MediaWikiScope.pages`, cached on the scope): the `pages` and `files` resources and the
+  listing step all work from it. Two titles stored at one path (`A//B` and `A__B` are both `Main/A__B.md`) give it to
+  the first one listed; the other is logged and left out of the sync as well as the listing, so the stored page cannot
+  flip between them with their edits.
+- **`user_agent`** (optional) replaces dlt's `User-Agent` on the client's session for every request, sign-in and
+  downloads included. Wikimedia's policy asks for a named client with a contact. One printable line only, so the value
+  cannot add headers.
+- **Changes are found by `lastrevid|object key`**, kept in the resource state like Confluence's `seen` map: a rename and
+  a page entering scope keep their revision. Only changed pages are parsed; `created` comes from the oldest revision
+  (one request per changed page), `updated` from their parsed revisions in batches of 50. Known gap: a template edit
+  re-renders the pages using it without a new revision, so they are re-read only when next edited (`touched` would catch
+  it, but also changes on every cache purge).
+- **Collections are named after a namespace's canonical name** (`MediaWikiCollections`, resolved by the preflight):
+  English for built-in namespaces (`File`, `Project`), as configured for custom ones, `Main` for the main namespace. The
+  local name (`Datei` on a German wiki, the site name for the project namespace) changes with the wiki's language or
+  site name, and a change would move every document of that namespace and re-ingest it. Two synced namespaces whose
+  collections would be stored under one name (after `NamespaceEntity.sanitize_namespace_name`) are refused: pages of the
+  same title would compete for one file. The file namespace's own pages may share the file collection, since a page
+  (`File/Report.pdf.md`) and a file (`File/Report.pdf`) normally share no key. A file whose key is taken all the same
+  (the page `File:Notes` and the file `Notes.md`, or two extensions that differ only in case) is left out with a
+  warning; the page, or the file first by name, keeps it. `layout_version` 2 marks the switch from local names.
+- **File and listing keys come from `MediaWikiPage.path_of`**: the collection, then the title without its prefix split
+  at `/` (subpages). A split giving an empty or dots-only folder keeps the title as one file name; a title of dots alone
+  is written as `page {id}`.
+- **Frontmatter uses `page_id`, `revision` and `categories`** (visible ones only; hidden maintenance categories are
+  dropped).
+- **Text is the rendered HTML**, rewritten by `MediaWikiHtml` before markdownify. Parser comments, edit sections, the
+  table of contents, navboxes, empty elements, footnote back-links and images are dropped, links made absolute against
+  the page without their `title`, red links kept as text, and unset template parameters (`{{{name}}}`) removed. A
+  **layout table** (one holding another table, or a single row, as a frame, a message box or columns are) is replaced by
+  its cells' content, because as data it would put the whole page in one cell. The remaining data tables are converted
+  on their own through core's `HtmlTableConverter`, as Confluence does with its own copy of that code: the two kinds
+  share no code, so each can change without the other.
+- **Files follow the pages** (`sync_documents` and `sync_images`, off by default). `MediaWikiScope.files` asks
+  `generator=images` for the files the in-scope pages show or link to, 50 pages per request, with `imageinfo` (URL,
+  size, sha1). It keeps only files of the wiki's own repository (a shared one such as Wikimedia Commons is another
+  host's content), not in an excluded category (a file page's own categories count; included categories do not, since
+  files are in scope through their pages), of a type switched on (`MediaWikiOptions.file_types()`: with `sync_documents`
+  pdf, Office 2007+, text; with `sync_images` the image types MinerU knows, `image_types()`, which is why `tif` and SVG
+  are not among them; never doc/ppt/pps, archives) and within `max_file_size_mb` (default 50). An image is also left out
+  when a page of the Template namespace shows it itself (`MediaWikiScope._template_images`: a template's logo or icon,
+  while an image passed as a template parameter is not on the template's page), or when its width or height is below
+  `min_image_pixels` (default 100, 0 keeps all). What is left out is counted in the run's log. A file is stored once at
+  `File/{name}.{extension in lower case}` and cites its description page. Changes are found by `sha1|key` in
+  `FILES_SEEN`.
+- **Downloads** (`MediaWikiClient.download`) use the sync's signed-in session (the adapter keeps the client of
+  `dlt_source` for `read_file`), follow no redirect, stop reading at the size limit, and refuse an HTML answer: a single
+  sign-on gateway answers an expired session with its login page and status 200, which would be stored as the document.
+  A file on another host than the wiki's (Wikimedia's upload host) passes `SourceHostGuard` first. 403, 404 and 410
+  become `StructuredFileUnavailableError`; a 401 or a server error fails the run.
+
 ## Markdown Frontmatter
 
 A `.md` file's leading YAML block becomes document fields and filterable metadata instead of chunked text (#1953). It is
@@ -651,10 +768,13 @@ and a converted file opening with a horizontal rule must not be taken for YAML. 
 - `MAX_METADATA_BYTES` (8 KiB, file order) caps the custom metadata: each node stores its metadata twice in Milvus' 64
   KiB dynamic field (keys + `_node_content`).
 
-**Not embedded.** Custom keys go into `excluded_embed_metadata_keys`: they exist to be filtered on, and on a short
-record they would outweigh the body in its vector. The title stays embedded. The exclusion has to survive every step
-that rebuilds a document or node — `refine_document_tables` passes it on, `build_nodes_from_splits` copies it to chunks,
-`RecursiveSummaryParser._create_summary_node` (core) copies it to summaries, and the doc store round-trips it.
+**Not embedded, but shown to the model.** Custom keys go into `excluded_embed_metadata_keys`: on a short record they
+would outweigh the body in its vector. The title stays embedded. The exclusion has to survive every step that rebuilds a
+document or node — `refine_document_tables` passes it on, `build_nodes_from_splits` copies it to chunks,
+`RecursiveSummaryParser._create_summary_node` (core) copies it to summaries, and the doc store round-trips it. That list
+is also how retrieval tells them apart from the platform's own metadata: core's `IngestedNode.from_llama_index_node`
+moves exactly those keys into `record_fields`, and `combine_nodes_in_order` writes them into each document's
+`<REFERENCE_DOCUMENT>` header, so an agent can answer "what is the status of ENG-2?" (aihub-core-private#362).
 
 **Filtering.** A retriever filters on keys listed in `allowed_metadata_filter_fields`, with values from
 `RAGStartEvent.additional_filters`. `MetadataFilterPair.to_llama_index()` (core) turns a text value into
@@ -1020,8 +1140,8 @@ nothing can be created on top of them, and rows predating the `ingestor` field r
 
 Run it locally: `make document-ingestion-pipeline`. The rclone source pipeline runs on the host the same way with
 `dagster dev -m app.rclone_pipeline` against the dev stack's daemon (`RCLONE_URL=http://localhost:5572`). The structured
-source pipeline runs with `make structured-pipeline` (Jira, Confluence), or `make structured-demo` with the playground's
-demo source, each next to the ingestion pipeline as a second code location.
+source pipeline runs with `make structured-pipeline` (Jira, Confluence, MediaWiki), or `make structured-demo` with the
+playground's demo source, each next to the ingestion pipeline as a second code location.
 
 ## Testing
 

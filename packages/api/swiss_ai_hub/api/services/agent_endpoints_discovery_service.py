@@ -3,7 +3,7 @@ import logging
 from asyncio import sleep, to_thread
 from collections.abc import Awaitable, Callable
 from enum import StrEnum
-from functools import reduce
+from functools import partial, reduce
 from operator import or_
 from typing import Annotated, override
 
@@ -23,6 +23,7 @@ from swiss_ai_hub.core.auth.usage import (
     use_usage_limits,
 )
 from swiss_ai_hub.core.dependencies import use_nats
+from swiss_ai_hub.core.discovery import DiscoveryKind, DiscoverySettings
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
@@ -64,15 +65,20 @@ class SyncTarget(StrEnum):
     OPENWEBUI = "openwebui"
 
 
-class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
+class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
     """
     This service ensures that new agents in the system are automatically registered.
     This ensures that the API and the Agents are decoupled.
 
     It broadcasts NATS discovery requests to find online agents and:
     1. Updates their last_discovered timestamp (which determines online status)
-    2. Registers/deregisters dynamic API endpoints for agent events
+    2. Registers/deregisters dynamic API endpoints for agent events at the CLASS level (not instance level)
+    3. After a completed round, syncs agent instances and knowledge to the external provisioners
+
+    Endpoints use {agent_id} as a FastAPI path parameter, with instance validation at request time.
     """
+
+    discovery_kind = DiscoveryKind.AGENT
 
     _AGENTS_HASH_KEY_PREFIX = "discovery:agents:hash"
     _AGENTS_HASH_TTL = 3600
@@ -84,9 +90,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         controller: AgentController,
         locale_handler: LocaleHandler,
         redis: Redis,
-        discovery_interval: int = 60,
+        settings: DiscoverySettings | None = None,
     ):
-        super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
+        super().__init__(nc, api_app, controller, locale_handler, redis, settings)
         self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
         self._redis = redis
@@ -95,46 +101,27 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         self._synced_targets: set[SyncTarget] = set()
 
     @override
-    async def _discover_and_register(self):
-        """
-        Discovers agent classes via NATS broadcast and registers class-level endpoints.
+    def _class_name_of(self, dto: AgentClassDTO) -> str:
+        return dto.agent_class
 
-        This method:
-        1. Broadcasts a NATS discovery request to all running agents
-        2. Collects responses and updates last_discovered timestamps in database
-        3. Registers/deregisters dynamic API endpoints at the CLASS level (not instance level)
+    @override
+    def _register_discovered_class(self, dto: AgentClassDTO) -> None:
+        self._register_class_endpoints(
+            agent_class=dto.agent_class,
+            start_events=dto.start_events,
+            stop_events=dto.stop_events,
+            hitl_request_events=dto.hitl_request_events,
+            hitl_response_events=dto.hitl_response_events,
+        )
 
-        Endpoints use {agent_id} as a FastAPI path parameter, with instance validation at request time.
-        """
-        # Step 1: Discover which agent classes are online via NATS broadcast
-        discovered_classes: list[AgentClassDTO] = await self._broadcast_discovery()
+    @override
+    def _online_class_names(self) -> set[str]:
+        return AgentClassEntity.get_online_class_names()
 
-        online_class_names = {dto.agent_class for dto in discovered_classes}
-
-        # Step 2: Deregister endpoints for classes no longer online
-        for agent_class in list(self.registered_classes):
-            if agent_class not in online_class_names:
-                self._deregister_endpoints_for_class(agent_class)
-
-        self.app.openapi_schema = None
-
-        # Step 3: Register endpoints for newly discovered classes
-        for agent_class_dto in discovered_classes:
-            if agent_class_dto.agent_class not in self.registered_classes:
-                self._register_class_endpoints(
-                    agent_class=agent_class_dto.agent_class,
-                    start_events=agent_class_dto.start_events,
-                    stop_events=agent_class_dto.stop_events,
-                    hitl_request_events=agent_class_dto.hitl_request_events,
-                    hitl_response_events=agent_class_dto.hitl_response_events,
-                )
-                self.registered_classes.add(agent_class_dto.agent_class)
-                logger.info(f"Registered class-level endpoints for agent class: {agent_class_dto.agent_class}")
-
-        # Step 4: Sync agent instances to external provisioners (Langfuse, OpenWebUI)
+    @override
+    async def _after_round(self) -> None:
         await self._sync_agent_instances_to_provisioners()
-
-        # Step 5: Reconcile the OpenWebUI knowledge entries, since collections a pipeline creates signal nothing here
+        # Collections a pipeline creates signal nothing here, so the knowledge entries are reconciled every round
         await self._sync_knowledge_to_openwebui()
 
     async def _sync_knowledge_to_openwebui(self) -> None:
@@ -143,12 +130,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         except Exception as e:
             logger.warning(f"OpenWebUI knowledge sync failed (non-fatal): {e}")
 
+    @override
     async def _broadcast_discovery(self) -> list[AgentClassDTO]:
         """
         Broadcasts a NATS discovery request to all agents and collects responses.
         Updates the last_discovered timestamp for responding agent classes.
 
-        Returns a list of AgentClassDTO for all online agent classes.
+        Returns a list of AgentClassDTO for the agent classes that answered this round.
         """
         call_id = str(ObjectId())
         discovery_responses: list[AgentClassDiscoveryResponseEvent] = []
@@ -172,8 +160,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             subject=self.topic_manager.get_agent_class_discovery_subject_request(call_id=call_id),
         )
 
-        # Wait briefly for responses
-        await sleep(10)
+        await sleep(self.settings.RESPONSE_WAIT_SECONDS)
         await nc_subscriber.stop()
 
         unique_agents_dict: dict[str, AgentClassDTO] = {}
@@ -181,15 +168,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         for response in discovery_responses:
             unique_key = response.agent_class
 
-            if unique_key not in unique_agents_dict:
-                agent_class_dto = AgentClassDTO.from_discovery_event(response)
-                unique_agents_dict[unique_key] = agent_class_dto
-
-                # One blocking write per responding class would serialize on the loop that also serves
-                # every request in this process. Nothing else refreshes `last_discovered`, and
-                # `AgentClassEntity.is_online` is only a 5-minute window on it — so a round that stalls
-                # here marks *every* agent class offline at once, not just the slow one.
-                await to_thread(AgentClassEntity.create_or_update, response)
+            if unique_key not in unique_agents_dict and await self._stamp_answer(
+                unique_key, partial(AgentClassEntity.create_or_update, response)
+            ):
+                unique_agents_dict[unique_key] = AgentClassDTO.from_discovery_event(response)
 
         return list(unique_agents_dict.values())
 

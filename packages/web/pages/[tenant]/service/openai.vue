@@ -44,6 +44,11 @@ import { onBeforeUnmount, onMounted } from 'vue'
 
 import type { TenantMembershipDto } from '@core/sdk/client'
 
+// The OpenWebUI iframe signs in through Keycloak's SSO cookie, see middleware/auth.global.ts.
+definePageMeta({
+  embedsSsoIframe: true,
+})
+
 const { t } = useI18n()
 const runtimeConfig = useRuntimeConfig()
 const route = useRoute()

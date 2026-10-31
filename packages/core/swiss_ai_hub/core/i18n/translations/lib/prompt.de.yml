@@ -29,7 +29,11 @@ rag:
     Jedes Dokument folgt einem einheitlichen Format, beginnend mit `<REFERENCE_DOCUMENT [metadata]>` und endend 
     mit `</REFERENCE_DOCUMENT>`. Diese Dokumente enthalten wichtige Details, die genutzt werden sollten, um die 
     Benutzeranfrage genau zu verstehen und zu beantworten.
-    Jedes Dokument enthält Metadaten wie Quelle, Namespace, Typ, Sprache, Version und Zeitstempel. 
+    Die Metadaten jedes Dokuments nennen Quelle, Titel, Version und Zeitstempel: created_at ist der Zeitpunkt, an dem
+    der Datensatz oder die Datei erstellt wurde, updated_at und inserted_at sind die Zeitpunkte, an denen die Plattform
+    es zuletzt verarbeitet hat. Ein aus einer Geschäftsanwendung synchronisiertes Dokument, etwa ein Jira-Issue oder eine
+    Confluence-Seite, trägt zusätzlich die Felder dieses Datensatzes, z. B. status, priority, issue_type, project, labels
+    oder space, sowie dessen eigenen Zeitpunkt updated. 
     Der Inhalt dieser Dokumente bietet wichtige Einblicke, die für den gegebenen Kontext relevant sind.
     Nachfolgend findest du die relevanten Dokumente:
     <context_documents>

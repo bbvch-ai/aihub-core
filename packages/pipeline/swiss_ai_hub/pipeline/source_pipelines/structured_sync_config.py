@@ -15,6 +15,8 @@ from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_adapter import
 from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_options import ConfluenceOptions
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_adapter import JiraAdapter
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_options import JiraOptions
+from swiss_ai_hub.pipeline.source_pipelines.mediawiki.mediawiki_adapter import MediaWikiAdapter
+from swiss_ai_hub.pipeline.source_pipelines.mediawiki.mediawiki_options import MediaWikiOptions
 
 _I18N = "lib.source_pipelines.structured.config"
 
@@ -37,11 +39,14 @@ class StructuredSyncConfig(SourcePipelineConfig):
     confluence: Annotated[ConfluenceOptions, Field(description="Confluence options.")] = Field(
         default_factory=ConfluenceOptions
     )
+    mediawiki: Annotated[MediaWikiOptions, Field(description="MediaWiki options.")] = Field(
+        default_factory=MediaWikiOptions
+    )
 
     @classmethod
     def adapters(cls) -> list[type[AbstractStructuredSourceAdapter]]:
-        """The kinds this pipeline offers: Jira and Confluence."""
-        return [JiraAdapter, ConfluenceAdapter]
+        """The kinds this pipeline offers: Jira, Confluence and MediaWiki."""
+        return [JiraAdapter, ConfluenceAdapter, MediaWikiAdapter]
 
     @classmethod
     def as_form(cls) -> Self:

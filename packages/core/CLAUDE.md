@@ -19,6 +19,7 @@ packages/core/swiss_ai_hub/core/
 │   └── identity/                    # Identity models (UserIdentity, TenantIdentity)
 ├── context/                         # Context utilities
 ├── dependencies/                    # NATS client dependency injection (use_nats)
+├── discovery/                       # DiscoverySettings (DISCOVERY_*) + DiscoveryKind for the API's class discovery rounds
 ├── dispatcher/                      # Workflow orchestration
 │   ├── base_dispatcher.py            # Abstract: event routing, step execution, state management
 │   └── stores/                      # JetStreamEventStore (event replay), StepStore (Redis)
@@ -115,6 +116,7 @@ packages/core/swiss_ai_hub/core/
 ├── persistence/                     # Database abstractions (MongoEngine ODM)
 │   ├── access/                      # RoleEntity, TenantMetadataEntity, UserTenantRoleEntity
 │   ├── agents/                      # AgentConfigEntity
+│   ├── discovery/                   # DiscoveryRoundEntity: completed rounds that online status is judged against
 │   ├── process/                     # ProcessConfigEntity
 │   ├── messaging/                   # ThreadEntity, PersistedAgentEventEntity, PersistedProcessEventEntity
 │   ├── user/                        # UserDashboardEntity (user dashboard config)
@@ -582,6 +584,15 @@ Real-time event emission for streaming LLM output to the UI:
 | `chat_history/`          | Chat context management                    | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22))                                                                                                                                                                                        |
 | `routing/`               | LLM-based event routing                    | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `structured_extraction/` | Records from one document, runtime schema  | `RecordSchemaBuilder.build()`, `RecordExtractor.extract()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+
+`retrieval/combine_nodes_in_order()` renders retrieved nodes as `<REFERENCE_DOCUMENT …>` blocks, one per document. The
+header carries the document's id, source, title, version and timestamps, then the fields of the record it was synced
+from (`IngestedNode.record_fields`: a Jira issue's status, a Confluence page's space), each cut at
+`MAX_RECORD_FIELD_CHARACTERS`. `IngestedNode.from_llama_index_node` fills `record_fields` from the keys the pipeline's
+frontmatter step listed in `excluded_embed_metadata_keys`, the one marker that tells them apart from platform metadata
+(aihub-core-private#362). A round trip through a llama-index node drops that list, so code holding `IngestedNode`s keeps
+them (`rerank_nodes` returns the nodes it was given, re-scored) instead of converting back. `language` is not in the
+header: ingestion detects none.
 
 `knowledge_documents/` gives agents whole-file access to knowledge collections next to vector search.
 `KnowledgeDocumentReader.list_documents(collections)` returns a `KnowledgeDocumentListing` of fully ingested documents

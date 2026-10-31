@@ -193,3 +193,74 @@ structured:
         label: Pagine padre
         help: Facoltativo. Vengono sincronizzate solo queste pagine e le pagine sottostanti.
           L'ID di una pagina è il numero nel suo URL.
+    mediawiki:
+      display_name: MediaWiki
+      base_url:
+        label: URL del wiki
+        help: La cartella che contiene il file api.php del wiki, ad es. https://wiki.acme.ch
+          o https://acme.ch/w.
+      auth_method:
+        label: Accesso
+        help: Come la pipeline accede al wiki. Scegli la pagina di accesso se il wiki
+          autentica tramite un'estensione come LDAP o il single sign-on.
+        bot_password: Password del bot
+        web_form: Pagina di accesso
+        oauth: Token di accesso OAuth
+        anonymous: Senza accesso (wiki pubblico)
+      username:
+        label: Nome utente
+        help: L'account con cui la pipeline legge; per una password del bot, Utente@NomeBot
+          come indicato su Speciale:BotPasswords.
+      password:
+        label: Password
+        help: La password del bot o quella dell'account. Salvata cifrata. La base
+          contiene tutte le pagine che questo account può leggere nei namespace indicati;
+          usa quindi un account dedicato di sola lettura.
+      access_token:
+        label: Token di accesso
+        help: Il token di accesso di un consumer OAuth 2 riservato al proprietario,
+          registrato su Speciale:OAuthConsumerRegistration con il diritto di base.
+          Salvato cifrato. La base contiene tutte le pagine che l'account del token
+          può leggere nei namespace indicati; registralo quindi per un account dedicato
+          di sola lettura.
+      namespaces:
+        label: Namespace del wiki
+        help: Facoltativo. Nomi o numeri dei namespace da sincronizzare, ad es. Main
+          o Project. Solo il namespace principale se vuoto. Ogni namespace del wiki
+          diventa un namespace della base.
+      include_categories:
+        label: Categorie
+        help: Facoltativo. Vengono sincronizzate solo le pagine di almeno una di queste
+          categorie.
+      exclude_categories:
+        label: Categorie escluse
+        help: Facoltativo. Le pagine di una di queste categorie non vengono mai sincronizzate,
+          ad es. una categoria che contrassegna le pagine da tenere lontane dagli
+          assistenti IA.
+      include_subcategories:
+        label: Includi sottocategorie
+        help: Una categoria conta anche le pagine di tutte le categorie sotto di essa,
+          per le categorie incluse ed escluse.
+      sync_documents:
+        label: Sincronizza documenti
+        help: Sincronizza anche i documenti mostrati o collegati dalle pagine sincronizzate
+          (PDF, Word, PowerPoint, Excel e file di testo) nel namespace File. I vecchi
+          formati Office (doc, ppt) e gli archivi sono esclusi.
+      sync_images:
+        label: Sincronizza immagini
+        help: Sincronizza anche le immagini mostrate o collegate dalle pagine sincronizzate
+          (PNG, JPEG, GIF, BMP, WebP, TIFF) nel namespace File. Le immagini mostrate
+          da un template, come loghi e icone, sono escluse, così come i file SVG.
+      max_file_size_mb:
+        label: Dimensione massima del file (MB)
+        help: I file più grandi sono esclusi. Durante il salvataggio viene tenuto
+          in memoria un file alla volta.
+      min_image_pixels:
+        label: Dimensione minima dell'immagine (px)
+        help: Le immagini più strette o più basse sono escluse come icone. 0 mantiene
+          tutte le immagini.
+      user_agent:
+        label: User-Agent
+        help: Facoltativo. Inviato con ogni richiesta al wiki, ad es. un nome e un
+          indirizzo di contatto. I wiki di Wikimedia ne richiedono uno e possono bloccare
+          il valore predefinito. Vuoto mantiene il valore predefinito.

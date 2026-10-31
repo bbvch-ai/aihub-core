@@ -26,6 +26,8 @@ _EVERY_FIVE_MINUTES = {**_HOURLY, "minute": "*/5"}
 # discovered class has to be built in the host's zone — not by stripping tzinfo off a UTC value, which is
 # the mistake this suite previously encoded.
 _LOCAL_NOW = _NOW.astimezone().replace(tzinfo=None)
+# Where the completed discovery rounds put the online cut-off; classes stamped before it read offline.
+_ONLINE_THRESHOLD = _LOCAL_NOW - timedelta(minutes=5)
 
 
 def _config(agent_class: str = "CronDemoAgent", agent_id: str = "demo", schedule: dict | None = _HOURLY):
@@ -102,6 +104,7 @@ async def _run_tick(
     with (
         patch(f"{_MODULE}.datetime", **{"now.return_value": _NOW}),
         patch(f"{_MODULE}.AgentClassEntity.get_all_schedulable", return_value=classes),
+        patch(f"{_MODULE}.AgentClassEntity.online_threshold", return_value=_ONLINE_THRESHOLD),
         patch(f"{_MODULE}.AgentConfigEntityDocument.find_for_classes", return_value=configs or [_config()]),
         patch(f"{_MODULE}.ThreadEntity.get_or_create_scheduled_thread") as scheduled_thread,
         patch(f"{_MODULE}.ThreadEntity.scheduled_thread_id", return_value="thread-1"),

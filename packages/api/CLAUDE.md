@@ -213,13 +213,37 @@ them to the main API.
 The API doesn't hardcode agent or process endpoints. Discovery services dynamically register/deregister FastAPI routes
 based on what's available on NATS.
 
-**`AgentEndpointsDiscoveryService`**: Every 60 seconds, broadcasts `ClassDiscoveryRequestEvent` via NATS. Online agents
-respond with metadata (start/stop/HITL event specs, config schema, form definition). The service creates FastAPI
-endpoints for each agent class's events — both regular and streaming variants. When agents go offline, their endpoints
-are removed and the OpenAPI schema is invalidated.
+**`AgentEndpointsDiscoveryService`**: Every `DISCOVERY_INTERVAL_SECONDS` (60), broadcasts `ClassDiscoveryRequestEvent`
+via NATS. Online agents respond with metadata (start/stop/HITL event specs, config schema, form definition). The service
+creates FastAPI endpoints for each agent class's events — both regular and streaming variants. When agents go offline,
+their endpoints are removed and the OpenAPI schema is invalidated.
 
 **`ProcessEndpointsDiscoveryService`**: Same pattern for processes. Registers form GET/POST endpoints for human input
 steps and data POST endpoints for programmatic input.
+
+**Online status counts completed rounds, not the clock** (#1970). The shared round lives in `EndpointsDiscoveryService`;
+the subclasses only broadcast, name and register classes.
+
+- **Rule**: a class is online while its `last_discovered` is at or after the *start* of the round
+  `DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE` (3) completed rounds back (`DiscoveryRoundEntity.online_threshold`). The
+  start, not the end, because answers are stamped after the response wait.
+- **What completes a round**: NATS connected before the broadcast and after the wait with no reconnect in between
+  (`nc.stats["reconnects"]`), and all of it inside `DISCOVERY_ROUND_TIMEOUT_SECONDS`. Anything else is logged as an
+  error and not recorded, so it moves no class towards offline. The NATS check matters because nats-py buffers a publish
+  while reconnecting instead of raising. A class whose answer cannot be saved counts as not having answered
+  (`_stamp_answer`); it does not fail the round for every other class.
+- **Max silence**: the threshold is never older than `DISCOVERY_MAX_SILENCE_SECONDS`. Without it, a fault that fails
+  every round, or the rounds left from before an API restart, would keep dead classes online indefinitely. Left empty
+  (the default) it is 2.5× the longest the missed rounds can take, `MISSED × (INTERVAL + ROUND_TIMEOUT)`: 900 s with the
+  defaults, and it follows the interval when that is raised. An explicit value must exceed that span.
+- **Several API processes**: every gunicorn worker or replica runs rounds, because each registers the dynamic endpoints
+  on its own app, but only the holder of the Redis `DiscoveryRecorderLease` (`discovery:{kind}:recorder`) records them.
+  Rounds from N processes would make "the last N rounds" span a fraction of the configured time. While Redis is
+  unreachable the lease reports not held, so rounds still reconcile endpoints and are simply not recorded.
+- **One rule everywhere**: `is_online_since(threshold)`, the scheduler, `get_online_conversational` and endpoint removal
+  all use it. Services read the threshold once per request and pass `is_online` into the DTO factories.
+- **Cold start**: until that many rounds exist, the wall-clock window they would span stands in.
+- **After the round**: the agent service's Langfuse/OpenWebUI syncs run in `_after_round`, outside the timeout.
 
 **`ModelCreationService`** + **`EventModelCreationService`**: Convert agent event JSON schemas into Pydantic models at
 runtime using `jambo.SchemaConverter.build()`. Input models exclude framework fields (`event_id`, `created_at`, `user`,

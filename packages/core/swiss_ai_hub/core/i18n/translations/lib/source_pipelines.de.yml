@@ -195,3 +195,75 @@ structured:
         label: Übergeordnete Seiten
         help: Optional. Synchronisiert werden nur diese Seiten und die Seiten darunter.
           Die ID einer Seite ist die Zahl in ihrer URL.
+    mediawiki:
+      display_name: MediaWiki
+      base_url:
+        label: Wiki-URL
+        help: Der Ordner mit der api.php des Wikis, z. B. https://wiki.acme.ch oder
+          https://acme.ch/w.
+      auth_method:
+        label: Anmeldung
+        help: Wie sich die Pipeline am Wiki anmeldet. Wählen Sie die Anmeldeseite,
+          wenn das Wiki über eine Erweiterung wie LDAP oder Single Sign-on anmeldet.
+        bot_password: Bot-Passwort
+        web_form: Anmeldeseite
+        oauth: OAuth-Zugriffstoken
+        anonymous: Ohne Anmeldung (öffentliches Wiki)
+      username:
+        label: Benutzername
+        help: Das Konto, mit dem die Pipeline liest; bei einem Bot-Passwort Benutzer@BotName
+          wie auf Spezial:Bot-Passwörter angezeigt.
+      password:
+        label: Passwort
+        help: Das Bot-Passwort oder das Passwort des Kontos. Wird verschlüsselt gespeichert.
+          Die Datenbank enthält alle Seiten, die dieses Konto in den angegebenen Namensräumen
+          lesen darf. Verwenden Sie deshalb ein eigenes Konto mit Lesezugriff.
+      access_token:
+        label: Zugriffstoken
+        help: Das Zugriffstoken eines OAuth-2-Consumers nur für den Eigentümer, registriert
+          auf Spezial:OAuthConsumerRegistration mit der Berechtigung für Basisrechte.
+          Wird verschlüsselt gespeichert. Die Datenbank enthält alle Seiten, die das
+          Konto des Tokens in den angegebenen Namensräumen lesen darf. Registrieren
+          Sie es deshalb für ein eigenes Konto mit Lesezugriff.
+      namespaces:
+        label: Namensräume
+        help: Optional. Namen oder Nummern der zu synchronisierenden Namensräume,
+          z. B. Main oder Project. Leer bedeutet nur den Hauptnamensraum. Jeder Namensraum
+          wird zu einem Namespace.
+      include_categories:
+        label: Kategorien
+        help: Optional. Synchronisiert werden nur Seiten in mindestens einer dieser
+          Kategorien.
+      exclude_categories:
+        label: Ausgeschlossene Kategorien
+        help: Optional. Seiten in einer dieser Kategorien werden nie synchronisiert,
+          z. B. eine Kategorie für Seiten, die KI-Assistenten nicht sehen sollen.
+      include_subcategories:
+        label: Unterkategorien einbeziehen
+        help: Eine Kategorie umfasst auch die Seiten aller Kategorien unter ihr, für
+          die einbezogenen und die ausgeschlossenen Kategorien.
+      sync_documents:
+        label: Dokumente synchronisieren
+        help: Synchronisiert auch die Dokumente, die auf den synchronisierten Seiten
+          angezeigt oder verlinkt sind (PDF, Word, PowerPoint, Excel und Textdateien),
+          in den Namespace File. Alte Office-Formate (doc, ppt) und Archive werden
+          ausgelassen.
+      sync_images:
+        label: Bilder synchronisieren
+        help: Synchronisiert auch die Bilder, die auf den synchronisierten Seiten
+          angezeigt oder verlinkt sind (PNG, JPEG, GIF, BMP, WebP, TIFF), in den Namespace
+          File. Bilder, die eine Vorlage anzeigt, etwa Logos und Icons, werden ausgelassen,
+          ebenso SVG-Dateien.
+      max_file_size_mb:
+        label: Maximale Dateigrösse (MB)
+        help: Grössere Dateien werden ausgelassen. Beim Speichern wird jeweils eine
+          Datei im Arbeitsspeicher gehalten.
+      min_image_pixels:
+        label: Minimale Bildgrösse (px)
+        help: Schmalere oder niedrigere Bilder werden als Icons ausgelassen. 0 behält
+          alle Bilder.
+      user_agent:
+        label: User-Agent
+        help: Optional. Wird bei jeder Anfrage an das Wiki mitgesendet, z. B. ein
+          Name und eine Kontaktadresse. Die Wikis von Wikimedia verlangen einen und
+          sperren den Standardwert unter Umständen. Leer behält den Standardwert.

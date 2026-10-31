@@ -186,3 +186,71 @@ structured:
         label: Parent pages
         help: Optional. Only these pages and the pages below them are synced. A page's
           ID is the number in its URL.
+    mediawiki:
+      display_name: MediaWiki
+      base_url:
+        label: Wiki URL
+        help: The folder holding the wiki's api.php, e.g. https://wiki.acme.ch or
+          https://acme.ch/w.
+      auth_method:
+        label: Sign-in
+        help: How the pipeline signs in to the wiki. Use the login page when the wiki
+          signs in through an extension such as LDAP or single sign-on.
+        bot_password: Bot password
+        web_form: Login page
+        oauth: OAuth access token
+        anonymous: No sign-in (public wiki)
+      username:
+        label: User name
+        help: The account the pipeline reads as; for a bot password, User@BotName
+          as shown on Special:BotPasswords.
+      password:
+        label: Password
+        help: The bot password or the account's password. Stored encrypted. The database
+          holds every page this account can read in the listed namespaces, so use
+          a dedicated read-only account.
+      access_token:
+        label: Access token
+        help: The access token of an owner-only OAuth 2 consumer, registered on Special:OAuthConsumerRegistration
+          with the basic rights grant. Stored encrypted. The database holds every
+          page the token's account can read in the listed namespaces, so register
+          it for a dedicated read-only account.
+      namespaces:
+        label: Namespaces
+        help: Optional. Names or numbers of the namespaces to sync, e.g. Main or Project.
+          Only the main namespace when empty. Each namespace becomes a namespace of
+          the database.
+      include_categories:
+        label: Categories
+        help: Optional. Only pages in at least one of these categories are synced.
+      exclude_categories:
+        label: Excluded categories
+        help: Optional. Pages in any of these categories are never synced, e.g. a
+          category that marks pages to keep away from AI assistants.
+      include_subcategories:
+        label: Include subcategories
+        help: A category also counts the pages of every category below it, for the
+          included and the excluded categories.
+      sync_documents:
+        label: Sync documents
+        help: Also sync the documents the synced pages show or link to (PDF, Word,
+          PowerPoint, Excel and text files) into the collection File. Old Office formats
+          (doc, ppt) and archives are left out.
+      sync_images:
+        label: Sync images
+        help: Also sync the images the synced pages show or link to (PNG, JPEG, GIF,
+          BMP, WebP, TIFF) into the collection File. Images a template shows, such
+          as logos and icons, are left out, and so are SVG files.
+      max_file_size_mb:
+        label: Maximum file size (MB)
+        help: Larger files are left out. One file at a time is held in memory while
+          it is stored.
+      min_image_pixels:
+        label: Minimum image size (px)
+        help: Images narrower or lower than this are left out as icons. 0 keeps every
+          image.
+      user_agent:
+        label: User-Agent
+        help: Optional. Sent with every request to the wiki, e.g. a name and a contact
+          address. Wikimedia's wikis ask for one and may block the default. Empty
+          keeps the default.

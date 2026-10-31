@@ -7,7 +7,7 @@ import pytest
 from dagster import build_op_context
 
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3DataLakeClient
-from swiss_ai_hub.pipeline.resources.structured.markdown_data_lake_destination import MarkdownDataLakeDestination
+from swiss_ai_hub.pipeline.resources.structured.structured_data_lake_destination import StructuredDataLakeDestination
 from swiss_ai_hub.pipeline.resources.structured.structured_source_state_store import StructuredSourceStateStore
 from swiss_ai_hub.pipeline.resources.structured.tests.fake_s3_client import FakeS3Client
 from swiss_ai_hub.pipeline.source_pipelines.tests.fake_structured_source_adapter import (
@@ -29,8 +29,8 @@ def s3() -> FakeS3Client:
 
     with (
         patch(f"{_PACKAGE}.structured_source_state_store.build_s3_data_lake_client", side_effect=client),
-        patch(f"{_PACKAGE}.markdown_data_lake_destination.build_s3_data_lake_client", side_effect=client),
-        patch(f"{_PACKAGE}.markdown_data_lake_destination.notify_source_updated"),
+        patch(f"{_PACKAGE}.structured_data_lake_destination.build_s3_data_lake_client", side_effect=client),
+        patch(f"{_PACKAGE}.structured_data_lake_destination.notify_source_updated"),
     ):
         yield fake
 
@@ -135,9 +135,9 @@ class TestResume:
         assert second.unchanged_count == 0, "nothing was even fetched, not merely skipped by hash"
 
 
-def _run(pipelines_dir: Path, config: FakeStructuredSyncConfig) -> MarkdownDataLakeDestination:
+def _run(pipelines_dir: Path, config: FakeStructuredSyncConfig) -> StructuredDataLakeDestination:
     with build_op_context() as context:
-        destination = MarkdownDataLakeDestination("db-a", context)
+        destination = StructuredDataLakeDestination("db-a", context)
         pipeline = dlt.pipeline(
             pipeline_name="structured_db-a",
             pipelines_dir=str(pipelines_dir),
@@ -147,3 +147,25 @@ def _run(pipelines_dir: Path, config: FakeStructuredSyncConfig) -> MarkdownDataL
         pipeline.config.restore_from_destination = False
         pipeline.run(config.adapter().file_source(config.options())).raise_on_failed_jobs()
     return destination
+
+
+class TestUnreadFiles:
+    def test_a_file_the_source_would_not_serve_is_forgotten_so_the_next_run_tries_it_again(self, tmp_path, s3):
+        """dlt recorded it as seen while extracting, before the destination found it could not be read."""
+        working_dir = tmp_path / "run1"
+        working_dir.mkdir()
+        resources = {
+            "pages": {"seen": {"7": "rev|Main/A.md"}},
+            "files": {"files_seen": {"File/a.pdf": "sha-a", "File/b.pdf": "sha-b"}},
+        }
+        (working_dir / "state.json").write_text(json.dumps({"sources": {"wiki": {"resources": resources}}}))
+        store = StructuredSourceStateStore("structured", "db-a")
+
+        store.save(working_dir, "scope-1", unread_files={"File/b.pdf"})
+
+        store.restore(tmp_path / "run2", "scope-1")
+        restored = json.loads((tmp_path / "run2" / "state.json").read_text())["sources"]["wiki"]["resources"]
+        assert restored == {
+            "pages": {"seen": {"7": "rev|Main/A.md"}},
+            "files": {"files_seen": {"File/a.pdf": "sha-a"}},
+        }

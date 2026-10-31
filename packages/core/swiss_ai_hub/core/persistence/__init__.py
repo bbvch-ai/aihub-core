@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
     from swiss_ai_hub.core.persistence.agents.agent_config_change_hook import AgentConfigChangeHook
     from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+    from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
     from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
     from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
     from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import (
@@ -113,6 +114,7 @@ __all__ = [
     "BucketEntity",
     "ConfigSpecsEntity",
     "CREATED_AT",
+    "DiscoveryRoundEntity",
     "DOCUMENT_ID",
     "DOCUMENT_STORE_NAME",
     "DOCUMENT_TITLE",
@@ -197,6 +199,7 @@ _LAZY_IMPORTS = {
     "BucketEntity": "swiss_ai_hub.core.persistence.rag.datalake.entities.bucket_entity",
     "ConfigSpecsEntity": "swiss_ai_hub.core.persistence.form.config_specs_entity",
     "CREATED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
+    "DiscoveryRoundEntity": "swiss_ai_hub.core.persistence.discovery.discovery_round_entity",
     "DOCUMENT_ID": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "DOCUMENT_STORE_NAME": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "DOCUMENT_TITLE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

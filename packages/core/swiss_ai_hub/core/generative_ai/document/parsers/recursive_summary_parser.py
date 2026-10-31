@@ -158,7 +158,7 @@ class RecursiveNodeSummarizer:
         if not nodes:
             return []
 
-        locale = nodes[0].metadata.get(LANGUAGE, NODE_LANGUAGE_ENGLISH)
+        locale = nodes[0].metadata.get(LANGUAGE) or NODE_LANGUAGE_ENGLISH
         locale_handler = LocaleHandler(locale=locale)
         llm_summarizer: LLMSummarizer = LLMSummarizer(
             llm=self._llm,
