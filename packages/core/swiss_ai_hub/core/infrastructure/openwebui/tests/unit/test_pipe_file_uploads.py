@@ -18,7 +18,11 @@ TEMPLATE_PIPE = REPO_ROOT / "infra/deployment/templates/openwebui_functions/aihu
 OPEN_WEBUI_MODULES = ["open_webui", "open_webui.models", "open_webui.models.chats", "open_webui.models.files"]
 OPEN_WEBUI_MODULES += ["open_webui.models.users", "open_webui.utils", "open_webui.utils.chat_id"]
 OPEN_WEBUI_MODULES += ["open_webui.models.notes", "open_webui.models.access_grants", "open_webui.models.folders"]
-OPEN_WEBUI_MODULES += ["open_webui.utils.misc", "open_webui.utils.access_control", "open_webui.utils.access_control.folders"]
+OPEN_WEBUI_MODULES += [
+    "open_webui.utils.misc",
+    "open_webui.utils.access_control",
+    "open_webui.utils.access_control.folders",
+]
 
 AGENT_CLASS, AGENT_ID = "RAGAgent", "hr"
 THREAD = "65f1c0ffee00000000000001"
@@ -393,9 +397,7 @@ def _message_list(messages_map: dict[str, dict[str, Any]], message_id: str) -> l
     return branch[::-1]
 
 
-def _chats(
-    *chats: MagicMock, pipe: Any, shared_with: str | None = None, folder_readers: tuple[str, ...] = ()
-) -> None:
+def _chats(*chats: MagicMock, pipe: Any, shared_with: str | None = None, folder_readers: tuple[str, ...] = ()) -> None:
     """Open WebUI's chats, the read grants on them and their folders' readers, as the pipe sees them."""
     by_id = {chat.id: chat for chat in chats}
     pipe.Chats.get_chat_by_id = AsyncMock(side_effect=by_id.get)
