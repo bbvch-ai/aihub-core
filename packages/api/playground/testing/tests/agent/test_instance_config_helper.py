@@ -8,6 +8,8 @@ normalize -> validate) rather than mocking it: the defect only existed *because*
 model drops `AgentConfig`'s own validators, so a mocked model would not reproduce it.
 """
 
+import asyncio
+
 import pytest
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -54,7 +56,7 @@ def _agent_config(**overrides) -> dict:
 
 
 def _validate(validator, config: dict, model: type[BaseModel]) -> BaseModel:
-    return validator(InstanceConfigHelper.normalize_form_configuration(config), model)
+    return asyncio.run(validator(InstanceConfigHelper.normalize_form_configuration(config), model))
 
 
 @pytest.mark.parametrize("validator", VALIDATORS)

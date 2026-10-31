@@ -9,6 +9,7 @@ from swiss_ai_hub.api.routes.process.dto.persisted_event_dto import PersistedEve
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.i18n import LocaleHandler
+    from swiss_ai_hub.core.persistence import AgentConfigEntityDocument
 
 
 class AgentProcessStepDTO(BaseProcessStepDTO):
@@ -30,8 +31,12 @@ class AgentProcessStepDTO(BaseProcessStepDTO):
         response_event,
         step_index: int,
         t: "LocaleHandler",
+        agent_configs: dict[tuple[str, str], "AgentConfigEntityDocument"],
     ) -> Self:
-        """Creates an AgentProcessStepDTO from optional request and response events."""
+        """Creates an AgentProcessStepDTO from optional request and response events.
+
+        `agent_configs` holds the profiles the events name, loaded up front because this runs synchronously.
+        """
         work_request: AgentWorkRequestDTO | None = None
         if request_event:
             if isinstance(request_event, dict):
@@ -42,6 +47,7 @@ class AgentProcessStepDTO(BaseProcessStepDTO):
                 request_event.event_name,
                 request_event.event_data["created_at"],
                 t,
+                agent_configs,
             )
 
         work_response: AgentWorkResponseDTO | None = None
@@ -55,6 +61,7 @@ class AgentProcessStepDTO(BaseProcessStepDTO):
                 response_event.event_name,
                 response_event.event_data["created_at"],
                 t,
+                agent_configs,
             )
             created_at = work_response.created_at
 

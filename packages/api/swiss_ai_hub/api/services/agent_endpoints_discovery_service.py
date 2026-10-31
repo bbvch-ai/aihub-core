@@ -405,7 +405,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
-            config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
             if not config:
                 raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
 
@@ -488,7 +488,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
-            config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
             if not config:
                 raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
 

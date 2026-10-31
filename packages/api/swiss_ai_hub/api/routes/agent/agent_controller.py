@@ -174,7 +174,7 @@ class AgentController(TenantScopedController):
             await AgentService.update_agent_instance(agent_class, agent_id, request.configuration, t, user=user)
 
             class_entity = AgentClassEntity.get_by_agent_class(agent_class)
-            config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
 
             if not class_entity or not config_entity:
                 raise HTTPException(status_code=404, detail=f"Agent instance {agent_class}/{agent_id} not found.")

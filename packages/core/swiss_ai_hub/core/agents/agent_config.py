@@ -14,7 +14,7 @@ from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.persistence.agents import AgentConfigEntity
+    from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 
 logger = logging.getLogger(__name__)
 
@@ -196,11 +196,11 @@ class AgentConfig(Form):
         )
 
     @classmethod
-    def from_entity(cls, entity: "AgentConfigEntity") -> Self:
+    def from_entity(cls, entity: "AgentConfigEntityDocument") -> Self:
         data = {
             "agent_id": entity.agent_id,
-            "name": entity.name.to_locale_string(),
-            "description": entity.description.to_locale_string(),
+            "name": entity.name,
+            "description": entity.description,
             "icon": entity.icon,
             **entity.config_data,
         }

@@ -9,6 +9,8 @@ from swiss_ai_hub.core.events.process import ProcessStartEvent, WorkEvent
 from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_process_event_entity import PersistedProcessEventEntity
 from swiss_ai_hub.core.persistence.process import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
@@ -352,7 +354,7 @@ class ProcessService:
         config_model = ModelCreationService.create_config_model(
             class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
-        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        config_instance = await InstanceConfigHelper.validate_config_for_create(config, config_model)
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
         await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, config, user, t)
 
@@ -377,8 +379,8 @@ class ProcessService:
         config_entity = ProcessConfigEntityDocument(
             process_class=process_class,
             process_id=request.process_id,
-            name=locale.name,
-            description=locale.description,
+            name=LocaleStringEntity.from_locale_string(locale.name),
+            description=LocaleStringEntity.from_locale_string(locale.description),
             icon=locale.icon,
             config_data=full_config_data,
         )
@@ -405,7 +407,7 @@ class ProcessService:
         config_model = ModelCreationService.create_config_model(
             class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
-        config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
+        config_instance = await InstanceConfigHelper.validate_config_for_update(configuration, config_model)
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
         await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, configuration, user, t)
 
@@ -473,10 +475,22 @@ class ProcessService:
             process_class, process_id, page, page_size
         )
 
+        agent_configs = await AgentConfigEntityDocument.find_for_instances(
+            {
+                instance
+                for walkthrough_data in walkthroughs_data
+                for instance in ProcessService._agent_instances_in(walkthrough_data["events"])
+            }
+        )
+
         walkthroughs = []
         for walkthrough_data in walkthroughs_data:
             process_steps = ProcessService._build_process_steps_from_events(
-                walkthrough_data["events"], t, walkthrough_data["process_class"], walkthrough_data["process_id"]
+                walkthrough_data["events"],
+                t,
+                walkthrough_data["process_class"],
+                walkthrough_data["process_id"],
+                agent_configs,
             )
 
             completed_steps = sum(1 for step in process_steps if step.is_completed)
@@ -488,7 +502,9 @@ class ProcessService:
                     is_active = False
                     break
 
-            involved_agents, involved_humans = ProcessService._extract_involved_entities(walkthrough_data["events"], t)
+            involved_agents, involved_humans = ProcessService._extract_involved_entities(
+                walkthrough_data["events"], t, agent_configs
+            )
 
             walkthrough = ProcessWalkthroughDTO(
                 process_walkthrough_id=walkthrough_data["process_walkthrough_id"],
@@ -508,8 +524,26 @@ class ProcessService:
         return total_count, walkthroughs
 
     @staticmethod
+    def _agent_instances_in(events: list[dict]) -> set[tuple[str, str]]:
+        """Every (agent_class, agent_id) an agent work request or response in `events` names.
+
+        The step DTOs are built synchronously, so the profiles they show are loaded up front in one query.
+        """
+        instances: set[tuple[str, str]] = set()
+        for event in events:
+            event_data = event.get("event_data", {})
+            for reference in (event_data, event_data.get("submitted_by")):
+                if isinstance(reference, dict) and "agent_class" in reference and "agent_id" in reference:
+                    instances.add((reference["agent_class"], reference["agent_id"]))
+        return instances
+
+    @staticmethod
     def _build_process_steps_from_events(
-        events: list[dict], t: LocaleHandler, process_class: str, process_id: str
+        events: list[dict],
+        t: LocaleHandler,
+        process_class: str,
+        process_id: str,
+        agent_configs: dict[tuple[str, str], AgentConfigEntityDocument],
     ) -> list:
         """
         Builds a list of ProcessStepDTO objects from raw event data by pairing
@@ -561,7 +595,7 @@ class ProcessService:
             if request_type == "human":
                 step = HumanProcessStepDTO.from_events(request_event, response_event, step_index, t)
             elif request_type == "agent":
-                step = AgentProcessStepDTO.from_events(request_event, response_event, step_index, t)
+                step = AgentProcessStepDTO.from_events(request_event, response_event, step_index, t, agent_configs)
             else:  # program
                 step = ProgramProcessStepDTO.from_events(request_event, response_event, step_index, t)
 
@@ -577,7 +611,7 @@ class ProcessService:
             if response_type == "human":
                 standalone_step = HumanProcessStepDTO.from_events(None, response_event, step_index, t)
             elif response_type == "agent":
-                standalone_step = AgentProcessStepDTO.from_events(None, response_event, step_index, t)
+                standalone_step = AgentProcessStepDTO.from_events(None, response_event, step_index, t, agent_configs)
             else:  # program
                 standalone_step = ProgramProcessStepDTO.from_events(None, response_event, step_index, t)
 
@@ -594,13 +628,14 @@ class ProcessService:
         return steps
 
     @staticmethod
-    def _extract_involved_entities(events: list[dict], t) -> tuple[list, list]:
+    def _extract_involved_entities(
+        events: list[dict], t, agent_configs: dict[tuple[str, str], AgentConfigEntityDocument]
+    ) -> tuple[list, list]:
         """
         Extracts involved agents and humans from events.
         Returns a tuple of (involved_agents, involved_humans).
         """
         from swiss_ai_hub.core.persistence.agents import AgentClassEntity
-        from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 
         from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
         from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
@@ -619,7 +654,7 @@ class ProcessService:
                     agent_key = f"{agent_class}:{agent_id}"
                     if agent_key not in involved_agents:
                         class_entity = AgentClassEntity.get_by_agent_class(agent_class)
-                        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+                        config_entity = agent_configs.get((agent_class, agent_id))
                         if class_entity and config_entity:
                             involved_agents[agent_key] = MinimalAgentInstanceDTO.from_class_and_config(
                                 class_entity, config_entity, t

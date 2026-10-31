@@ -12,6 +12,7 @@ Runs the real pipeline (`as_form()` -> configurable submission schema -> jambo m
 rather than mocking it, because the defect exists precisely in what that pipeline drops.
 """
 
+import asyncio
 from typing import Self
 
 import pytest
@@ -75,7 +76,7 @@ def _config(**overrides) -> dict:
 
 
 def _validate(validator, config: dict) -> BaseModel:
-    return validator(InstanceConfigHelper.normalize_form_configuration(config), _model())
+    return asyncio.run(validator(InstanceConfigHelper.normalize_form_configuration(config), _model()))
 
 
 @pytest.mark.parametrize("validator", VALIDATORS)

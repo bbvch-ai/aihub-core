@@ -27,10 +27,10 @@ class ConfigMetadata(NamedTuple):
 
 
 class LocaleEntities(NamedTuple):
-    """Locale-aware name and description entities for a new instance."""
+    """Locale-aware name and description for a new instance."""
 
-    name: LocaleStringEntity
-    description: LocaleStringEntity
+    name: LocaleString
+    description: LocaleString
     icon: str
 
 
@@ -66,7 +66,7 @@ class InstanceConfigHelper:
         return {**schema_defaults, **config}
 
     @staticmethod
-    def validate_config_for_create(
+    async def validate_config_for_create(
         config: dict[str, Any],
         config_model: type[BaseModel],
         agent: AgentInstanceRef | None = None,
@@ -82,11 +82,11 @@ class InstanceConfigHelper:
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(error_messages)}")
 
         InstanceConfigHelper.validate_identity_locale_fields(instance)
-        InstanceConfigHelper.validate_cron_field(config, agent)
+        await InstanceConfigHelper.validate_cron_field(config, agent)
         return instance
 
     @staticmethod
-    def validate_config_for_update(
+    async def validate_config_for_update(
         config: dict[str, Any],
         config_model: type[BaseModel],
         agent: AgentInstanceRef | None = None,
@@ -98,7 +98,7 @@ class InstanceConfigHelper:
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {e.errors()}")
 
         InstanceConfigHelper.validate_identity_locale_fields(instance)
-        InstanceConfigHelper.validate_cron_field(config, agent)
+        await InstanceConfigHelper.validate_cron_field(config, agent)
         return instance
 
     @staticmethod
@@ -314,7 +314,7 @@ class InstanceConfigHelper:
         return invalid
 
     @staticmethod
-    def validate_cron_field(config: dict[str, Any], agent: AgentInstanceRef | None = None) -> None:
+    async def validate_cron_field(config: dict[str, Any], agent: AgentInstanceRef | None = None) -> None:
         """Reject a config whose cron schedule is malformed or too costly, before it is stored.
 
         Same jambo gap as `validate_identity_locale_fields`, with a far wider blast radius. `CronSchedule` rejects a
@@ -355,7 +355,7 @@ class InstanceConfigHelper:
             # would count the profile being edited against itself, so it is skipped rather than guessed.
             return
 
-        rejection = ScheduleAdmission.rejection_reason(schedule, agent.agent_class, agent.agent_id)
+        rejection = await ScheduleAdmission.rejection_reason(schedule, agent.agent_class, agent.agent_id)
         if rejection:
             raise HTTPException(
                 status_code=400, detail=f"Configuration validation failed: {CRON_CONFIG_KEY}: {rejection}"
@@ -428,11 +428,11 @@ class InstanceConfigHelper:
 
     @staticmethod
     def build_locale_entities(name: Any, description: Any, class_name: str, icon: str) -> LocaleEntities:
-        """Build LocaleStringEntity objects with multilingual defaults for new instances."""
+        """Build the localised name and description of a new instance, with multilingual defaults."""
         name_entity = (
-            LocaleStringEntity.from_locale_string(name)
+            InstanceConfigHelper._as_locale_string(name)
             if name
-            else LocaleStringEntity(
+            else LocaleString(
                 de=f"New {class_name}",
                 en=f"New {class_name}",
                 fr=f"Nouveau {class_name}",
@@ -440,22 +440,44 @@ class InstanceConfigHelper:
             )
         )
         description_entity = (
-            LocaleStringEntity.from_locale_string(description)
+            InstanceConfigHelper._as_locale_string(description)
             if description
-            else LocaleStringEntity(de="", en="", fr="", it="")
+            else LocaleString(de="", en="", fr="", it="")
         )
         return LocaleEntities(name=name_entity, description=description_entity, icon=icon)
 
     @staticmethod
+    def metadata_updates(config_instance: BaseModel) -> dict[str, LocaleString | str]:
+        """The name, description and icon a validated config sets on its stored instance; unset ones left out."""
+        updates: dict[str, LocaleString | str] = {}
+        for field in InstanceConfigHelper.IDENTITY_LOCALE_FIELDS:
+            value = getattr(config_instance, field, None)
+            if value:
+                updates[field] = InstanceConfigHelper._as_locale_string(value)
+        icon = getattr(config_instance, "icon", None)
+        if icon:
+            updates["icon"] = icon
+        return updates
+
+    @staticmethod
+    def apply_metadata_to_document(config_instance: BaseModel, config_document: T) -> T:
+        """Apply name, description, and icon from a validated config to a stored Beanie instance."""
+        for field, value in InstanceConfigHelper.metadata_updates(config_instance).items():
+            setattr(config_document, field, value)
+        return config_document
+
+    @staticmethod
     def apply_metadata_to_entity(config_instance: BaseModel, config_entity: T) -> T:
-        """Apply name, description, and icon from a validated config to an existing entity."""
-        if hasattr(config_instance, "name") and config_instance.name:
-            config_entity.name = LocaleStringEntity.from_locale_string(config_instance.name)
+        """Apply name, description, and icon from a validated config to a stored MongoEngine instance.
 
-        if hasattr(config_instance, "description") and config_instance.description:
-            config_entity.description = LocaleStringEntity.from_locale_string(config_instance.description)
-
-        if hasattr(config_instance, "icon") and config_instance.icon:
-            config_entity.icon = config_instance.icon
-
+        For the process configs, which stay on MongoEngine and store a `LocaleStringEntity`.
+        """
+        for field, value in InstanceConfigHelper.metadata_updates(config_instance).items():
+            stored = LocaleStringEntity.from_locale_string(value) if isinstance(value, LocaleString) else value
+            setattr(config_entity, field, stored)
         return config_entity
+
+    @staticmethod
+    def _as_locale_string(value: Any) -> LocaleString:
+        """A `LocaleString` from anything carrying the four locales, such as a model generated from a schema."""
+        return LocaleString(**{locale: getattr(value, locale, None) for locale in LOCALES})

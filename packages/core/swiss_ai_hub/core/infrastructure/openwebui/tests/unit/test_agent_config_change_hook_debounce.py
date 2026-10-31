@@ -1,42 +1,43 @@
 import asyncio
-import gc
 
 import pytest
-from mongoengine import signals
 
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.persistence.agents import agent_config_change_hook
 from swiss_ai_hub.core.persistence.agents.agent_config_change_hook import AgentConfigChangeHook
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 
 
-class TestSignalSubscriptionSurvives:
-    """Regression for the weak-ref GC bug: a locally-defined closure wired with blinker's default
-    weak reference is collected the instant ``connect`` returns, silently dropping the subscription
-    so no config change ever triggers an OpenWebUI re-sync."""
+class TestAProfileWriteReachesTheSync:
+    """Beanie has no global signals, so the document itself notifies the hook; without that, OpenWebUI
+    would silently stop reflecting created, renamed and deleted agents until the next discovery cycle."""
 
-    def test_connect_subscription_survives_gc(self):
-        was_connected = AgentConfigChangeHook._connected
-        AgentConfigChangeHook._connected = False
+    @pytest.mark.beanie
+    async def test_saving_a_profile_syncs_openwebui_once(self, monkeypatch: pytest.MonkeyPatch):
+        synced: list[bool] = []
 
-        class _DummyProvisioner:
+        class _RecordingProvisioner:
             async def sync_known_agents(self) -> None:
-                pass
+                synced.append(True)
 
+        monkeypatch.setattr(agent_config_change_hook, "_DEBOUNCE_SECONDS", 0)
+        monkeypatch.setattr(AgentConfigChangeHook, "_connected", False)
+        monkeypatch.setattr(AgentConfigChangeHook, "_debounce_task", None)
+        AgentConfigChangeHook.connect(_RecordingProvisioner())
         try:
-            AgentConfigChangeHook.connect(_DummyProvisioner())
-            gc.collect()  # a weakly-referenced local closure would be collected here
-
-            assert list(signals.post_save.receivers_for(AgentConfigEntityDocument)), (
-                "post_save receiver was dropped — connect must use weak=False"
-            )
-            assert list(signals.post_delete.receivers_for(AgentConfigEntityDocument)), (
-                "post_delete receiver was dropped — connect must use weak=False"
-            )
+            await AgentConfigEntityDocument(
+                agent_class="RAGAgent",
+                agent_id="hr",
+                name=LocaleString(en="HR"),
+                description=LocaleString(en="HR profile"),
+                icon="meteor-icons:robot",
+                config_data={},
+            ).insert()
+            await AgentConfigChangeHook._debounce_task
         finally:
-            for sig in (signals.post_save, signals.post_delete):
-                for receiver in list(sig.receivers_for(AgentConfigEntityDocument)):
-                    sig.disconnect(receiver, sender=AgentConfigEntityDocument)
-            AgentConfigChangeHook._connected = was_connected
             AgentConfigChangeHook._provisioner = None
+
+        assert synced == [True]
 
 
 class TestDebounce:

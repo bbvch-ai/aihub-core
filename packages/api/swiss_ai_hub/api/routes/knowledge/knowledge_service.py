@@ -495,7 +495,7 @@ class KnowledgeService:
         # unrecognised key and then reports the correctly-spelled one as missing, which names the consequence
         # rather than the mistake and says nothing about the value the user actually typed.
         InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
-        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        config_instance = await InstanceConfigHelper.validate_config_for_create(config, config_model)
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=ingestor.form, config=config, user=user, t=t
         )
@@ -527,8 +527,8 @@ class KnowledgeService:
             bucket = BucketEntity.create_bucket(
                 bucket_name=database,
                 db_name=database,
-                name=locale.name,
-                description=locale.description,
+                name=LocaleStringEntity.from_locale_string(locale.name),
+                description=LocaleStringEntity.from_locale_string(locale.description),
                 ingestor=request.ingestor,
                 configuration=configuration,
                 source=request.source,
@@ -635,7 +635,7 @@ class KnowledgeService:
                 raise HTTPException(status_code=400, detail=str(no_stored_secret)) from None
         InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
         config_model = ModelCreationService.create_config_model(source_pipeline.config_specs.to_specs())
-        InstanceConfigHelper.validate_config_for_create(config, config_model)
+        await InstanceConfigHelper.validate_config_for_create(config, config_model)
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=source_pipeline.form, config=config, user=user, t=t
         )
