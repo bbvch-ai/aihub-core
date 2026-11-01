@@ -80,11 +80,18 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_chat_request_event import (
         HumanInTheLoopChatRequestEvent,
     )
+    from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_choice_option import HumanInTheLoopChoiceOption
+    from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_choice_question import (
+        HumanInTheLoopChoiceQuestion,
+    )
     from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_confirmation_request_event import (
         HumanInTheLoopConfirmationRequestEvent,
     )
     from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_input_request_event import (
         HumanInTheLoopInputRequestEvent,
+    )
+    from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_questions_request_event import (
+        HumanInTheLoopQuestionsRequestEvent,
     )
     from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event import HumanInTheLoopRequestEvent
     from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_chat_response_event import (
@@ -231,6 +238,9 @@ __all__ = [
     "HumanInTheLoopChat",
     "HumanInTheLoopChatRequestEvent",
     "HumanInTheLoopChatResponseEvent",
+    "HumanInTheLoopChoiceOption",
+    "HumanInTheLoopChoiceQuestion",
+    "HumanInTheLoopQuestionsRequestEvent",
     "HumanInTheLoopConfirmation",
     "HumanInTheLoopConfirmationRequestEvent",
     "HumanInTheLoopConfirmationResponseEvent",
@@ -368,6 +378,9 @@ _LAZY_IMPORTS: dict[str, str] = {
     "HumanInTheLoopChat": "swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_chat",
     "HumanInTheLoopChatRequestEvent": "swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_chat_request_event",
     "HumanInTheLoopChatResponseEvent": "swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_chat_response_event",
+    "HumanInTheLoopChoiceOption": "swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_choice_option",
+    "HumanInTheLoopChoiceQuestion": "swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_choice_question",
+    "HumanInTheLoopQuestionsRequestEvent": "swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_questions_request_event",
     "HumanInTheLoopConfirmation": "swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_confirmation",
     "HumanInTheLoopConfirmationRequestEvent": "swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_confirmation_request_event",
     "HumanInTheLoopConfirmationResponseEvent": "swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_confirmation_response_event",

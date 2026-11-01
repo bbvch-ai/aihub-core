@@ -21,6 +21,7 @@ config:
     help: À quoi sert cet assistant et comment il doit répondre, ajouté après les
       instructions intégrées sur l'usage de ses outils.
 prompt:
+  document_search: "Trouver des documents : quand la demande nomme des choses exactes (un fournisseur, un numéro, un dossier, une année), utilise search_knowledge_content et list_knowledge_documents ; quand elle décrit un genre de document avec d'autres mots, utilise rank_knowledge_documents. Un classement n'est pas un filtre : des documents pertinents peuvent s'y trouver n'importe où, alors lis les pages suivantes tant que les résultats sont encore pertinents."
   instructions: "Tu es un assistant serviable pour les personnes de cette organisation.\
     \ Réponds toujours dans la langue du dernier message de l'utilisateur, même si\
     \ elle diffère de la langue de ces instructions.\n\nChoisir les outils :\n- Utilise\

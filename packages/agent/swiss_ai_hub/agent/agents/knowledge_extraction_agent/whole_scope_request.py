@@ -4,8 +4,10 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import ExtractRecordsEvent
 from swiss_ai_hub.core.generative_ai import (
     InvalidPathPatternError,
+    KnowledgeDocumentCriteria,
     KnowledgeDocumentListing,
     KnowledgeDocumentReader,
+    KnowledgeDocumentSelection,
     KnowledgeDocumentSummary,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -25,18 +27,20 @@ from swiss_ai_hub.agent.capabilities.record_extraction.sample_awaiting_confirmat
 from swiss_ai_hub.agent.capabilities.record_extraction.selection_facets import SelectionFacets
 
 _MESSAGES = "agent.knowledge_extraction_agent.messages"
+_PATH_FIELDS = ("path_glob", "path_regex")
 
 
 class WholeScopeRequest:
-    """A request answered from every document in the profile's scope, or the confirmation of a sample.
+    """A request read over every document in the profile's scope, or the confirmation of a sample.
 
-    Without discovery the request is read once, and only the places the user named narrow the scope, so no document
-    is left out for its wording. With discovery the model searches instead; this still runs while a sample awaits the
-    user's decision, because only a reading of the message tells a "yes" from a new request.
+    The request is read once, in either mode, for the user to confirm in the request form; only a reading tells a "yes"
+    to a waiting sample from a new request. The files the message names replace the places a model made of them before
+    the form shows them, so what the user confirms is what is read. Without discovery, only the places the user
+    confirmed narrow the scope, so no document is left out for its wording.
     """
 
     @staticmethod
-    async def extraction(
+    async def reading(
         history: list[ChatMessage],
         scope: KnowledgeDocumentRunScope,
         agent_config: KnowledgeExtractionAgentConfig,
@@ -45,28 +49,62 @@ class WholeScopeRequest:
         user: UserIdentity | None,
         t: LocaleHandler,
         locale: str,
-    ) -> ExtractRecordsEvent | str | None:
-        """The extraction to run, the notice to answer with instead, or None to let the model search (discovery)."""
-        listing = await WholeScopeRequest._listing(scope)
-        facets = SelectionFacets.lines(listing.documents, t)
-        instructions = agent_config.instructions.in_locale(locale) if agent_config.instructions else None
-        reading = await ExtractionRequestReading.ask(
-            history, scope, facets, instructions, awaiting is not None, agent_config.llm, displayer, user, t
+    ) -> ExtractRecordsEvent | ExtractionRequestAnswer | str:
+        """The confirmation of the waiting sample, the request as read for the user to confirm, or the notice to
+        answer with instead."""
+        reading = await WholeScopeRequest.read(
+            history, scope, agent_config, awaiting is not None, displayer, user, t, locale
         )
-        notices = ExtractionNotices.for_table(scope, False, t)
         if awaiting is not None and reading is not None and reading.confirms_sample:
-            return RecordExtraction.confirm_sample(scope.pairs(), notices)
-        if agent_config.discovery:
-            return None
+            return RecordExtraction.confirm_sample(scope.pairs(), ExtractionNotices.for_table(scope, False, t))
         if reading is None:
             return t(f"{_MESSAGES}.no_request")
         if not reading.is_table_request:
             return t(f"{_MESSAGES}.not_a_table_request")
+        return reading
+
+    @staticmethod
+    async def read(
+        history: list[ChatMessage],
+        scope: KnowledgeDocumentRunScope,
+        agent_config: KnowledgeExtractionAgentConfig,
+        awaiting_sample: bool,
+        displayer: EventDisplayer,
+        user: UserIdentity | None,
+        t: LocaleHandler,
+        locale: str,
+    ) -> ExtractionRequestAnswer | None:
+        """The conversation's last message read as a table request, with the folders and years in scope to name, and
+        the files that message names in place of the places the model made of them."""
+        listing = await WholeScopeRequest._listing(scope)
+        facets = SelectionFacets.lines(listing.documents, t)
+        instructions = agent_config.instructions.in_locale(locale) if agent_config.instructions else None
+        reading = await ExtractionRequestReading.ask(
+            history, scope, facets, instructions, awaiting_sample, agent_config.llm, displayer, user, t
+        )
+        if reading is None:
+            return None
         named = WholeScopeRequest._named_files(ExtractionRequestReading.last_request(history), listing)
-        if named:
-            reading = reading.model_copy(update={"locations": WholeScopeRequest._narrowed(reading, named, listing)})
+        if not named:
+            return reading
+        return reading.model_copy(update={"locations": WholeScopeRequest._narrowed(reading, named, listing)})
+
+    @staticmethod
+    async def folders(scope: KnowledgeDocumentRunScope) -> str:
+        """The largest folders in scope, for the user to name one in the request form."""
+        listing = await WholeScopeRequest._listing(scope)
+        return SelectionFacets.folders(listing.documents)
+
+    @staticmethod
+    async def extraction_of(
+        reading: ExtractionRequestAnswer, scope: KnowledgeDocumentRunScope, t: LocaleHandler
+    ) -> ExtractRecordsEvent | str:
+        """The extraction of a confirmed reading over the whole scope, or the notice that its places hold nothing. The
+        places are taken as confirmed: the user may have widened or changed what the message named."""
+        listing = await WholeScopeRequest._listing(scope)
         if reading.locations and not WholeScopeRequest._anything_at(listing, reading):
             places = ", ".join(f"`{location.describe()}`" for location in reading.locations)
+            facets = SelectionFacets.lines(listing.documents, t)
             return "\n\n".join([t(f"{_MESSAGES}.nothing_at_location", locations=places), *facets])
         return RecordExtraction.extract(
             reading.selection,
@@ -74,9 +112,43 @@ class WholeScopeRequest:
             scope.pairs(),
             reading.instructions,
             reading.row_terms,
-            notices=notices,
+            notices=[
+                *ExtractionNotices.for_calculation(reading.calculation, t),
+                *ExtractionNotices.for_table(scope, False, t),
+            ],
             document_terms=reading.document_terms,
         )
+
+    @staticmethod
+    async def within(
+        selection: KnowledgeDocumentSelection,
+        locations: list[RequestedLocation],
+        scope: KnowledgeDocumentRunScope,
+        t: LocaleHandler,
+    ) -> KnowledgeDocumentSelection | str:
+        """The model's selection at the places the user confirmed, or the notice that those places hold nothing. The
+        confirmed Location replaces any path the model set: a model combining it with a file the message named
+        selected nothing and reported the confirmed folder as empty."""
+        places = [location for location in locations if location.path_glob or location.path_regex]
+        if not places:
+            return selection
+        listing = await WholeScopeRequest._listing(scope)
+        if not any(WholeScopeRequest._at(listing, place) != [] for place in places):
+            described = ", ".join(f"`{location.describe()}`" for location in places)
+            facets = SelectionFacets.lines(listing.documents, t)
+            return "\n\n".join([t(f"{_MESSAGES}.nothing_at_location", locations=described), *facets])
+        entries = [WholeScopeRequest._at_place(entry, place, listing) for entry in selection.any_of for place in places]
+        unique = {entry.model_dump_json(): entry for entry in entries}
+        return KnowledgeDocumentSelection(any_of=list(unique.values()))
+
+    @staticmethod
+    def _at_place(
+        entry: KnowledgeDocumentCriteria, place: RequestedLocation, listing: KnowledgeDocumentListing
+    ) -> KnowledgeDocumentCriteria:
+        """The entry with the place's path instead of its own. Documents the model chose by id stay chosen when they
+        lie at the place; when none do, the whole place is read and the condition decides the rows."""
+        ids = sorted(set(entry.document_ids) & WholeScopeRequest._ids_at(listing, place))
+        return entry.model_copy(update={field: getattr(place, field) for field in _PATH_FIELDS} | {"document_ids": ids})
 
     @staticmethod
     async def _listing(scope: KnowledgeDocumentRunScope) -> KnowledgeDocumentListing:
