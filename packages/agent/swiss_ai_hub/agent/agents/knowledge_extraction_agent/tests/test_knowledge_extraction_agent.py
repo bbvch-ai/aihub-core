@@ -1414,12 +1414,10 @@ class TestConfirmedRequestInDiscovery:
         ]
 
     @pytest.mark.asyncio
-    async def test_a_selection_by_another_path_keeps_only_the_documents_at_the_confirmed_place(self):
+    async def test_the_confirmed_place_replaces_another_path_the_model_set(self):
         request, _ = await _plan(_reading(CONFIRMED_PLACE), [_selecting([{"path_glob": "invoices/**"}])])
 
-        assert request.selection.any_of == [
-            KnowledgeDocumentCriteria(path_glob="invoices/**", document_ids=["invoices/2025/q1/c.pdf"])
-        ]
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="invoices/2025/**")]
 
     @pytest.mark.asyncio
     async def test_a_selection_by_the_confirmed_place_is_kept_as_it_is(self):
@@ -1428,11 +1426,33 @@ class TestConfirmedRequestInDiscovery:
         assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="invoices/2025/**")]
 
     @pytest.mark.asyncio
-    async def test_a_selection_entirely_outside_the_confirmed_place_extracts_nothing_and_says_where(self):
-        answer, _ = await _plan(_reading(CONFIRMED_PLACE), [_selecting([{"path_glob": "other/**"}])])
+    async def test_a_file_the_model_combined_with_the_confirmed_folder_does_not_empty_it(self):
+        """The model joined the confirmed folder with a file the first message named, which matches nothing; the
+        confirmed folder is read instead of being reported empty."""
+        combined = [{"path_glob": "invoices/2025/q1/zugferd_Warenrechnung.pdf"}]
+
+        request, _ = await _plan(_reading(CONFIRMED_PLACE), [_selecting(combined)])
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="invoices/2025/**")]
+
+    @pytest.mark.asyncio
+    async def test_documents_chosen_by_id_stay_chosen_at_the_confirmed_place(self):
+        chosen = [{"document_ids": ["invoices/2025/q1/c.pdf", "other/2026/d.pdf"]}]
+
+        request, _ = await _plan(_reading(CONFIRMED_PLACE), [_selecting(chosen)])
+
+        assert request.selection.any_of == [
+            KnowledgeDocumentCriteria(path_glob="invoices/2025/**", document_ids=["invoices/2025/q1/c.pdf"])
+        ]
+
+    @pytest.mark.asyncio
+    async def test_a_confirmed_place_without_documents_extracts_nothing_and_says_where(self):
+        empty = RequestedLocation(path_glob="archive/**", path_regex=None)
+
+        answer, _ = await _plan(_reading(empty), [_selecting([{"path_glob": "invoices/**"}])])
 
         assert isinstance(answer, CompleteConversationEvent)
-        assert "`invoices/2025/**`" in answer.stop.output_messages[-1].content
+        assert "`archive/**`" in answer.stop.output_messages[-1].content
 
     @pytest.mark.asyncio
     async def test_several_confirmed_places_and_entries_select_each_entry_at_each_place(self):

@@ -126,42 +126,29 @@ class WholeScopeRequest:
         scope: KnowledgeDocumentRunScope,
         t: LocaleHandler,
     ) -> KnowledgeDocumentSelection | str:
-        """The model's selection within the places the user confirmed, or the notice that it holds nothing there: a
-        document must meet one of its entries and lie at one of the places. A model searching confirmed places may
-        still select beyond them."""
+        """The model's selection at the places the user confirmed, or the notice that those places hold nothing. The
+        confirmed Location replaces any path the model set: a model combining it with a file the message named
+        selected nothing and reported the confirmed folder as empty."""
         places = [location for location in locations if location.path_glob or location.path_regex]
         if not places:
             return selection
         listing = await WholeScopeRequest._listing(scope)
-        entries = [WholeScopeRequest._both(entry, place, listing) for entry in selection.any_of for place in places]
-        kept = [entry for entry in entries if entry is not None]
-        if kept:
-            return KnowledgeDocumentSelection(any_of=kept)
-        described = ", ".join(f"`{location.describe()}`" for location in places)
-        facets = SelectionFacets.lines(listing.documents, t)
-        return "\n\n".join([t(f"{_MESSAGES}.nothing_at_location", locations=described), *facets])
+        if not any(WholeScopeRequest._at(listing, place) != [] for place in places):
+            described = ", ".join(f"`{location.describe()}`" for location in places)
+            facets = SelectionFacets.lines(listing.documents, t)
+            return "\n\n".join([t(f"{_MESSAGES}.nothing_at_location", locations=described), *facets])
+        entries = [WholeScopeRequest._at_place(entry, place, listing) for entry in selection.any_of for place in places]
+        unique = {entry.model_dump_json(): entry for entry in entries}
+        return KnowledgeDocumentSelection(any_of=list(unique.values()))
 
     @staticmethod
-    def _both(
+    def _at_place(
         entry: KnowledgeDocumentCriteria, place: RequestedLocation, listing: KnowledgeDocumentListing
-    ) -> KnowledgeDocumentCriteria | None:
-        """An entry that also lies at the place. A path pattern the entry already sets otherwise cannot hold both, so
-        the entry then narrows to the documents at both; None when there are none."""
-        update: dict[str, str | list[str]] = {
-            field: value for field in _PATH_FIELDS if (value := getattr(place, field)) and not getattr(entry, field)
-        }
-        clashes = any(
-            getattr(place, field) and getattr(entry, field) and getattr(place, field) != getattr(entry, field)
-            for field in _PATH_FIELDS
-        )
-        if clashes:
-            at_entry = RequestedLocation(path_glob=entry.path_glob, path_regex=entry.path_regex)
-            ids = WholeScopeRequest._ids_at(listing, place) & WholeScopeRequest._ids_at(listing, at_entry)
-            ids = ids & set(entry.document_ids) if entry.document_ids else ids
-            if not ids:
-                return None
-            update["document_ids"] = sorted(ids)
-        return entry.model_copy(update=update)
+    ) -> KnowledgeDocumentCriteria:
+        """The entry with the place's path instead of its own. Documents the model chose by id stay chosen when they
+        lie at the place; when none do, the whole place is read and the condition decides the rows."""
+        ids = sorted(set(entry.document_ids) & WholeScopeRequest._ids_at(listing, place))
+        return entry.model_copy(update={field: getattr(place, field) for field in _PATH_FIELDS} | {"document_ids": ids})
 
     @staticmethod
     async def _listing(scope: KnowledgeDocumentRunScope) -> KnowledgeDocumentListing:
