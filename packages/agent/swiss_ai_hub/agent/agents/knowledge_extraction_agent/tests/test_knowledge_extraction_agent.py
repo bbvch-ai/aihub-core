@@ -62,6 +62,7 @@ from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_call import 
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_collection import (
     KnowledgeDocumentCollection,
 )
+from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_scope import (
     KnowledgeDocumentRunScope,
 )
@@ -76,6 +77,10 @@ FINANCE = BucketNamespacePair(bucket_name="finance-db", namespace_name="invoices
 CONTRACTS = KnowledgeReference(database="legal", namespace="contracts")
 SELECT = "select_knowledge_documents"
 WHOLE = "swiss_ai_hub.agent.agents.knowledge_extraction_agent.whole_scope_request"
+
+
+def _discovering(discovery: bool) -> KnowledgeDocumentConfig:
+    return KnowledgeDocumentConfig(enabled=True, narrow_references=True, discovery=discovery)
 
 
 def _config(**fields: Any) -> KnowledgeExtractionAgentConfig:
@@ -185,8 +190,10 @@ def test_the_profile_form_fixes_the_document_tools_on_and_narrowing():
     assert form.knowledge_documents.enabled is True
     assert form.knowledge_documents.narrow_references is True
     assert form.knowledge_tool.every_readable_collection is False
-    assert isinstance(form.discovery, Checkbox)
-    assert _config().discovery is False
+    assert isinstance(form.knowledge_documents.discovery, Checkbox)
+    assert _config().knowledge_documents.discovery is False
+    assert "discovery" not in KnowledgeExtractionAgentConfig.model_fields
+    assert KnowledgeDocumentConfig.as_form().discovery is False
 
 
 @pytest.mark.asyncio
@@ -269,7 +276,7 @@ async def test_with_discovery_the_confirmed_request_gathers_with_the_messages_re
     assert (loop.mode, loop.knowledge_references) == (ToolLoopMode.GATHER, [CONTRACTS])
     assert loop.hands_back_results is False
     assert [message.role for message in loop.history[-2:]] == [MessageRole.ASSISTANT, MessageRole.USER]
-    assert "**Which rows:** only Hooli hardware" in loop.history[-1].content
+    assert "**Filter Condition:** only Hooli hardware" in loop.history[-1].content
     ask.assert_awaited_once()
 
 
@@ -615,7 +622,7 @@ async def _discover(
         step = await KnowledgeExtractionAgent().discover_step(
             ctx,
             _event(),
-            agent_config=_config(discovery=discovery),
+            agent_config=_config(knowledge_documents=_discovering(discovery)),
             displayer=_displayer(),
             t=T,
             thread=thread or _Thread(),
@@ -627,7 +634,7 @@ async def _discover(
                 response,
                 ctx,
                 _event(),
-                agent_config=_config(discovery=discovery),
+                agent_config=_config(knowledge_documents=_discovering(discovery)),
                 displayer=_displayer(),
                 t=T,
                 run_context=run_context,
@@ -845,9 +852,36 @@ class TestRequestForm:
         assert rows.options[0].description == "only Hooli hardware"
         assert [(option.label, option.description) for option in columns.options] == [("As understood", "item, amount")]
         assert all(question.allow_other for question in form.questions)
-        assert "- **Which rows:** only Hooli hardware" in form.question
-        assert form.question.endswith("Reply *yes* to go ahead, or write what to change.")
+        assert [question.header for question in form.questions] == ["Location", "Filter Condition", "Values to extract"]
+        assert where.question == (
+            "Which documents should I read? I understood: all documents in scope. To read only some, name a folder, a "
+            "file or a year. Folders: invoices/2024/q1 (1), invoices/2024/q2 (1), invoices/2025/q1 (1)"
+        )
+        assert rows.question.endswith(
+            "A condition on the records, not a calculation, e.g. from Lieferant GmbH · dated 2018 · only hardware items."
+        )
+        assert "→ one row per invoice; item, quantity, net amount → one row per line item." in columns.question
+        assert "- **Filter Condition:** only Hooli hardware" in form.question
+        reply, location, condition, values = form.question.split("\n")[-4:]
+        assert reply == "Reply *yes* to go ahead, or write what to change:"
+        assert location == f"- **Location:** {where.question.split('scope. ')[1]}"
+        assert condition.endswith(rows.question.split("Hooli hardware. ")[1])
+        assert values.startswith("- **Values to extract:** The values decide what a row is")
         ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_a_long_folder_list_is_cut_at_the_end_of_the_question(self):
+        folders = [f"invoices/supplier-with-a-long-name-{index:02d}/x.pdf" for index in range(12)]
+
+        form, _, _ = await _discover(
+            _reading(calculation="the sum of all invoices"), answer=None, listing=_listing(*folders)
+        )
+
+        where = form.questions[0].question
+        assert len(where) == 500
+        assert where.startswith("I don't calculate the sum of all invoices.")
+        assert "Folders: invoices/supplier-with-a-long-name-" in where
+        assert where.endswith("…")
 
     @pytest.mark.asyncio
     async def test_a_named_place_can_be_kept_or_dropped(self):
@@ -891,11 +925,11 @@ class TestRequestForm:
         assert request.instructions == "only invoices dated June 2018"
         history = ask.await_args_list[1].args[0]
         assert history[-2].role == MessageRole.ASSISTANT
-        assert "- **Which rows:** only Hooli hardware" in history[-2].content
+        assert "- **Filter Condition:** only Hooli hardware" in history[-2].content
         assert history[-1].content.splitlines() == [
-            "**Where:** all documents in scope",
-            "**Which rows:** only invoices dated June 2018",
-            "**Columns:** item, amount",
+            "**Location:** all documents in scope",
+            "**Filter Condition:** only invoices dated June 2018",
+            "**Values to extract:** item, amount",
         ]
 
     @pytest.mark.asyncio
@@ -1113,6 +1147,33 @@ class TestRequestReading:
             row_terms=None,
             document_terms=None,
         )
+
+    @pytest.mark.parametrize(
+        ("locale", "example"),
+        [
+            (
+                "en",
+                'Filter Condition: "sum all the items in the invoice", goes into calculation, never into instructions',
+            ),
+            (
+                "de",
+                'Filterbedingung: "summiere alle Positionen der Rechnung", gehört in calculation, nie in instructions',
+            ),
+            (
+                "fr",
+                'Condition de filtre : "additionne toutes les positions de la facture", va dans calculation, jamais',
+            ),
+            ("it", 'Condizione di filtro: "somma tutte le voci della fattura", va in calculation, mai in instructions'),
+        ],
+    )
+    def test_a_calculation_written_into_the_form_is_read_as_a_calculation_not_a_condition(
+        self, locale: str, example: str
+    ):
+        """Real invoices: "Sum all the items in the invoice" under Which rows became the row condition, and the
+        extraction model summed item lines itself on 2 of 106 invoices instead of reading their printed totals."""
+        prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.read_request")
+
+        assert example in prompt
 
     @pytest.mark.parametrize("locale", ["en", "de", "fr", "it"])
     def test_the_prompt_names_every_field_of_the_answer(self, locale: str):

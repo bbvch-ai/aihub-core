@@ -14,6 +14,14 @@ config:
     help: Le modèle peut aussi classer par sens les documents du filtre de chemins,
       et trouve ainsi des documents rédigés avec d'autres mots ou dans une autre langue
       que la demande.
+  discovery:
+    label: Chercher d'abord les documents
+    help: "Désactivé : chaque document des collections et du filtre de chemin est\
+      \ lu, aucun n'est donc oublié ; l'utilisateur précise en nommant des dossiers,\
+      \ des fichiers ou des années. Activé : le modèle cherche d'abord les documents\
+      \ et seuls ceux qu'il sélectionne sont lus, ce qui est plus rapide sur de grandes\
+      \ collections mais peut oublier des documents. La durée de la recherche est\
+      \ fixée par Décisions maximales et Appels d'outils maximaux sous Tools."
 tools:
   rank_knowledge_documents:
     label: Classer les documents de connaissances

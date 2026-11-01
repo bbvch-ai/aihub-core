@@ -33,11 +33,18 @@ class KnowledgeDocumentConfig(Form):
             "grouped by document), which finds documents that do not use the request's words."
         ),
     ] = False
+    discovery: Annotated[
+        bool | Checkbox,
+        Field(
+            description="Let the model search for the documents first and read only those it selects, instead of "
+            "every document in the collections and path filter."
+        ),
+    ] = False
 
     @classmethod
     def as_form(cls) -> Self:
-        """Without `semantic_search`: only a blueprint whose prompt leads the model through the ranking offers it, by
-        adding `semantic_search_input()` to its own form."""
+        """Without `semantic_search` and `discovery`: only a blueprint whose prompt leads the model through the ranking,
+        or that reads every document unless told to search, offers them, by adding their inputs to its own form."""
         return cls(
             enabled=Checkbox(
                 label=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.enabled.label"),
@@ -51,6 +58,13 @@ class KnowledgeDocumentConfig(Form):
         return Checkbox(
             label=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.semantic_search.label"),
             help=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.semantic_search.help"),
+        )
+
+    @staticmethod
+    def discovery_input() -> Checkbox:
+        return Checkbox(
+            label=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.discovery.label"),
+            help=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.discovery.help"),
         )
 
     @staticmethod

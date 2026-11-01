@@ -52,9 +52,9 @@ class KnowledgeExtractionAgent(Agent):
     One structured call reads where, which rows and which columns from the message, and the user confirms or corrects
     them in a form before any document is read. By default every document in the profile's collections and glob is
     then read, narrowed only by the folders, files or years the user named, so the table cannot miss a document for its
-    wording. With `discovery`, the model instead finds the documents in a bounded loop over the document tools and
-    settles them with `select_knowledge_documents`. Either way the selection is resolved
-    within the profile's glob and ceiling, `RecordExtraction` extracts every document in parallel (a large selection
+    wording. With `knowledge_documents.discovery`, the model instead finds the documents in a bounded loop over the
+    document tools and settles them with `select_knowledge_documents`. Either way the selection is resolved within the
+    profile's glob and ceiling, `RecordExtraction` extracts every document in parallel (a large selection
     after the user confirmed its sample), and the table's preview is the answer, its whole as a file.
     """
 
@@ -132,7 +132,8 @@ class KnowledgeExtractionAgent(Agent):
             return await ExtractionAnswer.notice(understood, ctx.query, displayer)
         if isinstance(understood, ExtractRecordsEvent):
             return understood
-        return await ExtractionRequestForm.ask(understood, run_context, t)
+        folders = await WholeScopeRequest.folders(scope)
+        return await ExtractionRequestForm.ask(understood, folders, run_context, t)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.steps.confirm_request.name"),
@@ -171,7 +172,7 @@ class KnowledgeExtractionAgent(Agent):
             )
         confirmed = ExtractionRequestParts.of(reading, t).lines(t)
         await displayer.display_thought("\n".join(confirmed))
-        if agent_config.discovery:
+        if agent_config.knowledge_documents.discovery is True:
             history = ExtractionRequestForm.answered(ctx.history, response.request_event.question, "\n".join(confirmed))
             loop = KnowledgeExtractionAgent.tools.run(
                 history, mode=ToolLoopMode.GATHER, knowledge_references=event.knowledge_references

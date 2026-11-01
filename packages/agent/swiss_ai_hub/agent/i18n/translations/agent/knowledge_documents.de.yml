@@ -14,6 +14,14 @@ config:
     help: Das Modell darf die Dokumente innerhalb des Pfadfilters zusätzlich nach
       Bedeutung ordnen und findet so Dokumente, die andere Wörter oder eine andere
       Sprache als die Anfrage verwenden.
+  discovery:
+    label: Zuerst nach den Dokumenten suchen
+    help: 'Aus: Jedes Dokument der Sammlungen und des Pfadfilters wird gelesen, so
+      wird keines übersehen; der Benutzer grenzt ein, indem er Ordner, Dateien oder
+      Jahre nennt. Ein: Das Modell sucht zuerst nach den Dokumenten, und nur die ausgewählten
+      werden gelesen; das ist bei grossen Sammlungen schneller, kann aber Dokumente
+      übersehen. Wie lange es suchen darf, legen Maximale Entscheidungen und Maximale
+      Werkzeugaufrufe unter Tools fest.'
 tools:
   rank_knowledge_documents:
     label: Wissensdokumente ordnen

@@ -13,6 +13,13 @@ config:
     label: Rank Documents by Meaning
     help: Also let the model rank the documents within the path filter by meaning,
       so it finds documents written in other words or another language than the request.
+  discovery:
+    label: Search for the Documents First
+    help: 'Off: every document in the collections and path filter is read, so none
+      is missed; the user narrows by naming folders, files or years. On: the model
+      first searches for the documents and only those it selects are read, which is
+      faster on large collections but can miss documents. How long it may search is
+      set by Maximum Decisions and Maximum Tool Calls under Tools.'
 tools:
   rank_knowledge_documents:
     label: Rank Knowledge Documents

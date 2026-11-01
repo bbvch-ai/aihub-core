@@ -14,6 +14,14 @@ config:
     help: Il modello può anche ordinare per significato i documenti del filtro dei
       percorsi, e trova così documenti scritti con altre parole o in un'altra lingua
       rispetto alla richiesta.
+  discovery:
+    label: Cercare prima i documenti
+    help: "Disattivato: viene letto ogni documento delle raccolte e del filtro di\
+      \ percorso, quindi nessuno viene tralasciato; l'utente restringe nominando cartelle,\
+      \ file o anni. Attivato: il modello cerca prima i documenti e vengono letti\
+      \ solo quelli selezionati, il che è più veloce su raccolte grandi ma può tralasciare\
+      \ documenti. Quanto a lungo può cercare lo stabiliscono Decisioni massime e\
+      \ Chiamate massime sotto Tools."
 tools:
   rank_knowledge_documents:
     label: Ordina documenti di conoscenza

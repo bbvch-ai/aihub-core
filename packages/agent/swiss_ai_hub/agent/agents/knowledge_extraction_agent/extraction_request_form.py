@@ -36,17 +36,25 @@ class ExtractionRequestForm:
 
     @classmethod
     async def ask(
-        cls, reading: ExtractionRequestAnswer, run_context: RunContext, t: LocaleHandler
+        cls, reading: ExtractionRequestAnswer, folders: str, run_context: RunContext, t: LocaleHandler
     ) -> ExtractionRequestFormRequestEvent:
+        """`folders`: the largest folders in scope, so the user can name one as the location."""
         await run_context.set(READING_KEY, reading.model_dump(mode="json"))
         parts = ExtractionRequestParts.of(reading, t)
         notices = ExtractionNotices.for_calculation(reading.calculation, t)
+        hints = ExtractionRequestForm._hints(folders, t)
         return cls.request(
-            question=ExtractionRequestForm.text(parts, notices, t),
+            question=ExtractionRequestForm.text(parts, notices, hints, t),
             questions=[
-                ExtractionRequestForm._question("where", parts.where, bool(reading.locations), True, t, notices),
-                ExtractionRequestForm._question("rows", parts.rows, bool(reading.instructions), True, t),
-                ExtractionRequestForm._question("columns", parts.columns, bool(reading.fields), False, t),
+                ExtractionRequestForm._question(
+                    "where", parts.where, bool(reading.locations), True, [*notices, hints["where"]], t
+                ),
+                ExtractionRequestForm._question(
+                    "rows", parts.rows, bool(reading.instructions), True, [hints["rows"]], t
+                ),
+                ExtractionRequestForm._question(
+                    "columns", parts.columns, bool(reading.fields), False, [hints["columns"]], t
+                ),
             ],
             topic=PartialAgentTopic(
                 event_type=AgentTopicManager.CONTROL_EVENT, event_name=cls.response.event_name_from_class()
@@ -67,19 +75,40 @@ class ExtractionRequestForm:
         ]
 
     @staticmethod
-    def text(parts: ExtractionRequestParts, notices: list[str], t: LocaleHandler) -> str:
-        """The form as text, for clients without a dialog; a calculation the agent does not do is said first."""
-        lines = [f"- {line}" for line in parts.lines(t)]
+    def text(parts: ExtractionRequestParts, notices: list[str], hints: dict[str, str], t: LocaleHandler) -> str:
+        """The form as text, for clients without a dialog, with the dialog's wording: a calculation the agent does not
+        do first, then the parts as understood, then what each part may say."""
+        understood = [f"- {line}" for line in parts.lines(t)]
+        guidance = [f"- **{t(f'{_FORM}.{key}.header')}:** {hint}" for key, hint in hints.items()]
         return "\n".join(
-            [*(f"{notice}\n" for notice in notices), t(f"{_FORM}.intro"), "", *lines, "", t(f"{_FORM}.reply_hint")]
+            [
+                *(f"{notice}\n" for notice in notices),
+                t(f"{_FORM}.intro"),
+                "",
+                *understood,
+                "",
+                t(f"{_FORM}.reply_hint"),
+                *guidance,
+            ]
         )
 
     @staticmethod
+    def _hints(folders: str, t: LocaleHandler) -> dict[str, str]:
+        """What each part may say, with examples, since the dialog's own answer field shows none."""
+        where = t(f"{_FORM}.where.hint")
+        return {
+            "where": f"{where} {t(f'{_FORM}.where.folders', folders=folders)}" if folders else where,
+            "rows": t(f"{_FORM}.rows.hint"),
+            "columns": t(f"{_FORM}.columns.hint"),
+        }
+
+    @staticmethod
     def _question(
-        key: str, value: str, named: bool, droppable: bool, t: LocaleHandler, notices: list[str] | None = None
+        key: str, value: str, named: bool, droppable: bool, around: list[str], t: LocaleHandler
     ) -> HumanInTheLoopChoiceQuestion:
         """The part as understood first; a part the user named can also be dropped, where dropping means anything.
-        Notices open the question, since a dialog shows only the questions."""
+        A calculation notice opens the first question and the part's hint closes each one, since a dialog shows only
+        the questions; the end, where the folder list stands, is what a long question loses."""
         understood = HumanInTheLoopChoiceOption(
             label=t(f"{_FORM}.as_understood"), description=ExtractionRequestForm._clip(value, DESCRIPTION_LENGTH)
         )
@@ -87,12 +116,12 @@ class ExtractionRequestForm:
             label=t(f"{_FORM}.{key}.anything"), description=t(f"{_FORM}.{key}.anything_description")
         )
         options = [understood, anything] if named and droppable else [understood if named else anything]
+        *opening, hint = around
+        text = " ".join([*opening, t(f"{_FORM}.{key}.question", value=value), hint])
         return HumanInTheLoopChoiceQuestion(
             id=key,
             header=t(f"{_FORM}.{key}.header"),
-            question=ExtractionRequestForm._clip(
-                " ".join([*(notices or []), t(f"{_FORM}.{key}.question", value=value)]), QUESTION_LENGTH
-            ),
+            question=ExtractionRequestForm._clip(text, QUESTION_LENGTH),
             options=options,
             allow_other=True,
         )

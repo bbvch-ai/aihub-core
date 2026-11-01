@@ -2,7 +2,7 @@ from typing import Annotated, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.form import Checkbox, LocaleInput
+from swiss_ai_hub.core.form import LocaleInput
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_config import KnowledgeToolConfig
@@ -21,20 +21,14 @@ class KnowledgeExtractionAgentConfig(RecordExtractionFields, ToolLoopFields, Age
 
     The profile is the hard boundary of what a request may touch, so the document tools are always on, `#` references
     only pick among the configured collections, and "every readable collection" is not offered. Without `discovery`,
-    the default, every document in that boundary is read, so the table cannot miss one for its wording.
+    the default (`knowledge_documents.discovery`), every document in that boundary is read, so the table cannot miss one
+    for its wording.
     """
 
     instructions: Annotated[
         LocaleString | LocaleInput | None,
         Field(description="Instructions for this profile, added after the agent's own on how to find documents."),
     ] = None
-    discovery: Annotated[
-        bool | Checkbox,
-        Field(
-            description="Let the model search for the documents first and read only those it selects, instead of "
-            "every document in the collections and path filter."
-        ),
-    ] = False
 
     @classmethod
     def as_form(cls) -> Self:
@@ -50,10 +44,6 @@ class KnowledgeExtractionAgentConfig(RecordExtractionFields, ToolLoopFields, Age
                 input_type="textarea",
                 rows=4,
             ),
-            discovery=Checkbox(
-                label=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.config.discovery.label"),
-                help=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.config.discovery.help"),
-            ),
             knowledge_tool=KnowledgeToolConfig(
                 every_readable_collection=False, sources=[KnowledgeToolSource.as_form()]
             ),
@@ -62,6 +52,7 @@ class KnowledgeExtractionAgentConfig(RecordExtractionFields, ToolLoopFields, Age
                 narrow_references=True,
                 path_glob=KnowledgeDocumentConfig.path_glob_input(),
                 semantic_search=KnowledgeDocumentConfig.semantic_search_input(),
+                discovery=KnowledgeDocumentConfig.discovery_input(),
             ),
             **cls.conversation_form_elements(),
             **cls.record_extraction_form_elements(),

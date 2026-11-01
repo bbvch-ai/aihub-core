@@ -79,6 +79,12 @@ class WholeScopeRequest:
         )
 
     @staticmethod
+    async def folders(scope: KnowledgeDocumentRunScope) -> str:
+        """The largest folders in scope, for the user to name one in the request form."""
+        listing = await WholeScopeRequest._listing(scope)
+        return SelectionFacets.folders(listing.documents)
+
+    @staticmethod
     async def extraction_of(
         reading: ExtractionRequestAnswer,
         history: list[ChatMessage],

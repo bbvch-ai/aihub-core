@@ -211,6 +211,7 @@ def test_the_form_never_offers_ranking_by_meaning():
     context = _tool_context(_config(knowledge_documents=KnowledgeDocumentConfig(enabled=True)))
 
     assert form.knowledge_documents.semantic_search is False
+    assert form.knowledge_documents.discovery is False
     assert "rank_knowledge_documents" not in UniversalAgent.tools.function_tools(context)
 
 
