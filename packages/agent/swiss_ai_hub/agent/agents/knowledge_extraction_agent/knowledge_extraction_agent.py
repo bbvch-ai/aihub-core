@@ -30,16 +30,13 @@ from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_par
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.knowledge_extraction_agent_config import (
     KnowledgeExtractionAgentConfig,
 )
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selected_extraction import SelectedExtraction
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_call import SelectionCall
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback import SelectionFallback
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.whole_scope_request import WholeScopeRequest
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
-from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_scope import (
-    KnowledgeDocumentRunScope,
-)
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_scope import KnowledgeDocumentScope
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_tools import KnowledgeDocumentTools
-from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_arguments import ExtractRecordsArguments
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import ExtractionForm
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import RecordExtraction
 from swiss_ai_hub.agent.capabilities.record_extraction.record_selection_tools import RecordSelectionTools
@@ -242,7 +239,7 @@ class KnowledgeExtractionAgent(Agent):
             ]
             return await ExtractionAnswer.notice("\n\n".join(notices), ctx.query, displayer)
         if confirmed is None:
-            return KnowledgeExtractionAgent._extraction(selection, scope, finished, by_location, t)
+            return SelectedExtraction.of(selection, scope, finished, by_location, t)
         within = await WholeScopeRequest.within(selection.selection, confirmed.locations, scope, t)
         if isinstance(within, str):
             return await ExtractionAnswer.notice(within, ctx.query, displayer)
@@ -256,30 +253,7 @@ class KnowledgeExtractionAgent(Agent):
             }
         )
         calculation = confirmed.calculation
-        return KnowledgeExtractionAgent._extraction(as_confirmed, scope, finished, by_location, t, calculation)
-
-    @staticmethod
-    def _extraction(
-        selection: ExtractRecordsArguments,
-        scope: KnowledgeDocumentRunScope,
-        finished: ToolLoop.Finished,
-        by_location: bool,
-        t: LocaleHandler,
-        calculation: str | None = None,
-    ) -> ExtractRecordsEvent:
-        return RecordExtraction.extract(
-            selection.selection,
-            selection.fields,
-            scope.pairs(),
-            selection.instructions,
-            selection.row_terms,
-            notices=[
-                *ExtractionNotices.for_calculation(calculation, t),
-                *ExtractionNotices.for_table(scope, finished.stopped_early, t, by_location),
-            ],
-            cut_short=finished.stopped_early and not by_location,
-            document_terms=selection.document_terms,
-        )
+        return SelectedExtraction.of(as_confirmed, scope, finished, by_location, t, calculation)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.steps.complete.name"),
