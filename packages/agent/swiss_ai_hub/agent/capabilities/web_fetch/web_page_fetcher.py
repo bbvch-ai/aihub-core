@@ -9,7 +9,6 @@ from swiss_ai_hub.core.infrastructure import PlaywrightSettings
 from swiss_ai_hub.agent.capabilities.web_fetch.fetched_web_page import FetchedWebPage
 from swiss_ai_hub.agent.capabilities.web_fetch.page_content_converter import PageContentConverter
 from swiss_ai_hub.agent.capabilities.web_fetch.request_guard import RequestGuard
-from swiss_ai_hub.agent.capabilities.web_fetch.url_safety_policy import UrlSafetyPolicy
 
 type FetchResult = FetchedWebPage | WebFetchFailure
 
@@ -29,7 +28,8 @@ NAVIGATION_ERROR_REASONS = {
 
 
 class WebPageFetcher:
-    """Reads web pages through the platform's Playwright server; agents have no internet access of their own.
+    """Reads web pages through the platform's Playwright server; agents have no internet access of their own, and
+    the server reaches the internet only through `browser-proxy`.
 
     The single place that knows the engine: replacing Playwright (e.g. with Firecrawl, #1605) changes this class
     and `RequestGuard`, and nothing that calls `fetch_all`.
@@ -42,18 +42,16 @@ class WebPageFetcher:
         if not urls:
             return []
         settings = PlaywrightSettings()
-        policy = UrlSafetyPolicy()
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_PAGES)
         async with async_playwright() as playwright:
             browser = await playwright.chromium.connect(settings.WS_URL)
             try:
-                context = await browser.new_context(service_workers="block", accept_downloads=False)
+                context = await browser.new_context(
+                    service_workers="block", accept_downloads=False, proxy={"server": settings.PROXY_URL}
+                )
                 await cls.refuse_unguarded_pages(context)
                 results = await asyncio.gather(
-                    *(
-                        cls._fetch_limited(semaphore, context, policy, url, timeout_seconds, max_page_characters)
-                        for url in urls
-                    )
+                    *(cls._fetch_limited(semaphore, context, url, timeout_seconds, max_page_characters) for url in urls)
                 )
             finally:
                 await browser.close()
@@ -71,7 +69,6 @@ class WebPageFetcher:
         cls,
         semaphore: asyncio.Semaphore,
         context: BrowserContext,
-        policy: UrlSafetyPolicy,
         url: str,
         timeout_seconds: float,
         max_page_characters: int,
@@ -79,17 +76,17 @@ class WebPageFetcher:
         async with semaphore:
             try:
                 async with asyncio.timeout(timeout_seconds + BACKSTOP_MARGIN_SECONDS):
-                    return await cls._follow(context, policy, url, timeout_seconds, max_page_characters)
+                    return await cls._follow(context, url, timeout_seconds, max_page_characters)
             except (TimeoutError, PlaywrightTimeoutError):
                 return WebFetchFailure(url=url, reason=WebFetchFailureReason.TIMEOUT)
 
     @classmethod
     async def _follow(
-        cls, context: BrowserContext, policy: UrlSafetyPolicy, url: str, timeout_seconds: float, max_characters: int
+        cls, context: BrowserContext, url: str, timeout_seconds: float, max_characters: int
     ) -> FetchResult:
         target = url
         for _ in range(MAX_NAVIGATION_REDIRECTS + 1):
-            result = await cls._visit(context, policy, url, target, timeout_seconds, max_characters)
+            result = await cls._visit(context, url, target, timeout_seconds, max_characters)
             if not isinstance(result, str):
                 return result
             target = result
@@ -99,7 +96,6 @@ class WebPageFetcher:
     async def _visit(
         cls,
         context: BrowserContext,
-        policy: UrlSafetyPolicy,
         url: str,
         target: str,
         timeout_seconds: float,
@@ -110,7 +106,7 @@ class WebPageFetcher:
         Fresh, because a page reused after an aborted navigation reports the next one as interrupted by Chrome's
         error page.
         """
-        guard = RequestGuard(policy, timeout_seconds)
+        guard = RequestGuard(timeout_seconds)
         page = await context.new_page()
         try:
             await page.route("**/*", guard.handle)

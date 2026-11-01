@@ -36,7 +36,7 @@ image_tags:
   litellm: litellm:v1.106.4
   mineru_api: mineru-api:v2.7.5
   mineru_vlm: mineru-vlm:v2.7.5
-  open_terminal: open-terminal-office:0.11.34-1
+  open_terminal: open-terminal-office:0.11.34-3
   otel_collector: otel/opentelemetry-collector-contrib:0.164.0
   traefik: traefik:v3.7.16
   docker_socket_proxy: tecnativa/docker-socket-proxy:0.3
@@ -46,6 +46,7 @@ image_tags:
   open_webui: open-webui:v0.11.4-playwright1.63.0-1
   open_webui_init: postgres:17
   playwright: playwright:v1.63.0-jammy-1
+  browser_proxy: browser-proxy:7.6-1
   vllm: vllm-openai:v0.15.1
   speaches: speaches-ai/speaches:latest-cuda-12.6.3
   pgbouncer: pgbouncer:v1.24.1-p1

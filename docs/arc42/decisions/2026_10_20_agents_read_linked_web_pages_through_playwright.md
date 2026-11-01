@@ -120,3 +120,21 @@ status while pages load, one source chip per page read, and an error status nami
 - **A failed `#` reference never reaches the agent.** Open WebUI 0.11.3 fetches it itself when it is picked and drops it
   with its own message when that fails. Deferred.
 - **Non-HTML links are not read.** PDFs and downloads are reported as unsupported; video pages give little text.
+
+## Amendment 2026-10-29: names are judged by a proxy, not the agent
+
+On staging every link failed as "the page does not exist": the fetching agents sit on internal networks only, Docker
+gives them no outside DNS, and the guard's lookup failed closed. That lookup also left the rebinding window this ADR
+describes open towards the Docker host, the customer's network and cloud metadata, which the browser reached through
+`egress`.
+
+ADR `2026_10_29_browser_reaches_the_internet_only_through_a_filtering_proxy` replaces two parts of this decision:
+
+- **The URL guard no longer resolves names.** `UrlSafetyPolicy` refuses only what the URL shows (schemes, internal
+  names, non-public IP literals, ambiguous URLs). The second bullet of "A URL guard on every request of the page" no
+  longer applies in the agent.
+- **Playwright has no `egress`.** It reaches the internet only through `browser-proxy` (Squid on `browser` and
+  `egress`), which resolves each name and refuses addresses that are not public, for the address it connects to. The
+  agents pass it as the browser context's proxy.
+
+The "Dev does not exercise the zone" consequence stands: the isolation is verified on the `local` stage.

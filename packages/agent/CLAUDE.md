@@ -263,11 +263,17 @@ first `max_urls` are read and the rest reported as over the limit. Pages load th
 (core's `PlaywrightSettings`; agents have no internet access of their own) via `WebPageFetcher`, the one class that
 knows the engine. The `playwright` package must have the server image's version (`image_tags.playwright` in
 `compose-config.yml`): the server refuses any other client, so a server bump is a package bump. `RequestGuard` performs
-every request of the page itself, redirects and subresources included, checked by `UrlSafetyPolicy`, which refuses
-internal hosts and any URL Python and the browser could read as different hosts; a catch-all on the browser context
-refuses requests from pages the fetched page opens. `PageContentConverter` keeps the main content as markdown
-(Trafilatura). Each page becomes one `IngestedNode` (`FetchedWebPage.to_ingested_node`, id from the URL, `source_origin`
-the URL chat clients link), rendered with `combine_nodes_in_order` and cited like retrieved knowledge; the result is a
+every request of the page itself, redirects and subresources included, checked by `UrlSafetyPolicy` on the URL alone
+(internal names, non-public IP literals, and any URL Python and the browser could read as different hosts); a catch-all
+on the browser context refuses requests from pages the fetched page opens. Where a name leads is never judged in the
+agent: agents sit on internal networks only and get no outside DNS (a lookup there failed every link on staging). The
+context's proxy, `browser-proxy` (`PlaywrightSettings.PROXY_URL`, Squid), is the Playwright server's only way out and
+refuses non-public addresses for the address it connects to; `RequestGuard.reason_for_proxy_refusal` reads its
+`X-Squid-Error` (`ERR_ACCESS_DENIED` → blocked host, `ERR_DNS_FAIL` → not found), so its 403 never reads as the site
+denying access. `route.fetch` tunnels plain `http://` with `CONNECT` too, and the proxy's error pages are empty, or a
+refusal surfaces as `Route.fetch: aborted`. `PageContentConverter` keeps the main content as markdown (Trafilatura).
+Each page becomes one `IngestedNode` (`FetchedWebPage.to_ingested_node`, id from the URL, `source_origin` the URL chat
+clients link), rendered with `combine_nodes_in_order` and cited like retrieved knowledge; the result is a
 `SemanticEvent`, so the fetch shows in the trace as a retrieval. Failing to reach the browser raises (a platform fault,
 not an unreadable page). `RAGAgent`, `ExpertRAGAgent`, `LLMWrappingAgent` and `WebFetchAgent` call it from
 `gather_context_step`, reserving `WebFetchFields.web_fetch_reserve(links)` in `AttachedFiles.read`, and compose its
@@ -814,9 +820,9 @@ config seeder needed.
 - Shared mailbox step functions: `packages/agent/swiss_ai_hub/agent/imap/step_functions.py` (`do_list_unread`,
   `do_list_unread_above` for the unread mail above an `InboxWatermark` position, `do_fetch_and_archive`,
   `do_file_message` for one message, `do_file_messages` for a whole batch on one connection — used by both mailbox
-  blueprints). `do_fetch_and_archive` archives and strips each message before fetching the next, so
-  the returned `parsed` carries no raw or attachment bytes for a batch caller to hold across its LLM calls; pass
-  `skip_vanished=True` to drop a UID another client expunged mid-run instead of failing the whole batch
+  blueprints). `do_fetch_and_archive` archives and strips each message before fetching the next, so the returned
+  `parsed` carries no raw or attachment bytes for a batch caller to hold across its LLM calls; pass `skip_vanished=True`
+  to drop a UID another client expunged mid-run instead of failing the whole batch
 - Self-awareness gate: `packages/agent/swiss_ai_hub/agent/self_awareness/meta_question_gate.py`
 
 **Playground patterns**: `playground/minimal_workflow/`
