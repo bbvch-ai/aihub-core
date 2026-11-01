@@ -14,7 +14,7 @@ from swiss_ai_hub.core.events.agent import (
     ToolDefinition,
     ToolResultEvent,
 )
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair, KnowledgeDocumentSelection
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair, KnowledgeDocumentReader, KnowledgeDocumentSelection
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -28,10 +28,18 @@ from swiss_ai_hub.agent.capabilities.record_extraction.document_record_extractio
 from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_tool_arguments import (
     ExtractRecordsToolArguments,
 )
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form import REWRITTEN_KEY, ExtractionCallForm
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form_request_event import (
+    ExtractionCallFormRequestEvent,
+)
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form_response_event import (
+    ExtractionCallFormResponseEvent,
+)
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_planner import ExtractionPlanner
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import ExtractionTable
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields import RecordExtractionFields
 from swiss_ai_hub.agent.capabilities.record_extraction.records_tool_result import RecordsToolResult
+from swiss_ai_hub.agent.capabilities.record_extraction.selection_facets import SelectionFacets
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
@@ -87,8 +95,9 @@ class RecordExtraction(Capability):
       every document is extracted in parallel before one table is assembled and stored as a file. A document that
       fails is listed, never fatal. A selection too large to extract unasked is sampled first, and `confirm_sample`
       extracts it whole once the user agrees.
-    - In a tool set the model chooses when to extract (`extract_records`); the table then reaches the user from the
-      result event itself, and the model reads its summary.
+    - In a tool set the model chooses when to extract (`extract_records`); a new extraction is first asked back in
+      the request form (`ExtractionCallForm`), which replaces the yes/no approval, and the table then reaches the user
+      from the result event itself, and the model reads its summary.
     """
 
     calls: ClassVar[dict] = {ExtractRecordsEvent: (RecordsExtractedEvent,)}
@@ -102,7 +111,8 @@ class RecordExtraction(Capability):
     tool_options: ClassVar[ToolOptions] = ToolOptions(
         label=AgentLocaleString.from_i18n_path("agent.record_extraction.tools.extract.label"),
         approval_summary=AgentLocaleString.from_i18n_path("agent.record_extraction.tools.extract.approval"),
-        default_approval=ToolApprovalPolicy.EVERY_CALL,
+        # The request form asks every new extraction back; a yes/no approval on top would ask twice.
+        default_approval=ToolApprovalPolicy.NEVER,
     )
 
     @classmethod
@@ -218,8 +228,9 @@ class RecordExtraction(Capability):
         t: LocaleHandler,
         run_context: RunContext,
         access: AccessChecker | None = None,
-    ) -> ExtractRecordsEvent | ToolResultEvent:
-        """The model chose to extract: the same extraction as an explicit call, over the collections of this run."""
+    ) -> ExtractRecordsEvent | ToolResultEvent | ExtractionCallFormRequestEvent:
+        """The model chose to extract: the same extraction as an explicit call, over the collections of this run. A new
+        extraction is asked back in the request form first, unless it is the one the user's typed answer asked for."""
         scope = await asyncio.to_thread(KnowledgeDocumentScope.of, tool, request.knowledge_references, access, t.locale)
         try:
             arguments = ExtractRecordsToolArguments.model_validate(call.arguments)
@@ -235,15 +246,45 @@ class RecordExtraction(Capability):
                 )
             event = RecordExtraction.confirm_sample(scope.pairs())
             return event.model_copy(update={"tool_call_id": call.tool_call_id})
+        if await run_context.pop(REWRITTEN_KEY):
+            return RecordExtraction._called(call.tool_call_id, arguments, scope.pairs())
+        form = ExtractionCallForm(tool_call_id=call.tool_call_id, arguments=arguments, collections=scope.pairs())
+        listing = await KnowledgeDocumentReader.list_documents(scope.pairs())
+        listing = listing.matching_glob(scope.restricting_glob) if scope.restricting_glob else listing
+        return await form.ask(SelectionFacets.folders(listing.documents), run_context, t)
+
+    @staticmethod
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.record_extraction.steps.answer_form.name"),
+        description=AgentLocaleString.from_i18n_path("agent.record_extraction.steps.answer_form.description"),
+        icon="mdi:form-select",
+    )
+    async def answer_extraction_form_step(
+        agent: Agent, response: ExtractionCallFormResponseEvent, t: LocaleHandler, run_context: RunContext
+    ) -> ExtractRecordsEvent | ToolResultEvent:
+        """Run the extraction the user confirmed or corrected; a decline, or a typed correction, goes back to the
+        model as the call's result, and the corrected call then runs without a second form."""
+        form = await ExtractionCallForm.pending(response, run_context)
+        answered = form.answered(response.response, t)
+        if isinstance(answered, ExtractRecordsToolArguments):
+            return RecordExtraction._called(form.tool_call_id, answered, form.collections)
+        if ExtractionCallForm.rewrites(response.response):
+            await run_context.set(REWRITTEN_KEY, True)
+        return ToolResultEvent(tool_call_id=form.tool_call_id, name=EXTRACT_RECORDS_TOOL, content=answered)
+
+    @staticmethod
+    def _called(
+        tool_call_id: str, arguments: ExtractRecordsToolArguments, collections: list[BucketNamespacePair]
+    ) -> ExtractRecordsEvent:
         event = RecordExtraction.extract(
             arguments.selection,
             arguments.fields,
-            scope.pairs(),
+            collections,
             arguments.instructions,
             arguments.row_terms,
             document_terms=arguments.document_terms,
         )
-        return event.model_copy(update={"tool_call_id": call.tool_call_id})
+        return event.model_copy(update={"tool_call_id": tool_call_id})
 
     @staticmethod
     @step(

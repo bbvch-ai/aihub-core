@@ -5,6 +5,7 @@ each document's rows and the whole table are stored as files, the events carry a
 import asyncio
 import contextlib
 import functools
+import json
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from typing import Any
@@ -34,6 +35,7 @@ from swiss_ai_hub.core.generative_ai import (
     ExtractionFileStore,
     KnowledgeDocument,
     KnowledgeDocumentCriteria,
+    KnowledgeDocumentListing,
     KnowledgeDocumentSelection,
     KnowledgeDocumentSelectionResult,
     KnowledgeDocumentSummary,
@@ -59,6 +61,12 @@ from swiss_ai_hub.agent.capabilities.record_extraction.document_extraction_reque
     DocumentExtractionRequestedEvent,
 )
 from swiss_ai_hub.agent.capabilities.record_extraction.document_record_extraction import DocumentRecordExtraction
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form_request_event import (
+    ExtractionCallFormRequestEvent,
+)
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form_response_event import (
+    ExtractionCallFormResponseEvent,
+)
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_planner import ExtractionPlanner
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_run import ExtractionRun
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import (
@@ -78,6 +86,7 @@ from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_config 
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields import RecordExtractionFields
 from swiss_ai_hub.agent.capabilities.record_extraction.record_selection_tools import RecordSelectionTools
 from swiss_ai_hub.agent.capabilities.record_extraction.records_tool_result import RecordsToolResult
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
@@ -796,12 +805,31 @@ def _scope() -> KnowledgeDocumentRunScope:
     )
 
 
-async def _tool_call(arguments: dict[str, Any], run_context: _Thread, call_id: str = "c1") -> Any:
+AS_UNDERSTOOD = json.dumps({key: {"type": "option", "option_index": 0} for key in ("where", "rows", "columns")})
+RECORDS = "swiss_ai_hub.agent.capabilities.record_extraction.record_extraction"
+
+
+async def _tool_call(
+    arguments: dict[str, Any], run_context: _Thread, call_id: str = "c1", answer: str | None = AS_UNDERSTOOD
+) -> Any:
+    """The tool step, and, when it asks the request form, the form's answer step with the given answer."""
     call = ToolCallApprovedEvent(tool_call_id=call_id, name="extract_records", arguments=arguments, kind="capability")
-    with patch(SCOPE_OF, return_value=_scope()):
-        return await RecordExtraction.extract_tool_call_step(
+    listing = KnowledgeDocumentListing.from_summaries(
+        [_summary("invoices/2025/a.pdf"), _summary("invoices/2025/b.pdf"), _summary("invoices/2024/c.pdf")]
+    )
+    with (
+        patch(SCOPE_OF, return_value=_scope()),
+        patch(f"{RECORDS}.KnowledgeDocumentReader.list_documents", AsyncMock(return_value=listing)),
+    ):
+        result = await RecordExtraction.extract_tool_call_step(
             MagicMock(), call=call, request=RunToolLoopEvent(), tool=_config(), t=T, run_context=run_context
         )
+    if isinstance(result, ExtractionCallFormRequestEvent) and answer is not None:
+        response = ExtractionCallFormResponseEvent(response=answer, request_event=result)
+        return await RecordExtraction.answer_extraction_form_step(
+            MagicMock(), response=response, t=T, run_context=run_context
+        )
+    return result
 
 
 class TestAsATool:
@@ -844,6 +872,103 @@ class TestAsATool:
         assert isinstance(request, ExtractRecordsEvent)
         assert (request.confirmed, request.selection, request.collections) == (True, None, [FINANCE])
         assert request.tool_call_id == "c1"
+
+    @pytest.mark.asyncio
+    async def test_a_new_extraction_is_asked_back_in_the_request_form_before_it_runs(self):
+        form = await _tool_call(
+            {"any_of": [{"content_query": "Lieferant GmbH"}], "fields": "number, date", "instructions": "2018"},
+            _Thread(),
+            answer=None,
+        )
+
+        assert isinstance(form, ExtractionCallFormRequestEvent)
+        assert form.hitl_type == "chat"
+        assert [question.header for question in form.questions] == ["Location", "Filter Condition", "Values to extract"]
+        where, rows, columns = form.questions
+        assert [(option.label, option.description) for option in where.options][0] == (
+            "As understood",
+            "text contains `Lieferant GmbH`",
+        )
+        assert where.question.endswith("Folders: invoices/2025 (2), invoices/2024 (1)")
+        assert [option.label for option in rows.options] == ["As understood", "Every row"]
+        assert [option.label for option in columns.options] == ["As understood"]
+        assert "- **Filter Condition:** 2018" in form.question
+
+    @pytest.mark.parametrize(
+        ("place", "criteria"),
+        [
+            ("einvoices/zugferd", KnowledgeDocumentCriteria(path_glob="einvoices/zugferd/**")),
+            ("2025/a.pdf", KnowledgeDocumentCriteria(path_glob="**/2025/a.pdf")),
+            ("Lieferant GmbH", KnowledgeDocumentCriteria(content_query="Lieferant GmbH")),
+        ],
+        ids=["folder", "file", "text"],
+    )
+    @pytest.mark.asyncio
+    async def test_what_the_user_writes_replaces_the_part(self, place: str, criteria: KnowledgeDocumentCriteria):
+        answer = json.dumps(
+            {
+                "where": {"type": "other", "text": place},
+                "rows": {"type": "other", "text": "only invoices dated 2018"},
+                "columns": {"type": "other", "text": "number, gross total"},
+            }
+        )
+
+        request = await _tool_call(
+            {"any_of": [{"path_glob": "invoices/**"}], "fields": "number", "instructions": "hardware"},
+            _Thread(),
+            answer=answer,
+        )
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert request.selection.any_of == [criteria]
+        assert (request.instructions, request.fields, request.tool_call_id) == (
+            "only invoices dated 2018",
+            "number, gross total",
+            "c1",
+        )
+
+    @pytest.mark.asyncio
+    async def test_the_second_options_read_every_document_and_keep_every_row(self):
+        answer = json.dumps(
+            {"where": {"type": "option", "option_index": 1}, "rows": {"type": "option", "option_index": 1}}
+        )
+
+        request = await _tool_call(
+            {"any_of": [{"path_glob": "invoices/**"}], "fields": "number", "instructions": "hardware"},
+            _Thread(),
+            answer=answer,
+        )
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria()]
+        assert request.instructions is None
+
+    @pytest.mark.asyncio
+    async def test_a_typed_no_declines_and_the_model_is_told(self):
+        result = await _tool_call(
+            {"any_of": [{"path_glob": "invoices/**"}], "fields": "number"}, _Thread(), answer="No"
+        )
+
+        assert isinstance(result, ToolResultEvent)
+        assert result.tool_call_id == "c1"
+        assert "declined this extraction" in result.content
+
+    @pytest.mark.asyncio
+    async def test_a_typed_correction_goes_to_the_model_and_its_next_call_runs_without_a_second_form(self):
+        run_context = _Thread()
+        arguments = {"any_of": [{"path_glob": "invoices/**"}], "fields": "number"}
+
+        result = await _tool_call(arguments, run_context, answer="only the 2018 invoices")
+        corrected = await _tool_call(arguments, run_context, "c2", answer=None)
+        next_one = await _tool_call(arguments, run_context, "c3", answer=None)
+
+        assert isinstance(result, ToolResultEvent)
+        assert '"only the 2018 invoices"' in result.content
+        assert isinstance(corrected, ExtractRecordsEvent)
+        assert corrected.tool_call_id == "c2"
+        assert isinstance(next_one, ExtractionCallFormRequestEvent)
+
+    def test_the_form_replaces_the_yes_no_approval(self):
+        assert RecordExtraction.tool_options.default_approval == ToolApprovalPolicy.NEVER
 
     def test_continuing_is_no_longer_an_argument(self):
         from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_tool_arguments import (

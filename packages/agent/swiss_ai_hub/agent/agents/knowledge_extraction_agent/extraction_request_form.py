@@ -1,5 +1,4 @@
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent import HumanInTheLoopChoiceOption, HumanInTheLoopChoiceQuestion
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 from swiss_ai_hub.core.topics import PartialAgentTopic
@@ -13,22 +12,19 @@ from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_for
     ExtractionRequestFormResponseEvent,
 )
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_parts import ExtractionRequestParts
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import ExtractionForm
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 
 READING_KEY = "knowledge_extraction:request_form:reading"
-_FORM = "agent.knowledge_extraction_agent.form"
-# OpenWebUI's dialog cuts longer texts; cutting here keeps the end visible as an ellipsis.
-QUESTION_LENGTH = 500
-DESCRIPTION_LENGTH = 240
+CONFIRMED_KEY = "knowledge_extraction:request_form:confirmed"
 
 
 class ExtractionRequestForm:
-    """Asks the user to confirm where, which rows and which columns before any document is read.
+    """Asks the user to confirm where, which rows and which columns before any document is read; with discovery also
+    the exact and the semantic keywords that guide the search.
 
-    A misread part otherwise only shows in the finished table. Each part is a choice question whose first option keeps
-    it as understood and whose second, when there is one, drops it (every document, every row); a free answer corrects
-    it. The same parts are the request's text, for clients without a dialog. The reading waits in the run for the
-    answer, since the answer resumes the same run.
+    A misread part otherwise only shows in the finished table. The reading waits in the run for the answer, since the
+    answer resumes the same run, and the confirmed reading stays there for the search's selection.
     """
 
     request = ExtractionRequestFormRequestEvent
@@ -36,26 +32,15 @@ class ExtractionRequestForm:
 
     @classmethod
     async def ask(
-        cls, reading: ExtractionRequestAnswer, folders: str, run_context: RunContext, t: LocaleHandler
+        cls, reading: ExtractionRequestAnswer, folders: str, keywords: bool, run_context: RunContext, t: LocaleHandler
     ) -> ExtractionRequestFormRequestEvent:
-        """`folders`: the largest folders in scope, so the user can name one as the location."""
+        """`folders`: the largest folders in scope; `keywords`: whether the model searches, so the keywords matter."""
         await run_context.set(READING_KEY, reading.model_dump(mode="json"))
-        parts = ExtractionRequestParts.of(reading, t)
+        parts = ExtractionRequestParts.of(reading, t, keywords).form(reading, folders, t)
         notices = ExtractionNotices.for_calculation(reading.calculation, t)
-        hints = ExtractionRequestForm._hints(folders, t)
         return cls.request(
-            question=ExtractionRequestForm.text(parts, notices, hints, t),
-            questions=[
-                ExtractionRequestForm._question(
-                    "where", parts.where, bool(reading.locations), True, [*notices, hints["where"]], t
-                ),
-                ExtractionRequestForm._question(
-                    "rows", parts.rows, bool(reading.instructions), True, [hints["rows"]], t
-                ),
-                ExtractionRequestForm._question(
-                    "columns", parts.columns, bool(reading.fields), False, [hints["columns"]], t
-                ),
-            ],
+            question=ExtractionForm.text(parts, notices, t),
+            questions=ExtractionForm.questions(parts, notices, t),
             topic=PartialAgentTopic(
                 event_type=AgentTopicManager.CONTROL_EVENT, event_name=cls.response.event_name_from_class()
             ),
@@ -66,6 +51,15 @@ class ExtractionRequestForm:
         return ExtractionRequestAnswer.model_validate(await run_context.get(READING_KEY))
 
     @staticmethod
+    async def confirm(run_context: RunContext, reading: ExtractionRequestAnswer) -> None:
+        await run_context.set(CONFIRMED_KEY, reading.model_dump(mode="json"))
+
+    @staticmethod
+    async def confirmed(run_context: RunContext) -> ExtractionRequestAnswer | None:
+        stored = await run_context.get(CONFIRMED_KEY)
+        return ExtractionRequestAnswer.model_validate(stored) if stored else None
+
+    @staticmethod
     def answered(history: list[ChatMessage], question: str, reply: str) -> list[ChatMessage]:
         """The conversation with the form and the user's reply to it, for reading or searching once more."""
         return [
@@ -73,59 +67,3 @@ class ExtractionRequestForm:
             ChatMessage(role=MessageRole.ASSISTANT, content=question),
             ChatMessage(role=MessageRole.USER, content=reply),
         ]
-
-    @staticmethod
-    def text(parts: ExtractionRequestParts, notices: list[str], hints: dict[str, str], t: LocaleHandler) -> str:
-        """The form as text, for clients without a dialog, with the dialog's wording: a calculation the agent does not
-        do first, then the parts as understood, then what each part may say."""
-        understood = [f"- {line}" for line in parts.lines(t)]
-        guidance = [f"- **{t(f'{_FORM}.{key}.header')}:** {hint}" for key, hint in hints.items()]
-        return "\n".join(
-            [
-                *(f"{notice}\n" for notice in notices),
-                t(f"{_FORM}.intro"),
-                "",
-                *understood,
-                "",
-                t(f"{_FORM}.reply_hint"),
-                *guidance,
-            ]
-        )
-
-    @staticmethod
-    def _hints(folders: str, t: LocaleHandler) -> dict[str, str]:
-        """What each part may say, with examples, since the dialog's own answer field shows none."""
-        where = t(f"{_FORM}.where.hint")
-        return {
-            "where": f"{where} {t(f'{_FORM}.where.folders', folders=folders)}" if folders else where,
-            "rows": t(f"{_FORM}.rows.hint"),
-            "columns": t(f"{_FORM}.columns.hint"),
-        }
-
-    @staticmethod
-    def _question(
-        key: str, value: str, named: bool, droppable: bool, around: list[str], t: LocaleHandler
-    ) -> HumanInTheLoopChoiceQuestion:
-        """The part as understood first; a part the user named can also be dropped, where dropping means anything.
-        A calculation notice opens the first question and the part's hint closes each one, since a dialog shows only
-        the questions; the end, where the folder list stands, is what a long question loses."""
-        understood = HumanInTheLoopChoiceOption(
-            label=t(f"{_FORM}.as_understood"), description=ExtractionRequestForm._clip(value, DESCRIPTION_LENGTH)
-        )
-        anything = HumanInTheLoopChoiceOption(
-            label=t(f"{_FORM}.{key}.anything"), description=t(f"{_FORM}.{key}.anything_description")
-        )
-        options = [understood, anything] if named and droppable else [understood if named else anything]
-        *opening, hint = around
-        text = " ".join([*opening, t(f"{_FORM}.{key}.question", value=value), hint])
-        return HumanInTheLoopChoiceQuestion(
-            id=key,
-            header=t(f"{_FORM}.{key}.header"),
-            question=ExtractionRequestForm._clip(text, QUESTION_LENGTH),
-            options=options,
-            allow_other=True,
-        )
-
-    @staticmethod
-    def _clip(text: str, length: int) -> str:
-        return text if len(text) <= length else f"{text[: length - 1]}…"

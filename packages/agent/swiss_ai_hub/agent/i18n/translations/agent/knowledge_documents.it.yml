@@ -9,19 +9,9 @@ config:
     help: Solo i documenti il cui percorso nella raccolta corrisponde a questo modello,
       ad es. invoices/2025/** o **/*.pdf. Vale solo per gli strumenti dei documenti,
       non per la ricerca nella conoscenza. Lasciare vuoto per tutti i documenti.
-  semantic_search:
-    label: Ordina i documenti per significato
-    help: Il modello può anche ordinare per significato i documenti del filtro dei
-      percorsi, e trova così documenti scritti con altre parole o in un'altra lingua
-      rispetto alla richiesta.
   discovery:
-    label: Cercare prima i documenti
-    help: "Disattivato: viene letto ogni documento delle raccolte e del filtro di\
-      \ percorso, quindi nessuno viene tralasciato; l'utente restringe nominando cartelle,\
-      \ file o anni. Attivato: il modello cerca prima i documenti e vengono letti\
-      \ solo quelli selezionati, il che è più veloce su raccolte grandi ma può tralasciare\
-      \ documenti. Quanto a lungo può cercare lo stabiliscono Decisioni massime e\
-      \ Chiamate massime sotto Tools."
+    label: "Modalità discovery"
+    help: "Disattivata: viene letto ogni documento delle raccolte e del filtro di percorso, quindi nessuno viene tralasciato; l'utente restringe nominando cartelle, file o anni. Attivata: il modello trova prima i documenti, cercando per parole chiave ciò che la richiesta nomina esattamente (un fornitore, un numero, una cartella) e ordinando per significato ciò che descrive soltanto; vengono letti solo i documenti selezionati. È più veloce su raccolte grandi ma può tralasciare documenti. Il modulo della richiesta chiede allora anche parole chiave esatte e semantiche. Quanto a lungo il modello può cercare lo stabiliscono Decisioni massime e Chiamate massime sotto Tools."
 tools:
   rank_knowledge_documents:
     label: Ordina documenti di conoscenza

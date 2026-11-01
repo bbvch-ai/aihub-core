@@ -92,7 +92,6 @@ class KnowledgeExtractionAgent(Agent):
             instructions,
             agent_config.input_budget,
             t,
-            semantic=agent_config.knowledge_documents.semantic_search is True,
         )
         return Conversation.contextualize(history=history, message=event)
 
@@ -133,7 +132,8 @@ class KnowledgeExtractionAgent(Agent):
         if isinstance(understood, ExtractRecordsEvent):
             return understood
         folders = await WholeScopeRequest.folders(scope)
-        return await ExtractionRequestForm.ask(understood, folders, run_context, t)
+        searches = agent_config.knowledge_documents.discovery is True
+        return await ExtractionRequestForm.ask(understood, folders, searches, run_context, t)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.steps.confirm_request.name"),
@@ -155,11 +155,14 @@ class KnowledgeExtractionAgent(Agent):
         user: UserIdentity | None = None,
     ) -> ToolLoop.RunRequest | RecordExtraction.ExtractRequest | Conversation.CompleteRequest:
         """Extract what the user confirmed: from the whole scope, or, with discovery, from the documents the model
-        finds for the confirmed parts. What the user wrote in the form is read once more, with no second form."""
+        finds for the confirmed parts and keywords. What the user wrote in the form is read once more, with no second
+        form."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
-        answers = ExtractionRequestAnswers.of(response.response, await ExtractionRequestForm.understood(run_context), t)
+        searches = agent_config.knowledge_documents.discovery is True
+        understood = await ExtractionRequestForm.understood(run_context)
+        answers = ExtractionRequestAnswers.of(response.response, understood, t, searches)
         reading: ExtractionRequestAnswer | None = answers.reading
         if answers.correction is not None:
             history = ExtractionRequestForm.answered(ctx.history, response.request_event.question, answers.correction)
@@ -170,9 +173,11 @@ class KnowledgeExtractionAgent(Agent):
             return await ExtractionAnswer.notice(
                 t("agent.knowledge_extraction_agent.messages.no_request"), ctx.query, displayer
             )
-        confirmed = ExtractionRequestParts.of(reading, t).lines(t)
+        reading = answers.applied(reading)
+        await ExtractionRequestForm.confirm(run_context, reading)
+        confirmed = ExtractionRequestParts.of(reading, t, searches).lines(t)
         await displayer.display_thought("\n".join(confirmed))
-        if agent_config.knowledge_documents.discovery is True:
+        if searches:
             history = ExtractionRequestForm.answered(ctx.history, response.request_event.question, "\n".join(confirmed))
             loop = KnowledgeExtractionAgent.tools.run(
                 history, mode=ToolLoopMode.GATHER, knowledge_references=event.knowledge_references
@@ -197,6 +202,7 @@ class KnowledgeExtractionAgent(Agent):
         agent_config: KnowledgeExtractionAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        run_context: RunContext,
         decided: list[ToolCallsDecidedEvent] | None = None,
         calls: list[ToolCallApprovedEvent] | None = None,
         results: list[ToolResultEvent] | None = None,
@@ -206,7 +212,8 @@ class KnowledgeExtractionAgent(Agent):
         """Extract from the documents the model settled on, re-resolved within the profile's limits. A model that
         ended its search without stating a selection is asked once for the selection its searches point to; one stopped
         at its limit before it did is asked for folders and paths only, since its hits are incomplete. A stopped search
-        whose own selection stands still marks the table as possibly incomplete."""
+        whose own selection stands still marks the table as possibly incomplete. The confirmed exact keywords order the
+        documents when the model named none, and a confirmed calculation is named under the table."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
@@ -222,15 +229,19 @@ class KnowledgeExtractionAgent(Agent):
                 *ExtractionNotices.for_table(scope, False, t),
             ]
             return await ExtractionAnswer.notice("\n\n".join(notices), ctx.query, displayer)
+        confirmed = await ExtractionRequestForm.confirmed(run_context)
         return RecordExtraction.extract(
             selection.selection,
             selection.fields,
             scope.pairs(),
             selection.instructions,
             selection.row_terms,
-            notices=ExtractionNotices.for_table(scope, finished.stopped_early, t, by_location),
+            notices=[
+                *ExtractionNotices.for_calculation(confirmed.calculation if confirmed else None, t),
+                *ExtractionNotices.for_table(scope, finished.stopped_early, t, by_location),
+            ],
             cut_short=finished.stopped_early and not by_location,
-            document_terms=selection.document_terms,
+            document_terms=selection.document_terms or (confirmed.document_terms if confirmed else None),
         )
 
     @step(

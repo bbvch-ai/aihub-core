@@ -50,6 +50,13 @@ class ExtractionRequestPlainAnswer(BaseModel):
             "user's words; null when none. The agent lists the values and does not calculate."
         ),
     ]
+    document_kind: Annotated[
+        str | None,
+        Field(
+            description="The kind of document the wanted rows stand in, in a few words, e.g. 'supplier invoice with "
+            "line items'; no amounts, dates or thresholds. Null when the request does not say."
+        ),
+    ]
 
     @property
     def selection(self) -> KnowledgeDocumentSelection:

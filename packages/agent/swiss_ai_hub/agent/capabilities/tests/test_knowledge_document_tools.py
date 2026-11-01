@@ -104,7 +104,12 @@ def test_a_config_without_the_document_settings_offers_no_tools():
 def test_enabled_tools_are_all_offered():
     names = {tool.metadata.name for tool in _tools().to_tool_list()}
 
-    assert names == {"list_knowledge_documents", "search_knowledge_content", "read_knowledge_document"}
+    assert names == {
+        "list_knowledge_documents",
+        "search_knowledge_content",
+        "read_knowledge_document",
+        RANK_KNOWLEDGE_DOCUMENTS_TOOL,
+    }
 
 
 @pytest.mark.asyncio
@@ -176,20 +181,9 @@ async def test_a_search_without_matches_suggests_other_queries():
     assert text.startswith("No document contains this.")
 
 
-def _semantic_config() -> DocumentToolsConfig:
-    return DocumentToolsConfig(
-        agent_id="documents",
-        name=LocaleString(en="Documents"),
-        description=LocaleString(en="Documents fixture"),
-        knowledge_documents=KnowledgeDocumentConfig(enabled=True, semantic_search=True),
-    )
-
-
-def test_ranking_by_meaning_is_offered_only_when_the_profile_enables_it():
-    names = {tool.metadata.name for tool in _tools(_semantic_config()).to_tool_list()}
-
-    assert RANK_KNOWLEDGE_DOCUMENTS_TOOL in names
-    assert RANK_KNOWLEDGE_DOCUMENTS_TOOL not in {tool.metadata.name for tool in _tools().to_tool_list()}
+def test_ranking_by_meaning_comes_with_the_document_tools_and_no_setting():
+    assert "semantic_search" not in KnowledgeDocumentConfig.model_fields
+    assert RANK_KNOWLEDGE_DOCUMENTS_TOOL in {tool.metadata.name for tool in _tools().to_tool_list()}
 
 
 def _ranked(path: str, score: float, *passages: str) -> KnowledgeSemanticMatch:
@@ -212,7 +206,7 @@ def _ranking(count: int, *, in_scope: int | None = None, unranked: int = 0, capp
 async def _rank_tool(ranking: KnowledgeSemanticRanking | Exception, **arguments: object) -> tuple[str, AsyncMock]:
     rank = AsyncMock(side_effect=ranking) if isinstance(ranking, Exception) else AsyncMock(return_value=ranking)
     with patch(SCOPE, AsyncMock(return_value=_scope())), patch(f"{TOOLS}.KnowledgeSemanticSearch.rank", rank):
-        text = await _tools(_semantic_config()).rank_knowledge_documents(query="liability cap", **arguments)
+        text = await _tools().rank_knowledge_documents(query="liability cap", **arguments)
     return text, rank
 
 

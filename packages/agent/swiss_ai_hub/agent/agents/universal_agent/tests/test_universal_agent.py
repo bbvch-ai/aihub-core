@@ -203,16 +203,15 @@ def test_a_profile_with_the_document_tools_on_offers_them():
     assert DOCUMENT_TOOLS <= set(UniversalAgent.tools.function_tools(context))
 
 
-def test_the_form_never_offers_ranking_by_meaning():
-    """Only a blueprint whose prompt leads the model through the ranking offers it; this one's prompt does not."""
+def test_ranking_by_meaning_comes_with_the_document_tools_without_a_setting():
     from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
 
     form = UniversalAgentConfig.as_form()
     context = _tool_context(_config(knowledge_documents=KnowledgeDocumentConfig(enabled=True)))
 
-    assert form.knowledge_documents.semantic_search is False
+    assert "semantic_search" not in KnowledgeDocumentConfig.model_fields
     assert form.knowledge_documents.discovery is False
-    assert "rank_knowledge_documents" not in UniversalAgent.tools.function_tools(context)
+    assert "rank_knowledge_documents" in UniversalAgent.tools.function_tools(context)
 
 
 @pytest.mark.asyncio
