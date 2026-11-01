@@ -11,8 +11,8 @@ steps:
       of the conversation
   discover:
     name: Read the Request
-    description: Reads which columns and rows the user wants, or lets the model search
-      for the documents when the profile asks for it
+    description: Reads which columns and rows the user wants and asks the user to confirm them
+      in a form
   confirm_request:
     name: Confirm the Request
     description: Asks the user to confirm or correct where, which rows and which columns,

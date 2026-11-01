@@ -11,8 +11,7 @@ steps:
       della conversazione
   discover:
     name: Leggere la richiesta
-    description: Legge quali colonne e righe vuole l'utente, oppure lascia cercare
-      i documenti al modello quando il profilo lo richiede
+    description: Legge quali colonne e righe vuole l'utente e gliele fa confermare in un modulo
   confirm_request:
     name: Confermare la richiesta
     description: Chiede all'utente di confermare o correggere dove, quali righe e

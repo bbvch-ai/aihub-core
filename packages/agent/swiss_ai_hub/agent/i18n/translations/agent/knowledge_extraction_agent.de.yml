@@ -11,8 +11,8 @@ steps:
       er arbeitet, vor die Unterhaltung
   discover:
     name: Anfrage lesen
-    description: Liest, welche Spalten und Zeilen der Benutzer möchte, oder lässt
-      das Modell nach den Dokumenten suchen, wenn das Profil es verlangt
+    description: Liest, welche Spalten und Zeilen der Benutzer möchte, und lässt sie in einem
+      Formular bestätigen
   confirm_request:
     name: Anfrage bestätigen
     description: Lässt den Benutzer bestätigen oder korrigieren, wo, welche Zeilen

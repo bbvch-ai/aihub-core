@@ -11,8 +11,8 @@ steps:
       il travaille avant la conversation
   discover:
     name: Lire la demande
-    description: Lit quelles colonnes et quelles lignes l'utilisateur veut, ou laisse
-      le modèle chercher les documents quand le profil le demande
+    description: Lit quelles colonnes et quelles lignes l'utilisateur veut et les lui fait confirmer
+      dans un formulaire
   confirm_request:
     name: Confirmer la demande
     description: Demande à l'utilisateur de confirmer ou de corriger où, quelles lignes
