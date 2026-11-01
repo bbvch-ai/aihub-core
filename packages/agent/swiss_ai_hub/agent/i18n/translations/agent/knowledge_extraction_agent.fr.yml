@@ -62,6 +62,11 @@ prompt:
     <request>
     {{ request }}
     </request>
+    {% if confirmed %}L'utilisateur a confirmé la demande ainsi ; la sélection s'en tient à l'emplacement confirmé :
+    <confirmed>
+    {{ confirmed }}
+    </confirmed>
+    {% endif %}
     Recherches et résultats :
     <searches>
     {{ transcript }}
@@ -122,6 +127,7 @@ messages:
     \ : numéro de facture, article, montant\"."
   nothing_at_location: "Aucun document du périmètre de cet agent ne se trouve à %{locations},\
     \ rien n'a donc été extrait. Voici les dossiers et années qu'il contient :"
+  declined: "Comme vous avez refusé la demande, je n'ai lu aucun document. Envoyez une nouvelle demande quand vous voulez un tableau."
   no_request: Je n'ai pas pu comprendre quel tableau vous voulez. Veuillez nommer
     les enregistrements voulus et les colonnes du tableau.
 form:

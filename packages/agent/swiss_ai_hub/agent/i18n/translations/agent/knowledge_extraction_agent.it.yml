@@ -61,6 +61,11 @@ prompt:
     <request>
     {{ request }}
     </request>
+    {% if confirmed %}L'utente ha confermato la richiesta così; la selezione resta nella posizione confermata:
+    <confirmed>
+    {{ confirmed }}
+    </confirmed>
+    {% endif %}
     Ricerche e risultati:
     <searches>
     {{ transcript }}
@@ -120,6 +125,7 @@ messages:
     "ogni posizione hardware sulle fatture 2025: numero di fattura, articolo, importo".'
   nothing_at_location: "Nell'ambito di questo agente non c'è alcun documento in %{locations},\
     \ quindi non è stato estratto nulla. Queste sono le cartelle e gli anni che contiene:"
+  declined: "Poiché ha rifiutato la richiesta, non ho letto alcun documento. Invii una nuova richiesta quando desidera una tabella."
   no_request: Non ho capito quale tabella desidera. Indichi i record che le servono
     e le colonne della tabella.
 form:

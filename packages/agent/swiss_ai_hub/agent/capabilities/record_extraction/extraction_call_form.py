@@ -1,8 +1,7 @@
-import re
-from typing import Annotated, ClassVar, Self
+from typing import Annotated, Any, ClassVar, Self
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair, KnowledgeDocumentCriteria
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair, KnowledgeDocumentCriteria, KnowledgeDocumentListing
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 from swiss_ai_hub.core.topics import PartialAgentTopic
@@ -19,13 +18,13 @@ from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form_resp
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import FORM, ExtractionForm
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form_part import ExtractionFormPart
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_planner import ExtractionPlanner
+from swiss_ai_hub.agent.capabilities.record_extraction.written_location import WrittenLocation
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 
 _PENDING_KEY = "record_extraction:call_form:{request_id}"
-# A typed correction goes back to the model; its next extraction in this run is the corrected one, asked no more.
+# A correction only the model can apply goes back to it; its next extraction in this run is the corrected one, asked
+# no more.
 REWRITTEN_KEY = "record_extraction:call_form:rewritten"
-# A word with a folder separator, a glob character or a file extension names a place; anything else is text.
-_PLACE = re.compile(r"[/*?\[]|\.[A-Za-z0-9]{1,5}$")
 
 
 class ExtractionCallForm(BaseModel):
@@ -34,8 +33,9 @@ class ExtractionCallForm(BaseModel):
 
     The form replaces the yes/no approval of `extract_records`. It asks three parts, not the keywords: the model
     searched for the documents before it called, so keywords could no longer guide that search. A chosen option keeps or
-    drops a part; a free answer replaces it as written, a place by its path and anything else as a text the documents
-    contain. A typed reply other than yes or no goes back to the model, whose next call then runs unasked.
+    drops a part; a free answer replaces it as written, a location by the folders, files or years in scope it names.
+    A location naming none of them, or a typed reply other than yes or no, goes back to the model, whose next call then
+    runs unasked: only the model can tell what such words mean for the call.
     """
 
     tool_call_id: Annotated[str, Field(description="The call the form asks about.")]
@@ -45,6 +45,9 @@ class ExtractionCallForm(BaseModel):
     collections: Annotated[
         list[BucketNamespacePair], Field(description="The run's collections the call extracts from.")
     ]
+    restricting_glob: Annotated[
+        str | None, Field(description="The profile's glob, which the paths a written location names lie within.")
+    ] = None
 
     request: ClassVar[type[ExtractionCallFormRequestEvent]] = ExtractionCallFormRequestEvent
     response: ClassVar[type[ExtractionCallFormResponseEvent]] = ExtractionCallFormResponseEvent
@@ -97,8 +100,11 @@ class ExtractionCallForm(BaseModel):
             ),
         ]
 
-    def answered(self, response: str, t: LocaleHandler) -> ExtractRecordsToolArguments | str:
-        """The call's arguments as the user answered the form, or what to tell the model instead."""
+    def answered(
+        self, response: str, listing: KnowledgeDocumentListing, t: LocaleHandler
+    ) -> ExtractRecordsToolArguments | str:
+        """The call's arguments as the user answered the form, or what to tell the model instead. `listing`: the
+        documents in scope, which a written location is matched against."""
         answers = ExtractionForm.dialog_answers(response)
         if answers is None:
             if ExtractionForm.is_yes(response):
@@ -109,7 +115,10 @@ class ExtractionCallForm(BaseModel):
         update: dict = {}
         where, rows, columns = answers.get("where"), answers.get("rows"), answers.get("columns")
         if (place := ExtractionForm.written(where)) is not None:
-            update["any_of"] = [ExtractionCallForm._criteria(place)]
+            criteria = WrittenLocation.criteria(place, listing)
+            if criteria is None:
+                return t(f"{FORM}.rewritten", reply=self._as_answered(answers, t))
+            update["any_of"] = criteria
         elif ExtractionForm.dropped(where):
             update["any_of"] = [KnowledgeDocumentCriteria()]
         if (condition := ExtractionForm.written(rows)) is not None:
@@ -120,18 +129,13 @@ class ExtractionCallForm(BaseModel):
             update["fields"] = values
         return self.arguments.model_copy(update=update)
 
-    @staticmethod
-    def rewrites(response: str) -> bool:
-        """Whether the answer is a typed correction the model applies, rather than the dialog's or a yes or a no."""
-        typed = ExtractionForm.dialog_answers(response) is None
-        return typed and not ExtractionForm.is_yes(response) and not ExtractionForm.is_no(response)
-
-    @staticmethod
-    def _criteria(place: str) -> KnowledgeDocumentCriteria:
-        """A written place: a path or folder as a glob, anything else as text the documents contain."""
-        if not _PLACE.search(place):
-            return KnowledgeDocumentCriteria(content_query=place)
-        path = place.strip().strip("/")
-        if any(character in path for character in "*?[") or re.search(r"\.[A-Za-z0-9]{1,5}$", path):
-            return KnowledgeDocumentCriteria(path_glob=path if path.startswith("**") else f"**/{path}")
-        return KnowledgeDocumentCriteria(path_glob=f"{path}/**")
+    def _as_answered(self, answers: dict[str, dict[str, Any]], t: LocaleHandler) -> str:
+        """Every part as the user answered it, for the model to apply."""
+        lines = []
+        for part in self.parts("", t):
+            answer = answers.get(part.key)
+            value = ExtractionForm.written(answer)
+            if value is None:
+                value = t(f"{FORM}.{part.key}.anything") if ExtractionForm.dropped(answer) else part.value
+            lines.append(ExtractionForm.line(part.key, value, t))
+        return " · ".join(lines)

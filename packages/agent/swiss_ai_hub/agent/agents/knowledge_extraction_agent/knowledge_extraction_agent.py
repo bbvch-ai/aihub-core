@@ -34,8 +34,13 @@ from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_call import 
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback import SelectionFallback
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.whole_scope_request import WholeScopeRequest
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_scope import (
+    KnowledgeDocumentRunScope,
+)
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_scope import KnowledgeDocumentScope
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_tools import KnowledgeDocumentTools
+from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_arguments import ExtractRecordsArguments
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import ExtractionForm
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import RecordExtraction
 from swiss_ai_hub.agent.capabilities.record_extraction.record_selection_tools import RecordSelectionTools
 from swiss_ai_hub.agent.capabilities.record_extraction.sample_awaiting_confirmation import SampleAwaitingConfirmation
@@ -156,7 +161,11 @@ class KnowledgeExtractionAgent(Agent):
     ) -> ToolLoop.RunRequest | RecordExtraction.ExtractRequest | Conversation.CompleteRequest:
         """Extract what the user confirmed: from the whole scope, or, with discovery, from the documents the model
         finds for the confirmed parts and keywords. What the user wrote in the form is read once more, with no second
-        form."""
+        form; a typed "no" extracts nothing."""
+        if ExtractionForm.is_no(response.response):
+            return await ExtractionAnswer.notice(
+                t("agent.knowledge_extraction_agent.messages.declined"), ctx.query, displayer
+            )
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
@@ -183,7 +192,7 @@ class KnowledgeExtractionAgent(Agent):
                 history, mode=ToolLoopMode.GATHER, knowledge_references=event.knowledge_references
             )
             return loop.model_copy(update={"hands_back_results": False})
-        extraction = await WholeScopeRequest.extraction_of(reading, ctx.history, scope, t)
+        extraction = await WholeScopeRequest.extraction_of(reading, scope, t)
         if isinstance(extraction, str):
             return await ExtractionAnswer.notice(extraction, ctx.query, displayer)
         return extraction
@@ -209,19 +218,22 @@ class KnowledgeExtractionAgent(Agent):
         access: AccessChecker | None = None,
         user: UserIdentity | None = None,
     ) -> RecordExtraction.ExtractRequest | Conversation.CompleteRequest:
-        """Extract from the documents the model settled on, re-resolved within the profile's limits. A model that
-        ended its search without stating a selection is asked once for the selection its searches point to; one stopped
-        at its limit before it did is asked for folders and paths only, since its hits are incomplete. A stopped search
-        whose own selection stands still marks the table as possibly incomplete. The confirmed exact keywords order the
-        documents when the model named none, and a confirmed calculation is named under the table."""
+        """Extract from the documents the model settled on, re-resolved within the profile's limits and the places the
+        user confirmed. A model that ended its search without stating a selection is asked once for the selection its
+        searches point to; one stopped at its limit before it did is asked for folders and paths only, since its hits
+        are incomplete. A stopped search whose own selection stands still marks the table as possibly incomplete. The
+        confirmed values and condition are what is extracted, whatever the model passed; the confirmed exact keywords
+        order the documents when the model named none, and a confirmed calculation is named under the table."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
+        confirmed = await ExtractionRequestForm.confirmed(run_context)
         selection = SelectionCall.last(decided, calls, results)
         by_location = selection is None and finished.stopped_early
         if selection is None:
+            lines = ExtractionRequestParts.of(confirmed, t, True).lines(t) if confirmed else []
             selection = await SelectionFallback.ask(
-                ctx.query, calls or [], results or [], scope, agent_config.llm, displayer, user, t, by_location
+                ctx.query, calls or [], results or [], scope, agent_config.llm, displayer, user, t, by_location, lines
             )
         if selection is None:
             notices = [
@@ -229,7 +241,32 @@ class KnowledgeExtractionAgent(Agent):
                 *ExtractionNotices.for_table(scope, False, t),
             ]
             return await ExtractionAnswer.notice("\n\n".join(notices), ctx.query, displayer)
-        confirmed = await ExtractionRequestForm.confirmed(run_context)
+        if confirmed is None:
+            return KnowledgeExtractionAgent._extraction(selection, scope, finished, by_location, t)
+        within = await WholeScopeRequest.within(selection.selection, confirmed.locations, scope, t)
+        if isinstance(within, str):
+            return await ExtractionAnswer.notice(within, ctx.query, displayer)
+        as_confirmed = selection.model_copy(
+            update={
+                "any_of": within.any_of,
+                "fields": confirmed.fields,
+                "instructions": confirmed.instructions,
+                "row_terms": confirmed.row_terms,
+                "document_terms": selection.document_terms or confirmed.document_terms,
+            }
+        )
+        calculation = confirmed.calculation
+        return KnowledgeExtractionAgent._extraction(as_confirmed, scope, finished, by_location, t, calculation)
+
+    @staticmethod
+    def _extraction(
+        selection: ExtractRecordsArguments,
+        scope: KnowledgeDocumentRunScope,
+        finished: ToolLoop.Finished,
+        by_location: bool,
+        t: LocaleHandler,
+        calculation: str | None = None,
+    ) -> ExtractRecordsEvent:
         return RecordExtraction.extract(
             selection.selection,
             selection.fields,
@@ -237,11 +274,11 @@ class KnowledgeExtractionAgent(Agent):
             selection.instructions,
             selection.row_terms,
             notices=[
-                *ExtractionNotices.for_calculation(confirmed.calculation if confirmed else None, t),
+                *ExtractionNotices.for_calculation(calculation, t),
                 *ExtractionNotices.for_table(scope, finished.stopped_early, t, by_location),
             ],
             cut_short=finished.stopped_early and not by_location,
-            document_terms=selection.document_terms or (confirmed.document_terms if confirmed else None),
+            document_terms=selection.document_terms,
         )
 
     @step(

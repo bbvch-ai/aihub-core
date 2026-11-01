@@ -824,11 +824,11 @@ async def _tool_call(
         result = await RecordExtraction.extract_tool_call_step(
             MagicMock(), call=call, request=RunToolLoopEvent(), tool=_config(), t=T, run_context=run_context
         )
-    if isinstance(result, ExtractionCallFormRequestEvent) and answer is not None:
-        response = ExtractionCallFormResponseEvent(response=answer, request_event=result)
-        return await RecordExtraction.answer_extraction_form_step(
-            MagicMock(), response=response, t=T, run_context=run_context
-        )
+        if isinstance(result, ExtractionCallFormRequestEvent) and answer is not None:
+            response = ExtractionCallFormResponseEvent(response=answer, request_event=result)
+            return await RecordExtraction.answer_extraction_form_step(
+                MagicMock(), response=response, t=T, run_context=run_context
+            )
     return result
 
 
@@ -897,14 +897,24 @@ class TestAsATool:
     @pytest.mark.parametrize(
         ("place", "criteria"),
         [
-            ("einvoices/zugferd", KnowledgeDocumentCriteria(path_glob="einvoices/zugferd/**")),
-            ("2025/a.pdf", KnowledgeDocumentCriteria(path_glob="**/2025/a.pdf")),
-            ("Lieferant GmbH", KnowledgeDocumentCriteria(content_query="Lieferant GmbH")),
+            ("invoices/2025", [KnowledgeDocumentCriteria(path_glob="invoices/2025/**")]),
+            ("Invoices", [KnowledgeDocumentCriteria(path_glob="invoices/**")]),
+            ("2025/a.pdf", [KnowledgeDocumentCriteria(path_glob="**/2025/a.pdf")]),
+            ("b", [KnowledgeDocumentCriteria(path_glob="**/b.pdf")]),
+            ("2024", [KnowledgeDocumentCriteria(path_regex=r"(?<!\d)2024(?!\d)")]),
+            ("invoices/**/*.pdf", [KnowledgeDocumentCriteria(path_glob="invoices/**/*.pdf")]),
+            (
+                "invoices/2024, a.pdf",
+                [
+                    KnowledgeDocumentCriteria(path_glob="invoices/2024/**"),
+                    KnowledgeDocumentCriteria(path_glob="**/a.pdf"),
+                ],
+            ),
         ],
-        ids=["folder", "file", "text"],
+        ids=["folder-path", "folder-name", "file-path", "file-stem", "year", "pattern", "comma-separated"],
     )
     @pytest.mark.asyncio
-    async def test_what_the_user_writes_replaces_the_part(self, place: str, criteria: KnowledgeDocumentCriteria):
+    async def test_what_the_user_writes_replaces_the_part(self, place: str, criteria: list[KnowledgeDocumentCriteria]):
         answer = json.dumps(
             {
                 "where": {"type": "other", "text": place},
@@ -920,12 +930,30 @@ class TestAsATool:
         )
 
         assert isinstance(request, ExtractRecordsEvent)
-        assert request.selection.any_of == [criteria]
+        assert request.selection.any_of == criteria
         assert (request.instructions, request.fields, request.tool_call_id) == (
             "only invoices dated 2018",
             "number, gross total",
             "c1",
         )
+
+    @pytest.mark.parametrize("place", ["Lieferant GmbH", "Was ist das?", "2019", "invoices, contracts/"])
+    @pytest.mark.asyncio
+    async def test_a_location_naming_no_place_in_scope_goes_to_the_model_and_its_next_call_runs_unasked(
+        self, place: str
+    ):
+        run_context = _Thread()
+        arguments = {"any_of": [{"path_glob": "invoices/**"}], "fields": "number", "instructions": "hardware"}
+        answer = json.dumps({"where": {"type": "other", "text": place}, "rows": {"type": "option", "option_index": 1}})
+
+        result = await _tool_call(arguments, run_context, answer=answer)
+        corrected = await _tool_call(arguments, run_context, "c2", answer=None)
+
+        assert isinstance(result, ToolResultEvent)
+        assert f"**Location:** {place}" in result.content
+        assert "**Filter Condition:** Every row" in result.content
+        assert "**Values to extract:** number" in result.content
+        assert isinstance(corrected, ExtractRecordsEvent)
 
     @pytest.mark.asyncio
     async def test_the_second_options_read_every_document_and_keep_every_row(self):

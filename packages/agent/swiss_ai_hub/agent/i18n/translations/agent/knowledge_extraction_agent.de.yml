@@ -62,6 +62,11 @@ prompt:
     <request>
     {{ request }}
     </request>
+    {% if confirmed %}Der Benutzer hat die Anfrage so bestätigt; die Auswahl bleibt am bestätigten Speicherort:
+    <confirmed>
+    {{ confirmed }}
+    </confirmed>
+    {% endif %}
     Suchen und ihre Ergebnisse:
     <searches>
     {{ transcript }}
@@ -123,6 +128,7 @@ messages:
     2025: Rechnungsnummer, Position, Betrag".'
   nothing_at_location: 'Im Umfang dieses Agenten liegt kein Dokument unter %{locations},
     daher wurde nichts extrahiert. Diese Ordner und Jahre enthält er:'
+  declined: "Da Sie die Anfrage abgelehnt haben, habe ich keine Dokumente gelesen. Senden Sie eine neue Anfrage, wenn Sie eine Tabelle möchten."
   no_request: Ich konnte nicht erkennen, welche Tabelle Sie möchten. Bitte nennen
     Sie die gesuchten Datensätze und die Spalten der Tabelle.
 form:

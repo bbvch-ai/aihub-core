@@ -13,7 +13,6 @@ from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdmin
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent,
     RecordsExtractedEvent,
 )
 from swiss_ai_hub.core.generative_ai import ExtractedTableFile, ExtractionFileStore
@@ -206,16 +205,9 @@ class ThreadService:
         A chat HITL is open when it has not been responded to. Only HITL requests
         with hitl_type == "chat" are considered.
         """
-        hitl_request_entities = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(thread_id)
-        hitl_response_entities = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(thread_id)
-
-        hitl_requests = [HumanInTheLoopRequestEvent.deserialize_event(e.event_data) for e in hitl_request_entities]
-        hitl_responses = [HumanInTheLoopResponseEvent.deserialize_event(e.event_data) for e in hitl_response_entities]
-
-        responded_request_ids: set[str] = {response.request_event.event_id for response in hitl_responses}
-
-        for request in hitl_requests:
-            if request.hitl_type == "chat" and request.event_id not in responded_request_ids:
+        open_entities = PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(thread_id)
+        for request in (HumanInTheLoopRequestEvent.deserialize_event(entity.event_data) for entity in open_entities):
+            if request.hitl_type == "chat":
                 return OpenChatHitlResponse(has_open_chat_hitl=True, hitl_request=request)
 
         return OpenChatHitlResponse(has_open_chat_hitl=False, hitl_request=None)

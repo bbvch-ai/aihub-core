@@ -14,7 +14,12 @@ from swiss_ai_hub.core.events.agent import (
     ToolDefinition,
     ToolResultEvent,
 )
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair, KnowledgeDocumentReader, KnowledgeDocumentSelection
+from swiss_ai_hub.core.generative_ai import (
+    BucketNamespacePair,
+    KnowledgeDocumentListing,
+    KnowledgeDocumentReader,
+    KnowledgeDocumentSelection,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -35,6 +40,7 @@ from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form_requ
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form_response_event import (
     ExtractionCallFormResponseEvent,
 )
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import ExtractionForm
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_planner import ExtractionPlanner
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import ExtractionTable
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields import RecordExtractionFields
@@ -248,9 +254,13 @@ class RecordExtraction(Capability):
             return event.model_copy(update={"tool_call_id": call.tool_call_id})
         if await run_context.pop(REWRITTEN_KEY):
             return RecordExtraction._called(call.tool_call_id, arguments, scope.pairs())
-        form = ExtractionCallForm(tool_call_id=call.tool_call_id, arguments=arguments, collections=scope.pairs())
-        listing = await KnowledgeDocumentReader.list_documents(scope.pairs())
-        listing = listing.matching_glob(scope.restricting_glob) if scope.restricting_glob else listing
+        form = ExtractionCallForm(
+            tool_call_id=call.tool_call_id,
+            arguments=arguments,
+            collections=scope.pairs(),
+            restricting_glob=scope.restricting_glob,
+        )
+        listing = await RecordExtraction._listing(form)
         return await form.ask(SelectionFacets.folders(listing.documents), run_context, t)
 
     @staticmethod
@@ -262,15 +272,21 @@ class RecordExtraction(Capability):
     async def answer_extraction_form_step(
         agent: Agent, response: ExtractionCallFormResponseEvent, t: LocaleHandler, run_context: RunContext
     ) -> ExtractRecordsEvent | ToolResultEvent:
-        """Run the extraction the user confirmed or corrected; a decline, or a typed correction, goes back to the
-        model as the call's result, and the corrected call then runs without a second form."""
+        """Run the extraction the user confirmed or corrected; a decline, or a correction only the model can apply,
+        goes back to the model as the call's result, and the corrected call then runs without a second form."""
         form = await ExtractionCallForm.pending(response, run_context)
-        answered = form.answered(response.response, t)
+        listing = await RecordExtraction._listing(form)
+        answered = form.answered(response.response, listing, t)
         if isinstance(answered, ExtractRecordsToolArguments):
             return RecordExtraction._called(form.tool_call_id, answered, form.collections)
-        if ExtractionCallForm.rewrites(response.response):
+        if not ExtractionForm.is_no(response.response):
             await run_context.set(REWRITTEN_KEY, True)
         return ToolResultEvent(tool_call_id=form.tool_call_id, name=EXTRACT_RECORDS_TOOL, content=answered)
+
+    @staticmethod
+    async def _listing(form: ExtractionCallForm) -> KnowledgeDocumentListing:
+        listing = await KnowledgeDocumentReader.list_documents(form.collections)
+        return listing.matching_glob(form.restricting_glob) if form.restricting_glob else listing
 
     @staticmethod
     def _called(

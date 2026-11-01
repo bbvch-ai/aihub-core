@@ -466,7 +466,7 @@ async def test_a_search_stopped_at_its_limit_selects_by_folder_and_is_not_marked
     request, ask = await _stopped_search(found)
 
     ask.assert_awaited_once()
-    assert ask.await_args.args[-1] is True
+    assert ask.await_args.args[8] is True
     assert isinstance(request, ExtractRecordsEvent)
     assert (request.instructions, request.cut_short) == ("cap below EUR 100k", False)
     assert any("selected by folder" in notice for notice in request.notices)
@@ -1282,3 +1282,199 @@ class TestRequestReading:
             assert field in prompt
         for field in RequestedLocation.model_fields:
             assert field in prompt
+
+
+class TestConfirmedLocation:
+    """The form shows the files the message names, and what the user confirms there is what is read."""
+
+    @pytest.mark.asyncio
+    async def test_the_form_shows_the_named_file_not_the_folder_the_reading_made_of_it(self):
+        reading = _reading(RequestedLocation(path_glob=f"{FOLDER}/**", path_regex=None))
+
+        form, _, _ = await _discover(
+            reading, message=f"Line items of {NAMED}", listing=_listing(*NAMED_FILES), answer=None
+        )
+
+        assert form.questions[0].options[0].description == f"**/{NAMED}"
+
+    @pytest.mark.asyncio
+    async def test_all_documents_chosen_for_a_named_file_reads_every_document(self):
+        reading = _reading(RequestedLocation(path_glob=f"{FOLDER}/**", path_regex=None))
+        answer = json.dumps({"where": {"type": "option", "option_index": 1}})
+
+        request, _, _ = await _discover(
+            reading, message=f"Line items of {NAMED}", listing=_listing(*NAMED_FILES), answer=answer
+        )
+
+        assert request.selection == KnowledgeDocumentSelection(any_of=[KnowledgeDocumentCriteria()])
+
+    @pytest.mark.asyncio
+    async def test_a_location_written_instead_of_the_named_file_is_read_as_written(self):
+        reading = _reading(RequestedLocation(path_glob=f"{FOLDER}/**", path_regex=None))
+        reread = _reading(RequestedLocation(path_glob="invoices/acme/**", path_regex=None))
+        answer = _dialog(where={"type": "other", "text": "invoices/acme"})
+
+        request, ask, _ = await _discover(
+            reading, message=f"Line items of {NAMED}", listing=_listing(*NAMED_FILES), answer=answer, reread=reread
+        )
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="invoices/acme/**")]
+        assert ask.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_a_file_written_into_the_form_wins_over_the_folder_the_second_reading_made_of_it(self):
+        reread = _reading(RequestedLocation(path_glob=f"{FOLDER}/**", path_regex=None))
+        answer = _dialog(where={"type": "other", "text": NAMED})
+
+        request, _, _ = await _discover(_reading(), listing=_listing(*NAMED_FILES), answer=answer, reread=reread)
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob=f"**/{NAMED}")]
+
+
+class TestDeclinedRequest:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("reply", ["no", "Nein.", "abbrechen", " cancel! "])
+    async def test_a_typed_no_extracts_nothing_and_says_so(self, reply: str):
+        answer, ask, _ = await _discover(_reading(), answer=reply)
+
+        assert isinstance(answer, CompleteConversationEvent)
+        assert answer.stop.output_messages[-1].content == T("agent.knowledge_extraction_agent.messages.declined")
+        ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_a_typed_no_with_discovery_starts_no_search(self):
+        answer, _, _ = await _discover(_reading(), discovery=True, answer="no")
+
+        assert isinstance(answer, CompleteConversationEvent)
+
+    def test_the_declined_notice_is_translated(self):
+        texts = {AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.messages.declined") for locale in LOCALES}
+        assert len(texts) == len(LOCALES)
+
+
+LOCALES = ("en", "de", "fr", "it")
+CONFIRMED_PLACE = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+
+
+async def _plan(
+    confirmed: ExtractionRequestAnswer | None,
+    calls: list[ToolCallApprovedEvent],
+    fallback: ExtractRecordsArguments | None = None,
+) -> tuple[Any, AsyncMock]:
+    """The plan step after a discovery search, with the request the user confirmed in the form."""
+    run_context = _Thread()
+    if confirmed is not None:
+        await ExtractionRequestForm.confirm(run_context, confirmed)
+    ask = AsyncMock(return_value=fallback)
+    with (
+        patch(SCOPE_OF, return_value=_scope()),
+        patch(f"{WHOLE}.KnowledgeDocumentReader.list_documents", AsyncMock(return_value=_listing())),
+        patch(
+            "swiss_ai_hub.agent.agents.knowledge_extraction_agent.knowledge_extraction_agent.SelectionFallback.ask", ask
+        ),
+    ):
+        request = await KnowledgeExtractionAgent().plan_step(
+            ToolLoopFinishedEvent(),
+            _ctx(),
+            _event(),
+            agent_config=_config(knowledge_documents=_discovering(True)),
+            displayer=_displayer(),
+            t=T,
+            run_context=run_context,
+            decided=[_decided(0, *(call.tool_call_id for call in calls))],
+            calls=calls,
+            results=[_result(call.tool_call_id, name=call.name) for call in calls],
+        )
+    return request, ask
+
+
+def _selecting(any_of: list[dict[str, Any]]) -> ToolCallApprovedEvent:
+    arguments = {"any_of": any_of, "fields": "supplier", "instructions": "only hardware", "row_terms": "Rack"}
+    return ToolCallApprovedEvent(tool_call_id="c1", name=SELECT, arguments=arguments, kind="function")
+
+
+class TestConfirmedRequestInDiscovery:
+    @pytest.mark.asyncio
+    async def test_the_confirmed_values_and_condition_are_extracted_whatever_the_model_passed(self):
+        request, _ = await _plan(_reading(), [_selecting([{"content_query": "Hooli"}])])
+
+        assert (request.fields, request.instructions, request.row_terms) == (
+            "item, amount",
+            "only Hooli hardware",
+            "Laptop|Server",
+        )
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(content_query="Hooli")]
+
+    @pytest.mark.asyncio
+    async def test_a_selection_without_a_path_is_kept_within_the_confirmed_place(self):
+        request, _ = await _plan(_reading(CONFIRMED_PLACE), [_selecting([{"content_query": "Hooli"}])])
+
+        assert request.selection.any_of == [
+            KnowledgeDocumentCriteria(path_glob="invoices/2025/**", content_query="Hooli")
+        ]
+
+    @pytest.mark.asyncio
+    async def test_a_selection_by_another_path_keeps_only_the_documents_at_the_confirmed_place(self):
+        request, _ = await _plan(_reading(CONFIRMED_PLACE), [_selecting([{"path_glob": "invoices/**"}])])
+
+        assert request.selection.any_of == [
+            KnowledgeDocumentCriteria(path_glob="invoices/**", document_ids=["invoices/2025/q1/c.pdf"])
+        ]
+
+    @pytest.mark.asyncio
+    async def test_a_selection_by_the_confirmed_place_is_kept_as_it_is(self):
+        request, _ = await _plan(_reading(CONFIRMED_PLACE), [_selecting([{"path_glob": "invoices/2025/**"}])])
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="invoices/2025/**")]
+
+    @pytest.mark.asyncio
+    async def test_a_selection_entirely_outside_the_confirmed_place_extracts_nothing_and_says_where(self):
+        answer, _ = await _plan(_reading(CONFIRMED_PLACE), [_selecting([{"path_glob": "other/**"}])])
+
+        assert isinstance(answer, CompleteConversationEvent)
+        assert "`invoices/2025/**`" in answer.stop.output_messages[-1].content
+
+    @pytest.mark.asyncio
+    async def test_several_confirmed_places_and_entries_select_each_entry_at_each_place(self):
+        places = [CONFIRMED_PLACE, RequestedLocation(path_glob=None, path_regex="2024")]
+        selection = [{"content_query": "Hooli"}, {"content_query": "Acme"}]
+
+        request, _ = await _plan(_reading(*places), [_selecting(selection)])
+
+        assert request.selection.any_of == [
+            KnowledgeDocumentCriteria(path_glob="invoices/2025/**", content_query="Hooli"),
+            KnowledgeDocumentCriteria(path_regex="2024", content_query="Hooli"),
+            KnowledgeDocumentCriteria(path_glob="invoices/2025/**", content_query="Acme"),
+            KnowledgeDocumentCriteria(path_regex="2024", content_query="Acme"),
+        ]
+
+    @pytest.mark.asyncio
+    async def test_the_fallback_is_given_the_confirmed_request(self):
+        search = ToolCallApprovedEvent(
+            tool_call_id="c1", name="search_knowledge_content", arguments={"query": "Hooli"}, kind="function"
+        )
+        stated = ExtractRecordsArguments(any_of=[{"content_query": "Hooli"}], fields="supplier")
+
+        request, ask = await _plan(_reading(CONFIRMED_PLACE), [search], fallback=stated)
+
+        confirmed = ask.await_args.args[9]
+        assert "**Location:** invoices/2025/**" in confirmed
+        assert "**Filter Condition:** only Hooli hardware" in confirmed
+        assert request.selection.any_of == [
+            KnowledgeDocumentCriteria(path_glob="invoices/2025/**", content_query="Hooli")
+        ]
+        assert request.fields == "item, amount"
+
+    @pytest.mark.asyncio
+    async def test_without_a_confirmed_request_the_models_selection_stands(self):
+        request, ask = await _plan(None, [_selecting([{"path_glob": "other/**"}])])
+
+        assert (request.fields, request.instructions) == ("supplier", "only hardware")
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="other/**")]
+        ask.assert_not_awaited()
+
+    def test_the_fallback_prompt_shows_the_confirmed_request_in_every_locale(self):
+        for locale in LOCALES:
+            prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.select_now")
+            assert "{% if confirmed %}" in prompt
+            assert "{{ confirmed }}" in prompt

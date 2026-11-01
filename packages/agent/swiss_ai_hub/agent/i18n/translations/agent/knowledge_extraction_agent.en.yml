@@ -62,6 +62,11 @@ prompt:
     <request>
     {{ request }}
     </request>
+    {% if confirmed %}The user confirmed the request as follows; the selection keeps to the location they confirmed:
+    <confirmed>
+    {{ confirmed }}
+    </confirmed>
+    {% endif %}
     Searches and their results:
     <searches>
     {{ transcript }}
@@ -121,6 +126,7 @@ messages:
     \ amount\"."
   nothing_at_location: "No document in this agent's scope is at %{locations}, so nothing\
     \ was extracted. These are the folders and years it holds:"
+  declined: "As you declined the request, I did not read any documents. Send a new request whenever you want a table."
   no_request: I could not tell which table you want. Please name the records you need
     and the table's columns.
 form:
