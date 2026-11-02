@@ -1664,10 +1664,13 @@ services:
       ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
       # Sized per deployment (.env): workers x request threads x torch threads should match the CPU limit, and every
       # worker needs about 3 GiB of the memory limit. Torch threads stay at 2: one makes a long text 3 to 4 times slower.
-      GUNICORN_WORKERS: ${PRESIDIO_ANALYZER_WORKERS}
-      GUNICORN_THREADS: ${PRESIDIO_ANALYZER_THREADS}
-      OMP_NUM_THREADS: ${PRESIDIO_ANALYZER_TORCH_THREADS}
-      MKL_NUM_THREADS: ${PRESIDIO_ANALYZER_TORCH_THREADS}
+      # The `:-` defaults here and on the limits are a deliberate exception to "defaults live in .env": an unset CPU or
+      # memory limit is an empty string that stops Compose from parsing the whole file (every `docker compose` call
+      # without --env-file, CI's cleanup included), and an empty worker count stops gunicorn from starting.
+      GUNICORN_WORKERS: ${PRESIDIO_ANALYZER_WORKERS:-1}
+      GUNICORN_THREADS: ${PRESIDIO_ANALYZER_THREADS:-4}
+      OMP_NUM_THREADS: ${PRESIDIO_ANALYZER_TORCH_THREADS:-2}
+      MKL_NUM_THREADS: ${PRESIDIO_ANALYZER_TORCH_THREADS:-2}
     volumes: [./configs/presidio/analyzer.yaml:/app/analyzer.yaml:ro]
     healthcheck:
       test:
@@ -1683,8 +1686,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: ${PRESIDIO_ANALYZER_CPUS}
-          memory: ${PRESIDIO_ANALYZER_MEMORY}  # Measured: about 3.1 GiB per worker under load
+          cpus: ${PRESIDIO_ANALYZER_CPUS:-4}
+          memory: ${PRESIDIO_ANALYZER_MEMORY:-4G}  # Measured: about 3.1 GiB per worker under load
     logging:
       driver: json-file
       options:
@@ -1726,7 +1729,7 @@ services:
       # Read by the pii-anonymisation guardrail (litellm_functions/pii_anonymisation_guardrail.py)
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
       PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
-      PRESIDIO_ANALYZER_TIMEOUT_SECONDS: ${PRESIDIO_ANALYZER_TIMEOUT_SECONDS}
+      PRESIDIO_ANALYZER_TIMEOUT_SECONDS: ${PRESIDIO_ANALYZER_TIMEOUT_SECONDS:-150}  # optional, like the analyzer sizing
       PII_ANONYMISE_EXTERNAL_MODELS: ${PII_ANONYMISE_EXTERNAL_MODELS}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc

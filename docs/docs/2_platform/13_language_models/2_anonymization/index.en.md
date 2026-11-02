@@ -157,7 +157,8 @@ The gateway analyses only what it has not seen: the messages of one call side by
 conversation from a cache. Turn 10 of a chat with a 4,000-character system prompt costs the analyzer under 2 seconds
 instead of 25.
 
-Size it in the environment file, then restart the analyzer (and `litellm` for the timeout):
+All six are optional: unset, the defaults below apply. Set them in the environment file, then restart the analyzer (and
+`litellm` for the timeout):
 
 | Variable | Default | What it sets |
 | ------------------------------------ | ------- | ---------------------------------------------------------------------- |

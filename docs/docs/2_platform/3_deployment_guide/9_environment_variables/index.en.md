@@ -159,12 +159,6 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `POSTGRES_PORT` | `openwebui-init-openwebui.sh` | `backup-code`, `openwebui-init` |  |
 | `POSTGRES_USER` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `rclone_pipeline`, `shared_rag_pipeline`, `structured_pipeline` |  |
 | `PRESIDIO_ANALYZER_API_KEY` | `PresidioAnalyzerSettings.API_KEY` | `anonymiser_agent`, `litellm`, `presidio-analyzer` | The bearer key every analyzer caller sends. |
-| `PRESIDIO_ANALYZER_CPUS` |  | `presidio-analyzer` |  |
-| `PRESIDIO_ANALYZER_MEMORY` |  | `presidio-analyzer` |  |
-| `PRESIDIO_ANALYZER_THREADS` |  | `presidio-analyzer` |  |
-| `PRESIDIO_ANALYZER_TIMEOUT_SECONDS` |  | `litellm` |  |
-| `PRESIDIO_ANALYZER_TORCH_THREADS` |  | `presidio-analyzer` |  |
-| `PRESIDIO_ANALYZER_WORKERS` |  | `presidio-analyzer` |  |
 | `RAG_FILE_MAX_COUNT` |  | `open-webui` |  |
 | `RAG_FILE_MAX_SIZE` |  | `open-webui` |  |
 | `RAG_IMAGE_INLINE_ENABLED` | `RagImageInlineSettings.ENABLED` | `expert_rag_agent`, `litellm`, `rag_agent`, `retrieval_agent` | Whether RAG figures are inlined as base64 at the LiteLLM gateway. |

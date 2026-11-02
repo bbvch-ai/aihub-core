@@ -165,7 +165,8 @@ Das Gateway analysiert nur, was es noch nicht gesehen hat: die Nachrichten eines
 Nachricht einer Konversation aus einem Cache. Runde 10 eines Chats mit einem System-Prompt von 4'000 Zeichen kostet den
 Analyzer unter 2 Sekunden statt 25.
 
-Dimensionieren Sie ihn in der Umgebungsdatei und starten Sie danach den Analyzer neu (für das Timeout `litellm`):
+Alle sechs sind optional: ohne Wert gelten die Standardwerte unten. Setzen Sie sie in der Umgebungsdatei und starten Sie
+danach den Analyzer neu (für das Timeout `litellm`):
 
 | Variable | Standard | Was sie festlegt |
 | ------------------------------------ | -------- | ------------------------------------------------------------------------- |
