@@ -270,6 +270,15 @@ character mail thread with personal data in every message) 46 s, and the contain
 The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
 for.
 
+Capacity is per deployment, never in the template: `PRESIDIO_ANALYZER_{CPUS,MEMORY,WORKERS,THREADS,TORCH_THREADS}` size
+the container (defaults 4 / 4G / 1 / 4 / 2 in `.env.dev` and `.env.prod`) and `PRESIDIO_ANALYZER_TIMEOUT_SECONDS` the
+guardrail's wait. One analysis takes the same time on any host (GLiNER is 99% of it); more CPUs only serve more calls
+at once, 4 to 8 CPUs measured 1.8 to 1.9 times the throughput. Keep workers x threads x torch threads at the CPU limit,
+about 3 GiB per worker, and torch threads at 2 (1 makes a long text 3 to 4 times slower). The sizing table for
+operators is in `docs/docs/2_platform/13_language_models/2_anonymization/`. The guardrail analyses the texts of one call
+side by side (at most `PARALLEL_ANALYSES_PER_CALL`) and reuses spans of texts it has seen from an in-memory cache keyed
+by the text's hash, so a conversation's history is not re-analysed on every call.
+
 ### Publishing the browser-proxy image
 
 The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages, built
