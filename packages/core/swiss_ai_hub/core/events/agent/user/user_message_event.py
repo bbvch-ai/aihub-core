@@ -9,6 +9,7 @@ from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
 from swiss_ai_hub.core.events.agent.user.api_attachments import ApiAttachments
 from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
 from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
+from swiss_ai_hub.core.events.agent.user.response_schema import ResponseSchema
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 from swiss_ai_hub.core.events.api_payload_context import ApiPayloadContext
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
@@ -92,6 +93,14 @@ class UserMessageEvent(StartEvent):
             "the message.",
         ),
     ] = []
+    response_schema: Annotated[
+        ResponseSchema | None,
+        Field(
+            description="The JSON shape the answer must come back in. An agent that supports it ends the run with "
+            "the parsed answer in its stop event's `structured_output`; one that does not is refused this field by "
+            "the API.",
+        ),
+    ] = None
 
     @classmethod
     def api_input_field_overrides(cls) -> dict[str, tuple[Any, FieldInfo]]:

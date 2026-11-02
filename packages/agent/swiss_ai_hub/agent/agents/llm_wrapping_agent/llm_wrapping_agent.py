@@ -24,7 +24,9 @@ from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversati
 from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
+from swiss_ai_hub.agent.capabilities.requested_response_schema import RequestedResponseSchema
 from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -162,6 +164,7 @@ class LLMWrappingAgent(Agent):
         event: Conversation.Composed,
         ctx: Conversation.Contextualized,
         agent_config: LLMWrappingAgentConfig,
+        run_context: RunContext,
         displayer: EventDisplayer,
         topic: AgentInstanceTopic,
         t: LocaleHandler,
@@ -176,7 +179,12 @@ class LLMWrappingAgent(Agent):
         """
         history = merge_consecutive_messages(event.history)
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
-            answer = await displayer.display_llm_stream(agent_config.llm, llm, history, as_stop_step=False)
+            answer = await displayer.display_llm_stream(
+                agent_config.llm,
+                llm,
+                history,
+                response_schema=await RequestedResponseSchema.of(run_context, type(self)),
+            )
         remember = Memory.remember(
             query=ctx.query,
             answer=answer,

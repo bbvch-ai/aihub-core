@@ -10,6 +10,7 @@ from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 from swiss_ai_hub.core.events.agent.display.chunk_event import ChunkEvent
 from swiss_ai_hub.core.events.agent.semantic.llm.llm_event import LLMEvent
 from swiss_ai_hub.core.events.agent.semantic.llm.llm_stop_event import LLMStopEvent
+from swiss_ai_hub.core.events.agent.user.response_schema import ResponseSchema
 
 
 @pytest.fixture
@@ -126,3 +127,17 @@ async def test_concurrent_streams_interleave(displayer, llm_config):
     assert fast_result.output_messages[0].content == "fast."
     slow_result = await slow_task
     assert slow_result.output_messages[0].content == "slow-a. slow-b."
+
+
+def test_a_requested_json_shape_is_sent_as_response_format_to_a_model_with_structured_outputs():
+    schema = ResponseSchema(name="invoice", json_schema={"type": "object"})
+    llm = SimpleNamespace(should_use_structured_outputs=True)
+
+    assert EventDisplayer._answer_kwargs(llm, None, schema) == {"response_format": schema.response_format()}
+
+
+def test_a_model_without_structured_outputs_gets_no_response_format_and_tools_stay():
+    tools = [{"type": "function", "function": {"name": "echo"}}]
+    llm = SimpleNamespace(should_use_structured_outputs=False)
+
+    assert EventDisplayer._answer_kwargs(llm, tools, ResponseSchema(name="any")) == {"tools": tools}

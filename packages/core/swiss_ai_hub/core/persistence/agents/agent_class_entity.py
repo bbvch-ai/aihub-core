@@ -105,6 +105,7 @@ class AgentClassEntity(Document):
     # value, and reads must not yield None into the non-optional DTO field. Self-heals on next discovery.
     is_schedulable = BooleanField(required=True, default=False)
     supported_features = ListField(StringField(), default=list)
+    supports_response_schema = BooleanField(required=True, default=False)
     start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     hitl_request_events = ListField(EmbeddedDocumentField(EventSpec), default=list)
@@ -150,6 +151,7 @@ class AgentClassEntity(Document):
         network_graph: dict,
         templates: list[dict] | None = None,
         agent_class_entity_id: ObjectId | None = None,
+        supports_response_schema: bool = False,
     ) -> Self:
         agent = cls(
             id=agent_class_entity_id or ObjectId(),
@@ -162,6 +164,7 @@ class AgentClassEntity(Document):
             is_conversational=is_conversational,
             is_schedulable=is_schedulable,
             supported_features=supported_features,
+            supports_response_schema=supports_response_schema,
             start_events=start_events,
             stop_events=stop_events,
             hitl_request_events=hitl_request_events,
@@ -211,6 +214,7 @@ class AgentClassEntity(Document):
             existing_agent.is_conversational = discovery.is_conversational
             existing_agent.is_schedulable = discovery.is_schedulable
             existing_agent.supported_features = [str(feature) for feature in discovery.supported_features]
+            existing_agent.supports_response_schema = discovery.supports_response_schema
             existing_agent.start_events = start_events_entities
             existing_agent.stop_events = stop_events_entities
             existing_agent.hitl_request_events = hitl_request_events_entities
@@ -231,6 +235,7 @@ class AgentClassEntity(Document):
                 is_conversational=discovery.is_conversational,
                 is_schedulable=discovery.is_schedulable,
                 supported_features=[str(feature) for feature in discovery.supported_features],
+                supports_response_schema=discovery.supports_response_schema,
                 start_events=start_events_entities,
                 stop_events=stop_events_entities,
                 hitl_request_events=hitl_request_events_entities,

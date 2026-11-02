@@ -14,6 +14,7 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
+    ResponseSchema,
     ChatFeature,
     KnowledgeReference,
     KnowledgeSearchedEvent,
@@ -311,6 +312,15 @@ class TestDecisions:
 
         assert isinstance(finished, ToolLoopFinishedEvent)
         assert finished.answer.output_messages[-1].content == "It is noon."
+        assert displayer.display_llm_stream.await_args.kwargs["tools"][0]["function"]["name"] == "echo"
+
+    @pytest.mark.asyncio
+    async def test_an_answering_turn_asks_for_the_requested_json_shape_next_to_the_tools(self):
+        schema = ResponseSchema(name="clock", json_schema={"type": "object", "properties": {"time": {"type": "string"}}})
+        with patch(f"{MODULE}.RequestedResponseSchema.of", new=AsyncMock(return_value=schema)):
+            _, displayer = await _decide(_state(), ANSWER)
+
+        assert displayer.display_llm_stream.await_args.kwargs["response_schema"] == schema
         assert displayer.display_llm_stream.await_args.kwargs["tools"][0]["function"]["name"] == "echo"
 
     @pytest.mark.asyncio

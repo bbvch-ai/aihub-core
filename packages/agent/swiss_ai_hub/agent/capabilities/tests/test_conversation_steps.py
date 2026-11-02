@@ -50,6 +50,11 @@ def _no_window():
     return patch.object(LLMConfig, "get_model_info", return_value={"model_info": {}})
 
 
+def _without_schema() -> MagicMock:
+    """A run context whose start event asked for no JSON shape."""
+    return MagicMock(get=AsyncMock(return_value=None))
+
+
 @pytest.mark.asyncio
 async def test_a_programmatic_start_is_cleared_without_inspection():
     with patch(f"{CONVERSATION_MODULE}.do_detect_meta_question", new=AsyncMock()) as detect:
@@ -57,6 +62,7 @@ async def test_a_programmatic_start_is_cleared_without_inspection():
             LLMWrappingAgent(),
             request=ContextualizeConversationEvent(history=[], user_query=None),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -81,6 +87,7 @@ async def test_the_inspection_is_told_which_files_are_attached():
             LLMWrappingAgent(),
             request=Conversation.contextualize(history=[question], message=message),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -271,6 +278,7 @@ async def test_complete_generates_follow_ups_and_ends_with_the_given_stop_or_the
             LLMWrappingAgent(),
             request=CompleteConversationEvent(answer=answer),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -278,6 +286,7 @@ async def test_complete_generates_follow_ups_and_ends_with_the_given_stop_or_the
             LLMWrappingAgent(),
             request=Conversation.complete(answer=answer, stop=RAGSuccessStopEvent(answer="25 days")),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )

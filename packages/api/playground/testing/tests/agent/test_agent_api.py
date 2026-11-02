@@ -204,3 +204,41 @@ async def test_a_missing_image_is_not_found(simulated_agent):
     client, _ = simulated_agent
     response = await client.get(f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/images/{'0' * 64}.png")
     assert response.status_code == 404
+
+
+INVOICE_SCHEMA = {
+    "name": "invoice",
+    "json_schema": {"type": "object", "properties": {"total": {"type": "number"}}, "required": ["total"]},
+    "strict": True,
+}
+
+
+@pytest.mark.asyncio
+async def test_a_response_schema_is_refused_for_an_agent_that_does_not_support_it(simulated_agent):
+    """A caller who asked for a JSON shape must not get prose from an agent that ignores the request."""
+    client, runner = simulated_agent
+
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/{UserMessageEvent.event_name_from_class()}",
+        json={"messages": [], "response_schema": INVOICE_SCHEMA},
+    )
+
+    assert response.status_code == 400, response.text
+    assert "does not support a response schema" in response.json()["detail"]
+    assert not any(event.is_user_message_event for event in runner.received_events)
+
+
+@pytest.mark.asyncio
+async def test_a_response_schema_reaches_an_agent_that_supports_it(simulated_agent):
+    client, runner = simulated_agent
+    runner.supports_response_schema = True
+    runner.create_agent_config_in_db()
+
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/{UserMessageEvent.event_name_from_class()}",
+        json={"messages": [], "response_schema": INVOICE_SCHEMA},
+    )
+
+    assert response.status_code == 200, response.text
+    received = next(event for event in runner.received_events if event.is_user_message_event)
+    assert received.response_schema.json_schema["required"] == ["total"]

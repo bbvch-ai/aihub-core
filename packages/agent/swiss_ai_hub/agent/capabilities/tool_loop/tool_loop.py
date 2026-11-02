@@ -9,6 +9,7 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     LLMEvent,
     Message,
+    ResponseSchema,
     RunToolLoopEvent,
     TextContent,
     ToolApprovalRequestEvent,
@@ -32,6 +33,7 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
+from swiss_ai_hub.agent.capabilities.requested_response_schema import RequestedResponseSchema
 from swiss_ai_hub.agent.capabilities.tool_loop.earlier_tool_turns import EarlierToolTurns
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
@@ -203,7 +205,8 @@ class ToolLoop(Capability):
             # model told by its instructions to use tools calls one anyway, and the gateway strips the call to nothing.
             note = "limit_reached" if exhausted else "no_tools"
             messages.append(ChatMessage(role=MessageRole.USER, content=t(f"agent.tool_loop.prompt.{note}")))
-        turn = await ToolLoop._turn(messages, tools, state.mode, conversation, displayer, user)
+        response_schema = await RequestedResponseSchema.of(run_context, type(agent))
+        turn = await ToolLoop._turn(messages, tools, state.mode, conversation, displayer, user, response_schema)
 
         assistant = turn.output_messages[-1]
         if not assistant.tool_calls:
@@ -544,11 +547,17 @@ class ToolLoop(Capability):
         conversation: ConversationFields,
         displayer: EventDisplayer,
         user: UserIdentity | None,
+        response_schema: ResponseSchema | None = None,
     ) -> LLMEvent:
-        """The model's turn: streamed when it may be the reply, silent when the loop only gathers."""
+        """The model's turn: streamed when it may be the reply, silent when the loop only gathers.
+
+        A reply asked for in a JSON shape is asked for on every answering turn, as OpenAI does: the model may still
+        call tools, and its reply is the JSON."""
         async with conversation.llm.cost_reporting_llm(displayer, user=user) as llm:
             if mode == ToolLoopMode.ANSWER:
-                return await displayer.display_llm_stream(conversation.llm, llm, messages, tools=tools)
+                return await displayer.display_llm_stream(
+                    conversation.llm, llm, messages, tools=tools, response_schema=response_schema
+                )
             response = await (llm.achat(messages, tools=tools) if tools else llm.achat(messages))
         return LLMEvent(
             input_messages=[Message.from_llama_index(message) for message in messages],

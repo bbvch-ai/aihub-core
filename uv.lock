@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = "==3.13.*"
 resolution-markers = [
     "sys_platform == 'win32'",
@@ -6149,6 +6149,7 @@ dependencies = [
     { name = "fsspec" },
     { name = "html5lib" },
     { name = "imagehash" },
+    { name = "jsonschema" },
     { name = "langchain-neo4j" },
     { name = "langfuse" },
     { name = "llama-index-core" },
@@ -6231,6 +6232,7 @@ requires-dist = [
     { name = "fsspec", specifier = ">=2024.10.0" },
     { name = "html5lib", specifier = ">=1.1" },
     { name = "imagehash", specifier = ">=4.3.2" },
+    { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "langchain-neo4j", specifier = ">=0.4.0" },
     { name = "langfuse", specifier = ">=3.14.1" },
     { name = "llama-index-core", specifier = ">=0.14.12,<0.15" },

@@ -473,6 +473,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         event_parents: list[str],
         context: ApiPayloadContext,
     ) -> StartEvent | HumanInTheLoopResponseEvent:
+        if getattr(start_event_input, "response_schema", None) is not None:
+            await to_thread(AgentService.refuse_unsupported_response_schema, context.agent_class)
         return await expected_type.from_api_payload(
             # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
             # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.

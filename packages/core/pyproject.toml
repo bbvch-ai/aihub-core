@@ -94,6 +94,7 @@ dependencies = [
     "beautifulsoup4>=4.14.3",
     "markdownify>=1.2.2",
     "sentencepiece>=0.2.2",
+    "jsonschema>=4.26.0",
 ]
 
 [dependency-groups]
