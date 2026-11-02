@@ -70,7 +70,9 @@ config:
     help: Chat-Modell, das den Antworttext entwirft.
   draft_prompt:
     label: Entwurfs-Prompt
-    help: Anweisungen, wie das LLM den Antworttext entwirft.
+    help: Anweisungen, wie das LLM den Antworttext entwirft. Die Antwort darf Markdown
+      verwenden (fett, Listen); Text in ==doppelten Gleichheitszeichen== wird im Entwurf
+      gelb hervorgehoben.
   category_name:
     label: Kategorie
     help: Name der Kategorie, z. B. support_request. Muss eindeutig sein.
@@ -83,10 +85,16 @@ config:
     help: Beschreiben Sie, welche Art von E-Mails in diese Kategorie gehört. Danach
       klassifiziert das Modell — beschreiben Sie also die Absicht konkret, statt Stichwörter
       aufzuzählen.
+  keep_uncategorised_in_inbox:
+    label: Nicht kategorisierte E-Mails im Posteingang lassen
+    help: Wenn aktiviert, bleiben E-Mails, die zu keiner Kategorie passen, ungelesen
+      im Posteingang statt in den Ausweichordner verschoben zu werden, und spätere
+      Läufe klassifizieren sie nicht erneut. E-Mails, bei denen die Klassifizierung
+      fehlschlug, kommen weiterhin in den Fehlerordner.
   fallback_folder:
     label: Ausweichordner
     help: Ordner für E-Mails, bei denen sich das Modell unsicher ist. Solche E-Mails
-      werden nie in eine Kategorie geraten und nie im Posteingang belassen.
+      werden nie in eine Kategorie geraten.
   failure_folder:
     label: Fehlerordner
     help: Ordner für E-Mails, die der Klassifizierer überhaupt nicht verarbeiten konnte.
@@ -150,3 +158,25 @@ config:
     help: Wie lange eine Wissenssuche dauern darf, bevor die Nachricht stattdessen
       mit dem Fehlertext entworfen wird. Ohne Zeitlimit wartet der Lauf bei einem
       nicht erreichbaren Wissensagenten endlos.
+  quote_original:
+    label: Originalnachricht zitieren
+    help: Wenn aktiviert, wird die Originalnachricht mit Absender, Datum, Empfängern
+      und Betreff unter der Antwort zitiert, wie bei einer Antwort in Outlook. Sie
+      wird erst nach dem Verfassen angefügt und dem Modell nie gezeigt.
+  quote_locale:
+    label: Sprache des Zitats
+    help: Sprache der Bezeichnungen Von/Gesendet/An/Betreff und des Datums über der
+      zitierten Nachricht. Outlook verwendet die Sprache der antwortenden Person,
+      wählen Sie also die Sprache der Postfachinhaberin oder des Postfachinhabers.
+  quote_timezone:
+    label: Zeitzone des Zitats
+    help: Zeitzone des Gesendet-Datums über der zitierten Nachricht. Outlook zeigt
+      es in der Zeitzone der antwortenden Person, wählen Sie also die der Postfachinhaberin
+      oder des Postfachinhabers.
+quote:
+  from: Von
+  sent: Gesendet
+  to: An
+  cc: Cc
+  subject: Betreff
+  date_format: '%d.%m.%Y %H:%M'

@@ -26,7 +26,9 @@ const facts = computed<EventFact[]>(() => [
   { label: t('event.capability.sections'), value: (props.event.event.grounding_nodes ?? []).length },
   {
     label: t('event.capability.notSearched'),
-    value: (props.event.event.refused ?? []).map(reference => `${reference.database} / ${reference.namespace}`),
+    value: [...(props.event.event.missing ?? []), ...(props.event.event.refused ?? [])].map(
+      reference => `${reference.database} / ${reference.namespace}`,
+    ),
   },
   { label: t('event.capability.toolCall'), value: props.event.event.tool_call_id },
 ])

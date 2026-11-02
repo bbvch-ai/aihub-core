@@ -68,7 +68,7 @@ async def process_api_client(setup_process_config_mock):
     mock_class_entity = Mock(spec=ProcessClassEntity)
     mock_class_entity.process_class = PROCESS_CLASS
     mock_class_entity.human_inputs = human_input_entities
-    mock_class_entity.is_online = True
+    mock_class_entity.is_online_since.return_value = True
 
     class_patcher = patch.object(ProcessClassEntity, "get_by_process_class", return_value=mock_class_entity)
     class_patcher.start()

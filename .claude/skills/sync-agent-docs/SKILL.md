@@ -27,7 +27,7 @@ reader until a customer hits it.
 ```bash
 BASE=$(git merge-base HEAD origin/main)
 git diff --name-only "$BASE"...HEAD | grep -E \
-  "^(packages/agent/(swiss_ai_hub/agent/(agents|capabilities|imap|rag|mcp|steps)/|app/)|packages/core/swiss_ai_hub/core/imap/)" \
+  "^(packages/agent/(swiss_ai_hub/agent/(agents|capabilities|imap|rag|mcp|steps)/|app/)|packages/core/swiss_ai_hub/core/(imap|jira)/)" \
   || echo "no agent-implementation change -- stop here"
 ```
 
@@ -63,6 +63,8 @@ Current mapping — note that code names and product names have almost nothing i
 | `11_email_agent`                    | `imap_agent`                 | `agent/imap/`, `core/imap/`           |
 | `12_email_classification_agent`     | `email_classification_agent` | `agent/imap/`, `core/imap/`           |
 | `13_universal_agent`                | `universal_agent`            | `agent/capabilities/` (tool loop)     |
+| `15_release_notes_assistant`        | `release_notes_agent`        | `core/jira/`                          |
+| `16_anonymiser`                     | `anonymiser_agent`           | `core/generative_ai/anonymisation/`   |
 
 **Two exceptions the derivation cannot give you.** `imap_agent` and `memory_writer_agent` have no i18n file, so they are
 absent from the loop's output. `imap_agent` is `11_email_agent`. `memory_writer_agent` is a non-discoverable system

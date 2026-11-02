@@ -1,9 +1,10 @@
 import logging
-from typing import TYPE_CHECKING, Annotated, Self
+from typing import TYPE_CHECKING, Annotated, ClassVar, Self
 
 from pydantic import ConfigDict, Field, model_validator
 
 from swiss_ai_hub.core.form.constraints import Pattern
+from swiss_ai_hub.core.form.elements.checkbox import Checkbox
 from swiss_ai_hub.core.form.elements.cron_input import CronInput
 from swiss_ai_hub.core.form.elements.icon_selector import IconSelector
 from swiss_ai_hub.core.form.elements.input_text import InputText
@@ -20,6 +21,9 @@ logger = logging.getLogger(__name__)
 # The config key holding a profile's schedule. Platform-owned: `AgentRunner` writes the form element and
 # `CronScheduler` reads the stored value, so neither depends on a blueprint naming the field correctly.
 CRON_CONFIG_KEY = "cron"
+# The config key of the anonymisation toggle. Platform-owned like `cron`: the dispatcher reads it on every run, and
+# `AgentRunner` offers it on every blueprint's form.
+ANONYMISE_CONFIG_KEY = "anonymise"
 
 
 class StepConfig(Form):
@@ -72,6 +76,10 @@ class AgentConfig(Form):
     ```
     """
 
+    ID_MAX_LENGTH: ClassVar[int] = 100
+    NAME_MAX_LENGTH: ClassVar[int] = 120
+    DESCRIPTION_MAX_LENGTH: ClassVar[int] = 500
+
     agent_id: Annotated[
         str | InputText,
         Field(description="Uniquely identifies the agent instance."),
@@ -95,6 +103,13 @@ class AgentConfig(Form):
         CronSchedule | CronInput | None,
         Field(description="Cron schedule controlling when this profile runs automatically."),
     ] = None
+    # Platform-owned like `cron`, and for the same reason left out of `as_form()`: `for_discovery` puts the
+    # element on every blueprint's form, so no blueprint needs code for it. On means every LLM call of a run asks
+    # the gateway to anonymise, also for models the gateway would not anonymise on its own.
+    anonymise: Annotated[
+        bool | Checkbox,
+        Field(description="Anonymise personal data in every LLM call of this profile's runs."),
+    ] = False
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
     @model_validator(mode="after")
@@ -124,6 +139,7 @@ class AgentConfig(Form):
             agent_id=InputText(
                 label=LocaleString.from_i18n_path("lib.agents.config.agent_id.label"),
                 help=LocaleString.from_i18n_path("lib.agents.config.agent_id.help"),
+                max_length=cls.ID_MAX_LENGTH,
                 placeholder=LocaleString.from_i18n_path("lib.agents.config.agent_id.placeholder"),
                 required=True,
             ),
@@ -131,11 +147,13 @@ class AgentConfig(Form):
                 label=LocaleString.from_i18n_path("lib.agents.config.name.label"),
                 placeholder=LocaleString.from_i18n_path("lib.agents.config.placeholder.name"),
                 input_type="text",
+                max_length=cls.NAME_MAX_LENGTH,
             ),
             description=LocaleInput(
                 label=LocaleString.from_i18n_path("lib.agents.config.description.label"),
                 placeholder=LocaleString.from_i18n_path("lib.agents.config.placeholder.description"),
                 input_type="textarea",
+                max_length=cls.DESCRIPTION_MAX_LENGTH,
             ),
             icon=IconSelector(
                 label=LocaleString.from_i18n_path("lib.agents.config.icon.label"),
@@ -153,15 +171,29 @@ class AgentConfig(Form):
             timezone_placeholder=LocaleString.from_i18n_path("lib.agents.config.cron.timezone_placeholder"),
         )
 
+    @classmethod
+    def anonymise_form_field(cls) -> Checkbox:
+        """The anonymisation toggle, offered on every profile."""
+        return Checkbox(
+            label=LocaleString.from_i18n_path("lib.agents.config.anonymise.label"),
+            help=LocaleString.from_i18n_path("lib.agents.config.anonymise.help"),
+        )
+
     def for_discovery(self, *, is_schedulable: bool) -> Self:
         """This config as discovery should publish it, with the schedule offered only where it applies.
 
         Whether a field is configurable follows from its *value* being a form element, so setting or
         clearing `cron` here settles both published surfaces at once: the rendered form and the
         submission JSON schema. Clearing rather than leaving it alone is deliberate — a blueprint that
-        declared its own `cron` must not be able to offer a schedule it will never be fired on.
+        declared its own `cron` must not be able to offer a schedule it will never be fired on. The
+        anonymisation toggle applies to every profile, so it is always offered.
         """
-        return self.model_copy(update={CRON_CONFIG_KEY: self.cron_form_field() if is_schedulable else None})
+        return self.model_copy(
+            update={
+                CRON_CONFIG_KEY: self.cron_form_field() if is_schedulable else None,
+                ANONYMISE_CONFIG_KEY: self.anonymise_form_field(),
+            }
+        )
 
     @classmethod
     def from_entity(cls, entity: "AgentConfigEntity") -> Self:

@@ -92,9 +92,10 @@ Valkey, SeaweedFS) belong to the Data tier.
 ## Utility tier
 
 Auxiliary services that support the application tier without being core to it: SearXNG for web search, Open Terminal as
-the code-execution sandbox for OpenWebUI (plain LLM models; per-user isolation, downloadable file output), Playwright
-for browser automation, and Attu as a Milvus admin console for operators. These are consumed mostly by OpenWebUI (as
-agent tools) and by operators.
+the code-execution sandbox for OpenWebUI (plain LLM models; per-user isolation, downloadable file output), Playwright as
+the headless browser through which OpenWebUI's web loader and the agents read web pages (reaching the internet only
+through browser-proxy, a Squid proxy that refuses non-public destinations), and Attu as a Milvus admin console for
+operators. These are consumed mostly by OpenWebUI (as agent tools) and by operators.
 
 <likec4-view view-id="tier_utility" style="display:block;height:420px"></likec4-view>
 

@@ -19,10 +19,7 @@ export class DocumentProfile {
       knowledge_documents: { enabled: true, path_glob: glob },
       record_extraction: {
         extraction_model_name: TASK_LLM,
-        max_files: 100,
-        minutes_per_turn: 5,
         max_documents_total: 1000,
-        max_rows: 500,
         max_document_chars: 500_000,
         max_parallel_extractions: 4,
       },

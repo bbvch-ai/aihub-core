@@ -6,8 +6,8 @@ HEAD_CHARACTERS = 1_500
 
 
 class RecordsToolResult:
-    """What a model that chose to extract reads back: the table is shown to the user directly, so the model gets its
-    summary and the first rows, and is told not to retype it."""
+    """What a model that chose to extract reads back: the table is shown to the user directly, with the whole of it as
+    a file, so the model gets its summary and the first rows, and is told not to retype it."""
 
     @staticmethod
     def content(extracted: RecordsExtractedEvent) -> str:
@@ -15,26 +15,26 @@ class RecordsToolResult:
             return f"{extracted.summary}{RecordsToolResult._left(extracted)}"
         head = RecordsToolResult._head(extracted.table)
         return (
-            f"{extracted.summary}\n\nThe user already sees the full table of {extracted.row_count} rows next to your "
-            "answer. Do not write a table or a list of its rows yourself: you see only its first rows, so anything you "
-            "write would be incomplete or invented. Say in a few sentences what it holds and point out anything "
-            "notable. Its first rows:\n"
+            f"{extracted.summary}\n\nThe user already sees the table next to your answer, the first "
+            f"{extracted.row_count} of its {extracted.total_row_count} rows, and can download all of them"
+            f"{RecordsToolResult._file(extracted)}. Do not write a table or a list of its rows yourself: you see only "
+            "its first rows, so anything you write would be incomplete or invented. Say in a few sentences what it "
+            "holds and point out anything notable. Its first rows:\n"
             f"{head}{RecordsToolResult._left(extracted)}"
         )
 
     @staticmethod
+    def _file(extracted: RecordsExtractedEvent) -> str:
+        return f" as {extracted.file.filename}" if extracted.file else ""
+
+    @staticmethod
     def _left(extracted: RecordsExtractedEvent) -> str:
-        """What the extraction left for later: the user decides whether to go on, never the model on its own."""
-        if not extracted.remaining_documents and not extracted.remaining_rows:
+        """A sample: the user decides whether to extract everything, never the model on its own."""
+        if not extracted.awaiting_confirmation:
             return ""
-        left = (
-            f"{extracted.remaining_rows} more rows"
-            if extracted.remaining_rows
-            else f"{extracted.remaining_documents} more documents"
-        )
         return (
-            f"\n\n{left} are left for later. Ask the user whether to narrow the request or to continue; only when "
-            "they agree, call extract_records with continue_pending set to true."
+            "\n\nThis is only a sample of the selection. Ask the user whether to extract every document or to narrow "
+            "the request; only when they agree, call extract_records with confirm_sample set to true."
         )
 
     @staticmethod

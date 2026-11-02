@@ -3,7 +3,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from playground.jira_seed.seed_jira import SEED_LABEL, JiraSeeder, JiraSite, SeedIssue, SeedScenario
+from playground.jira_seed.seed_jira import (
+    RELEASE_LABEL,
+    SEED_LABEL,
+    JiraSeeder,
+    JiraSite,
+    ReleaseTickets,
+    SeedIssue,
+    SeedScenario,
+)
 
 
 def _seeder(offered: dict[str, dict]) -> JiraSeeder:
@@ -232,3 +240,64 @@ class TestSite:
         env.write_text("# comment\nexport JIRA_URL='https://acme.atlassian.net'\nJIRA_TOKEN=\"t=1\"\n")
 
         assert JiraSite._read_env_file(env) == {"JIRA_URL": "https://acme.atlassian.net", "JIRA_TOKEN": "t=1"}
+
+
+class TestRelease:
+    def test_tickets_rotate_over_the_kinds_and_name_an_area(self):
+        tickets = ReleaseTickets.load()
+
+        kinds = [tickets.ticket(number, ["bug", "story"])[0] for number in range(4)]
+
+        assert kinds == ["bug", "story", "bug", "story"]
+        assert tickets.ticket(0, ["bug"])[1] == "Login page shows an error after the session expires"
+
+    def test_the_first_dozens_of_tickets_of_a_kind_read_differently(self):
+        tickets = ReleaseTickets.load()
+
+        summaries = [tickets.ticket(number, ["bug"])[1] for number in range(24)]
+
+        assert len(set(summaries)) == 24
+
+    def test_wiki_monospace_survives_the_area_being_filled_in(self):
+        tickets = ReleaseTickets.load()
+        number = next(n for n in range(200) if "Keyboard shortcuts" in tickets.ticket(n, ["story"])[1])
+
+        assert "{{g}}" in tickets.ticket(number, ["story"])[2]
+
+    def test_an_unknown_kind_is_refused(self):
+        with pytest.raises(RuntimeError, match="Unknown release ticket kind"):
+            ReleaseTickets.load().ticket(0, ["epic"])
+
+    def test_a_ticket_carries_the_fix_version_and_the_release_label(self):
+        fields = _seeder({}).release_fields("ENG", "2.0", ("bug", "Fix it", "Text"))
+
+        assert fields["fixVersions"] == [{"name": "2.0"}]
+        assert fields["labels"] == [SEED_LABEL, RELEASE_LABEL]
+        assert fields["issuetype"] == {"id": "2"}
+
+    def test_a_release_is_created_in_batches_and_every_ticket_assigned_to_the_seeding_account(self):
+        site = _RecordingSite(
+            {
+                "/rest/api/2/project/ENG/versions": [{"name": "2.0"}],
+                "/rest/api/2/issue/bulk": {"issues": [{"key": "ENG-9"}]},
+            },
+            groups=[],
+        )
+        site.search = lambda jql, fields="summary": []
+        seeder = JiraSeeder(site)
+        seeder._types["ENG"] = [{"id": "1", "name": "Task"}, {"id": "2", "name": "Bug"}]
+
+        seeder.release("ENG", "2.0", 120, ["bug", "task"], ReleaseTickets.load())
+
+        bulk = [body for method, path, body in site.calls if path == "/rest/api/2/issue/bulk"]
+        assert [len(body["issueUpdates"]) for body in bulk] == [50, 50, 20]
+        assert ("PUT", "/rest/api/2/issue/ENG-9/assignee", {"accountId": "me-1"}) in site.calls
+
+    def test_a_release_already_there_is_not_created_again(self, capsys: pytest.CaptureFixture[str]):
+        site = _RecordingSite({"/rest/api/2/project/ENG/versions": [{"name": "2.0"}]}, groups=[])
+        site.search = lambda jql, fields="summary": [{"key": "ENG-40"}]
+
+        JiraSeeder(site).release("ENG", "2.0", 120, ["bug"], ReleaseTickets.load())
+
+        assert not [path for _, path, _ in site.calls if path == "/rest/api/2/issue/bulk"]
+        assert "release 2.0: 1 tickets already there" in capsys.readouterr().out

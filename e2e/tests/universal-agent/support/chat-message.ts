@@ -10,7 +10,6 @@ export type ToolName =
   | 'read_knowledge_document'
   | 'select_knowledge_documents'
   | 'extract_records'
-  | 'continue_extraction'
 
 /**
  * The pipe names a tool block by the tool's label in the run's locale (`ToolEvent.label`), so a call is recognised
@@ -56,7 +55,6 @@ const TOOL_LABELS: Record<ToolName, string[]> = {
     'Seleziona documenti',
   ],
   extract_records: ['Extract a Table', 'Tabelle extrahieren', 'Extraire un tableau', 'Estrai una tabella'],
-  continue_extraction: ['Continue the Table', 'Tabelle fortsetzen', 'Poursuivre le tableau', 'Continua la tabella'],
 }
 
 export const STOPPED_EARLY_NOTICE = 'I stopped looking into this before I was done'
