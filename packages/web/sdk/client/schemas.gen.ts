@@ -16050,6 +16050,16 @@ export const KnowledgeSearchedEventSchema = {
         "The document sections the block holds, for listing as sources.",
       default: [],
     },
+    missing: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Missing",
+      description:
+        "Referenced collections that were not searched, because they no longer exist.",
+      default: [],
+    },
     refused: {
       items: {
         $ref: "#/components/schemas/KnowledgeReference",
@@ -42082,6 +42092,16 @@ export const KnowledgeSearchedEventWritableSchema = {
       title: "Grounding Nodes",
       description:
         "The document sections the block holds, for listing as sources.",
+      default: [],
+    },
+    missing: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Missing",
+      description:
+        "Referenced collections that were not searched, because they no longer exist.",
       default: [],
     },
     refused: {

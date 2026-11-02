@@ -117,11 +117,10 @@ class LLMSummarizer:
 
         For the Latin-script EU-language content this pipeline processes, a character never costs more than
         `SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER` tokens, so a render at or under `budget /
-        SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER` is guaranteed to fit without the network round trip
-        `_count_tokens` costs. Symmetrically, no tokenizer we route through produces more than one token per
-        character, so a render past 4x the budget is guaranteed to overflow it. That round trip is only
-        load-bearing in the boundary between those two — never on a whole oversized document or a large
-        map-reduce batch, which the reject short-circuit keeps off `/utils/token_counter` entirely.
+        SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER` is guaranteed to fit without being counted. Symmetrically, no
+        tokenizer we route through produces more than one token per character, so a render past 4x the budget is
+        guaranteed to overflow it. Only the boundary between those two is counted, so a whole oversized document or
+        a large map-reduce batch is never tokenized just to be rejected.
         """
         rendered = self._summarize_prompt_template.format(text=text)
         if len(rendered) <= self._budget // SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER:
