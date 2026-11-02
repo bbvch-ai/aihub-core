@@ -9,7 +9,8 @@ chatbots, agents follow predefined steps to analyze documents, answer questions,
 
 Agents can be interactive (responding to user questions via chat) or autonomous (executing tasks automatically on a
 schedule or triggered by events). The structured workflow approach makes agents predictable, transparent, and auditable
-regardless of how they operate.
+regardless of how they operate. Where a task calls for it, the Universal Agent lets the model choose among tools you
+have enabled, still inside limits, permissions and approvals you set.
 
 ## What is an agent?
 
@@ -24,6 +25,66 @@ Examples:
 
 Agents combine large language models (LLMs) for understanding natural language with structured processes for reliable
 operation.
+
+## The standard blueprint set
+
+The pages that follow document every agent blueprint the platform ships. A tenant does not get all of them.
+
+Three are granted to a new tenant by default:
+
+- **Instructed Assistant** — follows plain-text instructions you write
+- **Teachable Assistant** — learns the shape of the answer you want from examples
+- **Document Intelligence Assistant** — answers from your knowledge bases and cites its sources
+
+The Universal Agent is the one profile an admin configures once for open-ended work: the model decides per message
+whether to search knowledge, read the user's attached files, recall memory or use another enabled tool. The Knowledge
+Extraction Agent collects records from many documents into one table, each row naming its file.
+
+The rest are documented here because they are built, supported and ready to run — but a tenant only sees one after a
+sysadmin grants it. That keeps a new tenant's catalog small enough to choose from, without taking anything away from a
+tenant that already relies on an agent outside the set. Granting one takes effect immediately, with no redeploy; see
+[Access control](../16_multi_tenancy/4_access_control/).
+
+## What every chat agent can do
+
+The conversational blueprints built on the shared capabilities (Instructed, Teachable, Document Intelligence, Company
+Knowledge, MCP Tool, Universal and Web Page) share the same behaviour in the conversation:
+
+- **Attached files.** Files attached in the chat are read by the agent itself and listed as sources. A long file is cut
+  down to the sections that matter for the question, and the answer says so.
+- **Knowledge references.** Typing `#` in Open WebUI points the agent at one of the company's knowledge collections,
+  limited to what the user may read.
+- **Linked web pages.** Where the profile turns on **Read Linked Web Pages**, the agent reads the pages a message links
+  or attaches with `#`, cites them, and names the ones it could not read. Available on the Instructed, Document
+  Intelligence, Company Knowledge and Universal agents, and always on in the Web Page Assistant; see
+  [Linked web pages](../10_chat_ui/15_linked_web_pages/).
+- **Inline citations.** Statements link to the document they came from, as numbered chips in the answer.
+- **Memory.** What the agent remembers about the user and the organization joins the model's instructions.
+- **Chat toggles.** A chat toggle is a request to the agent, which runs it as traced, cost-attributed steps. An agent
+  shows a toggle only if it can serve it; today that is Code Interpreter and My Files, on the Universal Agent.
+- **Refusals instead of errors.** A message larger than the model's context window, or a request outside a Teachable
+  Assistant's remit, is answered with a short explanation in the chat rather than an error.
+
+How these show up in Open WebUI is described under
+[Integration architecture](../10_chat_ui/11_integration_architecture/); the settings are in
+[Blueprints & Profiles](2_blueprints_and_profiles/#shared-chat-settings).
+
+## Tools the model chooses
+
+A fixed workflow is the default, because it is predictable. Some jobs cannot be written as a fixed sequence, so an agent
+can also hand the model a set of tools and let it decide, per message, which to use, run them, and decide again until it
+can answer. This is the tool loop, and it is how the Universal Agent works.
+
+The loop stays inside controls an admin sets per profile:
+
+- **Only what is offered runs.** A tool is offered only if the profile enables it, the user's access allows it and, for
+  Code Interpreter or My Files, the chat toggle is on. A call to anything else is refused.
+- **Approvals.** A tool can ask the user to confirm first: on every call, once per answer or once per conversation. A
+  declined tool is not requested again for that answer.
+- **Limits.** The profile caps the number of decisions and tool calls. At the cap the model answers with what it has and
+  the chat says it stopped early.
+- **Transparency.** Every call and result appears in the chat and in the event history, so the path to an answer can be
+  audited like any workflow.
 
 ## Agent "Training"
 

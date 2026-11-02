@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from imapclient.exceptions import IMAPClientError, LoginError
@@ -9,6 +9,7 @@ from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.core.testing import async_test
 
 from swiss_ai_hub.agent.imap.imap_client import _MAX_ORDERING_CANDIDATES, ImapClient, ImapClientFactory
+from swiss_ai_hub.agent.imap.inbox_position import InboxPosition
 
 _HEADER = b"From: Alice <alice@example.com>\r\nSubject: Report\r\nDate: Mon, 05 Jan 2026 10:00:00 +0000\r\n\r\n"
 
@@ -458,6 +459,63 @@ async def test_factory_raises_and_logs_out_on_failed_login():
             async with ImapClientFactory.create(config):
                 pytest.fail("client must not be yielded after a failed login")
 
+    connection.logout.assert_called_once()
+
+
+def _oauth_config(**overrides: str) -> ImapClientConfig:
+    values = {
+        "host": "outlook.office365.com",
+        "username": "shared@contoso.com",
+        "auth_method": "oauth2_client_credentials",
+        "tenant_id": "tenant-guid",
+        "client_id": "client-guid",
+        "client_secret": "secret",
+    }
+    return ImapClientConfig(**(values | overrides))
+
+
+@async_test
+async def test_factory_logs_in_with_password_by_default():
+    connection = MagicMock()
+    config = ImapClientConfig(host="imap.test", username="a@test", password="pw")
+
+    with patch("swiss_ai_hub.agent.imap.imap_client.IMAPClient", return_value=connection):
+        async with ImapClientFactory.create(config):
+            pass
+
+    connection.login.assert_called_once_with("a@test", "pw")
+    connection.oauth2_login.assert_not_called()
+
+
+@async_test
+async def test_factory_logs_in_with_xoauth2_for_the_mailbox_when_oauth_is_selected():
+    connection = MagicMock()
+    provider = MagicMock()
+    provider.get_token = AsyncMock(return_value="access-token")
+
+    with (
+        patch("swiss_ai_hub.agent.imap.imap_client.IMAPClient", return_value=connection),
+        patch("swiss_ai_hub.agent.imap.imap_client.EntraTokenProvider.from_config", return_value=provider),
+    ):
+        async with ImapClientFactory.create(_oauth_config()):
+            pass
+
+    connection.oauth2_login.assert_called_once_with("shared@contoso.com", "access-token")
+    connection.login.assert_not_called()
+
+
+@async_test
+async def test_factory_refuses_oauth_with_a_missing_field_and_still_logs_out():
+    connection = MagicMock()
+    config = _oauth_config(client_secret="")
+
+    with patch("swiss_ai_hub.agent.imap.imap_client.IMAPClient", return_value=connection):
+        with pytest.raises(ValueError, match="client_secret"):
+            async with ImapClientFactory.create(config):
+                pass
+
+    connection.oauth2_login.assert_not_called()
+    connection.login.assert_not_called()
     connection.logout.assert_called_once()
 
 
@@ -913,3 +971,60 @@ async def test_a_source_folder_that_does_not_exist_names_what_does():
 
     with pytest.raises(ValueError, match="has no folder 'Inbx'"):
         await client.list_unread()
+
+
+def _inbox_connection(search: list[int], uid_validity: int = 7) -> MagicMock:
+    connection = _connection(search=search)
+    connection.select_folder = MagicMock(return_value={b"UIDVALIDITY": uid_validity})
+    return connection
+
+
+@async_test
+async def test_listing_above_no_position_lists_every_unread_message_lowest_uid_first():
+    """Lowest UID first, not oldest sent: the watermark the caller advances to the batch's highest UID is only sound
+    when every unread UID below it was in the batch."""
+    connection = _inbox_connection(search=[103, 101, 102])
+    client = _client(connection, max_messages=2)
+
+    uid_validity, summaries = await client.list_unread_above(None)
+
+    assert uid_validity == 7
+    assert [summary.message_id for summary in summaries] == ["101", "102"]
+    assert connection.search.call_args.args == (["UNSEEN"],)
+    connection.sort.assert_not_called()
+
+
+@async_test
+async def test_listing_above_a_position_searches_only_higher_uids_and_drops_the_highest_below_it():
+    """`UID 101:*` still names the highest UID when it is lower (RFC 3501 reads the range either way round)."""
+    connection = _inbox_connection(search=[100, 105])
+    client = _client(connection)
+
+    _, summaries = await client.list_unread_above(InboxPosition(uid_validity=7, uid=100))
+
+    assert [summary.message_id for summary in summaries] == ["105"]
+    assert connection.search.call_args.args == (["UNSEEN", "UID", "101:*"],)
+
+
+@async_test
+async def test_listing_above_a_position_with_nothing_newer_lists_nothing():
+    connection = _inbox_connection(search=[100])
+    client = _client(connection)
+
+    _, summaries = await client.list_unread_above(InboxPosition(uid_validity=7, uid=100))
+
+    assert summaries == []
+    connection.fetch.assert_not_called()
+
+
+@async_test
+async def test_listing_above_a_position_from_another_uid_space_lists_every_unread_message_again():
+    """A renumbered folder starts again from low UIDs; reusing the old number would skip all of its new mail."""
+    connection = _inbox_connection(search=[3, 4], uid_validity=8)
+    client = _client(connection)
+
+    uid_validity, summaries = await client.list_unread_above(InboxPosition(uid_validity=7, uid=100))
+
+    assert uid_validity == 8
+    assert [summary.message_id for summary in summaries] == ["3", "4"]
+    assert connection.search.call_args.args == (["UNSEEN"],)

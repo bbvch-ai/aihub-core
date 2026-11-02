@@ -1,0 +1,26 @@
+[
+  {
+    "project": "ONBOARDING",
+    "key": "ONB-1",
+    "title": "Laptop setup for new joiners",
+    "updated": "2026-09-01T09:00:00Z",
+    "status": "Done",
+    "body": "New joiners receive their laptop on the first day. IT installs the VPN client, the password manager and the chat app before handing it over."
+  },
+  {
+    "project": "ONBOARDING",
+    "key": "ONB-2",
+    "title": "Access to the knowledge base",
+    "updated": "2026-09-02T09:00:00Z",
+    "status": "In progress",
+    "body": "Every new joiner gets read access to the team spaces of their department. Write access is requested by the team lead."
+  },
+  {
+    "project": "SUPPORT",
+    "key": "SUP-7",
+    "title": "Password reset takes too long",
+    "updated": "2026-09-03T09:00:00Z",
+    "status": "Open",
+    "body": "Users report that the password reset email arrives after more than ten minutes. The mail relay queue is suspected."
+  }
+]

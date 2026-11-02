@@ -16,7 +16,8 @@
       "allowedVersions": {
         "@nuxt/cli>@nuxt/schema": "3.21.0",
         "vue3-apexcharts>apexcharts": "4.7.0",
-        "c12>magicast": "0.5.2"
+        "c12>magicast": "0.5.2",
+        "unctx>oxc-parser": "0.112.0"
       }
     }
   },

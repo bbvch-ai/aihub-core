@@ -52,6 +52,12 @@
           height="5rem"
         />
       </template>
+      <div
+        v-else-if="appsError"
+        class="col-span-4 py-4 text-center text-sm text-surface-500 dark:text-surface-400"
+      >
+        {{ t('http_error.code.503') }}
+      </div>
       <template
         v-else
       >
@@ -98,13 +104,15 @@
 </template>
 
 <script setup lang="ts">
+import { useEventListener } from '@vueuse/core'
+
 import type { MenuItem } from 'primevue/menuitem'
 
 const router = useRouter()
 const route = useRoute()
 const tenantPath = useTenantPath()
 
-const { apps, appsLoading } = useApps()
+const { apps, appsLoading, appsError } = useApps()
 const { t } = useI18n()
 
 const shownApps = computed(() => {
@@ -138,6 +146,14 @@ const op = ref()
 const toggle = (event: Event) => {
   op.value.toggle(event)
 }
+
+// A click into an embedded iframe (the OpenWebUI chat) never reaches this document, so the
+// Popover's outside-click handler misses it; the window losing focus to the iframe is the signal.
+useEventListener(window, 'blur', () => {
+  if (document.activeElement instanceof HTMLIFrameElement) {
+    op.value?.hide()
+  }
+})
 
 const onEnter = (event: Event) => {
   if (shownApps.value.length > 0) {

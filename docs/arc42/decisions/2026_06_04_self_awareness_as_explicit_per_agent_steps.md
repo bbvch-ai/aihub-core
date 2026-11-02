@@ -1,5 +1,8 @@
 # Implement Agent Self-Awareness as Explicit Per-Agent Steps
 
+> **Superseded by `2026_09_28_capabilities_and_the_conversational_spine`:** the per-agent step copies this ADR accepted
+> are gone; every conversational blueprint now installs the shared steps as capabilities.
+
 ## Context
 
 Issue #556 added "self-awareness": an agent detects a meta question about itself ("what can you do?", "why did you do
@@ -63,10 +66,10 @@ from their pre-feature state. There is no `SelfAwarenessMixin`, no `get_steps()`
 - **Entry accepts only `UserMessageEvent`** (`LLMWrappingAgent`, `FewShotAgent`, `McpReactAgent`): the step takes a
   **required** `_clear: NotAMetaQuestionEvent` parameter. The dependency alone gates it — no precondition — since the
   start event is always a chat message.
-- **Entry also accepts a programmatic start** (`RAGAgent`, `ExpertRAGAgent`, `NamespaceSelectionAgent` accept
-  `UserMessageEvent | RAGStartEvent`): the step keeps `_clear: NotAMetaQuestionEvent | None = None` and combines its
-  precondition with `check_passed_meta_question_gate`. Programmatic starts (e.g. `RAGStartEvent`) are not
-  `UserMessageEvent`, so the gate lets them through immediately and detection is skipped.
+- **Entry also accepts a programmatic start** (`RAGAgent`, `ExpertRAGAgent` accept `UserMessageEvent | RAGStartEvent`):
+  the step keeps `_clear: NotAMetaQuestionEvent | None = None` and combines its precondition with
+  `check_passed_meta_question_gate`. Programmatic starts (e.g. `RAGStartEvent`) are not `UserMessageEvent`, so the gate
+  lets them through immediately and detection is skipped.
 
 Either way the dispatcher cannot fire the entry step on a chat message until detection has cleared it.
 

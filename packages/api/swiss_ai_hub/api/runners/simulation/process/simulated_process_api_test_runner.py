@@ -1,5 +1,6 @@
 import logging
 from typing import Self
+from unittest.mock import MagicMock
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -9,7 +10,6 @@ from swiss_ai_hub.core.events.process import (
     HumanInSpecs,
     HumanWorkEvent,
     ProcessClassDiscoveryResponseEvent,
-    ProcessConfigSpecs,
     ProcessEvent,
     ProcessStartEvent,
     ProgramInSpecs,
@@ -17,7 +17,7 @@ from swiss_ai_hub.core.events.process import (
     WorkEvent,
     WorkRequestEvent,
 )
-from swiss_ai_hub.core.form import InputText
+from swiss_ai_hub.core.form import ConfigSpecs, InputText
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import NatsSettings
 from swiss_ai_hub.core.processes import ProcessConfig
@@ -134,7 +134,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             human_inputs=self.human_inputs,
             program_inputs=self.program_inputs,
             agent_inputs=self.agent_inputs,
-            process_config_specs=ProcessConfigSpecs.from_process_config_class(ProcessConfig),
+            process_config_specs=ConfigSpecs.from_form_class(ProcessConfig),
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
@@ -243,7 +243,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 api_app=self._api_app,
                 controller=self._api_app.state.process_controller,
                 locale_handler=ApiLocaleHandler(),
-                discovery_interval=60,
+                redis=MagicMock(),
             )
             process_class_dto = ProcessClassDTO(
                 process_class=self.process_class,
@@ -251,7 +251,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 description=LocaleString(en=""),
                 icon="mage:broadcast",
                 form=[],
-                process_config_specs=ProcessConfigSpecs.from_process_config_class(ProcessConfig),
+                process_config_specs=ConfigSpecs.from_form_class(ProcessConfig),
                 human_inputs=self.human_inputs,
                 program_inputs=self.program_inputs,
                 agent_inputs=self.agent_inputs,

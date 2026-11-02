@@ -168,6 +168,55 @@ are warnings that can be alerted on; neither changes what runs.
 Nothing in the tree parsed cron. `croniter` is a small, widely used library with timezone-aware iteration; the
 alternative is hand-rolling field parsing, ranges, steps, and DST handling.
 
+### 9. A schedule's cost is checked when it is saved, not metered while it runs
+
+*Added after review of [#1759](https://github.com/bbvch-ai/aihub-core/pull/1759), which first proposed the opposite.*
+
+A cron expression is a declaration, not traffic. `CronScheduleCalculator` can say exactly how many runs it produces
+before the first one fires, so the question "is this more work than this deployment wants?" is answerable while an admin
+is still looking at the form. Two ceilings live in `SchedulerSettings` and are enforced by `ScheduleAdmission` from the
+config save path:
+
+- `SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH` bounds one schedule. It **defaults to 43,200** — every-minute, the tightest
+  expression cron can produce — so out of the box it rejects nothing that can be written. It exists for a deployment
+  that wants to allow less, not as a number the platform picked on a customer's behalf.
+- `SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH` bounds every schedule together, because 400 hourly profiles are 288,000 runs a
+  month and each of those configs is unremarkable alone. **Disabled by default**, on the same principle as retention: a
+  check that can reject an admin's save has to be something an operator turned on.
+
+Both are paired with a scan-side skip, exactly as a malformed schedule is: write-time validation only covers rows
+written since it existed and only while the setting held its value, so lowering a ceiling must not leave the profiles
+admitted under the old one firing forever.
+
+**The rejected alternative was runtime metering** — a synthetic `scheduler` principal billed to the startup tenant
+against a seeded `AIHubScheduler` role holding a default of 5000 runs/day. It was implemented and withdrawn, for reasons
+worth recording because they generalise:
+
+- **The default failed at both jobs it could have had.** Four every-minute profiles are 5,760 runs/day, so the cap
+  refused a configuration the engine advertises as supported; and 5,000 is far too low to read as "no correct scheduler
+  fires this much". A platform-wide constant is only defensible as a backstop against our own bugs, and that is not a
+  number that also bounds customer cost.
+- **The guard was removable and failed open.** The role was tenant-scoped, so `RoleService.delete_role` permitted it;
+  afterwards the limit lookup returned "no limits", which reads as *unlimited*. A budget an admin can delete from the
+  role editor, leaving one line in a background log, does not hold.
+- **The counter's scope matched nothing.** Counters key on the matched pattern, so one seeded wildcard is a single
+  bucket for every scheduled run — one runaway profile spending what the well-behaved ones needed.
+- **Enforcement sat where nobody was looking.** Over the cap, runs stopped with no notification, no thread entry, and no
+  UI state, because a scheduled run fires into a thread with no members (#1582). For an inbox classifier that is mail
+  quietly ceasing to be filed.
+- **Counting runs cannot see the runaway.** One run doing a fifty-step retrieval loop is one unit at any threshold.
+
+That last point is the real division of labour: bounding *how often* an agent starts is admission control and belongs
+here; bounding *what it costs* belongs in [#1766](https://github.com/bbvch-ai/aihub-core/issues/1766) (per-run call
+cap), [#1767](https://github.com/bbvch-ai/aihub-core/issues/1767) (per-agent spend),
+[#1452](https://github.com/bbvch-ai/aihub-core/issues/1452) and
+[#441](https://github.com/bbvch-ai/aihub-core/issues/441) (per-user and per-tenant spend). #1452 plans to extend
+`core/auth/usage/` from invocation-count to cost, so shipping a default limit in invocation-count would have been the
+platform's first default cap in the unit that module is scheduled to leave.
+
+Still open: a circuit breaker against the scheduler *itself* misfiring — a bug firing far more than any schedule
+declares. Admission control cannot see that, because the declarations would all be admissible. It wants its own issue.
+
 ## Consequences
 
 **Positive**
@@ -179,10 +228,11 @@ alternative is hand-rolling field parsing, ranges, steps, and DST handling.
 
 **Negative**
 
-- **Scheduled runs bypass usage limits.** `UsageLimits.check_and_increment` derives its tenant from
-  `user.acting_within_tenant` and is only wired as a FastAPI `Depends` on HTTP endpoints. A scheduled run has neither a
-  user nor an HTTP request, so nothing meters it: a misconfigured cron can consume LLM budget unchecked. Accepted for v1
-  and tracked separately.
+- **Scheduled runs are bounded in frequency, not in spend.** Decision 9 rejects a schedule that declares more runs than
+  the deployment allows, which is everything computable from the schedule itself. What one run then costs is not: a
+  single scheduled run doing a fifty-step retrieval loop is one run at any ceiling. `UsageLimits` is still reachable
+  only as a FastAPI `Depends`, and a scheduled run has neither a user nor an HTTP request, so nothing meters its spend.
+  That gap is real and is tracked in #1766/#1767/#1452/#441 rather than papered over with a run count here.
 
 - **Scheduled runs are invisible in the UI.** A thread with no members appears in nobody's thread list. This is the
   documented v1 behaviour; configurable membership is [#1582](https://github.com/bbvch-ai/aihub-core/issues/1582).

@@ -8,7 +8,9 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
+from swiss_ai_hub.core.discovery import DiscoverySettings
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, ExternalProcessEventDistributor
+from swiss_ai_hub.core.incident import IncidentSettings
 from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
     LangfuseProvisioner,
@@ -20,7 +22,7 @@ from swiss_ai_hub.core.infrastructure import (
     RedisSettings,
     S3StorageSettings,
 )
-from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook
+from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook, KnowledgeChangeHook
 from swiss_ai_hub.core.scheduling import CronScheduler, SchedulerSettings
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
@@ -29,12 +31,19 @@ from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.persistance.events.event_persister import EventPersister
 from swiss_ai_hub.api.persistance.threads.thread_title_persister import ThreadTitlePersister
 from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
+from swiss_ai_hub.api.routes.incident.github_issue_client import GitHubIssueClient
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
+    carry_over_bucket_model_columns,
+    carry_over_pre_pair_knowledge_collections,
     finalize_role_setup,
     initialize_knowledge_buckets,
     initialize_startup_tenant,
+    lower_llm_request_timeouts,
+    strip_retired_agent_config_keys,
+    unset_oversized_input_limits,
+    widen_empty_retriever_namespace_scopes,
 )
 from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEndpointsDiscoveryService
 from swiss_ai_hub.api.services.process_endpoints_discovery_service import ProcessEndpointsDiscoveryService
@@ -109,9 +118,21 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     # Connect to Redis
     redis = RedisSettings.create_client()
 
-    # Connect to Milvus
+    # Milvus is optional at startup. Its /healthz turns healthy long before the proxy accepts
+    # register, so `depends_on: service_healthy` does not cover the gap: on staging 2026-09-03 the
+    # proxy answered "Milvus Proxy is not ready yet" for over 24 minutes, MilvusClient() raised out
+    # of the lifespan, and `restart: always` retried the same unready Milvus 56 times - taking auth,
+    # threads and every other route down with it. Degrade instead: /ready reports milvus false and
+    # use_milvus reconnects on the next request that needs it.
     milvus_settings = MilvusSettings()
-    milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+    milvus_client: MilvusClient | None = None
+    try:
+        milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+    # Broad on purpose: pymilvus re-raises the codes in its own IGNORE_RETRY_CODES as bare
+    # grpc.RpcError instead of MilvusException, so naming MilvusException would let an
+    # UNAUTHENTICATED from a token mismatch crash-loop the process exactly as before.
+    except Exception:
+        logger.exception("Milvus unreachable at startup, continuing without a client")
 
     # Connect to S3 (SeaweedFS)
     s3_settings = S3StorageSettings()
@@ -205,6 +226,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         agent_file_upload_service.ensure_bucket_exists()
         app.state.agent_file_upload_service = agent_file_upload_service
+        # Absent unless the deployment configured an incident repository. The client caches its
+        # installation token, so it has to outlive a request; the endpoints answer 404 while it is None.
+        incident_settings = IncidentSettings()
+        app.state.incident_client = GitHubIssueClient(incident_settings) if incident_settings.enabled else None
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
         app.state.external_agent_event_distributor = external_agent_event_distributor
@@ -217,6 +242,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         langfuse_provisioner = LangfuseProvisioner()
         openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
 
+        discovery_settings = DiscoverySettings()
+
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
@@ -224,7 +251,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 controller=api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 redis=redis,
-                discovery_interval=60,  # Check for new agents every 60 seconds
+                settings=discovery_settings,
             )
             await agent_discovery_service.start()
             app.state.agent_discovery_service = agent_discovery_service
@@ -237,7 +264,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 api_app=api_app,
                 controller=api_app.state.process_controller,
                 locale_handler=ApiLocaleHandler(),
-                discovery_interval=60,  # Check for new process every 60 seconds
+                redis=redis,
+                settings=discovery_settings,
             )
             await process_discovery_service.start()
             app.state.process_discovery_service = process_discovery_service
@@ -245,8 +273,14 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
         await initialize_startup_tenant()
-        await finalize_role_setup()
+        await finalize_role_setup(redis)
         await initialize_knowledge_buckets()
+        await carry_over_bucket_model_columns()
+        strip_retired_agent_config_keys()
+        widen_empty_retriever_namespace_scopes()
+        carry_over_pre_pair_knowledge_collections()
+        lower_llm_request_timeouts()
+        unset_oversized_input_limits()
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.
         # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
@@ -271,6 +305,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Re-sync OpenWebUI workspace models when agent configs are created/renamed/deleted, so the
         # model picker reflects the change immediately instead of on the next periodic discovery cycle
         AgentConfigChangeHook.connect(openwebui_provisioner)
+
+        # Re-sync the OpenWebUI knowledge entries users reference with `#` when collections change
+        KnowledgeChangeHook.connect(openwebui_provisioner)
 
         # Yield control back to FastAPI to start serving requests
         yield
@@ -302,8 +339,11 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Close Redis connection
         await redis.aclose()
 
-        # Close Milvus connection
-        milvus_client.close()
+        # Close Milvus connection. Read it back off app.state rather than using the local: when the
+        # startup connection failed, use_milvus builds the client on the first request that needs
+        # one and stores it there, and that is the instance holding the open channel.
+        if app.state.milvus_client is not None:
+            app.state.milvus_client.close()
 
         # Close S3 connections
         s3_client.close()

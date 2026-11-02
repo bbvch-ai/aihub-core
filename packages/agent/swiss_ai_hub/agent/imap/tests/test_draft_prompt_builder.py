@@ -2,11 +2,11 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
+from swiss_ai_hub.core.imap import MAX_SUBJECT_CHARACTERS, ParsedMessage
 
 from swiss_ai_hub.agent.imap.draft_prompt_builder import DraftPromptBuilder
 from swiss_ai_hub.agent.imap.extracted_attachment import AttachmentOutcome, ExtractedAttachment
-from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
-from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS, TRUNCATION_MARKER
+from swiss_ai_hub.agent.imap.token_budget import TRUNCATION_MARKER
 
 
 def _counter(text: str) -> list[int]:

@@ -1,13 +1,14 @@
 ---
-title: Email Classification Agent
+title: Email Processing Agent
 description: A mailbox agent that reads every unread message, decides which category it belongs to, and files it into that category's folder — with a fallback folder for anything it is unsure about.
 ---
 
-# Email Classification Agent
+# Email Processing Agent
 
-The **Email Classification Agent** turns a shared mailbox into a queue that sorts itself. On each run it reads every
-unread message in the inbox, decides which of your categories it belongs to, and moves it into that category's folder.
-Anything no category fits goes to a fallback folder rather than being guessed into a bucket.
+The **Email Processing Agent** turns a shared mailbox into a queue that sorts itself. On each run it reads every unread
+message in the inbox, decides which of your categories it belongs to, and moves it into that category's folder. Anything
+no category fits goes to a fallback folder, or stays in the inbox if you prefer, rather than being guessed into a
+bucket.
 
 Like the [Email Agent](../11_email_agent/), it has **no chat interface**. You configure it once in the Admin UI and
 trigger it programmatically — by another workflow, or via the API.
@@ -70,13 +71,18 @@ sees genuinely unread mail waiting for them — the agent sorted it, it did not 
 
 ## Configuration
 
-Create a profile from the **Email Classification Agent** blueprint in the Admin UI.
+Create a profile from the **Email Processing Agent** blueprint in the Admin UI.
 
 ### Mailbox connection
 
-The same fields as the [Email Agent](../11_email_agent/#mailbox-connection): host, port, username, password, TLS, inbox
-folder, and **Max Unread Messages**. There is no "processed folder" here — the classifier decides where each message
-goes.
+The same fields as the [Email Agent](../11_email_agent/#mailbox-connection): host, port, authentication, username and
+password or Entra ID credentials, TLS, inbox folder, and **Max Unread Messages**. There is no "processed folder" here —
+the classifier decides where each message goes.
+
+For a Microsoft 365 mailbox with basic authentication disabled, choose **Microsoft 365 (OAuth 2.0)** under
+**Authentication**. The tenant needs a one-time setup by an administrator — an app registration, the `IMAP.AccessAsApp`
+permission, and access granted per mailbox — described step by step in
+[Microsoft 365 with OAuth 2.0](../11_email_agent/#microsoft-365-with-oauth-2-0).
 
 ### Categories
 
@@ -105,11 +111,26 @@ you are unsure, use flat names like `Support` and `Invoices`.
 
 ### Classifier
 
-| Field                     | Default                | Description                                                                                        |
-| ------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------- |
-| **Fallback Folder**       | `Uncategorised`        | Where mail the model is unsure about goes. Never guessed into a category, never left in the inbox. |
-| **Classification Model**  | *(empty)*              | The model that classifies. Leave empty to use the agent's main model.                              |
-| **Classification Prompt** | *(a sensible default)* | Instructions steering how the model chooses.                                                       |
+| Field                                     | Default                | Description                                                                                                                     |
+| ----------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Leave Uncategorised Mail in the Inbox** | Off                    | Keep mail that fits no category unread in the inbox instead of moving it to the fallback folder.                                |
+| **Fallback Folder**                       | `Uncategorised`        | Where mail the model is unsure about goes. Never guessed into a category. Hidden while uncategorised mail is kept in the inbox. |
+| **Classification Model**                  | *(empty)*              | The model that classifies. Leave empty to use the agent's main model.                                                           |
+| **Classification Prompt**                 | *(a sensible default)* | Instructions steering how the model chooses.                                                                                    |
+
+::: details Keeping uncategorised mail in the inbox
+Useful when you start with a single category: its mail moves to its folder, and everything else stays in the inbox,
+unread, exactly where it arrived. Mail the classifier failed on still goes to the failure folder.
+
+Normally, moving a message out of the inbox is what stops the next run from classifying it again. A message left in the
+inbox needs another record, and Microsoft 365 does not accept the custom IMAP keyword that would carry it on the message
+itself. The agent therefore remembers how far into the inbox it has read: each run classifies only unread mail that
+arrived after the last one it classified, oldest arrival first.
+
+- Mail you drag back into the inbox counts as new arrival and is classified again — that is how you retry a message.
+- Marking an old message unread again does not bring it back; it arrived before the agent's mark.
+- If the platform's state store is reset, the next run classifies the unread mail in the inbox once more.
+:::
 
 ::: details How a message ends up in the fallback folder
 The model is given one way out: it can say outright that **none of the categories fit**. When it does, the message goes
@@ -189,22 +210,105 @@ feature: a *complaint* usually deserves a reply, a *thank-you* rarely does, and 
 answering. Mail that fitted no category and went to the fallback folder is never drafted — if the model could not say
 what a message was about, it is in no position to answer it.
 
-| Field                  | Description                                                                                                                         |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **Draft Reply**        | The master switch for this section. Off by default.                                                                                 |
-| **Drafts Folder**      | Where drafts are appended. If the name is not found, your server's own Drafts folder is used, and failing that the name is created. |
-| **LLM Model**          | The model that writes the reply. Leave empty to use the agent's main model.                                                         |
-| **Draft Prompt**       | Instructions for tone and style. The shipped default is concise, polite, and forbids inventing facts.                               |
-| **Draft Input Tokens** | How much of the message the model may be shown. See *Long mail* below.                                                              |
+| Field                      | Description                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Draft Reply**            | The master switch for this section. Off by default.                                                                                   |
+| **Drafts Folder**          | Where drafts are appended. If the name is not found, your server's own Drafts folder is used, and failing that the name is created.   |
+| **LLM Model**              | The model that writes the reply. Leave empty to use the agent's main model.                                                           |
+| **Draft Prompt**           | Instructions for tone and style. The shipped default is concise, polite, and forbids inventing facts.                                 |
+| **Quote Original Message** | When on, the original email is quoted below the reply, as Outlook does. Off by default.                                               |
+| **Quote Language**         | Language of the quote's From / Sent / To / Subject labels and its date. Pick the mailbox owner's language. German by default.         |
+| **Quote Time Zone**        | Time zone the quote's Sent date is shown in, whatever zone the sender wrote from. Pick the mailbox owner's. Europe/Zurich by default. |
+| **Draft Input Tokens**     | How much of the message the model may be shown. See *Long mail* below.                                                                |
 
 Each draft is threaded to the message it answers — `Re:` subject, correct `In-Reply-To` and `References` headers — so it
 appears inside the original conversation in your mail client rather than as a stray new message.
 
+**Formatting and quoting.** Drafts are HTML with a plain-text alternative. The model writes Markdown, so bold text,
+lists and links come through (a bare `https://…` or `www.…` address becomes clickable), and text it wraps in
+`==double equals==` is highlighted in yellow — ask for it in the **Draft Prompt** (e.g. *"highlight the delivery date
+with ==…=="*). HTML the model writes is shown as text, never rendered, so a placeholder such as `<Your name>` stays in
+the draft and scripts, images and unsafe links never reach the mailbox. With **Quote Original Message** on, the original
+email follows the reply under an Outlook-style From / Sent / To / Cc / Subject block, its own HTML sanitised and its
+images left out. The quote is added after the reply is written, so the model never sees it and the reply does not
+change.
+
 ::: warning A draft is a first pass, not an answer
-Read every draft before sending it. The model writes from the message and, optionally, its attachments — it has no
-access to your systems, your prices or your case history, and it will not know what it does not know. Grounding drafts
-in your own documents is a separate, planned capability.
+Read every draft before sending it. Even a draft grounded in your own documents (below) is only as good as the documents
+behind it, and an ungrounded one is written from the message alone — it has no access to your systems, your prices or
+your case history, and it will not know what it does not know.
 :::
+
+#### Grounding drafts in your own documents
+
+A reply written from the incoming message alone can acknowledge it, but it cannot *answer* it. Pick a **Knowledge
+Agent** and drafts are written from your documents instead — the agent asks that knowledge agent to answer each message,
+and uses the answer as the draft. Leave the Knowledge Agent off and every draft is written from the message alone, with
+no retrieval at all.
+
+With a knowledge agent picked, every drafted reply is answered from it. By default a category searches every collection
+the knowledge agent retrieves from. **Select Knowledge Collections** appears on a category once its **Draft a Reply**
+switch is on — collections only shape a drafted reply. Tick it and pick one or more collections, and its replies are
+answered from those and nothing else — so a message classified as `support_request` can be answered from your support
+material alone, with the category verdict making the lookup precise. Only the collections the knowledge agent you picked
+is actually configured for are offered, because a collection outside its scope would retrieve nothing at all.
+
+**The knowledge base layout this needs.** A collection is a top-level folder in your knowledge database — ingestion
+creates one collection per folder automatically. So the setup is: one folder per category, holding the documents that
+answer that category.
+
+```text
+support-kb/                 ← knowledge database
+├── support/                ← collection, for the support_request category
+│   ├── troubleshooting-guide.pdf
+│   └── known-issues.md
+└── information/            ← collection, for the information_request category
+    ├── price-list.pdf
+    └── opening-hours.md
+```
+
+Configure it in two places:
+
+| Field                            | Where                | What it is                                                                                                                             |
+| -------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Knowledge Agent**              | Knowledge delegation | The agent that answers your mail from your documents. Leaving it off turns grounding off for the whole profile.                        |
+| **Select Knowledge Collections** | On each category     | Tick it to answer that category's replies from the collections you pick. Unticked, they are answered from all the agent's collections. |
+
+A category pointed at a collection your knowledge base no longer holds fails the run **before** any mail is classified,
+rather than quietly answering from nothing. So does one whose selection is switched on but empty — switch it off instead
+to search all collections. A selection on a category whose **Draft a Reply** switch was later turned off is kept, hidden
+and ignored until drafting is switched back on.
+
+::: warning Upgrading a profile configured before this release
+Earlier releases named one collection per category in a plain text field, with the databases listed once on the
+classification section. Both fields were replaced by the per-category picker. A profile saved in the old shape is
+carried over when the API starts — each category's old collection name is paired with the databases that were configured
+— so grounding keeps working without you re-entering it. Categories that named no collection now search all of the
+knowledge agent's collections. The conversion runs once when the API starts, and a category whose selection you later
+switch off stays on all collections. Open the profile and check the picker once after upgrading: a carried-over
+collection the knowledge agent you picked is not configured for is listed as unavailable, and that category needs a new
+selection.
+:::
+
+**Grounded drafts are written in the sender's language.** The agent detects the language of each incoming message
+(German, English, French or Italian) and has the knowledge agent answer in that language, so the draft is written in it;
+scheduled runs have no user locale of their own, so without this every grounded draft would come out in German.
+Detection is a model call and can misjudge mixed-language mail, for instance an English reply above a quoted German
+thread. When the language cannot be determined, the previous behaviour applies.
+
+**Every message still gets a draft.** When the lookup finds nothing that answers a message, the agent does not ask the
+model to write around an empty result — an ungrounded reply that reads like a grounded one is worse than an honest
+blank, because a reviewer skims it and sends it. Instead you get a draft carrying a fixed text you configure:
+
+| Field                            | Used when                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------- |
+| **Draft When Nothing Was Found** | Retrieval ran and found nothing relevant. A true statement about your knowledge base. |
+| **Draft When The Lookup Failed** | The lookup itself broke or never answered. A statement about your deployment.         |
+| **Knowledge Lookup Timeout**     | How long to wait before treating a lookup as failed. Defaults to 10 minutes.          |
+
+The two are kept apart deliberately: reporting an outage as an absence of knowledge is how a broken deployment gets read
+as a working one. And the reason there is always *some* draft is filing — a message that got no draft would be filed,
+unflagged and never looked at again, sitting in neither the drafted nor the untouched state.
 
 #### Attachments
 
@@ -259,6 +363,8 @@ Input Tokens** if your model accepts more and you want less trimming.
 5. **Then put it on a schedule** (above), and the inbox drains itself.
 6. **Turn on drafting last**, and only for the categories that need it. Read the first few drafts before you trust the
    rest.
+7. **Then ground the drafts.** Pick a knowledge agent, and tick **Knowledge Collections** on the categories that have
+   documents behind them. An ungrounded draft can only acknowledge a message; a grounded one can answer it.
 
 ## What it does *not* do
 
@@ -266,9 +372,10 @@ Input Tokens** if your model accepts more and you want less trimming.
   leaves the mailbox, and the platform has no way to send mail at all.
 - **It does not read attachments to classify.** Classification uses the headers and the plain-text body only.
   Attachments can feed a *drafted reply* (above), but never the choice of category.
-- **It does not ground drafts in your documents.** A draft is written from the message and its attachments alone.
-  Answering from your knowledge base is a separate, planned capability.
-- **It has no chat interface** and no knowledge base.
+- **It does not answer from documents the knowledge agent you picked cannot reach.** Narrowing a category only ever
+  restricts that agent's own scope; with no knowledge agent configured, every draft is written from the message and its
+  attachments alone.
+- **It has no chat interface.**
 - **It does not skip a message it cannot handle.** A run is all-or-nothing: if one message fails to classify, nothing in
   that batch is filed and the whole batch is retried next run. That keeps a transient outage from scattering mail into
   the fallback folder, but it does mean one persistently unprocessable message blocks the mailbox until you move it out

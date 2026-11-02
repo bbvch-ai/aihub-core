@@ -7,7 +7,19 @@ config:
   temperature:
     label: Temperature
     help: 'Controls randomness: 0 = deterministic, 2 = very creative. Lower values
-      for factual tasks.'
+      for factual tasks. Helper steps (e.g. checks, titles) use 0 unless a value is
+      set here.'
+    toggle_label: Override the model's default temperature
+  top_p:
+    label: Breadth of word choice (top_p)
+    help: 'How many alternatives the model considers for each next word: only the
+      most likely words that together reach this probability. Lower values give more
+      focused and predictable answers, higher values more varied ones.'
+    toggle_label: Override the model's default breadth of word choice (top_p)
+  accept_images:
+    label: Accept images
+    help: Pass images in the conversation to the model. Only available for models
+      that support image input.
   logprobs:
     label: Return log probabilities
     help: Include token-level log probabilities in the response. Useful for analyzing

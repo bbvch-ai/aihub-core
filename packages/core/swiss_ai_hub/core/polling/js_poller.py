@@ -48,6 +48,13 @@ class JSPoller:
         ack_policy: AckPolicy = AckPolicy.EXPLICIT,
         max_deliver: int = 3,
         filter_subject: Annotated[str | None, "Optional subject filter for the consumer"] = None,
+        inactive_threshold: Annotated[
+            float | None,
+            "Optional seconds of inactivity after which the JetStream server automatically deletes "
+            "this consumer. Leave unset for long-lived durable consumers; set it for short-lived "
+            "ones (e.g. one-shot replay consumers) so the server reclaims them even if the client "
+            "is killed (SIGKILL/OOM) before it can run its own cleanup.",
+        ] = None,
     ):
         """Ensure the durable consumer exists with the specified configuration."""
         try:
@@ -61,6 +68,8 @@ class JSPoller:
             }
             if filter_subject:
                 config_params["filter_subject"] = filter_subject
+            if inactive_threshold is not None:
+                config_params["inactive_threshold"] = inactive_threshold
 
             await self.js.add_consumer(self.stream_name, config=ConsumerConfig(**config_params))
 

@@ -4,16 +4,23 @@ set -e
 # Provides message viewing, subject inspection, JetStream stream management,
 # and monitoring. NATS is the event-driven backbone for the Swiss AI Agent Protocol.
 #
-# Uses the certified mcp-nats server (sinadarbouy/mcp-nats) via Docker.
+# Uses the certified mcp-nats server (sinadarbouy/mcp-nats) via Docker, pulled from
+# ghcr.io: the Docker Hub mirror (cnadb/mcp-nats) publishes an arm64 manifest only,
+# so it cannot run on amd64 hosts at all.
 # Connection uses NATS_TOKEN from .env for authentication.
 #
 # Auth strategy: mcp-nats supports credentials, user/password, and anonymous modes.
 # Our NATS uses token auth. We embed the token in the URL (nats://token@host:port)
 # and use anonymous mode, so account_name="anonymous" in all tool calls.
 #
-# Workaround: The cnadb/mcp-nats Docker image bundles an ARM64 nats CLI binary
-# even in the amd64 image (upstream packaging bug). We auto-download the correct
-# nats CLI for the host architecture and mount it into the container.
+# Workaround: the image has shipped a nats CLI binary whose architecture does not
+# match the image's own (upstream packaging bug), so we auto-download the correct
+# nats CLI for the host architecture and mount it over the bundled one.
+#
+# The image publishes only a :latest tag, so it is pinned by digest to keep every developer on
+# the same server build. Update deliberately with:
+#   docker buildx imagetools inspect ghcr.io/sinadarbouy/mcp-nats:latest
+NATS_MCP_IMAGE="ghcr.io/sinadarbouy/mcp-nats@sha256:3f468dbd4c1948dae0458314622a23f7d3f13fa73a6c0f58daac1535c9b67064"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../.."
 if [[ -f .env ]]; then
@@ -61,4 +68,4 @@ exec docker run -i --rm --init \
   -v "$NATS_CLI_BIN:/usr/local/bin/nats:ro" \
   -e "NATS_URL=$NATS_CONNECT" \
   -e "NATS_NO_AUTHENTICATION=true" \
-  cnadb/mcp-nats --transport stdio
+  "$NATS_MCP_IMAGE" --transport stdio

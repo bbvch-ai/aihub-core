@@ -26,17 +26,20 @@ def _fake_entity() -> MagicMock:
     entity.description = "desc"
     entity.access_rules = []
     entity.lcdm_tenant_id = 5
+    entity.chat_disclaimer = None
     entity.created_at = datetime.now(UTC)
     entity.updated_at = datetime.now(UTC)
     return entity
 
 
-def _make_request(lcdm_tenant_id: int | None = None) -> CreateTenantMetadataRequest:
+def _make_request(
+    lcdm_tenant_id: int | None = None, access_rules: list[str] | None = None
+) -> CreateTenantMetadataRequest:
     return CreateTenantMetadataRequest(
         tenant_id="my-tenant",
         name="My Tenant",
         description="desc",
-        access_rules=[],
+        access_rules=access_rules,
         lcdm_tenant_id=lcdm_tenant_id,
     )
 
@@ -119,9 +122,9 @@ async def test_provision_passes_lcdm_tenant_id_through_on_update(monkeypatch: py
 
 
 @pytest.mark.asyncio
-async def test_provision_new_tenant_seeds_default_ceiling_when_none_given(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A brand-new tenant with no access rules gets a usable default ceiling (not an empty, locked one)."""
-    _stub_metadata_lookups(monkeypatch)  # not existing
+async def test_provision_new_tenant_stores_the_rules_it_was_given(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The service grants no wildcard of its own: a new tenant gets exactly the ceiling it was handed."""
+    _stub_metadata_lookups(monkeypatch)
     monkeypatch.setattr(KeycloakAdminService, "create_tenant_group", AsyncMock(return_value=None))
     monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", AsyncMock(return_value=None))
@@ -130,14 +133,14 @@ async def test_provision_new_tenant_seeds_default_ceiling_when_none_given(monkey
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
     monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", MagicMock())
 
-    await TenantAdminService.provision_tenant(_make_request())  # access_rules=[]
+    await TenantAdminService.provision_tenant(_make_request(access_rules=["aihub.admin.agent.>"]))
 
-    assert create_mock.call_args.kwargs["access_rules"] == ["aihub.admin.>"]
+    assert create_mock.call_args.kwargs["access_rules"] == ["aihub.admin.agent.>"]
 
 
 @pytest.mark.asyncio
-async def test_provision_existing_tenant_empty_rules_preserves_ceiling(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Re-syncing with no rules must NOT wipe a ceiling an admin customized — pass None (unchanged)."""
+async def test_provision_existing_tenant_omitted_rules_preserve_ceiling(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Re-syncing without rules must NOT touch a ceiling an admin customized — pass None (unchanged)."""
     _stub_metadata_lookups(monkeypatch, by_id=MagicMock(id="my-tenant"), by_name=MagicMock(id="my-tenant"))
     monkeypatch.setattr(KeycloakAdminService, "create_tenant_group", AsyncMock(return_value=None))
     monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
@@ -147,7 +150,7 @@ async def test_provision_existing_tenant_empty_rules_preserves_ceiling(monkeypat
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", MagicMock())
     monkeypatch.setattr(TenantMetadataEntity, "update_tenant_metadata", update_mock)
 
-    await TenantAdminService.provision_tenant(_make_request())  # access_rules=[]
+    await TenantAdminService.provision_tenant(_make_request())
 
     assert update_mock.call_args.kwargs["access_rules"] is None
 

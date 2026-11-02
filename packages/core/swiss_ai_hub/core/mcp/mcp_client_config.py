@@ -39,9 +39,10 @@ class McpClientConfig(StepConfig):
         Field(
             default=None,
             description=(
-                "If set, the acting tenant's originating id (TenantMetadataEntity.lcdm_tenant_id) is sent "
-                "on every MCP request under this header name — so one agent profile serves all tenants, each "
-                "scoped to its own external tenant. Leave empty to disable. Example: 'X-LCDM-Tenant'."
+                "If set, the acting tenant's external id (TenantMetadataEntity.lcdm_tenant_id) is sent on "
+                "every MCP request under this header name. Derived server-side so a profile cannot target "
+                "another tenant's external data; a run without such an id fails instead of calling unscoped. "
+                "Leave empty to disable. Example: 'X-LCDM-Tenant'."
             ),
         ),
     ]

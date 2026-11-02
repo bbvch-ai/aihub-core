@@ -1,6 +1,6 @@
 ---
 name: explain
-description: Analyze and explain code in the swiss-ai-hub monorepo by reading the documentation hierarchy (README.md, CLAUDE.md, scope docs) and tracing cross-scope dependencies. Use when user says 'explain this code', 'what does this do', 'how does this work', 'walk me through', 'explain folder X', or 'help me understand'. Takes a file or folder path as argument. Do NOT use for code review (use /review-diff), deep codebase knowledge building (use codebase-expert agent), or documentation updates (use /update-doc).
+description: Analyze and explain code in the swiss-ai-hub monorepo by reading the documentation hierarchy (README.md, CLAUDE.md, scope docs) and tracing cross-scope dependencies. Use when user says 'explain this code', 'what does this do', 'how does this work', 'walk me through', 'explain folder X', or 'help me understand'. Takes a file or folder path as argument. Do NOT use for code review (use /review-diff), or documentation updates (use /update-doc).
 allowed-tools: Read, Grep, Glob
 ---
 
@@ -13,18 +13,20 @@ across the swiss-ai-hub monorepo.
 
 Determine which monorepo scope the target path belongs to:
 
-| Scope               | Source root                                | Responsibility                                        |
-| ------------------- | ------------------------------------------ | ----------------------------------------------------- |
-| `packages/core`     | `packages/core/swiss_ai_hub/core/`         | Shared library (events, entities, NATS, auth, config) |
-| `packages/api`      | `packages/api/swiss_ai_hub/api/`           | REST API + WebSocket (FastAPI)                        |
-| `packages/agent`    | `packages/agent/swiss_ai_hub/agent/`       | AI agent workflows (LlamaIndex)                       |
-| `packages/pipeline` | `packages/pipeline/swiss_ai_hub/pipeline/` | Data ingestion (Dagster)                              |
-| `packages/process`  | `packages/process/swiss_ai_hub/process/`   | Business process orchestration                        |
-| `packages/bot`      | `packages/bot/swiss_ai_hub/bot/`           | Bot integrations (Teams, Slack)                       |
-| `packages/web`      | `packages/web/`                            | Frontend admin UI (Nuxt 3)                            |
+| Scope                   | Source root                                        | Responsibility                                        |
+| ----------------------- | -------------------------------------------------- | ----------------------------------------------------- |
+| `packages/core`         | `packages/core/swiss_ai_hub/core/`                 | Shared library (events, entities, NATS, auth, config) |
+| `packages/api`          | `packages/api/swiss_ai_hub/api/`                   | REST API + WebSocket (FastAPI)                        |
+| `packages/agent`        | `packages/agent/swiss_ai_hub/agent/`               | AI agent workflows (custom workflow engine)           |
+| `packages/pipeline`     | `packages/pipeline/swiss_ai_hub/pipeline/`         | Data ingestion (Dagster)                              |
+| `packages/process`      | `packages/process/swiss_ai_hub/process/`           | Business process orchestration                        |
+| `packages/bot`          | `packages/bot/swiss_ai_hub/bot/`                   | Bot integrations (Teams, Slack)                       |
+| `packages/web`          | `packages/web/`                                    | Frontend admin UI (Nuxt 3)                            |
+| `packages/backup`       | `packages/backup/swiss_ai_hub/backup/`             | Backup/restore (independent Dagster instance)         |
+| `packages/sysadmin-api` | `packages/sysadmin-api/swiss_ai_hub/sysadmin_api/` | Sysadmin-gated tenant lifecycle API                   |
+| `packages/sysadmin-web` | `packages/sysadmin-web/`                           | Sysadmin UI (Nuxt layer extending web)                |
 
-Note the double-nesting convention: `{scope}/{scope}/` where the outer directory is the package root and the inner
-contains the source code.
+Python packages use a nested layout: the package root contains `swiss_ai_hub/{scope}/` with the source code.
 
 ## Step 2: Read the Documentation Hierarchy
 
@@ -40,7 +42,7 @@ Read docs from broad to narrow — each layer adds context:
 
 Read the source files at \$ARGUMENTS and trace how they fit into the architecture:
 
-- **Architectural layer**: Controller → Service → Entity? Event handler? Dagster asset? LlamaIndex workflow step?
+- **Architectural layer**: Controller → Service → Entity? Event handler? Dagster asset? workflow `@step` method?
 - **Cross-scope dependencies**: Does it import from `packages/core`? Which shared classes does it use (events, entities,
   NATS subscribers, auth)?
 - **Event system role**: Does it publish or subscribe to Control/Display events? Check
@@ -72,19 +74,19 @@ Output: Explanation of the agent API controllers, services, DTOs, route registra
 **Explain an agent**:
 
 ```
-/explain packages/agent/swiss_ai_hub/agent/agents/RagAgent
+/explain packages/agent/swiss_ai_hub/agent/agents/rag_agent
 ```
 
-Output: Breakdown of the RAG agent workflow — events, config, LlamaIndex steps, and NATS integration.
+Output: Breakdown of the RAG agent workflow — events, config, steps, and NATS integration.
 
 **Explain a shared module**:
 
 ```
-/explain packages/core/swiss_ai_hub/core/nats
+/explain packages/core/swiss_ai_hub/core/subscribers
 ```
 
-Output: How the NATS abstraction layer works — subscribers, publishers, topic management, and the Swiss AI Agent
-Protocol implementation.
+Output: How the NATS subscriber layer works — core and JetStream subscribers, the topics they listen on, and how they
+fit the Swiss AI Agent Protocol.
 
 ## Troubleshooting
 

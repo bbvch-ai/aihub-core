@@ -47,6 +47,10 @@ class PrimeVueElement(FormkitElement, abc.ABC):
             self_copy.label = t.extract(self_copy.label)
         if isinstance(self_copy.help, LocaleString):
             self_copy.help = t.extract(self_copy.help)
+        if isinstance(self_copy.toggle_label, LocaleString):
+            self_copy.toggle_label = t.extract(self_copy.toggle_label)
+        if isinstance(self_copy.toggle_help, LocaleString):
+            self_copy.toggle_help = t.extract(self_copy.toggle_help)
         # Gate on the flag, not on the rendered rule string: subclasses may emit a differently
         # named rule (LocaleInput emits `localeRequired`), and a substring match would also
         # misfire on unrelated rules such as `required_if`.

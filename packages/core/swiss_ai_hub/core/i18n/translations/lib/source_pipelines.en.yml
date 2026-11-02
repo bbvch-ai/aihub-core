@@ -1,0 +1,256 @@
+---
+manual_upload:
+  display_name: Manual upload
+  description: Documents are uploaded by hand through the knowledge views; nothing
+    synchronises them.
+rclone:
+  display_name: Cloud storage sync (rclone)
+  description: Keeps the database in sync with a SharePoint document library, a OneDrive,
+    a Google Drive folder or an S3 bucket. Each top-level folder becomes a namespace.
+  config:
+    backend_type:
+      label: Storage backend
+      help: Which kind of system the files are pulled from.
+      options:
+        onedrive: OneDrive / SharePoint
+        drive: Google Drive
+        s3: Amazon S3 / S3-compatible
+        azureblob: Azure Blob Storage
+        sftp: SFTP
+        local: Local folder
+    root_path:
+      label: Root folder
+      help: Folder inside the source to sync. Each of its top-level folders becomes
+        a namespace; files directly in it are not synced.
+    include_patterns:
+      label: Include patterns
+      help: rclone glob rules; when set, only matching files are synced (e.g. *.pdf,
+        reports/**).
+    exclude_patterns:
+      label: Exclude patterns
+      help: rclone glob rules for files to skip (e.g. **/~$*, drafts/**).
+    onedrive:
+      client_id:
+        label: Client ID
+        help: Application (client) ID of the Entra ID app registration.
+      client_secret:
+        label: Client secret
+        help: Client secret of the app registration. Stored encrypted.
+      tenant:
+        label: Tenant ID
+        help: Entra ID tenant (directory) ID.
+      drive_id:
+        label: Drive ID
+        help: ID of the drive to sync. For SharePoint, the drive of the document library,
+          an ID starting with b! as Microsoft Graph lists it among the site's drives.
+      drive_type:
+        label: Drive type
+        help: personal, business or documentLibrary (SharePoint). rclone takes the
+          value Microsoft Graph reports for the drive when it connects.
+      region:
+        label: Region
+        help: 'Microsoft cloud: global, us, de or cn.'
+      token:
+        label: OAuth token
+        help: Pre-obtained rclone token JSON, as an alternative to client credentials.
+          Stored encrypted.
+    drive:
+      client_id:
+        label: Client ID
+        help: OAuth client ID of your Google Cloud project.
+      client_secret:
+        label: Client secret
+        help: OAuth client secret. Stored encrypted.
+      token:
+        label: OAuth token
+        help: Pre-obtained rclone token JSON. Stored encrypted.
+      service_account_credentials:
+        label: Service account key file
+        help: JSON key file downloaded from the Google Cloud console, as an alternative
+          to an OAuth token. Stored encrypted.
+      root_folder_id:
+        label: Root folder ID
+        help: Drive folder ID to treat as the root; empty for the whole drive.
+    s3:
+      provider:
+        label: Provider
+        help: rclone S3 provider name, e.g. AWS, Minio, Ceph.
+      access_key_id:
+        label: Access key ID
+        help: Access key ID.
+      secret_access_key:
+        label: Secret access key
+        help: Secret access key. Stored encrypted.
+      region:
+        label: Region
+        help: Region, e.g. eu-central-1.
+      endpoint:
+        label: Endpoint
+        help: Endpoint URL for non-AWS providers.
+    azureblob:
+      account:
+        label: Storage account
+        help: Azure storage account name.
+      key:
+        label: Account key
+        help: Storage account key. Stored encrypted.
+      sas_url:
+        label: SAS URL
+        help: Shared access signature URL, as an alternative to an account key. Stored
+          encrypted.
+      endpoint:
+        label: Endpoint
+        help: Custom endpoint for sovereign clouds.
+    sftp:
+      host:
+        label: Host
+        help: SFTP host name or IP.
+      port:
+        label: Port
+        help: SFTP port.
+      user:
+        label: User
+        help: SFTP user name.
+      password:
+        label: Password
+        help: Password, as an alternative to a private key. Stored encrypted.
+      key_pem:
+        label: Private key (PEM)
+        help: PEM-encoded private key, as an alternative to a password. Stored encrypted.
+structured:
+  display_name: Business application sync
+  description: Keeps the database in sync with records from business applications
+    such as issue trackers and wikis. Each record becomes a markdown document, and
+    its project or space becomes a namespace.
+  config:
+    source_kind:
+      label: Source system
+      help: Which application the records are read from. Its settings appear once
+        it is selected.
+    jira:
+      display_name: Jira
+      base_url:
+        label: Jira URL
+        help: The address you open Jira at, e.g. https://acme.atlassian.net for Jira
+          Cloud or https://jira.acme.ch/jira for Jira Data Center.
+      deployment:
+        label: Jira edition
+        help: Jira Cloud signs in with an account e-mail and an API token, Jira Data
+          Center with a personal access token.
+        cloud: Jira Cloud
+        data_center: Jira Data Center (11.3)
+      email:
+        label: Account e-mail
+        help: E-mail of the Jira Cloud account the API token belongs to.
+      api_token:
+        label: Token
+        help: A Jira Cloud API token without scopes, or a Jira Data Center personal
+          access token. Stored encrypted. The database holds every issue and comment
+          this account can read, except restricted comments, so use a dedicated read-only
+          account.
+      project_keys:
+        label: Projects
+        help: Keys of the projects to sync, e.g. ABC. Each project becomes a namespace.
+      jql:
+        label: Additional JQL filter
+        help: Optional. Only issues that also match this JQL are synced, e.g. issuetype
+          != "Service Request". Without ORDER BY.
+    confluence:
+      display_name: Confluence
+      base_url:
+        label: Confluence URL
+        help: The address you open Confluence at, e.g. https://acme.atlassian.net/wiki
+          for Confluence Cloud or https://confluence.acme.ch for Confluence Data Center.
+      deployment:
+        label: Confluence edition
+        help: Confluence Cloud signs in with an account e-mail and an API token, Confluence
+          Data Center with a personal access token.
+        cloud: Confluence Cloud
+        data_center: Confluence Data Center
+      email:
+        label: Account e-mail
+        help: E-mail of the Confluence Cloud account the API token belongs to.
+      api_token:
+        label: Token
+        help: A Confluence Cloud API token without scopes, or a Confluence Data Center
+          personal access token. Stored encrypted. The database holds every page this
+          account can read in the listed spaces, so use a dedicated read-only account.
+      space_keys:
+        label: Spaces
+        help: Keys of the spaces to sync, e.g. ENG. Each space becomes a namespace,
+          and its page tree becomes folders.
+      labels:
+        label: Labels
+        help: Optional. Only pages carrying at least one of these labels are synced.
+      ancestor_page_ids:
+        label: Parent pages
+        help: Optional. Only these pages and the pages below them are synced. A page's
+          ID is the number in its URL.
+    mediawiki:
+      display_name: MediaWiki
+      base_url:
+        label: Wiki URL
+        help: The folder holding the wiki's api.php, e.g. https://wiki.acme.ch or
+          https://acme.ch/w.
+      auth_method:
+        label: Sign-in
+        help: How the pipeline signs in to the wiki. Use the login page when the wiki
+          signs in through an extension such as LDAP or single sign-on.
+        bot_password: Bot password
+        web_form: Login page
+        oauth: OAuth access token
+        anonymous: No sign-in (public wiki)
+      username:
+        label: User name
+        help: The account the pipeline reads as; for a bot password, User@BotName
+          as shown on Special:BotPasswords.
+      password:
+        label: Password
+        help: The bot password or the account's password. Stored encrypted. The database
+          holds every page this account can read in the listed namespaces, so use
+          a dedicated read-only account.
+      access_token:
+        label: Access token
+        help: The access token of an owner-only OAuth 2 consumer, registered on Special:OAuthConsumerRegistration
+          with the basic rights grant. Stored encrypted. The database holds every
+          page the token's account can read in the listed namespaces, so register
+          it for a dedicated read-only account.
+      namespaces:
+        label: Namespaces
+        help: Optional. Names or numbers of the namespaces to sync, e.g. Main or Project.
+          Only the main namespace when empty. Each namespace becomes a namespace of
+          the database.
+      include_categories:
+        label: Categories
+        help: Optional. Only pages in at least one of these categories are synced.
+      exclude_categories:
+        label: Excluded categories
+        help: Optional. Pages in any of these categories are never synced, e.g. a
+          category that marks pages to keep away from AI assistants.
+      include_subcategories:
+        label: Include subcategories
+        help: A category also counts the pages of every category below it, for the
+          included and the excluded categories.
+      sync_documents:
+        label: Sync documents
+        help: Also sync the documents the synced pages show or link to (PDF, Word,
+          PowerPoint, Excel and text files) into the collection File. Old Office formats
+          (doc, ppt) and archives are left out.
+      sync_images:
+        label: Sync images
+        help: Also sync the images the synced pages show or link to (PNG, JPEG, GIF,
+          BMP, WebP, TIFF) into the collection File. Images a template shows, such
+          as logos and icons, are left out, and so are SVG files.
+      max_file_size_mb:
+        label: Maximum file size (MB)
+        help: Larger files are left out. One file at a time is held in memory while
+          it is stored.
+      min_image_pixels:
+        label: Minimum image size (px)
+        help: Images narrower or lower than this are left out as icons. 0 keeps every
+          image.
+      user_agent:
+        label: User-Agent
+        help: Optional. Sent with every request to the wiki, e.g. a name and a contact
+          address. Wikimedia's wikis ask for one and may block the default. Empty
+          keeps the default.

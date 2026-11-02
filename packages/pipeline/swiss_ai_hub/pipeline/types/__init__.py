@@ -4,37 +4,61 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+    from swiss_ai_hub.pipeline.types.data_lake_listing import DataLakeListing
     from swiss_ai_hub.pipeline.types.document_with_figure_info import DocumentWithFigureInfo
     from swiss_ai_hub.pipeline.types.figure_metadata import FigureMetadata
+    from swiss_ai_hub.pipeline.types.malformed_frontmatter_error import MalformedFrontmatterError
+    from swiss_ai_hub.pipeline.types.markdown_frontmatter import MarkdownFrontmatter
     from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile, RcloneFile
     from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
     from swiss_ai_hub.pipeline.types.share_point_file import MinimalSharePointFile, SharePointFile
+    from swiss_ai_hub.pipeline.types.skipped_data_lake_file import SkippedDataLakeFile
     from swiss_ai_hub.pipeline.types.source_file import MinimalSourceFile, SourceFile
+    from swiss_ai_hub.pipeline.types.structured_listing import StructuredListing
+    from swiss_ai_hub.pipeline.types.structured_record_file import StructuredRecordFile
+    from swiss_ai_hub.pipeline.types.structured_source_state import StructuredSourceState
+    from swiss_ai_hub.pipeline.types.structured_sync_outcome import StructuredSyncOutcome
 
 __all__ = [
     "DataLakeFile",
+    "DataLakeListing",
     "DocumentWithFigureInfo",
     "FigureMetadata",
+    "MalformedFrontmatterError",
+    "MarkdownFrontmatter",
     "MinimalRcloneFile",
     "MinimalSharePointFile",
     "MinimalSourceFile",
     "RcloneFile",
     "RefDocDocument",
     "SharePointFile",
+    "SkippedDataLakeFile",
     "SourceFile",
+    "StructuredListing",
+    "StructuredRecordFile",
+    "StructuredSourceState",
+    "StructuredSyncOutcome",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
     "DataLakeFile": "swiss_ai_hub.pipeline.types.data_lake_file",
+    "DataLakeListing": "swiss_ai_hub.pipeline.types.data_lake_listing",
     "DocumentWithFigureInfo": "swiss_ai_hub.pipeline.types.document_with_figure_info",
     "FigureMetadata": "swiss_ai_hub.pipeline.types.figure_metadata",
+    "MalformedFrontmatterError": "swiss_ai_hub.pipeline.types.malformed_frontmatter_error",
+    "MarkdownFrontmatter": "swiss_ai_hub.pipeline.types.markdown_frontmatter",
     "MinimalRcloneFile": "swiss_ai_hub.pipeline.types.rclone_file",
     "MinimalSharePointFile": "swiss_ai_hub.pipeline.types.share_point_file",
     "MinimalSourceFile": "swiss_ai_hub.pipeline.types.source_file",
     "RcloneFile": "swiss_ai_hub.pipeline.types.rclone_file",
     "RefDocDocument": "swiss_ai_hub.pipeline.types.ref_doc_document",
     "SharePointFile": "swiss_ai_hub.pipeline.types.share_point_file",
+    "SkippedDataLakeFile": "swiss_ai_hub.pipeline.types.skipped_data_lake_file",
     "SourceFile": "swiss_ai_hub.pipeline.types.source_file",
+    "StructuredListing": "swiss_ai_hub.pipeline.types.structured_listing",
+    "StructuredRecordFile": "swiss_ai_hub.pipeline.types.structured_record_file",
+    "StructuredSourceState": "swiss_ai_hub.pipeline.types.structured_source_state",
+    "StructuredSyncOutcome": "swiss_ai_hub.pipeline.types.structured_sync_outcome",
 }
 
 

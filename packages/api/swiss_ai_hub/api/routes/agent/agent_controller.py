@@ -1,7 +1,8 @@
 import asyncio
+from functools import partial
 from typing import Annotated, Self
 
-from fastapi import Depends, HTTPException, Query, Security
+from fastapi import BackgroundTasks, Depends, HTTPException, Query, Security
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
@@ -20,14 +21,15 @@ from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUpl
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
 from swiss_ai_hub.api.routes.agent.dependencies.use_agent_file_upload import use_agent_file_upload_service
 from swiss_ai_hub.api.routes.agent.dto.agent_class_dto import AgentClassDTO
+from swiss_ai_hub.api.routes.agent.dto.agent_file_batch_validation_request import AgentFileBatchValidationRequest
+from swiss_ai_hub.api.routes.agent.dto.agent_file_batch_validation_response import AgentFileBatchValidationResponse
 from swiss_ai_hub.api.routes.agent.dto.agent_file_upload_request import AgentFileUploadRequest
 from swiss_ai_hub.api.routes.agent.dto.agent_file_upload_response import AgentFileUploadResponse
-from swiss_ai_hub.api.routes.agent.dto.agent_file_validation_request import AgentFileValidationRequest
-from swiss_ai_hub.api.routes.agent.dto.agent_file_validation_response import AgentFileValidationResponse
 from swiss_ai_hub.api.routes.agent.dto.create_agent_instance_request import CreateAgentInstanceRequest
 from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
 from swiss_ai_hub.api.routes.agent.dto.update_agent_instance_dto import UpdateAgentInstanceDTO
 from swiss_ai_hub.api.routes.thread.dto.paginated_threads_response import PaginatedThreadsResponse
+from swiss_ai_hub.api.routes.user_knowledge.user_knowledge_service import UserKnowledgeService
 
 
 class AgentController(TenantScopedController):
@@ -44,6 +46,10 @@ class AgentController(TenantScopedController):
     description = ApiLocaleString.from_i18n_path("api.controllers.agent.description")
     icon = "mage:robot"
 
+    # Generalises this controller's own admin guards below (`aihub.admin.agent.{agent_class}[.{agent_id}]`):
+    # the app is a management surface, while `aihub.user.service.agent` is held by everyone who merely chats.
+    suite_visibility_permission = f"{AccessChecker.ADMIN_PREFIX}agent.?>"
+
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this resource")
 
     _AGENT_INSTANCE_ROUTE = "/classes/{agent_class}/instances/{agent_id}"
@@ -59,15 +65,24 @@ class AgentController(TenantScopedController):
     def get_agent_classes(self, route: str = "/classes") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_classes(
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             online: Annotated[bool | None, Query(description="Filter by online status")] = None,
         ) -> list[AgentClassDTO]:
             """
-            Retrieve all available agent classes.
+            Retrieve the agent classes this caller may reach.
             Use `?online=true` for online classes only, `?online=false` for offline only.
             """
-            return await AgentService.get_agent_classes(t, online=online)
+            agent_classes = await AgentService.get_agent_classes(t, online=online)
+            # Filtered per class because the route guard is an existence query that any single agent rule
+            # satisfies, so without this a tenant curated down to a subset still sees every blueprint and
+            # learns of the block only on click-through.
+            access_checker = AccessChecker.from_user(user)
+            return [
+                agent_class
+                for agent_class in agent_classes
+                if access_checker.has_access_to_agent_class(agent_class.agent_class)
+            ]
 
         return self
 
@@ -164,7 +179,8 @@ class AgentController(TenantScopedController):
             if not class_entity or not config_entity:
                 raise HTTPException(status_code=404, detail=f"Agent instance {agent_class}/{agent_id} not found.")
 
-            return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+            is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+            return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
         return self
 
@@ -282,24 +298,28 @@ class AgentController(TenantScopedController):
         async def validate_file_upload(
             agent_class: str,
             agent_id: str,
-            request: AgentFileValidationRequest,
-            _: Annotated[
+            request: AgentFileBatchValidationRequest,
+            user: Annotated[
                 UserIdentity,
                 Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}")),
             ],
             upload_service: Annotated[AgentFileUploadService, Depends(use_agent_file_upload_service)],
-        ) -> AgentFileValidationResponse:
-            """Validate that a file was successfully uploaded to the agent's dedicated bucket."""
-            exists = await asyncio.to_thread(
-                upload_service.verify_file_exists,
-                agent_class=agent_class,
-                agent_id=agent_id,
-                file_id=request.file_id,
-                filename=request.filename,
-            )
-            return AgentFileValidationResponse(
-                file_id=request.file_id,
-                exists=exists,
-            )
+            background_tasks: BackgroundTasks,
+        ) -> AgentFileBatchValidationResponse:
+            """Report which of a turn's files the agent's dedicated bucket does not hold.
+
+            Once none is missing, the files are placed in the user's files of the conversation together, after the
+            answer is sent, so a slow or unavailable sandbox never holds up or fails the chat.
+            """
+            missing = await upload_service.missing_files(agent_class, agent_id, request.files)
+            if not missing and request.thread_id:
+                background_tasks.add_task(
+                    UserKnowledgeService.place_attachments,
+                    user,
+                    request.thread_id,
+                    {file.file_id: file.filename for file in request.files},
+                    partial(upload_service.read_file, agent_class, agent_id),
+                )
+            return AgentFileBatchValidationResponse(missing=missing)
 
         return self

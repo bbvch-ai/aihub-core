@@ -1,4 +1,5 @@
 import { client } from '@core/sdk/client/client.gen'
+import { createHtmlResponseGuard } from '@core/utils/apiResponseGuard'
 
 // Configures the @swiss-ai-hub/web SDK client (`@core/sdk/client`) that every
 // composable shipped in this layer uses.
@@ -31,6 +32,10 @@ export default defineNuxtPlugin((nuxtApp) => {
       const locale = (nuxtApp.$i18n as { locale?: { value?: string } } | undefined)?.locale?.value
       if (locale) options.headers.set('lang', locale)
     },
+    // Both app.vue files re-run setConfig and mergeConfigs is a shallow spread,
+    // but neither sets `onResponse` — so this hook survives in @swiss-ai-hub/web
+    // and in every extender.
+    onResponse: createHtmlResponseGuard(nuxtApp),
     onResponseError: ({ response }) => {
       console.error('AI-Hub API error', response.status, response._data?.detail)
     },

@@ -50,6 +50,11 @@ export default defineNuxtPlugin(() => {
   assign(group('sysadmin'), 'url', injected.SYSADMIN_URL)
   assign(group('mainApp'), 'url', injected.MAIN_APP_URL)
   if (injected.API_BASE_URL) publicConfig.apiBaseUrl = injected.API_BASE_URL
+  // The version actually deployed. A release is promoted by retagging the exact
+  // `-rc.N` build that was tested, so whatever was baked into the bundle at build
+  // time keeps the candidate's name — the deployment is the only party that knows
+  // the tag it pulled. Falls back to the baked value when nothing is injected.
+  if (injected.APP_VERSION) publicConfig.appVersion = injected.APP_VERSION
 
   isConfigLoaded.value = true
 })

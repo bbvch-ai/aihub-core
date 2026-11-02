@@ -40,9 +40,15 @@ import type {
   CreateAgentInstanceData,
   CreateAgentInstanceError,
   CreateAgentInstanceResponse,
+  CreateDatabaseData,
+  CreateDatabaseError,
+  CreateDatabaseResponse,
   CreateDatasetData,
   CreateDatasetError,
   CreateDatasetResponse,
+  CreateIncidentData,
+  CreateIncidentError,
+  CreateIncidentResponse,
   CreateNamespaceData,
   CreateNamespaceError,
   CreateNamespaceResponse,
@@ -63,6 +69,9 @@ import type {
   CreateTranscriptionData,
   CreateTranscriptionError,
   CreateTranscriptionResponse,
+  CreateUserFolderData,
+  CreateUserFolderError,
+  CreateUserFolderResponse,
   DeleteAgentInstanceData,
   DeleteAgentInstanceError,
   DeleteAgentInstanceResponse,
@@ -70,8 +79,12 @@ import type {
   DeleteAllOrganizationMemoriesResponse,
   DeleteAllUserMemoriesData,
   DeleteAllUserMemoriesResponse,
+  DeleteDatabaseData,
+  DeleteDatabaseError,
   DeleteDocumentData,
   DeleteDocumentError,
+  DeleteNamespaceData,
+  DeleteNamespaceError,
   DeleteOrganizationMemoryData,
   DeleteOrganizationMemoryError,
   DeleteOrganizationMemoryResponse,
@@ -81,6 +94,9 @@ import type {
   DeleteRoleData,
   DeleteRoleError,
   DeleteRoleResponse2,
+  DeleteUserFileData,
+  DeleteUserFileError,
+  DeleteUserFileResponse,
   DeleteUserMemoryData,
   DeleteUserMemoryError,
   DeleteUserMemoryResponse,
@@ -123,8 +139,13 @@ import type {
   GetAnonymousFileRedirectError,
   GetAnonymousFileUrlData,
   GetAnonymousFileUrlError,
+  GetAuthProviderData,
+  GetAuthProviderError,
+  GetAuthProviderResponse,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
+  GetChatDisclaimerData,
+  GetChatDisclaimerResponse,
   GetDatabasesData,
   GetDatabasesResponse,
   GetDatasetData,
@@ -132,6 +153,8 @@ import type {
   GetDatasetResponse,
   GetDatasetsData,
   GetDatasetsResponse,
+  GetDefaultTenantRulesData,
+  GetDefaultTenantRulesResponse,
   GetDocumentByIdData,
   GetDocumentByIdError,
   GetDocumentByIdResponse,
@@ -144,11 +167,20 @@ import type {
   GetEmbeddingsData,
   GetEmbeddingsError,
   GetEmbeddingsResponse,
+  GetExtractedTableDownloadUrlData,
+  GetExtractedTableDownloadUrlError,
+  GetExtractedTableDownloadUrlResponse,
   GetFileUrlData,
   GetFileUrlError,
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetIncidentAvailabilityData,
+  GetIncidentAvailabilityResponse,
+  GetIncidentFormData,
+  GetIncidentFormResponse,
+  GetIngestorsData,
+  GetIngestorsResponse,
   GetLitellmModelData,
   GetLitellmModelError,
   GetLitellmModelResponse,
@@ -220,6 +252,8 @@ import type {
   GetRoleResponse,
   GetRolesData,
   GetRolesResponse,
+  GetSourcePipelinesData,
+  GetSourcePipelinesResponse,
   GetSuiteData,
   GetSuiteResponse,
   GetSummaryNodesForDocumentData,
@@ -227,11 +261,16 @@ import type {
   GetSummaryNodesForDocumentResponse,
   GetSupportedFileTypesData,
   GetSupportedFileTypesResponse,
+  GetTenantAuthProviderData,
+  GetTenantAuthProviderError,
+  GetTenantAuthProviderResponse,
   GetThreadData,
   GetThreadError,
   GetThreadResponse,
   GetUserData,
   GetUserError,
+  GetUserFileContentData,
+  GetUserFileContentError,
   GetUserMemoriesData,
   GetUserMemoriesError,
   GetUserMemoriesResponse,
@@ -250,6 +289,15 @@ import type {
   InitiateFileUploadResponse,
   ListTokensEndpointData,
   ListTokensEndpointResponse,
+  ListUserFilesData,
+  ListUserFilesError,
+  ListUserFilesResponse,
+  MoveUserFileData,
+  MoveUserFileError,
+  MoveUserFileResponse,
+  PreviewUserFileData,
+  PreviewUserFileError,
+  PreviewUserFileResponse,
   ProcessDocumentData,
   ProcessDocumentError,
   ProcessDocumentResponse,
@@ -262,6 +310,9 @@ import type {
   RemoveUserFromThreadData,
   RemoveUserFromThreadError,
   RemoveUserFromThreadResponse,
+  ResolveOpenwebuiReferencesData,
+  ResolveOpenwebuiReferencesError,
+  ResolveOpenwebuiReferencesResponse,
   ResolveThreadForDisplayData,
   ResolveThreadForDisplayError,
   ResolveThreadForDisplayResponse,
@@ -292,12 +343,18 @@ import type {
   UpdateAgentInstanceData,
   UpdateAgentInstanceError,
   UpdateAgentInstanceResponse,
+  UpdateDatabaseSourceData,
+  UpdateDatabaseSourceError,
+  UpdateDatabaseSourceResponse,
   UpdateDatasetData,
   UpdateDatasetError,
   UpdateDatasetResponse,
   UpdateMyDashboardData,
   UpdateMyDashboardError,
   UpdateMyDashboardResponse,
+  UpdateMyLocaleData,
+  UpdateMyLocaleError,
+  UpdateMyLocaleResponse,
   UpdateNamespaceData,
   UpdateNamespaceError,
   UpdateNamespaceResponse,
@@ -319,6 +376,9 @@ import type {
   UpdateUserMemoryData,
   UpdateUserMemoryError,
   UpdateUserMemoryResponse,
+  UploadUserFileData,
+  UploadUserFileError,
+  UploadUserFileResponse,
   ValidateDocumentUploadData,
   ValidateDocumentUploadError,
   ValidateDocumentUploadResponse,
@@ -404,6 +464,49 @@ export const getAuthProviders = <
     unknown,
     DefaultT
   >({ url: "/auth-providers/", ...options });
+
+/**
+ * Get Auth Provider
+ */
+export const getAuthProvider = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAuthProviderResponse = GetAuthProviderResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAuthProviderData,
+    GetAuthProviderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetAuthProviderResponse | DefaultT,
+    GetAuthProviderError,
+    DefaultT
+  >({ url: "/auth-providers/{alias}", ...options });
+
+/**
+ * Get Tenant Auth Provider
+ */
+export const getTenantAuthProvider = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetTenantAuthProviderResponse =
+    GetTenantAuthProviderResponse,
+>(
+  options: Options<
+    TComposable,
+    GetTenantAuthProviderData,
+    GetTenantAuthProviderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetTenantAuthProviderResponse | DefaultT,
+    GetTenantAuthProviderError,
+    DefaultT
+  >({ url: "/auth-providers/tenants/{tenant_id}", ...options });
 
 /**
  * Get Suite
@@ -645,6 +748,40 @@ export const updateMyDashboard = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/my-account/dashboard",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update My Locale
+ *
+ * Persists the user's preferred UI language so it survives logout.
+ */
+export const updateMyLocale = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends UpdateMyLocaleResponse = UpdateMyLocaleResponse,
+>(
+  options: Options<
+    TComposable,
+    UpdateMyLocaleData,
+    UpdateMyLocaleResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).put<
+    TComposable,
+    UpdateMyLocaleResponse | DefaultT,
+    UpdateMyLocaleError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/my-account/locale",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1292,9 +1429,42 @@ export const getOpenChatHitl = <
   });
 
 /**
+ * Get Extracted Table Download Url
+ *
+ * Returns a link that downloads the whole table of an extraction in the thread as CSV, valid for 24 hours.
+ *
+ * Events carry only a preview of the table; the link is signed for thread members only.
+ */
+export const getExtractedTableDownloadUrl = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetExtractedTableDownloadUrlResponse =
+    GetExtractedTableDownloadUrlResponse,
+>(
+  options: Options<
+    TComposable,
+    GetExtractedTableDownloadUrlData,
+    GetExtractedTableDownloadUrlResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetExtractedTableDownloadUrlResponse | DefaultT,
+    GetExtractedTableDownloadUrlError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/threads/{thread_id}/extracted-tables/{extraction_id}/download-url",
+    ...options,
+  });
+
+/**
  * Get Agent Classes
  *
- * Retrieve all available agent classes.
+ * Retrieve the agent classes this caller may reach.
  * Use `?online=true` for online classes only, `?online=false` for offline only.
  */
 export const getAgentClasses = <
@@ -1611,7 +1781,10 @@ export const initiateFileUpload = <
 /**
  * Validate File Upload
  *
- * Validate that a file was successfully uploaded to the agent's dedicated bucket.
+ * Report which of a turn's files the agent's dedicated bucket does not hold.
+ *
+ * Once none is missing, the files are placed in the user's files of the conversation together, after the
+ * answer is sent, so a slow or unavailable sandbox never holds up or fails the chat.
  */
 export const validateFileUpload = <
   TComposable extends Composable = "$fetch",
@@ -2352,6 +2525,67 @@ export const getAccessPresets = <
   });
 
 /**
+ * Derive Default Tenant Access Rules
+ *
+ * Returns the access ceiling a newly created tenant should start with, derived from the models this instance actually serves minus the configured exclusions.
+ */
+export const getDefaultTenantRules = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetDefaultTenantRulesResponse =
+    GetDefaultTenantRulesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetDefaultTenantRulesData,
+    GetDefaultTenantRulesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetDefaultTenantRulesResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/access/default-tenant-rules",
+    ...options,
+  });
+
+/**
+ * Get Chat Disclaimer
+ *
+ * Read the current tenant's chat disclaimer in the user's requested language.
+ */
+export const getChatDisclaimer = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetChatDisclaimerResponse = GetChatDisclaimerResponse,
+>(
+  options: Options<
+    TComposable,
+    GetChatDisclaimerData,
+    GetChatDisclaimerResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetChatDisclaimerResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/openai/chat-disclaimer",
+    ...options,
+  });
+
+/**
  * List Models
  *
  * Lists the currently available models, and provides basic information about each one such as the owner and availability.
@@ -2697,6 +2931,187 @@ export const updateDataset = <
   });
 
 /**
+ * Get selectable ingestion pipelines
+ *
+ * Returns the ingestion pipelines that can be assigned to a new knowledge database.
+ */
+export const getIngestors = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetIngestorsResponse = GetIngestorsResponse,
+>(
+  options: Options<
+    TComposable,
+    GetIngestorsData,
+    GetIngestorsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetIngestorsResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/ingestors",
+    ...options,
+  });
+
+/**
+ * Get selectable source pipelines
+ *
+ * Returns the source pipelines a knowledge database can be filled from, with their configuration forms.
+ */
+export const getSourcePipelines = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetSourcePipelinesResponse = GetSourcePipelinesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetSourcePipelinesData,
+    GetSourcePipelinesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetSourcePipelinesResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/source-pipelines",
+    ...options,
+  });
+
+/**
+ * Delete a knowledge database
+ *
+ * Schedules asynchronous teardown of a whole knowledge database — its Milvus collection, doc-store
+ * database and S3 bucket — via the pipeline's Dagster teardown job. Returns immediately with 202.
+ */
+export const deleteDatabase = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, DeleteDatabaseData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    unknown | DefaultT,
+    DeleteDatabaseError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}",
+    ...options,
+  });
+
+/**
+ * Create Database
+ *
+ * Creates a new self-service knowledge database (bucket) ingested by the document ingestion pipeline.
+ */
+export const createDatabase = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends CreateDatabaseResponse = CreateDatabaseResponse,
+>(
+  options: Options<
+    TComposable,
+    CreateDatabaseData,
+    CreateDatabaseResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    CreateDatabaseResponse | DefaultT,
+    CreateDatabaseError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Set or clear a knowledge database's source
+ *
+ * Replaces the database's source and its configuration; secrets resubmitted as the mask keep their stored
+ * value. Takes effect on the source pipeline's next run.
+ */
+export const updateDatabaseSource = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends UpdateDatabaseSourceResponse = UpdateDatabaseSourceResponse,
+>(
+  options: Options<
+    TComposable,
+    UpdateDatabaseSourceData,
+    UpdateDatabaseSourceResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).put<
+    TComposable,
+    UpdateDatabaseSourceResponse | DefaultT,
+    UpdateDatabaseSourceError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/source",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete a namespace
+ *
+ * Schedules asynchronous teardown of one namespace — its S3 folder, doc-store rows and Milvus
+ * vectors (deleted by metadata filter, never a partition drop). Returns immediately with 202.
+ */
+export const deleteNamespace = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, DeleteNamespaceData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    unknown | DefaultT,
+    DeleteNamespaceError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}",
+    ...options,
+  });
+
+/**
  * Create Namespace
  *
  * Creates a new namespace (folder) in the specified database.
@@ -2793,6 +3208,44 @@ export const getDatabases = <
     ],
     url: "/{tenant_id}/knowledge/databases",
     ...options,
+  });
+
+/**
+ * Resolve Openwebui References
+ *
+ * The collections behind the OpenWebUI knowledge entries a chat message referenced with `#`.
+ *
+ * Resolved for anyone signed in, without checking access: the agent checks what the asking user may read and
+ * tells them about the rest, which it could not if unreadable references were dropped here.
+ */
+export const resolveOpenwebuiReferences = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends ResolveOpenwebuiReferencesResponse =
+    ResolveOpenwebuiReferencesResponse,
+>(
+  options: Options<
+    TComposable,
+    ResolveOpenwebuiReferencesData,
+    ResolveOpenwebuiReferencesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    ResolveOpenwebuiReferencesResponse | DefaultT,
+    ResolveOpenwebuiReferencesError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/openwebui-references",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   });
 
 /**
@@ -3294,6 +3747,309 @@ export const updateNotification = <
   });
 
 /**
+ * Get Incident Availability
+ *
+ * Says whether reporting is configured here, so the UI shows the button only where it leads somewhere.
+ */
+export const getIncidentAvailability = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetIncidentAvailabilityResponse =
+    GetIncidentAvailabilityResponse,
+>(
+  options: Options<
+    TComposable,
+    GetIncidentAvailabilityData,
+    GetIncidentAvailabilityResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetIncidentAvailabilityResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/incidents/availability",
+    ...options,
+  });
+
+/**
+ * Get Incident Form
+ *
+ * Returns the report form with everything the platform already knows filled in.
+ */
+export const getIncidentForm = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetIncidentFormResponse = GetIncidentFormResponse,
+>(
+  options: Options<
+    TComposable,
+    GetIncidentFormData,
+    GetIncidentFormResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetIncidentFormResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/incidents/form",
+    ...options,
+  });
+
+/**
+ * Create Incident
+ *
+ * Files the report as an issue, with any attachments committed alongside it.
+ *
+ * Multipart rather than the presigned-PUT flow the other uploads use: those hand the
+ * browser an S3 URL, and the destination here is GitHub, which issues no such URL.
+ */
+export const createIncident = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends CreateIncidentResponse = CreateIncidentResponse,
+>(
+  options: Options<
+    TComposable,
+    CreateIncidentData,
+    CreateIncidentResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    CreateIncidentResponse | DefaultT,
+    CreateIncidentError,
+    DefaultT
+  >({
+    ...formDataBodySerializer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/incidents",
+    ...options,
+    headers: {
+      "Content-Type": null,
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete User File
+ */
+export const deleteUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends DeleteUserFileResponse = DeleteUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    DeleteUserFileData,
+    DeleteUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    DeleteUserFileResponse | DefaultT,
+    DeleteUserFileError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge",
+    ...options,
+  });
+
+/**
+ * List User Files
+ */
+export const listUserFiles = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends ListUserFilesResponse = ListUserFilesResponse,
+>(
+  options: Options<
+    TComposable,
+    ListUserFilesData,
+    ListUserFilesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    ListUserFilesResponse | DefaultT,
+    ListUserFilesError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge",
+    ...options,
+  });
+
+/**
+ * Get User File Content
+ */
+export const getUserFileContent = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, GetUserFileContentData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    unknown | DefaultT,
+    GetUserFileContentError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/content",
+    ...options,
+  });
+
+/**
+ * Preview User File
+ */
+export const previewUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends PreviewUserFileResponse = PreviewUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    PreviewUserFileData,
+    PreviewUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    PreviewUserFileResponse | DefaultT,
+    PreviewUserFileError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/preview",
+    ...options,
+  });
+
+/**
+ * Upload User File
+ */
+export const uploadUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends UploadUserFileResponse = UploadUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    UploadUserFileData,
+    UploadUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    UploadUserFileResponse | DefaultT,
+    UploadUserFileError,
+    DefaultT
+  >({
+    ...formDataBodySerializer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/files",
+    ...options,
+    headers: {
+      "Content-Type": null,
+      ...options.headers,
+    },
+  });
+
+/**
+ * Create User Folder
+ */
+export const createUserFolder = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends CreateUserFolderResponse = CreateUserFolderResponse,
+>(
+  options: Options<
+    TComposable,
+    CreateUserFolderData,
+    CreateUserFolderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    CreateUserFolderResponse | DefaultT,
+    CreateUserFolderError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/folders",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Move User File
+ */
+export const moveUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends MoveUserFileResponse = MoveUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    MoveUserFileData,
+    MoveUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    MoveUserFileResponse | DefaultT,
+    MoveUserFileError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/move",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
  * Delete All User Memories
  */
 export const deleteAllUserMemories = <
@@ -3620,10 +4376,10 @@ export const processDocument = <
 /**
  * Translate Text
  *
- * Translate a LocaleString to all supported locales.
+ * Fill in the empty locales of a LocaleString by translating its source locale.
  *
- * Takes a LocaleString with at least one locale populated and translates it
- * to all other supported locales (de, en, fr, it) using an LLM.
+ * Locales that already have a value are left unchanged, so retrying after a partial failure
+ * fills in only the rest. Locales that could not be translated stay empty and are listed in failed_locales.
  */
 export const translateText = <
   TComposable extends Composable = "$fetch",

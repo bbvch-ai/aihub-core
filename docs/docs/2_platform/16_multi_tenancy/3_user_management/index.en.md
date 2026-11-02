@@ -19,6 +19,10 @@ When someone logs in for the first time:
 3. They automatically join the default tenant with standard user roles
 4. They see the default tenant's agents and resources
 
+The platform also creates the user's chat account in OpenWebUI as soon as they hold a role in their active tenant, and
+places it in that tenant's groups. The model picker is therefore populated at the first chat visit, without waiting for
+an administrator to change anything.
+
 **Important**: The platform doesn't import roles from your identity provider. It only imports identity information (who
 you are, not what you can do).
 :::
@@ -78,6 +82,9 @@ The tenant defines what exists. Roles define what users with that role can do wi
 ### Changing roles
 
 Select a role and click **Edit**. Changes affect all users with that role immediately.
+
+A role's name is fixed once the role is created: users are assigned to roles by name, so renaming would detach them. To
+use a different name, create a new role, assign it to the users, then delete the old one.
 
 Adding permissions to a role grants those permissions to everyone who has it. Removing permissions revokes them from
 everyone with that role.
@@ -149,6 +156,11 @@ Someone might be:
 
 They switch between tenants using the selector in the top bar. The interface shows only what's available in the selected
 tenant. Their permissions change based on their roles in that tenant.
+
+Admin pages for different tenants can stay open side by side in several tabs. The chat cannot: it works in one tenant at
+a time, the user's active tenant, whichever tab or device set it. A chat page whose tenant is not the active one asks
+the user to either chat in that tenant or go to the active one. Choosing to chat there makes it the active tenant, and
+the chat pages open in other tabs of the same browser show the same question at once.
 
 ## Permissions inheritance
 

@@ -11,15 +11,29 @@ Regenerate the TypeScript API client from the live OpenAPI specification.
 ## Step 1: Verify API Server Is Running
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/active/docs
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/openapi.json
 ```
 
 - **200**: Proceed to Step 2
 - **Any other code or connection refused**: Stop and display this message:
   > API server not running at http://localhost:8000. Start it with:
   >
-  > - `make run-dev` in `packages/api/`, OR
-  > - `docker compose -f infra/docker-compose.dev.yml up aihub-api -d`
+  > - `make run-dev` in `packages/api/` (the API is not part of `infra/docker-compose.dev.yml`)
+
+### Stop every agent runner first
+
+The API registers an endpoint pair per **discovered** agent class, so the spec depends on which runners happen to be
+attached. Regenerating with a local agent running bakes that agent into the shared client — a RAG agent alone adds four
+`…ToRAGAgent…` endpoints plus the `ChatMessage_Input/Output` and `*Block_Input/Output` schemas they pull in, roughly
+2,900 lines of diff that belong to nobody's change. The committed SDK carries **no** agent-specific endpoints, which is
+the baseline to reproduce.
+
+```bash
+pkill -f "app/.*_agent/main.py"
+curl -s -H "Authorization: Bearer $SUPERUSER_TOKEN" http://localhost:8000/api/v1/openapi.json | grep -c "RagAgent"
+```
+
+Expect `0` before generating. Restart the runners afterwards.
 
 ## Step 2: Generate the SDK
 
@@ -30,16 +44,15 @@ cd packages/web && pnpm generate-sdk
 ```
 
 This uses the config at `packages/web/openapi-ts.config.ts` to fetch the OpenAPI spec from
-`http://localhost:8000/api/v1/active/openapi.json` and regenerate TypeScript files into `packages/web/sdk/client/`
-(`types.gen.ts`, `sdk.gen.ts`, `schemas.gen.ts`, `client.gen.ts`, `transformers.gen.ts`).
+`http://localhost:8000/api/v1/openapi.json` and regenerate TypeScript files into `packages/web/sdk/client/`
+(`types.gen.ts`, `sdk.gen.ts`, `schemas.gen.ts`, `client.gen.ts`, `transformers.gen.ts`). The admin plane
+(`packages/sysadmin-web`, backend `packages/sysadmin-api` on :8001) has its own client; a `packages/core` change affects
+both. To reproduce CI without a running stack use `/verify-sdk-sync`.
 
-## Step 3: Lint Generated Code
+## Step 3: Do Not Lint the Output
 
-```bash
-cd packages/web && pnpm lint --fix
-```
-
-This auto-fixes formatting issues in the generated TypeScript files.
+`eslint.config.js` globally ignores `sdk/**` and the generator already runs prettier (`postProcess`), so `pnpm lint`
+over the output is a no-op. Commit the files exactly as generated.
 
 ## Step 4: Verify and Report
 
@@ -69,13 +82,10 @@ Summarize: new endpoints added, modified request/response types, removed endpoin
 
 ## Troubleshooting
 
-- **API not running**: Start it with `docker compose -f infra/docker-compose.dev.yml up aihub-api -d` or `make run-dev`
-  in `packages/api/`
+- **API not running**: Start it with `make run-dev` in `packages/api/`
 - **pnpm not found**: Run `corepack enable` or install pnpm globally
 - **Generation produces no changes**: The API spec may not have changed. Verify your API changes are deployed to the
   running server.
-- **Lint errors after generation**: Some generated code may have issues the linter cannot auto-fix. Review the lint
-  output and fix manually if needed.
 
 ## When to Run
 

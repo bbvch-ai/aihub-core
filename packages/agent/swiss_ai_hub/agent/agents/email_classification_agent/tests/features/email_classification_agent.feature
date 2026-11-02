@@ -16,6 +16,22 @@ Feature: Email Classification Agent
     Then a MailBatchClassifiedEvent with 1 classified messages was emitted
     And the message was filed into the fallback folder
     And the summary counts 1 message in the fallback folder
+    And the inbox watermark was not touched
+    And no ExceptionEvent is present
+
+  Scenario: Keeps mail no category fits in the inbox when the admin chose to
+    Given an EmailClassificationAgent runner keeping uncategorised mail, with one support message and one no category fits
+    When the user triggers classification
+    Then a MailBatchClassifiedEvent with 2 classified messages was emitted
+    And the support message was filed and the other one was left in the inbox
+    And the inbox watermark stands at uid 9
+    And no ExceptionEvent is present
+
+  Scenario: A run keeping uncategorised mail lists only mail above the inbox watermark
+    Given an EmailClassificationAgent runner keeping uncategorised mail whose inbox watermark stands at uid 5
+    When the user triggers classification
+    Then the listing started above uid 5
+    And the inbox watermark stands at uid 6
     And no ExceptionEvent is present
 
   Scenario: Reports a run over an empty inbox without filing anything
@@ -129,3 +145,61 @@ Feature: Email Classification Agent
     Given an EmailClassificationAgent runner with three unread messages the model classifies into categories
     When the scheduler triggers classification
     Then the mailbox is no longer held
+
+  Scenario: A grounded category is answered from its own knowledge collection
+    Given an EmailClassificationAgent runner grounding support_request in the support collection
+    When the user triggers classification and the knowledge agent answers
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the draft body is the answer the knowledge agent returned
+    And retrieval was scoped to the support collection and no other
+    And a StopEvent is present
+    And no ExceptionEvent is present
+
+  Scenario: Several messages each get their own grounded draft
+    Given an EmailClassificationAgent runner grounding three support_request messages
+    When the user triggers classification and the knowledge agent answers each message differently
+    Then a MailBatchDraftedEvent with 3 drafts was emitted
+    And every draft carries the answer that belongs to its own message
+    And no ExceptionEvent is present
+
+  Scenario: Retrieval that finds nothing still produces a draft
+    Given an EmailClassificationAgent runner grounding support_request in the support collection
+    When the user triggers classification and the knowledge agent finds nothing
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the draft body is the configured no-information text
+    And no ExceptionEvent is present
+
+  Scenario: A knowledge lookup that failed still produces a draft
+    Given an EmailClassificationAgent runner grounding support_request in the support collection
+    When the user triggers classification and the knowledge lookup fails
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the draft body is the configured lookup-failed text
+    And no ExceptionEvent is present
+
+  Scenario: A category with no collection selected searches every collection
+    Given an EmailClassificationAgent runner grounding support_request in its collection and invoice in all
+    When the user triggers classification and the knowledge agent answers
+    Then a MailBatchDraftedEvent with 2 drafts was emitted
+    And support_request was scoped to its collection and invoice to every collection
+    And no ExceptionEvent is present
+
+  Scenario: A scheduled run delegates without an initiating user
+    Given an EmailClassificationAgent runner grounding support_request in the support collection
+    When the scheduler triggers classification and the knowledge agent answers
+    Then a MailBatchDraftedEvent with 1 drafts was emitted
+    And the delegated run carried no user
+    And no ExceptionEvent is present
+
+  Scenario: A category narrowed to a collection nothing holds fails before the batch is classified
+    Given an EmailClassificationAgent runner grounding support_request in a collection that does not exist
+    When the user triggers classification
+    Then an ExceptionEvent is present
+    And no message was filed
+
+  Scenario: Grounding left configured with drafting paused does not fail the run
+    Given an EmailClassificationAgent runner grounding support_request with drafting turned off
+    When the user triggers classification
+    Then a MailBatchClassifiedEvent with 1 classified messages was emitted
+    And the knowledge catalogue was never consulted
+    And a StopEvent is present
+    And no ExceptionEvent is present

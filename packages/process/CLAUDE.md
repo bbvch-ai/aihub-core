@@ -127,12 +127,11 @@ signatures for entity In/Out annotations.
 
 ```python
 @process_step(
-    name=LocaleString(en="My Step"),         # UI display name
-    description=LocaleString(en="Does X"),   # UI description
-    icon="mage:magic-wand",                  # Iconify icon
+    name=LocaleString(en="My Step"),  # UI display name
+    description=LocaleString(en="Does X"),  # UI description
+    icon="mage:magic-wand",  # Iconify icon
 )
-def my_step(self, work: Annotated[SomeWorkEvent, Agent.In(...)]) -> Annotated[SomeRequest, Human.Out(...)]:
-    ...
+def my_step(self, work: Annotated[SomeWorkEvent, Agent.In(...)]) -> Annotated[SomeRequest, Human.Out(...)]: ...
 ```
 
 Parameters are simpler than `@step()` for agents — no `precondition`, `max_executions_per_run`, or `stop_on_error`. The
@@ -324,7 +323,8 @@ Per-walkthrough ephemeral state in Redis/Valkey. Equivalent of `RunContext` for 
 - DispatchableWorkflow: `packages/core/swiss_ai_hub/core/workflow/dispatchable_workflow.py`
 - ProcessConfig: `packages/core/swiss_ai_hub/core/processes/process_config.py`
 - Form base: `packages/core/swiss_ai_hub/core/form/form.py`
-- ProcessConfigSpecs: `packages/core/swiss_ai_hub/core/events/process/discovery/process_config_specs.py`
+- ConfigSpecs (announced schema, shared with agents and ingestors):
+  `packages/core/swiss_ai_hub/core/form/config_specs.py`
 - ProcessConfigClient (RPC): `packages/core/swiss_ai_hub/core/rpc/process_config_client.py`
 - ProcessConfigEntityDocument: `packages/core/swiss_ai_hub/core/persistence/process/process_config_entity_document.py`
 - WorkEvent: `packages/core/swiss_ai_hub/core/events/process/work/work_event.py`

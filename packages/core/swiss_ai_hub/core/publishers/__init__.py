@@ -6,17 +6,20 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.publishers.abstract_publisher import AbstractPublisher
     from swiss_ai_hub.core.publishers.js_publisher import JSPublisher
     from swiss_ai_hub.core.publishers.nc_publisher import NCPublisher
+    from swiss_ai_hub.core.publishers.source_updated_publisher import SourceUpdatedPublisher
 
 __all__ = [
     "AbstractPublisher",
     "JSPublisher",
     "NCPublisher",
+    "SourceUpdatedPublisher",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
     "AbstractPublisher": "swiss_ai_hub.core.publishers.abstract_publisher",
     "JSPublisher": "swiss_ai_hub.core.publishers.js_publisher",
     "NCPublisher": "swiss_ai_hub.core.publishers.nc_publisher",
+    "SourceUpdatedPublisher": "swiss_ai_hub.core.publishers.source_updated_publisher",
 }
 
 

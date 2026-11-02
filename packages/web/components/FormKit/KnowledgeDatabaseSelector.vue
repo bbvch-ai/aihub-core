@@ -11,6 +11,13 @@
       class="w-full"
       :loading="isLoading"
     >
+      <!-- PrimeVue 4.5 renders the chip-mode placeholder twice while loading with no options yet. -->
+      <template
+        v-if="selectedDatabases.length === 0"
+        #value="{ placeholder: emptyLabel }"
+      >
+        {{ emptyLabel }}
+      </template>
       <template #option="{ option }">
         <div class="flex items-center gap-2">
           <Icon
@@ -53,6 +60,7 @@ const filter = computed(() => props.context.filter ?? true)
 
 const databases = ref<DatabaseDto[]>([])
 const isLoading = ref(false)
+const hasLoaded = ref(false)
 
 const selectedDatabases = computed({
   get: () => props.context.value ?? [],
@@ -61,21 +69,28 @@ const selectedDatabases = computed({
   },
 })
 
-const databaseOptions = computed<DatabaseOption[]>(() =>
-  databases.value.map(db => ({
+const databaseOptions = computed<DatabaseOption[]>(() => {
+  const available = databases.value.map(db => ({
     name: db.name,
     displayName: db.display_name || capitalCase(db.name),
-  })),
-)
+  }))
+  if (!hasLoaded.value) return available
+
+  const known = new Set(available.map(option => option.name))
+  const unavailable = selectedDatabases.value
+    .filter(name => !known.has(name))
+    .map(name => ({ name, displayName: t('lib.knowledgeDatabases.unavailable', { name }) }))
+  return [...available, ...unavailable]
+})
 
 async function fetchDatabases() {
   isLoading.value = true
   try {
-    const response = await getDatabases({
+    databases.value = await getDatabases({
       composable: '$fetch',
       path: { tenant_id: tenantId.value! },
     })
-    databases.value = response
+    hasLoaded.value = true
   }
   catch (error) {
     console.error('Failed to fetch databases:', error)

@@ -6,3 +6,7 @@ determine_namespaces:
   name: Événement de détermination des namespaces
   description: Déclenche le LLM pour déterminer les namespaces à partir du contexte
     de conversation.
+in_order_node_combiner:
+  name: Documents pour la réponse
+  description: Les documents trouvés sur lesquels la réponse s'appuie, dans l'ordre
+    où le modèle les lit.

@@ -12,7 +12,6 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalAgentEvent, ExternalAgentEventDistributor
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import (
-    AgentConfigSpecs,
     DisplayEvent,
     ExceptionEvent,
     HumanInTheLoopRequestEvent,
@@ -43,6 +42,7 @@ from swiss_ai_hub.api.services.model_creation_service import ModelCreationServic
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
+from swiss_ai_hub.api.util.model_limit_validator import ModelLimitValidator
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class AgentService:
     async def get_agent_instance(agent_class: str, agent_id: str, t: LocaleHandler) -> FullAgentInstanceDTO:
         """
         Returns details for a given agent instance from the database.
-        Online status is derived from the last_discovered timestamp on the class entity.
+        Online status compares the class's last_discovered timestamp with the completed discovery rounds.
         """
         class_entity = AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
@@ -83,7 +83,8 @@ class AgentService:
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent instance {agent_class}/{agent_id} not found.")
 
-        return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+        return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
     @staticmethod
     @trace_fn
@@ -95,12 +96,14 @@ class AgentService:
     ) -> list[FullAgentInstanceDTO]:
         """
         Returns all registered agent instances from the database.
-        Online status is determined by the last_discovered timestamp - agents that responded
-        to a discovery broadcast within AgentClassEntity.ONLINE_THRESHOLD are considered online.
+        Online status is read once for the whole listing: a class is online while it has answered one of the
+        last `DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE` completed discovery rounds.
         """
         agents = []
+        online_threshold = AgentClassEntity.online_threshold()
         for class_entity in AgentClassEntity.get_all():
-            if online is not None and class_entity.is_online != online:
+            is_online = class_entity.is_online_since(online_threshold)
+            if online is not None and is_online != online:
                 continue
             if agent_class is not None and class_entity.agent_class != agent_class:
                 continue
@@ -108,8 +111,8 @@ class AgentService:
             configs = AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
             for config_entity in configs:
                 dto = InstanceDtoBuilder.build_or_skip(
-                    lambda class_entity=class_entity, config_entity=config_entity: (
-                        FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                    lambda class_entity=class_entity, config_entity=config_entity, is_online=is_online: (
+                        FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
                     ),
                     kind="agent instance",
                     key=f"{class_entity.agent_class}/{getattr(config_entity, 'agent_id', '?')}",
@@ -342,8 +345,13 @@ class AgentService:
         """
         Retrieve the current configuration data for a specific agent.
         Returns empty dict if no configuration has been saved.
+
+        Off the loop because `AgentConfigResponder` serves this over NATS RPC, and the requester
+        (`NCRequester`) gives it one 5 s shot with no retry. A blocking query here competes with every
+        other coroutine in this process, so a loop busy with event persistence can burn that budget
+        before the handler even runs — and the agent aborts its run on a timeout while NATS sits idle.
         """
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await asyncio.to_thread(AgentConfigEntityDocument.find_for_class_and_id, agent_class, agent_id)
         if config_entity and config_entity.config_data:
             return config_entity.config_data
         return {}
@@ -367,13 +375,15 @@ class AgentService:
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
-        config_model = ModelCreationService.create_agent_config_model(
-            AgentConfigSpecs(
-                agent_class=class_entity.agent_config_specs.agent_class,
-                agent_config_schema=class_entity.agent_config_specs.agent_config_schema,
-            )
+        config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
+        # Before the generated model, which only sees the schema's notion of required — a key being
+        # present. A starred field submitted as "" or None satisfies that and is caught only here.
+        InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, configuration)
+        config_instance = InstanceConfigHelper.validate_config_for_update(
+            configuration, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
         )
-        config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
+        InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
+        await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, configuration, user, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -398,10 +408,12 @@ class AgentService:
     async def get_agent_classes(t: LocaleHandler, online: bool | None = None) -> list[AgentClassDTO]:
         """Returns all agent classes from the database."""
         agent_classes = []
+        online_threshold = AgentClassEntity.online_threshold()
         for class_entity in AgentClassEntity.get_all():
-            if online is not None and class_entity.is_online != online:
+            is_online = class_entity.is_online_since(online_threshold)
+            if online is not None and is_online != online:
                 continue
-            agent_classes.append(AgentClassDTO.from_entity(class_entity, t))
+            agent_classes.append(AgentClassDTO.from_entity(class_entity, t, is_online=is_online))
         return agent_classes
 
     @staticmethod
@@ -411,7 +423,8 @@ class AgentService:
         class_entity = AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
-        return AgentClassDTO.from_entity(class_entity, t)
+        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+        return AgentClassDTO.from_entity(class_entity, t, is_online=is_online)
 
     @staticmethod
     @trace_fn
@@ -421,10 +434,13 @@ class AgentService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
+        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
         instances = []
         configs = AgentConfigEntityDocument.find_for_class(agent_class)
         for config_entity in configs:
-            instances.append(FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t))
+            instances.append(
+                FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
+            )
         return instances
 
     @staticmethod
@@ -444,7 +460,7 @@ class AgentService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class '{agent_class}' not found.")
 
-        if not class_entity.is_online:
+        if not class_entity.is_online_since(AgentClassEntity.online_threshold()):
             raise HTTPException(
                 status_code=503,
                 detail=f"Agent class '{agent_class}' is not online. Make sure the agent is running.",
@@ -458,13 +474,15 @@ class AgentService:
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
-        config_model = ModelCreationService.create_agent_config_model(
-            AgentConfigSpecs(
-                agent_class=class_entity.agent_config_specs.agent_class,
-                agent_config_schema=class_entity.agent_config_specs.agent_config_schema,
-            )
+        config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
+        # Before the generated model, which only sees the schema's notion of required — a key being
+        # present. A starred field submitted as "" or None satisfies that and is caught only here.
+        InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, config)
+        config_instance = InstanceConfigHelper.validate_config_for_create(
+            config, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=request.agent_id)
         )
-        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
+        await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, config, user, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -497,7 +515,7 @@ class AgentService:
         if user.acting_within_tenant is not None:
             AgentService._grant_instance_access(agent_class, request.agent_id, user, config_entity)
 
-        return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+        return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=True)
 
     @staticmethod
     @trace_fn

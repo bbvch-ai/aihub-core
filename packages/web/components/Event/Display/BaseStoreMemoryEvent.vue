@@ -149,10 +149,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { BaseStoreMemoryEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { BaseStoreMemoryEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: BaseStoreMemoryEventReadable }
+  event: ContextualizedAgentEvent & { event: BaseStoreMemoryEvent }
   thread: ThreadDto
 }>()
 

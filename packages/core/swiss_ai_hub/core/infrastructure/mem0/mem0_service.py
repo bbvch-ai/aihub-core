@@ -1,5 +1,8 @@
+import asyncio
+
 from mem0.configs.base import MemoryConfig
 
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import EmbeddingQueryClamp
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.graph.patched_memory_graph import PatchedMemoryGraph
 from swiss_ai_hub.core.infrastructure.mem0.patched_async_memory import PatchedAsyncMemory
@@ -11,25 +14,43 @@ from swiss_ai_hub.core.infrastructure.mem0.types.memory_added import MemoryAdded
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import MemorySearchResult
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
 
+# Memories are single facts, a sentence or two each; a reranked search leaves each this much room next to the query.
+MEMORY_ROOM_TOKENS = 512
+
 
 class Mem0Service:
     def __init__(
         self,
         config: MemoryConfig,
         t: LocaleHandler,
+        max_search_query_tokens: int | None = None,
+        requested_guardrails: tuple[str, ...] = (),
     ):
         self._config = config
+        self._max_search_query_tokens = max_search_query_tokens
         self._memory = PatchedAsyncMemory(config=config)
         self._memory.vector_store = PatchedMilvusDB.from_milvus(self._memory.vector_store)
         self._memory.llm = PatchedOpenAILLM.from_llm(self._memory.llm)
+        self._memory.llm.requested_guardrails = requested_guardrails
         self._memory.embedding_model = PatchedOpenAIEmbedding.from_embedding(self._memory.embedding_model)
         # When the graph store is disabled, mem0 sets enable_graph=False and self.graph=None — nothing to wrap.
         if self._memory.enable_graph:
             self._memory.graph = PatchedMemoryGraph.from_graph(self._memory.graph, t=t)
+            self._memory.graph.llm.requested_guardrails = requested_guardrails
 
     @property
     def config(self):
         return self._config
+
+    def _clamp_query(self, query: str, rerank: bool) -> str:
+        clamped = EmbeddingQueryClamp.clamp(
+            query, model_name=self._config.embedder.config["model"], max_input_tokens=self._max_search_query_tokens
+        )
+        if not rerank or self._config.reranker is None:
+            return clamped
+        return EmbeddingQueryClamp.clamp_for_rerank(
+            clamped, reranking_model_name=self._config.reranker.config["model"], document_room=MEMORY_ROOM_TOKENS
+        )
 
     async def add_memory(
         self,
@@ -100,6 +121,8 @@ class Mem0Service:
                 "_tenant_id": tenant_id,
                 "_tenant_namespace": tenant_namespace,
                 "_type": memory_type.value,
+                # Only an inferring write runs the LLM; a verbatim write reports no model because none ran.
+                "llm_model_name": self._config.llm.config["model"] if infer else None,
             }
         )
 
@@ -129,6 +152,7 @@ class Mem0Service:
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
+        query = await asyncio.to_thread(self._clamp_query, query, rerank)
         scalar_filters = {
             "_type": memory_type.value,
             "_user_id": user_id,

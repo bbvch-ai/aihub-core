@@ -6,6 +6,7 @@ export const useSuite = defineQuery(() => {
 
   const {
     data: suite,
+    error: suiteError,
     isPending: suiteIsLoading,
   } = useQuery<SuiteDto>({
     key: () => ['tenant', tenantId.value, 'suite'],
@@ -21,6 +22,7 @@ export const useSuite = defineQuery(() => {
 
   return {
     suite,
+    suiteError,
     suiteIsLoading,
   }
 })

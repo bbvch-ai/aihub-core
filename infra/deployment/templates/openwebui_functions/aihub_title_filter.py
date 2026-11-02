@@ -2,6 +2,7 @@
 title: AI-Hub Conversation Title
 description: Restores the agent-generated conversation title after the OpenWebUI first-turn title fallback.
 required_open_webui_version: 0.6.0
+global: false
 """
 
 import logging

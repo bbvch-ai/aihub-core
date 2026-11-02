@@ -1,0 +1,182 @@
+---
+title: Universal Agent
+description: Ein Assistent, der selbst entscheidet, ob er Ihr Wissen durchsucht, angehängte Dateien liest oder sich an Gespeichertes erinnert, und so lange weitermacht, bis er antworten kann.
+source_sha: 930f6ff68de19e175aa268a12bc47c67d7310b52e6c2e6afde806e5b95365fca
+---
+
+# Universal Agent
+
+Der **Universal Agent** arbeitet so, wie man es von einem modernen Assistenten erwartet. Statt einer festen Abfolge von
+Schritten zu folgen, betrachtet er jede Nachricht und entscheidet selbst, was er braucht: das Wissen Ihres Unternehmens
+durchsuchen, eine vom Benutzer angehängte Datei lesen, sich an das erinnern, was er über den Benutzer weiss, oder direkt
+antworten. Er macht weiter, ein Werkzeug nach dem anderen, bis er antworten kann.
+
+Jeder andere Agent der Plattform folgt einem festen Ablauf. Ein Administrator wählt also pro Anwendungsfall den
+passenden aus, und Benutzer müssen wissen, welchen Assistenten sie fragen sollen. Ein Universal-Agent-Profil wird einmal
+mit dem Wissen konfiguriert, das es durchsuchen darf, und Benutzer fragen es alles.
+
+::: tip Wann Sie diesen Agenten einsetzen
+Setzen Sie den Universal Agent als allgemeinen Assistenten ein, der Ihr Wissen, die Anhänge des Benutzers und das
+Gedächtnis in einer Unterhaltung verbindet. Wenn ein Anwendungsfall eine garantierte, nachvollziehbare Abfolge von
+Schritten braucht — immer aus denselben Sammlungen abrufen, die Fundierung vor der Antwort prüfen, an einen Experten
+eskalieren —, verwenden Sie die dafür vorgesehenen Blueprints wie den
+[Document Intelligence Assistant](../5_document_intelligence_assistant/). Sie bleiben die vorhersehbare Option.
+:::
+
+## Was er tut
+
+```mermaid
+flowchart LR
+    A[Benutzernachricht] --> B[Unterhaltung<br/>vorbereiten]
+    B --> C{Modell entscheidet}
+    C -->|braucht ein Werkzeug| D[Werkzeug ausführen]
+    D --> C
+    C -->|kann antworten| E[Antwort streamen]
+```
+
+1. **Unterhaltung vorbereiten.** Die eingebauten Anweisungen des Agenten zum Einsatz seiner Werkzeuge und danach die
+   eigenen Anweisungen Ihres Profils werden an den Anfang der Unterhaltung gestellt, und der Verlauf wird auf das
+   Eingabebudget gekürzt.
+2. **Entscheiden und Werkzeuge nutzen.** Das Modell wählt, welche Werkzeuge es aufruft, die Plattform führt sie aus und
+   gibt die Ergebnisse zurück, und das Modell entscheidet erneut. Es kann in einer Runde mehrere unabhängige Werkzeuge
+   aufrufen.
+3. **Antworten.** Sobald das Modell hat, was es braucht, wird seine Antwort an den Benutzer gestreamt, mit Zitaten der
+   verwendeten Dokumente.
+
+Nichts wird vorab in den Prompt geladen: Eine Frage, die keine Suche braucht, wird direkt beantwortet, und eine, die
+drei Suchen braucht, bekommt drei.
+
+### Die Werkzeuge
+
+| Werkzeug                      | Was es tut                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Angeboten, wenn                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| **Unser Wissen durchsuchen**  | Durchsucht die Wissenssammlungen, die das Profil erlaubt, sortiert die Ergebnisse neu und liefert die besten Abschnitte mit zitierbaren IDs. Die eigenen `#`-Verweise des Benutzers werden ebenfalls angeboten. Durchsucht werden immer nur Sammlungen, die der fragende Benutzer lesen darf.                                                                                                                                                                                  | Das Profil listet Sammlungen auf oder erlaubt jede Sammlung, die der Benutzer lesen kann.    |
+| **Angehängte Dateien lesen**  | Liest die an die Unterhaltung angehängten Dateien. Das Modell sieht, welche Dateien angehängt sind, und liest die, die es braucht; eine Datei, die zu lang ist, um sie ganz zu lesen, liefert die Abschnitte, die für das Gesuchte am relevantesten sind.                                                                                                                                                                                                                      | Der Benutzer hat ein Dokument angehängt (Bilder erreichen das Modell direkt).                |
+| **Gedächtnis abrufen**        | Durchsucht, was über den Benutzer und die Organisation gespeichert ist: Vorlieben, Fakten und Entscheidungen aus früheren Unterhaltungen.                                                                                                                                                                                                                                                                                                                                      | Benutzer- oder Organisationsgedächtnis ist im Profil aktiviert.                              |
+| **Code-Sandbox**              | Führt Befehle aus und liest und schreibt Dateien in der eigenen Code-Sandbox des Benutzers, in einem Ordner pro Unterhaltung, der die angehängten Dateien der Unterhaltung enthält. Eine Datei, die der Agent dem Benutzer zeigt, etwa ein Diagramm oder ein Spreadsheet, wird an die Antwort angehängt und bleibt herunterladbar.                                                                                                                                             | Der Benutzer hat im Chat den **Code Interpreter** eingeschaltet.                             |
+| **Meine Dateien**             | Listet und liest die eigenen Dateien des Benutzers in [My Files](../../10_chat_ui/14_my_files/): seine Uploads, Chat-Anhänge und Dateien, die Agents für ihn erstellt haben. Nur lesend.                                                                                                                                                                                                                                                                                       | Der Benutzer hat im Chat **My Files** eingeschaltet.                                         |
+| **Verlinkte Webseiten lesen** | Liest die Webseiten, die der Benutzer in der Nachricht verlinkt oder mit `#` angehängt hat, und nur diese: Ein Aufruf, der eine andere Adresse nennt, wird abgelehnt, sodass eine in einer Seite oder Datei versteckte Anweisung die Unterhaltung nicht anderswohin lenken kann. Siehe [Verlinkte Webseiten](../../10_chat_ui/15_linked_web_pages/).                                                                                                                           | **Read Linked Web Pages** ist im Profil eingeschaltet und die Nachricht verlinkt eine Seite. |
+| **Wissensdokumente**          | Listet die Dokumente der Wissenssammlungen nach Pfad auf, findet jedes Dokument, dessen Text einen exakten Begriff oder ein Muster enthält, ordnet die Dokumente nach Bedeutung, um jene zu finden, die andere Wörter oder eine andere Sprache verwenden, und liest ein ganzes Dokument Teil für Teil. Anders als die Wissenssuche findet es jeden Treffer, nicht die ähnlichsten Abschnitte. Es verlässt nie die Sammlungen des Profils oder dessen Filter für Dokumentpfade. | **Mit ganzen Dokumenten arbeiten** ist im Profil eingeschaltet.                              |
+| **Tabelle extrahieren**       | Sammelt Datensätze aus vielen Dokumenten in einer Tabelle, jede Zeile mit ihrer Datei, wie es der [Wissensextraktions-Agent](../14_knowledge_extraction_agent/) tut. Das Modell prüft zuerst, welche Dokumente eine Auswahl umfasst; der Benutzer sieht die Tabelle direkt, mit ihrer Zusammenfassung, und das Modell beschreibt sie. Lässt den Benutzer jede neue Extraktion in einem Anfrageformular bestätigen.                                                             | **Mit ganzen Dokumenten arbeiten** ist im Profil eingeschaltet.                              |
+
+Weitere Werkzeuge folgen, sobald die Plattform sie hinzufügt: Websuche und Bildgenerierung fügen diesem Agenten jeweils
+ihr Werkzeug hinzu.
+
+Jeder Werkzeugaufruf ist im Chat sichtbar: Die Wissenssuche und die Dateien erscheinen als Quellen, jeder Aufruf als
+aufklappbarer Block mit dem, was das Werkzeug zurückgegeben hat, und der Agenten-Trace zeichnet jeden Schritt auf.
+
+### Im Kontext des Modells bleiben
+
+Lange Unterhaltungen mit vielen Werkzeugergebnissen können über das hinauswachsen, was das Modell lesen kann. Vor jeder
+Entscheidung prüft der Agent die Grösse und verdichtet bei Bedarf zuerst das älteste Material: Frühere
+Werkzeugergebnisse werden auf das für die Frage Wesentliche zusammengefasst, dann wird die Unterhaltung vor der Frage zu
+einer Zusammenfassung. Der Chat zeigt dabei einen kurzen Status. Die aktuelle Frage und die neuesten Ergebnisse werden
+nie zusammengefasst; nur wenn die neuesten Ergebnisse allein zu gross sind, werden sie passend gekürzt und als gekürzt
+markiert. Wenn selbst die Frage und die Beschreibungen der Werkzeuge nicht passen, antwortet der Agent ohne seine
+Werkzeuge.
+
+### Grenzen und Freigaben
+
+Ein Profil begrenzt, wie viele Entscheidungen und Werkzeugaufrufe eine Antwort umfassen darf. Am Limit antwortet der
+Agent mit dem, was er gefunden hat, und sagt, dass er vorzeitig aufgehört hat. Jedes Werkzeug kann so eingestellt
+werden, dass es vor der Ausführung die Freigabe des Benutzers braucht — jedes Mal, einmal pro Antwort oder einmal pro
+Unterhaltung.
+
+## Was er *nicht* tut
+
+- **Er ist kein fester Ablauf.** Das Modell entscheidet, welche Werkzeuge es nutzt, daher können zwei ähnliche Fragen
+  unterschiedliche Wege nehmen. Für eine garantierte Abfolge verwenden Sie die dafür vorgesehenen Blueprints.
+- **Er ersetzt nicht den Abruf des Document Intelligence Assistant.** Seine Wissenssuche ist einfacher: Jede Datenbank
+  wird mit dem Embedding-Modell durchsucht, mit dem sie indexiert wurde, und die Ergebnisse werden gemeinsam neu
+  sortiert, ohne die Feinabstimmung pro Retriever und die Fundierungsprüfung des Document Intelligence Assistant.
+- **Er liest nie, was der Benutzer nicht darf.** Sammlungen, die der fragende Benutzer nicht lesen kann, werden nicht
+  angeboten, auch wenn das Profil sie auflistet oder "jede Sammlung" erlaubt.
+- **Seine Code-Sandbox ist geteilte Hardware.** Das Sandbox-Home jedes Benutzers ist getrennt, aber alle Benutzer teilen
+  sich einen Container, daher ist sie keine harte Grenze zwischen Benutzern; siehe
+  [Programmierung](../../10_chat_ui/6_coding/).
+- **Noch keine Werkzeuge aus externen Systemen.** MCP-Werkzeugserver und die Übergabe an andere Agenten sind geplante
+  Folgeschritte; verwenden Sie dafür heute den MCP Tool Agent.
+
+## Einrichtung
+
+1. **Blueprint freigeben.** Der Universal Agent gehört nicht zum Standardumfang eines neuen Mandanten; ein Sysadmin gibt
+   ihn frei (siehe [Zugriffskontrolle](../../16_multi_tenancy/4_access_control/)).
+2. **Profil erstellen.** Wählen Sie unter **Admin > Agents > Blueprints** den **Universal Agent** und klicken Sie auf
+   **Profil erstellen**. Vergeben Sie eine Agent-ID, einen Namen, eine Beschreibung und ein Symbol.
+3. **Anweisungen schreiben.** Beschreiben Sie, wofür dieser Assistent da ist und wie er antworten soll. Die Anweisungen
+   werden nach den eingebauten Anweisungen zum Werkzeugeinsatz hinzugefügt, Sie müssen die Werkzeuge also nicht
+   erklären.
+4. **Wissen wählen.** Listen Sie unter **Wissenswerkzeug** entweder die Datenbanken und Sammlungen auf, die durchsucht
+   werden dürfen, oder aktivieren Sie **Jede Sammlung, die der Benutzer lesen kann**.
+5. **Modell wählen.** Wählen Sie ein Chat-Modell, das Werkzeugaufrufe unterstützt. Das **Task-LLM** verdichtet lange
+   Unterhaltungen und schreibt Titel und Folgefragen, dafür genügt ein kleineres Modell.
+6. **Grenzen und Freigaben prüfen** unter **Werkzeuge**, dann speichern.
+
+## Konfigurationsreferenz
+
+### Verhalten
+
+| Feld                        | Standard | Beschreibung                                                                                           |
+| --------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| **Anweisungen**             | *(leer)* | Wofür dieser Assistent da ist und wie er antworten soll, nach den eingebauten Anweisungen hinzugefügt. |
+| **Maximale Eingabe-Tokens** | `128000` | Das Eingabebudget. Die Unterhaltung wird darauf gekürzt und in der Werkzeugschleife darauf verdichtet. |
+
+### Wissenswerkzeug
+
+| Feld                                           | Standard | Beschreibung                                                                                               |
+| ---------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| **Jede Sammlung, die der Benutzer lesen kann** | Aus      | Jede Wissenssammlung anbieten, die der fragende Benutzer lesen darf, statt der aufgelisteten.              |
+| **Sammlungen**                                 | —        | Datenbanken, die das Modell durchsuchen darf, jeweils ganz oder auf einige ihrer Sammlungen eingeschränkt. |
+
+Unter **Wissenssuche** legen **Abschnitte pro Datenbank** und das **Reranking-Modell** fest, wie die Suche ihre Funde
+ordnet.
+
+### Werkzeuge
+
+| Feld                         | Standard | Beschreibung                                                                                                                |
+| ---------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Maximale Entscheidungen**  | `10`     | Wie oft das Modell Werkzeuge wählen darf, bevor es antworten muss.                                                          |
+| **Maximale Werkzeugaufrufe** | `20`     | Wie viele Werkzeugaufrufe eine Antwort insgesamt machen darf.                                                               |
+| **Werkzeuge deaktivieren**   | Aus      | Einschalten, um Werkzeuge zurückzuhalten; die Auswahl der deaktivierten Werkzeuge erscheint nur dann.                       |
+| **Deaktivierte Werkzeuge**   | —        | Werkzeuge, die dieses Profil nie anbietet, solange «Werkzeuge deaktivieren» eingeschaltet ist.                              |
+| **Freigaben**                | —        | Werkzeuge, deren Aufrufe der Benutzer zuerst freigeben muss: jeder Aufruf, einmal pro Antwort oder einmal pro Unterhaltung. |
+
+### Wissensdokumente
+
+| Feld                               | Standard | Beschreibung                                                                                                                                        |
+| ---------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mit ganzen Dokumenten arbeiten** | Aus      | Die Dokumentwerkzeuge und die Tabellenextraktion anbieten. Profile, die gespeichert wurden, bevor es diese Werkzeuge gab, lassen sie ausgeschaltet. |
+| **Filter für Dokumentpfade**       | *(leer)* | Nur Dokumente, deren Pfad diesem Muster entspricht, z. B. `invoices/**`. Er begrenzt die Dokumentwerkzeuge, nicht die Suche.                        |
+
+### Tabellenextraktion
+
+| Feld                                        | Standard    | Beschreibung                                                                                      |
+| ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------- |
+| **Extraktionsmodell**                       | Hauptmodell | Das Modell, das jedes Dokument liest und seine Zeilen extrahiert.                                 |
+| **Höchstens Dokumente pro Tabelle**         | `1000`      | Darüber wird der Benutzer nur gebeten, die Anfrage einzugrenzen.                                  |
+| **Längstes vollständig gelesenes Dokument** | `500000`    | Längere Dokumente (in Zeichen) werden in ihren relevanten Teilen gelesen und als solche markiert. |
+| **Gleichzeitige Modellaufrufe**             | `4`         | Extraktionsaufrufe, die eine Agenteninstanz gleichzeitig macht.                                   |
+
+Die Extraktion verhält sich wie beim [Wissensextraktions-Agenten](../14_knowledge_extraction_agent/): Eine Antwort
+extrahiert jedes ausgewählte Dokument, der Chat zeigt die ersten 100 Zeilen, und die ganze Tabelle ist eine CSV-Datei,
+die an die Antwort angehängt ist (über die API ein Download-Link). Eine Auswahl von mehr als 100 Dokumenten erhält
+zuerst eine Stichprobe, und das Modell fragt den Benutzer, bevor es alle extrahiert; eine Antwort mit Stichprobe
+extrahiert nichts weiter, sodass der Benutzer immer erst bestätigt, nachdem er sie gesehen hat.
+
+Bevor eine neue Extraktion läuft, bestätigt der Benutzer sie im selben
+[Anfrageformular](../14_knowledge_extraction_agent/#das-anfrageformular) wie beim Wissensextraktions-Agenten, in drei
+Teilen, die aus dem Aufruf des Modells ausgefüllt sind: **Ablageort**, **Filterbedingung** und **Zu extrahierende
+Werte**. Es fragt nicht nach Stichwörtern, da das Modell bereits gesucht hat. In OpenWebUI ist es ein Dialog; jeder
+andere Client zeigt es als Chat-Nachricht, die die nächste Nachricht beantwortet. Ein Ablageort, den der Benutzer
+schreibt, wird mit den Ordnern, Dateien und Jahren im Bereich abgeglichen. Ein *ja* startet die Extraktion, ein *nein*
+teilt dem Modell mit, dass der Benutzer abgelehnt hat, und jede andere Antwort, oder ein geschriebener Ablageort, der
+nichts im Bereich nennt, geht an das Modell zurück, dessen korrigierte Extraktion dann ohne zweites Formular läuft. Das
+Bestätigen einer Stichprobe wird nicht erneut gefragt.
+
+Das Formular ersetzt die Ja/Nein-Freigabe, daher braucht **Tabelle extrahieren** standardmässig keine Freigabe (*nie*);
+ein Profil, das eine setzt, fragt zusätzlich danach. Die Vorlage **Arbeitsplatz-Assistent** lässt die Dokumentwerkzeuge
+ausgeschaltet: Sie ist der allgemeine Assistent für den Alltag, ihre Benutzer brauchen selten eine Tabelle über viele
+Dokumente, und weniger Werkzeuge halten ihre Werkzeugwahl zuverlässig.
+
+Die Einstellungen für Gedächtnis und angehängte Dateien sind dieselben wie bei den anderen Chat-Agenten; siehe
+[Gedächtnis](../../15_memory/).

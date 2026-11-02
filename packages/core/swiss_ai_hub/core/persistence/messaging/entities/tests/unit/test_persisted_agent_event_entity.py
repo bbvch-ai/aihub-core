@@ -33,11 +33,14 @@ def _persist_event(
     event_type: str = AgentTopicManager.CONTROL_EVENT,
     display_id: str = "disp",
     agent_id: str = "test",
+    agent_class: str = "TestAgent",
     run_id: str = "run",
+    created_at: int = 1_730_000_000_000_000_000,
+    data: dict | None = None,
 ) -> None:
-    """Insert a minimal event. Only thread_id / event_id / event_parents / event_type drive classification."""
+    """Insert a minimal persisted event for repository query tests."""
     PersistedAgentEventEntity(
-        agent_class="TestAgent",
+        agent_class=agent_class,
         agent_id=agent_id,
         thread_id=thread_id,
         display_id=display_id,
@@ -45,7 +48,7 @@ def _persist_event(
         event_id=event_id,
         event_type=event_type,
         event_name=event_parents[0],
-        event_data={"created_at": 1_730_000_000_000_000_000},
+        event_data={"created_at": created_at, **(data or {})},
         event_parents=event_parents,
     ).save()
 
@@ -123,6 +126,133 @@ class TestThreadIdForDisplay:
         _persist_event("t_b", ["StartEvent"], "e2", display_id="d_b")
         assert PersistedAgentEventEntity.thread_id_for_display("d_a") == "t_a"
         assert PersistedAgentEventEntity.thread_id_for_display("d_b") == "t_b"
+
+
+class TestConversationEventsForThread:
+    def test_user_agent_markers_select_user_and_hitl_displays(self):
+        _persist_event(
+            "thread",
+            ["UserMessageEvent"],
+            "visible-user",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="user-display",
+            agent_class="UserAgent",
+        )
+        _persist_event(
+            "thread",
+            ["HumanInTheLoopResponseEvent"],
+            "visible-hitl",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="hitl-display",
+            agent_class="UserAgent",
+        )
+        _persist_event(
+            "thread",
+            ["UserMessageEvent"],
+            "wrong-agent",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="hidden-agent-display",
+        )
+        _persist_event(
+            "thread",
+            ["UserMessageEvent"],
+            "wrong-type",
+            event_type=AgentTopicManager.CONTROL_EVENT,
+            display_id="hidden-control-display",
+            agent_class="UserAgent",
+        )
+        _persist_event(
+            "thread",
+            ["NotUserMessageEvent"],
+            "substring-only-parent",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="hidden-substring-display",
+            agent_class="UserAgent",
+        )
+
+        events = PersistedAgentEventEntity.conversation_events_for_thread("thread")
+
+        assert {event.event_id for event in events} == {"visible-user", "visible-hitl"}
+
+    def test_returns_only_projectable_events_on_visible_displays(self):
+        _persist_event(
+            "thread",
+            ["UserMessageEvent"],
+            "user",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            agent_class="UserAgent",
+            created_at=1,
+        )
+        _persist_event(
+            "thread",
+            ["ChunkEvent"],
+            "chunk",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            created_at=2,
+        )
+        _persist_event(
+            "thread",
+            ["HumanInTheLoopRequestEvent"],
+            "hitl-request",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            created_at=3,
+        )
+        _persist_event(
+            "thread",
+            ["StopEvent"],
+            "stop",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            created_at=4,
+        )
+        _persist_event(
+            "thread",
+            ["ThoughtEvent"],
+            "irrelevant-visible",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            created_at=5,
+        )
+        _persist_event(
+            "thread",
+            ["RetrievalAgentInTheLoopResponseEvent", "AgentInTheLoopResponseEvent"],
+            "malformed-hidden",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="hidden",
+            created_at=6,
+        )
+        _persist_event(
+            "other-thread",
+            ["UserMessageEvent"],
+            "other-user",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="visible",
+            agent_class="UserAgent",
+            created_at=7,
+        )
+
+        events = PersistedAgentEventEntity.conversation_events_for_thread("thread")
+
+        assert [event.event_id for event in events] == ["user", "chunk", "hitl-request", "stop"]
+
+    def test_markerless_thread_returns_empty_and_warns(self, caplog):
+        _persist_event(
+            "thread",
+            ["ChunkEvent"],
+            "hidden-chunk",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            display_id="hidden",
+        )
+
+        with caplog.at_level("WARNING"):
+            events = PersistedAgentEventEntity.conversation_events_for_thread("thread")
+
+        assert events == []
+        assert caplog.records[-1].message == "No client-visible display marker found for thread history"
+        assert caplog.records[-1].thread_id == "thread"
 
 
 def _persist_cost_event(
@@ -303,3 +433,62 @@ class TestLLMSpendAggregation:
 
         assert len(spend) == 1
         assert spend[0].calls == 1
+
+    def test_payload_beyond_the_attributed_fields_does_not_change_the_sum(self):
+        """The pipeline projects the five fields it groups on instead of carrying `event_data` whole, so
+        anything outside those fields must be unable to change the result."""
+        _persist_cost_event("e1", user_id="u1", tenant_id="acme", prompt=1.0, completion=2.0)
+        event = PersistedAgentEventEntity.objects(event_id="e1").first()
+        event.event_data["messages"] = ["x" * 4096]
+        event.event_data["model_parameters"] = {"temperature": 0.7, "prompt": "y" * 4096}
+        event.save()
+
+        spend = PersistedAgentEventEntity.get_llm_spend_by_user()
+
+        assert spend[0].calls == 1
+        assert spend[0].total_costs == pytest.approx(3.0)
+
+
+_REQUEST = ["ExtractionRequestFormRequestEvent", "HumanInTheLoopRequestEvent"]
+_RESPONSE = ["ExtractionRequestFormResponseEvent", "HumanInTheLoopResponseEvent"]
+
+
+def _persist_request(thread_id: str, event_id: str, created_at: int) -> None:
+    """A request as the platform persists it: once as a control and once as a display event."""
+    for event_type in (AgentTopicManager.CONTROL_EVENT, AgentTopicManager.DISPLAY_EVENT):
+        _persist_event(thread_id, _REQUEST, event_id, event_type, created_at=created_at, data={"event_id": event_id})
+
+
+def _persist_response(thread_id: str, event_id: str, request_id: str, created_at: int) -> None:
+    _persist_event(
+        thread_id,
+        _RESPONSE,
+        event_id,
+        created_at=created_at,
+        data={"event_id": event_id, "request_event": {"event_id": request_id}},
+    )
+
+
+class TestOpenHumanInTheLoopRequests:
+    def test_a_request_is_listed_once_although_persisted_as_control_and_display(self):
+        _persist_request("t_hitl", "req1", 1)
+        requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread("t_hitl")
+        assert [request.event_id for request in requests] == ["req1"]
+
+    def test_an_answered_request_is_not_open(self):
+        _persist_request("t_hitl", "req1", 1)
+        _persist_response("t_hitl", "res1", "req1", 2)
+        assert PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread("t_hitl") == []
+
+    def test_only_the_request_no_response_names_is_open(self):
+        _persist_request("t_hitl", "req1", 1)
+        _persist_response("t_hitl", "res1", "req1", 2)
+        _persist_request("t_hitl", "req2", 3)
+        _persist_request("t_hitl", "req3", 4)
+        _persist_response("t_hitl", "res3", "req3", 5)
+        open_requests = PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread("t_hitl")
+        assert [request.event_id for request in open_requests] == ["req2"]
+
+    def test_requests_of_other_threads_are_not_open_here(self):
+        _persist_request("t_other", "req1", 1)
+        assert PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread("t_hitl") == []

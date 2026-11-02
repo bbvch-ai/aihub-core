@@ -5,3 +5,7 @@ rag_start:
 determine_namespaces:
   name: Determine Namespaces Event
   description: Triggers the LLM to determine namespaces from conversation context.
+in_order_node_combiner:
+  name: Documents for the answer
+  description: The retrieved documents the answer is grounded in, in the order the
+    model reads them.

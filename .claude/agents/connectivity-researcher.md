@@ -44,8 +44,8 @@ Use these exact L2 container labels in your output. They match the LikeC4 model 
 > `packages/core` is a shared library with no container of its own.
 
 **Infrastructure**: `LiteLLM Gateway`, `NATS`, `PostgreSQL`, `FerretDB`, `Valkey`, `Neo4j`, `Milvus`, `ClickHouse`,
-`etcd`, `SeaweedFS Cluster`, `Keycloak`, `Presidio`, `MinerU`, `vLLM`, `Speaches`, `SearXNG`, `Jupyter`, `Playwright`,
-`Attu`, `Traefik`, `OIDC Middleware`, `pgbouncer`, `Docker Socket Proxy`, `OTEL Collector`, `Langfuse`
+`etcd`, `SeaweedFS Cluster`, `Keycloak`, `Presidio`, `MinerU`, `vLLM`, `Speaches`, `SearXNG`, `Open Terminal`,
+`Playwright`, `Attu`, `Traefik`, `OIDC Middleware`, `pgbouncer`, `Docker Socket Proxy`, `OTEL Collector`, `Langfuse`
 
 **L1 externals**: `Identity Provider`, `LLM Provider`, `Document Source`, `Collaboration Platform`,
 `Observability Sink`, `Notification Target`, `External MCP Tools`

@@ -7,6 +7,7 @@ tenant_admin:
   create_new: New Tenant
   cancel: Cancel
   save: Save
+  save_error: Could not save tenant. Please try again.
   tenant_id: Tenant ID
   navigation:
     overview: Overview
@@ -14,10 +15,19 @@ tenant_admin:
     users: Users
   keycloak_unreachable: Keycloak is unreachable — the tenant list may be incomplete.
     Please retry.
+  load_error: This tenant's data could not be loaded. Please retry.
   state:
     orphaned_label: Orphaned
     orphaned_tooltip: This tenant has metadata but no matching Keycloak group. Users
       cannot access it.
+    not_member_label: Not a member
+    not_member_tooltip: Your account is not in this tenant's Keycloak group, so its
+      roles and users cannot be loaded.
+    not_member_message: Your account is not a member of the Keycloak group /tenants/{tenantId},
+      so this tenant's roles and users cannot be loaded. Ask a Keycloak administrator
+      to add the account you are signed in with to that group.
+  card:
+    more_rules: +{count} more
   configure:
     title: Configure Tenant
     description: Attach metadata to an existing Keycloak tenant group. The tenant
@@ -25,7 +35,12 @@ tenant_admin:
     tenant_id_label: Keycloak Tenant ID
     empty_unconfigured: No unconfigured Keycloak tenants available. Create a tenant
       group in the Keycloak admin console first.
+    default_rules_error: Could not load this instance's standard access rules. Saving
+      now would create a tenant with no access — check that the platform API and model
+      gateway are reachable.
   form:
+    chat_disclaimer: Chat disclaimer
+    chat_disclaimer_help: Shown below the chat input. Up to 100 characters per language.
     name: Tenant Name
     description: Description
   table:

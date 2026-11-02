@@ -58,9 +58,20 @@ class AgentInTheLoopRequestEvent(DisplayEvent, ControlEvent):
         bool,
         Field(
             description="Whether to share the run context with the other agent. "
-            "Warning: In almost all cases, you will not want to share the run!",
+            "Warning: In almost all cases, you will not want to share the run! The response subscription is scoped "
+            "to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.",
         ),
     ] = False
+    timeout_seconds: Annotated[
+        float | None,
+        Field(
+            description="How long to wait for the delegated agent before synthesizing a failure. `None` (the "
+            "default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped "
+            "agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set "
+            "it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the "
+            "timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.",
+        ),
+    ] = None
 
     def __init__(
         self,

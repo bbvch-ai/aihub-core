@@ -23,6 +23,14 @@ like "We deploy to production on Fridays." Retrieval works the same way.
 Both scopes retrieve from the vector store only. `MemorySearchResult.relations` still exists on the model but is always
 empty.
 
+## Memory in chat agents
+
+Chat blueprints do not write the steps below. They call the `Memory` capability: `Memory.recall(query)` returns a block
+per scope that `Conversation.compose` merges into the model's system instructions, and `Memory.remember(...)` returns
+the storage request, which belongs ahead of the completion in the list the answering step returns so it is published
+before the run ends. See [Capabilities and Tools](../12_capabilities_and_tools/). The explicit workflow below is the
+pattern for a custom agent that wires memory by hand.
+
 ## Memory workflow pattern
 
 Both memory types follow a common four-step workflow:
@@ -584,6 +592,39 @@ All memories store full Swiss AI Agent Protocol context: `agent_id` (which agent
 conversation thread), `display_id` (UI display context), `run_id` (workflow execution ID), and `user_id` (who the memory
 belongs to or who documented it). This enables complete auditability—you can trace back to which conversation taught the
 agent a particular preference.
+
+Storage events also carry `llm_model_name`, the model that extracted the memories, so a stored fact can be attributed to
+the model that produced it. It is empty for organization memory, which stores the text you pass verbatim and runs no
+model.
+
+## Choosing the extraction model
+
+Extraction and reconciliation are several model calls per stored conversation, and they are short, mechanical tasks — so
+they do not need the agent's answer model. `AgentMemory` takes an optional `llm_model_name`; unset, it uses the
+platform-wide default (`MEM0_LLM_NAME`). The dispatcher supplies it from the agent config when injecting `AgentMemory`,
+reading `AgentConfig.memory_llm_model_name`.
+
+That property is the platform's hook: it returns `None` on the base class, and a blueprint that offers a memory-model
+picker overrides it to point at its own field. `RAGAgentConfig` does exactly that, exposing `memory_llm` inside its
+`UserMemoryConfig` so administrators pick the model per profile.
+
+```python
+class MyAgentConfig(AgentConfig):
+    memory_llm: Annotated[str | ModelSelect | None, Field(description="Model that extracts memories.")] = None
+
+    @property
+    @override
+    def memory_llm_model_name(self) -> str | None:
+        # A form-mode element or a blank submission both mean "use the platform default".
+        return self.memory_llm if isinstance(self.memory_llm, str) and self.memory_llm else None
+```
+
+Only the extraction model is per-agent. Embedding and reranking stay deployment-wide, because memories written with one
+embedding model cannot be searched with another.
+
+The RAG blueprints do not write user memory themselves — they delegate it to the `MemoryWriterAgent` so the run
+finalizes as soon as the answer is ready. The chosen model travels there on the start event (`origin_memory_llm`), which
+is what keeps extraction on the profile's own model rather than the platform default.
 
 ## Best practices
 

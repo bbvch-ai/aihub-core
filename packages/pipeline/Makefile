@@ -1,5 +1,5 @@
-.PHONY: lint format typecheck pr-ready test-cov test playground quickstart rag-pipelines \
-	check-dotenv dagster-home
+.PHONY: lint format typecheck pr-ready test-cov test playground quickstart document-ingestion-pipeline \
+	structured-pipeline structured-demo check-dotenv dagster-home
 
 DOTENV := ../../.env
 
@@ -65,6 +65,16 @@ quickstart: check-dotenv dagster-home
 	@echo "Running quickstart..."
 	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -f playground/quick_start/simple_pipeline.py -f playground/quick_start/my_document_pipeline.py
 
-rag-pipelines: check-dotenv dagster-home
-	@echo "Running RAG pipelines..."
-	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -m app.default_rag_pipeline -m app.shared_rag_pipeline
+document-ingestion-pipeline: check-dotenv dagster-home
+	@echo "Running document ingestion pipeline..."
+	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -m app.document_ingestion_pipeline
+
+# Two code locations in one dagster dev: the structured source writes (Jira, ...), the ingestion pipeline ingests it.
+structured-pipeline: check-dotenv dagster-home
+	@echo "Running the structured source pipeline next to the document ingestion pipeline..."
+	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -m app.document_ingestion_pipeline -m app.structured_pipeline
+
+# Two code locations in one dagster dev: the demo source writes, the ingestion pipeline ingests what it wrote.
+structured-demo: check-dotenv dagster-home
+	@echo "Running the structured source demo next to the document ingestion pipeline..."
+	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -m app.document_ingestion_pipeline -m playground.structured_demo

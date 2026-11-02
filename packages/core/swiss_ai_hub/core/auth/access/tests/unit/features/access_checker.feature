@@ -95,6 +95,21 @@ Feature: User Access Control Checker
       | aihub.user.process.>          | aihub.user.agent.?>                 | ACCESS_DENIED  |
       | aihub.user.agent.class-a.id-1 | aihub.user.agent.class-a.?>         | ACCESS_USER    |
 
+      # Template `*` (every child): only a rule wildcarding that level qualifies
+      | aihub.user.agent.class-a.>    | aihub.user.agent.class-a.*          | ACCESS_USER    |
+      | aihub.user.agent.class-a.*    | aihub.user.agent.class-a.*          | ACCESS_USER    |
+      | aihub.user.agent.>            | aihub.user.agent.class-a.*          | ACCESS_USER    |
+      | aihub.user.agent.*.*          | aihub.user.agent.class-a.*          | ACCESS_USER    |
+      | aihub.user.agent.class-a.id-1 | aihub.user.agent.class-a.*          | ACCESS_DENIED  |
+      | aihub.user.agent.class-a      | aihub.user.agent.class-a.*          | ACCESS_DENIED  |
+      | aihub.user.agent.class-b.>    | aihub.user.agent.class-a.*          | ACCESS_DENIED  |
+
+      # Role ending exactly at the `?>` node (any access "at or below" includes the node itself)
+      | aihub.user.agent.class-a      | aihub.user.agent.class-a.?>         | ACCESS_USER    |
+      | aihub.user.agent.class-a      | aihub.user.agent.class-b.?>         | ACCESS_DENIED  |
+      | aihub.user.agent.class-a      | aihub.user.agent.class-a.?*         | ACCESS_DENIED  |
+      | aihub.user.agent.class-a      | aihub.user.agent.class-a.id-1.?>    | ACCESS_DENIED  |
+
   Scenario Outline: Admin Access Priority
     Given the access rule "<user_access_rule>"
     And the access rule "<admin_access_rule>"

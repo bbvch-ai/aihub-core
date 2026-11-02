@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import Field, computed_field
 
@@ -58,6 +58,10 @@ class LocaleInput(PrimeVueElement):
 
     placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text for each language")] = None
 
+    max_length: Annotated[
+        int | None, Field(description="Maximum number of characters per language", alias="maxLength", ge=1)
+    ] = None
+
     @computed_field
     @property
     def validation(self) -> str:
@@ -71,9 +75,22 @@ class LocaleInput(PrimeVueElement):
         rules: list[str] = []
         if self.required:
             rules.append("localeRequired")
+        if self.max_length is not None:
+            rules.append(f"localeMaxLength:{self.max_length}")
         if self.additional_validation_rules:
             rules.append(self.additional_validation_rules)
         return "|".join(rules)
+
+    def validate_value(self, field_path: str, value: Any, t: LocaleHandler) -> list[str]:
+        """Enforces `max_length` on save, since `maxlength` only stops typing in the browser."""
+        if self.max_length is None or not isinstance(value, dict):
+            return []
+        too_long = [
+            locale for locale, text in value.items() if isinstance(text, str) and len(text.strip()) > self.max_length
+        ]
+        if not too_long:
+            return []
+        return [f"must be at most {self.max_length} characters per language ({', '.join(too_long)})"]
 
     def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)

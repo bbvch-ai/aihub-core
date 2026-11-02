@@ -128,8 +128,9 @@ def test_task_llm_is_not_aliased_to_the_main_llm(build_config: Callable[..., Age
     config = build_config()
 
     assert config.task_llm is not config.llm
+    main_temperature = config.llm.default_parameter.temperature
     config.task_llm.default_parameter.temperature = 1.5
-    assert config.llm.default_parameter.temperature == 0.0
+    assert config.llm.default_parameter.temperature == main_temperature
 
 
 @pytest.mark.parametrize("build_config", CONFIG_FACTORIES, ids=lambda f: f.__name__)
@@ -156,6 +157,18 @@ def test_task_llm_inherits_generation_parameters_from_the_main_llm(
     assert config.task_llm.default_parameter.timeout == 42.0
     assert config.task_llm.default_parameter.logprobs is False
     assert config.task_llm.default_parameter.top_logprobs == 0
+
+
+@pytest.mark.parametrize("build_config", CONFIG_FACTORIES, ids=lambda f: f.__name__)
+def test_auxiliary_steps_stay_deterministic_while_the_main_temperature_is_unset(
+    build_config: Callable[..., AgentConfig],
+) -> None:
+    """An unset main temperature means the model's chat default for the answer only; guards and condensation
+    keep the 0.0 they ran at before temperatures became per model."""
+    config = build_config(task_llm=LLMConfig(model_name=TASK_MODEL))
+
+    assert config.llm.default_parameter.temperature is None
+    assert config.task_llm.default_parameter.temperature == 0.0
 
 
 @pytest.mark.parametrize("build_config", CONFIG_FACTORIES, ids=lambda f: f.__name__)

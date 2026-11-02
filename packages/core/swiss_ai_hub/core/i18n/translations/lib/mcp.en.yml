@@ -22,6 +22,7 @@ config:
     help: Maximum time to wait for a response from the MCP server.
   forward_tenant_id_header:
     label: Forward tenant id header
-    help: Optional. If set, the acting tenant's originating id is sent on every MCP request
-      under this header name, so one profile serves all tenants (each scoped to its own tenant).
+    help: Optional. If set, the acting tenant's external id is sent on every MCP request
+      under this header name. The value is derived server-side, not stored in the profile. Runs
+      without such an id fail instead of calling the server without the header.
       Leave empty to disable. Example - X-LCDM-Tenant.

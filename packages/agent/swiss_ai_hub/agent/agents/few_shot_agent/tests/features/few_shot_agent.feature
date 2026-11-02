@@ -14,9 +14,9 @@ Feature: Test the FewShotAgent
     And I create a FewShotAgent runner with the config with valid self hosted configuration
     When the start event is sent with a user query "Fight Club"
     Then a StartEvent is present with payload "Fight Club"
-    Then a LimitChatHistoryEvent is present
+    Then a ContextualizeConversationEvent is present
     Then a RightAgentEvent is present
-    Then a FewShotStandaloneQuestionCondenserEvent is present with condensed question
+    Then a StandaloneQuestionCondenserEvent is present with condensed question
     Then a FewShotEvent is present with few shot context
     Then an LLMEvent is present with a generated response
     Then a StopEvent is present

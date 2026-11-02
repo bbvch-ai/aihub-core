@@ -210,6 +210,8 @@ event:
     no_filters: Nessun filtro aggiuntivo
   rag_stop:
     failure_reason:
+      condensation_empty: Non è stato possibile condensare la domanda in una forma
+        ricercabile — questa esecuzione è stata interrotta prima del recupero.
       context_insufficient: Il contesto recuperato era insufficiente — la risposta
         è un ripiego e non è ancorata alle vostre fonti di conoscenza.
       expert_declined: L'esperto umano non ha potuto fornire una risposta — questa
@@ -218,6 +220,9 @@ event:
         non ha prodotto una risposta fondata.
       few_shot_rejected: La richiesta non corrispondeva a nessun pattern noto, quindi
         la risposta è stata prodotta senza recupero.
+      input_too_large: Il messaggio o il file allegato superava la finestra di contesto
+        del modello, quindi questa esecuzione è stata interrotta prima di chiamare
+        il modello.
   limitChatHistory:
     summary: Cronologia chat limitata a {count} messaggi
     assistant: Assistente
@@ -267,11 +272,27 @@ event:
     assistant: Assistente
     system: Sistema
     user: Utente
+  contextComposed:
+    summary: 'Contesto assemblato per il modello: {count} messaggio | Contesto assemblato
+      per il modello: {count} messaggi'
+    description: La cronologia della chat ricevuta dal modello, con tutti i blocchi
+      di contesto recuperati
+    assistant: Assistente
+    system: Sistema
+    user: Utente
   metaQuestionDetected:
     category:
       identity: Identità
       capabilities: Capacità
       behavior: Comportamento
+  sandboxFileDisplayed:
+    file: File
+    type: Tipo
+    size: Dimensione
+    path: Nella sandbox
+  humanInTheLoopResponse:
+    confirmed: Confermato
+    declined: Rifiutato
   standaloneQuestionCondenser:
     summary: Domanda rifinita e condensata
     condensedQuestion: Domanda Condensata
@@ -290,6 +311,95 @@ event:
       delegations: Deleghe
       delegatedTaskAgentInTheLoop: Compito delegato (Agente nel loop)
       allEvents: Tutti gli eventi
+  parts:
+    noMessages: Nessun messaggio
+    yes: Sì
+    no: 'No'
+  capability:
+    userQuery: Messaggio dell'utente
+    historyMessages: Messaggi nella cronologia
+    condensed: Condensata dalla cronologia
+    query: Richiesta
+    block: Blocco {number}
+    blocks: Blocchi di contesto
+    namespaces: Ambiti della memoria dell'organizzazione
+    toolCall: Chiamata di strumento
+    userMemories: Ricordi dell'utente
+    organizationMemories: Ricordi dell'organizzazione
+    references: Raccolte referenziate
+    citeSources: Citare le fonti
+    sections: Sezioni trovate
+    notSearched: Non cercate (nessun accesso)
+    files: File
+    reserveTokens: Token riservati
+    fileStatus:
+      read: Letto
+      truncated: Abbreviato
+      failed: Non riuscito
+    citationId: ID di citazione
+    pages: Pagine
+    error: Errore
+    stop: Termina con
+    targetAgent: Scrittore di memoria
+    links: Link
+    webReferences: Pagine web indicate
+    pagesRead: Pagine lette
+    notRead: Non lette
+    webFetchFailure:
+      malformed_url: Link non valido
+      unsupported_url: Link non supportato
+      blocked_host: Indirizzo bloccato
+      not_found: Non trovata
+      access_denied: Accesso negato
+      http_error: Errore del server
+      timeout: Tempo scaduto
+      unsupported_content: Non è una pagina web
+      empty_content: Nessun contenuto leggibile
+      url_limit_reached: Oltre il limite di link
+  extraction:
+    fields: Colonne
+    instructions: Righe da tenere
+    criteria: Documenti selezionati
+    collections: Raccolte
+    notices: Avvisi
+    documentIds: '{count} documenti scelti'
+    files: File
+    failedFiles: File non riusciti
+    rows: Righe mostrate / trovate
+    truncated: Abbreviato
+    confirmed: Estrae tutti i documenti confermati dall'utente
+    awaitingConfirmation: Campione in attesa del via libera dell'utente
+    previewRows: '{shown} di {total} righe mostrate'
+    download: Scarica l'intera tabella (CSV)
+    downloadFailed: Non è stato possibile scaricare la tabella
+  toolLoop:
+    loop: Insieme di strumenti
+    mode: Modalità
+    modes:
+      answer: Rispondere
+      gather: Raccogliere il contesto
+    iteration: Decisioni
+    toolCallsMade: Chiamate di strumenti finora
+    messages: Messaggi nel ciclo
+    offeredTools: Strumenti offerti
+    condensedResults: Risultati condensati
+    needsCondensing: Da condensare
+    decidedCalls: Una chiamata di strumento decisa | {count} chiamate di strumenti
+      decise
+    narrowedTools: Limitato a
+    maxIterations: Limite di decisioni
+    tool: Strumento
+    kind: Tipo
+    kinds:
+      function: Funzione
+      capability: Capacità
+    failed: Non riuscito
+    resultContext: Contesto restituito
+    stoppedEarly: Fermato ai suoi limiti
+    gathered: Contesto raccolto
+    gatheredMessages: Messaggi raccolti
+    tokens: Token
+    condensedTurns: Turni condensati
 costs:
   table:
     count: Conteggio
@@ -452,7 +562,7 @@ document:
     deleting: Eliminazione in corso
     button: Elimina
     button_selected: Elimina selezionati
-    confirmMessage: Vuoi davvero eliminare questo documento? Verrà rimosso definitivamente
+    confirmMessage: Vuoi davvero eliminare "{title}"? Verrà rimosso definitivamente
       dalla base di conoscenza. Questa azione non può essere annullata.
     confirmMessageBatch: Vuoi davvero eliminare {count} documento/i? Verranno rimossi
       definitivamente dalla base di conoscenza. Questa azione non può essere annullata.
@@ -509,21 +619,97 @@ knowledge:
     title: Aggiungi collezione
     description: Crea una nuova collezione di conoscenza
     cancel: Annulla
-  auto_sync:
-    title: Sincronizzato automaticamente
-    description: Le collezioni sono gestite automaticamente
+  add_database:
+    title: Aggiungi database di conoscenza
+    description: Crea un nuovo database di conoscenza self-service
+  source:
+    description: Sincronizzato da {name}
+    edit: Modifica sorgente
+    next_sync: La sorgente si sincronizza una volta al giorno, quindi i suoi contenuti
+      compaiono dopo la prossima sincronizzazione pianificata.
+    awaiting_sync:
+      title: Nessun contenuto ancora sincronizzato
+      description: La sorgente sincronizza questo database una volta al giorno, quindi
+        le sue collezioni compaiono qui dopo la prossima sincronizzazione pianificata.
+        Se ancora non compaiono, controlla le impostazioni della sorgente.
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Modifica collezione
   upload_documents: Carica documenti
+  delete_namespace: Elimina collezione
+  delete_database: Elimina database
+  delete:
+    confirm_label: Digita {name} per confermare
+    database:
+      title: Elimina database di conoscenza
+      warning: Questa operazione elimina definitivamente il database {name}, tutte
+        le sue collezioni e i suoi {count} documenti. L’operazione non può essere
+        annullata.
+    namespace:
+      title: Elimina collezione
+      warning: Questa operazione elimina definitivamente la collezione {name} e i
+        suoi {count} documenti. L’operazione non può essere annullata.
+    actions:
+      delete: Elimina
+    scheduled:
+      summary: Eliminazione avviata
+      detail: L’eliminazione viene eseguita in background e potrebbe richiedere un
+        momento.
+    error:
+      summary: Eliminazione non riuscita
+      detail: Impossibile avviare l’eliminazione. Riprova.
   form:
     create:
       title: Crea collezione
+    create_error: Creazione della collezione non riuscita. Riprova.
+    create_database:
+      title: Crea database di conoscenza
+      success: Base di conoscenza creata
+      error: Impossibile creare la base di conoscenza
+      no_ingestors: Nessuna pipeline di ingestione disponibile. Assicurati che almeno
+        una pipeline sia in esecuzione.
+      steps:
+        basic_info: Informazioni di base
+        source: Sorgente
+    edit_source:
+      title: Sorgente di {name}
+      success: Sorgente aggiornata
+      error: Impossibile aggiornare la sorgente
+      switch_to_manual: Passa al caricamento manuale
+      replace_documents:
+        header: Affidare il contenuto alla sorgente?
+        message: '{name} contiene già {count} documento/i caricato/i manualmente.
+          Quando una sorgente alimenta questo database, alla prossima sincronizzazione
+          viene rimosso ogni file che la sorgente non possiede.'
+        message_from_source: '{name} contiene {count} documento/i sincronizzato/i
+          da {source}. Quando la nuova sorgente alimenta questo database, alla sua
+          prossima sincronizzazione viene rimosso ogni file che non possiede.'
+        accept: Sostituisci i documenti esistenti
     edit:
       title: Modifica collezione
     database:
       label: Database di conoscenza
       placeholder: Nome del database di conoscenza
+    database_name:
+      label: Nome del database
+      placeholder: ilmiodatabase
+      help: Sono consentite solo lettere minuscole e cifre, iniziando con una lettera,
+        da 3 a 63 caratteri. Il nome non può essere modificato in seguito.
+      validation_error: Il nome del database deve iniziare con una lettera minuscola
+        e può contenere solo lettere minuscole e cifre, tra 3 e 63 caratteri
+    source:
+      label: Sorgente
+      placeholder: Scegli da dove provengono i documenti
+      help: Una pipeline sorgente mantiene questa base sincronizzata con un sistema
+        esterno. La sua descrizione indica come il contenuto viene suddiviso in namespace.
+      manual_upload:
+        label: Caricamento manuale
+        description: I documenti vengono caricati a mano in namespace creati da te.
+    ingestor:
+      label: Pipeline di ingestione
+      placeholder: Seleziona una pipeline di ingestione
+      help: La pipeline che elabora i documenti caricati in questo database.
     folder_name:
       label: Nome collezione
       placeholder: mia-collezione
@@ -557,6 +743,9 @@ auth:
     welcomeProvider: Benvenuti nell'AI Hub — accesso con {provider}
     pleaseLogin: Effettua il login
     pleaseLoginWith: Effettua il login con {provider}
+    useOrganisationLink: Usa il link di accesso fornito dalla tua organizzazione.
+      Se non lo hai, contatta il tuo amministratore.
+    adminLogin: Accesso amministratore
     loginWith: Accedi con {provider}
     customSolutions: Soluzioni AI personalizzate per la tua azienda
     logoAlt: Logo dell'azienda
@@ -624,6 +813,8 @@ evaluation:
 role:
   title: Ruoli di accesso
   name: Nome
+  name_immutable_hint: Il nome non può essere modificato dopo la creazione del ruolo,
+    perché gli utenti sono assegnati ai ruoli tramite il nome.
   description: Descrizione
   edit: Modifica ruolo
   create_new: Nuovo ruolo
@@ -662,6 +853,8 @@ role:
     cambiare questo.
   capability_readonly: Nessuna singola regola lo concede — usa un modello o una regola
     più ampia.
+  capability_also_cleared: 'Deselezionando si rimuove anche: {rules}'
+  capability_also_granted: 'Selezionando si concede anche: {rules}'
   pattern_help_intro: 'I modelli usano caratteri jolly per gli agenti:'
   pattern_help_all: Tutti gli agenti
   pattern_help_wildcard: Tutte le istanze di MyAgent
@@ -786,13 +979,40 @@ process:
       done: Completato
       steps: Progresso
 form:
+  secret_file_input:
+    drop_hint: Trascina qui il file o fai clic per sceglierlo
+    limits: '{accept}, fino a {size}'
+    selected: File selezionato
+    stored: File chiave salvato (cifrato)
+    client_email: 'Account di servizio: {email}'
+    replace: Sostituisci
+    remove: Rimuovi
+    too_large: Il file supera {size}.
+    invalid_json: Il file non è un JSON valido.
   locale_input:
     translate_tooltip: Traduci in tutte le lingue
+    translate_partial_summary: Alcune lingue non sono state tradotte
+    translate_partial_detail: Impossibile tradurre in {locales}. Le altre lingue sono
+      state aggiornate — riprova per completare il resto.
+    translate_failed_summary: La traduzione non è riuscita questa volta
+    translate_failed_detail: Nessuna lingua è stata tradotta. Il tuo testo è invariato
+      — riprova tra un momento.
   warnings:
     org_memory_performance: Questa funzionalità potrebbe non funzionare come previsto
       in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
       fino al rilascio di una correzione.
 lib:
+  modelBound:
+    providerDefault: predefinito del fornitore
+    overrideRequired: Inserisci un valore, oppure deseleziona la sostituzione per
+      usare il valore predefinito.
+    defaultPlaceholder: 'Predefinito del modello: {value}'
+    maximumHint: Al massimo {maximum} per {model}.
+    maximumHintWithFill: 'Al massimo {maximum} per {model}: il {percent} dei {modelMaximum}
+      token del modello, come margine per le differenze nel conteggio dei token.'
+    aboveMaximum: Per {model} sono consentiti al massimo {maximum}.
+  modelGated:
+    unavailable: '{model} non lo supporta.'
   cron:
     errors:
       required: Ogni posizione è obbligatoria — una vuota non è una pianificazione
@@ -815,6 +1035,17 @@ lib:
       placeholder: Seleziona un fuso orario
       help: Le posizioni cron sono interpretate in questo fuso orario, così una pianificazione
         giornaliera mantiene la stessa ora durante i cambi di orario.
+  knowledgeCollections:
+    placeholder: Seleziona raccolte
+    help: Vengono cercate solo le raccolte selezionate.
+    noAgent: Scegli prima un agente di conoscenza — qui si possono selezionare le
+      sue raccolte.
+    noSource: A questo campo non è associato alcun agente di conoscenza, quindi non
+      è possibile offrire raccolte.
+    empty: L'agente selezionato non è configurato per alcuna raccolta.
+    unavailable: Salvata, ma non consultata dall'agente selezionato
+  knowledgeDatabases:
+    unavailable: '{name} (eliminato o non visibile a te)'
   vectorStore:
     label: Archivio vettoriale
     help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare
@@ -822,8 +1053,14 @@ lib:
       label: Database
     namespaces:
       label: Spazi dei nomi
-      placeholder: Seleziona gli spazi dei nomi (vuoto = tutti)
-      help: Lascia vuoto per cercare tutti gli spazi dei nomi
+      placeholder: Seleziona almeno uno spazio dei nomi
+      help: Vengono cercati solo gli spazi dei nomi selezionati
+      required: Seleziona almeno uno spazio dei nomi o attiva «Cerca in tutti gli
+        spazi dei nomi». Altrimenti la configurazione non può essere salvata.
+    allNamespaces:
+      label: Cerca in tutti gli spazi dei nomi
+      help: Viene cercato ogni spazio dei nomi di questo database, inclusi quelli
+        aggiunti in seguito ({count} oggi).
     allowedFilterFields:
       label: Campi filtro consentiti
       placeholder: Inserisci una chiave di metadati e premi Invio
@@ -890,6 +1127,7 @@ memory:
       title: Eliminazione fallita
       message: Impossibile eliminare tutti i ricordi. Riprova.
 openwebui:
+  default_disclaimer: L’IA può commettere errori. Verifica le risposte.
   memories:
     title: Ricordi dell'Agente
     select_agent: Seleziona Agente
@@ -907,6 +1145,69 @@ tenant:
   mismatch_warning: Conflitto di tenant
   mismatch_description: Il tuo tenant attivo è stato cambiato in {tenant} in un'altra
     sessione. L'interfaccia di chat utilizza il tenant attivo per tutte le richieste.
-  mismatch_switch_action: Cambia tenant
+  mismatch_switch_action: Vai a {tenant}
+  mismatch_use_this_tenant: Chatta in {tenant}
   administration_title: Amministrazione tenant
   administration_description: Gestisci i tenant nell'intera piattaforma
+support:
+  report_bug: Segnala un problema
+  dialog_title: Segnala un problema
+  choose_files: Scegli i file
+  submit: Invia segnalazione
+  submitting: Invio…
+  sent: Segnalazione inviata
+  sent_detail: 'Riferimento {reference}, segnalazione #{number}. Il supporto ti risponderà
+    via e-mail.'
+  send_failed: Segnalazione non inviata
+  send_failed_detail: 'Le tue risposte sono ancora qui: riprova a inviare.'
+  unavailable: La segnalazione non è configurata su questa installazione. Contatta
+    l'amministratore.
+userFiles:
+  title: I miei file
+  description: 'I file con cui lavorate tu e i tuoi agenti: allegati delle chat, file
+    creati per te dagli agenti e i tuoi caricamenti.'
+  conversation: Chat
+  actions:
+    move: Sposta
+    upload: Carica
+    newFolder: Nuova cartella
+    refresh: Aggiorna
+    download: Scarica
+    rename: Rinomina
+    delete: Elimina
+    close: Chiudi
+    cancel: Annulla
+    save: Salva
+    openFolder: Apri la cartella {name}
+    preview: Anteprima di {name}
+  columns:
+    name: Nome
+    size: Dimensione
+    modified: Modificato
+  empty:
+    folder: Questa cartella è vuota. Trascina qui i file per caricarli.
+    noSpace: Il tuo spazio file viene creato con il tuo account chat. Apri la chat
+      una volta, poi torna qui.
+  error:
+    load: Impossibile caricare questa cartella. Riprova con Aggiorna.
+  move:
+    header: Sposta {name} in
+    noTargets: Nessuna cartella in cui spostarlo.
+  preview:
+    unavailable: Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo.
+    truncated: Questa anteprima mostra solo l'inizio del documento. Scaricalo per
+      vederlo tutto.
+    failed: Non è stato possibile creare l'anteprima di questo file. Scaricalo per
+      aprirlo.
+    empty: Questo documento non contiene testo.
+    tooLarge: Questo file è troppo grande per l'anteprima. Scaricalo per aprirlo.
+  name:
+    invalid: Un nome non può essere vuoto né contenere una barra.
+  delete:
+    header: Elimina
+    file: Eliminare {name}?
+    folder: Eliminare la cartella {name} con tutto il contenuto?
+  toast:
+    uploaded: '{count} file caricati'
+    uploadFailed: Caricamento non riuscito
+    changeFailed: La modifica non è riuscita

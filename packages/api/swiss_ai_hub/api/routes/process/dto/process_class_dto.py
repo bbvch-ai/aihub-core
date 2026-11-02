@@ -5,10 +5,9 @@ from swiss_ai_hub.core.events.process import (
     AgentInSpecs,
     HumanInSpecs,
     ProcessClassDiscoveryResponseEvent,
-    ProcessConfigSpecs,
     ProgramInSpecs,
 )
-from swiss_ai_hub.core.form import ALL_FORM_OPTIONS, TemplateData
+from swiss_ai_hub.core.form import ALL_FORM_OPTIONS, ConfigSpecs, TemplateData
 from swiss_ai_hub.core.i18n import LocaleString
 
 if TYPE_CHECKING:
@@ -28,7 +27,7 @@ class ProcessClassDTO(BaseModel):
     icon: Annotated[str, Field(description="Icon for this process class.")] = "mage:broadcast"
     form: Annotated[list[ALL_FORM_OPTIONS], Field(description="FormKit elements defining the configuration form.")]
     process_config_specs: Annotated[
-        ProcessConfigSpecs,
+        ConfigSpecs,
         Field(description="Configuration specifications of the process class, including schema and parameters."),
     ]
     human_inputs: Annotated[
@@ -77,6 +76,8 @@ class ProcessClassDTO(BaseModel):
         cls,
         entity: "ProcessClassEntity",
         t: "LocaleHandler",
+        *,
+        is_online: bool,
     ) -> Self:
         """Converts a ProcessClassEntity to a ProcessClassDTO."""
         return cls(
@@ -86,11 +87,11 @@ class ProcessClassDTO(BaseModel):
             icon=entity.icon,
             form=entity.form_elements,
             process_config_specs=(
-                entity.process_config_specs.to_specs() if entity.process_config_specs else ProcessConfigSpecs()
+                entity.process_config_specs.to_specs() if entity.process_config_specs else ConfigSpecs()
             ),
             human_inputs=[],
             program_inputs=[],
             agent_inputs=[],
-            is_online=entity.is_online,
+            is_online=is_online,
             templates=[TemplateData.model_validate(td) for td in entity.templates] if entity.templates else [],
         )

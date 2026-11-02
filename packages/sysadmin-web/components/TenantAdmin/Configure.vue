@@ -48,9 +48,18 @@
         </label>
       </FloatLabel>
 
+      <Message
+        v-if="defaultAccessRulesError"
+        severity="warn"
+        variant="simple"
+        size="small"
+      >
+        {{ t('tenant_admin.configure.default_rules_error') }}
+      </Message>
+
       <AccessRulesEditor
         v-model:rules="accessRules"
-        :initial-rules="[]"
+        :initial-rules="defaultAccessRules ?? []"
         :restrict-to-tenant="false"
       />
 
@@ -80,19 +89,35 @@ import type { CreateTenantMetadataRequest } from '~/sdk/client'
 const { t } = useI18n()
 
 const { unconfiguredTenantIds, unconfiguredTenantIdsAreLoading } = useUnconfiguredTenantIds()
+const { defaultAccessRules, defaultAccessRulesError } = useDefaultTenantAccessRules()
 const { createTenantMetadata } = useCreateTenantMetadata()
 
 const tenant = ref<CreateTenantMetadataRequest>({
   tenant_id: '',
   name: '',
   description: '',
-  access_rules: [],
 })
 
-const accessRules = computed({
-  get: () => tenant.value.access_rules ?? [],
-  set: (val) => { tenant.value.access_rules = val },
-})
+// Held on its own rather than behind a computed over `tenant.access_rules`, which is absent until the
+// prefill lands: the seeding watch below and the omit-versus-empty decision at save both need a value that
+// exists before the tenant does.
+const accessRules = ref<string[]>([])
+
+// Seeded once, so the standard set is visible and editable before saving rather than applied invisibly
+// by the backend. Guarded against re-firing so a refetch cannot discard edits already made in the form.
+const defaultRulesSeeded = ref(false)
+watch(defaultAccessRules, (rules) => {
+  if (defaultRulesSeeded.value || !rules) return
+  accessRules.value = [...rules]
+  defaultRulesSeeded.value = true
+}, { immediate: true })
+
+// Omitted, not [], only when the prefill failed and nothing was entered, so the backend derives the
+// default ceiling itself. Once the editor holds a seeded or hand-typed list, an empty one is sent as []
+// and reads as "a tenant that deliberately starts with no access at all".
+const accessRulesToSave = computed(() =>
+  defaultRulesSeeded.value || accessRules.value.length ? accessRules.value : undefined,
+)
 
 const canSave = computed(() => Boolean(tenant.value.tenant_id && tenant.value.name))
 
@@ -105,7 +130,7 @@ const close = () => {
 }
 
 const save = async () => {
-  await createTenantMetadata({ data: tenant.value })
+  await createTenantMetadata({ data: { ...tenant.value, access_rules: accessRulesToSave.value } })
   emit('close')
 }
 </script>

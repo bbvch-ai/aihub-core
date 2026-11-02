@@ -12,8 +12,9 @@ class MemoryWriterAgentConfig(AgentConfig):
     agent triggered programmatically, never configured via the Admin UI, so there is no `agent_configs`
     profile record for it. Because these values are non-configurable, `get_non_configurable_values()` supplies
     them and `deep_merge(non_configurable, {})` yields a valid config even when the RPC returns an empty
-    config — so the run starts with no seeded DB record. The mem0 LLM/embedding models come from
-    `MEM0_*` settings, so no LLM field is needed here.
+    config — so the run starts with no seeded DB record. No LLM field is needed here: embedding and reranking
+    come from `MEM0_*` settings, and the extraction model is the *originating* agent's choice (issue #1590),
+    carried on the start event rather than configured on this system agent.
     """
 
     AGENT_CLASS: ClassVar[str] = "MemoryWriterAgent"

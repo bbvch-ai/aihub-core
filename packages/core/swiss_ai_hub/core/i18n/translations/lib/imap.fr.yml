@@ -6,12 +6,31 @@ config:
   port:
     label: Port IMAP
     help: Port du serveur IMAP. Utiliser 993 pour le TLS implicite.
+  auth_method:
+    label: Authentification
+    help: Comment l'agent se connecte à la boîte aux lettres. Choisir Microsoft 365
+      (OAuth 2.0) pour les boîtes Microsoft 365 dont l'authentification de base est
+      désactivée ; une inscription d'application dans Microsoft Entra ID est requise.
+    password_label: Nom d'utilisateur et mot de passe
+    oauth2_label: Microsoft 365 (OAuth 2.0)
   username:
     label: Nom d'utilisateur
     help: Identifiant de la boîte aux lettres, généralement l'adresse e-mail complète.
+      Avec Microsoft 365 (OAuth 2.0), l'adresse de la boîte aux lettres à traiter.
   password:
     label: Mot de passe
     help: Mot de passe de la boîte aux lettres ou jeton spécifique à l'application.
+  tenant_id:
+    label: ID de locataire
+    help: ID de l'annuaire (locataire) de votre locataire Microsoft Entra ID.
+  client_id:
+    label: ID client
+    help: ID d'application (client) de l'inscription d'application Entra ID autorisée
+      à accéder à cette boîte aux lettres via IMAP.
+  client_secret:
+    label: Secret client
+    help: Secret client de l'inscription d'application Entra ID. Les secrets expirent
+      ; le renouveler ici avant sa date d'expiration.
   use_tls:
     label: Utiliser TLS
     help: Se connecter via TLS implicite. À désactiver uniquement pour les serveurs
@@ -54,6 +73,8 @@ config:
   draft_prompt:
     label: Invite de rédaction
     help: Instructions guidant la manière dont le LLM rédige le corps de la réponse.
+      La réponse peut utiliser le Markdown (gras, listes) ; un texte entouré de ==doubles
+      signes égal== est surligné en jaune dans le brouillon.
   category_name:
     label: Catégorie
     help: Nom de la catégorie, par ex. support_request. Doit être unique.
@@ -66,10 +87,16 @@ config:
     help: Décrivez le type de courrier qui appartient à cette catégorie. C'est là-dessus
       que le modèle classe — soyez concret sur l'intention plutôt que d'énumérer des
       mots-clés.
+  keep_uncategorised_in_inbox:
+    label: Laisser le courrier non classé dans la boîte de réception
+    help: Si activé, le courrier qui ne correspond à aucune catégorie reste non lu
+      dans la boîte de réception au lieu d'être déplacé dans le dossier de repli,
+      et les exécutions suivantes ne le classent pas à nouveau. Le courrier que le
+      classificateur n'a pas pu traiter va toujours dans le dossier d'échec.
   fallback_folder:
     label: Dossier de repli
     help: Dossier pour le courrier dont le modèle n'est pas sûr. Ce courrier n'est
-      jamais deviné dans une catégorie ni laissé dans la boîte de réception.
+      jamais deviné dans une catégorie.
   failure_folder:
     label: Dossier d'échec
     help: Dossier pour les e-mails que le classificateur n'a pas pu traiter du tout.
@@ -110,3 +137,48 @@ config:
   attachment_char_limit:
     label: Limite de caractères par pièce jointe
     help: Nombre de caractères conservés du texte extrait d'une seule pièce jointe.
+  category_knowledge_namespaces:
+    label: Collections de connaissances
+    help: Collections à partir desquelles les réponses de cette catégorie sont rédigées.
+      Seules les collections pour lesquelles l'agent de connaissances du profil est
+      configuré sont proposées.
+    placeholder: Sélectionner des collections
+    toggle_label: Sélectionner des collections de connaissances
+    toggle_help: Décocher pour rechercher dans toutes les collections.
+  no_information_draft:
+    label: Brouillon lorsque rien n'a été trouvé
+    help: Texte du brouillon lorsque la recherche n'a rien trouvé qui réponde au message.
+      Utilisé tel quel, afin que la réponse n'invente jamais ce pour quoi il n'existe
+      aucun document.
+  grounding_failed_draft:
+    label: Brouillon lorsque la recherche a échoué
+    help: Texte du brouillon lorsque la recherche de connaissances a échoué ou n'a
+      jamais répondu. Distinct du texte d'absence d'information, pour différencier
+      une lacune documentaire d'une installation défaillante.
+  grounding_timeout_seconds:
+    label: Délai de la recherche de connaissances (secondes)
+    help: Durée maximale d'une recherche de connaissances avant que le message soit
+      rédigé avec le texte d'échec. Sans délai, un agent de connaissances hors ligne
+      laisse l'exécution attendre indéfiniment.
+  quote_original:
+    label: Citer le message d'origine
+    help: Si activé, le message d'origine est cité sous la réponse, avec son expéditeur,
+      sa date, ses destinataires et son objet, comme une réponse dans Outlook. Il
+      est ajouté après la rédaction et n'est jamais montré au modèle.
+  quote_locale:
+    label: Langue de la citation
+    help: Langue des libellés De/Envoyé/À/Objet et de la date au-dessus du message
+      cité. Outlook utilise la langue de la personne qui répond. Choisissez celle
+      du titulaire de la boîte.
+  quote_timezone:
+    label: Fuseau horaire de la citation
+    help: Fuseau horaire de la date d'envoi au-dessus du message cité. Outlook l'affiche
+      dans le fuseau de la personne qui répond. Choisissez celui du titulaire de la
+      boîte.
+quote:
+  from: De
+  sent: Envoyé
+  to: À
+  cc: Cc
+  subject: Objet
+  date_format: '%d/%m/%Y %H:%M'

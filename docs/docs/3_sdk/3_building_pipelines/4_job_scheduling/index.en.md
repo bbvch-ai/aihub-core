@@ -28,8 +28,9 @@ actual data changes.
 
 ## Implementation with SDK Factories
 
-The `default_definitions` and `default_sharepoint_to_datalake_definitions` factories automatically configure this entire
-automation setup for you. They create the necessary jobs, schedules, and sensors to implement the hybrid strategy.
+The `document_ingestion_pipeline_definitions` and `default_sharepoint_to_datalake_definitions` factories automatically
+configure this entire automation setup for you. They create the necessary jobs, schedules, and sensors to implement the
+hybrid strategy.
 
 Here is how the components are assembled within a `Definitions` object:
 

@@ -7,7 +7,21 @@ config:
   temperature:
     label: Temperatura
     help: 'Controlla la casualità: 0 = deterministico, 2 = molto creativo. Valori
-      bassi per compiti fattuali.'
+      bassi per compiti fattuali. I passaggi ausiliari (ad es. verifiche, titoli)
+      usano 0 finché qui non è impostato alcun valore.'
+    toggle_label: Sostituisci la temperatura predefinita del modello
+  top_p:
+    label: Ampiezza della scelta delle parole (top_p)
+    help: 'Quante alternative il modello considera per ogni parola successiva: solo
+      le parole più probabili che insieme raggiungono questa probabilità. Valori più
+      bassi danno risposte più mirate e prevedibili, valori più alti risposte più
+      varie.'
+    toggle_label: Sostituisci l'ampiezza predefinita della scelta delle parole (top_p)
+      del modello
+  accept_images:
+    label: Accetta immagini
+    help: Passa al modello le immagini della conversazione. Disponibile solo per i
+      modelli che supportano l'input di immagini.
   logprobs:
     label: Restituire log-probabilità
     help: Includere le log-probabilità per token nella risposta. Utile per analizzare

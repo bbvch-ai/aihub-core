@@ -17,12 +17,14 @@ class OrganizationMemory:
 
     def __init__(self, t: LocaleHandler):
         """Initialize tenant memory manager using default tenant from settings."""
-        self._config = Mem0Settings().get_config()
+        settings = Mem0Settings()
+        self._config = settings.get_config()
         self._tenant_id = MemorySettings().DEFAULT_TENANT_ID
         self._t = t
         self.mem0service = Mem0Service(
             self._config,
             t=self._t,
+            max_search_query_tokens=settings.SEARCH_QUERY_EMBEDDING_WINDOW,
         )
 
     @property

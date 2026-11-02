@@ -57,10 +57,12 @@ Langfuse adds AI-specific observability on top — full prompt/response capture,
 tracing, and evaluation datasets. Both integrate via the same trace context, providing end-to-end visibility from user
 request to LLM response.
 
-**Network Isolation**: Docker Compose defines six network zones: `proxy` (external ingress via Traefik), `backend`
+**Network Isolation**: Docker Compose defines eight network zones: `proxy` (external ingress via Traefik), `backend`
 (application services), `data` (databases, caches, message broker), `storage` (SeaweedFS cluster), `egress` (outbound
-internet with inter-container communication disabled), and `code-sandbox` (single-tenant zone for the `open-terminal`
-code-execution sandbox plus exactly its callers). Services are assigned only the networks they require.
+internet with inter-container communication disabled), `code-sandbox` (single-tenant zone for the `open-terminal`
+code-execution sandbox plus exactly its callers), `pii-detection` (the Presidio analyzer plus exactly its callers), and
+`browser` (the Playwright browser plus exactly its callers, and `browser-proxy`, the browser's only way to the internet,
+which refuses addresses that are not public). Services are assigned only the networks they require.
 
 ## Dev Stack Services
 
@@ -69,10 +71,10 @@ The `infra/docker-compose.dev.yml` runs ~30 containers. Key services by role:
 **User-Facing**: OpenWebUI (chat UI, :8080), Admin UI and Process UI (Nuxt, :3333, run locally outside Docker)
 
 **API & Gateway**: FastAPI REST + WebSocket (:8000, run locally), LiteLLM universal LLM proxy (:4000), Traefik reverse
-proxy (production only)
+proxy (production only), Keycloak identity provider (:8180)
 
-**AI Inference**: Speaches STT/TTS (:8185), Presidio analyzer + anonymizer (PII filtering). GPU deployments add vLLM for
-local chat, embedding, and reranking. Non-GPU deployments route all inference to Swiss LLM Cloud.
+**AI Inference**: Presidio analyzer + anonymizer (PII filtering). GPU deployments add vLLM for local chat, embedding,
+and reranking, and Speaches STT/TTS (:8185). Non-GPU deployments route all inference to Swiss LLM Cloud.
 
 **Databases**: PostgreSQL with pgvector (:5432, 4 DBs: openwebui/langfuse/dagster/litellm), FerretDB (:27017,
 MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j graph DB (:7474/:7687), Valkey/Redis
@@ -83,16 +85,16 @@ MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j gr
 
 **Pipelines**: Dagster orchestrator (:3000, run locally), pipeline workers (run locally)
 
-**Document Processing**: MinerU OCR + parsing (:5001)
+**Document Processing**: MinerU OCR + parsing (:8002)
 
 **Backup**: Backup Dagster webserver (:3004), gRPC code server, daemon — independent Dagster instance for scheduled
 backup/restore
 
 **Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
 
-**Utility**: Open Terminal (:8200 in dev, code execution sandbox for OpenWebUI — plain LLM models only), Jupyter Lab
-(:8888, retained in stack but no longer the OpenWebUI code path), Playwright (:3036, browser automation), Attu (:3003,
-Milvus admin UI)
+**Utility**: Open Terminal (:8200 in dev, code-execution sandbox for plain LLM chats and for agents' code tools, each
+user confined to their own home), SearXNG (:8881, web search), Playwright (:3036, browser automation), browser-proxy
+(Squid, Playwright's only way out), Attu (:3003, Milvus admin UI)
 
 ## Package Architecture
 
@@ -226,6 +228,30 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 3. Update scope `README.md` if changes affect architecture/usage
 4. Create ADR in `docs/arc42/decisions/` for significant architectural decisions
 5. Commit & push following Git workflow above
+6. **After pushing a PR branch, check SonarCloud** — see below
+
+### SonarCloud Check After Pushing
+
+Whenever you push a branch that has (or is about to have) a PR, check what SonarCloud reported on it. CI scans each
+package as its own project, so findings that never reach the terminal will otherwise block review.
+
+1. **Only if the `sonarqube` MCP server is connected.** It needs `SONARQUBE_TOKEN` in `.env` (see `.claude/README.md`).
+   If it is not connected, say so once and move on — do not install it, and do not fall back to guessing.
+2. Wait for the scan. SonarCloud analyses **after** CI runs, so results are not there the instant you push. Check
+   `gh pr checks` first; if the Sonar job has not finished, come back to it.
+3. Query with `search_sonar_issues_in_projects`, passing the **PR number** as `pullRequest` and the project key from the
+   relevant `packages/*/sonar-project.properties`. Pass `ps` as a **number**, not a string. Only query the packages your
+   diff touched.
+4. **Fix trivial findings yourself, then push the fix.** Trivial means the fix is local, obvious, and cannot change
+   behaviour: unused imports or variables, redundant casts, missing `readonly`, duplicated string literals, cognitive
+   complexity resolved by extracting a helper, naming convention violations.
+5. **Do not auto-fix anything else.** Report it to the user with the rule key, the file and line, and what the fix would
+   risk. This covers anything that changes control flow, touches security or auth, alters a public signature, requires a
+   design decision, or is arguably a false positive.
+6. **Always tell the user what you found and what you did** — including when you found nothing, and including each issue
+   you fixed. Never fix Sonar findings silently.
+
+Some findings are deliberately left open; check `git log` and existing comments before "fixing" one.
 
 ## Testing
 
@@ -246,7 +272,7 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 
 **Create ADR if**: Adding major dependencies, introducing new tools/frameworks, or altering fundamental patterns.
 
-**ADR Format**: `YYYY_MM_DD_short-decision-summary.md` (Context → Decision Drivers → Decision → Consequences)
+**ADR Format**: `YYYY_MM_DD_short_decision_summary.md` (Context → Decision Drivers → Decision → Consequences)
 
 ## Package Dependencies
 

@@ -1,63 +1,52 @@
-import asyncio
 import logging
-from collections.abc import Callable
+from collections.abc import Sequence
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
+    ConversationContextualizedEvent,
     ExpertRejectEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
-    MemoryStorageRequestedEvent,
     RAGFailureReason,
     RAGFailureStopEvent,
-    RAGStartEvent,
     RAGSuccessStopEvent,
+    RefusalStopEvent,
     RerankerEvent,
-    RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
-    RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
-    StoreUserMemoryRequestedEvent,
-    UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
-    AgentMemory,
     IngestedNode,
     LLMConfig,
-    OrgMemoryNamespaceResolver,
-    OrgMemoryReadConfig,
     RetrievalRuntimeConfig,
     combine_nodes_in_order,
-    condense_standalone_question,
     context_sufficient_guard,
+    context_sufficient_guard_messages,
+    estimate_prompt_tokens,
     few_shot_guard,
     limit_chat_history,
-    limit_chat_history_with_context,
-    merge_consecutive_messages,
     rerank_nodes,
     retrieve_from_all_sources,
+    usable_input_budget,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
-from swiss_ai_hub.core.topics import AgentInstanceTopic
 
-from swiss_ai_hub.agent.agents.memory_writer_agent.configs.memory_writer_agent_config import MemoryWriterAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.context_insufficient_with_query_event import (
     ContextInsufficientWithQueryEvent,
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.expert_answer_context_event import ExpertAnswerContextEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
-from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
-    LimitChatHistoryWithContextEvent,
-)
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import FALLBACK_INPUT_TOKENS, ConversationFields
+from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 
@@ -65,72 +54,123 @@ logger = logging.getLogger(__name__)
 
 PREV_GROUNDING_NODES_KEY = "prev_grounding_nodes"
 
-# Bounds a hung backend, not normal latency: well above the ~0.25s graph-free median from issue #1713.
-MEMORY_RETRIEVAL_TIMEOUT_SECONDS = 15.0
 
-
-def do_limit_chat_history(
-    messages: list[ChatMessage],
+def effective_input_token_limit(
     number_of_input_tokens: int,
-) -> LimitChatHistoryEvent:
-    """Truncate chat messages to fit within token limit."""
-    limited = limit_chat_history(chat_history=messages, number_of_input_tokens=number_of_input_tokens)
+    llm_configs: list[LLMConfig | None],
+) -> int:
+    """The admin's cost ceiling capped by the narrowest model window that could receive the prompt.
+
+    `number_of_input_tokens` is a cost ceiling and may sit above the model's real context window, so
+    trimming to it alone does not bound what the provider will accept. Falls back to the ceiling when no
+    window can be established, matching `usable_input_budget`'s fail-open contract.
+    """
+    budget = usable_input_budget(llm_configs)
+    return number_of_input_tokens if budget is None else min(number_of_input_tokens, budget)
+
+
+async def do_limit_chat_history(
+    messages: list[ChatMessage],
+    number_of_input_tokens: int | None,
+    last_user_message: ChatMessage,
+    llm_configs: list[LLMConfig | None],
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+) -> LimitChatHistoryEvent | RefusalStopEvent:
+    """Truncate chat messages to the configured token limit, and refuse the run if the result still cannot be sent.
+
+    Truncation alone cannot bound the prompt. `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` when even
+    one message exceeds the limit (llama-index-core 0.14.22) -- deliberately, so the model reports the overflow
+    rather than the history silently losing the question -- and `number_of_input_tokens` is an admin's cost ceiling,
+    which may sit above the model's actual context window. A chat client that pastes a whole document into one turn
+    therefore reaches the model regardless, and comes back as a provider 400 wrapped in the gateway's fallback
+    bookkeeping. Re-check that branch on a llama-index upgrade: a version returning `[]` instead would drop the
+    user's question rather than keep it.
+
+    Only the last turn is irreducible, and it is what decides: everything older is negotiable, so the history is
+    trimmed against the model's window rather than the admin's ceiling, and the run is refused only when the turn
+    alone already exceeds the window. That threshold is deliberately the impossible case rather than a prediction of
+    any one step's prompt. `condense_standalone_question` really does pay for the turn twice -- it renders the
+    limited history into its system prompt and appends the message again -- but tiktoken is not the served model's
+    tokenizer and over-counts enough on non-Latin scripts that budgeting for the doubling refuses prompts the model
+    accepts (121k tiktoken tokens of Vietnamese fit gemma-4-31B-it's 100k window on Infomaniak). A prompt that fits
+    here and still overflows downstream gets the provider's own 400, which `ModelGatewayErrorHandler` rewrites into a
+    sentence naming the limit.
+
+    An unset `number_of_input_tokens` sets no ceiling of the admin's own: the window alone bounds the history, and
+    `FALLBACK_INPUT_TOKENS` stands in when no window can be established.
+
+    Refusing loses the thread's title, which `generate_conversation_title_step` anchors on the event this no longer
+    emits. Generating one here would hand the same oversized turn to the same model and fail the same way.
+    """
+    budget = usable_input_budget(llm_configs)
+    if budget is None:
+        return LimitChatHistoryEvent(
+            limited_history=limit_chat_history(
+                chat_history=messages,
+                number_of_input_tokens=FALLBACK_INPUT_TOKENS
+                if number_of_input_tokens is None
+                else number_of_input_tokens,
+            )
+        )
+
+    answering_config = next(config for config in llm_configs if config is not None)
+    last_turn_tokens = estimate_prompt_tokens([last_user_message], answering_config.token_counter)
+    if last_turn_tokens > budget:
+        return await OversizedInputRefusal.refuse(last_turn_tokens, budget, answering_config.model_name, displayer, t)
+
+    # Trim only what precedes the last turn, then put it back -- the same shape `Conversation.compose` uses for
+    # the turns. Reserving room for the turn and then handing the trimmer a list that still contains it charges the
+    # turn twice: no subset holding it fits the reduced limit, so `ChatMemoryBuffer` falls through to its most-recent-
+    # message branch and the whole earlier conversation is dropped for any turn past half the budget.
+    room = budget - last_turn_tokens
+    older_limit = room if number_of_input_tokens is None else min(number_of_input_tokens, room)
+    limited = [*limit_chat_history(chat_history=messages[:-1], number_of_input_tokens=older_limit), *messages[-1:]]
     return LimitChatHistoryEvent(limited_history=limited)
 
 
-async def do_condense_standalone_question(
-    limited_history: list[ChatMessage],
-    last_user_message: ChatMessage,
-    llm_config: LLMConfig,
-    displayer: EventDisplayer,
+def do_answer_instructions(
+    outcome: FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent | None,
+    context_insufficient_prompt: LocaleString | None,
+    system_prompt: LocaleString | None,
     t: LocaleHandler,
-    user: UserIdentity,
-) -> StandaloneQuestionCondenserEvent:
-    """Condense chat history and user query into standalone question."""
-    await displayer.display_thought(t("agent.thought.condense_question"))
-    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
-        condensed = await condense_standalone_question(
-            chat_history=limited_history, message=last_user_message, t=t, llm=llm
+    cite_sources: bool = True,
+) -> list[ChatMessage]:
+    """The system messages the answer is written under: the profile's prompt, the citation rule, and on a
+    rejection the reason the answer cannot come from the documents.
+
+    With `cite_sources` the model is told to cite documents by their `id` attribute; chat clients turn those
+    markers into their own source references.
+    """
+    system_prompt_text = t.extract(system_prompt) if system_prompt else None
+    instructions = [
+        text for text in (system_prompt_text, t("lib.prompt.citations.instruction") if cite_sources else None) if text
+    ]
+    messages = [ChatMessage(role=MessageRole.SYSTEM, content="\n\n".join(instructions))] if instructions else []
+    if outcome is not None:
+        reject_prompt = t("agent.prompt.guard.reject").format(
+            prompt=t.extract(context_insufficient_prompt), reason=outcome.reason
         )
-        return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed)
+        messages.append(ChatMessage(role=MessageRole.SYSTEM, content=reject_prompt))
+    return messages
+
+
+def do_context_block(context_message: ChatMessage) -> list[ChatMessage]:
+    """Retrieved or expert context as a block of the system head. A profile's context prompt may render it as a
+    user message, which would otherwise land ahead of the conversation as a turn of its own."""
+    return [ChatMessage(role=MessageRole.SYSTEM, blocks=context_message.blocks)]
 
 
 async def do_respond_with_llm(
-    event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent,
-    limited_history_without_context: list[ChatMessage],
-    context_insufficient_prompt: LocaleString | None,
-    system_prompt: LocaleString | None,
+    messages: list[ChatMessage],
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
     as_stop_step: bool = True,
 ) -> LLMStopEvent | LLMEvent:
-    """Generate LLM response with proper message building and streaming."""
+    """Stream the answer to the composed prompt, exactly as the composed-context event shows it."""
     await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
-
-    if isinstance(event, FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent):
-        context_insufficient_prompt_text = t.extract(context_insufficient_prompt)
-        prompt_text = t("agent.prompt.guard.reject").format(
-            prompt=context_insufficient_prompt_text, reason=event.reason
-        )
-        messages = [
-            ChatMessage(
-                role=MessageRole.SYSTEM,
-                content=prompt_text,
-            ),
-        ] + limited_history_without_context
-    else:
-        messages = event.limited_history_with_context
-
-    system_prompt_text = t.extract(system_prompt) if system_prompt else None
-    if system_prompt_text:
-        system_message = ChatMessage(role=MessageRole.SYSTEM, content=system_prompt_text)
-        messages = [system_message] + messages
-
-    # Merge consecutive messages with the same role (required by LiteLLM)
-    messages = merge_consecutive_messages(messages)
-
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=as_stop_step)
 
@@ -141,7 +181,7 @@ async def do_few_shot_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> FewShotRejectEvent | FewShotAcceptEvent:
     """Execute few-shot guard logic and return appropriate event."""
     if not examples:
@@ -161,100 +201,20 @@ async def do_few_shot_guard(
     return FewShotAcceptEvent(reason=guard_result.reasoning)
 
 
-async def do_retrieve_user_memory(
-    event: UserMessageEvent | RAGStartEvent,
-    memory: AgentMemory,
-    rerank: bool,
-) -> RetrieveUserMemoryEvent:
-    """Retrieve user memories for personalized context.
-
-    A failing memory subsystem degrades to an empty event instead of propagating (issue #1713): raising
-    would end the run, while `stop_on_error=False` would suppress the `ExceptionEvent` but emit nothing at
-    all — and `check_memory_ready_for_chat_history` blocks until this event exists, so the run would hang.
-    A hung backend degrades the same way, since a stall blocks the chat turn just as a raise ends it.
-    """
-    user_id = event.user.id
-    try:
-        memory_result = await asyncio.wait_for(
-            memory.search_user_memory(
-                query=event.user_query,
-                user_id=user_id,
-                limit=10,
-                threshold=0.5,
-                rerank=rerank,
-            ),
-            timeout=MEMORY_RETRIEVAL_TIMEOUT_SECONDS,
-        )
-    except Exception:
-        logger.warning(
-            "User memory retrieval failed; answering without user memory. user_id=%s",
-            user_id,
-            exc_info=True,
-        )
-        return RetrieveUserMemoryEvent(memories=[], relations=[])
-
-    return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
-
-
-async def do_retrieve_organization_memory(
-    event: UserMessageEvent | RAGStartEvent,
-    org_memory: OrgMemoryReadConfig,
-    memory: AgentMemory,
-) -> RetrieveOrganizationMemoryEvent:
-    """Retrieve organization memories for shared expert-knowledge context.
-
-    Degrades to an empty event on failure for the same reason as `do_retrieve_user_memory`.
-
-    Namespace resolution is deliberately left outside that safety net: a start event asking for a namespace
-    outside the configured allow-list is a caller error, and silently answering from the wrong scope (or
-    from none) would hide it. Only the memory-subsystem call degrades.
-    """
-    requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
-    tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
-        requested=requested,
-        configured=org_memory.allowed_tenant_namespaces,
-    )
-    try:
-        memory_result = await asyncio.wait_for(
-            memory.search_organization_memory(
-                query=event.user_query,
-                tenant_id=org_memory.tenant_id,
-                tenant_namespaces=tenant_namespaces,
-                user_id=None,
-                limit=10,
-                threshold=0.5,
-                rerank=org_memory.rerank_organization_memory,
-            ),
-            timeout=MEMORY_RETRIEVAL_TIMEOUT_SECONDS,
-        )
-    except Exception:
-        logger.warning(
-            "Organization memory retrieval failed; answering without organization memory. "
-            "tenant_id=%s namespaces=%s user_id=%s",
-            org_memory.tenant_id,
-            tenant_namespaces,
-            event.user.id,
-            exc_info=True,
-        )
-        return RetrieveOrganizationMemoryEvent(memories=[], relations=[])
-
-    return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
-
-
 async def do_retrieve(
-    event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
+    event: ConversationContextualizedEvent | StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
     runtime_configs: list[RetrievalRuntimeConfig],
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
-    if isinstance(event, StandaloneQuestionCondenserEvent):
-        query = event.condensed_chat_message.content or ""
+    if isinstance(event, ConversationContextualizedEvent):
+        query = event.query
+    elif isinstance(event, StandaloneQuestionCondenserEvent):
+        query = event.condensed_question
     else:
         query = event.new_query
-    all_nodes = await retrieve_from_all_sources(query, runtime_configs, t, user)
-    nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
-    return RetrieverEvent.from_nodes(nodes_with_score)
+    return RetrieverEvent(nodes=await retrieve_from_all_sources(query, runtime_configs, t, user))
 
 
 async def do_rerank_nodes(
@@ -263,24 +223,35 @@ async def do_rerank_nodes(
     reranking_config: RerankingConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    user: UserIdentity,
+    user: UserIdentity | None,
 ) -> RerankerEvent:
-    """Rerank nodes and build RerankerEvent."""
+    """Rerank nodes and build RerankerEvent; ordered by retrieval score when the reranker is unavailable.
+
+    The fallback keeps the turn answering from what was retrieved rather than failing on the ranking, as `Knowledge`
+    does; `reranked` on the event tells a reader which order the answer was built from.
+    """
     await displayer.display_thought(t("agent.thought.reranking_results"))
-    reranked_nodes = await rerank_nodes(
-        nodes=nodes,
-        query=query,
-        reranking_model=reranking_config.reranking_model,
-        user=user,
-    )
+    top_n = reranking_config.reranking_model.top_n
+    try:
+        output_nodes = await rerank_nodes(
+            nodes=nodes,
+            query=query,
+            reranking_model=reranking_config.reranking_model,
+            user=user,
+        )
+        reranked = True
+    except Exception:
+        logger.exception("[rag] Could not rerank the retrieved nodes, keeping retrieval order")
+        output_nodes = sorted(nodes, key=lambda node: node.score or 0.0, reverse=True)[:top_n]
+        reranked = False
 
     return RerankerEvent(
         query=query,
         rerank_model_name=reranking_config.reranking_model.model_name,
-        top_n=reranking_config.reranking_model.top_n,
+        top_n=top_n,
         input_nodes=nodes,
-        output_nodes=reranked_nodes,
-        reranked=reranking_config.reranking_model is not None,
+        output_nodes=output_nodes,
+        reranked=reranked,
     )
 
 
@@ -338,15 +309,29 @@ async def do_context_sufficient_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    chat_history: list[ChatMessage],
-    user: UserIdentity,
+    history: list[ChatMessage],
+    blocks: Sequence[list[ChatMessage]],
+    conversation: ConversationFields,
+    user: UserIdentity | None,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
+    """Ask the task model whether the retrieved documents answer the question.
+
+    The history is fitted here, not by the caller: the guard renders the documents and its own instructions next to
+    it, so only the room left after them may hold the history. Fitted to the whole budget, the prompt overflowed
+    by the size of the documents (issue #2077).
+    """
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
 
     prev_queries = await run_context.get("prev_queries", [])
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
+
+    guard_prompt = context_sufficient_guard_messages(
+        t, user_query, context_message, prev_queries, more_hops_available, chat_history=[]
+    )
+    reserve_tokens = estimate_prompt_tokens(guard_prompt, conversation.llm.token_counter)
+    chat_history = Conversation.fit(history, blocks, conversation, reserve_tokens=reserve_tokens)
 
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         guard_result = await context_sufficient_guard(
@@ -374,26 +359,6 @@ async def do_context_sufficient_guard(
     return ContextInsufficientWithQueryEvent(reason=guard_result.reasoning, new_query=new_query)
 
 
-def do_limit_chat_history_with_context(
-    context_message: ChatMessage,
-    chat_history: list[ChatMessage],
-    last_user_message: ChatMessage | None,
-    tokenizer: Callable[[str], list[int]],
-    number_of_input_tokens: int,
-) -> LimitChatHistoryWithContextEvent:
-    """Limit chat history including context and return event."""
-    system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
-    limited_history = limit_chat_history_with_context(
-        chat_history=chat_history,
-        context_messages=[context_message],
-        system_messages=system_messages,
-        last_user_message=last_user_message or ChatMessage(role=MessageRole.USER, content=""),
-        tokenizer=tokenizer,
-        number_of_input_tokens=number_of_input_tokens,
-    )
-    return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_history)
-
-
 def do_finalize_rag_stop(
     llm_event: LLMEvent,
     expert_answer_context: ExpertAnswerContextEvent | None,
@@ -411,36 +376,3 @@ def do_finalize_rag_stop(
     if context_insufficient_reject is not None:
         return RAGFailureStopEvent(reason=RAGFailureReason.CONTEXT_INSUFFICIENT, answer=answer)
     return RAGSuccessStopEvent(answer=answer)
-
-
-def build_memory_storage_request(
-    user: UserIdentity,
-    messages: list[ChatMessage],
-    topic: AgentInstanceTopic,
-    agent_config: AgentConfig,
-    locale: str,
-) -> MemoryStorageRequestedEvent:
-    """
-    Build the detached memory-storage delegation targeting the `MemoryWriterAgent` (issue #1179).
-
-    Carries the originating agent's identity (from the topic + config) so the writer rebuilds the *same*
-    `AgentMemory` — preserving the fact-extraction prompt and the `_agent_id` scoping tag.
-    """
-    return MemoryStorageRequestedEvent(
-        start_event=StoreUserMemoryRequestedEvent(
-            user=user,
-            messages=messages,
-            locale=locale,
-            origin_thread_id=topic.thread_id,
-            origin_display_id=topic.display_id,
-            origin_run_id=topic.run_id,
-            origin_agent_class=topic.agent_class,
-            origin_agent_id=agent_config.agent_id,
-            origin_agent_name=agent_config.name,
-            origin_agent_description=agent_config.description,
-        ),
-        # Routing target carried on the event (not hard-coded in the dispatcher by design) so the delegation
-        # primitive stays generic; today it resolves to the single MemoryWriterAgent system instance.
-        target_agent_class=MemoryWriterAgentConfig.AGENT_CLASS,
-        target_agent_id=MemoryWriterAgentConfig.AGENT_ID,
-    )

@@ -18,6 +18,14 @@ Data subjects can request copies of their personal data, including processing pu
 retention periods, and data sources. The platform stores this information in user profiles, conversation threads, and
 audit logs. Organizations verify the requester's identity before providing data.
 
+::: warning Compiling chat data for a request
+By default no administrator can export another user's conversations or list their uploaded files from the chat interface
+\- that data is scoped to its owner. Compiling it for a request therefore needs one of: the data subject exporting their
+own conversations, temporary use of the administrative override (`OPENWEBUI_ENABLE_ADMIN_EXPORT` and
+`OPENWEBUI_BYPASS_ADMIN_ACCESS_CONTROL`, see [Chat UI feature overview](../../10_chat_ui/1_feature_overview/)), or
+direct database access. Plan for this when setting internal response-time targets.
+:::
+
 ## Rectification
 
 Data subjects can request corrections to inaccurate data. Administrators can update user profiles through the platform's

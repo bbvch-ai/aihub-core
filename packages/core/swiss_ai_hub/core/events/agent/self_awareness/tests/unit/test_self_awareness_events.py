@@ -32,7 +32,7 @@ class TestNotAMetaQuestionEvent:
     def test_carries_reasoning(self):
         assert NotAMetaQuestionEvent(reasoning="normal task").reasoning == "normal task"
 
-    def test_is_control_only_not_displayed(self):
-        """The gate signal is internal — it must not surface in the UI timeline."""
+    def test_is_a_displayed_protocol_event(self):
+        """The gate's verdict is part of the protocol, so the event history shows it next to the detected case."""
         assert issubclass(NotAMetaQuestionEvent, ControlEvent)
-        assert not issubclass(NotAMetaQuestionEvent, DisplayEvent)
+        assert issubclass(NotAMetaQuestionEvent, DisplayEvent)

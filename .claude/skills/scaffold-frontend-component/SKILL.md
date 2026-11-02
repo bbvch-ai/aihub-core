@@ -314,7 +314,6 @@ components/
 │   ├── Card.vue           # Resource card for grid layouts
 │   ├── EmptyCard.vue      # Add-new placeholder
 │   ├── CreateModal.vue    # Create dialog
-│   ├── EditModal.vue      # Edit dialog
 │   └── List.vue           # DataTable list
 ├── Structural/            # Layout primitives (DO NOT modify)
 │   ├── Screen.vue

@@ -6,12 +6,31 @@ config:
   port:
     label: IMAP Port
     help: Port of the IMAP server. Use 993 for implicit TLS.
+  auth_method:
+    label: Authentication
+    help: How the agent logs in to the mailbox. Choose Microsoft 365 (OAuth 2.0) for
+      Microsoft 365 mailboxes where basic authentication is disabled; it requires
+      an app registration in Microsoft Entra ID.
+    password_label: Username and password
+    oauth2_label: Microsoft 365 (OAuth 2.0)
   username:
     label: Username
-    help: Mailbox login, usually the full email address.
+    help: Mailbox login, usually the full email address. With Microsoft 365 (OAuth
+      2.0), the address of the mailbox to process.
   password:
     label: Password
     help: Mailbox password or app-specific token.
+  tenant_id:
+    label: Tenant ID
+    help: Directory (tenant) ID of your Microsoft Entra ID tenant.
+  client_id:
+    label: Client ID
+    help: Application (client) ID of the Entra ID app registration that was granted
+      IMAP access to this mailbox.
+  client_secret:
+    label: Client Secret
+    help: Client secret of the Entra ID app registration. Secrets expire, so renew
+      it here before its expiry date.
   use_tls:
     label: Use TLS
     help: Connect over implicit TLS. Disable only for plaintext test servers.
@@ -48,7 +67,9 @@ config:
     help: Chat model used to draft the reply body.
   draft_prompt:
     label: Draft Prompt
-    help: Instructions steering how the LLM drafts the reply body.
+    help: Instructions steering how the LLM drafts the reply body. The reply may use
+      Markdown (bold, lists); ask for text wrapped in ==double equals== to have it
+      highlighted in yellow in the draft.
   category_name:
     label: Category
     help: Name of the category, e.g. support_request. Must be unique.
@@ -60,10 +81,15 @@ config:
     label: What Belongs Here
     help: Describe the kind of mail that belongs in this category. This is what the
       model classifies on, so be concrete about intent rather than listing keywords.
+  keep_uncategorised_in_inbox:
+    label: Leave Uncategorised Mail in the Inbox
+    help: When on, mail that fits no category stays unread in the inbox instead of
+      moving to the fallback folder, and later runs do not classify it again. Mail
+      the classifier failed on still goes to the failure folder.
   fallback_folder:
     label: Fallback Folder
     help: Folder for mail the model is not confident about. Such mail is never guessed
-      into a category and never left in the inbox.
+      into a category.
   failure_folder:
     label: Failure Folder
     help: Folder for mail the classifier could not process at all. Such mail still
@@ -102,3 +128,45 @@ config:
   attachment_char_limit:
     label: Attachment Character Limit
     help: Characters kept from a single attachment's extracted text.
+  category_knowledge_namespaces:
+    label: Knowledge Collections
+    help: Collections this category's replies are answered from. Only the collections
+      the profile's knowledge agent is configured for are offered.
+    placeholder: Select collections
+    toggle_label: Select Knowledge Collections
+    toggle_help: Uncheck to search all collections.
+  no_information_draft:
+    label: Draft When Nothing Was Found
+    help: Draft body used when retrieval found nothing that answers the message. Used
+      verbatim, so the reply never invents an answer it has no documents for.
+  grounding_failed_draft:
+    label: Draft When The Lookup Failed
+    help: Draft body used when the knowledge lookup itself failed or never answered.
+      Kept apart from the no-information text so a reviewer can tell a gap in the
+      documentation from a broken deployment.
+  grounding_timeout_seconds:
+    label: Knowledge Lookup Timeout (seconds)
+    help: How long a knowledge lookup may take before the message is drafted with
+      the failure text instead. Without a deadline, an offline knowledge agent leaves
+      the run waiting forever.
+  quote_original:
+    label: Quote Original Message
+    help: When on, the original message is quoted below the reply, with its sender,
+      date, recipients and subject, as a reply in Outlook does. It is added after
+      the reply is written and is never shown to the model.
+  quote_locale:
+    label: Quote Language
+    help: Language of the From/Sent/To/Subject labels and the date above the quoted
+      message. Outlook uses the language of whoever replies, so pick the mailbox owner's
+      language.
+  quote_timezone:
+    label: Quote Time Zone
+    help: Time zone of the Sent date above the quoted message. Outlook shows it in
+      the time zone of whoever replies, so pick the mailbox owner's.
+quote:
+  from: From
+  sent: Sent
+  to: To
+  cc: Cc
+  subject: Subject
+  date_format: '%d %b %Y %H:%M'

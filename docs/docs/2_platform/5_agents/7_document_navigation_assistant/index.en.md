@@ -124,9 +124,10 @@ These settings control how the assistant decides where to search and where it se
 | **Knowledge Databases** | Knowledge-base picker | —       | Yes      | The knowledge bases the assistant may route between. Their namespaces are the options it chooses from. At least one.                                                          |
 | **RAG Agent**           | Agent picker          | —       | Yes      | The [Document Intelligence Assistant](../5_document_intelligence_assistant/) profile that questions are delegated to. The picker lists agents that accept RAG-style requests. |
 
-The **Model** picker also exposes the standard language-model parameters (temperature, timeout, and the log-probability
-options) described on the [Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model) page;
-a low temperature is best, since routing should be consistent.
+The **Model** picker also exposes the standard language-model parameters (temperature and breadth-of-word-choice (top_p)
+overrides, image handling, timeout, and the log-probability options) described on the
+[Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model) page; a low temperature is best,
+since routing should be consistent (switch on the temperature override and set it).
 
 ### Conversation behaviour
 
@@ -143,8 +144,8 @@ delegates to. Get that working on its own before putting a navigator in front of
 **Give namespaces clear, descriptive names.** The routing model decides based on namespace names and descriptions —
 `hr-policies` and `customer-contracts` route far more reliably than `docs1` and `docs2`.
 
-**Keep the routing model's temperature low.** Routing is a classification task; consistency matters more than
-creativity.
+**Keep the routing model's temperature low** (switch on the temperature override and set it, since the default follows
+the model). Routing is a classification task; consistency matters more than creativity.
 
 **Use it only when you genuinely have multiple knowledge bases.** For a single knowledge base it adds an approval step
 with no benefit — use the [Document Intelligence Assistant](../5_document_intelligence_assistant/) directly instead.

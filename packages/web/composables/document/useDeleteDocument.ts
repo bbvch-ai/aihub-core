@@ -5,7 +5,7 @@ export const useDeleteDocument = defineMutation(() => {
 
   const {
     mutateAsync: deleteDocumentMutation,
-    isPending: isDeleting,
+    isLoading: isDeleting,
     error: deleteError,
   } = useMutation({
     mutation: async ({ tenantId, database, namespace, documentId }: { tenantId: string, database: string, namespace: string, documentId: string }) => {

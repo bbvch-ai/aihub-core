@@ -11,7 +11,29 @@ class Capability(BaseModel):
         str | None,
         Field(description="Exact access rule that grants this capability, or null for read-only capabilities."),
     ]
-    granted: Annotated[bool, Field(description="Whether the draft rules grant this capability.")]
+    companion_rules: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Rules written *and* removed together with `rule`. A knowledge database's row carries "
+                "`<rule>.>` here: its namespaces belong to it, and a `.>` rule never matches its own root, "
+                "so the row needs both forms to mean 'this whole database'."
+            )
+        ),
+    ] = []
+    revoked_rules: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Rules removed with `rule`, never written with it. An agent class's row carries `<rule>.>` "
+                "here: granting it would hand over every profile of the class in the deployment, other "
+                "tenants' included, but a ceiling written before that was understood still holds it."
+            )
+        ),
+    ] = []
+    granted: Annotated[
+        bool, Field(description="Whether the draft rules grant `rule` and every `companion_rules` entry.")
+    ]
     locked: Annotated[
         bool,
         Field(description="Granted via a broader rule (e.g. a wildcard preset) and so cannot be toggled off here."),

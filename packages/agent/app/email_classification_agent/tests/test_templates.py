@@ -13,7 +13,7 @@ from app.email_classification_agent.templates import get_all_templates
 from swiss_ai_hub.agent.agents.email_classification_agent.configs.email_classification_agent_config import (
     EmailClassificationAgentConfig,
 )
-from swiss_ai_hub.agent.agents.email_classification_agent.email_classification_agent import EmailClassificationAgent
+from swiss_ai_hub.agent.agents.email_classification_agent.mail_triage_validator import MailTriageValidator
 
 _LOCALES = ("de", "en", "fr", "it")
 
@@ -52,13 +52,13 @@ def test_the_taxonomy_passes_the_agents_own_validation(template: EmailClassifica
     """A template must never produce a config that the agent rejects at runtime.
 
     This now also covers the fallback-vs-category and target-vs-inbox rules, plus the drafting rules, which
-    `_validate` enforces for every config rather than only for the shipped templates.
+    `MailTriageValidator.validate` enforces for every config rather than only for the shipped templates.
 
     Uses the template's own token counter rather than a stub, so the drafting budget it ships with is checked against
     the tokenizer the runtime will actually use — a template whose budget cannot fit its own prompt would otherwise
     only be discovered by whoever instantiated it.
     """
-    EmailClassificationAgent._validate(
+    MailTriageValidator.validate(
         template.classification,
         template.draft,
         template.imap.inbox_folder,
@@ -92,8 +92,8 @@ def test_a_template_that_names_no_drafting_category_is_still_usable_with_draftin
 ):
     """An admin flipping the master switch must not be met with a validation error.
 
-    `_validate` rejects drafting enabled with nothing opted in, so a template whose categories all leave
-    `draft_reply` off would fail the moment the switch is turned on — a shipped dead end.
+    `MailTriageValidator.validate` rejects drafting enabled with nothing opted in, so a template whose categories all
+    leave `draft_reply` off would fail the moment the switch is turned on — a shipped dead end.
     """
     assert any(category.draft_reply for category in template.classification.categories)
 

@@ -10,6 +10,10 @@ config:
   query_mode:
     label: Modalità di query
     help: Specifica come interrogare il vector store.
+  min_similarity:
+    label: Similarità minima
+    help: I risultati meno simili alla domanda vengono scartati prima del reranking.
+      Vale per la modalità di query Default; 0 mantiene tutti i risultati.
   node_types:
     label: Tipi di nodo
     help: Tipi di nodi da recuperare dall'indice.

@@ -1,7 +1,10 @@
 import functools
-from typing import ClassVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, ClassVar
 
+from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import (
+    ChatFeature,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     StartEvent,
@@ -10,6 +13,10 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.workflow import DispatchableWorkflow
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+
+if TYPE_CHECKING:
+    from swiss_ai_hub.agent.capabilities.capability import Capability
+    from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
 
 
 class Agent(DispatchableWorkflow):
@@ -55,11 +62,85 @@ class Agent(DispatchableWorkflow):
     # Admin UI. Non-discoverable agents still subscribe to and process their control events normally.
     discoverable: ClassVar[bool] = True
 
+    # The stop events a blueprint ends its runs with by handing them to `Conversation.complete(stop=...)`. They
+    # travel inside the request's payload, so no step's return type names them; without this declaration the
+    # REST response model and the workflow graph fall back to the bare `StopEvent` and drop their fields.
+    completion_stops: ClassVar[tuple[type[StopEvent], ...]] = ()
+
     STEP_ANNOTATION = "_is_agent_step"
 
     PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"
     STOP_ON_ERROR_ANNOTATION = "_stop_on_error"
     MAX_EXECUTION_PER_RUN_ANNOTATION = "_max_executions_per_run"
+
+    @classmethod
+    @functools.cache
+    def get_own_steps(cls) -> list[Callable]:
+        """The steps defined on the class itself, without the capabilities its calls pull in."""
+        return super().get_steps()
+
+    @classmethod
+    @functools.cache
+    def installed_capabilities(cls) -> list["type[Capability]"]:
+        """Derived, never declared: returning a capability's request event from a step is what installs it."""
+        from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
+
+        return CapabilityCatalog.called_by(cls.get_own_steps(), cls.declared_tool_capabilities())
+
+    @classmethod
+    @functools.cache
+    def get_steps(cls) -> list[Callable]:
+        """The blueprint's own steps plus the capability steps its calls can trigger, as one flat set."""
+        from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
+
+        return [
+            *cls.get_own_steps(),
+            *CapabilityCatalog.reachable_steps(cls.get_own_steps(), cls.declared_tool_capabilities()),
+        ]
+
+    @classmethod
+    @functools.cache
+    def tool_sets(cls) -> list["ToolSet"]:
+        """The tool sets the blueprint declares as class attributes with `ToolLoop.over(...)`, inherited ones too."""
+        from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
+
+        found: dict[str, ToolSet] = {}
+        for klass in reversed(cls.__mro__):
+            found |= {name: value for name, value in vars(klass).items() if isinstance(value, ToolSet)}
+        return list(found.values())
+
+    @classmethod
+    def tool_set(cls, name: str) -> "ToolSet":
+        return next(tool_set for tool_set in cls.tool_sets() if tool_set.name == name)
+
+    @classmethod
+    def tool_set_offering(cls, tool_name: str | None) -> "ToolSet | None":
+        return next((tool_set for tool_set in cls.tool_sets() if tool_name in tool_set.names()), None)
+
+    @classmethod
+    def declared_tool_capabilities(cls) -> list["type[Capability]"]:
+        """Declaring a capability as a tool installs it, so a model-chosen call can run its steps."""
+        return list(dict.fromkeys(c for tool_set in cls.tool_sets() for c in tool_set.capabilities))
+
+    @classmethod
+    def validate_workflow(cls, agent_config_type: type[AgentConfig]) -> None:
+        """Refuse a blueprint whose composed workflow would stall or crash before it runs.
+
+        Called by the runner with the config it was handed. Collects every problem at once: a step waiting for
+        an event nothing produces, two steps sharing a name, and a capability whose form mixin the config lacks.
+        """
+        from swiss_ai_hub.agent.workflow.workflow_validation import WorkflowValidation
+
+        WorkflowValidation.for_blueprint(cls, agent_config_type).raise_for_problems()
+
+    @classmethod
+    def supported_features(cls) -> set[ChatFeature]:
+        """Derived, never declared: calling the capability that serves a feature is what makes it supported."""
+        return {
+            capability.chat_feature
+            for capability in cls.installed_capabilities()
+            if capability.chat_feature is not None
+        } | {feature for tool_set in cls.tool_sets() for feature in tool_set.chat_features()}
 
     @classmethod
     @functools.cache
@@ -79,7 +160,7 @@ class Agent(DispatchableWorkflow):
         These events indicate how a run/workflow can terminate.
         """
         output_events = cls.get_output_events()
-        return {event for event in output_events if issubclass(event, StopEvent)}
+        return {event for event in output_events if issubclass(event, StopEvent)} | set(cls.completion_stops)
 
     @classmethod
     @functools.cache

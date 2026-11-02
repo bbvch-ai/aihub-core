@@ -78,8 +78,9 @@
         </span>
         <code
           v-if="cap.rule"
+          v-tooltip.top="ruleTooltip(cap)"
           class="mt-0.5 shrink-0 font-mono text-[11px] text-surface-300 transition-colors group-hover/cap:text-surface-500 dark:text-surface-600 dark:group-hover/cap:text-surface-400"
-        >{{ cap.rule }}</code>
+        >{{ cap.companion_rules?.length ? `${cap.rule} +${cap.companion_rules.length}` : cap.rule }}</code>
       </label>
     </div>
 
@@ -95,8 +96,8 @@
         :group="sub"
         :depth="depth + 1"
         :readonly="readonly"
-        @add="(rule) => emit('add', rule)"
-        @remove="(rule) => emit('remove', rule)"
+        @add="(rules) => emit('add', rules)"
+        @remove="(rules) => emit('remove', rules)"
       />
     </div>
   </div>
@@ -119,12 +120,27 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  add: [rule: string]
-  remove: [rule: string]
+  add: [rules: string[]]
+  remove: [rules: string[]]
 }>()
+
+// Two lists, two meanings. `companion_rules` is written and cleared with the row — a knowledge database
+// owns its namespaces, and the grammar has no single form covering a node and its subtree, so that row
+// needs both. `revoked_rules` is only ever cleared: an agent class does not own the profiles built from it,
+// so ticking must never write `<class>.>`, while unticking still takes an old ceiling's copy of it. Each
+// direction emits one payload because the parent writes them through a single `v-model`, which cannot
+// absorb two writes in the same tick — the second would read a model value the first had not yet updated.
+// The badge counts only what ticking grants; what unticking additionally takes is left to the tooltip.
+const ruleTooltip = (cap: Capability) =>
+  [
+    cap.companion_rules?.length ? t('role.capability_also_granted', { rules: cap.companion_rules.join(', ') }) : null,
+    cap.revoked_rules?.length ? t('role.capability_also_cleared', { rules: cap.revoked_rules.join(', ') }) : null,
+  ].filter(Boolean).join('\n') || undefined
 
 const onToggle = (cap: Capability, value: boolean) => {
   if (props.readonly || !cap.rule) return
-  emit(value ? 'add' : 'remove', cap.rule)
+  const granted = [cap.rule, ...(cap.companion_rules ?? [])]
+  if (value) emit('add', granted)
+  else emit('remove', [...granted, ...(cap.revoked_rules ?? [])])
 }
 </script>

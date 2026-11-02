@@ -12,7 +12,7 @@ from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig
 
 from swiss_ai_hub.agent.agents.expert_rag_agent import ExpertRAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.expert_escalation_config import ExpertEscalationConfig
-from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserMemoryConfig
+from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
 )
@@ -46,12 +46,11 @@ def build() -> ExpertRAGAgentConfig:
                 " quando il contesto recuperato non è sufficiente."
             ),
         ),
-        icon="mage:book-open-check",
+        icon="mage:bookmark-check",
         llm=LLMConfig(
             model_name="text-generation/gemma-4-31B-it",
             default_parameter=LLMParameter(temperature=0.1, timeout=120.0),
         ),
-        number_of_input_tokens=128000,
         context_sufficient_guard=ContextSufficientGuardStepConfig(
             check_context_sufficiency=True,
             max_hops=2,

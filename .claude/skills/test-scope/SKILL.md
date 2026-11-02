@@ -16,6 +16,8 @@ packages/core ──→ packages/agent ──→ packages/process
     │              │
     ├──→ packages/api ┘
     ├──→ packages/bot
+    ├──→ packages/sysadmin-api
+    ├──→ packages/backup
     └──→ packages/pipeline
 ```
 
@@ -26,7 +28,7 @@ If `$ARGUMENTS` specifies scope names (e.g., `packages/api packages/agent`), use
 1. Run `git diff --name-only HEAD` to list staged + unstaged changed files
 2. Map each changed file to its scope by extracting the first path component
 3. Valid scopes: `packages/core`, `packages/agent`, `packages/api`, `packages/bot`, `packages/pipeline`,
-   `packages/process`, `packages/web`
+   `packages/process`, `packages/sysadmin-api`, `packages/backup`, `packages/web`, `packages/sysadmin-web`
 4. Ignore files not in a valid scope (e.g., root configs, docs)
 
 **Expected output**: A list like `Detected affected scopes: packages/core, packages/api`
@@ -48,7 +50,8 @@ Execute `make test` in each affected scope's directory, following this order:
 4. `packages/process` (depends on agent)
 5. `packages/api`
 6. `packages/bot`
-7. `packages/web` — run `make -C packages/web pr-ready` (ESLint, no pytest for frontend)
+7. `packages/sysadmin-api`, `packages/backup`
+8. `packages/web` / `packages/sysadmin-web` — run `make -C <scope> pr-ready` (ESLint, no pytest for frontend)
 
 Skip scopes not in the affected set. If a scope fails, continue running remaining scopes to collect all failures.
 
@@ -74,5 +77,9 @@ Produce a summary table:
 - **"No changes detected"**: Ensure you have uncommitted changes. Run `git status` to verify.
 - **"make test fails with ModuleNotFoundError"**: Dependencies may not be installed. Run `uv sync --all-packages` from
   the workspace root.
-- **No root `make test` exists**: Each scope must be tested individually via `make -C <scope> test`.
-- **Frontend scope**: `packages/web` has no pytest — `make -C packages/web pr-ready` runs ESLint instead.
+- **Root `make test`** runs every Python scope plus `check-env`; this skill runs only the affected scopes via
+  `make -C <scope> test`.
+- **Agent/API tests that need NATS or the API** require the Docker dev stack, and no locally running agent of the same
+  class (it shares the test runner's queue group and eats its events).
+- **Frontend scopes**: `packages/web` and `packages/sysadmin-web` have no tests — `make -C <scope> pr-ready` runs ESLint
+  instead.

@@ -44,8 +44,28 @@
       </Select>
     </div>
 
-    <!-- Namespace Selection (shown when database selected) -->
-    <div v-if="selectedDatabase">
+    <!-- Namespace scope (shown when database selected) -->
+    <div
+      v-if="selectedDatabase"
+      class="flex items-center gap-2"
+    >
+      <ToggleSwitch
+        v-model="allNamespaces"
+        input-id="vector-store-all-namespaces"
+      />
+      <label
+        for="vector-store-all-namespaces"
+        class="text-sm"
+      >{{ t('lib.vectorStore.allNamespaces.label') }}</label>
+    </div>
+    <small
+      v-if="selectedDatabase && allNamespaces"
+      class="-mt-3 text-surface-500"
+    >
+      {{ t('lib.vectorStore.allNamespaces.help', { count: namespaceOptions.length }) }}
+    </small>
+
+    <div v-if="selectedDatabase && !allNamespaces">
       <label
         for="vector-store-namespaces-select"
         class="mb-1 block text-sm font-medium"
@@ -60,6 +80,9 @@
         option-value="name"
         :placeholder="namespacePlaceholder ?? t('lib.vectorStore.namespaces.placeholder')"
         :filter="filter"
+        :invalid="namespaceScopeIsEmpty"
+        :aria-invalid="namespaceScopeIsEmpty"
+        aria-describedby="vector-store-namespaces-hint"
         display="chip"
         class="w-full"
       >
@@ -73,7 +96,18 @@
           </div>
         </template>
       </MultiSelect>
-      <small class="mt-1 text-surface-500">
+      <small
+        v-if="namespaceScopeIsEmpty"
+        id="vector-store-namespaces-hint"
+        class="mt-1 block text-red-500"
+      >
+        {{ t('lib.vectorStore.namespaces.required') }}
+      </small>
+      <small
+        v-else
+        id="vector-store-namespaces-hint"
+        class="mt-1 text-surface-500"
+      >
         {{ t('lib.vectorStore.namespaces.help') }}
       </small>
     </div>
@@ -104,6 +138,7 @@ import type { DatabaseDto } from '@core/sdk/client'
 interface VectorStoreInputValue {
   collection_name: string
   index_namespaces: string[]
+  all_namespaces: boolean
   allowed_metadata_filter_fields: string[]
 }
 
@@ -154,10 +189,20 @@ const selectedDatabase = computed({
   set: (value: string | null) => {
     if (value) {
       // When database changes, reset namespaces and allowed filter fields
-      emitValue(value, [], [])
+      emitValue(value, [], false, [])
     }
     else {
       props.context.node.input(null)
+    }
+  },
+})
+
+// Whole-database scope: switching it on discards any named namespaces so the two never coexist
+const allNamespaces = computed({
+  get: () => currentValue.value?.all_namespaces ?? false,
+  set: (value: boolean) => {
+    if (selectedDatabase.value) {
+      emitValue(selectedDatabase.value, value ? [] : selectedNamespaces.value, value, allowedFilterFields.value)
     }
   },
 })
@@ -167,10 +212,15 @@ const selectedNamespaces = computed({
   get: () => currentValue.value?.index_namespaces ?? [],
   set: (value: string[]) => {
     if (selectedDatabase.value) {
-      emitValue(selectedDatabase.value, value, allowedFilterFields.value)
+      emitValue(selectedDatabase.value, value, false, allowedFilterFields.value)
     }
   },
 })
+
+// The API refuses this scope on save and a run would abort on it, so it is flagged while the admin edits
+const namespaceScopeIsEmpty = computed(() =>
+  Boolean(selectedDatabase.value) && !allNamespaces.value && selectedNamespaces.value.length === 0,
+)
 
 // Allowed metadata filter fields (delegated to ChipsInput child component)
 const allowedFilterFields = computed(() => currentValue.value?.allowed_metadata_filter_fields ?? [])
@@ -179,7 +229,7 @@ const chipsInputContext = computed(() => ({
   node: {
     input: (value: string[]) => {
       if (selectedDatabase.value) {
-        emitValue(selectedDatabase.value, selectedNamespaces.value, value)
+        emitValue(selectedDatabase.value, selectedNamespaces.value, allNamespaces.value, value)
       }
     },
   },
@@ -189,10 +239,16 @@ const chipsInputContext = computed(() => ({
 }))
 
 // Emit complete value object
-function emitValue(collectionName: string, namespaces: string[], allowedFilterFieldKeys: string[]) {
+function emitValue(
+  collectionName: string,
+  namespaces: string[],
+  wholeDatabase: boolean,
+  allowedFilterFieldKeys: string[],
+) {
   props.context.node.input({
     collection_name: collectionName,
     index_namespaces: namespaces,
+    all_namespaces: wholeDatabase,
     allowed_metadata_filter_fields: allowedFilterFieldKeys,
   })
 }

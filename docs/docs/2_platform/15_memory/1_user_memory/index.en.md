@@ -127,8 +127,9 @@ User memory is designed to work in the background. You don't need to think about
 features exist for verification and control, not because you need to actively manage the system.
 
 ::: details How memory affects performance
-User memories are retrieved at the start of each conversation with an agent. The retrieval adds minimal latency –
-typically under 100ms. Semantic search ensures only relevant memories are included in the agent's context.
+User memories are retrieved for each message you send, using the question the agent derived from the conversation. The
+retrieval adds minimal latency – typically under 100ms. Semantic search ensures only relevant memories are included in
+the agent's context.
 :::
 
 ::: details Memory limits

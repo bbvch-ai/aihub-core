@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Annotated, Any
 
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.core.llms import LLM
 from opentelemetry import trace
@@ -140,6 +140,9 @@ class EventDisplayer:
             "The chat messages (prompt + context) to send to the LLM.",
         ],
         as_stop_step: Annotated[bool, "Stop Agent after response finished streaming"] = False,
+        tools: Annotated[
+            list[dict[str, Any]] | None, "OpenAI-format tools the model may call instead of, or after, answering"
+        ] = None,
     ) -> LLMEvent | LLMStopEvent:
         """
         Stream the LLM's response incrementally as chunked events, then return a final LLMEvent encapsulating
@@ -160,9 +163,13 @@ class EventDisplayer:
         then produce a final LLMEvent with the aggregate content.
         """
         processor = StreamProcessor(self, llm_config.model_name)
+        tool_calls = None
 
-        async for chunk in await llm.astream_chat(messages):
+        stream = await (llm.astream_chat(messages, tools=tools) if tools else llm.astream_chat(messages))
+        async for chunk in stream:
             await processor.process_chunk(chunk.delta)
+            if tools:
+                tool_calls = chunk.message.additional_kwargs.get("tool_calls") or tool_calls
 
         aggregate_content = await processor.finalize()
         prompt_tokens, completion_tokens = self._extract_token_counts(llm)
@@ -174,6 +181,16 @@ class EventDisplayer:
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
         )
+        if tool_calls:
+            llm_event.output_messages = [
+                Message.from_llama_index(
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=aggregate_content,
+                        additional_kwargs={"tool_calls": tool_calls},
+                    )
+                )
+            ]
 
         if as_stop_step:
             return LLMStopEvent(**llm_event.model_dump())

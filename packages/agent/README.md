@@ -63,9 +63,11 @@ import asyncio
 from swiss_ai_hub.agent.agents.llm_wrapping_agent import LLMWrappingAgent, LLMWrappingAgentConfig
 from swiss_ai_hub.agent.runners import AgentRunner
 
+
 async def main():
     runner = AgentRunner(agent_type=LLMWrappingAgent, agent_config=LLMWrappingAgentConfig.as_form())
     await runner.run_forever()
+
 
 asyncio.run(main())
 ```
@@ -84,6 +86,7 @@ from swiss_ai_hub.agent import Agent, AgentLocaleString, step
 from swiss_ai_hub.core.events.agent import UserMessageEvent, StopEvent
 from swiss_ai_hub.core.displayers import EventDisplayer
 
+
 class EchoAgent(Agent):
     name: ClassVar[AgentLocaleString] = AgentLocaleString(en="Echo Agent")
     description: ClassVar[AgentLocaleString] = AgentLocaleString(en="Repeats the user's message back.")
@@ -92,8 +95,8 @@ class EchoAgent(Agent):
     @step()
     async def echo(self, event: UserMessageEvent, displayer: EventDisplayer) -> StopEvent:
         last_message = event.messages[-1].content if event.messages else ""
-        await displayer.display_chunk(f"You said: {last_message}")   # streamed to the UI in real time
-        return StopEvent()                                           # terminates the run
+        await displayer.display_chunk(f"You said: {last_message}")  # streamed to the UI in real time
+        return StopEvent()  # terminates the run
 ```
 
 Accepting `UserMessageEvent` as the entry event makes the agent **conversational**. The `displayer` parameter is
@@ -128,6 +131,7 @@ from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form.elements import Textarea
 from swiss_ai_hub.core.i18n import LocaleString
+
 
 class EchoAgentConfig(AgentConfig):
     greeting: Annotated[str | Textarea, Field(description="Prefix for the echo")] = "You said:"
@@ -246,6 +250,7 @@ Import any of these from `swiss_ai_hub.agent.agents.<name>` and run them as-is, 
 | Agent                     | Purpose                                                             |
 | ------------------------- | ------------------------------------------------------------------- |
 | `LLMWrappingAgent`        | Simple LLM chat passthrough (minimal 2-step workflow)               |
+| `WebFetchAgent`           | `LLMWrappingAgent` that always reads the web pages a message links  |
 | `RAGAgent`                | Knowledge QA — multi-source retrieval + reranking + user/org memory |
 | `RetrievalAgent`          | Pure document retrieval, no LLM — returns structured context        |
 | `FewShotAgent`            | Pattern-matching with few-shot examples + a suitability guard       |

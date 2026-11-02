@@ -12,9 +12,9 @@ Generate a list page for a new resource. The resource name should be provided vi
 
 1. Read the frontend scope guide: `packages/web/CLAUDE.md`
 2. Study these reference pages:
-   - Simple list: `packages/web/pages/service/roles.vue`
-   - Complex list with grouping: `packages/web/pages/service/agents.vue`
-   - Knowledge list: `packages/web/pages/service/knowledge.vue`
+   - Simple list: `packages/web/pages/[tenant]/service/roles.vue`
+   - Complex list with grouping: `packages/web/pages/[tenant]/service/agents.vue`
+   - Knowledge list: `packages/web/pages/[tenant]/service/knowledge.vue`
 
 ## Step 1: Check SDK Availability
 
@@ -33,7 +33,7 @@ If composables don't exist yet, create them first using the patterns from `/scaf
 
 ## Step 3: Create the List Page
 
-Create `packages/web/pages/service/{resource}s.vue`:
+Create `packages/web/pages/[tenant]/service/{resource}s.vue`:
 
 ```vue
 <template>
@@ -81,10 +81,8 @@ Create `packages/web/pages/service/{resource}s.vue`:
 <script setup lang="ts">
 import type { <Resource>Dto } from '@core/sdk/client'
 
-import { useLocalePath } from '#i18n'
-
 const router = useRouter()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 const { t } = useI18n()
 
 const { <resource>s, <resource>sAreLoading } = use<Resource>s()
@@ -92,7 +90,7 @@ const { <resource>s, <resource>sAreLoading } = use<Resource>s()
 const createModalOpen = ref(false)
 
 const toDetail = (item: <Resource>Dto) => {
-  router.push(localePath(`/service/<resource>s/${item.id}/overview`))
+  router.push(tenantPath(`/service/<resource>s/${item.id}/overview`))
 }
 </script>
 ```
@@ -107,7 +105,8 @@ const toDetail = (item: <Resource>Dto) => {
    detail routes as a second column.
 4. **Card grid**: Use `grid grid-cols-2 gap-4 2xl:grid-cols-2` for consistent card layout.
 5. **Create button**: Top-right aligned with `flex w-full justify-end`.
-6. **Navigation**: Always use `localePath()` for i18n-aware routing.
+6. **Navigation**: Always use `useTenantPath()` (wraps `useLocalePath()` and injects the `[tenant]` segment); paths are
+   written without locale or tenant (`/service/roles`).
 
 ## Step 4: Create Card Component
 
@@ -195,9 +194,10 @@ Add translation keys in all 4 locale files (`packages/web/i18n/locales/{de,en,fr
 
 ## Step 6: Verify
 
-1. Check Nuxt file-based routing resolves the new page: filename must be `{resource}s.vue` (plural) in `pages/service/`
-2. Verify `NuxtPage` renders nested routes: create a placeholder `pages/service/{resource}s/` directory if detail routes
-   are planned
+1. Check Nuxt file-based routing resolves the new page: filename must be `{resource}s.vue` (plural) in
+   `pages/[tenant]/service/`
+2. Verify `NuxtPage` renders nested routes: create a placeholder `pages/[tenant]/service/{resource}s/` directory if
+   detail routes are planned
 3. Check sidebar registration: `useSuite()` → `useApps()` fetches service definitions from the API — the new resource
    may need API-side registration
 4. Verify i18n keys exist in ALL 4 locale files (`de.yaml`, `en.yaml`, `fr.yaml`, `it.yaml`)
@@ -211,7 +211,7 @@ Add translation keys in all 4 locale files (`packages/web/i18n/locales/{de,en,fr
 - **SDK types for props**: Import from `@core/sdk/client`, never define manually
 - **i18n all text**: `{{ t('key.path') }}` for everything user-visible
 - **Pinia-Colada**: `defineQuery`/`defineMutation` -- never raw fetch or global stores
-- **`useLocalePath()`**: Always for navigation -- `router.push(localePath('/path'))`
+- **`useTenantPath()`**: Always for navigation -- `router.push(tenantPath('/service/path'))` (auto-imported)
 - **`useConfirm()` + `useToast()`**: For delete confirmations and success/error messages
 
 ## Examples
@@ -220,7 +220,7 @@ Add translation keys in all 4 locale files (`packages/web/i18n/locales/{de,en,fr
 
 **Output files created**:
 
-1. `packages/web/pages/service/pipelines.vue` -- List page with card grid
+1. `packages/web/pages/[tenant]/service/pipelines.vue` -- List page with card grid
 2. `packages/web/components/Pipeline/Card.vue` -- Resource card component
 3. `packages/web/composables/pipeline/usePipelines.ts` -- List query composable
 4. `packages/web/composables/pipeline/useCreatePipeline.ts` -- Create mutation composable

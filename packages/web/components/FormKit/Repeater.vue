@@ -99,11 +99,8 @@ const isRemoveDisabled = computed(() => {
 
 function addItem() {
   if (isAddDisabled.value) return
-  if (!modelValue.value) {
-    modelValue.value = []
-  }
   rowKeys.value.push(makeRowKey())
-  modelValue.value.push(props.defaultItem ? cloneDeep(props.defaultItem) : {})
+  modelValue.value = [...items.value, props.defaultItem ? cloneDeep(props.defaultItem) : {}]
 }
 
 function removeItem(index: number) {

@@ -1,7 +1,9 @@
 import hashlib
 import logging
-from asyncio import sleep
-from functools import reduce
+from asyncio import sleep, to_thread
+from collections.abc import Awaitable, Callable
+from enum import StrEnum
+from functools import partial, reduce
 from operator import or_
 from typing import Annotated, override
 
@@ -21,6 +23,7 @@ from swiss_ai_hub.core.auth.usage import (
     use_usage_limits,
 )
 from swiss_ai_hub.core.dependencies import use_nats
+from swiss_ai_hub.core.discovery import DiscoveryKind, DiscoverySettings
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
@@ -57,17 +60,27 @@ from swiss_ai_hub.api.services.model_creation_service import ModelCreationServic
 logger = logging.getLogger(__name__)
 
 
-class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
+class SyncTarget(StrEnum):
+    LANGFUSE = "langfuse"
+    OPENWEBUI = "openwebui"
+
+
+class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
     """
     This service ensures that new agents in the system are automatically registered.
     This ensures that the API and the Agents are decoupled.
 
     It broadcasts NATS discovery requests to find online agents and:
     1. Updates their last_discovered timestamp (which determines online status)
-    2. Registers/deregisters dynamic API endpoints for agent events
+    2. Registers/deregisters dynamic API endpoints for agent events at the CLASS level (not instance level)
+    3. After a completed round, syncs agent instances and knowledge to the external provisioners
+
+    Endpoints use {agent_id} as a FastAPI path parameter, with instance validation at request time.
     """
 
-    _AGENTS_HASH_KEY = "discovery:agents:hash"
+    discovery_kind = DiscoveryKind.AGENT
+
+    _AGENTS_HASH_KEY_PREFIX = "discovery:agents:hash"
     _AGENTS_HASH_TTL = 3600
 
     def __init__(
@@ -77,61 +90,53 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         controller: AgentController,
         locale_handler: LocaleHandler,
         redis: Redis,
-        discovery_interval: int = 60,
+        settings: DiscoverySettings | None = None,
     ):
-        super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
+        super().__init__(nc, api_app, controller, locale_handler, redis, settings)
         self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
         self._redis = redis
         self._langfuse_provisioner = LangfuseProvisioner()
         self._openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
+        self._synced_targets: set[SyncTarget] = set()
 
     @override
-    async def _discover_and_register(self):
-        """
-        Discovers agent classes via NATS broadcast and registers class-level endpoints.
+    def _class_name_of(self, dto: AgentClassDTO) -> str:
+        return dto.agent_class
 
-        This method:
-        1. Broadcasts a NATS discovery request to all running agents
-        2. Collects responses and updates last_discovered timestamps in database
-        3. Registers/deregisters dynamic API endpoints at the CLASS level (not instance level)
+    @override
+    def _register_discovered_class(self, dto: AgentClassDTO) -> None:
+        self._register_class_endpoints(
+            agent_class=dto.agent_class,
+            start_events=dto.start_events,
+            stop_events=dto.stop_events,
+            hitl_request_events=dto.hitl_request_events,
+            hitl_response_events=dto.hitl_response_events,
+        )
 
-        Endpoints use {agent_id} as a FastAPI path parameter, with instance validation at request time.
-        """
-        # Step 1: Discover which agent classes are online via NATS broadcast
-        discovered_classes: list[AgentClassDTO] = await self._broadcast_discovery()
+    @override
+    def _online_class_names(self) -> set[str]:
+        return AgentClassEntity.get_online_class_names()
 
-        online_class_names = {dto.agent_class for dto in discovered_classes}
-
-        # Step 2: Deregister endpoints for classes no longer online
-        for agent_class in list(self.registered_classes):
-            if agent_class not in online_class_names:
-                self._deregister_endpoints_for_class(agent_class)
-
-        self.app.openapi_schema = None
-
-        # Step 3: Register endpoints for newly discovered classes
-        for agent_class_dto in discovered_classes:
-            if agent_class_dto.agent_class not in self.registered_classes:
-                self._register_class_endpoints(
-                    agent_class=agent_class_dto.agent_class,
-                    start_events=agent_class_dto.start_events,
-                    stop_events=agent_class_dto.stop_events,
-                    hitl_request_events=agent_class_dto.hitl_request_events,
-                    hitl_response_events=agent_class_dto.hitl_response_events,
-                )
-                self.registered_classes.add(agent_class_dto.agent_class)
-                logger.info(f"Registered class-level endpoints for agent class: {agent_class_dto.agent_class}")
-
-        # Step 4: Sync agent instances to external provisioners (Langfuse, OpenWebUI)
+    @override
+    async def _after_round(self) -> None:
         await self._sync_agent_instances_to_provisioners()
+        # Collections a pipeline creates signal nothing here, so the knowledge entries are reconciled every round
+        await self._sync_knowledge_to_openwebui()
 
+    async def _sync_knowledge_to_openwebui(self) -> None:
+        try:
+            await self._openwebui_provisioner.sync_knowledge()
+        except Exception as e:
+            logger.warning(f"OpenWebUI knowledge sync failed (non-fatal): {e}")
+
+    @override
     async def _broadcast_discovery(self) -> list[AgentClassDTO]:
         """
         Broadcasts a NATS discovery request to all agents and collects responses.
         Updates the last_discovered timestamp for responding agent classes.
 
-        Returns a list of AgentClassDTO for all online agent classes.
+        Returns a list of AgentClassDTO for the agent classes that answered this round.
         """
         call_id = str(ObjectId())
         discovery_responses: list[AgentClassDiscoveryResponseEvent] = []
@@ -155,8 +160,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             subject=self.topic_manager.get_agent_class_discovery_subject_request(call_id=call_id),
         )
 
-        # Wait briefly for responses
-        await sleep(10)
+        await sleep(self.settings.RESPONSE_WAIT_SECONDS)
         await nc_subscriber.stop()
 
         unique_agents_dict: dict[str, AgentClassDTO] = {}
@@ -164,44 +168,64 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         for response in discovery_responses:
             unique_key = response.agent_class
 
-            if unique_key not in unique_agents_dict:
-                agent_class_dto = AgentClassDTO.from_discovery_event(response)
-                unique_agents_dict[unique_key] = agent_class_dto
-
-                AgentClassEntity.create_or_update(response)
+            if unique_key not in unique_agents_dict and await self._stamp_answer(
+                unique_key, partial(AgentClassEntity.create_or_update, response)
+            ):
+                unique_agents_dict[unique_key] = AgentClassDTO.from_discovery_event(response)
 
         return list(unique_agents_dict.values())
 
     async def _sync_agent_instances_to_provisioners(self) -> None:
-        """Sync online agent instances to external provisioners when the set changes."""
+        """Each target carries its own hash so a permanently failing one does not re-drive the healthy one."""
         name_locale_handler = ApiLocaleHandler(locale=self._openwebui_provisioner.model_name_locale)
         instances = await AgentService.get_all_agent_instances(t=name_locale_handler, online=True)
 
-        current_set = {(inst.agent_class, inst.agent_id, inst.name) for inst in instances}
+        features_by_class = await to_thread(self._supported_features_by_class)
+        current_set = {
+            (inst.agent_class, inst.agent_id, inst.name, ",".join(features_by_class.get(inst.agent_class, [])))
+            for inst in instances
+        }
         current_hash = self._compute_agents_hash(current_set)
 
-        if await self._agents_hash_unchanged(current_hash):
+        await self._sync_target(SyncTarget.LANGFUSE, self._sync_agent_instances_to_langfuse, instances, current_hash)
+        await self._sync_target(SyncTarget.OPENWEBUI, self._sync_agent_instances_to_openwebui, instances, current_hash)
+
+    async def _sync_target(
+        self,
+        target: SyncTarget,
+        sync: Callable[[list[FullAgentInstanceDTO]], Awaitable[bool]],
+        instances: list[FullAgentInstanceDTO],
+        current_hash: str,
+    ) -> None:
+        """Startup provisioning re-registers the connections with an empty model list, so a hash left behind by a
+        previous process describes state this one has already discarded — each target syncs once before trusting it."""
+        if target in self._synced_targets and await self._agents_hash_unchanged(target, current_hash):
             return
 
-        langfuse_ok = await self._sync_agent_instances_to_langfuse(instances)
-        openwebui_ok = await self._sync_agent_instances_to_openwebui(instances)
-
-        if langfuse_ok and openwebui_ok:
-            await self._store_agents_hash(current_hash)
+        if await sync(instances):
+            self._synced_targets.add(target)
+            await self._store_agents_hash(target, current_hash)
 
     @staticmethod
-    def _compute_agents_hash(agent_set: set[tuple[str, str, str]]) -> str:
-        normalized = sorted(f"{ac}:{ai}:{name}" for ac, ai, name in agent_set)
+    def _compute_agents_hash(agent_set: set[tuple[str, str, str, str]]) -> str:
+        """The supported features are part of the hash, so a blueprint gaining one re-syncs its toggles."""
+        normalized = sorted(f"{ac}:{ai}:{name}:{features}" for ac, ai, name, features in agent_set)
         return hashlib.sha256(",".join(normalized).encode()).hexdigest()
 
-    async def _agents_hash_unchanged(self, current_hash: str) -> bool:
-        stored_hash = await self._redis.get(self._AGENTS_HASH_KEY)
-        if stored_hash and stored_hash.decode() == current_hash:
-            return True
-        return False
+    @staticmethod
+    def _supported_features_by_class() -> dict[str, list[str]]:
+        return {entity.agent_class: sorted(entity.supported_features) for entity in AgentClassEntity.objects()}
 
-    async def _store_agents_hash(self, agents_hash: str) -> None:
-        await self._redis.set(self._AGENTS_HASH_KEY, agents_hash, ex=self._AGENTS_HASH_TTL)
+    @classmethod
+    def _agents_hash_key(cls, target: SyncTarget) -> str:
+        return f"{cls._AGENTS_HASH_KEY_PREFIX}:{target}"
+
+    async def _agents_hash_unchanged(self, target: SyncTarget, current_hash: str) -> bool:
+        stored_hash = await self._redis.get(self._agents_hash_key(target))
+        return bool(stored_hash) and stored_hash.decode() == current_hash
+
+    async def _store_agents_hash(self, target: SyncTarget, agents_hash: str) -> None:
+        await self._redis.set(self._agents_hash_key(target), agents_hash, ex=self._AGENTS_HASH_TTL)
 
     async def _sync_agent_instances_to_langfuse(self, instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to Langfuse so they appear in the experiment model dropdown."""
@@ -216,8 +240,14 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     async def _sync_agent_instances_to_openwebui(self, instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
+            features_by_class = await to_thread(self._supported_features_by_class)
             online_agents = [
-                OnlineAgent(agent_class=inst.agent_class, agent_id=inst.agent_id, display_name=inst.name)
+                OnlineAgent(
+                    agent_class=inst.agent_class,
+                    agent_id=inst.agent_id,
+                    display_name=inst.name,
+                    supported_features=features_by_class.get(inst.agent_class, []),
+                )
                 for inst in instances
                 if inst.is_conversational
             ]

@@ -3,10 +3,19 @@ from typing import Any, NamedTuple, TypeVar
 from fastapi import HTTPException
 from pydantic import BaseModel, ValidationError
 from swiss_ai_hub.core.agents import CRON_CONFIG_KEY
-from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
-from swiss_ai_hub.core.i18n import LOCALES, LocaleString
+from swiss_ai_hub.core.form import (
+    FormkitElement,
+    Group,
+    PrimeVueElement,
+    Repeater,
+    normalize_empty_locale_strings,
+    normalize_empty_objects_to_none,
+    transform_formkit_arrays,
+)
+from swiss_ai_hub.core.i18n import LOCALES, LocaleHandler, LocaleString
+from swiss_ai_hub.core.persistence import AgentInstanceRef
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
-from swiss_ai_hub.core.scheduling import CronSchedule
+from swiss_ai_hub.core.scheduling import CronSchedule, ScheduleAdmission
 
 
 class ConfigMetadata(NamedTuple):
@@ -42,7 +51,26 @@ class InstanceConfigHelper:
         return config
 
     @staticmethod
-    def validate_config_for_create(config: dict[str, Any], config_model: type[BaseModel]) -> BaseModel:
+    def with_schema_defaults(config: dict[str, Any], config_schema: dict[str, Any]) -> dict[str, Any]:
+        """Fill top-level keys a stored config predates with the default the agent applies at runtime.
+
+        The edit form otherwise seeds a missing key from the form element's value, which may differ from
+        the model default, so saving an old profile would silently change its behaviour. Nested, list
+        and null defaults stay with the frontend, whose group and nullable-toggle seeding depends on them.
+        """
+        schema_defaults = {
+            name: prop["default"]
+            for name, prop in config_schema.get("properties", {}).items()
+            if prop.get("default") is not None and not isinstance(prop["default"], dict | list)
+        }
+        return {**schema_defaults, **config}
+
+    @staticmethod
+    def validate_config_for_create(
+        config: dict[str, Any],
+        config_model: type[BaseModel],
+        agent: AgentInstanceRef | None = None,
+    ) -> BaseModel:
         """Validate configuration for instance creation with detailed field-path error messages."""
         try:
             instance = config_model.model_validate(config)
@@ -54,11 +82,15 @@ class InstanceConfigHelper:
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(error_messages)}")
 
         InstanceConfigHelper.validate_identity_locale_fields(instance)
-        InstanceConfigHelper.validate_cron_field(config)
+        InstanceConfigHelper.validate_cron_field(config, agent)
         return instance
 
     @staticmethod
-    def validate_config_for_update(config: dict[str, Any], config_model: type[BaseModel]) -> BaseModel:
+    def validate_config_for_update(
+        config: dict[str, Any],
+        config_model: type[BaseModel],
+        agent: AgentInstanceRef | None = None,
+    ) -> BaseModel:
         """Validate configuration for instance update with simple error passthrough."""
         try:
             instance = config_model.model_validate(config)
@@ -66,12 +98,224 @@ class InstanceConfigHelper:
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {e.errors()}")
 
         InstanceConfigHelper.validate_identity_locale_fields(instance)
-        InstanceConfigHelper.validate_cron_field(config)
+        InstanceConfigHelper.validate_cron_field(config, agent)
         return instance
 
     @staticmethod
-    def validate_cron_field(config: dict[str, Any]) -> None:
-        """Reject a config whose cron schedule is malformed, before it is stored.
+    def reject_undeclared_fields(elements: list[FormkitElement], config: dict[str, Any]) -> None:
+        """Reject a submission carrying a field the announced form never declared.
+
+        The generated model cannot do this: jambo builds it with Pydantic's default `extra="ignore"`, so an
+        unrecognised key validates and is dropped rather than refused — and the caller stores what was
+        submitted, so a mistyped knob is persisted and then silently ignored by whoever reads it back.
+
+        Checked against the announced elements rather than by forbidding extras on the generated model, which
+        does work: jambo ignores `additionalProperties`, so the submission schema cannot carry the rule, but
+        mutating each built model's `extra` and rebuilding does reject the same keys with better error
+        locations. It is declined on scope and coupling. `create_config_model` is shared with the agent and
+        process paths, where an unannounced key is legitimate — `AgentConfig.cron` is deliberately absent from
+        the form and injected only for schedulable classes — so forbidding extras would change those surfaces
+        blind. And the rebuild is only correct while jambo's ref cache happens to hold children before parents,
+        which it does not promise.
+        """
+        undeclared = InstanceConfigHelper._undeclared_fields(elements, config, prefix="")
+        if not undeclared:
+            return
+
+        raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(undeclared)}")
+
+    @staticmethod
+    def _undeclared_fields(elements: list[FormkitElement], config: dict[str, Any], prefix: str) -> list[str]:
+        """Every config path with no element of that name, deepest-last, as `field`, `group.field`,
+        `repeater.0.field`."""
+        declared = {name for element in elements if (name := getattr(element, "name", None))}
+        # `normalize_form_configuration` strips FormKit's own keys only at the top level, and making it
+        # recursive would change what the agent and process paths persist — `Form.deserialize_form` dispatches
+        # on a nested `_form_name`. So the same convention is applied locally, at every depth.
+        # `normalize_form_configuration` turns an empty submission into None; nothing is undeclared in it.
+        config = config or {}
+        undeclared = [
+            f"{prefix}{key}: not a configurable field of the announced form"
+            for key in config
+            if key not in declared and not key.startswith("_")
+        ]
+
+        for element in elements:
+            name = getattr(element, "name", None)
+            if name:
+                undeclared.extend(
+                    InstanceConfigHelper._undeclared_in_element(element, config.get(name), f"{prefix}{name}")
+                )
+
+        return undeclared
+
+    @staticmethod
+    def _undeclared_in_element(element: FormkitElement, value: Any, field_path: str) -> list[str]:
+        """One element of an announced form: a container to walk into, or a leaf whose value is opaque.
+
+        Only a group and a repeater put a caller-supplied key space underneath them; anything a leaf holds is
+        that element's own value, and descending into it would start rejecting the keys of a `LocaleString`.
+        """
+        if isinstance(element, Group) and isinstance(value, dict):
+            return InstanceConfigHelper._undeclared_fields(element.children, value, f"{field_path}.")
+        if isinstance(element, Repeater) and isinstance(value, list):
+            return InstanceConfigHelper._undeclared_in_entries(element.children, value, field_path)
+        return []
+
+    @staticmethod
+    def _undeclared_in_entries(children: list[FormkitElement], entries: list[Any], field_path: str) -> list[str]:
+        """Each repeated entry against the same announced children, indexed so a rejection names the row."""
+        undeclared: list[str] = []
+        for index, entry in enumerate(entries):
+            if isinstance(entry, dict):
+                undeclared.extend(InstanceConfigHelper._undeclared_fields(children, entry, f"{field_path}.{index}."))
+        return undeclared
+
+    @staticmethod
+    def reject_blank_required_fields(elements: list[FormkitElement], config: dict[str, Any] | None) -> None:
+        """Reject a submission that left a field blank which the announced form marks required.
+
+        The generated model cannot do this reliably. `required` on a form element carries FormKit's
+        meaning — the user must put something here — while the JSON schema only carries Pydantic's: the
+        key is present, and `{"type": "string"}` accepts `""` as readily as a real value. A field with no
+        Pydantic default (e.g. `ImapClientConfig.host`) does reject `None`, but only through `str`'s type
+        check, an accident of the annotation rather than a required-field rule — the same field accepts
+        `""`. Which of the two a blank field arrives as depends on how it was left empty: a fresh form
+        seeds an untouched field to `None`, a template ships `""` placeholders (the shared-mailbox
+        template leaves the whole mailbox connection blank on purpose), so both are rejected here.
+
+        Read from the announced elements rather than the schema, because they are the only place holding
+        the form's own answer.
+
+        Runs before the generated model so a blank field is named as itself. The model, when it does
+        reject a leaf, reports either a missing key or a type mismatch and says nothing about a
+        present-and-empty value, which is the case that actually reaches here. An empty submission
+        arrives as `None` from `normalize_form_configuration`, and repeaters are read in FormKit's
+        numbered-dict shape too, both as in `reject_invalid_values`.
+        """
+        blank = InstanceConfigHelper._blank_required_fields(elements, transform_formkit_arrays(config or {}), prefix="")
+        if not blank:
+            return
+
+        raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(blank)}")
+
+    @staticmethod
+    def _blank_required_fields(elements: list[FormkitElement], config: dict[str, Any], prefix: str) -> list[str]:
+        """Every required leaf left blank, deepest-last, as `field`, `group.field`, `repeater.0.field`."""
+        blank: list[str] = []
+
+        for element in elements:
+            name = getattr(element, "name", None)
+            if not name:
+                continue
+
+            value = config.get(name)
+            field_path = f"{prefix}{name}"
+
+            if isinstance(element, Group):
+                # Only descend into a submitted object. A null group is a nullable section switched off, and
+                # requiring the children it is not submitting would make the toggle impossible to leave off.
+                if isinstance(value, dict):
+                    blank.extend(InstanceConfigHelper._blank_required_fields(element.children, value, f"{field_path}."))
+            elif isinstance(element, Repeater):
+                blank.extend(InstanceConfigHelper._blank_required_in_entries(element.children, value, field_path))
+            elif InstanceConfigHelper._is_blank_required_leaf(element, value):
+                blank.append(f"{field_path}: required field is empty")
+
+        return blank
+
+    @staticmethod
+    def _blank_required_in_entries(children: list[FormkitElement], entries: Any, field_path: str) -> list[str]:
+        """Each repeated entry against the same announced children, indexed so a rejection names the row."""
+        if not isinstance(entries, list):
+            return []
+
+        blank: list[str] = []
+        for index, entry in enumerate(entries):
+            if isinstance(entry, dict):
+                blank.extend(InstanceConfigHelper._blank_required_fields(children, entry, f"{field_path}.{index}."))
+        return blank
+
+    @staticmethod
+    def _is_blank_required_leaf(element: FormkitElement, value: Any) -> bool:
+        """Whether this leaf is one the form requires and the submission left blank.
+
+        A conditional element is skipped: whether it is shown at all depends on a FormKit expression over the
+        rest of the form (`$get(...).value`), which only the browser can evaluate. Rejecting a field the user
+        was never offered would be a worse bug than the gap this closes.
+        """
+        if not isinstance(element, PrimeVueElement) or not element.required:
+            return False
+        if element.condition_if is not None:
+            return False
+        return InstanceConfigHelper._is_blank(value)
+
+    @staticmethod
+    def _is_blank(value: Any) -> bool:
+        """FormKit's `empty()`, over the values a submission can carry.
+
+        `None` and `""` are treated identically — deliberately, since which shape a blank field arrives in
+        depends on how it got there (an untouched fresh field seeds to `None`; a template's placeholder
+        carries `""`), not on whether it is actually filled in. `False` and `0` are values, not blanks — as
+        on the client, where an unchecked box satisfies `required` (and why `Form._prepare_formkit_element`
+        never auto-requires a toggle). Deliberately not trimmed, to match the plain `required` rule the
+        browser runs: `required:trim` is a separate opt-in rule, and being stricter here than the form would
+        reject a submission the user watched pass validation.
+        """
+        if value is None:
+            return True
+        if isinstance(value, str | list | dict | tuple):
+            return len(value) == 0
+        return False
+
+    @staticmethod
+    def reject_invalid_values(elements: list[FormkitElement], config: dict[str, Any] | None, t: LocaleHandler) -> None:
+        """Reject a submission holding a value its form element knows the config model would refuse.
+
+        Same jambo gap as `validate_cron_field`: a cross-field rule lives in a `model_validator`, which the
+        generated model does not carry, so the value is stored and then aborts every run when the runtime
+        validates the real config. The element owns the rule, so this only walks the announced form.
+
+        Repeaters are read in FormKit's numbered-dict shape too, because the runtime converts that shape
+        back to a list before validating and would reject what it finds there.
+        """
+        invalid = InstanceConfigHelper._invalid_values(elements, transform_formkit_arrays(config or {}), "", t)
+        if not invalid:
+            return
+
+        raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(invalid)}")
+
+    @staticmethod
+    def _invalid_values(
+        elements: list[FormkitElement], config: dict[str, Any], prefix: str, t: LocaleHandler
+    ) -> list[str]:
+        """Every rejected value under these elements, as `field: message`, `repeater.0.field: message`."""
+        invalid: list[str] = []
+        for element in elements:
+            name = getattr(element, "name", None)
+            if name:
+                invalid.extend(
+                    InstanceConfigHelper._invalid_in_element(element, config.get(name), f"{prefix}{name}", t)
+                )
+        return invalid
+
+    @staticmethod
+    def _invalid_in_element(element: FormkitElement, value: Any, field_path: str, t: LocaleHandler) -> list[str]:
+        """One element's own verdict, plus its children's when it is a group or a repeater."""
+        invalid = [f"{field_path}: {message}" for message in element.validate_value(field_path, value, t)]
+        if isinstance(element, Group) and isinstance(value, dict):
+            invalid.extend(InstanceConfigHelper._invalid_values(element.children, value, f"{field_path}.", t))
+        if isinstance(element, Repeater) and isinstance(value, list):
+            for index, entry in enumerate(value):
+                if isinstance(entry, dict):
+                    invalid.extend(
+                        InstanceConfigHelper._invalid_values(element.children, entry, f"{field_path}.{index}.", t)
+                    )
+        return invalid
+
+    @staticmethod
+    def validate_cron_field(config: dict[str, Any], agent: AgentInstanceRef | None = None) -> None:
+        """Reject a config whose cron schedule is malformed or too costly, before it is stored.
 
         Same jambo gap as `validate_identity_locale_fields`, with a far wider blast radius. `CronSchedule` rejects a
         bad expression and an unknown timezone in a `model_validator`, which the generated model does not carry: every
@@ -83,6 +327,10 @@ class InstanceConfigHelper:
         Keyed on the field name because `CRON_CONFIG_KEY` is platform-owned: `cron` lives on the `AgentConfig` base
         and the scheduler reads a profile's schedule from exactly this top-level key, so a blueprint cannot use the
         name for anything else.
+
+        The same call also rejects a schedule that is well-formed but produces more runs than the deployment allows.
+        How many a cron expression produces is computable from the expression alone, so the admin who typed it can be
+        told now — which is the only moment the answer is useful.
         """
         cron = config.get(CRON_CONFIG_KEY)
         if not isinstance(cron, dict):
@@ -96,10 +344,22 @@ class InstanceConfigHelper:
             return
 
         try:
-            CronSchedule.model_validate(cron)
+            schedule = CronSchedule.model_validate(cron)
         except ValidationError as e:
             details = "; ".join(InstanceConfigHelper._cron_error_message(error) for error in e.errors())
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {details}")
+
+        if agent is None:
+            # Only the agent save path knows which profile is being written, and only agents carry a
+            # schedule at all — `cron` lives on `AgentConfig`. Without an identity the aggregate check
+            # would count the profile being edited against itself, so it is skipped rather than guessed.
+            return
+
+        rejection = ScheduleAdmission.rejection_reason(schedule, agent.agent_class, agent.agent_id)
+        if rejection:
+            raise HTTPException(
+                status_code=400, detail=f"Configuration validation failed: {CRON_CONFIG_KEY}: {rejection}"
+            )
 
     @staticmethod
     def _cron_error_message(error: Any) -> str:

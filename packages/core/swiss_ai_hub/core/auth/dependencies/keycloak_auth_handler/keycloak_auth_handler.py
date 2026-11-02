@@ -7,6 +7,7 @@ from cachetools import TTLCache
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from fastapi import HTTPException, Request, Security
 from jwt.algorithms import RSAAlgorithm
+from redis.asyncio import Redis
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -110,7 +111,7 @@ class KeycloakAuthHandler(AuthHandler):
             # Sync tenant memberships from JWT tenants claim
             tenants_claim = decoded_token.get("tenants", [])
             self._sync_tenant_memberships(sub, tenants_claim)
-            await KeycloakAdminService.ensure_active_tenant(sub)
+            await KeycloakAdminService.ensure_active_tenant(sub, self._app_redis(request))
 
             return await self.build_identity(
                 user_id=sub,
@@ -134,6 +135,13 @@ class KeycloakAuthHandler(AuthHandler):
         except Exception as e:
             logger.exception("Unexpected error during token validation: %s", str(e))
             raise HTTPException(status_code=500, detail="Authentication error")
+
+    @staticmethod
+    def _app_redis(request: Request | None) -> Redis | None:
+        """The API and sysadmin-api keep a Redis client on app state; the bot has none."""
+        if request is None:
+            return None
+        return getattr(request.app.state, "redis", None)
 
     @staticmethod
     def _extract_tenant_ids_from_claim(tenants_claim: list[str]) -> list[str]:

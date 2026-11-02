@@ -1,0 +1,59 @@
+---
+config:
+  number_of_input_tokens:
+    label: Maximale Eingabe-Tokens
+    help: Wie viel Gesprächsverlauf und Kontext das Modell höchstens erhält. Ohne
+      eigenes Limit nutzt der Agent das Eingabefenster des Modells (abzüglich einer
+      Reserve); ein tieferes Limit senkt die Kosten.
+    toggle_label: Eigenes Eingabe-Limit festlegen
+  condense_question:
+    label: Frage kondensieren
+    help: Formuliert die letzte Nachricht anhand des bisherigen Gesprächs in eine
+      eigenständige Frage um, bevor Gedächtnis, Retrieval und weiterer Kontext nachgeschlagen
+      werden. Deaktiviert wird die letzte Nachricht unverändert verwendet.
+steps:
+  derive_query:
+    name: Anfrage ableiten
+    description: Bestimmt die Frage, die in diesem Zug beantwortet wird, entweder
+      die letzte Nachricht unverändert oder aus dem Gespräch kondensiert.
+  compose_context:
+    name: Kontext zusammenstellen
+    description: Fügt die angeforderten Kontextblöcke, etwa Erinnerungen, innerhalb
+      des Eingabebudgets des Modells in den Chat-Verlauf ein.
+  complete:
+    name: Gespräch abschliessen
+    description: Schlägt aus der Antwort Folgefragen vor und beendet den Lauf mit
+      dem angeforderten Stopp-Ereignis.
+  limit_chat_history:
+    name: Chat-Verlauf begrenzen
+    description: Kürzt eingehende Chat-Nachrichten auf das konfigurierte Token-Limit.
+  gather_context:
+    name: Kontext sammeln
+    description: 'Fragt die Fähigkeiten nach dem Kontext des Zugs: den Erinnerungen
+      des Benutzers und der Organisation sowie den angehängten Dateien.'
+  assemble_prompt:
+    name: Prompt zusammenstellen
+    description: Fordert den Chat-Verlauf mit dem abgerufenen Kontext an.
+thoughts:
+  condensation_empty: Der Condenser hat keine eigenständige Frage geliefert, daher
+    gibt es für diesen Zug keine nutzbare Suchanfrage. Die Anfrage wird abgelehnt,
+    statt die Rohnachricht zu verwenden.
+  input_too_large: 'Die Eingabe passt nicht in das Kontextfenster des Modells: rund
+    %{tokens} Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des
+    Modells wird abgelehnt.'
+  images_not_accepted: Die Nachricht enthält %{images} Bilder, dieser Assistent gibt
+    seinem Modell %{model} jedoch keine Bilder weiter. Der Aufruf des Modells wird
+    abgelehnt.
+  too_many_images: Die Nachricht enthält %{images} Bilder, mehr als die %{max_images},
+    die das Modell %{model} pro Anfrage annimmt. Der Aufruf des Modells wird abgelehnt.
+messages:
+  images_not_accepted: Dieser Assistent kann keine Bilder ansehen. Bitte beschreiben
+    Sie den Bildinhalt in Textform, oder wechseln Sie zu einem Assistenten mit einem
+    Modell, das Bilder unterstützt.
+  too_many_images: Sie haben %{images} Bilder gesendet, ich kann aber höchstens %{max_images}
+    auf einmal ansehen. Bitte senden Sie weniger Bilder pro Nachricht.
+  condensation_empty: Ich konnte aus dieser Nachricht nicht ableiten, wonach ich suchen
+    soll. Bitte formulieren Sie Ihre Frage neu und versuchen Sie es erneut.
+  input_too_large: Diese Datei ist zu gross, als dass ich sie auf einmal lesen könnte.
+    Bitte laden Sie eine kleinere Datei hoch, teilen Sie sie auf, oder wechseln Sie
+    zu einem Assistenten mit einem Modell mit grösserem Kontextfenster.

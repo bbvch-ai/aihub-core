@@ -67,8 +67,8 @@ class TestNamespaceFilteringBranch:
                 vector_store=MilvusVectorStoreConfig(
                     collection_name="bucket_a",
                     dimensions=1024,
+                    index_namespaces=["ns1", "ns2"],
                 ),
-                index_namespaces=["ns1", "ns2"],
                 retrieve_k=5,
             ),
             KnowledgeRetrieverConfig(
@@ -76,8 +76,8 @@ class TestNamespaceFilteringBranch:
                 vector_store=MilvusVectorStoreConfig(
                     collection_name="bucket_b",
                     dimensions=1024,
+                    index_namespaces=["ns3"],
                 ),
-                index_namespaces=["ns3"],
                 retrieve_k=5,
             ),
         ]
@@ -117,9 +117,9 @@ class TestAdditionalFiltersWiring:
                 vector_store=MilvusVectorStoreConfig(
                     collection_name="bucket_a",
                     dimensions=1024,
+                    index_namespaces=["ns1"],
                     allowed_metadata_filter_fields=["snk"],
                 ),
-                index_namespaces=["ns1"],
                 retrieve_k=5,
             ),
         ]

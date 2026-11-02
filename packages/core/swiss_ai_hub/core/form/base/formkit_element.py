@@ -7,6 +7,7 @@ from pydantic import ConfigDict, Field
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
 class FormkitElement(BaseModel, abc.ABC):
@@ -37,9 +38,32 @@ class FormkitElement(BaseModel, abc.ABC):
             alias="defaultEnabled",
         ),
     ] = None
+    toggle_label: Annotated[
+        LocaleString | str | None,
+        Field(
+            description="For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', "
+            "which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+            alias="toggleLabel",
+        ),
+    ] = None
+    toggle_help: Annotated[
+        LocaleString | str | None,
+        Field(description="For a nullable element, the help text shown under its toggle.", alias="toggleHelp"),
+    ] = None
 
     @abc.abstractmethod
     def in_locale(self, t: LocaleHandler) -> Self: ...
+
+    def renders_own_unset_state(self) -> bool:
+        """Whether the element itself offers "not set" for a nullable field, so the form must not wrap it in the
+        generic enable toggle, which hides the input while it is off. Override in elements that keep the input in
+        view and show what applies while it is unset."""
+        return False
+
+    def anchored_at(self, id_prefix: str) -> Self:
+        """This element with paths it declares relative to its own form rewritten to the form root, once the form
+        is rendered and `id_prefix` is known. Override in elements that reference another field by path."""
+        return self
 
     def validate_authorization(
         self,
@@ -58,5 +82,14 @@ class FormkitElement(BaseModel, abc.ABC):
         cannot answer cross-tenant membership questions. `accessible_tenant_ids` is resolved
         once per request by the caller (Keycloak is the source of truth for membership) and
         passed down for elements that reference tenants.
+        """
+        return []
+
+    def validate_value(self, field_path: str, value: Any, t: LocaleHandler) -> list[str]:
+        """Messages for a submitted value that the config model would reject when the runtime loads it.
+
+        Override in elements whose data type carries a cross-field rule: the API validates saves against a
+        model rebuilt from the JSON Schema, which drops Python validators, so without this such a value is
+        stored and then aborts every run. The default accepts every value.
         """
         return []

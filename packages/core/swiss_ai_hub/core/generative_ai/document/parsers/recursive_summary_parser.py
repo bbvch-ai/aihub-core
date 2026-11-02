@@ -24,7 +24,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SUMMARIZATION_MAX_INPUT_TOKENS = 32768  # conservative default; Infomaniak serves gemma-4-31B-it at 100000
+DEFAULT_SUMMARIZATION_MAX_INPUT_TOKENS = 32768  # conservative default, below either provider's gemma-4-31B-it window
 
 # Absorbs the prompt-template overhead the budget check cannot measure until render time and the tokenizer
 # mismatch between our counter and the model actually enforcing the limit.
@@ -117,11 +117,10 @@ class LLMSummarizer:
 
         For the Latin-script EU-language content this pipeline processes, a character never costs more than
         `SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER` tokens, so a render at or under `budget /
-        SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER` is guaranteed to fit without the network round trip
-        `_count_tokens` costs. Symmetrically, no tokenizer we route through produces more than one token per
-        character, so a render past 4x the budget is guaranteed to overflow it. That round trip is only
-        load-bearing in the boundary between those two — never on a whole oversized document or a large
-        map-reduce batch, which the reject short-circuit keeps off `/utils/token_counter` entirely.
+        SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER` is guaranteed to fit without being counted. Symmetrically, no
+        tokenizer we route through produces more than one token per character, so a render past 4x the budget is
+        guaranteed to overflow it. Only the boundary between those two is counted, so a whole oversized document or
+        a large map-reduce batch is never tokenized just to be rejected.
         """
         rendered = self._summarize_prompt_template.format(text=text)
         if len(rendered) <= self._budget // SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER:
@@ -159,7 +158,7 @@ class RecursiveNodeSummarizer:
         if not nodes:
             return []
 
-        locale = nodes[0].metadata.get(LANGUAGE, NODE_LANGUAGE_ENGLISH)
+        locale = nodes[0].metadata.get(LANGUAGE) or NODE_LANGUAGE_ENGLISH
         locale_handler = LocaleHandler(locale=locale)
         llm_summarizer: LLMSummarizer = LLMSummarizer(
             llm=self._llm,
@@ -358,6 +357,9 @@ class RecursiveNodeSummarizer:
             text=summary_text,
             metadata=metadata,
             relationships={},
+            # Inherited with the metadata, so keys a document keeps out of its embeddings stay out of its summaries'.
+            excluded_embed_metadata_keys=original_node.excluded_embed_metadata_keys,
+            excluded_llm_metadata_keys=original_node.excluded_llm_metadata_keys,
         )
 
         if NodeRelationship.SOURCE in original_node.relationships:

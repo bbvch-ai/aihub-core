@@ -26,6 +26,8 @@ _EVERY_FIVE_MINUTES = {**_HOURLY, "minute": "*/5"}
 # discovered class has to be built in the host's zone — not by stripping tzinfo off a UTC value, which is
 # the mistake this suite previously encoded.
 _LOCAL_NOW = _NOW.astimezone().replace(tzinfo=None)
+# Where the completed discovery rounds put the online cut-off; classes stamped before it read offline.
+_ONLINE_THRESHOLD = _LOCAL_NOW - timedelta(minutes=5)
 
 
 def _config(agent_class: str = "CronDemoAgent", agent_id: str = "demo", schedule: dict | None = _HOURLY):
@@ -102,6 +104,7 @@ async def _run_tick(
     with (
         patch(f"{_MODULE}.datetime", **{"now.return_value": _NOW}),
         patch(f"{_MODULE}.AgentClassEntity.get_all_schedulable", return_value=classes),
+        patch(f"{_MODULE}.AgentClassEntity.online_threshold", return_value=_ONLINE_THRESHOLD),
         patch(f"{_MODULE}.AgentConfigEntityDocument.find_for_classes", return_value=configs or [_config()]),
         patch(f"{_MODULE}.ThreadEntity.get_or_create_scheduled_thread") as scheduled_thread,
         patch(f"{_MODULE}.ThreadEntity.scheduled_thread_id", return_value="thread-1"),
@@ -333,6 +336,43 @@ class TestInstanceSelection:
         await _run_tick(service, configs=[_config(agent_id="broken", schedule={"minute": "99"})])
 
         service._store.set_watermark.assert_awaited_once_with(_NOW)
+
+    @pytest.mark.asyncio
+    async def test_a_schedule_over_the_per_profile_ceiling_is_skipped(self, distributor: MagicMock) -> None:
+        """The save path rejects these, but only for rows written since it existed and only while the
+        setting held its value. Lowering the ceiling must not leave the profiles that were admissible
+        under the old one firing forever — the same write-validation-plus-scan-skip pairing a malformed
+        schedule gets."""
+        service = CronScheduler(
+            redis=MagicMock(),
+            external_agent_event_distributor=distributor,
+            settings=SchedulerSettings(MAX_RUNS_PER_PROFILE_PER_MONTH=100),
+        )
+
+        await _run_tick(service, configs=[_config(schedule=_HOURLY)])
+
+        distributor.distribute_event.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_an_over_ceiling_profile_does_not_starve_the_others(self, distributor: MagicMock) -> None:
+        service = CronScheduler(
+            redis=MagicMock(),
+            external_agent_event_distributor=distributor,
+            settings=SchedulerSettings(MAX_RUNS_PER_PROFILE_PER_MONTH=750),
+        )
+        every_five = _config(agent_id="greedy", schedule=_EVERY_FIVE_MINUTES)
+
+        await _run_tick(service, configs=[every_five, _config(agent_id="hourly", schedule=_HOURLY)])
+
+        fired = {call.kwargs["target_agent"].agent_id for call in distributor.distribute_event.call_args_list}
+        assert fired == {"hourly"}
+
+    @pytest.mark.asyncio
+    async def test_the_default_ceiling_skips_nothing(self, service: CronScheduler, distributor: MagicMock) -> None:
+        """Every-minute is supported, so an untouched deployment must fire it."""
+        await _run_tick(service, configs=[_config(schedule={**_HOURLY, "minute": "*"})])
+
+        distributor.distribute_event.assert_awaited()
 
     @pytest.mark.asyncio
     async def test_does_nothing_when_no_class_is_schedulable(

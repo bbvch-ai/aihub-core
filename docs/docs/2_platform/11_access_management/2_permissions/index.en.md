@@ -122,6 +122,10 @@ monitoring purposes.
 (`aihub.user.knowledge.hr_documents`) or namespace level (`aihub.user.knowledge.hr_documents.policies`), with
 hierarchical inheritance through the permission tree.
 
+**My Files**: Guarded by the service's own rule rather than by a per-resource rule, so a tenant whose access ceiling
+already covers the platform's user services covers My Files too. Whatever the rule, a user only ever reaches their own
+files.
+
 **Administrative Services**: Require explicit administrative permissions like `aihub.admin.users` or
 `aihub.admin.roles`. These services never appear for users without administrative grants, creating a clear separation
 between standard and administrative interfaces.

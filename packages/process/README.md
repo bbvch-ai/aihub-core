@@ -36,9 +36,10 @@ delegated to):
 ```python
 from swiss_ai_hub.process import AgenticProcess, process_step, Agent, Human
 
+
 class ReviewProcess(AgenticProcess):
     @process_step()
-    def analyze(self, work: ...) -> ...:        # delegate to an Agent, then a Human reviews, ...
+    def analyze(self, work: ...) -> ...:  # delegate to an Agent, then a Human reviews, ...
         ...
 ```
 

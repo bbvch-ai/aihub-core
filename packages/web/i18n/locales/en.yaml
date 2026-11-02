@@ -210,6 +210,8 @@ event:
     no_filters: No additional filters
   rag_stop:
     failure_reason:
+      condensation_empty: The question could not be condensed into something searchable
+        — this run was stopped before retrieval.
       context_insufficient: Retrieved context was insufficient — the answer is a fallback,
         not grounded in your knowledge sources.
       expert_declined: The human expert could not provide an answer — this run did
@@ -218,6 +220,8 @@ event:
         produce a grounded response.
       few_shot_rejected: The query did not match any known pattern, so the answer
         was produced without retrieval.
+      input_too_large: The message or attached file exceeded the model's context window,
+        so this run was stopped before calling the model.
   limitChatHistory:
     summary: Chat history limited to {count} messages
     assistant: Assistant
@@ -229,6 +233,14 @@ event:
     summary: Added {count} memory message to chat history | Added {count} memory messages
       to chat history
     description: Chat history was extended with relevant memories from previous interactions
+    assistant: Assistant
+    system: System
+    user: User
+  contextComposed:
+    summary: 'Context assembled for the model: {count} message | Context assembled
+      for the model: {count} messages'
+    description: The chat history the model received, with every retrieved context
+      block merged in
     assistant: Assistant
     system: System
     user: User
@@ -271,6 +283,14 @@ event:
       identity: Identity
       capabilities: Capabilities
       behavior: Behaviour
+  sandboxFileDisplayed:
+    file: File
+    type: Type
+    size: Size
+    path: In the sandbox
+  humanInTheLoopResponse:
+    confirmed: Confirmed
+    declined: Declined
   standaloneQuestionCondenser:
     summary: Question refined and condensed
     condensedQuestion: Condensed Question
@@ -289,6 +309,94 @@ event:
       delegations: Delegations
       delegatedTaskAgentInTheLoop: Delegated Task (Agent in the Loop)
       allEvents: All Events
+  parts:
+    noMessages: No messages
+    yes: 'Yes'
+    no: 'No'
+  capability:
+    userQuery: User message
+    historyMessages: Messages in history
+    condensed: Condensed from the history
+    query: Query
+    block: Block {number}
+    blocks: Context blocks
+    namespaces: Organization memory scopes
+    toolCall: Tool call
+    userMemories: User memories
+    organizationMemories: Organization memories
+    references: Referenced collections
+    citeSources: Cite sources
+    sections: Sections found
+    notSearched: Not searched (no access)
+    files: Files
+    reserveTokens: Tokens reserved
+    fileStatus:
+      read: Read
+      truncated: Shortened
+      failed: Failed
+    citationId: Citation id
+    pages: Pages
+    error: Error
+    stop: Ends with
+    targetAgent: Memory writer
+    links: Links
+    webReferences: Referenced web pages
+    pagesRead: Pages read
+    notRead: Not read
+    webFetchFailure:
+      malformed_url: Malformed link
+      unsupported_url: Unsupported link
+      blocked_host: Blocked address
+      not_found: Not found
+      access_denied: Access denied
+      http_error: Server error
+      timeout: Timed out
+      unsupported_content: Not a web page
+      empty_content: No readable content
+      url_limit_reached: Over the link limit
+  extraction:
+    fields: Columns
+    instructions: Rows to keep
+    criteria: Selected documents
+    collections: Collections
+    notices: Notices
+    documentIds: '{count} chosen documents'
+    files: Files
+    failedFiles: Files that failed
+    rows: Rows shown / found
+    truncated: Cut short
+    confirmed: Extracts every document the user confirmed
+    awaitingConfirmation: Sample awaiting the user's go-ahead
+    previewRows: Showing {shown} of {total} rows
+    download: Download the whole table (CSV)
+    downloadFailed: The table could not be downloaded
+  toolLoop:
+    loop: Tool set
+    mode: Mode
+    modes:
+      answer: Answer
+      gather: Gather context
+    iteration: Decisions
+    toolCallsMade: Tool calls so far
+    messages: Messages in the loop
+    offeredTools: Offered tools
+    condensedResults: Condensed results
+    needsCondensing: Needs condensing
+    decidedCalls: One tool call decided | {count} tool calls decided
+    narrowedTools: Narrowed to
+    maxIterations: Decision limit
+    tool: Tool
+    kind: Kind
+    kinds:
+      function: Function
+      capability: Capability
+    failed: Failed
+    resultContext: Context returned
+    stoppedEarly: Stopped at its limits
+    gathered: Gathered context
+    gatheredMessages: Gathered messages
+    tokens: Tokens
+    condensedTurns: Condensed turns
 costs:
   table:
     count: Count
@@ -448,7 +556,7 @@ document:
     deleting: Deleting
     button: Delete
     button_selected: Delete selected
-    confirmMessage: Are you sure you want to delete this document? It will be permanently
+    confirmMessage: Are you sure you want to delete "{title}"? It will be permanently
       removed from the knowledge base. This action cannot be undone.
     confirmMessageBatch: Are you sure you want to delete {count} document(s)? They
       will be permanently removed from the knowledge base. This action cannot be undone.
@@ -504,21 +612,95 @@ knowledge:
     title: Add Collection
     description: Create a new knowledge collection
     cancel: Cancel
-  auto_sync:
-    title: Auto-synchronized
-    description: Collections are automatically managed
+  add_database:
+    title: Add Knowledge Database
+    description: Create a new self-service knowledge database
+  source:
+    description: Synchronised from {name}
+    edit: Edit source
+    next_sync: The source syncs once a day, so its content appears after the next
+      scheduled sync.
+    awaiting_sync:
+      title: Nothing synced yet
+      description: The source syncs this database once a day, so its collections appear
+        here after the next scheduled sync. If they still do not, check the source
+        settings.
   manual_management:
     description: Collections can be created and managed manually
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Edit collection
   upload_documents: Upload documents
+  delete_namespace: Delete collection
+  delete_database: Delete database
+  delete:
+    confirm_label: Type {name} to confirm
+    database:
+      title: Delete knowledge database
+      warning: This permanently deletes the database {name}, all its collections,
+        and its {count} documents. This cannot be undone.
+    namespace:
+      title: Delete collection
+      warning: This permanently deletes the collection {name} and its {count} documents.
+        This cannot be undone.
+    actions:
+      delete: Delete
+    scheduled:
+      summary: Deletion started
+      detail: The deletion runs in the background and may take a moment.
+    error:
+      summary: Deletion failed
+      detail: The deletion could not be started. Please try again.
   form:
     create:
       title: Create Collection
+    create_error: Failed to create the collection. Please try again.
+    create_database:
+      title: Create Knowledge Database
+      success: Knowledge database created
+      error: Failed to create the knowledge database
+      no_ingestors: No ingestion pipeline is available. Make sure at least one pipeline
+        is running.
+      steps:
+        basic_info: Basic Info
+        source: Source
+    edit_source:
+      title: Source of {name}
+      success: Source updated
+      error: Failed to update the source
+      switch_to_manual: Switch to manual upload
+      replace_documents:
+        header: Hand the content over to the source?
+        message: '{name} already holds {count} manually uploaded document(s). Once
+          a source fills this database, every file the source does not have is removed
+          on the next sync.'
+        message_from_source: '{name} holds {count} document(s) synced from {source}.
+          Once the new source fills this database, every file it does not have is
+          removed on its next sync.'
+        accept: Replace existing documents
     edit:
       title: Edit Collection
     database:
       label: Knowledge Database
       placeholder: Knowledge Database Name
+    database_name:
+      label: Database Name
+      placeholder: myknowledgebase
+      help: Only lowercase letters and digits are allowed, starting with a letter,
+        3 to 63 characters. The name cannot be changed later.
+      validation_error: The database name must start with a lowercase letter and contain
+        only lowercase letters and digits, between 3 and 63 characters
+    source:
+      label: Source
+      placeholder: Select where documents come from
+      help: A source pipeline keeps this database in sync with an external system.
+        Its description says how the content is grouped into namespaces.
+      manual_upload:
+        label: Manual upload
+        description: Documents are uploaded by hand into namespaces you create.
+    ingestor:
+      label: Ingestion Pipeline
+      placeholder: Select an ingestion pipeline
+      help: The pipeline that processes documents uploaded to this database.
     folder_name:
       label: Collection Name
       placeholder: my-collection
@@ -551,6 +733,9 @@ auth:
     welcomeProvider: Welcome to the AI Hub — sign in with {provider}
     pleaseLogin: Please log in
     pleaseLoginWith: Please log in with {provider}
+    useOrganisationLink: Please use the login link your organisation gave you. If
+      you don't have it, contact your administrator.
+    adminLogin: Administrator login
     loginWith: Login with {provider}
     customSolutions: Custom AI solutions for your company
     logoAlt: Logo of company
@@ -617,6 +802,8 @@ evaluation:
 role:
   title: Access Roles
   name: Name
+  name_immutable_hint: The name cannot be changed after the role is created, because
+    users are assigned to roles by name.
   description: Description
   edit: Edit Role
   create_new: New Role
@@ -654,6 +841,8 @@ role:
   capability_locked: Granted by a broader rule — remove that rule to change this.
   capability_readonly: No single rule grants this on its own — use a preset or a broader
     rule.
+  capability_also_cleared: 'Unticking also clears: {rules}'
+  capability_also_granted: 'Ticking also grants: {rules}'
   pattern_help_intro: 'Patterns use wildcards to match agents:'
   pattern_help_all: All agents
   pattern_help_wildcard: All instances of MyAgent
@@ -778,12 +967,38 @@ process:
       done: Done
       steps: Progress
 form:
+  secret_file_input:
+    drop_hint: Drop the file here or click to choose it
+    limits: '{accept}, up to {size}'
+    selected: File selected
+    stored: Key file stored (encrypted)
+    client_email: 'Service account: {email}'
+    replace: Replace
+    remove: Remove
+    too_large: The file is larger than {size}.
+    invalid_json: The file is not valid JSON.
   locale_input:
     translate_tooltip: Translate to all languages
+    translate_partial_summary: Some languages were not translated
+    translate_partial_detail: Could not translate into {locales}. The other languages
+      were updated — try again to fill in the rest.
+    translate_failed_summary: Translation didn't work this time
+    translate_failed_detail: None of the languages could be translated. Your text
+      is unchanged — please try again in a moment.
   warnings:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  modelBound:
+    providerDefault: provider default
+    overrideRequired: Enter a value, or untick the override to use the default.
+    defaultPlaceholder: 'Model default: {value}'
+    maximumHint: At most {maximum} for {model}.
+    maximumHintWithFill: "At most {maximum} for {model}: {percent} of the model's\
+      \ {modelMaximum} tokens, as a margin for token-count differences."
+    aboveMaximum: At most {maximum} is allowed for {model}.
+  modelGated:
+    unavailable: '{model} does not support this.'
   cron:
     errors:
       required: Every position is required — a blank one is not a valid schedule.
@@ -805,6 +1020,17 @@ lib:
       placeholder: Select a timezone
       help: The cron positions are interpreted in this timezone, so a daily schedule
         keeps the same wall-clock time across daylight-saving changes.
+  knowledgeCollections:
+    placeholder: Select collections
+    help: Only the selected collections are searched.
+    noAgent: Pick a knowledge agent first — its collections are what can be selected
+      here.
+    noSource: No knowledge agent is linked to this field, so no collections can be
+      offered.
+    empty: The selected agent is not configured to retrieve from any collection.
+    unavailable: Saved, but not retrieved by the selected agent
+  knowledgeDatabases:
+    unavailable: '{name} (deleted or not visible to you)'
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search
@@ -812,8 +1038,14 @@ lib:
       label: Database
     namespaces:
       label: Namespaces
-      placeholder: Select namespaces (empty = all)
-      help: Leave empty to search all namespaces
+      placeholder: Select at least one namespace
+      help: Only the selected namespaces are searched
+      required: Select at least one namespace or turn on “Search all namespaces”.
+        The configuration cannot be saved otherwise.
+    allNamespaces:
+      label: Search all namespaces
+      help: Every namespace of this database is searched, including ones added later
+        ({count} today).
     allowedFilterFields:
       label: Allowed Filter Fields
       placeholder: Add a metadata key and press Enter
@@ -880,6 +1112,7 @@ memory:
       title: Delete Failed
       message: Failed to delete all memories. Please try again.
 openwebui:
+  default_disclaimer: AI can make mistakes. Please verify answers.
   memories:
     title: Agent Memories
     select_agent: Select Agent
@@ -898,6 +1131,68 @@ tenant:
   mismatch_warning: Tenant Mismatch
   mismatch_description: Your active tenant was changed to {tenant} in another session.
     The chat interface uses the active tenant for all requests.
-  mismatch_switch_action: Switch Tenant
+  mismatch_switch_action: Go to {tenant}
+  mismatch_use_this_tenant: Chat in {tenant}
   administration_title: Tenant Administration
   administration_description: Manage tenants across the platform
+support:
+  report_bug: Report a bug
+  dialog_title: Report a problem
+  choose_files: Choose files
+  submit: Send report
+  submitting: Sending…
+  sent: Report sent
+  sent_detail: 'Reference {reference}, report #{number}. Support will get back to
+    you by email.'
+  send_failed: Report not sent
+  send_failed_detail: Your answers are still here — try sending again.
+  unavailable: Reporting is not configured on this deployment. Please contact your
+    administrator.
+userFiles:
+  title: My Files
+  description: 'The files you and your agents work with: chat attachments, files agents
+    made for you and your own uploads.'
+  conversation: Chat
+  actions:
+    move: Move
+    upload: Upload
+    newFolder: New folder
+    refresh: Refresh
+    download: Download
+    rename: Rename
+    delete: Delete
+    close: Close
+    cancel: Cancel
+    save: Save
+    openFolder: Open folder {name}
+    preview: Preview {name}
+  columns:
+    name: Name
+    size: Size
+    modified: Changed
+  empty:
+    folder: This folder is empty. Drop files here to upload them.
+    noSpace: Your file space is set up with your chat account. Open the chat once,
+      then come back.
+  error:
+    load: This folder could not be loaded. Try again with Refresh.
+  move:
+    header: Move {name} to
+    noTargets: No folder to move it to.
+  preview:
+    unavailable: No preview for this file type. Download it to open it.
+    truncated: This preview shows only the beginning of the document. Download it
+      to see all of it.
+    failed: This file could not be previewed. Download it to open it.
+    empty: This document has no text to show.
+    tooLarge: This file is too large to preview. Download it to open it.
+  name:
+    invalid: A name must not be empty or contain a slash.
+  delete:
+    header: Delete
+    file: Delete {name}?
+    folder: Delete the folder {name} with everything in it?
+  toast:
+    uploaded: Uploaded {count} file(s)
+    uploadFailed: Upload failed
+    changeFailed: The change failed

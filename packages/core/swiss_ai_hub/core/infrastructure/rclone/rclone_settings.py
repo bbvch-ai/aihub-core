@@ -30,3 +30,14 @@ class RcloneSettings(EnvironmentSettings):
         SecretStr | None,
         Field(description="RC API password for authentication."),
     ] = None
+
+    LOCAL_SOURCE_ROOT: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Directory inside the rclone container that knowledge databases with a `local` source may read. "
+                "Unset (the default) removes the `local` backend from the offered sources, because the daemon's own "
+                "filesystem would otherwise be readable by every knowledge administrator."
+            )
+        ),
+    ] = None

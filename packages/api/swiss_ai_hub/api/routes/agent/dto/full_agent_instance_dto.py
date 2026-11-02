@@ -8,6 +8,7 @@ from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 
 from swiss_ai_hub.api.routes.agent.dto.agent_config_dto import AgentConfigDTO
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
+from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
@@ -66,6 +67,8 @@ class FullAgentInstanceDTO(MinimalAgentInstanceDTO):
         class_entity: AgentClassEntity,
         config_entity: "AgentConfigEntityDocument",
         t: LocaleHandler,
+        *,
+        is_online: bool,
     ) -> Self:
         """
         Creates a FullAgentInstanceDTO from a class entity and a config entity.
@@ -122,6 +125,9 @@ class FullAgentInstanceDTO(MinimalAgentInstanceDTO):
             hitl_request_events=hitl_request_events,
             hitl_response_events=hitl_response_events,
             network_graph=network_graph,
-            is_online=class_entity.is_online,
-            configuration=config_entity.config_data or {},
+            is_online=is_online,
+            configuration=InstanceConfigHelper.with_schema_defaults(
+                config_entity.config_data or {},
+                class_entity.agent_config_specs.config_schema if class_entity.agent_config_specs else {},
+            ),
         )

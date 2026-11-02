@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from swiss_ai_hub.core.events.agent import MailAttachmentRef, MailMessageRef
-
-from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
+from swiss_ai_hub.core.imap import ParsedMessage
 
 
 class FetchedMail(BaseModel):

@@ -249,9 +249,21 @@ export type Capability = {
    */
   rule: string | null;
   /**
+   * Companion Rules
+   *
+   * Rules written *and* removed together with `rule`. A knowledge database's row carries `<rule>.>` here: its namespaces belong to it, and a `.>` rule never matches its own root, so the row needs both forms to mean 'this whole database'.
+   */
+  companion_rules?: Array<string>;
+  /**
+   * Revoked Rules
+   *
+   * Rules removed with `rule`, never written with it. An agent class's row carries `<rule>.>` here: granting it would hand over every profile of the class in the deployment, other tenants' included, but a ceiling written before that was understood still holds it.
+   */
+  revoked_rules?: Array<string>;
+  /**
    * Granted
    *
-   * Whether the draft rules grant this capability.
+   * Whether the draft rules grant `rule` and every `companion_rules` entry.
    */
   granted: boolean;
   /**
@@ -371,9 +383,9 @@ export type CreateTenantMetadataRequest = {
   /**
    * Access Rules
    *
-   * Access rules granted to this tenant.
+   * Access rules granted to this tenant. Omit to start from this instance's default ceiling (every served model minus the configured exclusions); pass an empty list for a tenant that starts with no access at all.
    */
-  access_rules?: Array<string>;
+  access_rules?: Array<string> | null;
 };
 
 /**
@@ -523,6 +535,114 @@ export type HealthResponse = {
 };
 
 /**
+ * LocaleString
+ *
+ * A multi-language string container supporting German, English, French, and Italian.
+ *
+ * LocaleString serves as a data container for translated strings. For form rendering,
+ * use the `LocaleInput` FormKit element with the duality pattern.
+ *
+ * ## Basic Usage (Data Mode)
+ *
+ * ```python
+ * greeting = LocaleString(
+ * de="Hallo",
+ * en="Hello",
+ * fr="Bonjour",
+ * it="Ciao",
+ * )
+ * print(greeting.in_locale("en"))  # "Hello"
+ * ```
+ *
+ * ## Form Duality Pattern
+ *
+ * For form fields that accept LocaleString values, use the union type pattern:
+ *
+ * ```python
+ * class MyConfig(Form):
+ * name: Annotated[LocaleString | LocaleInput, Field(description="Name")]
+ *
+ * # Form mode - for rendering:
+ * config = MyConfig(name=LocaleInput(label=LocaleString(en="Name", de="Name")))
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(name=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"))
+ * ```
+ *
+ * For convenience, use `LocaleString.as_form()` to create a pre-configured `LocaleInput`:
+ *
+ * ```python
+ * config = MyConfig(name=LocaleString.as_form(label=LocaleString(en="Name", de="Name")))
+ * ```
+ */
+export type LocaleString = {
+  /**
+   * De
+   *
+   * German
+   */
+  de?: string | null;
+  /**
+   * En
+   *
+   * English
+   */
+  en?: string | null;
+  /**
+   * Fr
+   *
+   * French
+   */
+  fr?: string | null;
+  /**
+   * It
+   *
+   * Italian
+   */
+  it?: string | null;
+};
+
+/**
+ * LoginOptionsResponse
+ *
+ * What the generic login page may offer. A welcome-page instance never lists a federated provider here.
+ */
+export type LoginOptionsResponse = {
+  /**
+   * Welcome Page
+   *
+   * Show a welcome page pointing to the organisation's login link instead of provider buttons
+   */
+  welcome_page: boolean;
+  /**
+   * Providers
+   *
+   * Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use
+   */
+  providers: Array<AuthProviderResponse>;
+};
+
+/**
+ * MyTenantsResponse
+ *
+ * Response for the GET /my-tenants endpoint, including sysadmin status.
+ */
+export type MyTenantsResponse = {
+  /**
+   * Tenants
+   *
+   * Tenants the user making the call belongs to
+   */
+  tenants: Array<TenantMembershipDto>;
+  /**
+   * Is Sys Admin
+   *
+   * Whether the user has system administrator privileges
+   */
+  is_sys_admin?: boolean;
+};
+
+/**
  * PaginatedUsersResponse
  *
  * Represents a paginated response containing a list of users.
@@ -631,6 +751,32 @@ export type RoleResponse = {
 };
 
 /**
+ * TenantMembershipDTO
+ *
+ * A tenant the current user belongs to.
+ */
+export type TenantMembershipDto = {
+  /**
+   * Id
+   *
+   * Tenant identifier
+   */
+  id: string;
+  /**
+   * Name
+   *
+   * Tenant display name
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * Tenant description
+   */
+  description: string;
+};
+
+/**
  * TenantResponse
  *
  * Response model for a tenant, as seen by sysadmins.
@@ -660,6 +806,10 @@ export type TenantResponse = {
    * Access rules granted to this tenant.
    */
   access_rules: Array<string>;
+  /**
+   * Chat disclaimer in each supported language.
+   */
+  chat_disclaimer: LocaleString;
   /**
    * Whether the tenant also exists in Keycloak (active) or not (orphaned).
    */
@@ -769,6 +919,10 @@ export type UpdateTenantMetadataRequest = {
    * Access rules granted to this tenant.
    */
   access_rules?: Array<string> | null;
+  /**
+   * Plain text below the chat input, up to 100 characters per language. At least one translation is required.
+   */
+  chat_disclaimer?: LocaleString | null;
 };
 
 /**
@@ -937,6 +1091,12 @@ export type UserWithAccessDto = {
    * The user's resolved access rules (union of their roles), to drive the capability view.
    */
   access_rules: Array<string>;
+  /**
+   * Preferred Locale
+   *
+   * The user's persisted UI language, or null if they have never chosen one.
+   */
+  preferred_locale?: string | null;
 };
 
 /**
@@ -992,7 +1152,7 @@ export type ListTenantsData = {
 
 export type ListTenantsResponses = {
   /**
-   * Response List Tenants Admin Tenants  Get
+   * Response List Tenants
    *
    * Successful Response
    */
@@ -1038,7 +1198,7 @@ export type ListUnconfiguredTenantsData = {
 
 export type ListUnconfiguredTenantsResponses = {
   /**
-   * Response List Unconfigured Tenants Admin Tenants Unconfigured Get
+   * Response List Unconfigured Tenants
    *
    * Successful Response
    */
@@ -1047,6 +1207,25 @@ export type ListUnconfiguredTenantsResponses = {
 
 export type ListUnconfiguredTenantsResponse =
   ListUnconfiguredTenantsResponses[keyof ListUnconfiguredTenantsResponses];
+
+export type GetDefaultAccessRulesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/tenants/default-access-rules";
+};
+
+export type GetDefaultAccessRulesResponses = {
+  /**
+   * Response Get Default Access Rules
+   *
+   * Successful Response
+   */
+  200: Array<string>;
+};
+
+export type GetDefaultAccessRulesResponse =
+  GetDefaultAccessRulesResponses[keyof GetDefaultAccessRulesResponses];
 
 export type DeleteTenantMetadataData = {
   body?: never;
@@ -1166,6 +1345,23 @@ export type GetMyIdentityResponses = {
 export type GetMyIdentityResponse =
   GetMyIdentityResponses[keyof GetMyIdentityResponses];
 
+export type GetMyTenantsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/my-tenants";
+};
+
+export type GetMyTenantsResponses = {
+  /**
+   * Successful Response
+   */
+  200: MyTenantsResponse;
+};
+
+export type GetMyTenantsResponse =
+  GetMyTenantsResponses[keyof GetMyTenantsResponses];
+
 export type GetUserData = {
   body?: never;
   path: {
@@ -1280,7 +1476,7 @@ export type AssignRoleError = AssignRoleErrors[keyof AssignRoleErrors];
 
 export type AssignRoleResponses = {
   /**
-   * Response Assign Role  Tenant Id  Users  User Id  Roles Post
+   * Response Assign Role
    *
    * Successful Response
    */
@@ -1326,7 +1522,7 @@ export type RevokeRoleError = RevokeRoleErrors[keyof RevokeRoleErrors];
 
 export type RevokeRoleResponses = {
   /**
-   * Response Revoke Role  Tenant Id  Users  User Id  Roles  Role Name  Delete
+   * Response Revoke Role
    *
    * Successful Response
    */
@@ -1460,7 +1656,7 @@ export type GetRolesData = {
 
 export type GetRolesResponses = {
   /**
-   * Response Get Roles  Tenant Id  Roles  Get
+   * Response Get Roles
    *
    * Successful Response
    */
@@ -1551,7 +1747,7 @@ export type GetAccessPresetsData = {
 
 export type GetAccessPresetsResponses = {
   /**
-   * Response Get Access Presets  Tenant Id  Access Presets Get
+   * Response Get Access Presets
    *
    * Successful Response
    */
@@ -1570,12 +1766,46 @@ export type GetAuthProvidersData = {
 
 export type GetAuthProvidersResponses = {
   /**
-   * Response Get Auth Providers Auth Providers  Get
-   *
    * Successful Response
    */
-  200: Array<AuthProviderResponse>;
+  200: LoginOptionsResponse;
 };
 
 export type GetAuthProvidersResponse =
   GetAuthProvidersResponses[keyof GetAuthProvidersResponses];
+
+export type GetAuthProviderData = {
+  body?: never;
+  path: {
+    /**
+     * Alias
+     *
+     * Keycloak IDP alias taken from a /auth/login/<idp-alias> link
+     */
+    alias: string;
+  };
+  query?: never;
+  url: "/auth-providers/{alias}";
+};
+
+export type GetAuthProviderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAuthProviderError =
+  GetAuthProviderErrors[keyof GetAuthProviderErrors];
+
+export type GetAuthProviderResponses = {
+  /**
+   * Response Get Auth Provider
+   *
+   * Successful Response
+   */
+  200: AuthProviderResponse | null;
+};
+
+export type GetAuthProviderResponse =
+  GetAuthProviderResponses[keyof GetAuthProviderResponses];

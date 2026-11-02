@@ -174,6 +174,19 @@ class TestFlatFormDuality:
         assert required_elem.required is True
         assert optional_elem.required is False
 
+    def test_explicit_required_survives_nullable_annotation(self) -> None:
+        """A toggled field that demands a value once enabled must stay required and carry the marker."""
+        form = OptionalFieldForm(
+            required_field=InputText(label=LocaleString(en="Required")),
+            optional_field=InputText(label=LocaleString(en="Optional"), required=True),
+        )
+
+        optional_elem = next(e for e in form.to_formkit_form() if e.name == "optional_field")
+
+        assert optional_elem.nullable is True
+        assert optional_elem.required is True
+        assert optional_elem.validation == "required"
+
     def test_none_values_are_skipped(self) -> None:
         """Test that None field values are not included in form output."""
         form = OptionalFieldForm(
@@ -223,6 +236,23 @@ class TestNestedForms:
         child_names = [c.name for c in elements[1].children]
         assert "street" in child_names
         assert "city" in child_names
+
+    def test_a_group_with_differently_shown_children_shows_when_any_child_would(self) -> None:
+        """FormKit evaluates ``a || a && b`` as ``(a || a) && b``; unparenthesised, a group whose field depends on a
+        sibling inside it would never show, because the sibling never mounts."""
+        kind = "$get(kind).value === 'x'"
+        cloud_only = f"{kind} && $get(edition).value === 'cloud'"
+        form = NestedOuterForm(
+            name=InputText(label=LocaleString(en="Name")),
+            address=NestedInnerForm(
+                street=InputText(label=LocaleString(en="Street"), condition_if=kind),
+                city=InputText(label=LocaleString(en="City"), condition_if=cloud_only),
+            ),
+        )
+
+        group = form.to_formkit_form()[1]
+
+        assert group.condition_if == f"$: ({kind}) || ({cloud_only})"
 
     def test_deeply_nested_forms(self) -> None:
         """Test that deeply nested forms produce nested Groups."""
@@ -939,6 +969,24 @@ class TestNullableFlag:
         # Required must still be False since the field is optional
         assert count_elem.required is False
 
+    def test_nullable_leaf_keeps_an_explicit_element_value(self) -> None:
+        """An element may pre-fill the input its toggle gates without that toggle starting on.
+
+        The two are independent on purpose: `default_enabled` comes from the field's *data* default (None
+        here, so off) while `value` is what the input offers once enabled. A blueprint uses this to start a
+        picker on a deployment-wide default — e.g. the RAG memory model — without pinning profiles to it.
+        """
+        form = FormWithNullableLeaf(
+            name=InputText(label=LocaleString(en="Name")),
+            count=InputNumber(label=LocaleString(en="Count"), value=7),
+        )
+
+        count_elem = next(e for e in form.to_formkit_form() if e.name == "count")
+
+        assert count_elem.value == 7
+        assert count_elem.nullable is True
+        assert count_elem.default_enabled is False
+
     def test_non_nullable_field_not_marked(self) -> None:
         form = SimpleForm(
             name=InputText(label=LocaleString(en="Name")),
@@ -1066,3 +1114,44 @@ class TestEmptyGroups:
         inner = next(e for e in form.to_formkit_form() if e.name == "inner")
         assert inner.nullable
         assert inner.children == []
+
+
+class ModelChoiceForm(Form):
+    """A sub-form whose model has no class default, like `RerankingModelConfig.model_name`."""
+
+    model_name: Annotated[str | InputText, Field(description="Model")]
+    top_n: Annotated[int | InputNumber, Field(description="Top N")] = 5
+    tenant: Annotated[str | InputText, Field(description="Tenant")] = Field(default_factory=lambda: "from-settings")
+
+
+class FormWithDefaultedModelChoice(Form):
+    """Outer form whose sub-form default names the model, so a profile stored without it still has one."""
+
+    choice: Annotated[ModelChoiceForm, Field(description="Choice", title="Choice")] = ModelChoiceForm(
+        model_name="reranker/bge", top_n=7
+    )
+
+
+class TestInheritedSubFormDefaults:
+    """A nested element is pre-filled from the parent field's default, which the UI falls back to when editing a
+    profile stored before the sub-form existed."""
+
+    def _children(self) -> dict[str, object]:
+        form = FormWithDefaultedModelChoice(
+            choice=ModelChoiceForm(
+                model_name=InputText(label=LocaleString(en="Model")),
+                top_n=InputNumber(label=LocaleString(en="Top N")),
+                tenant=InputText(label=LocaleString(en="Tenant")),
+            )
+        )
+        group = form.to_formkit_form()[0]
+        return {child.name: child.value for child in group.children}
+
+    def test_parent_default_fills_a_field_without_a_class_default(self) -> None:
+        assert self._children()["model_name"] == "reranker/bge"
+
+    def test_parent_default_wins_over_the_class_default(self) -> None:
+        assert self._children()["top_n"] == 7
+
+    def test_a_factory_default_is_left_for_the_admin_to_choose(self) -> None:
+        assert self._children()["tenant"] is None

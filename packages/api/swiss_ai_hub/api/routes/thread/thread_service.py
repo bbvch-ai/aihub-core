@@ -1,28 +1,21 @@
 import asyncio
 import logging
 from datetime import UTC, datetime
+from typing import Annotated
 
 from bson import ObjectId
 from cachetools import TTLCache, cached
 from fastapi import HTTPException
-from llama_index.core.base.llms.types import AudioBlock, ImageBlock, TextBlock
 from mongoengine import DoesNotExist
-from openai.types.chat import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionContentPartImageParam,
-    ChatCompletionContentPartInputAudioParam,
-    ChatCompletionContentPartTextParam,
-    ChatCompletionMessageParam,
-    ChatCompletionUserMessageParam,
-)
-from openai.types.chat.chat_completion_content_part_image_param import ImageURL
-from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
-from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events.agent import HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent
+from swiss_ai_hub.core.events.agent import (
+    HumanInTheLoopRequestEvent,
+    RecordsExtractedEvent,
+)
+from swiss_ai_hub.core.generative_ai import ExtractedTableFile, ExtractionFileStore
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
@@ -34,8 +27,9 @@ from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import S
 
 from swiss_ai_hub.api.routes.agent.dto.agent_identifier import AgentIdentifier
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
-from swiss_ai_hub.api.routes.event.event_service import EventService
+from swiss_ai_hub.api.routes.file.dto.signed_url_dto import SignedUrlDto
 from swiss_ai_hub.api.routes.openai.dto.history_response import HistoryResponse
+from swiss_ai_hub.api.routes.thread.conversation_history_projector import ConversationHistoryProjector
 from swiss_ai_hub.api.routes.thread.dto.open_chat_hitl_response import OpenChatHitlResponse
 from swiss_ai_hub.api.routes.thread.dto.statistics.calculated_thread_stats import CalculatedThreadStats
 from swiss_ai_hub.api.routes.thread.dto.statistics.display_statistics import DisplayStatistics
@@ -46,7 +40,6 @@ from swiss_ai_hub.api.routes.thread.dto.thread_agent_dto import ThreadAgentDTO
 from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
 from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
 from swiss_ai_hub.api.routes.user.user_service import UserService
-from swiss_ai_hub.api.sockets.events.server_to_user.contextualized_agent_event import ContextualizedAgentEvent
 
 logger = logging.getLogger(__name__)
 
@@ -188,75 +181,20 @@ class ThreadService:
 
     @staticmethod
     @trace_fn
-    async def thread_as_message_history(thread_id: str) -> HistoryResponse:
-        persisted_events = EventService.get_all_thread_display_events(thread_id)
-        contextualized_events = [ContextualizedAgentEvent.from_persisted_event(event) for event in persisted_events]
-
-        messages: list[ChatCompletionMessageParam] = []
-
-        def is_user_event(event: BaseEvent) -> bool:
-            return event.is_user_message_event or event.is_hitl_response_event
-
-        def is_agent_event(event: BaseEvent) -> bool:
-            return event.is_chunk_event or event.is_hitl_response_event
-
-        continue_chunk = False
-
-        for contextualized_event in contextualized_events:
-            event = contextualized_event.event
-
-            if is_user_event(event):
-                continue_chunk = False
-
-                if len(messages) == 0 or messages[-1]["role"] != "user":
-                    messages.append(ChatCompletionUserMessageParam(role="user", content=[]))
-
-                current_message = messages[-1]
-                if event.is_user_message_event and len(event.messages) > 0:
-                    for block in event.messages[-1].blocks:
-                        if isinstance(block, TextBlock):
-                            current_message["content"].append(
-                                ChatCompletionContentPartTextParam(text=block.text, type="text")
-                            )
-                        if isinstance(block, ImageBlock):
-                            current_message["content"].append(
-                                ChatCompletionContentPartImageParam(
-                                    image_url=ImageURL(url=str(block.url)), type="image_url"
-                                )
-                            )
-                        if isinstance(block, AudioBlock):
-                            current_message["content"].append(
-                                ChatCompletionContentPartInputAudioParam(
-                                    input_audio=InputAudio(data=block.audio, format=block.format), type="input_audio"
-                                )
-                            )
-
-                if event.is_hitl_response_event:
-                    current_message["content"].append(
-                        ChatCompletionContentPartTextParam(text=event.response, type="text")
-                    )
-
-            if is_agent_event(event):
-                if len(messages) == 0 or messages[-1]["role"] != "assistant":
-                    messages.append(ChatCompletionAssistantMessageParam(role="assistant", content=[]))
-
-                current_message = messages[-1]
-                if event.is_chunk_event:
-                    if continue_chunk:
-                        current_message["content"][-1]["text"] += event.content
-                    else:
-                        current_message["content"].append(
-                            ChatCompletionContentPartTextParam(text=event.content, type="text")
-                        )
-                        continue_chunk = True
-
-                if event.is_hitl_response_event:
-                    continue_chunk = False
-                    current_message["content"].append(
-                        ChatCompletionContentPartTextParam(text=event.response, type="text")
-                    )
-
-        return HistoryResponse(messages=messages)
+    async def thread_as_message_history(
+        thread_id: str,
+        *,
+        primary_agent_class: str | None = None,
+        primary_agent_id: str | None = None,
+    ) -> HistoryResponse:
+        persisted_events = PersistedAgentEventEntity.conversation_events_for_thread(thread_id)
+        return HistoryResponse(
+            messages=ConversationHistoryProjector.project(
+                persisted_events,
+                primary_agent_class=primary_agent_class,
+                primary_agent_id=primary_agent_id,
+            )
+        )
 
     @staticmethod
     @trace_fn
@@ -267,19 +205,49 @@ class ThreadService:
         A chat HITL is open when it has not been responded to. Only HITL requests
         with hitl_type == "chat" are considered.
         """
-        hitl_request_entities = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(thread_id)
-        hitl_response_entities = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(thread_id)
-
-        hitl_requests = [HumanInTheLoopRequestEvent.deserialize_event(e.event_data) for e in hitl_request_entities]
-        hitl_responses = [HumanInTheLoopResponseEvent.deserialize_event(e.event_data) for e in hitl_response_entities]
-
-        responded_request_ids: set[str] = {response.request_event.event_id for response in hitl_responses}
-
-        for request in hitl_requests:
-            if request.hitl_type == "chat" and request.event_id not in responded_request_ids:
+        open_entities = PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(thread_id)
+        for request in (HumanInTheLoopRequestEvent.deserialize_event(entity.event_data) for entity in open_entities):
+            if request.hitl_type == "chat":
                 return OpenChatHitlResponse(has_open_chat_hitl=True, hitl_request=request)
 
         return OpenChatHitlResponse(has_open_chat_hitl=False, hitl_request=None)
+
+    @staticmethod
+    @trace_fn
+    async def extracted_table_download_url(
+        thread_id: Annotated[str, "The thread the extraction answered in"],
+        extraction_id: Annotated[str, "The extraction whose whole table to download"],
+    ) -> SignedUrlDto:
+        """A presigned link to the whole table of an extraction in the thread; events only carry a preview.
+
+        The table is looked up in the thread's own events, so access to the thread is access to its tables, and only
+        extraction tables are signed: an event naming any other object is not a table of this thread.
+        """
+        table = await asyncio.to_thread(ThreadService._extracted_table_file, thread_id, extraction_id)
+        if table is None:
+            raise HTTPException(status_code=404, detail="No extracted table with this id in the thread")
+        if not await ExtractionFileStore.exists(table):
+            raise HTTPException(
+                status_code=410,
+                detail="The extracted table is no longer stored: tables are deleted after 7 days. Run the extraction "
+                "again to get a new one.",
+            )
+        return SignedUrlDto(url=ExtractionFileStore.download_url(table))
+
+    @staticmethod
+    def _extracted_table_file(thread_id: str, extraction_id: str) -> ExtractedTableFile | None:
+        """The file of the extraction's latest answer: a sample first, every document once the user confirms."""
+        stored = [
+            entity.event_data["file"]
+            for entity in PersistedAgentEventEntity.display_events_for_thread(
+                thread_id, event_name=RecordsExtractedEvent.__name__
+            )
+            if entity.event_data.get("extraction_id") == extraction_id and entity.event_data.get("file")
+        ]
+        if not stored:
+            return None
+        table = ExtractedTableFile.model_validate(stored[-1])
+        return table if ExtractionFileStore.holds(table) else None
 
     @staticmethod
     @trace_fn

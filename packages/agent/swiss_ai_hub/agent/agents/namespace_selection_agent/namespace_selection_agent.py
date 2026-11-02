@@ -4,7 +4,7 @@ from typing import ClassVar
 
 from llama_index.core.prompts import RichPromptTemplate
 from mongoengine import DoesNotExist
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AgentInTheLoop,
@@ -15,7 +15,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair, UserScopedRetrievers
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence import BucketEntity, NamespaceEntity
 
@@ -37,6 +37,7 @@ from swiss_ai_hub.agent.agents.namespace_selection_agent.events.namespace_approv
     NamespaceApprovalResponseEvent,
 )
 from swiss_ai_hub.agent.agents.namespace_selection_agent.llm.namespace_decision import NamespaceDecision
+from swiss_ai_hub.agent.agents.namespace_selection_agent.readable_selection import ReadableSelection
 from swiss_ai_hub.agent.agents.namespace_selection_agent.utils import (
     format_approval_question,
     format_available_namespaces,
@@ -66,6 +67,11 @@ PROPOSED_NAMESPACES_KEY = "proposed_namespaces"
 
 # ThreadContext keys
 NAMESPACE_SELECTION_KEY = "namespace_selection"
+
+# Strict structured output marks every property required, so a model that omits one cannot emit the closing
+# brace and pads whitespace until it exhausts its output budget. Capping the budget for this one call bounds
+# that failure to seconds instead of the model's full ceiling (8192 tokens on the default chat model).
+DETERMINATION_MAX_OUTPUT_TOKENS = 1024
 
 
 @precondition()
@@ -150,6 +156,7 @@ class NamespaceSelectionAgent(Agent):
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
             user_query=event.user_query,
+            attached_file_names=event.attached_file_names,
             llm_config=agent_config.task_llm,
             displayer=displayer,
             user=user,
@@ -201,7 +208,8 @@ class NamespaceSelectionAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         _clear: NotAMetaQuestionEvent | None = None,
-    ) -> DetermineNamespacesEvent:
+        access: AccessChecker | None = None,
+    ) -> DetermineNamespacesEvent | StopEvent:
         """Fetch namespaces, store original query, and start determination loop."""
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.fetching_namespaces"))
 
@@ -213,12 +221,22 @@ class NamespaceSelectionAgent(Agent):
                 logger.warning("Bucket '%s' not found - skipping", bucket_name)
                 continue
 
+            if bucket.deleting:
+                logger.warning("Bucket '%s' is being deleted - skipping", bucket_name)
+                continue
+
             namespaces = await asyncio.to_thread(NamespaceEntity.get_namespaces_by_bucket, str(bucket.id))
-            if not namespaces:
+            namespaces_names = [ns.namespace_name for ns in namespaces if not ns.deleting]
+            if not namespaces_names:
                 logger.warning("No namespaces found in bucket '%s' - skipping", bucket_name)
                 continue
 
-            available_namespaces[bucket_name] = [ns.namespace_name for ns in namespaces]
+            available_namespaces[bucket_name] = namespaces_names
+
+        if agent_config.restrict_to_user_access and access is not None and available_namespaces:
+            available_namespaces = UserScopedRetrievers.readable_namespaces(access, available_namespaces)
+            if not available_namespaces:
+                return await ReadableSelection.refuse(NamespaceSelectionAgent.__name__, displayer, t)
 
         # Store in RunContext
         logger.debug("Available namespaces fetched: %s", available_namespaces)
@@ -246,7 +264,7 @@ class NamespaceSelectionAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity,
-    ) -> FollowUpQuestionRequestEvent | NamespaceApprovalRequestEvent | DetermineNamespacesEvent:
+    ) -> FollowUpQuestionRequestEvent | NamespaceApprovalRequestEvent | DetermineNamespacesEvent | StopEvent:
         """Use LLM to determine if enough info exists to select namespaces."""
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.analyzing_request"))
 
@@ -261,13 +279,27 @@ class NamespaceSelectionAgent(Agent):
         logger.debug("Conversation history:\n%s", conversation_str)
 
         async with agent_config.task_llm.cost_reporting_llm(displayer, user=user) as llm:
+            llm.max_tokens = min(llm.max_tokens or DETERMINATION_MAX_OUTPUT_TOKENS, DETERMINATION_MAX_OUTPUT_TOKENS)
             prompt = RichPromptTemplate(t("agent.namespace_selection_agent.prompts.determination"))
-            decision: NamespaceDecision = await llm.astructured_predict(
-                NamespaceDecision,
-                prompt,
-                available_namespaces=namespaces_str,
-                conversation_history=conversation_str,
-            )
+            try:
+                decision: NamespaceDecision = await llm.astructured_predict(
+                    NamespaceDecision,
+                    prompt,
+                    available_namespaces=namespaces_str,
+                    conversation_history=conversation_str,
+                )
+            except ValueError as unparseable_decision:
+                # A model that drops a required property deadlocks guided decoding, so the response arrives
+                # truncated however often it is retried. Routing is the only thing this step decides, so the
+                # run ends with a request to rephrase rather than a Pydantic dump reaching the chat window.
+                # `ValueError` covers both shapes of malformed output: Pydantic's `ValidationError` subclasses
+                # it, and `ResilientOpenAILike` raises it bare when the response carries no usable content.
+                logger.warning("Namespace determination returned unparseable output: %s", unparseable_decision)
+                await displayer.display_chunk(
+                    t("agent.namespace_selection_agent.messages.determination_failed"),
+                    model_name=NamespaceSelectionAgent.__name__,
+                )
+                return StopEvent()
 
         await displayer.display_thought(
             t("agent.namespace_selection_agent.thoughts.llm_decision", reasoning=decision.reasoning)
@@ -342,17 +374,25 @@ class NamespaceSelectionAgent(Agent):
     async def process_approval_approved_step(
         self,
         _: NamespaceApprovalResponseEvent,
-        start_event: UserMessageEvent | RAGStartEvent,
+        # A run only reaches an approval response through the chat entry point, so this is always the
+        # user's message. Naming RAGStartEvent here would advertise it as a start event of this agent,
+        # which puts this agent in its own RAG-delegation picker and lets a profile delegate to itself.
+        start_event: UserMessageEvent,
         agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> AgentInTheLoop.request:
+        access: AccessChecker | None = None,
+    ) -> AgentInTheLoop.request | StopEvent:
         """Store selection and forward to RAG."""
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.selection_approved"))
 
-        selected: dict[str, str] = await run_context.get(PROPOSED_NAMESPACES_KEY, {})
+        proposed: dict[str, str] = await run_context.get(PROPOSED_NAMESPACES_KEY, {})
+        selected = ReadableSelection.narrow(proposed, agent_config, access)
+        if proposed and not selected:
+            await thread_context.delete(NAMESPACE_SELECTION_KEY)
+            return await ReadableSelection.refuse(NamespaceSelectionAgent.__name__, displayer, t)
         await thread_context.set(NAMESPACE_SELECTION_KEY, selected)
 
         namespace_pairs = [
@@ -463,9 +503,14 @@ class NamespaceSelectionAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         _clear: NotAMetaQuestionEvent | None = None,
-    ) -> AgentInTheLoop.request:
+        access: AccessChecker | None = None,
+    ) -> AgentInTheLoop.request | StopEvent:
         """Forward message to RAG agent with stored namespace selection."""
-        selected: dict[str, str] = await thread_context.get(NAMESPACE_SELECTION_KEY, {})
+        stored: dict[str, str] = await thread_context.get(NAMESPACE_SELECTION_KEY, {})
+        selected = ReadableSelection.narrow(stored, agent_config, access)
+        if stored and not selected:
+            await thread_context.delete(NAMESPACE_SELECTION_KEY)
+            return await ReadableSelection.refuse(NamespaceSelectionAgent.__name__, displayer, t)
 
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.forwarding_to_rag"))
 

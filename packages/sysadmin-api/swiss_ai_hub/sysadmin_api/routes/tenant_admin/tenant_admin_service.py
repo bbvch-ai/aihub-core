@@ -13,19 +13,13 @@ from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.update_tenant_metadata_re
 
 _TENANT_NOT_FOUND = "Tenant not found."
 
-# A freshly provisioned tenant with an empty ceiling can use no service at all (the access-checker
-# takes MIN(tenant ceiling, user rules), so an empty ceiling denies everything — even for admins).
-# An external syncer (e.g. the LCDM Hub) pushes tenants with no rules, so seed a sensible default on
-# creation to make them usable out of the box. Admins can narrow it afterwards.
-_DEFAULT_PROVISION_ACCESS_RULES = ["aihub.admin.>"]
-
 
 class TenantAdminService:
     """Handles tenant CRUD operations for system administrators.
 
     Tenants live in two places: Keycloak (group under ``/tenants/``) owns existence
     and user membership; MongoDB ``TenantMetadataEntity`` owns display metadata
-    (name, description, access rules). A tenant is only accessible to end users
+    (name, description, access rules, chat disclaimer). A tenant is only accessible to end users
     when it exists in both. Sysadmins can see orphaned metadata (MongoDB only)
     and delete it, but cannot edit it.
     """
@@ -113,10 +107,15 @@ class TenantAdminService:
             tenant_id=data.tenant_id,
             name=data.name,
             description=data.description,
-            access_rules=[AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules],
+            access_rules=[AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules or []],
             lcdm_tenant_id=data.lcdm_tenant_id,
         )
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
+
+    @staticmethod
+    @trace_fn
+    def is_configured(tenant_id: str) -> bool:
+        return TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id) is not None
 
     @staticmethod
     @trace_fn
@@ -128,7 +127,8 @@ class TenantAdminService:
         duplicates), this is built for an external source of truth (e.g. the LCDM Hub) that
         pushes its tenants in and re-runs the sync repeatedly: every side effect is idempotent
         so the same call can be replayed safely. The tenant hierarchy is flattened — each pushed
-        tenant becomes its own flat group under ``/tenants/``.
+        tenant becomes its own flat group under ``/tenants/``. A new tenant without explicit rules
+        must already carry the instance default ceiling (resolved by the controller).
         """
         by_name = TenantMetadataEntity.get_metadata_by_tenant_name(data.name)
         if by_name and by_name.id != data.tenant_id:
@@ -141,25 +141,26 @@ class TenantAdminService:
         await initialize_default_roles_for_tenant(data.tenant_id)
         await KeycloakAdminService.assign_superuser_to_tenant(data.tenant_id)
 
-        normalized_rules = [AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules]
+        normalized_rules = (
+            [AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules]
+            if data.access_rules is not None
+            else None
+        )
         if TenantMetadataEntity.get_metadata_by_tenant_id(data.tenant_id):
-            # Update: an empty rule set means "unchanged" (None) so a re-sync from an external source
-            # that always sends [] never wipes a ceiling an admin has since customized.
+            # Omitted rules leave the ceiling untouched, so a re-sync never overwrites one an admin has customized.
             entity = TenantMetadataEntity.update_tenant_metadata(
                 tenant_id=data.tenant_id,
                 name=data.name,
                 description=data.description,
-                access_rules=normalized_rules or None,
+                access_rules=normalized_rules,
                 lcdm_tenant_id=data.lcdm_tenant_id,
             )
         else:
-            # Create: seed a usable default ceiling when the caller sends none, so an externally
-            # synced tenant is not born locked out of every service.
             entity = TenantMetadataEntity.create_tenant_metadata(
                 tenant_id=data.tenant_id,
                 name=data.name,
                 description=data.description,
-                access_rules=normalized_rules or _DEFAULT_PROVISION_ACCESS_RULES,
+                access_rules=normalized_rules,
                 lcdm_tenant_id=data.lcdm_tenant_id,
             )
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
@@ -187,6 +188,7 @@ class TenantAdminService:
             tenant_id=tenant_id,
             name=data.name,
             description=data.description,
+            chat_disclaimer=data.chat_disclaimer,
             access_rules=(
                 [AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules]
                 if data.access_rules is not None
@@ -230,6 +232,7 @@ class TenantAdminService:
             "name": tenant.name,
             "description": tenant.description,
             "access_rules": list(tenant.access_rules),
+            "chat_disclaimer": tenant.chat_disclaimer.to_locale_string() if tenant.chat_disclaimer else None,
             "lcdm_tenant_id": tenant.lcdm_tenant_id,
         }
 

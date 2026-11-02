@@ -7,15 +7,14 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from pymilvus import MilvusClient
 from redis.asyncio import Redis
-from swiss_ai_hub.core.agents import CRON_CONFIG_KEY, AgentConfig
+from swiss_ai_hub.core.agents import ANONYMISE_CONFIG_KEY, CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
-    AgentConfigSpecs,
     CronStartEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.form import FormkitElement
+from swiss_ai_hub.core.form import ConfigSpecs, FormkitElement
 from swiss_ai_hub.core.form.template_data import TemplateData
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MilvusSettings, MongoSettings, NatsSettings, RedisSettings
 from swiss_ai_hub.core.publishers import NCPublisher
@@ -75,8 +74,11 @@ class AgentRunner(HealthCheckProvider):
         # as the run's actual config, so overwriting a real `CronSchedule` there with the form element
         # would hand an agent its own form to execute against.
         self.published_config = agent_config.for_discovery(is_schedulable=self.is_schedulable)
+        for capability in agent_type.installed_capabilities():
+            self.published_config = capability.published_config(self.published_config, agent_type)
         self.templates = templates or []
         self.agent_config_type = agent_config.__class__
+        agent_type.validate_workflow(self.agent_config_type)
 
         self.name = agent_type.name
         self.description = agent_type.description
@@ -112,17 +114,18 @@ class AgentRunner(HealthCheckProvider):
         )
 
     def _published_form(self) -> list[FormkitElement]:
-        """The published form, with the platform's schedule control after the blueprint's own settings.
+        """The published form, with the platform's controls (anonymisation, schedule) after the blueprint's own.
 
-        `cron` lives on `AgentConfig` and Pydantic orders base fields before subclass ones, so left where
-        it falls it would sit between the identity fields and a blueprint's first real setting — above
-        `system_prompt` on every schedulable agent. It is platform-injected rather than part of what the
-        blueprint asks an admin to configure, so it goes last.
+        `anonymise` and `cron` live on `AgentConfig` and Pydantic orders base fields before subclass ones, so left
+        where they fall they would sit between the identity fields and a blueprint's first real setting, above
+        `system_prompt`. They are platform-injected rather than part of what the blueprint asks an admin to
+        configure, so they go last.
         """
+        platform_keys = (ANONYMISE_CONFIG_KEY, CRON_CONFIG_KEY)
         elements = self.published_config.to_formkit_form()
-        blueprint_elements = [element for element in elements if element.name != CRON_CONFIG_KEY]
-        cron_elements = [element for element in elements if element.name == CRON_CONFIG_KEY]
-        return blueprint_elements + cron_elements
+        blueprint_elements = [element for element in elements if element.name not in platform_keys]
+        platform_elements = [element for key in platform_keys for element in elements if element.name == key]
+        return blueprint_elements + platform_elements
 
     @property
     def entity_name(self) -> str:
@@ -168,7 +171,7 @@ class AgentRunner(HealthCheckProvider):
 
         network_graph = WorkflowVisualizer(agent=self.agent_type).build()
 
-        agent_config_specs = AgentConfigSpecs.from_agent_config(self.published_config, self.agent_class)
+        agent_config_specs = ConfigSpecs.from_form(self.published_config, self.agent_class)
 
         templates_data: list[TemplateData] = [t.to_template_data(self.published_config) for t in self.templates]
 
@@ -181,6 +184,7 @@ class AgentRunner(HealthCheckProvider):
             agent_config_specs=agent_config_specs,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
             is_schedulable=self.is_schedulable,
+            supported_features=sorted(self.agent_type.supported_features()),
             start_events=start_event_specs,
             stop_events=stop_event_specs,
             hitl_request_events=hitl_request_event_specs,
@@ -207,9 +211,18 @@ class AgentRunner(HealthCheckProvider):
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         self.redis = RedisSettings.create_client()
 
-        # Connect to Milvus
+        # Connect to Milvus. Optional on purpose: this client only feeds the readiness report - RAG
+        # builds its own connection through MilvusVectorStoreConfig - so letting it raise turned a
+        # slow Milvus start into a restart loop across every agent container, the same way it did
+        # for the API on staging 2026-09-03.
         milvus_settings = MilvusSettings()
-        self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+        try:
+            self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+        # Broad on purpose: pymilvus re-raises the codes in its own IGNORE_RETRY_CODES as bare
+        # grpc.RpcError instead of MilvusException, so naming MilvusException would let an
+        # UNAUTHENTICATED from a token mismatch crash-loop the container exactly as before.
+        except Exception:
+            logger.exception("Milvus unreachable at startup, continuing without a client")
 
         # Connect to MongoDB (skip if already connected)
         try:

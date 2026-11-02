@@ -219,7 +219,7 @@ async def get_resource_with_stats(resource_id: str, t: LocaleHandler) -> Resourc
 
 ### Pattern 5: Caching (ThreadService pattern)
 
-Only use when profiling shows repeated DB queries. See `packages/api/swiss_ai_hub/api/routes/thread/ThreadService.py`.
+Only use when profiling shows repeated DB queries. See `packages/api/swiss_ai_hub/api/routes/thread/thread_service.py`.
 
 ```python
 from cachetools import TTLCache, cached

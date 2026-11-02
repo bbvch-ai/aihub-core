@@ -24,6 +24,26 @@ class LiteLLMProxySettings(EnvironmentSettings):
         Field(description="API key for authentication. If not provided, other authentication methods will be used."),
     ] = None
 
+    INTERNAL_BASE_URL: Annotated[
+        str | None,
+        Field(
+            description="In-cluster LiteLLM URL that Langfuse dials from its own containers when running managed "
+            "evaluators. Falls back to BASE_URL, which is already correct wherever the API and Langfuse share a "
+            "network; set it only where they do not, as in local development where the API runs on the host. Its "
+            "hostname must appear in LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST on langfuse-web and langfuse-worker."
+        ),
+    ] = None
+
+    CONNECT_TIMEOUT_SECONDS: Annotated[
+        float,
+        Field(
+            gt=0,
+            description="How long an LLM or embedding call may take to open its connection to the gateway. Kept "
+            "far below the request timeout: a connect that never completes has nothing in flight, so failing it "
+            "in seconds lets the SDK retry at once instead of waiting out the whole request timeout.",
+        ),
+    ] = 5.0
+
     USER_MAX_BUDGET: Annotated[float | None, Field(description="Budget available to a user in one period")] = None
     USER_SOFT_BUDGET: Annotated[
         float | None, Field(description="Get alerts when user crosses given budget, doesn't block requests.")
@@ -49,6 +69,10 @@ class LiteLLMProxySettings(EnvironmentSettings):
             'months ("1mo").'
         ),
     ] = None
+
+    def get_internal_base_url(self) -> str:
+        """Langfuse dials the registered connection itself, from a container that may not share BASE_URL's vantage."""
+        return self.INTERNAL_BASE_URL or self.BASE_URL
 
     @property
     def authorization_header(self) -> dict[str, str]:

@@ -17,15 +17,19 @@ from swiss_ai_hub.core.form.elements.input_number import InputNumber
 from swiss_ai_hub.core.form.elements.input_otp import InputOtp
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.form.elements.knob import Knob
+from swiss_ai_hub.core.form.elements.knowledge_collection_selector import KnowledgeCollectionSelector
 from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
 from swiss_ai_hub.core.form.elements.listbox import Listbox
 from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
+from swiss_ai_hub.core.form.elements.model_bound_input_number import ModelBoundInputNumber
+from swiss_ai_hub.core.form.elements.model_gated_checkbox import ModelGatedCheckbox
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.multi_select import MultiSelect
 from swiss_ai_hub.core.form.elements.password import Password
 from swiss_ai_hub.core.form.elements.radio_button import RadioButton
 from swiss_ai_hub.core.form.elements.rating import Rating
 from swiss_ai_hub.core.form.elements.repeater import Repeater
+from swiss_ai_hub.core.form.elements.secret_file_input import SecretFileInput
 from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.elements.select_button import SelectButton
 from swiss_ai_hub.core.form.elements.slider import Slider
@@ -41,8 +45,11 @@ _FORMKIT_TYPE_MAP: dict[str, str] = {
     "cronInput": "CronInput",
     "group": "Group",
     "iconSelector": "IconSelector",
+    "knowledgeCollectionSelector": "KnowledgeCollectionSelector",
     "knowledgeDatabaseSelector": "KnowledgeDatabaseSelector",
     "localeInput": "LocaleInput",
+    "modelBoundNumber": "ModelBoundInputNumber",
+    "modelGatedCheckbox": "ModelGatedCheckbox",
     "modelSelect": "ModelSelect",
     "primeCascadeSelect": "CascadeSelect",
     "primeCheckbox": "Checkbox",
@@ -65,6 +72,7 @@ _FORMKIT_TYPE_MAP: dict[str, str] = {
     "primeToggleButton": "ToggleButton",
     "primeToggleSwitch": "ToggleSwitch",
     "repeater": "Repeater",
+    "secretFileInput": "SecretFileInput",
     "tenantSelect": "TenantSelect",
     "vectorStoreInput": "VectorStoreInput",
 }
@@ -99,16 +107,20 @@ _FormElementUnion = (
     | Annotated[InputNumber, Tag("InputNumber")]
     | Annotated[InputOtp, Tag("InputOtp")]
     | Annotated[InputText, Tag("InputText")]
+    | Annotated[KnowledgeCollectionSelector, Tag("KnowledgeCollectionSelector")]
     | Annotated[KnowledgeDatabaseSelector, Tag("KnowledgeDatabaseSelector")]
     | Annotated[Knob, Tag("Knob")]
     | Annotated[Listbox, Tag("Listbox")]
     | Annotated[LocaleInput, Tag("LocaleInput")]
+    | Annotated[ModelBoundInputNumber, Tag("ModelBoundInputNumber")]
+    | Annotated[ModelGatedCheckbox, Tag("ModelGatedCheckbox")]
     | Annotated[ModelSelect, Tag("ModelSelect")]
     | Annotated[MultiSelect, Tag("MultiSelect")]
     | Annotated[Password, Tag("Password")]
     | Annotated[RadioButton, Tag("RadioButton")]
     | Annotated[Rating, Tag("Rating")]
     | Annotated[Repeater, Tag("Repeater")]
+    | Annotated[SecretFileInput, Tag("SecretFileInput")]
     | Annotated[Select, Tag("Select")]
     | Annotated[SelectButton, Tag("SelectButton")]
     | Annotated[Slider, Tag("Slider")]

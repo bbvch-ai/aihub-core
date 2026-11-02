@@ -1,9 +1,10 @@
 import logging
 from collections.abc import Callable
 
+from swiss_ai_hub.core.imap import MAX_SUBJECT_CHARACTERS, ParsedMessage
+
 from swiss_ai_hub.agent.imap.extracted_attachment import AttachmentOutcome, ExtractedAttachment
-from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
-from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS, TRUNCATION_MARKER, TokenBudget
+from swiss_ai_hub.agent.imap.token_budget import TRUNCATION_MARKER, TokenBudget
 
 logger = logging.getLogger(__name__)
 

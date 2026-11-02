@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Document Ingestion Pipeline" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" folderName="Run Services">
+    <makefile filename="$PROJECT_DIR$/packages/pipeline/Makefile" target="document-ingestion-pipeline" workingDirectory="$PROJECT_DIR$/packages/pipeline" arguments="">
+      <envs>
+        <env name="OTEL_ENABLED" value="false" />
+      </envs>
+    </makefile>
+    <method v="2" />
+  </configuration>
+</component>

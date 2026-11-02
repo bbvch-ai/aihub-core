@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-api"
-version = "0.321.0"
+version = "0.325.0"
 description = "Swiss AI Hub REST API, WebSocket gateway, and MCP server (FastAPI) for the Swiss AI Agent Protocol."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -24,11 +24,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "swiss-ai-hub-core==0.321.0",
+    "swiss-ai-hub-core==0.325.0",
     "azure-identity>=1.19.0",
     "azure-mgmt-cosmosdb>=9.7.0",
     "azure-mgmt-resource>=23.2.0",
-    "uvicorn[standard]>=0.34.0",
+    "uvicorn[standard]>=0.48.0",
     "gunicorn>=23.0.0",
     "httpx>=0.28.1",
     "cryptography>=44.0.0",
@@ -38,7 +38,7 @@ dependencies = [
     "stringcase>=1.2.0",
     "pydub>=0.25.1",
     "audioop-lts>=0.2.1",
-    "fastmcp>=2.11.2",
+    "fastmcp>=3.0.0",
     "opentelemetry-instrumentation-fastapi>=0.60b1",
     "starlette>=1.0.1",
     "swiss-ai-hub-jambo>=0.5.0",
@@ -56,7 +56,7 @@ Documentation = "https://bbvch-ai.github.io/aihub-core/"
 Issues = "https://github.com/bbvch-ai/aihub-core/issues"
 
 [build-system]
-requires = ["uv_build>=0.10.4,<0.11.0"]
+requires = ["uv_build>=0.10.4,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

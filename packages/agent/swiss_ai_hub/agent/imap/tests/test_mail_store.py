@@ -4,10 +4,9 @@ from email.policy import default as default_policy
 from unittest.mock import Mock, patch
 
 import pytest
+from swiss_ai_hub.core.imap import MailParser, ParsedAttachment
 
-from swiss_ai_hub.agent.imap.mail_parser import MailParser
 from swiss_ai_hub.agent.imap.mail_store import MailStore
-from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment
 
 _STORE_MODULE = "swiss_ai_hub.agent.imap.mail_store"
 _AGENT_CLASS = "ImapAgent"

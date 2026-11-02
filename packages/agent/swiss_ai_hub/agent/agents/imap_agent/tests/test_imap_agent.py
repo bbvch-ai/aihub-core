@@ -11,14 +11,13 @@ from swiss_ai_hub.core.events.agent import (
     UnreadMailListedEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig
+from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig, ParsedMessage
 from swiss_ai_hub.core.testing import async_test
 
 from swiss_ai_hub.agent.agents.imap_agent.configs.imap_agent_config import ImapAgentConfig
 from swiss_ai_hub.agent.agents.imap_agent.events.draft_mail_start_event import DraftMailStartEvent
 from swiss_ai_hub.agent.agents.imap_agent.events.read_mail_start_event import ReadMailStartEvent
 from swiss_ai_hub.agent.agents.imap_agent.imap_agent import ImapAgent
-from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 from swiss_ai_hub.agent.imap.tests.mail_doubles import infrastructure_patches, make_client
 from swiss_ai_hub.agent.imap.tests.mail_doubles import summary as _summary
 from swiss_ai_hub.agent.runners import AgentTestRunner

@@ -1,0 +1,269 @@
+---
+manual_upload:
+  display_name: Manueller Upload
+  description: Dokumente werden von Hand über die Wissensansichten hochgeladen; nichts
+    synchronisiert sie.
+rclone:
+  display_name: Cloud-Speicher-Synchronisation (rclone)
+  description: Hält die Datenbank mit einer SharePoint-Dokumentbibliothek, einem OneDrive,
+    einem Google-Drive-Ordner oder einem S3-Bucket synchron. Jeder Ordner der obersten
+    Ebene wird zu einem Namespace.
+  config:
+    backend_type:
+      label: Speicher-Backend
+      help: Aus welcher Art von System die Dateien geholt werden.
+      options:
+        onedrive: OneDrive / SharePoint
+        drive: Google Drive
+        s3: Amazon S3 / S3-kompatibel
+        azureblob: Azure Blob Storage
+        sftp: SFTP
+        local: Lokaler Ordner
+    root_path:
+      label: Stammordner
+      help: Ordner in der Quelle, der synchronisiert wird. Jeder seiner Ordner der
+        obersten Ebene wird zu einem Namespace; Dateien direkt darin werden nicht
+        synchronisiert.
+    include_patterns:
+      label: Einschlussmuster
+      help: rclone-Glob-Regeln; wenn gesetzt, werden nur passende Dateien synchronisiert
+        (z. B. *.pdf, reports/**).
+    exclude_patterns:
+      label: Ausschlussmuster
+      help: rclone-Glob-Regeln für zu überspringende Dateien (z. B. **/~$*, drafts/**).
+    onedrive:
+      client_id:
+        label: Client-ID
+        help: Anwendungs-ID (Client-ID) der Entra-ID-App-Registrierung.
+      client_secret:
+        label: Client-Geheimnis
+        help: Client-Geheimnis der App-Registrierung. Verschlüsselt gespeichert.
+      tenant:
+        label: Mandanten-ID
+        help: Entra-ID-Mandanten-(Verzeichnis-)ID.
+      drive_id:
+        label: Laufwerks-ID
+        help: ID des zu synchronisierenden Laufwerks. Bei SharePoint das Laufwerk
+          der Dokumentbibliothek, eine mit b! beginnende ID, wie Microsoft Graph sie
+          unter den Laufwerken der Website auflistet.
+      drive_type:
+        label: Laufwerkstyp
+        help: personal, business oder documentLibrary (SharePoint). rclone übernimmt
+          beim Verbinden den Wert, den Microsoft Graph für das Laufwerk meldet.
+      region:
+        label: Region
+        help: 'Microsoft-Cloud: global, us, de oder cn.'
+      token:
+        label: OAuth-Token
+        help: Vorab erzeugtes rclone-Token-JSON als Alternative zu Client-Anmeldedaten.
+          Verschlüsselt gespeichert.
+    drive:
+      client_id:
+        label: Client-ID
+        help: OAuth-Client-ID Ihres Google-Cloud-Projekts.
+      client_secret:
+        label: Client-Geheimnis
+        help: OAuth-Client-Geheimnis. Verschlüsselt gespeichert.
+      token:
+        label: OAuth-Token
+        help: Vorab erzeugtes rclone-Token-JSON. Verschlüsselt gespeichert.
+      service_account_credentials:
+        label: Dienstkonto-Schlüsseldatei
+        help: Aus der Google-Cloud-Konsole heruntergeladene JSON-Schlüsseldatei, als
+          Alternative zu einem OAuth-Token. Verschlüsselt gespeichert.
+      root_folder_id:
+        label: Stammordner-ID
+        help: Drive-Ordner-ID, die als Stamm gilt; leer für das ganze Laufwerk.
+    s3:
+      provider:
+        label: Anbieter
+        help: rclone-S3-Anbietername, z. B. AWS, Minio, Ceph.
+      access_key_id:
+        label: Access Key ID
+        help: Access Key ID.
+      secret_access_key:
+        label: Secret Access Key
+        help: Secret Access Key. Verschlüsselt gespeichert.
+      region:
+        label: Region
+        help: Region, z. B. eu-central-1.
+      endpoint:
+        label: Endpunkt
+        help: Endpunkt-URL für Nicht-AWS-Anbieter.
+    azureblob:
+      account:
+        label: Speicherkonto
+        help: Name des Azure-Speicherkontos.
+      key:
+        label: Kontoschlüssel
+        help: Schlüssel des Speicherkontos. Verschlüsselt gespeichert.
+      sas_url:
+        label: SAS-URL
+        help: Shared-Access-Signature-URL als Alternative zu einem Kontoschlüssel.
+          Verschlüsselt gespeichert.
+      endpoint:
+        label: Endpunkt
+        help: Eigener Endpunkt für souveräne Clouds.
+    sftp:
+      host:
+        label: Host
+        help: SFTP-Hostname oder IP.
+      port:
+        label: Port
+        help: SFTP-Port.
+      user:
+        label: Benutzer
+        help: SFTP-Benutzername.
+      password:
+        label: Passwort
+        help: Passwort als Alternative zu einem privaten Schlüssel. Verschlüsselt
+          gespeichert.
+      key_pem:
+        label: Privater Schlüssel (PEM)
+        help: PEM-kodierter privater Schlüssel als Alternative zu einem Passwort.
+          Verschlüsselt gespeichert.
+structured:
+  display_name: Synchronisation von Geschäftsanwendungen
+  description: Hält die Datenbank mit Datensätzen aus Geschäftsanwendungen wie Issue-Trackern
+    und Wikis synchron. Jeder Datensatz wird zu einem Markdown-Dokument, sein Projekt
+    oder Bereich zu einem Namespace.
+  config:
+    source_kind:
+      label: Quellsystem
+      help: Aus welcher Anwendung die Datensätze gelesen werden. Ihre Einstellungen
+        erscheinen, sobald sie ausgewählt ist.
+    jira:
+      display_name: Jira
+      base_url:
+        label: Jira-URL
+        help: Die Adresse, unter der Sie Jira öffnen, z. B. https://acme.atlassian.net
+          für Jira Cloud oder https://jira.acme.ch/jira für Jira Data Center.
+      deployment:
+        label: Jira-Edition
+        help: Jira Cloud meldet sich mit der E-Mail-Adresse eines Kontos und einem
+          API-Token an, Jira Data Center mit einem persönlichen Zugriffstoken.
+        cloud: Jira Cloud
+        data_center: Jira Data Center (11.3)
+      email:
+        label: E-Mail-Adresse des Kontos
+        help: E-Mail-Adresse des Jira-Cloud-Kontos, zu dem das API-Token gehört.
+      api_token:
+        label: Token
+        help: Ein Jira-Cloud-API-Token ohne Bereiche oder ein persönliches Zugriffstoken
+          von Jira Data Center. Wird verschlüsselt gespeichert. Die Datenbank enthält
+          alle Vorgänge und Kommentare, die dieses Konto lesen darf, ausser eingeschränkten
+          Kommentaren. Verwenden Sie deshalb ein eigenes Konto mit Lesezugriff.
+      project_keys:
+        label: Projekte
+        help: Schlüssel der zu synchronisierenden Projekte, z. B. ABC. Jedes Projekt
+          wird zu einem Namespace.
+      jql:
+        label: Zusätzlicher JQL-Filter
+        help: Optional. Synchronisiert werden nur Vorgänge, die auch diese JQL erfüllen,
+          z. B. issuetype != "Service Request". Ohne ORDER BY.
+    confluence:
+      display_name: Confluence
+      base_url:
+        label: Confluence-URL
+        help: Die Adresse, unter der Sie Confluence öffnen, z. B. https://acme.atlassian.net/wiki
+          für Confluence Cloud oder https://confluence.acme.ch für Confluence Data
+          Center.
+      deployment:
+        label: Confluence-Edition
+        help: Confluence Cloud meldet sich mit der E-Mail-Adresse eines Kontos und
+          einem API-Token an, Confluence Data Center mit einem persönlichen Zugriffstoken.
+        cloud: Confluence Cloud
+        data_center: Confluence Data Center
+      email:
+        label: E-Mail-Adresse des Kontos
+        help: E-Mail-Adresse des Confluence-Cloud-Kontos, zu dem das API-Token gehört.
+      api_token:
+        label: Token
+        help: Ein Confluence-Cloud-API-Token ohne Bereiche oder ein persönliches Zugriffstoken
+          von Confluence Data Center. Wird verschlüsselt gespeichert. Die Datenbank
+          enthält alle Seiten, die dieses Konto in den angegebenen Bereichen lesen
+          darf. Verwenden Sie deshalb ein eigenes Konto mit Lesezugriff.
+      space_keys:
+        label: Bereiche
+        help: Schlüssel der zu synchronisierenden Bereiche, z. B. ENG. Jeder Bereich
+          wird zu einem Namespace, sein Seitenbaum zu Ordnern.
+      labels:
+        label: Stichwörter
+        help: Optional. Synchronisiert werden nur Seiten mit mindestens einem dieser
+          Stichwörter.
+      ancestor_page_ids:
+        label: Übergeordnete Seiten
+        help: Optional. Synchronisiert werden nur diese Seiten und die Seiten darunter.
+          Die ID einer Seite ist die Zahl in ihrer URL.
+    mediawiki:
+      display_name: MediaWiki
+      base_url:
+        label: Wiki-URL
+        help: Der Ordner mit der api.php des Wikis, z. B. https://wiki.acme.ch oder
+          https://acme.ch/w.
+      auth_method:
+        label: Anmeldung
+        help: Wie sich die Pipeline am Wiki anmeldet. Wählen Sie die Anmeldeseite,
+          wenn das Wiki über eine Erweiterung wie LDAP oder Single Sign-on anmeldet.
+        bot_password: Bot-Passwort
+        web_form: Anmeldeseite
+        oauth: OAuth-Zugriffstoken
+        anonymous: Ohne Anmeldung (öffentliches Wiki)
+      username:
+        label: Benutzername
+        help: Das Konto, mit dem die Pipeline liest; bei einem Bot-Passwort Benutzer@BotName
+          wie auf Spezial:Bot-Passwörter angezeigt.
+      password:
+        label: Passwort
+        help: Das Bot-Passwort oder das Passwort des Kontos. Wird verschlüsselt gespeichert.
+          Die Datenbank enthält alle Seiten, die dieses Konto in den angegebenen Namensräumen
+          lesen darf. Verwenden Sie deshalb ein eigenes Konto mit Lesezugriff.
+      access_token:
+        label: Zugriffstoken
+        help: Das Zugriffstoken eines OAuth-2-Consumers nur für den Eigentümer, registriert
+          auf Spezial:OAuthConsumerRegistration mit der Berechtigung für Basisrechte.
+          Wird verschlüsselt gespeichert. Die Datenbank enthält alle Seiten, die das
+          Konto des Tokens in den angegebenen Namensräumen lesen darf. Registrieren
+          Sie es deshalb für ein eigenes Konto mit Lesezugriff.
+      namespaces:
+        label: Namensräume
+        help: Optional. Namen oder Nummern der zu synchronisierenden Namensräume,
+          z. B. Main oder Project. Leer bedeutet nur den Hauptnamensraum. Jeder Namensraum
+          wird zu einem Namespace.
+      include_categories:
+        label: Kategorien
+        help: Optional. Synchronisiert werden nur Seiten in mindestens einer dieser
+          Kategorien.
+      exclude_categories:
+        label: Ausgeschlossene Kategorien
+        help: Optional. Seiten in einer dieser Kategorien werden nie synchronisiert,
+          z. B. eine Kategorie für Seiten, die KI-Assistenten nicht sehen sollen.
+      include_subcategories:
+        label: Unterkategorien einbeziehen
+        help: Eine Kategorie umfasst auch die Seiten aller Kategorien unter ihr, für
+          die einbezogenen und die ausgeschlossenen Kategorien.
+      sync_documents:
+        label: Dokumente synchronisieren
+        help: Synchronisiert auch die Dokumente, die auf den synchronisierten Seiten
+          angezeigt oder verlinkt sind (PDF, Word, PowerPoint, Excel und Textdateien),
+          in den Namespace File. Alte Office-Formate (doc, ppt) und Archive werden
+          ausgelassen.
+      sync_images:
+        label: Bilder synchronisieren
+        help: Synchronisiert auch die Bilder, die auf den synchronisierten Seiten
+          angezeigt oder verlinkt sind (PNG, JPEG, GIF, BMP, WebP, TIFF), in den Namespace
+          File. Bilder, die eine Vorlage anzeigt, etwa Logos und Icons, werden ausgelassen,
+          ebenso SVG-Dateien.
+      max_file_size_mb:
+        label: Maximale Dateigrösse (MB)
+        help: Grössere Dateien werden ausgelassen. Beim Speichern wird jeweils eine
+          Datei im Arbeitsspeicher gehalten.
+      min_image_pixels:
+        label: Minimale Bildgrösse (px)
+        help: Schmalere oder niedrigere Bilder werden als Icons ausgelassen. 0 behält
+          alle Bilder.
+      user_agent:
+        label: User-Agent
+        help: Optional. Wird bei jeder Anfrage an das Wiki mitgesendet, z. B. ein
+          Name und eine Kontaktadresse. Die Wikis von Wikimedia verlangen einen und
+          sperren den Standardwert unter Umständen. Leer behält den Standardwert.

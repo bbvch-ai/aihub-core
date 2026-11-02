@@ -378,7 +378,7 @@ packages/core/swiss_ai_hub/core/persistence/
 
 **Typical invocation**: `/scaffold-api-repository notification`
 
-**Result**: Creates `packages/core/swiss_ai_hub/core/persistence/notification/NotificationEntity.py` with:
+**Result**: Creates `packages/core/swiss_ai_hub/core/persistence/notification/notification_entity.py` with:
 
 - Document class with schema fields
 - Repository classmethods (get_by_id, find_by_name, get_all, create, delete)

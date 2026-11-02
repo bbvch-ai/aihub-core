@@ -33,3 +33,12 @@ server:
   image_proxy: false
   port: 8080
   bind_address: 0.0.0.0
+# `keep_only` filters the engine set but does not enable engines that ship
+# disabled upstream. SearXNG 2026.9.5 flipped mojeek and qwant to
+# disabled-by-default, silently reducing the list above from seven engines to
+# five, so both need re-enabling explicitly to keep the documented set intact.
+engines:
+  - name: mojeek
+    disabled: false
+  - name: qwant
+    disabled: false

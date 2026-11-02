@@ -3,7 +3,7 @@ from typing import Annotated, Literal, Self
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pydantic import Field
 
-from swiss_ai_hub.core.form.constraints import Ge, MinLen
+from swiss_ai_hub.core.form.constraints import Ge, Le, MinLen
 from swiss_ai_hub.core.form.elements.input_number import InputNumber
 from swiss_ai_hub.core.form.elements.multi_select import MultiSelect
 from swiss_ai_hub.core.form.elements.select import Select
@@ -40,6 +40,17 @@ class KnowledgeRetrieverConfig(BaseRetrieverConfig):
         VectorStoreQueryMode | Select,
         Field(description="Specifies how the vector store should be queried (e.g., 'default', 'hybrid')."),
     ] = VectorStoreQueryMode.DEFAULT
+    min_similarity: Annotated[
+        float | InputNumber,
+        Field(
+            description=(
+                "Results whose similarity to the question is below this value are dropped before reranking. "
+                "Applies to the default query mode only; 0 keeps every result."
+            )
+        ),
+        Ge(0.0),
+        Le(1.0),
+    ] = 0.35
     node_types: Annotated[
         list[Literal["summary", "content"]] | MultiSelect,
         Field(description="The types of nodes to retrieve (options: 'summary' or 'content')."),
@@ -80,6 +91,14 @@ class KnowledgeRetrieverConfig(BaseRetrieverConfig):
                 ],
                 option_label="label",
                 option_value="value",
+            ),
+            min_similarity=InputNumber(
+                label=LocaleString.from_i18n_path("lib.retriever.config.min_similarity.label"),
+                help=LocaleString.from_i18n_path("lib.retriever.config.min_similarity.help"),
+                min=0,
+                max=1,
+                step=0.05,
+                min_fraction_digits=2,
             ),
             node_types=MultiSelect(
                 label=LocaleString.from_i18n_path("lib.retriever.config.node_types.label"),

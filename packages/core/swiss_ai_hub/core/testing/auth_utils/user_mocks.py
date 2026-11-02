@@ -207,5 +207,6 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
             "services": [{"level": 2, "name": "Mein Konto"}],
         }
         data["access_rules"] = ["aihub.admin.>"]
+        data["preferred_locale"] = None
 
     return data

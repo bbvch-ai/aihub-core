@@ -175,7 +175,7 @@ subscriber.
 
 Each running agent has a NATS Core subscriber for discovery requests, registered during `AgentRunner.start()`. When the
 request arrives, the handler inspects the agent class to collect its start events, stop events, human-in-the-loop
-events, workflow graph (built by `WorkflowVisualizer`), and configuration schema (built by `AgentConfigSpecs` from the
+events, workflow graph (built by `WorkflowVisualizer`), and configuration schema (built by `ConfigSpecs` from the
 agent's Pydantic form model). It packages this metadata into an `AgentClassDiscoveryResponseEvent` and publishes it back
 on the response subject.
 

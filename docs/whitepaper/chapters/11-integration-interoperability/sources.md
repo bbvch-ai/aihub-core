@@ -27,7 +27,7 @@
 # Data Integration and Resolving Silos
 
 2_platform/6_pipelines/index.en.md 2_platform/6_pipelines/1_fundamentals/index.en.md
-2_platform/6_pipelines/2_rag_ingestion_pipeline/index.en.md 2_platform/8_knowledges/index.en.md
+2_platform/6_pipelines/2_document_ingestion_pipeline/index.en.md 2_platform/8_knowledges/index.en.md
 2_platform/22_external_integrations/index.en.md 3_sdk/3_building_pipelines/index.en.md
 3_sdk/3_building_pipelines/3_data_ingestion_pipeline/index.en.md 6_code_deep_dive/aihub_pipeline/index.en.md
 

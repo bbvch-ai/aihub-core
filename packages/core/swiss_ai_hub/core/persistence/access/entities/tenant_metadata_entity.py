@@ -1,14 +1,16 @@
 from datetime import UTC, datetime
 from typing import Self
 
-from mongoengine import DateTimeField, Document, IntField, ListField, NotUniqueError, StringField
+from mongoengine import DateTimeField, Document, EmbeddedDocumentField, IntField, ListField, NotUniqueError, StringField
 
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 
 class TenantMetadataEntity(Document):
     """
-    Metadata (display name, description, access rules) for a tenant.
+    Metadata (display name, description, access rules, chat disclaimer) for a tenant.
 
     WARNING: This collection is NOT the source of truth for tenant existence.
     Keycloak owns that — the group ``/tenants/<tenant_id>`` is the only authoritative
@@ -35,6 +37,7 @@ class TenantMetadataEntity(Document):
     name = StringField(required=True, unique=True)
     description = StringField(default="")
     access_rules = ListField(StringField(), default=list)
+    chat_disclaimer = EmbeddedDocumentField(LocaleStringEntity)
     # The originating LCDM Hub tenant id (numeric), set when a tenant is pushed in from the LCDM Hub.
     # It is what the LCDM MCP expects in its X-LCDM-Tenant header, so exposing it here lets an admin
     # read it off the AI Hub tenant when wiring an McpReactAgent profile. None for non-LCDM tenants.
@@ -81,6 +84,7 @@ class TenantMetadataEntity(Document):
         description: str = "",
         access_rules: list[str] | None = None,
         lcdm_tenant_id: int | None = None,
+        chat_disclaimer: LocaleString | None = None,
     ) -> Self:
         """Stores metadata for an existing Keycloak tenant group.
 
@@ -93,6 +97,7 @@ class TenantMetadataEntity(Document):
             description=description,
             access_rules=access_rules or [],
             lcdm_tenant_id=lcdm_tenant_id,
+            chat_disclaimer=LocaleStringEntity.from_locale_string(chat_disclaimer) if chat_disclaimer else None,
         )
         tenant.save()
         return tenant
@@ -136,6 +141,7 @@ class TenantMetadataEntity(Document):
         description: str | None = None,
         access_rules: list[str] | None = None,
         lcdm_tenant_id: int | None = None,
+        chat_disclaimer: LocaleString | None = None,
     ) -> Self | None:
         """
         Updates stored metadata for an existing tenant. Returns the updated entity or None if no metadata was stored.
@@ -155,6 +161,8 @@ class TenantMetadataEntity(Document):
             tenant.access_rules = access_rules
         if lcdm_tenant_id is not None:
             tenant.lcdm_tenant_id = lcdm_tenant_id
+        if chat_disclaimer is not None:
+            tenant.chat_disclaimer = LocaleStringEntity.from_locale_string(chat_disclaimer)
 
         tenant.updated_at = datetime.now(UTC)
         tenant.save()
@@ -209,7 +217,7 @@ class TenantMetadataEntity(Document):
     @classmethod
     @trace_fn
     def cascade_delete_tenant_data(cls, tenant_id: str) -> None:
-        """Deletes the tenant-scoped role and membership rows.
+        """Deletes tenant settings, roles and memberships.
 
         Must run only after ``delete_tenant_metadata`` has confirmed the row-delete
         does not violate the last-tenant invariant — this cascade is irreversible

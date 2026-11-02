@@ -4,9 +4,11 @@ from pydantic import Field
 
 from swiss_ai_hub.core.form.constraints import MinLen
 from swiss_ai_hub.core.form.elements.input_text import InputText
+from swiss_ai_hub.core.form.elements.knowledge_collection_selector import KnowledgeCollectionSelector
 from swiss_ai_hub.core.form.elements.textarea import Textarea
 from swiss_ai_hub.core.form.elements.toggle_switch import ToggleSwitch
 from swiss_ai_hub.core.form.form import Form
+from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
@@ -21,6 +23,12 @@ class MailCategory(Form):
     `draft_reply` is per category because the value of a drafted reply is: a `complaint` usually warrants one, a
     `thanking` mail rarely does. Mail no category fitted goes to the fallback folder and is therefore never drafted —
     the opt-in lives on the category, and uncategorised mail has none.
+
+    `knowledge_namespaces` narrows retrieval per category: a `support_request` is answered from the support
+    documentation, not from invoices. Left off, the reply is answered from every collection the profile's knowledge
+    agent retrieves from; turned on, from the collections named here and no others. The knowledge agent supplies which
+    collections can be named. The selection only applies while `draft_reply` is on, since retrieval only ever serves
+    a drafted reply; a selection left behind on a category that stopped drafting is kept but ignored.
     """
 
     category: Annotated[
@@ -46,6 +54,15 @@ class MailCategory(Form):
             "human to review and send. Mail is never sent.",
         ),
     ]
+    knowledge_namespaces: Annotated[
+        list[BucketNamespacePair] | KnowledgeCollectionSelector | None,
+        Field(
+            default=None,
+            description="Knowledge collections this category's replies are answered from. Left off, the reply is "
+            "answered from every collection the knowledge agent retrieves from; turned on, from the collections "
+            "named here and no others.",
+        ),
+    ] = None
 
     @classmethod
     def as_form(cls) -> Self:
@@ -67,5 +84,20 @@ class MailCategory(Form):
             draft_reply=ToggleSwitch(
                 label=LocaleString.from_i18n_path("lib.imap.config.category_draft_reply.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.category_draft_reply.help"),
+            ),
+            knowledge_namespaces=KnowledgeCollectionSelector(
+                label=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.help"),
+                placeholder=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.placeholder"),
+                toggle_label=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.toggle_label"),
+                toggle_help=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.toggle_help"),
+                # Only ever evaluated while the enable toggle is on, since the toggle unmounts the field: switched
+                # on and left empty reads like narrowing but retrieves everything, so it is rejected in the form
+                # rather than by the run that would have been answered too widely.
+                required=True,
+                # A row-data reference, not `$get(...)`: categories are a repeater, and `$get` resolves through one
+                # global node registry shared by every row. Collections only shape a drafted reply, so they are
+                # offered only where one is drafted.
+                condition_if="$draft_reply",
             ),
         )

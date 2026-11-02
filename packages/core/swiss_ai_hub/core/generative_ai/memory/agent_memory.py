@@ -4,6 +4,7 @@ from functools import cached_property
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails import GatewayGuardrails
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.mem0_service import Mem0Service
 from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
@@ -25,13 +26,24 @@ class AgentMemory:
     interacted with the user, enabling specialized memory banks per agent type.
     """
 
-    def __init__(self, agent_config: AgentConfig, agent_class: str, t: LocaleHandler):
+    def __init__(
+        self,
+        agent_config: AgentConfig,
+        agent_class: str,
+        t: LocaleHandler,
+        llm_model_name: str | None = None,
+    ):
         """
         Initialize agent memory with customized fact extraction prompts.
 
         Configures mem0 with agent-specific prompts that guide the LLM on what facts to extract from
         conversations. This personalization ensures memories are relevant to the agent's domain and includes
         temporal context (current date) for time-sensitive information.
+
+        `llm_model_name` is the profile's own extraction model (issue #1590). Extraction and reconciliation
+        are short, mechanical tasks, so a profile may point them at a smaller model than its answer model.
+        Unset means the platform default (`MEM0_LLM_NAME`), which is why resolution lives here rather than in
+        a config validator: the fallback is a deployment setting, not another field on the config.
         """
         self._agent_class = agent_class
         custom_fact_extraction_prompt = t(
@@ -49,6 +61,7 @@ class AgentMemory:
         self._agent_config = agent_config
         self._t = t
         self._settings = Mem0Settings()
+        self._llm_model_name = llm_model_name
         self._custom_fact_extraction_prompt = custom_fact_extraction_prompt
         self._custom_update_memory_prompt = custom_update_memory_prompt
 
@@ -59,8 +72,20 @@ class AgentMemory:
             custom_fact_extraction_prompt=self._custom_fact_extraction_prompt,
             custom_update_memory_prompt=self._custom_update_memory_prompt,
             enable_graph=False,
+            llm_name=self._llm_model_name,
         )
-        return Mem0Service(config, t=self._t)
+        return Mem0Service(
+            config,
+            t=self._t,
+            max_search_query_tokens=self._settings.SEARCH_QUERY_EMBEDDING_WINDOW,
+            requested_guardrails=self._requested_guardrails,
+        )
+
+    @property
+    def _requested_guardrails(self) -> tuple[str, ...]:
+        """Extraction and reconciliation are LLM calls of the run too, so an anonymised profile anonymises them."""
+        anonymise = self._agent_config.anonymise is True or GatewayGuardrails.anonymising()
+        return (GatewayGuardrails.PII_ANONYMISATION,) if anonymise else ()
 
     @property
     def agent_id(self):

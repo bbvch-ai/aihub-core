@@ -4,27 +4,32 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
-    LLMStopEvent,
+    LLMEvent,
+    MemoryStorageRequestedEvent,
     Message,
     StopEvent,
     ToolEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import limit_chat_history
+from swiss_ai_hub.core.generative_ai import limit_chat_history, merge_consecutive_messages
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
-from swiss_ai_hub.core.persistence import TenantMetadataEntity
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config import McpReactAgentConfig
 from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
+from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
-from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_conversation_metadata
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
 from swiss_ai_hub.agent.mcp.mcp_resource_schemas import fetch_static_resources, resource_read_tool_schema
+from swiss_ai_hub.agent.mcp.mcp_tenant_header_resolver import McpTenantHeaderResolver
 from swiss_ai_hub.agent.mcp.mcp_tool_schemas import execute_single_tool_call, to_openai_tool_schemas, to_tool_events
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -33,38 +38,6 @@ TOOL_SCHEMAS_KEY = "mcp_tool_schemas"
 CONVERSATION_KEY = "conversation"
 TOTAL_TOOL_CALLS_KEY = "total_tool_calls"
 NEW_TOOL_CALLS_KEY = "new_tool_calls"
-TENANT_HEADER_VALUE_KEY = "mcp_tenant_header_value"
-
-
-async def _apply_tenant_header(
-    mcp_config: McpClientConfig,
-    run_context: RunContext,
-    user: UserIdentity | None,
-) -> McpClientConfig:
-    """Inject the acting tenant's originating id under ``forward_tenant_id_header`` when configured.
-
-    One agent profile can then serve every tenant, each MCP call scoped to its own external tenant.
-    The value is resolved from the user's acting tenant on the entry step (which carries the user)
-    and cached in the run context, so later tool-execution steps — whose trigger events have no user —
-    reuse the same tenant. No-op when the header is not configured or the tenant has no originating id.
-    """
-    header_name = mcp_config.forward_tenant_id_header
-    if not header_name:
-        return mcp_config
-
-    tenant_id_value: str | None = await run_context.get(TENANT_HEADER_VALUE_KEY, None)
-    if tenant_id_value is None and user is not None and user.acting_within_tenant is not None:
-        entity = TenantMetadataEntity.get_metadata_by_tenant_id(user.acting_within_tenant.id)
-        if entity is not None and entity.lcdm_tenant_id is not None:
-            tenant_id_value = str(entity.lcdm_tenant_id)
-            await run_context.set(TENANT_HEADER_VALUE_KEY, tenant_id_value)
-
-    if tenant_id_value is None:
-        return mcp_config
-
-    merged_headers = dict(mcp_config.headers or {})
-    merged_headers[header_name] = tenant_id_value
-    return mcp_config.model_copy(update={"headers": merged_headers})
 
 
 @precondition()
@@ -84,7 +57,12 @@ async def all_tool_calls_emitted(tool_events: list[ToolEvent], run_context: RunC
 
 
 class McpReactAgent(Agent):
-    """ReAct agent that discovers and calls tools on an external MCP server."""
+    """ReAct agent that discovers and calls tools on an external MCP server.
+
+    The loop is the blueprint's answer pipeline: it starts once the conversation capability has cleared the
+    message and memory has answered, and it hands the final answer back to the conversation for the
+    follow-ups and the stop.
+    """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.mcp_react_agent.metadata.name")
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path(
@@ -93,20 +71,58 @@ class McpReactAgent(Agent):
     icon: ClassVar[str] = "mage:plug"
 
     @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.limit_chat_history.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.limit_chat_history.description"),
+        icon="mage:edit",
+    )
+    async def limit_chat_history_step(
+        self,
+        event: UserMessageEvent,
+        config: McpReactAgentConfig,
+    ) -> Conversation.ContextualizeRequest:
+        """The entry step: the chat message becomes the limited history the conversation picks up from."""
+        limited = limit_chat_history(chat_history=event.messages, number_of_input_tokens=config.input_budget)
+        return Conversation.contextualize(history=limited, message=event)
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.description"),
+        icon="mdi:brain",
+    )
+    async def gather_context_step(
+        self, ctx: Conversation.Contextualized, start_event: UserMessageEvent, config: KnowledgeFields
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]:
+        references = start_event.knowledge_references
+        reserve = config.knowledge.context_reserve() if references else 0
+        return [
+            Memory.recall(ctx.query),
+            AttachedFiles.read(start_event.files, ctx.history, ctx.query, reserve_tokens=reserve),
+            Knowledge.search(references, ctx.query),
+        ]
+
+    @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.name"),
         description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.description"),
         icon="mage:search",
     )
     async def init_step(
         self,
-        event: UserMessageEvent,
+        ctx: Conversation.Contextualized,
+        memories: Memory.Recalled,
+        files: AttachedFiles.Contents,
+        knowledge: Knowledge.Searched,
+        start_event: UserMessageEvent,
         mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
         run_context: RunContext,
         user: UserIdentity | None = None,
     ) -> McpReasoningEvent:
-        """Discover MCP tools and resources, seed conversation with system prompt, trigger first reasoning iteration."""
-        mcp_config = await _apply_tenant_header(mcp_config, run_context, user)
+        """Discover MCP tools and resources, seed the conversation with the system prompt and the recalled
+        memories, trigger the first reasoning iteration.
+
+        The history keeps the client's system messages. Merged so strict providers see one leading system message.
+        """
+        mcp_config = await McpTenantHeaderResolver.apply(mcp_config, run_context, user)
         user_token = await McpAuthResolver.resolve_user_token(run_context)
         async with McpClientFactory.create(mcp_config, user_token=user_token) as mcp_client:
             tools = await mcp_client.list_tools()
@@ -126,7 +142,7 @@ class McpReactAgent(Agent):
 
         messages: list[ChatMessage] = []
         if config.system_prompt:
-            locale = event.locale
+            locale = start_event.locale
             messages.append(ChatMessage(role=MessageRole.SYSTEM, content=config.system_prompt.in_locale(locale)))
 
         if server_instructions:
@@ -135,11 +151,12 @@ class McpReactAgent(Agent):
         if resource_context:
             messages.append(ChatMessage(role=MessageRole.SYSTEM, content=resource_context))
 
-        messages.extend(msg for msg in event.messages if msg.role != MessageRole.SYSTEM)
+        messages.extend(message for block in [*memories.blocks, knowledge.block, files.block] for message in block)
+        messages.extend(ctx.history)
 
         limited = limit_chat_history(
-            chat_history=messages,
-            number_of_input_tokens=config.number_of_input_tokens,
+            chat_history=merge_consecutive_messages(messages),
+            number_of_input_tokens=config.input_budget,
         )
 
         return McpReasoningEvent(
@@ -155,14 +172,15 @@ class McpReactAgent(Agent):
     async def reasoning_step(
         self,
         event: McpReasoningEvent,
+        ctx: Conversation.Contextualized,
         config: McpReactAgentConfig,
         displayer: EventDisplayer,
         run_context: RunContext,
-        thread_context: ThreadContext,
+        topic: AgentInstanceTopic,
         t: LocaleHandler,
-        user: UserIdentity,
-    ) -> list[ToolEvent] | StopEvent:
-        """Ask the LLM what to do next — call a tool or respond to the user."""
+        user: UserIdentity | None = None,
+    ) -> list[ToolEvent] | list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
+        """Ask the LLM what to do next — call a tool, or answer the user and hand the turn back."""
         chat_messages = [m.to_llama_index() for m in event.input_messages]
         tool_schemas = await run_context.get(TOOL_SCHEMAS_KEY)
 
@@ -173,16 +191,21 @@ class McpReactAgent(Agent):
 
         if not assistant.tool_calls:
             await displayer.display_chunk(assistant.content, config.llm.model_name)
-            stop_event = LLMStopEvent(
+            answer = LLMEvent(
                 input_messages=event.input_messages,
                 output_messages=[assistant],
                 chat_model_name=config.llm.model_name,
             )
-            # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
-            await generate_conversation_metadata(
-                stop_event.chat_messages, config.task_llm, displayer, t, thread_context, user
+            remember = Memory.remember(
+                query=ctx.query,
+                answer=answer,
+                user=user,
+                topic=topic,
+                agent_config=config,
+                memory=config,
+                locale=t.locale,
             )
-            return stop_event
+            return [*([remember] if remember else []), Conversation.complete(answer=answer)]
 
         await run_context.set(CONVERSATION_KEY, [m.model_dump() for m in [*event.input_messages, assistant]])
 
@@ -195,7 +218,7 @@ class McpReactAgent(Agent):
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.max_iterations_reached.name"),
         description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.max_iterations_reached.description"),
-        icon="mage:stop-sign",
+        icon="mage:stop-circle",
         precondition=exceeded_max_iterations,
     )
     async def max_iterations_reached_step(
@@ -210,7 +233,7 @@ class McpReactAgent(Agent):
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.tool_execution.name"),
         description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.tool_execution.description"),
-        icon="mage:wand",
+        icon="mage:stars-c",
         precondition=all_tool_calls_emitted,
     )
     async def tool_execution_step(
@@ -225,7 +248,7 @@ class McpReactAgent(Agent):
         new_tool_events = tool_events[-new_count:]
 
         tool_messages: list[Message] = []
-        mcp_config = await _apply_tenant_header(mcp_config, run_context, None)
+        mcp_config = await McpTenantHeaderResolver.apply(mcp_config, run_context, None)
         user_token = await McpAuthResolver.resolve_user_token(run_context)
         async with McpClientFactory.create(mcp_config, user_token=user_token) as mcp_client:
             for tool_event in new_tool_events:

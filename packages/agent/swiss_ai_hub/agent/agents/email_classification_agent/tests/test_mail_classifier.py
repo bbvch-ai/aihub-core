@@ -3,15 +3,25 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-from swiss_ai_hub.core.imap import DraftEmailSettings, EmailClassificationSettings, MailCategory
+from swiss_ai_hub.core.agents import AgentRef
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair
+from swiss_ai_hub.core.imap import (
+    MAX_SUBJECT_CHARACTERS,
+    DraftEmailSettings,
+    EmailClassificationSettings,
+    MailCategory,
+    ParsedMessage,
+)
 
-from swiss_ai_hub.agent.agents.email_classification_agent.email_classification_agent import EmailClassificationAgent
+from swiss_ai_hub.agent.agents.email_classification_agent.configs.knowledge_delegation_config import (
+    KnowledgeDelegationConfig,
+)
 from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import (
+    CategoryVerdict,
     ClassificationOutcome,
     MailClassifier,
 )
-from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
-from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS
+from swiss_ai_hub.agent.agents.email_classification_agent.mail_triage_validator import MailTriageValidator
 
 _SUPPORT = MailCategory(category="support_request", imap_folder="Triage/Support", description="Needs an action.")
 _INVOICE = MailCategory(category="invoice", imap_folder="Triage/Invoices", description="A bill.")
@@ -94,7 +104,7 @@ def test_no_categories_is_rejected():
     settings = _settings(categories=[])
     draft = _no_drafting()
     with pytest.raises(ValueError, match="no categories are configured"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_an_empty_fallback_folder_is_rejected():
@@ -102,7 +112,7 @@ def test_an_empty_fallback_folder_is_rejected():
     settings.fallback_folder = ""
     draft = _no_drafting()
     with pytest.raises(ValueError, match="fallback_folder is empty"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_duplicate_category_names_are_rejected():
@@ -110,7 +120,7 @@ def test_duplicate_category_names_are_rejected():
     settings = _settings(categories=[_SUPPORT, duplicate])
     draft = _no_drafting()
     with pytest.raises(ValueError, match="category names must be unique"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_duplicate_category_folders_are_rejected():
@@ -119,11 +129,11 @@ def test_duplicate_category_folders_are_rejected():
     settings = _settings(categories=[_SUPPORT, duplicate])
     draft = _no_drafting()
     with pytest.raises(ValueError, match="category folders must be unique"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_a_valid_taxonomy_passes():
-    EmailClassificationAgent._validate(_settings(), _no_drafting(), "INBOX", _counter)
+    MailTriageValidator.validate(_settings(), _no_drafting(), "INBOX", _counter)
 
 
 def test_a_category_folder_equal_to_the_inbox_is_rejected():
@@ -136,7 +146,7 @@ def test_a_category_folder_equal_to_the_inbox_is_rejected():
     settings = _settings(categories=[into_inbox])
     draft = _no_drafting()
     with pytest.raises(ValueError, match="equals the inbox folder"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_a_fallback_folder_equal_to_the_inbox_is_rejected():
@@ -144,7 +154,7 @@ def test_a_fallback_folder_equal_to_the_inbox_is_rejected():
     settings.fallback_folder = "INBOX"
     draft = _no_drafting()
     with pytest.raises(ValueError, match="equals the inbox folder"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_the_inbox_check_uses_the_configured_folder_not_a_hardcoded_name():
@@ -153,7 +163,7 @@ def test_the_inbox_check_uses_the_configured_folder_not_a_hardcoded_name():
     settings.fallback_folder = "Shared/Support"
     draft = _no_drafting()
     with pytest.raises(ValueError, match="equals the inbox folder"):
-        EmailClassificationAgent._validate(settings, draft, "Shared/Support", _counter)
+        MailTriageValidator.validate(settings, draft, "Shared/Support", _counter)
 
 
 def test_a_fallback_folder_that_is_also_a_category_folder_is_rejected():
@@ -162,7 +172,7 @@ def test_a_fallback_folder_that_is_also_a_category_folder_is_rejected():
     settings.fallback_folder = _SUPPORT.imap_folder
     draft = _no_drafting()
     with pytest.raises(ValueError, match="is also a category folder"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 # --- drafting configuration, validated before the run spends anything ---
@@ -173,7 +183,7 @@ def test_drafting_enabled_with_no_opted_in_category_is_rejected():
     settings = _settings()
     draft = _drafting()
     with pytest.raises(ValueError, match="no category is set to get a drafted reply"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_a_drafts_folder_equal_to_the_inbox_is_rejected():
@@ -182,25 +192,25 @@ def test_a_drafts_folder_equal_to_the_inbox_is_rejected():
     settings = _settings(categories=[_SUPPORT.model_copy(update={"draft_reply": True})])
     draft = _drafting(drafts_folder="INBOX")
     with pytest.raises(ValueError, match="drafts_folder equals the inbox folder"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_a_drafts_folder_that_is_also_a_category_folder_is_rejected():
     settings = _settings(categories=[_SUPPORT.model_copy(update={"draft_reply": True})])
     draft = _drafting(drafts_folder=_SUPPORT.imap_folder)
     with pytest.raises(ValueError, match="is also a category or fallback folder"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_a_valid_drafting_configuration_passes():
     settings = _settings(categories=[_SUPPORT.model_copy(update={"draft_reply": True}), _INVOICE])
-    EmailClassificationAgent._validate(settings, _drafting(), "INBOX", _counter)
+    MailTriageValidator.validate(settings, _drafting(), "INBOX", _counter)
 
 
 def test_drafting_configuration_is_not_checked_when_drafting_is_off():
     """An admin who never turned drafting on must not be blocked by its defaults."""
     off = DraftEmailSettings(enable_draft=False, drafts_folder="INBOX")
-    EmailClassificationAgent._validate(_settings(), off, "INBOX", _counter)
+    MailTriageValidator.validate(_settings(), off, "INBOX", _counter)
 
 
 # --- a message that cannot be classified must not cost the batch, or the mailbox ---
@@ -283,7 +293,7 @@ def test_an_empty_failure_folder_is_rejected():
     settings.failure_folder = ""
     draft = _no_drafting()
     with pytest.raises(ValueError, match="failure_folder is empty"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_a_failure_folder_equal_to_the_fallback_folder_is_rejected():
@@ -293,7 +303,7 @@ def test_a_failure_folder_equal_to_the_fallback_folder_is_rejected():
     settings.failure_folder = settings.fallback_folder
     draft = _no_drafting()
     with pytest.raises(ValueError, match="equals the fallback folder"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_a_failure_folder_that_is_also_a_category_folder_is_rejected():
@@ -301,7 +311,7 @@ def test_a_failure_folder_that_is_also_a_category_folder_is_rejected():
     settings.failure_folder = _SUPPORT.imap_folder
     draft = _no_drafting()
     with pytest.raises(ValueError, match="is also a category folder"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_a_failure_folder_equal_to_the_inbox_is_rejected():
@@ -311,14 +321,14 @@ def test_a_failure_folder_equal_to_the_inbox_is_rejected():
     settings.failure_folder = "INBOX"
     draft = _no_drafting()
     with pytest.raises(ValueError, match="equals the inbox folder"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_a_drafts_folder_equal_to_the_failure_folder_is_rejected():
     settings = _settings(categories=[_SUPPORT.model_copy(update={"draft_reply": True})])
     draft = _drafting(drafts_folder=settings.failure_folder)
     with pytest.raises(ValueError, match="is also a category or fallback folder"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 # --- a budget that cannot work is rejected before the run spends anything ---
@@ -331,10 +341,137 @@ def test_a_drafting_budget_too_small_for_its_own_prompt_is_rejected_up_front():
     draft = _drafting()
     draft.number_of_input_tokens = 1
     with pytest.raises(ValueError, match="system prompt alone exhausts"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter)
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter)
 
 
 def test_a_workable_budget_passes_validation():
     settings = _settings(categories=[_SUPPORT.model_copy(update={"draft_reply": True})])
 
-    EmailClassificationAgent._validate(settings, _drafting(), "INBOX", _counter)
+    MailTriageValidator.validate(settings, _drafting(), "INBOX", _counter)
+
+
+# --- grounding validation ---
+
+
+def _narrowed(namespace: str = "support") -> MailCategory:
+    return _SUPPORT.model_copy(
+        update={
+            "draft_reply": True,
+            "knowledge_namespaces": [BucketNamespacePair(bucket_name="support-kb", namespace_name=namespace)],
+        }
+    )
+
+
+def _delegation() -> KnowledgeDelegationConfig:
+    return KnowledgeDelegationConfig(rag_agent=AgentRef(agent_class="RAGAgent", agent_id="rag-support"))
+
+
+def _grounded_settings() -> EmailClassificationSettings:
+    return _settings([_narrowed(), _INVOICE])
+
+
+def test_a_grounded_setup_that_can_produce_a_draft_passes():
+    MailTriageValidator.validate(_grounded_settings(), _drafting(), "INBOX", _counter, _delegation())
+
+
+def test_a_category_answering_from_the_whole_knowledge_agent_passes():
+    """No selection is not a missing scope — it is the delegate's own, which is the default this feature ships."""
+    settings = _settings([_SUPPORT.model_copy(update={"draft_reply": True}), _INVOICE])
+
+    MailTriageValidator.validate(settings, _drafting(), "INBOX", _counter, _delegation())
+
+
+def test_narrowing_without_a_knowledge_agent_is_rejected():
+    settings = _grounded_settings()
+    draft = _drafting()
+    with pytest.raises(ValueError, match="no knowledge agent is configured"):
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter, None)
+
+
+def test_an_empty_collection_selection_is_rejected():
+    """Switched on and holding nothing, the delegated run would silently answer from the delegate's whole scope —
+    the opposite of what narrowing was turned on to do."""
+    settings = _settings([_narrowed().model_copy(update={"knowledge_namespaces": []}), _INVOICE])
+    draft = _drafting()
+    delegation = _delegation()
+    with pytest.raises(ValueError, match="switched on but name no collection"):
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter, delegation)
+
+
+def test_a_selection_left_on_a_category_that_stopped_drafting_is_ignored():
+    """The form hides the selection once drafting is off, so an admin cannot see it — it must not fail the run.
+
+    No knowledge agent is configured either, which would reject the same selection on a drafting category.
+    """
+    settings = _settings(
+        [
+            _narrowed().model_copy(update={"draft_reply": False}),
+            _INVOICE.model_copy(update={"draft_reply": True}),
+        ]
+    )
+
+    MailTriageValidator.validate(settings, _drafting(), "INBOX", _counter, None)
+
+
+def test_a_blank_fallback_text_is_rejected_up_front():
+    """The one message that needs a fallback text is the one nobody is watching for — a blank has to fail here."""
+    draft = _drafting()
+    draft.no_information_draft = "   "
+    settings = _grounded_settings()
+    delegation = _delegation()
+    with pytest.raises(ValueError, match="both fallback draft texts must be set"):
+        MailTriageValidator.validate(settings, draft, "INBOX", _counter, delegation)
+
+
+def test_grounding_is_not_checked_when_drafting_is_off():
+    """Drafting off means grounding cannot execute, so it must not be able to fail the run either.
+
+    The reachable case is an admin who set grounding up and later paused drafting: every classification run would
+    otherwise die on a feature that `ReplyDrafting.drafting_batch` disables anyway.
+    """
+    MailTriageValidator.validate(_grounded_settings(), _no_drafting(), "INBOX", _counter, None)
+
+
+# --- keeping uncategorised mail in the inbox ---
+
+
+def _keeping(categories: list[MailCategory] | None = None) -> EmailClassificationSettings:
+    return _settings(categories).model_copy(update={"keep_uncategorised_in_inbox": True})
+
+
+def test_a_decline_stays_in_the_inbox_when_uncategorised_mail_is_kept():
+    verdict = CategoryVerdict(category=None, outcome=ClassificationOutcome.DECLINED, reason="fits nothing")
+
+    assert verdict.target_folder(_keeping()) is None
+    assert verdict.target_folder(_settings()) == "Triage/Uncategorised"
+
+
+def test_a_failure_still_leaves_the_inbox_when_uncategorised_mail_is_kept():
+    """A failure kept in the inbox would be listed and failed again on every run."""
+    verdict = CategoryVerdict(category=None, outcome=ClassificationOutcome.FAILED, reason="gateway down")
+
+    assert verdict.target_folder(_keeping()) == _keeping().failure_folder
+
+
+def test_a_categorised_message_still_moves_when_uncategorised_mail_is_kept():
+    verdict = CategoryVerdict(category=_SUPPORT, outcome=ClassificationOutcome.CATEGORISED, reason="support")
+
+    assert verdict.target_folder(_keeping()) == "Triage/Support"
+
+
+def test_the_unused_fallback_folder_constrains_nothing_when_uncategorised_mail_is_kept():
+    settings = _keeping(categories=[_SUPPORT])
+    settings.fallback_folder = _SUPPORT.imap_folder
+
+    MailTriageValidator.validate(settings, _no_drafting(), "INBOX", _counter)
+
+    settings.fallback_folder = ""
+    MailTriageValidator.validate(settings, _no_drafting(), "INBOX", _counter)
+
+
+def test_a_failure_folder_equal_to_the_inbox_is_still_rejected_when_uncategorised_mail_is_kept():
+    settings = _keeping()
+    settings.failure_folder = "INBOX"
+
+    with pytest.raises(ValueError, match="equals the inbox folder"):
+        MailTriageValidator.validate(settings, _no_drafting(), "INBOX", _counter)

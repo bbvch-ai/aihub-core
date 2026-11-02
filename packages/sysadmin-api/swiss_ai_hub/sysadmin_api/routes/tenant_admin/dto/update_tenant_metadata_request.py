@@ -2,6 +2,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+from swiss_ai_hub.core.i18n import LocaleString
 
 
 class UpdateTenantMetadataRequest(BaseModel):
@@ -28,6 +29,25 @@ class UpdateTenantMetadataRequest(BaseModel):
         | None
     ) = None
     access_rules: Annotated[list[str] | None, Field(description="Access rules granted to this tenant.")] = None
+    chat_disclaimer: Annotated[
+        LocaleString | None,
+        Field(
+            description="Plain text below the chat input, up to 100 characters per language. "
+            "At least one translation is required."
+        ),
+    ] = None
+
+    @field_validator("chat_disclaimer")
+    @classmethod
+    def normalize_disclaimer(cls, text: LocaleString | None) -> LocaleString | None:
+        if text is None:
+            return None
+        if not text.has_content():
+            raise ValueError("At least one disclaimer translation is required.")
+        values = {locale: (value or "").strip() or None for locale, value in text.model_dump().items()}
+        if any(len(value) > 100 for value in values.values() if value):
+            raise ValueError("The disclaimer must be at most 100 characters per language.")
+        return LocaleString(**values)
 
     @field_validator("access_rules")
     @classmethod

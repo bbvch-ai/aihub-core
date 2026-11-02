@@ -15,7 +15,7 @@
 # Multimodal Input and Document Handling
 
 6_code_deep_dive/aihub_agent/.venv/lib/python3.13/site-packages/llama_index/readers/file/pymu_pdf/index.en.md
-2_platform/6_pipelines/2_rag_ingestion_pipeline/index.en.md
+2_platform/6_pipelines/2_document_ingestion_pipeline/index.en.md
 
 # Multi-channel Access and Integrations
 

@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 class AccessCatalogService:
     """Evaluates an AccessChecker against the full catalog of services, agents and processes.
 
-    The same enumeration powers both the user "what can I see" view (``include_denied=False``)
-    and the access-rule preview (``include_denied=True``, so denied resources can be shown crossed).
+    Serves the user's "what can I see" view (``include_denied=False``); the access-rule preview that shows denied
+    resources crossed is ``AccessCapabilityService``, so ``include_denied=True`` currently has no caller.
     """
 
     @staticmethod
@@ -44,7 +44,12 @@ class AccessCatalogService:
     @staticmethod
     def _effective_service_access(access_checker: AccessChecker, controller) -> AccessLevel:
         """A service's level, capped by its ``additionally_required_permission`` when set: an ADMIN service
-        behind a USER-only extra permission is USER, mirroring how the endpoint would actually enter."""
+        behind a USER-only extra permission is USER, mirroring how the endpoint would actually enter.
+
+        ``suite_visibility_permission`` is deliberately not applied: that gate decides which app the navigation
+        offers, while this catalog reports which services the caller can actually reach — a chat-only user reaches
+        the agent service's user-level routes even though the AI Assistants app is not offered.
+        """
         level = access_checker.access_level_for_service(controller.service_name)
         if controller.additionally_required_permission and level != AccessLevel.ACCESS_DENIED:
             special = access_checker.access_level(controller.additionally_required_permission)

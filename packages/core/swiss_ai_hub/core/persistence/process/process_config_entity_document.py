@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Any
 
 from mongoengine import DateTimeField, Document
 
@@ -24,6 +25,25 @@ class ProcessConfigEntityDocument(ProcessConfigEntity, Document):
 
     created_at = DateTimeField(default=lambda: datetime.now(UTC))
     updated_at = DateTimeField(default=lambda: datetime.now(UTC))
+
+    @classmethod
+    @trace_fn
+    def find_all(cls) -> list["ProcessConfigEntityDocument"]:
+        """Every process instance, whatever class it belongs to, including classes that are offline or retired."""
+        return list(cls.objects())
+
+    @classmethod
+    @trace_fn
+    def replace_config_data_if_unchanged(
+        cls, document_id: Any, expected_config_data: dict[str, Any], config_data: dict[str, Any]
+    ) -> bool:
+        """Swap in `config_data` only while the stored value still equals `expected_config_data`.
+
+        For startup rewrites: several API replicas boot together, and an instance saved between the read and
+        the write must not be overwritten with a rewrite of what it held before.
+        """
+        matching = cls.objects(pk=document_id, config_data=expected_config_data)
+        return matching.update_one(set__config_data=config_data) == 1
 
     @classmethod
     @trace_fn

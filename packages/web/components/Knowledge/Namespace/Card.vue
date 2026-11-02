@@ -3,29 +3,32 @@
     class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
     :class="{ 'bg-surface-100 dark:bg-surface-800': isActive }"
   >
-    <div class="flex items-center justify-between gap-4">
-      <div class="flex items-center justify-start gap-2">
+    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div class="flex min-w-0 flex-1 basis-48 items-center justify-start gap-2">
         <div
-          class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
+          class="flex shrink-0 items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
         >
           <Icon
             name="mage:book"
             size="1.5em"
           />
         </div>
-        <div>
-          <h3 class="font-semibold opacity-80">
+        <div class="min-w-0">
+          <h3
+            v-tooltip.top="displayName"
+            class="truncate font-semibold opacity-80"
+          >
             {{ displayName }}
           </h3>
           <p
             v-if="namespace.description"
-            class="text-sm text-surface-500 dark:text-surface-400"
+            class="line-clamp-3 text-sm text-surface-500 [overflow-wrap:anywhere] dark:text-surface-400"
           >
             {{ namespace.description }}
           </p>
         </div>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-2">
         <Button
           v-tooltip.top="t('knowledge.edit_namespace')"
           icon="pi pi-pencil"
@@ -36,7 +39,7 @@
           @click.stop="handleEditClick"
         />
         <Button
-          v-if="!autoSync"
+          v-if="!sourced"
           v-tooltip.top="t('knowledge.upload_documents')"
           icon="pi pi-upload"
           rounded
@@ -44,6 +47,16 @@
           size="small"
           severity="secondary"
           @click.stop="handleUploadClick"
+        />
+        <Button
+          v-if="!sourced"
+          v-tooltip.top="t('knowledge.delete_namespace')"
+          icon="pi pi-trash"
+          rounded
+          text
+          size="small"
+          severity="danger"
+          @click.stop="handleDeleteClick"
         />
         <Badge
           :value="namespace.number_of_documents"
@@ -67,14 +80,17 @@ import { capitalCase } from 'change-case'
 
 import type { NamespaceDto } from '@core/sdk/client'
 
+// Not gated on the database's `deletable`: a legacy database cannot be removed as a whole, but its
+// namespaces can. Only a sourced database, whose source would just re-sync them, blocks both affordances.
 const props = defineProps<{
   namespace: NamespaceDto
-  autoSync?: boolean
+  sourced?: boolean
 }>()
 
 const emit = defineEmits<{
   upload: [namespace: NamespaceDto]
   edit: [namespace: NamespaceDto]
+  delete: [namespace: NamespaceDto]
 }>()
 
 const route = useRoute()
@@ -104,5 +120,10 @@ const handleUploadClick = (event: Event) => {
 const handleEditClick = (event: Event) => {
   event.stopPropagation()
   emit('edit', props.namespace)
+}
+
+const handleDeleteClick = (event: Event) => {
+  event.stopPropagation()
+  emit('delete', props.namespace)
 }
 </script>

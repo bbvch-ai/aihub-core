@@ -39,6 +39,7 @@
         </label>
         <InputText
           v-model="name"
+          :maxlength="folderNameMaxLength"
           input-id="namespace-name-input"
           :placeholder="t('knowledge.form.folder_name.placeholder')"
           :class="{ 'p-invalid': error || nameValidationError }"
@@ -64,6 +65,7 @@
         </label>
         <InputText
           v-model="displayName"
+          :maxlength="displayNameMaxLength"
           input-id="namespace-display-name-input"
           :placeholder="t('knowledge.form.display_name.placeholder')"
           :disabled="isCreating"
@@ -81,6 +83,7 @@
         </label>
         <Textarea
           v-model="description"
+          :maxlength="descriptionMaxLength"
           input-id="namespace-description-textarea"
           :placeholder="t('knowledge.form.description.placeholder')"
           :disabled="isCreating"
@@ -114,11 +117,16 @@
 </template>
 
 <script setup lang="ts">
+import { CreateNamespaceRequestSchema } from '@core/sdk/client/schemas.gen'
 import { capitalCase } from 'change-case'
 
 import type { CreateNamespaceRequest, DatabaseDto } from '@core/sdk/client'
 
 const { t } = useI18n()
+
+const folderNameMaxLength = schemaMaxLength(CreateNamespaceRequestSchema, 'folder_name')
+const displayNameMaxLength = schemaMaxLength(CreateNamespaceRequestSchema, 'display_name')
+const descriptionMaxLength = schemaMaxLength(CreateNamespaceRequestSchema, 'description')
 
 const props = defineProps<{
   modelValue: boolean
@@ -143,7 +151,7 @@ const isCreating = ref(false)
 
 const databaseOptions = computed(() =>
   (props.databases || [])
-    .filter(db => !db.auto_sync)
+    .filter(db => !db.source)
     .map(db => ({
       name: db.name,
       displayName: capitalCase(db.name),
@@ -190,9 +198,17 @@ const handleCreate = async () => {
     tenantId: tenantId.value!,
   }
 
-  await createNamespace(requestBody)
-  emit('success', { database: selectedDatabase.value, namespace: name.value })
-  closeModal()
+  try {
+    await createNamespace(requestBody)
+    emit('success', { database: selectedDatabase.value, namespace: name.value })
+    closeModal()
+  }
+  catch {
+    error.value = t('knowledge.form.create_error')
+  }
+  finally {
+    isCreating.value = false
+  }
 }
 
 watch(() => props.modelValue, (isVisible) => {

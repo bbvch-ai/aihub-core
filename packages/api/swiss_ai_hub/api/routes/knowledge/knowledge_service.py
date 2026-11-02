@@ -1,15 +1,16 @@
 import logging
+import re
 import uuid
-from typing import Annotated
+from collections.abc import Callable
+from typing import Annotated, Any
 
-import mongoengine
 from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from mongoengine import DoesNotExist, register_connection
+from mongoengine import DoesNotExist, NotUniqueError, ValidationError
 from nats.aio.client import Client as NATS
-from pydantic import Field
 from swiss_ai_hub.core.auth import UserIdentity
-from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+from swiss_ai_hub.core.form import FormkitElement, Group, ModelSelect, Repeater, SecretFieldWalker
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
@@ -17,9 +18,18 @@ from swiss_ai_hub.core.generative_ai.document.types.file_type_config import File
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
-from swiss_ai_hub.core.infrastructure import MongoSettings, trace_fn
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoConnectionRegistry, trace_fn
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities import (
+    BucketEntity,
+    IngestorEntity,
+    IngestorType,
+    NamespaceEntity,
+    SourcePipelineEntity,
+)
 from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
@@ -30,43 +40,48 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     TYPE,
     NodeTypeValue,
 )
-from swiss_ai_hub.core.publishers import NCPublisher
-from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
+from swiss_ai_hub.core.publishers import SourceUpdatedPublisher
+from swiss_ai_hub.core.secrets import SecretEncryptionService
 
 from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response import (
     BatchDeleteDocumentsResponse,
     DocumentDeletionResult,
 )
+from swiss_ai_hub.api.routes.knowledge.dto.create_database_request import CreateDatabaseRequest
 from swiss_ai_hub.api.routes.knowledge.dto.create_namespace_request import CreateNamespaceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.database_dto import DatabaseDTO
+from swiss_ai_hub.api.routes.knowledge.dto.database_response import DatabaseResponse
 from swiss_ai_hub.api.routes.knowledge.dto.document_dto import DocumentDTO
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_request import DocumentUploadRequest
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_response import DocumentUploadResponse
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_validation_request import DocumentUploadValidationRequest
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_validation_response import DocumentUploadValidationResponse
+from swiss_ai_hub.api.routes.knowledge.dto.ingestor_dto import IngestorDTO
 from swiss_ai_hub.api.routes.knowledge.dto.namespace_dto import NamespaceDTO
 from swiss_ai_hub.api.routes.knowledge.dto.namespace_response import NamespaceResponse
 from swiss_ai_hub.api.routes.knowledge.dto.node_summary_dto import NodeSummaryDTO
+from swiss_ai_hub.api.routes.knowledge.dto.source_pipeline_dto import SourcePipelineDTO
+from swiss_ai_hub.api.routes.knowledge.dto.update_database_source_request import UpdateDatabaseSourceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.update_namespace_request import UpdateNamespaceRequest
+from swiss_ai_hub.api.routes.model.model_service import ModelService
 from swiss_ai_hub.api.routes.translation.translation_service import TranslationService
+from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
+from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
+from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 logger = logging.getLogger(__name__)
 
 _S3_URI_SCHEME = "s3://"
 
+_DOCUMENT_NOT_FOUND_DETAIL = "Document not found"
+
+_SYSTEM_DATABASE_NAMES = frozenset({"admin", "local", "config"})
+
 
 class KnowledgeService:
     @staticmethod
     def _ensure_db_exists(db: str):
-        try:
-            mongoengine.connection.get_connection(alias=db)
-        except Exception:
-            register_connection(
-                alias=db,
-                name=db,
-                host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-                uuidRepresentation="standard",
-            )
+        MongoConnectionRegistry.ensure_alias(db)
 
     @staticmethod
     @trace_fn
@@ -117,10 +132,17 @@ class KnowledgeService:
 
     @staticmethod
     @trace_fn
-    def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
-        """Retrieves a single document by its ID from the knowledge database."""
+    def get_document_by_id(db: str, namespace: str, document_id: str) -> DocumentDTO:
+        """Retrieves a single document by its ID from the knowledge database.
+
+        Scoped by namespace like every other document read: the route is only authorised for the namespace
+        named in its path, so a lookup by id alone would hand out documents from any namespace of the database.
+        """
         KnowledgeService._ensure_db_exists(db)
-        ref_doc = RefDoc.by_id(db_alias=db, doc_id=document_id)
+        try:
+            ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=_DOCUMENT_NOT_FOUND_DETAIL)
         return DocumentDTO.from_ref_doc(ref_doc)
 
     @staticmethod
@@ -134,8 +156,19 @@ class KnowledgeService:
         """
         database_dtos: list[DatabaseDTO] = []
         buckets = BucketEntity.get_all_buckets()
+        show_legacy = AIHubSettings().SHOW_LEGACY_KNOWLEDGE
 
         for bucket in buckets:
+            # A bucket flagged for teardown is being purged by the pipeline; hide it so it disappears
+            # from the UI immediately and cannot be re-selected while the teardown job runs.
+            if bucket.deleting:
+                continue
+
+            # The legacy default_rag / shared_rag databases are obsolete once their deploy-bound pipelines
+            # are switched off, so they are hidden unless a deployment opts back in via SHOW_LEGACY_KNOWLEDGE.
+            if not show_legacy and KnowledgeService._is_legacy_bucket(bucket):
+                continue
+
             db_name = bucket.db_name
             KnowledgeService._ensure_db_exists(db_name)
 
@@ -143,12 +176,22 @@ class KnowledgeService:
 
             namespaces = []
             for ns_entity in namespace_entities:
+                if ns_entity.deleting:
+                    continue
                 total_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
                 namespaces.append(NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_count))
 
             display_name = KnowledgeService._safe_extract_locale_string(bucket.name, t)
             database_dtos.append(
-                DatabaseDTO(name=db_name, display_name=display_name, auto_sync=bucket.auto_sync, namespaces=namespaces)
+                DatabaseDTO(
+                    name=db_name,
+                    display_name=display_name,
+                    source=bucket.source,
+                    source_configuration=KnowledgeService._masked_source_configuration(bucket),
+                    deletable=KnowledgeService._is_database_deletable(bucket),
+                    ingestor=bucket.ingestor,
+                    namespaces=namespaces,
+                )
             )
 
         return database_dtos
@@ -213,10 +256,441 @@ class KnowledgeService:
 
         locale_string = LocaleString(**{t.locale: text})
 
-        translated_locale_string = await TranslationService.translate(
+        outcome = await TranslationService.translate(
             locale_string=locale_string, llm_config=llm_config, t=t, user=user, source_locale=t.locale
         )
-        return LocaleStringEntity.from_locale_string(translated_locale_string)
+        return LocaleStringEntity.from_locale_string(outcome.translated)
+
+    @staticmethod
+    def _knowledge_admin_role_name(database: str, namespace: str | None = None) -> str:
+        """Per-resource admin role name, e.g. ``KnowledgeResearchDocsReportsAdmin``.
+
+        The ``Knowledge`` prefix keeps these from colliding with the per-agent-instance roles, which are
+        named from the agent id alone.
+        """
+        segments = [database, namespace] if namespace else [database]
+        pascal_case = "".join(
+            word[:1].upper() + word[1:] for segment in segments for word in re.split(r"[^0-9A-Za-z]+", segment) if word
+        )
+        return f"Knowledge{pascal_case}Admin"
+
+    @staticmethod
+    def _database_admin_rules(database: str) -> list[str]:
+        """The database root and everything beneath it.
+
+        A rule matches only its own depth, so the root alone would leave out every namespace — including the
+        ones an ingestion or source pipeline creates, which are granted to no one when they appear. The subtree
+        is safe to hand the creating tenant because a database owns its namespaces, unlike an agent class,
+        whose profiles belong to whichever tenant built them. It is also exactly the pair the capability
+        catalog's knowledge "Manage" row writes, so the row reads as granted rather than half-granted.
+        """
+        root = AccessChecker.knowledge_database_admin_rule(database)
+        return [root, f"{root}.>"]
+
+    @staticmethod
+    def _grant_knowledge_access(
+        admin_rules: Annotated[list[str], "Admin rules for the resource just created"],
+        role_name: Annotated[str, "Per-resource admin role to bind the creator to"],
+        role_description: Annotated[str, "Human-readable description stored on the role"],
+        user: UserIdentity,
+        rollback: Annotated[Callable[[], Any], "Undoes the resource creation if the grant fails"],
+        resource_label: Annotated[str, "Resource named in the error message"],
+    ) -> None:
+        """Grants the creating tenant and creator admin on the new resource, rolling back on failure.
+
+        The tenant ceiling carries no knowledge wildcard (aihub-core-private#269), so this grant is the only
+        thing that makes a new database reachable, and only for the tenant that created it.
+        """
+        tenant = user.acting_within_tenant
+        granted_tenant_rules: list[str] = []
+        created_role = False
+        try:
+            for admin_rule in admin_rules:
+                if not AccessChecker.rules_grant_admin(tenant.access_rules, admin_rule):
+                    TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
+                    granted_tenant_rules.append(admin_rule)
+            created_role = KnowledgeService._ensure_admin_role(role_name, admin_rules, tenant.id, role_description)
+            UserTenantRoleEntity.add_roles(user.id, tenant.id, [role_name])
+        except Exception as error:
+            if created_role:
+                KnowledgeService._best_effort(
+                    lambda: RoleEntity.delete_role_from_all_tenants(role_name), f"delete role {role_name}"
+                )
+            if granted_tenant_rules:
+                KnowledgeService._best_effort(
+                    lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(granted_tenant_rules),
+                    f"revoke {granted_tenant_rules}",
+                )
+            KnowledgeService._best_effort(rollback, f"roll back {resource_label}")
+            raise HTTPException(
+                status_code=500,
+                detail=(f"{resource_label} was created but access could not be granted; the creation was rolled back."),
+            ) from error
+
+    @staticmethod
+    def _ensure_admin_role(role_name: str, admin_rules: list[str], tenant_id: str, description: str) -> bool:
+        """Creates the per-resource admin role if absent. Returns whether it was created."""
+        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
+            return False
+        RoleEntity.create_tenant_role(
+            name=role_name, description=description, access_rules=admin_rules, tenant_id=tenant_id
+        )
+        return True
+
+    @staticmethod
+    def _revoke_knowledge_access(
+        rules: Annotated[list[str], "User and admin rules to revoke from every tenant"],
+        role_names: Annotated[list[str], "Per-resource admin roles to delete"],
+    ) -> None:
+        """Removes the grants a create made, so a deleted resource leaves no inert rules behind.
+
+        Best-effort throughout: teardown is already under way by the time this runs, and a stale rule
+        must not block it.
+        """
+        KnowledgeService._best_effort(
+            lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(rules), f"revoke {rules}"
+        )
+        for role_name in role_names:
+            KnowledgeService._best_effort(
+                lambda name=role_name: RoleEntity.delete_role_from_all_tenants(name), f"delete role {role_name}"
+            )
+
+    @staticmethod
+    def _best_effort(action: Callable[[], Any], description: str) -> None:
+        """Runs a compensating action, swallowing and logging any failure so it cannot mask the outcome."""
+        try:
+            action()
+        except Exception:
+            logger.exception("Best-effort step failed: %s", description)
+
+    @staticmethod
+    async def _validated_model(
+        field_path: Annotated[str, "Where on the form the model was chosen, named in any rejection"],
+        model_name: str,
+        expected_mode: Annotated[str, "LiteLLM mode the picker requires, e.g. 'chat' or 'embedding'"],
+        user: UserIdentity,
+    ) -> None:
+        """Rejects a model this deployment does not serve, the caller cannot use, or that cannot do the job.
+
+        Goes through ``ModelService`` rather than LiteLLM directly so the tenant's own model access rules
+        apply: a database must not be bound to a model its creator is not allowed to use.
+        """
+        model = await ModelService.get_model_by_name(user, model_name)
+        if model.model_info.mode != expected_mode:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Configuration validation failed: {field_path}: '{model_name}' is a "
+                    f"'{model.model_info.mode}' model and cannot be used where a '{expected_mode}' model is required."
+                ),
+            )
+        if expected_mode == "embedding" and model.model_info.output_vector_size is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Configuration validation failed: {field_path}: embedding model '{model_name}' declares no "
+                    "output_vector_size, so the vector collection's dimension cannot be derived from it. "
+                    "Add it to the LiteLLM model config."
+                ),
+            )
+
+    @staticmethod
+    async def _validate_model_selections(
+        elements: list[FormkitElement], config: dict[str, Any], user: UserIdentity, prefix: str = ""
+    ) -> None:
+        """Every ``ModelSelect`` the ingestor announced is checked against LiteLLM, wherever it sits on the form.
+
+        The API knows nothing about a pipeline's field names; it knows which elements are model pickers and what
+        mode each requires, which is all the check needs.
+        """
+        for element in elements:
+            name = getattr(element, "name", None)
+            if name:
+                await KnowledgeService._validate_element(element, f"{prefix}{name}", config.get(name), user)
+
+    @staticmethod
+    async def _validate_element(element: FormkitElement, field_path: str, value: Any, user: UserIdentity) -> None:
+        """One element of an announced form: a container to walk into, a model picker to check, or nothing."""
+        if isinstance(element, Group) and isinstance(value, dict):
+            await KnowledgeService._validate_model_selections(element.children, value, user, f"{field_path}.")
+        elif isinstance(element, Repeater) and isinstance(value, list):
+            await KnowledgeService._validate_repeated_entries(element, field_path, value, user)
+        elif isinstance(element, ModelSelect) and value is not None:
+            await KnowledgeService._validated_model(field_path, value, element.mode, user)
+
+    @staticmethod
+    async def _validate_repeated_entries(
+        element: Repeater, field_path: str, entries: list[Any], user: UserIdentity
+    ) -> None:
+        for index, entry in enumerate(entries):
+            if isinstance(entry, dict):
+                await KnowledgeService._validate_model_selections(
+                    element.children, entry, user, f"{field_path}.{index}."
+                )
+
+    @staticmethod
+    @trace_fn
+    def get_ingestors(t: LocaleHandler) -> list[IngestorDTO]:
+        """The ingestion pipelines a user may pick when creating a knowledge database, with their forms.
+
+        Every deployed pipeline — the platform's own included — registers itself from its own container, so what
+        is offered is exactly what is running, localized from the labels and form it announced.
+        """
+        return [IngestorDTO.from_ingestor(ingestor, t) for ingestor in IngestorEntity.all()]
+
+    @staticmethod
+    async def create_database(
+        database: str,
+        request: CreateDatabaseRequest,
+        t: LocaleHandler,
+        s3_service: S3AnonymousFileAccessService,
+        user: UserIdentity,
+    ) -> DatabaseResponse:
+        """
+        Creates a new self-service knowledge database (bucket).
+
+        The database name doubles as the S3 bucket, Mongo store, and Milvus collection name. The bucket
+        records the ingestor that owns it, so the matching deployed pipeline picks it up without any
+        redeployment, and the configuration that ingestor's announced form produced — validated here against
+        the schema it announced, the way an agent instance is validated against its class.
+
+        The S3 bucket is provisioned (with browser-upload CORS) up front so documents can be uploaded
+        immediately, before the pipeline's first lazy ingest.
+        """
+        # First, so a rejected name costs neither a translation call nor a storage probe.
+        try:
+            BucketEntity.validate_new_database_name(database)
+        except ValidationError as invalid_name:
+            raise HTTPException(status_code=400, detail=str(invalid_name)) from None
+
+        ingestor = IngestorEntity.find(request.ingestor)
+        if ingestor is None or ingestor.config_specs is None or not ingestor.form:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Ingestor '{request.ingestor}' cannot be assigned to a self-service database: no running "
+                    "pipeline has announced it with a configuration form."
+                ),
+            )
+
+        try:
+            BucketEntity.get_bucket_by_bucket_name(database)
+            raise HTTPException(status_code=409, detail=f"Database '{database}' already exists.")
+        except DoesNotExist:
+            pass
+
+        if s3_service.container_exists(database):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Storage container '{database}' already exists but is not a knowledge database. "
+                    "Choose a different name."
+                ),
+            )
+
+        form_elements = ingestor.form_elements
+        config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
+        config_model = ModelCreationService.create_config_model(ingestor.config_specs.to_specs())
+        # Before the model validation, so a misspelled key is named as itself. The generated model drops an
+        # unrecognised key and then reports the correctly-spelled one as missing, which names the consequence
+        # rather than the mistake and says nothing about the value the user actually typed.
+        InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
+        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        await ConfigAuthorizationService.validate_for_user_or_raise(
+            form_elements=ingestor.form, config=config, user=user, t=t
+        )
+        await KnowledgeService._validate_model_selections(form_elements, config, user)
+        source_configuration = (
+            await KnowledgeService._validated_source_configuration(
+                request.source, request.source_configuration, stored=None, user=user, t=t
+            )
+            if request.source
+            else {}
+        )
+
+        metadata = InstanceConfigHelper.extract_config_metadata(config_instance, fallback_icon="")
+        locale = InstanceConfigHelper.build_locale_entities(metadata.name, metadata.description, database, "")
+        # Dumped from the validated instance rather than copied from the submission, so a knob is stored in the
+        # type its pipeline declared. `exclude_unset` keeps that to the keys the user actually sent: an omitted
+        # optional must stay absent, or it would override the deployment default the pipeline falls back to.
+        configuration = {
+            key: value
+            for key, value in config_instance.model_dump(mode="json", exclude_unset=True).items()
+            if key not in InstanceConfigHelper.IDENTITY_LOCALE_FIELDS
+        }
+
+        # Persist the entity before provisioning storage: the unique bucket_name index serialises
+        # concurrent admin calls (the loser gets NotUniqueError, not a second bucket), so any failure
+        # before this point leaves no orphan. If provisioning fails, roll back both the container and
+        # the row so a retry starts clean.
+        try:
+            bucket = BucketEntity.create_bucket(
+                bucket_name=database,
+                db_name=database,
+                name=locale.name,
+                description=locale.description,
+                ingestor=request.ingestor,
+                configuration=configuration,
+                source=request.source,
+                source_configuration=source_configuration,
+            )
+        except NotUniqueError:
+            raise HTTPException(status_code=409, detail=f"Database '{database}' already exists.") from None
+
+        def undo_provisioning() -> None:
+            s3_service.delete_container(database)
+            BucketEntity.delete_bucket(str(bucket.id))
+
+        try:
+            s3_service.ensure_bucket_with_cors(database)
+        except Exception:
+            undo_provisioning()
+            raise
+
+        if user.acting_within_tenant is not None:
+            KnowledgeService._grant_knowledge_access(
+                admin_rules=KnowledgeService._database_admin_rules(database),
+                role_name=KnowledgeService._knowledge_admin_role_name(database),
+                role_description=f"Admin access to knowledge database {database}",
+                user=user,
+                rollback=undo_provisioning,
+                resource_label=f"Knowledge database '{database}'",
+            )
+
+        return KnowledgeService._database_response(bucket, t)
+
+    @staticmethod
+    def get_source_pipelines(t: LocaleHandler) -> list[SourcePipelineDTO]:
+        """The source pipelines a new database may be filled from, as the running pipelines announced them."""
+        return [SourcePipelineDTO.from_source_pipeline(source, t) for source in SourcePipelineEntity.all()]
+
+    @staticmethod
+    @trace_fn
+    async def update_database_source(
+        database: str,
+        request: UpdateDatabaseSourceRequest,
+        t: LocaleHandler,
+        user: UserIdentity,
+    ) -> DatabaseResponse:
+        """Replaces the source axis of a database: credentials rotate, patterns change, or it returns to manual upload.
+
+        A secret resubmitted as the mask keeps its stored value, so a client never has to know a credential to edit
+        the fields around it. Handing a database that holds documents to a different source needs the caller's
+        acknowledgement; editing the current source's settings does not. Takes effect on the source pipeline's next
+        run; nothing is redeployed.
+        """
+        try:
+            bucket = BucketEntity.get_bucket_by_db_name(database)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Database '{database}' not found.") from None
+        if KnowledgeService._is_legacy_bucket(bucket):
+            raise HTTPException(status_code=403, detail=f"Legacy database '{database}' cannot be given a source.")
+
+        if request.source is None:
+            updated = BucketEntity.update_source(bucket.bucket_name, None, None)
+            return KnowledgeService._database_response(updated, t)
+
+        if bucket.source != request.source and not request.replace_existing_documents:
+            KnowledgeService._reject_if_documents_would_be_replaced(bucket)
+        stored = bucket.source_configuration if bucket.source == request.source else None
+        source_configuration = await KnowledgeService._validated_source_configuration(
+            request.source, request.source_configuration, stored=stored, user=user, t=t
+        )
+        updated = BucketEntity.update_source(bucket.bucket_name, request.source, source_configuration)
+        return KnowledgeService._database_response(updated, t)
+
+    @staticmethod
+    async def _validated_source_configuration(
+        source_id: str,
+        submitted: dict[str, Any],
+        *,
+        stored: Annotated[dict[str, Any] | None, "Currently persisted configuration when the same source is kept"],
+        user: UserIdentity,
+        t: LocaleHandler,
+    ) -> dict[str, Any]:
+        """The same chain the ingestor form goes through, plus the secret handling the source form needs.
+
+        Submitted ciphertext is refused, masked secrets are restored from the stored row before validation so the
+        schema sees real values, and every secret path is encrypted before the result is persisted. Which paths are
+        secrets is read off the announced form, so the API never learns a pipeline's field names. With nothing stored
+        (a new database, or a switch to another source) masks are restored against an empty row, so a mask carried
+        over from an imported or copied form is refused as the client's mistake rather than failing in ``encrypt``.
+        """
+        source_pipeline = SourcePipelineEntity.find(source_id)
+        if source_pipeline is None or source_pipeline.config_specs is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Source pipeline '{source_id}' cannot fill a knowledge database: no running pipeline has "
+                    "announced it with a configuration form."
+                ),
+            )
+        form_elements = source_pipeline.form_elements
+        secret_paths = SecretFieldWalker.secret_paths(form_elements)
+        encryption = SecretEncryptionService.from_settings()
+        # An empty submission normalises to None; validating {} instead names the missing fields.
+        config = InstanceConfigHelper.normalize_form_configuration(submitted) or {}
+        try:
+            encryption.reject_submitted_ciphertext(config, secret_paths)
+            config = encryption.restore_masked_paths(config, stored or {}, secret_paths)
+        except ValueError as unusable_secret:
+            raise HTTPException(status_code=400, detail=str(unusable_secret)) from None
+        InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
+        config_model = ModelCreationService.create_config_model(source_pipeline.config_specs.to_specs())
+        InstanceConfigHelper.validate_config_for_create(config, config_model)
+        await ConfigAuthorizationService.validate_for_user_or_raise(
+            form_elements=source_pipeline.form, config=config, user=user, t=t
+        )
+        return encryption.encrypt_paths(config, secret_paths)
+
+    @staticmethod
+    def _reject_if_documents_would_be_replaced(bucket: BucketEntity) -> None:
+        """A source owns the content of its database: on the next sync it removes every file it does not have. A
+        database filled by hand or by another source must therefore not be handed over without the caller saying so."""
+        KnowledgeService._ensure_db_exists(bucket.db_name)
+        documents = sum(
+            RefDoc.count_by_namespace(db_alias=bucket.db_name, namespace=namespace.namespace_name)
+            for namespace in NamespaceEntity.get_namespaces_by_bucket(str(bucket.id))
+            if not namespace.deleting
+        )
+        if documents:
+            held = (
+                f"{documents} manually uploaded document(s)"
+                if bucket.source is None
+                else f"{documents} document(s) synced from source '{bucket.source}'"
+            )
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Database '{bucket.db_name}' holds {held} that the new source would remove on its next sync. "
+                    "Resubmit with replace_existing_documents=true to hand the content over to the new source."
+                ),
+            )
+
+    @staticmethod
+    def _database_response(bucket: BucketEntity, t: LocaleHandler) -> DatabaseResponse:
+        return DatabaseResponse(
+            name=bucket.db_name,
+            bucket_name=bucket.bucket_name,
+            ingestor=bucket.ingestor,
+            configuration=bucket.configuration,
+            source=bucket.source,
+            source_configuration=KnowledgeService._masked_source_configuration(bucket),
+            display_name=KnowledgeService._safe_extract_locale_string(bucket.name, t),
+            description=KnowledgeService._safe_extract_locale_string(bucket.description, t),
+        )
+
+    @staticmethod
+    def _masked_source_configuration(bucket: BucketEntity) -> dict[str, Any]:
+        """Secrets never leave the API. Without the announcing pipeline's form the secret paths are unknown, so
+        nothing is returned rather than risking a leak."""
+        if bucket.source is None:
+            return {}
+        source_pipeline = SourcePipelineEntity.find(bucket.source)
+        if source_pipeline is None:
+            return {}
+        secret_paths = SecretFieldWalker.secret_paths(source_pipeline.form_elements)
+        return SecretEncryptionService.from_settings().mask_paths(bucket.source_configuration, secret_paths)
 
     @staticmethod
     async def create_namespace(
@@ -231,15 +705,8 @@ class KnowledgeService:
         Creates a new namespace (folder) in the specified database.
         """
         bucket = BucketEntity.get_bucket_by_db_name(database)
-
-        try:
-            NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), namespace)
-            raise HTTPException(
-                status_code=409,
-                detail=f"Folder '{namespace}' already exists in database '{database}'.",
-            )
-        except DoesNotExist:
-            pass
+        KnowledgeService._reject_if_sourced(bucket)
+        KnowledgeService._reject_if_namespace_taken(bucket, database, namespace, request.folder_name)
 
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
             text=request.display_name, t=t, llm_config=llm_config, user=user
@@ -248,13 +715,28 @@ class KnowledgeService:
             request.description, t, llm_config, user
         )
 
-        namespace_entity = NamespaceEntity.create_namespace(
-            bucket_id=str(bucket.id),
-            namespace_name=namespace,
-            folder_name=request.folder_name,
-            display_name=display_name_entity,
-            description=description_entity,
-        )
+        try:
+            namespace_entity = NamespaceEntity.create_namespace(
+                bucket_id=str(bucket.id),
+                namespace_name=namespace,
+                folder_name=request.folder_name,
+                display_name=display_name_entity,
+                description=description_entity,
+            )
+        except NotUniqueError:
+            raise HTTPException(
+                status_code=409, detail=f"Folder '{namespace}' already exists in database '{database}'."
+            ) from None
+
+        if user.acting_within_tenant is not None:
+            KnowledgeService._grant_knowledge_access(
+                admin_rules=[AccessChecker.knowledge_namespace_admin_rule(database, namespace)],
+                role_name=KnowledgeService._knowledge_admin_role_name(database, namespace),
+                role_description=f"Admin access to knowledge folder {database}/{namespace}",
+                user=user,
+                rollback=lambda: NamespaceEntity.delete_namespace(str(namespace_entity.id)),
+                resource_label=f"Knowledge folder '{database}/{namespace}'",
+            )
 
         return NamespaceResponse(
             id=str(namespace_entity.id),
@@ -266,20 +748,58 @@ class KnowledgeService:
         )
 
     @staticmethod
+    def _reject_if_namespace_taken(bucket: BucketEntity, database: str, namespace: str, folder_name: str) -> None:
+        """The name is compared as it will be stored, sanitised, or ``hr docs`` would pass next to ``hr_docs`` and
+        hit the unique index. A folder may back only one namespace: the pipeline resolves a namespace by its folder,
+        and two rows for one folder fail that lookup for the whole database."""
+        bucket_id = str(bucket.id)
+        stored_name = NamespaceEntity.sanitize_namespace_name(namespace)
+        try:
+            NamespaceEntity.get_namespace_by_bucket_and_name(bucket_id, stored_name)
+        except DoesNotExist:
+            pass
+        else:
+            raise HTTPException(
+                status_code=409, detail=f"Folder '{namespace}' already exists in database '{database}'."
+            )
+        try:
+            owner = NamespaceEntity.get_namespace_by_bucket_and_folder(bucket_id, folder_name)
+        except DoesNotExist:
+            pass
+        else:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Folder name '{folder_name}' is already used by folder '{owner.namespace_name}' "
+                    f"in database '{database}'."
+                ),
+            )
+
+    @staticmethod
     async def update_namespace(
-        namespace_id: str,
+        database: str,
+        namespace: str,
         request: UpdateNamespaceRequest,
         t: LocaleHandler,
         user: UserIdentity,
         llm_config: LLMConfig | None = None,
     ) -> NamespaceResponse:
-        """
-        Updates display name and description for an existing namespace.
+        """Updates display name and description for an existing namespace.
+
+        Resolved by name, never by id: the route guard authorises ``aihub.admin.knowledge.{database}.{namespace}``,
+        so only a name lookup guarantees the row written is the one the caller was cleared for.
         """
         try:
-            NamespaceEntity.get_namespace_by_id(namespace_id)
-        except Exception:
-            raise HTTPException(status_code=404, detail=f"Folder with ID '{namespace_id}' not found")
+            bucket = BucketEntity.get_bucket_by_db_name(database)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from None
+
+        try:
+            namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), namespace)
+        except DoesNotExist:
+            raise HTTPException(
+                status_code=404, detail=f"Folder '{namespace}' not found in database '{database}'"
+            ) from None
 
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
             text=request.display_name, t=t, llm_config=llm_config, user=user
@@ -289,7 +809,7 @@ class KnowledgeService:
         )
 
         updated_entity = NamespaceEntity.update_namespace(
-            namespace_id=namespace_id,
+            namespace_id=str(namespace_entity.id),
             display_name=display_name_entity,
             description=description_entity,
         )
@@ -326,6 +846,7 @@ class KnowledgeService:
                 detail=f"Database '{database}' or namespace '{namespace}' not found",
             ) from e
 
+        KnowledgeService._reject_if_sourced(bucket_entity)
         container = bucket_entity.bucket_name
         folder = namespace_entity.folder_name
 
@@ -347,39 +868,6 @@ class KnowledgeService:
             expires_in=3600,  # 1 hour in seconds
             folder=folder,
         )
-
-    @staticmethod
-    @trace_fn
-    async def _publish_source_updated_event(
-        nc: Annotated[NATS, Field(description="NATS client connection")],
-        database: Annotated[str, Field(description="Target knowledge database name")],
-        container: Annotated[str, Field(description="Container/bucket name")],
-        file_path: Annotated[str, Field(description="Path to the uploaded file")],
-    ) -> None:
-        """
-        Publishes a SourceUpdatedEvent to NATS after a source file is added or removed.
-
-        The Dagster observe job reacts by scanning the data lake, so the same event drives
-        both ingestion (file uploaded) and cleanup (file deleted, picked up as an orphan).
-        """
-        topic_manager = PipelineInstanceTopicManager(
-            source_type="datalake",
-            source_id=container,
-            target_type="knowledge",
-            target_id=database,
-        )
-
-        event = SourceUpdatedEvent(path=file_path)
-        subject = topic_manager.get_subject_for_specific_event_in_pipeline_instance(
-            run_key=event.event_id,
-            event_name=event.event_name,
-            event_id=event.event_id,
-        )
-
-        publisher = NCPublisher(name="KnowledgeService", nc=nc)
-        await publisher.publish_event(event, subject)
-
-        logger.info(f"Published SourceUpdatedEvent for file {file_path} to subject {subject}")
 
     @staticmethod
     async def validate_document_upload(
@@ -426,12 +914,7 @@ class KnowledgeService:
 
             # Publish event to trigger pipeline - this must succeed or upload fails
             try:
-                await KnowledgeService._publish_source_updated_event(
-                    nc=nc,
-                    database=database,
-                    container=container,
-                    file_path=object_key,
-                )
+                await SourceUpdatedPublisher.publish(nc, bucket_entity, object_key)
             except Exception as e:
                 logger.exception(f"Failed to publish event for {object_key}: {e}")
                 raise HTTPException(
@@ -459,7 +942,7 @@ class KnowledgeService:
         try:
             ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
         except DoesNotExist:
-            raise HTTPException(status_code=404, detail="Document not found")
+            raise HTTPException(status_code=404, detail=_DOCUMENT_NOT_FOUND_DETAIL)
         source = ref_doc.data.metadata.source
         source = source.removeprefix(_S3_URI_SCHEME)
         parts = source.split("/", 1)
@@ -492,17 +975,16 @@ class KnowledgeService:
         then cleans the doc store and vector store. Keeping the pipeline as the single writer for
         those stores avoids races with in-flight ingestion runs.
         """
+        KnowledgeService._reject_if_sourced(BucketEntity.get_bucket_by_db_name(db))
         KnowledgeService._ensure_db_exists(db)
         try:
             ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
         except DoesNotExist:
-            raise HTTPException(status_code=404, detail="Document not found")
+            raise HTTPException(status_code=404, detail=_DOCUMENT_NOT_FOUND_DETAIL)
 
         source = ref_doc.data.metadata.source
-        container, file_path = KnowledgeService._delete_source_from_data_lake(s3_service, source)
-        await KnowledgeService._publish_source_updated_event(
-            nc=nc, database=db, container=container, file_path=file_path
-        )
+        _, file_path = KnowledgeService._delete_source_from_data_lake(s3_service, source)
+        await SourceUpdatedPublisher.publish(nc, BucketEntity.get_bucket_by_db_name(db), file_path)
 
     @staticmethod
     def _delete_source_from_data_lake(s3_service: S3AnonymousFileAccessService, source: str) -> tuple[str, str]:
@@ -540,3 +1022,159 @@ class KnowledgeService:
                 status = "failed"
             results.append(DocumentDeletionResult(document_id=document_id, status=status))
         return BatchDeleteDocumentsResponse(results=results)
+
+    @staticmethod
+    def _is_legacy_bucket(bucket: BucketEntity) -> bool:
+        """Whether the bucket belongs to a legacy deploy-bound pipeline (``default_rag`` / ``shared_rag``)."""
+        return bucket.ingestor in (IngestorType.DEFAULT_RAG.value, IngestorType.SHARED_RAG.value)
+
+    @staticmethod
+    def reserved_database_names() -> frozenset[str]:
+        """Names a new knowledge database may never be created on.
+
+        A database's name doubles as its Mongo store and Milvus collection, so Mongo's own system databases
+        and the application's main database would collide, and the two legacy names would put a new database
+        on top of a frozen corpus that has no migration path. Spelled out rather than derived from
+        ``non_browsable_database_names``, so that widening one policy cannot silently widen the other.
+        """
+        aihub_settings = AIHubSettings()
+        return _SYSTEM_DATABASE_NAMES | {
+            aihub_settings.MONGO_MAIN_DB_NAME,
+            aihub_settings.DEFAULT_BUCKET_NAME,
+            aihub_settings.SHARED_BUCKET_NAME,
+        }
+
+    @staticmethod
+    def non_browsable_database_names() -> frozenset[str]:
+        """Names no caller may read from or delete in, whatever access rules they hold.
+
+        Reserving a name for creation is not a reason to refuse reads of the database already on it, so the
+        legacy names appear here only when the deployment hides legacy knowledge, making hidden mean
+        unreadable rather than merely unlisted. Uploads and namespace creation stay open either way.
+        """
+        # Keyed on the two configured names, while get_databases hides by the bucket's ingestor. The two
+        # agree unless a deployment renamed its buckets after seeding, which would leave such a bucket
+        # unlisted yet readable by name; closing that would cost a bucket lookup on every guarded read.
+        aihub_settings = AIHubSettings()
+        system_names = _SYSTEM_DATABASE_NAMES | {aihub_settings.MONGO_MAIN_DB_NAME}
+        if aihub_settings.SHOW_LEGACY_KNOWLEDGE:
+            return frozenset(system_names)
+        return frozenset(system_names | {aihub_settings.DEFAULT_BUCKET_NAME, aihub_settings.SHARED_BUCKET_NAME})
+
+    @staticmethod
+    def _is_database_deletable(bucket: BucketEntity) -> bool:
+        """Whether the database *itself* may be torn down.
+
+        A legacy ``default_rag`` / ``shared_rag`` bucket is re-provisioned by three separate paths — the API's
+        bucket seeder, the S3 init script, and its own pipeline's definitions build — so removing it needs the code
+        location retired afterwards, which the platform cannot do for the operator. Its namespaces and its documents
+        are deletable; only the database as a whole is not. A sourced database is deletable: tearing it down ends
+        its sync, nothing refills it.
+        """
+        return not KnowledgeService._is_legacy_bucket(bucket)
+
+    @staticmethod
+    def _reject_if_sourced(bucket: BucketEntity) -> None:
+        """Guard on manual content changes: a sourced database's content is owned by its source and would be
+        re-synced or removed on the next run, so uploads, deletions and hand-made namespaces are refused."""
+        if bucket.source is not None:
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"Database '{bucket.db_name}' is filled by source '{bucket.source}'; "
+                    "manage its content at the source."
+                ),
+            )
+
+    @staticmethod
+    def _reject_undeletable_database(bucket: BucketEntity) -> None:
+        """Whole-database deletion guard: legacy databases are protected.
+
+        Mongo-internal / main-db names are rejected earlier, at the controller, via the hidden-name guard.
+        """
+        if KnowledgeService._is_legacy_bucket(bucket):
+            raise HTTPException(status_code=403, detail=f"Legacy database '{bucket.db_name}' cannot be deleted.")
+
+    @staticmethod
+    @trace_fn
+    def delete_database(database: str) -> None:
+        """Flag a knowledge database (and its namespaces) for teardown; the pipeline does the heavy purge.
+
+        The synchronous work is O(1): flip the ``deleting`` flag, which excludes the rows from every
+        enumeration path so ingestion stops at once. The flag *is* the durable teardown request — the
+        pipeline's teardown sensor reads it directly, so there is no message that could be published,
+        acknowledged and then lost, leaving the database hidden but never purged. The Dagster job drops the
+        Milvus collection, the doc-store database and the S3 bucket, and hard-deletes the rows last.
+        """
+        try:
+            bucket = BucketEntity.get_bucket_by_db_name(database)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from None
+
+        KnowledgeService._reject_undeletable_database(bucket)
+
+        # Revoke first, while the namespace rows are still enumerable: once the flags are set the
+        # teardown job may hard-delete them, and their rules would then have nothing left to name.
+        namespaces = NamespaceEntity.get_namespaces_by_bucket(str(bucket.id))
+        KnowledgeService._revoke_knowledge_access(
+            rules=[
+                AccessChecker.knowledge_database_user_rule(database),
+                f"{AccessChecker.knowledge_database_user_rule(database)}.>",
+                *KnowledgeService._database_admin_rules(database),
+                *[
+                    rule
+                    for entity in namespaces
+                    for rule in (
+                        AccessChecker.knowledge_namespace_user_rule(database, entity.namespace_name),
+                        AccessChecker.knowledge_namespace_admin_rule(database, entity.namespace_name),
+                    )
+                ],
+            ],
+            role_names=[
+                KnowledgeService._knowledge_admin_role_name(database),
+                *[
+                    KnowledgeService._knowledge_admin_role_name(database, entity.namespace_name)
+                    for entity in namespaces
+                ],
+            ],
+        )
+
+        BucketEntity.mark_deleting(str(bucket.id))
+        NamespaceEntity.mark_all_deleting_for_bucket(str(bucket.id))
+
+    @staticmethod
+    @trace_fn
+    def delete_namespace(database: str, namespace: str) -> None:
+        """Flag a single namespace for teardown; the bucket and its other namespaces survive.
+
+        Same flag-as-request shape as ``delete_database``. The teardown job deletes the namespace's S3
+        folder, its doc-store rows and its Milvus vectors (by metadata filter — never a partition drop,
+        since namespaces share hashed partitions), then hard-deletes the row.
+        """
+        try:
+            bucket = BucketEntity.get_bucket_by_db_name(database)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from None
+
+        # Only auto-sync is refused. A legacy database's namespaces are deletable: its frozen images carry the
+        # teardown sensor from v0.320.1, so the flag this sets is a queue something actually reads.
+        KnowledgeService._reject_if_sourced(bucket)
+
+        try:
+            namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), namespace)
+        except DoesNotExist:
+            raise HTTPException(
+                status_code=404, detail=f"Folder '{namespace}' not found in database '{database}'"
+            ) from None
+
+        KnowledgeService._revoke_knowledge_access(
+            rules=[
+                AccessChecker.knowledge_namespace_user_rule(database, namespace_entity.namespace_name),
+                AccessChecker.knowledge_namespace_admin_rule(database, namespace_entity.namespace_name),
+            ],
+            role_names=[
+                KnowledgeService._knowledge_admin_role_name(database, namespace_entity.namespace_name),
+            ],
+        )
+
+        NamespaceEntity.mark_deleting(str(namespace_entity.id))

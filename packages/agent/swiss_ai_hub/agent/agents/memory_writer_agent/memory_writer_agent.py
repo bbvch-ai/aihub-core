@@ -18,8 +18,9 @@ class MemoryWriterAgent(Agent):
     soon as the answer is ready and never waits on this write.
 
     It rebuilds the *originating* agent's `AgentMemory` from the identity carried on the event, so the
-    fact-extraction prompt and the `_agent_id` scoping tag are identical to an inline write — the only
-    difference is that the work runs here, in a separate, independently-traced execution context.
+    fact-extraction prompt, the `_agent_id` scoping tag and the extraction model (issue #1590) are the
+    originating profile's own — the write happens here, in a separate, independently-traced execution
+    context, but is scoped and configured exactly as that agent configured it.
     """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString(
@@ -43,9 +44,11 @@ class MemoryWriterAgent(Agent):
                 agent_id=event.origin_agent_id,
                 name=event.origin_agent_name,
                 description=event.origin_agent_description,
+                anonymise=event.origin_anonymise,
             ),
             agent_class=event.origin_agent_class,
             t=t,
+            llm_model_name=event.origin_memory_llm,
         )
         memory_added = await memory.add_user_memory(
             messages=event.messages,

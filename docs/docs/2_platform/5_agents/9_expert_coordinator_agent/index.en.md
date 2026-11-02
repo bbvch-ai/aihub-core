@@ -129,11 +129,11 @@ Pick the platform, then fill in that platform's fields. The identifiers come fro
 
 ### Language model
 
-| Field                                                                  | Type         | Default | Description                                                                                                                              |
-| ---------------------------------------------------------------------- | ------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **Model**                                                              | Model picker | —       | The chat model used to judge answer sufficiency and write follow-up questions. Required.                                                 |
-| **Temperature**                                                        | Number       | `0.0`   | Keep low — this is a judgement/extraction task, not a creative one. Range 0.0–2.0.                                                       |
-| **Return Log Probabilities** / **Top Log Probabilities** / **Timeout** | —            | —       | Standard language-model options, as on the [Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model) page. |
+| Field                                                                                                                           | Type         | Default | Description                                                                                                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Model**                                                                                                                       | Model picker | —       | The chat model used to judge answer sufficiency and write follow-up questions. Required.                                                                                  |
+| **Temperature**                                                                                                                 | Number       | `0.0`   | Keep low — this is a judgement/extraction task, not a creative one. Switch on the temperature override and set it (range 0.0–2.0); otherwise the model's default applies. |
+| **Breadth of word choice (top_p)** / **Accept images** / **Return Log Probabilities** / **Top Log Probabilities** / **Timeout** | —            | —       | Standard language-model options, as on the [Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model) page.                                  |
 
 ### Organization memory
 

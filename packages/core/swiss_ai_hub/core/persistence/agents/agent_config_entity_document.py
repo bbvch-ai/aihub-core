@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from functools import reduce
 from operator import or_
+from typing import Any
 
 from mongoengine import DateTimeField, Document, Q
 
@@ -32,6 +33,47 @@ class AgentConfigEntityDocument(AgentConfigEntity, Document):
     @trace_fn
     def find_for_classes(cls, agent_classes: list[str]) -> list["AgentConfigEntityDocument"]:
         return list(cls.objects(agent_class__in=agent_classes))
+
+    @classmethod
+    @trace_fn
+    def find_with_config_key(cls, config_key: str) -> list["AgentConfigEntityDocument"]:
+        """Every profile carrying `config_key`, whatever class it belongs to.
+
+        Takes the key rather than naming one, so this stays a persistence query: which key matters is the
+        caller's business, and the entity has no reason to know what a schedule is.
+        """
+        return list(cls.objects(**{f"config_data__{config_key}__exists": True}))
+
+    @classmethod
+    @trace_fn
+    def unset_config_key(cls, config_key: str) -> int:
+        """Strip `config_key` from every profile still carrying it, returning how many were changed.
+
+        For a field a blueprint has dropped: nothing reads the key any more (a config model ignores extras),
+        so this is tidiness rather than correctness. Takes the key for the same reason
+        `find_with_config_key` does.
+        """
+        key_path = f"config_data__{config_key}"
+        return cls.objects(**{f"{key_path}__exists": True}).update(**{f"unset__{key_path}": 1})
+
+    @classmethod
+    @trace_fn
+    def find_all(cls) -> list["AgentConfigEntityDocument"]:
+        """Every profile, whatever class it belongs to, including classes that are offline or retired."""
+        return list(cls.objects())
+
+    @classmethod
+    @trace_fn
+    def replace_config_data_if_unchanged(
+        cls, document_id: Any, expected_config_data: dict[str, Any], config_data: dict[str, Any]
+    ) -> bool:
+        """Swap in `config_data` only while the stored value still equals `expected_config_data`.
+
+        For startup rewrites: several API replicas boot together, and a profile saved between the read and
+        the write must not be overwritten with a rewrite of what it held before.
+        """
+        matching = cls.objects(pk=document_id, config_data=expected_config_data)
+        return matching.update_one(set__config_data=config_data) == 1
 
     @classmethod
     @trace_fn

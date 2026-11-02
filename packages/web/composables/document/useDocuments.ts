@@ -88,11 +88,14 @@ export const useDocuments = defineQuery(() => {
   // Only show loading on initial load, not during refetch/search when we have data
   const isLoading = computed(() => documentsQuery.asyncStatus.value === 'loading' && !documentsQuery.state.value?.data)
   const isFetching = computed(() => documentsQuery.asyncStatus.value === 'loading')
+  // Only a changed search, sort or page shows the previous results as placeholder; a background refetch does not.
+  const isSearching = computed(() => isFetching.value && documentsQuery.isPlaceholderData.value)
 
   return {
     documents,
     isLoading,
     isFetching,
+    isSearching,
     pagination: paginationMeta,
     currentPage,
     pageSize,

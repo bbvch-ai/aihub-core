@@ -5,3 +5,7 @@ rag_start:
 determine_namespaces:
   name: Evento di determinazione dei namespace
   description: Attiva l'LLM per determinare i namespace dal contesto della conversazione.
+in_order_node_combiner:
+  name: Documenti per la risposta
+  description: I documenti trovati su cui si basa la risposta, nell'ordine in cui
+    il modello li legge.

@@ -4,6 +4,11 @@ metadata:
   description: KI-Assistent, der Ihre Dokumente durchsucht und analysiert, um fundierte,
     kontextbezogene Antworten zu geben
 config:
+  restrict_to_user_access:
+    label: Auf die Rechte der Benutzerin oder des Benutzers beschränken
+    help: Nur aus den konfigurierten Sammlungen abrufen, welche die fragende Person
+      im Wissensbereich lesen darf. Ohne diese Einstellung erhalten alle, die diesen
+      Agenten nutzen dürfen, Antworten aus allen seinen Sammlungen.
   number_of_input_tokens:
     label: Maximale Eingabe-Tokens
     help: Maximale Anzahl von Tokens in der LLM-Eingabe. Begrenzt die Kontextgrösse
@@ -31,16 +36,21 @@ config:
       \ in Form von strukturierten Dokumenten. Jedes Dokument folgt einem\neinheitlichen\
       \ Format, beginnend mit `<REFERENCE_DOCUMENT [metadata]>` und endend mit `</REFERENCE_DOCUMENT>`.\
       \ Diese Dokumente enthalten\nwesentliche Details, die genutzt werden sollten,\
-      \ um die Anfrage des Benutzers genau zu verstehen und zu beantworten.\n\nJedes\
-      \ Dokument enthält Metadaten wie Quelle, Namespace, Typ, Sprache, Version und\
-      \ Zeitstempel. Der Inhalt\ndieser Dokumente liefert wichtige Erkenntnisse, die\
-      \ für den gegebenen Kontext relevant sind.\n\nNachfolgend finden Sie die relevanten\
-      \ Dokumente:\n\n<context_documents>\n{% for block in context_blocks %}\n{% if\
-      \ block.block_type == 'text' %}\n{{ block.text }}\n{% endif %}\n{% if block.block_type\
-      \ == 'image' %}\n{{ block.url | string | image}}\n{% endif %}\n{% endfor %}\n\
-      </context_documents>\n\nAnweisung: Erstellen Sie anhand der Informationen aus\
-      \ den bereitgestellten Dokumenten eine detaillierte und gut strukturierte Antwort\n\
-      auf die Frage des Benutzers.\n{% endchat %}\n"
+      \ um die Anfrage des Benutzers genau zu verstehen und zu beantworten.\n\nDie\
+      \ Metadaten jedes Dokuments nennen Quelle, Titel, Version und Zeitstempel: created_at\
+      \ ist der Zeitpunkt, an dem\nder Datensatz oder die Datei erstellt wurde, updated_at\
+      \ und inserted_at sind die Zeitpunkte, an denen die Plattform\nes zuletzt verarbeitet\
+      \ hat. Ein aus einer Geschäftsanwendung synchronisiertes Dokument, etwa ein\
+      \ Jira-Issue oder eine\nConfluence-Seite, trägt zusätzlich die Felder dieses\
+      \ Datensatzes, z. B. status, priority, issue_type, project, labels\noder space,\
+      \ sowie dessen eigenen Zeitpunkt updated. Der Inhalt\ndieser Dokumente liefert\
+      \ wichtige Erkenntnisse, die für den gegebenen Kontext relevant sind.\n\nNachfolgend\
+      \ finden Sie die relevanten Dokumente:\n\n<context_documents>\n{% for block\
+      \ in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url | string | image}}\n\
+      {% endif %}\n{% endfor %}\n</context_documents>\n\nAnweisung: Erstellen Sie\
+      \ anhand der Informationen aus den bereitgestellten Dokumenten eine detaillierte\
+      \ und gut strukturierte Antwort\nauf die Frage des Benutzers.\n{% endchat %}\n"
   enable_user_memory_retrieval:
     label: Benutzergedächtnis-Abruf aktivieren
     help: Ob benutzerspezifische Erinnerungen für personalisierten Kontext abgerufen
@@ -53,6 +63,12 @@ config:
     label: Benutzergedächtnis-Speicherung aktivieren
     help: Ob neue Erinnerungen aus Gesprächen für zukünftigen Abruf gespeichert werden
       sollen.
+  memory_llm:
+    label: Speichermodell
+    help: Modell, das Benutzererinnerungen extrahiert und abgleicht. Die Extraktion
+      ist kurz und mechanisch, daher genügt in der Regel ein kleineres Modell. Deaktiviert
+      lassen, um den Plattformstandard zu verwenden; beim Aktivieren ist genau dieses
+      Modell der Startpunkt.
 steps:
   retrieve_user_memory:
     name: Benutzergedächtnis abrufen
@@ -95,9 +111,6 @@ steps:
     name: Grundlagen-Dokumente speichern
     description: Speichert die wichtigsten Grundlagen-Dokumente dieser Antwort, damit
       eine Folgefrage sie wiederverwenden kann.
-  limit_chat_history_with_context:
-    name: Chat-Verlauf mit Kontext begrenzen
-    description: Fügt den kombinierten Kontext hinzu und kürzt den Chat-Verlauf erneut.
   respond_with_llm:
     name: Mit LLM antworten
     description: Generiert eine Antwort mit dem konfigurierten LLM.
@@ -108,3 +121,19 @@ steps:
   stop:
     name: Stopp
     description: Beendet den Workflow nach Abschluss aller erforderlichen Schritte
+thoughts:
+  condensation_empty: Der Condenser hat keine eigenständige Frage geliefert, daher
+    gibt es für diesen Zug keine nutzbare Suchanfrage. Die Anfrage wird abgelehnt,
+    statt die Rohnachricht zu verwenden.
+  input_too_large: 'Die Eingabe passt nicht in das Kontextfenster des Modells: rund
+    %{tokens} Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des
+    Modells wird abgelehnt.'
+messages:
+  no_accessible_knowledge: 'Das Wissen dieses Agenten steht Ihnen nicht zur Verfügung:
+    Sie haben auf keine der Sammlungen Zugriff, aus denen er antwortet. Bitten Sie
+    bei Bedarf eine Administratorin oder einen Administrator um Zugriff.'
+  condensation_empty: Ich konnte aus dieser Nachricht nicht ableiten, wonach ich suchen
+    soll. Bitte formulieren Sie Ihre Frage neu und versuchen Sie es erneut.
+  input_too_large: Diese Datei ist zu gross, als dass ich sie auf einmal lesen könnte.
+    Bitte laden Sie eine kleinere Datei hoch, teilen Sie sie auf, oder wechseln Sie
+    zu einem Assistenten mit einem Modell mit grösserem Kontextfenster.

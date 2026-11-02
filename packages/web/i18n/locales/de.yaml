@@ -212,6 +212,8 @@ event:
     no_filters: Keine zusätzlichen Filter
   rag_stop:
     failure_reason:
+      condensation_empty: Die Frage konnte nicht in eine durchsuchbare Form verdichtet
+        werden – dieser Lauf wurde vor dem Retrieval gestoppt.
       context_insufficient: Der abgerufene Kontext war unzureichend – die Antwort
         ist eine Notlösung und nicht in Ihren Wissensquellen verankert.
       expert_declined: Der menschliche Experte konnte keine Antwort liefern – dieser
@@ -220,6 +222,8 @@ event:
         – dieser Lauf hat keine fundierte Antwort produziert.
       few_shot_rejected: Die Anfrage entsprach keinem bekannten Muster, daher wurde
         die Antwort ohne Retrieval erzeugt.
+      input_too_large: Die Nachricht oder die angehängte Datei überschritt das Kontextfenster
+        des Modells, daher wurde dieser Lauf vor dem Modellaufruf gestoppt.
   limitChatHistory:
     summary: Chat-Verlauf auf {count} Nachrichten begrenzt
     assistant: Assistent
@@ -232,6 +236,14 @@ event:
       Erinnerungsnachrichten zum Chat-Verlauf hinzugefügt'
     description: Chat-Verlauf wurde mit relevanten Erinnerungen aus früheren Interaktionen
       erweitert
+    assistant: Assistent
+    system: System
+    user: Benutzer/in
+  contextComposed:
+    summary: 'Kontext für das Modell zusammengestellt: {count} Nachricht | Kontext
+      für das Modell zusammengestellt: {count} Nachrichten'
+    description: Der Chat-Verlauf, den das Modell erhalten hat, mit allen abgerufenen
+      Kontextblöcken
     assistant: Assistent
     system: System
     user: Benutzer/in
@@ -274,6 +286,14 @@ event:
       identity: Identität
       capabilities: Fähigkeiten
       behavior: Verhalten
+  sandboxFileDisplayed:
+    file: Datei
+    type: Typ
+    size: Grösse
+    path: In der Sandbox
+  humanInTheLoopResponse:
+    confirmed: Bestätigt
+    declined: Abgelehnt
   standaloneQuestionCondenser:
     summary: Frage verfeinert und verdichtet
     condensedQuestion: Verdichtete Frage
@@ -292,6 +312,94 @@ event:
       delegations: Delegationen
       delegatedTaskAgentInTheLoop: Delegierte Aufgabe (Agent in der Schleife)
       allEvents: Alle Ereignisse
+  parts:
+    noMessages: Keine Nachrichten
+    yes: Ja
+    no: Nein
+  capability:
+    userQuery: Nachricht des Benutzers
+    historyMessages: Nachrichten im Verlauf
+    condensed: Aus dem Verlauf verdichtet
+    query: Anfrage
+    block: Block {number}
+    blocks: Kontextblöcke
+    namespaces: Bereiche des Organisationsgedächtnisses
+    toolCall: Werkzeugaufruf
+    userMemories: Benutzererinnerungen
+    organizationMemories: Organisationserinnerungen
+    references: Referenzierte Sammlungen
+    citeSources: Quellen zitieren
+    sections: Gefundene Abschnitte
+    notSearched: Nicht durchsucht (kein Zugriff)
+    files: Dateien
+    reserveTokens: Reservierte Tokens
+    fileStatus:
+      read: Gelesen
+      truncated: Gekürzt
+      failed: Fehlgeschlagen
+    citationId: Zitier-ID
+    pages: Seiten
+    error: Fehler
+    stop: Endet mit
+    targetAgent: Gedächtnisschreiber
+    links: Links
+    webReferences: Referenzierte Webseiten
+    pagesRead: Gelesene Seiten
+    notRead: Nicht gelesen
+    webFetchFailure:
+      malformed_url: Ungültiger Link
+      unsupported_url: Nicht unterstützter Link
+      blocked_host: Gesperrte Adresse
+      not_found: Nicht gefunden
+      access_denied: Zugriff verweigert
+      http_error: Serverfehler
+      timeout: Zeitüberschreitung
+      unsupported_content: Keine Webseite
+      empty_content: Kein lesbarer Inhalt
+      url_limit_reached: Über dem Link-Limit
+  extraction:
+    fields: Spalten
+    instructions: Zu behaltende Zeilen
+    criteria: Ausgewählte Dokumente
+    collections: Sammlungen
+    notices: Hinweise
+    documentIds: '{count} gewählte Dokumente'
+    files: Dateien
+    failedFiles: Fehlgeschlagene Dateien
+    rows: Gezeigte / gefundene Zeilen
+    truncated: Gekürzt
+    confirmed: Extrahiert alle vom Benutzer bestätigten Dokumente
+    awaitingConfirmation: Stichprobe wartet auf die Freigabe des Benutzers
+    previewRows: '{shown} von {total} Zeilen angezeigt'
+    download: Ganze Tabelle herunterladen (CSV)
+    downloadFailed: Die Tabelle konnte nicht heruntergeladen werden
+  toolLoop:
+    loop: Werkzeugsatz
+    mode: Modus
+    modes:
+      answer: Antworten
+      gather: Kontext sammeln
+    iteration: Entscheidungen
+    toolCallsMade: Bisherige Werkzeugaufrufe
+    messages: Nachrichten in der Schleife
+    offeredTools: Angebotene Werkzeuge
+    condensedResults: Verdichtete Ergebnisse
+    needsCondensing: Muss verdichtet werden
+    decidedCalls: Ein Werkzeugaufruf entschieden | {count} Werkzeugaufrufe entschieden
+    narrowedTools: Eingeschränkt auf
+    maxIterations: Entscheidungslimit
+    tool: Werkzeug
+    kind: Art
+    kinds:
+      function: Funktion
+      capability: Fähigkeit
+    failed: Fehlgeschlagen
+    resultContext: Zurückgegebener Kontext
+    stoppedEarly: An den Limits gestoppt
+    gathered: Gesammelter Kontext
+    gatheredMessages: Gesammelte Nachrichten
+    tokens: Tokens
+    condensedTurns: Verdichtete Runden
 costs:
   table:
     count: Anzahl
@@ -454,9 +562,8 @@ document:
     deleting: Wird gelöscht
     button: Löschen
     button_selected: Ausgewählte löschen
-    confirmMessage: Möchten Sie dieses Dokument wirklich löschen? Es wird dauerhaft
-      aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig gemacht
-      werden.
+    confirmMessage: Möchten Sie "{title}" wirklich löschen? Es wird dauerhaft aus
+      der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig gemacht werden.
     confirmMessageBatch: Möchten Sie {count} Dokument(e) wirklich löschen? Sie werden
       dauerhaft aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig
       gemacht werden.
@@ -511,21 +618,97 @@ knowledge:
     title: Sammlung hinzufügen
     description: Eine neue Wissenssammlung erstellen
     cancel: Abbrechen
-  auto_sync:
-    title: Automatisch synchronisiert
-    description: Sammlungen werden automatisch verwaltet
+  add_database:
+    title: Wissensdatenbank hinzufügen
+    description: Eine neue Self-Service-Wissensdatenbank erstellen
+  source:
+    description: Synchronisiert aus {name}
+    edit: Quelle bearbeiten
+    next_sync: Die Quelle synchronisiert einmal täglich, ihre Inhalte erscheinen also
+      nach der nächsten geplanten Synchronisierung.
+    awaiting_sync:
+      title: Noch nichts synchronisiert
+      description: Die Quelle synchronisiert diese Datenbank einmal täglich, ihre
+        Sammlungen erscheinen hier also nach der nächsten geplanten Synchronisierung.
+        Fehlen sie danach noch, prüfen Sie die Einstellungen der Quelle.
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Sammlung bearbeiten
   upload_documents: Dokumente hochladen
+  delete_namespace: Sammlung löschen
+  delete_database: Datenbank löschen
+  delete:
+    confirm_label: Geben Sie zur Bestätigung {name} ein
+    database:
+      title: Wissensdatenbank löschen
+      warning: Dadurch werden die Datenbank {name}, alle ihre Sammlungen und ihre
+        {count} Dokumente unwiderruflich gelöscht. Dies kann nicht rückgängig gemacht
+        werden.
+    namespace:
+      title: Sammlung löschen
+      warning: Dadurch werden die Sammlung {name} und ihre {count} Dokumente unwiderruflich
+        gelöscht. Dies kann nicht rückgängig gemacht werden.
+    actions:
+      delete: Löschen
+    scheduled:
+      summary: Löschung gestartet
+      detail: Die Löschung läuft im Hintergrund und kann einen Moment dauern.
+    error:
+      summary: Löschung fehlgeschlagen
+      detail: Die Löschung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.
   form:
     create:
       title: Sammlung erstellen
+    create_error: Die Sammlung konnte nicht erstellt werden. Bitte versuchen Sie es
+      erneut.
+    create_database:
+      title: Wissensdatenbank erstellen
+      success: Wissensdatenbank erstellt
+      error: Die Wissensdatenbank konnte nicht erstellt werden
+      no_ingestors: Keine Ingestion-Pipeline verfügbar. Stellen Sie sicher, dass mindestens
+        eine Pipeline läuft.
+      steps:
+        basic_info: Grundinformationen
+        source: Quelle
+    edit_source:
+      title: Quelle von {name}
+      success: Quelle aktualisiert
+      error: Quelle konnte nicht aktualisiert werden
+      switch_to_manual: Auf manuellen Upload umstellen
+      replace_documents:
+        header: Inhalt an die Quelle übergeben?
+        message: '{name} enthält bereits {count} manuell hochgeladene(s) Dokument(e).
+          Sobald eine Quelle diese Datenbank befüllt, wird bei der nächsten Synchronisation
+          jede Datei entfernt, die die Quelle nicht hat.'
+        message_from_source: '{name} enthält {count} Dokument(e), die aus {source}
+          synchronisiert wurden. Sobald die neue Quelle diese Datenbank befüllt, wird
+          bei ihrer nächsten Synchronisation jede Datei entfernt, die sie nicht hat.'
+        accept: Bestehende Dokumente ersetzen
     edit:
       title: Sammlung bearbeiten
     database:
       label: Wissensdatenbank
       placeholder: Name der Wissensdatenbank
+    database_name:
+      label: Datenbankname
+      placeholder: meinewissensdatenbank
+      help: Nur Kleinbuchstaben und Ziffern sind erlaubt, beginnend mit einem Buchstaben,
+        3 bis 63 Zeichen. Der Name kann später nicht geändert werden.
+      validation_error: Der Datenbankname muss mit einem Kleinbuchstaben beginnen
+        und darf nur Kleinbuchstaben und Ziffern enthalten, zwischen 3 und 63 Zeichen
+    source:
+      label: Quelle
+      placeholder: Wählen Sie, woher die Dokumente kommen
+      help: Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron.
+        Ihre Beschreibung sagt, wie der Inhalt in Namespaces gegliedert wird.
+      manual_upload:
+        label: Manueller Upload
+        description: Dokumente werden von Hand in selbst erstellte Namespaces hochgeladen.
+    ingestor:
+      label: Ingestion-Pipeline
+      placeholder: Ingestion-Pipeline auswählen
+      help: Die Pipeline, die in diese Datenbank hochgeladene Dokumente verarbeitet.
     folder_name:
       label: Sammlungsname
       placeholder: meine-sammlung
@@ -560,6 +743,9 @@ auth:
     welcomeProvider: Willkommen im AI Hub — Anmeldung mit {provider}
     pleaseLogin: Bitte melden Sie sich an
     pleaseLoginWith: Bitte melden Sie sich mit {provider} an
+    useOrganisationLink: Bitte verwenden Sie den Anmeldelink Ihrer Organisation. Falls
+      Sie ihn nicht haben, kontaktieren Sie Ihren Administrator.
+    adminLogin: Anmeldung für Administratoren
     loginWith: Anmelden mit {provider}
     customSolutions: Massgeschneiderte KI-Lösungen für Ihr Unternehmen
     logoAlt: Logo des Unternehmens
@@ -627,6 +813,8 @@ evaluation:
 role:
   title: Zugriffsrollen
   name: Name
+  name_immutable_hint: Der Name kann nach dem Erstellen der Rolle nicht geändert werden,
+    da Benutzer Rollen über ihren Namen zugewiesen werden.
   description: Beschreibung
   edit: Rolle bearbeiten
   create_new: Neue Rolle
@@ -665,6 +853,8 @@ role:
     dies zu ändern.
   capability_readonly: Keine einzelne Regel gewährt dies allein — nutze eine Vorlage
     oder eine breitere Regel.
+  capability_also_cleared: 'Das Abwählen entfernt zusätzlich: {rules}'
+  capability_also_granted: 'Das Auswählen gewährt zusätzlich: {rules}'
   pattern_help_intro: 'Muster verwenden Platzhalter für Agenten:'
   pattern_help_all: Alle Agenten
   pattern_help_wildcard: Alle Instanzen von MyAgent
@@ -790,13 +980,40 @@ process:
       done: Abgeschlossen
       steps: Fortschritt
 form:
+  secret_file_input:
+    drop_hint: Datei hier ablegen oder zum Auswählen klicken
+    limits: '{accept}, bis {size}'
+    selected: Datei ausgewählt
+    stored: Schlüsseldatei gespeichert (verschlüsselt)
+    client_email: 'Dienstkonto: {email}'
+    replace: Ersetzen
+    remove: Entfernen
+    too_large: Die Datei ist grösser als {size}.
+    invalid_json: Die Datei ist kein gültiges JSON.
   locale_input:
     translate_tooltip: In alle Sprachen übersetzen
+    translate_partial_summary: Einige Sprachen wurden nicht übersetzt
+    translate_partial_detail: Übersetzung nach {locales} nicht möglich. Die anderen
+      Sprachen wurden aktualisiert — versuchen Sie es erneut, um den Rest zu ergänzen.
+    translate_failed_summary: Die Übersetzung hat diesmal nicht geklappt
+    translate_failed_detail: Keine der Sprachen konnte übersetzt werden. Ihr Text
+      ist unverändert — bitte versuchen Sie es gleich noch einmal.
   warnings:
     org_memory_performance: Diese Funktion funktioniert in manchen Fällen möglicherweise
       nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie
       sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
+  modelBound:
+    providerDefault: Anbieter-Standard
+    overrideRequired: Geben Sie einen Wert ein, oder deaktivieren Sie die Überschreibung,
+      um den Standard zu verwenden.
+    defaultPlaceholder: 'Modellstandard: {value}'
+    maximumHint: Höchstens {maximum} für {model}.
+    maximumHintWithFill: 'Höchstens {maximum} für {model}: {percent} der {modelMaximum}
+      Tokens des Modells, als Reserve für Abweichungen bei der Token-Zählung.'
+    aboveMaximum: Für {model} sind höchstens {maximum} erlaubt.
+  modelGated:
+    unavailable: '{model} unterstützt dies nicht.'
   cron:
     errors:
       required: Jede Position ist erforderlich — eine leere ergibt keinen gültigen
@@ -819,6 +1036,16 @@ lib:
       placeholder: Zeitzone auswählen
       help: Die Cron-Positionen werden in dieser Zeitzone interpretiert, damit ein
         täglicher Zeitplan über Zeitumstellungen hinweg dieselbe Uhrzeit behält.
+  knowledgeCollections:
+    placeholder: Sammlungen auswählen
+    help: Nur die ausgewählten Sammlungen werden durchsucht.
+    noAgent: Zuerst einen Wissensagenten wählen — auswählbar sind dessen Sammlungen.
+    noSource: Diesem Feld ist kein Wissensagent zugeordnet, daher können keine Sammlungen
+      angeboten werden.
+    empty: Der gewählte Agent ist für keine Sammlung konfiguriert.
+    unavailable: Gespeichert, wird aber vom gewählten Agenten nicht abgerufen
+  knowledgeDatabases:
+    unavailable: '{name} (gelöscht oder für Sie nicht sichtbar)'
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen
@@ -826,8 +1053,14 @@ lib:
       label: Datenbank
     namespaces:
       label: Namensräume
-      placeholder: Namensräume auswählen (leer = alle)
-      help: Leer lassen, um alle Namensräume zu durchsuchen
+      placeholder: Mindestens einen Namensraum auswählen
+      help: Nur die ausgewählten Namensräume werden durchsucht
+      required: Mindestens einen Namensraum auswählen oder „Alle Namensräume durchsuchen“
+        aktivieren. Sonst kann die Konfiguration nicht gespeichert werden.
+    allNamespaces:
+      label: Alle Namensräume durchsuchen
+      help: Jeder Namensraum dieser Datenbank wird durchsucht, auch später hinzugefügte
+        ({count} heute).
     allowedFilterFields:
       label: Erlaubte Filterfelder
       placeholder: Metadatenschlüssel eingeben und Enter drücken
@@ -896,6 +1129,7 @@ memory:
       message: Alle Erinnerungen konnten nicht gelöscht werden. Bitte versuchen Sie
         es erneut.
 openwebui:
+  default_disclaimer: KI kann Fehler machen. Bitte überprüfen Sie die Antworten.
   memories:
     title: Agent-Erinnerungen
     select_agent: Agent auswählen
@@ -914,6 +1148,72 @@ tenant:
   mismatch_warning: Mandantenkonflikt
   mismatch_description: Ihr aktiver Mandant wurde in einer anderen Sitzung auf {tenant}
     geändert. Die Chat-Oberfläche verwendet den aktiven Mandanten für alle Anfragen.
-  mismatch_switch_action: Mandant wechseln
+  mismatch_switch_action: Zu {tenant} wechseln
+  mismatch_use_this_tenant: In {tenant} chatten
   administration_title: Tenant-Verwaltung
   administration_description: Tenants plattformweit verwalten
+support:
+  report_bug: Fehler melden
+  dialog_title: Problem melden
+  choose_files: Dateien auswählen
+  submit: Meldung senden
+  submitting: Wird gesendet…
+  sent: Meldung gesendet
+  sent_detail: 'Referenz {reference}, Meldung #{number}. Der Support meldet sich per
+    E-Mail.'
+  send_failed: Meldung nicht gesendet
+  send_failed_detail: Ihre Angaben sind noch vorhanden — versuchen Sie es erneut.
+  unavailable: Die Meldefunktion ist auf dieser Installation nicht konfiguriert. Bitte
+    wenden Sie sich an Ihre Administration.
+userFiles:
+  title: Meine Dateien
+  description: 'Die Dateien, mit denen Sie und Ihre Agenten arbeiten: Chat-Anhänge,
+    Dateien, die Agenten für Sie erstellt haben, und Ihre eigenen Uploads.'
+  conversation: Chat
+  actions:
+    move: Verschieben
+    upload: Hochladen
+    newFolder: Neuer Ordner
+    refresh: Aktualisieren
+    download: Herunterladen
+    rename: Umbenennen
+    delete: Löschen
+    close: Schliessen
+    cancel: Abbrechen
+    save: Speichern
+    openFolder: Ordner {name} öffnen
+    preview: Vorschau von {name}
+  columns:
+    name: Name
+    size: Grösse
+    modified: Geändert
+  empty:
+    folder: Dieser Ordner ist leer. Dateien hierher ziehen, um sie hochzuladen.
+    noSpace: Ihr Dateibereich wird mit Ihrem Chat-Konto eingerichtet. Öffnen Sie den
+      Chat einmal und kommen Sie dann zurück.
+  error:
+    load: Dieser Ordner konnte nicht geladen werden. Versuchen Sie es mit Aktualisieren
+      erneut.
+  move:
+    header: '{name} verschieben nach'
+    noTargets: Kein Ordner zum Verschieben vorhanden.
+  preview:
+    unavailable: Keine Vorschau für diesen Dateityp. Laden Sie die Datei herunter,
+      um sie zu öffnen.
+    truncated: Diese Vorschau zeigt nur den Anfang des Dokuments. Laden Sie es herunter,
+      um alles zu sehen.
+    failed: Für diese Datei konnte keine Vorschau erstellt werden. Laden Sie sie herunter,
+      um sie zu öffnen.
+    empty: Dieses Dokument enthält keinen Text.
+    tooLarge: Diese Datei ist für eine Vorschau zu gross. Laden Sie sie herunter,
+      um sie zu öffnen.
+  name:
+    invalid: Ein Name darf nicht leer sein und keinen Schrägstrich enthalten.
+  delete:
+    header: Löschen
+    file: '{name} löschen?'
+    folder: Den Ordner {name} mit allem Inhalt löschen?
+  toast:
+    uploaded: '{count} Datei(en) hochgeladen'
+    uploadFailed: Hochladen fehlgeschlagen
+    changeFailed: Die Änderung ist fehlgeschlagen

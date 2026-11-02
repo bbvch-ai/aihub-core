@@ -12,11 +12,10 @@ from swiss_ai_hub.core.events.process import (
     AgentInSpecs,
     HumanInSpecs,
     ProcessClassDiscoveryResponseEvent,
-    ProcessConfigSpecs,
     ProcessStartEvent,
     ProgramInSpecs,
 )
-from swiss_ai_hub.core.form import TemplateData
+from swiss_ai_hub.core.form import ConfigSpecs, TemplateData
 from swiss_ai_hub.core.infrastructure import MongoSettings, NatsSettings, RedisSettings
 from swiss_ai_hub.core.processes import ProcessConfig
 from swiss_ai_hub.core.publishers import NCPublisher
@@ -174,7 +173,7 @@ class ProcessRunner(HealthCheckProvider):
             for agent_work_event, agent_in in self.process_type.get_events_with_agent_in()
         ]
 
-        process_config_specs = ProcessConfigSpecs.from_process_config(self.process_config, self.process_class)
+        process_config_specs = ConfigSpecs.from_form(self.process_config, self.process_class)
 
         templates_data: list[TemplateData] = [t.to_template_data(self.process_config) for t in self.templates]
 

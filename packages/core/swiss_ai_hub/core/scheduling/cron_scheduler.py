@@ -188,24 +188,26 @@ class CronScheduler:
     def _load_schedulable_snapshot(self, now: datetime, watermark: datetime) -> _SchedulableSnapshot:
         """Reads every schedulable class and its profiles in one pass. Synchronous — runs in a thread.
 
-        `now` is passed in rather than read here so the online/offline split uses the same instant as the
-        window this tick is computing. It stays aware — `AgentClassEntity.is_online_at` owns the
-        conversion to the local wall clock `last_discovered` is stored in, which is not the same as
-        stripping the tzinfo off a UTC value.
+        The online/offline split is judged against completed discovery rounds, not `now`: a discovery round
+        that stalls must not make this tick drop every scheduled run as if all agents had gone away.
         """
         entities = AgentClassEntity.get_all_schedulable()
         if not entities:
             return _SchedulableSnapshot(window_start=self._clamp_window_start(watermark, now))
 
+        online_threshold = AgentClassEntity.online_threshold()
         offline_last_seen = {
             entity.agent_class: entity.last_discovered
             for entity in entities
-            if not AgentClassEntity.is_online_at(entity, now)
+            if not AgentClassEntity.is_online_since(entity, online_threshold)
         }
 
         online: list[_ScheduledProfile] = []
         offline: list[tuple[_ScheduledProfile, datetime]] = []
-        for profile in self._scheduled_profiles([entity.agent_class for entity in entities]):
+        profiles = self._scheduled_profiles(
+            [entity.agent_class for entity in entities], self._settings.enforced_profile_ceiling
+        )
+        for profile in profiles:
             _, config = profile
             if config.agent_class in offline_last_seen:
                 offline.append((profile, offline_last_seen[config.agent_class]))
@@ -315,8 +317,14 @@ class CronScheduler:
         return dropped
 
     @staticmethod
-    def _scheduled_profiles(agent_classes: list[str]) -> list[tuple[CronSchedule, AgentConfigEntityDocument]]:
-        """Profiles of the given classes that carry a parseable schedule, paired with that schedule."""
+    def _scheduled_profiles(
+        agent_classes: list[str],
+        max_runs_per_profile: int | None,
+    ) -> list[tuple[CronSchedule, AgentConfigEntityDocument]]:
+        """Profiles of the given classes that carry a parseable, admissible schedule.
+
+        Paired with the schedule so the caller does not parse it twice.
+        """
         instances: list[tuple[CronSchedule, AgentConfigEntityDocument]] = []
         for config in AgentConfigEntityDocument.find_for_classes(agent_classes):
             raw_schedule = (config.config_data or {}).get(CRON_CONFIG_KEY)
@@ -339,6 +347,26 @@ class CronScheduler:
                     "Skipping %s/%s: stored schedule is not valid",
                     config.agent_class,
                     config.agent_id,
+                )
+                continue
+            # The save path rejects an over-budget schedule, but only for rows written since it existed
+            # and only while the setting held its current value. Lowering the ceiling must not leave the
+            # profiles that were admissible under the old one firing forever, so the scan re-checks it —
+            # the same write-time-validation-plus-scan-side-skip pairing a malformed schedule gets.
+            # None means the ceiling is unreachable, so there is no verdict to reach; counting anyway
+            # would cost half a second per every-minute profile per tick to confirm a foregone answer.
+            if max_runs_per_profile is None:
+                instances.append((schedule, config))
+                continue
+            runs = CronScheduleCalculator.runs_per_month(schedule, max_runs_per_profile + 1)
+            if runs > max_runs_per_profile:
+                logger.warning(
+                    "Skipping %s/%s: its schedule runs more than %d times per 30 days, over this "
+                    "deployment's per-agent limit. Edit the schedule, or raise "
+                    "SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH.",
+                    config.agent_class,
+                    config.agent_id,
+                    max_runs_per_profile,
                 )
                 continue
             instances.append((schedule, config))

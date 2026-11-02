@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from mongoengine import DictField, Document, ListField, StringField
+from mongoengine.queryset.visitor import Q
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket import EventBucket
@@ -18,6 +19,21 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 logger = logging.getLogger(__name__)
+_VISIBLE_DISPLAY_MARKER = Q(
+    event_parents__in=[
+        "UserMessageEvent",
+        "HumanInTheLoopResponseEvent",
+    ]
+)
+_PROJECTABLE_CONVERSATION_EVENT = Q(
+    event_parents__in=[
+        "UserMessageEvent",
+        "HumanInTheLoopResponseEvent",
+        "ChunkEvent",
+        "HumanInTheLoopRequestEvent",
+        "StopEvent",
+    ]
+)
 
 
 class TimeRange(StrEnum):
@@ -178,6 +194,36 @@ class PersistedAgentEventEntity(Document):
 
     @classmethod
     @trace_fn
+    def conversation_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
+        """Return only OpenAI-projectable events on displays proven visible to a user."""
+        visible_display_ids = (
+            cls.objects(
+                thread_id=thread_id,
+                event_type=AgentTopicManager.DISPLAY_EVENT,
+                agent_class="UserAgent",
+            )
+            .filter(_VISIBLE_DISPLAY_MARKER)
+            .distinct("display_id")
+        )
+        if not visible_display_ids:
+            logger.warning(
+                "No client-visible display marker found for thread history",
+                extra={"thread_id": thread_id},
+            )
+            return []
+
+        return list(
+            cls.objects(
+                thread_id=thread_id,
+                event_type=AgentTopicManager.DISPLAY_EVENT,
+                display_id__in=visible_display_ids,
+            )
+            .filter(_PROJECTABLE_CONVERSATION_EVENT)
+            .order_by("event_data__created_at", "event_id")
+        )
+
+    @classmethod
+    @trace_fn
     def thread_id_for_display(cls, display_id: str) -> str | None:
         """Resolve the thread that owns a display. Every event sharing a display_id shares one thread_id (AITL
         delegation preserves both), so any match yields the same answer."""
@@ -274,11 +320,31 @@ class PersistedAgentEventEntity(Document):
     @classmethod
     @trace_fn
     def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
+        """Each request once: a request is persisted both as a control and as a display event."""
         return list(
             cls.objects()
-            .filter(thread_id=thread_id, event_parents__contains="HumanInTheLoopRequestEvent")
+            .filter(
+                thread_id=thread_id,
+                event_parents__contains="HumanInTheLoopRequestEvent",
+                event_type=AgentTopicManager.CONTROL_EVENT,
+            )
             .order_by("event_data__created_at")
         )
+
+    @classmethod
+    @trace_fn
+    def open_human_in_the_loop_requests_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
+        """The thread's requests no response answers yet, oldest first. Matched by the request each response names,
+        never by counting: one unmatched count once sent a new message as the answer to an answered request."""
+        answered = {
+            (response.event_data.get("request_event") or {}).get("event_id")
+            for response in cls.human_in_the_loop_response_events_for_thread(thread_id)
+        }
+        return [
+            request
+            for request in cls.human_in_the_loop_request_events_for_thread(thread_id)
+            if request.event_data.get("event_id") not in answered
+        ]
 
     @classmethod
     @trace_fn
@@ -528,14 +594,22 @@ class PersistedAgentEventEntity(Document):
             match["event_data.tenant_id"] = tenant_id
 
         cost_fields = ["prompt_tokens_costs", "completion_tokens_costs", "embedding_tokens_costs"]
+        carried_fields = [*group_fields, *cost_fields]
         pipeline = [
             {"$match": match},
-            {"$group": {"_id": "$event_id", "event_data": {"$first": "$event_data"}}},
+            # Lift the five fields the group stages read out of `event_data` before the dedup, rather
+            # than carrying the document with `$first: "$event_data"`: a cost event's payload holds the
+            # whole request context, and the stage needs none of it. Measured warm on staging over 33k
+            # cost events, 6.5s carrying the documents against 1.2s carrying the fields. It is not what
+            # took the event loop down, though — that was a 123s cold read of 30 days off disk, which
+            # no pipeline shape avoids and only the threadpool hand-off contains.
+            {"$project": {"_id": 0, "event_id": 1, **{field: f"$event_data.{field}" for field in carried_fields}}},
+            {"$group": {"_id": "$event_id", **{field: {"$first": f"${field}"} for field in carried_fields}}},
             {
                 "$group": {
-                    "_id": {field: f"$event_data.{field}" for field in group_fields},
+                    "_id": {field: f"${field}" for field in group_fields},
                     "calls": {"$sum": 1},
-                    **{field: {"$sum": {"$ifNull": [f"$event_data.{field}", 0]}} for field in cost_fields},
+                    **{field: {"$sum": {"$ifNull": [f"${field}", 0]}} for field in cost_fields},
                 }
             },
             {"$sort": {"_id": 1}},

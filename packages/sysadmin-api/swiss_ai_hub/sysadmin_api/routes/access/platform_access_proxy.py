@@ -48,6 +48,33 @@ class PlatformAccessProxy:
             raise PlatformAccessProxy._gateway_error(error) from error
 
     @staticmethod
+    async def fetch_default_tenant_rules(base_url: str, tenant_id: str, request: Request) -> list[str]:
+        """The ceiling a new tenant should start with. Derived on the main API because only it is wired to the
+        model gateway — the sysadmin plane has no LiteLLM configuration and deriving here would add one."""
+        try:
+            async with httpx.AsyncClient(base_url=base_url, timeout=_TIMEOUT) as client:
+                response = await client.get(
+                    f"/api/v1/{tenant_id}/access/default-tenant-rules",
+                    headers=PlatformAccessProxy._forward_headers(request),
+                )
+                response.raise_for_status()
+                return [str(rule) for rule in response.json()]
+        except httpx.HTTPError as error:
+            raise PlatformAccessProxy._gateway_error(error) from error
+
+    @staticmethod
+    def base_url_or_raise(base_url: str | None) -> str:
+        """Shared by every controller that proxies to the platform API, so the "not configured" failure reads
+        the same wherever it surfaces. Takes the value rather than the runner, so this stays independent of
+        which object happens to expose it."""
+        if base_url is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Sysadmin plane has no platform API base URL configured to proxy to.",
+            )
+        return base_url
+
+    @staticmethod
     def _gateway_error(error: httpx.HTTPError) -> HTTPException:
         """Translate a failed upstream call into a gateway-appropriate status instead of a generic 500:
         an upstream HTTP error passes its status through (so a forwarded 401/403 stays a 401/403), while

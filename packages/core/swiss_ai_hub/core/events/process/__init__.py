@@ -8,8 +8,6 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.process.discovery.process_class_discovery_response_event import (
         ProcessClassDiscoveryResponseEvent,
     )
-    from swiss_ai_hub.core.events.process.discovery.process_config_specs import ProcessConfigSpecs
-    from swiss_ai_hub.core.events.process.discovery.process_config_specs_entity import ProcessConfigSpecsEntity
     from swiss_ai_hub.core.events.process.discovery.program_in.program_in_specs import ProgramInSpecs
     from swiss_ai_hub.core.events.process.exception.process_exception_event import ProcessExceptionEvent
     from swiss_ai_hub.core.events.process.process_event import ProcessEvent
@@ -33,8 +31,6 @@ __all__ = [
     "HumanWorkEvent",
     "HumanWorkRequestEvent",
     "ProcessClassDiscoveryResponseEvent",
-    "ProcessConfigSpecs",
-    "ProcessConfigSpecsEntity",
     "ProcessEvent",
     "ProcessExceptionEvent",
     "ProcessStartEvent",
@@ -55,8 +51,6 @@ _LAZY_IMPORTS: dict[str, str] = {
     "HumanWorkEvent": "swiss_ai_hub.core.events.process.work.human.human_work_event",
     "HumanWorkRequestEvent": "swiss_ai_hub.core.events.process.work_request.human.human_work_request_event",
     "ProcessClassDiscoveryResponseEvent": "swiss_ai_hub.core.events.process.discovery.process_class_discovery_response_event",
-    "ProcessConfigSpecs": "swiss_ai_hub.core.events.process.discovery.process_config_specs",
-    "ProcessConfigSpecsEntity": "swiss_ai_hub.core.events.process.discovery.process_config_specs_entity",
     "ProcessEvent": "swiss_ai_hub.core.events.process.process_event",
     "ProcessExceptionEvent": "swiss_ai_hub.core.events.process.exception.process_exception_event",
     "ProcessStartEvent": "swiss_ai_hub.core.events.process.start.process_start_event",

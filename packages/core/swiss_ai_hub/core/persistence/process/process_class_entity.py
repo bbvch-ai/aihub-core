@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import TYPE_CHECKING, Self
 
 from bson import ObjectId
@@ -15,15 +15,17 @@ from mongoengine import (
 )
 from pydantic import TypeAdapter
 
+from swiss_ai_hub.core.discovery.discovery_kind import DiscoveryKind
 from swiss_ai_hub.core.events.process.discovery.agent_in.agent_in_specs import AgentInSpecs
 from swiss_ai_hub.core.events.process.discovery.human_in.human_in_specs import HumanInSpecs
-from swiss_ai_hub.core.events.process.discovery.process_config_specs import ProcessConfigSpecs
-from swiss_ai_hub.core.events.process.discovery.process_config_specs_entity import ProcessConfigSpecsEntity
 from swiss_ai_hub.core.events.process.discovery.program_in.program_in_specs import ProgramInSpecs
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
+from swiss_ai_hub.core.form.config_specs import ConfigSpecs
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import EventSpec
+from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
+from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 if TYPE_CHECKING:
@@ -130,13 +132,11 @@ class ProcessClassEntity(Document):
 
     Stores the class-level metadata (name, description, icon), form schema for
     creating process instances, and the validation specs.
-    Online status is determined by the last_discovered timestamp.
+    Online status compares the last_discovered timestamp with the completed discovery rounds.
 
     NOTE: This entity stores CLASS information only (one record per process_class).
     Instance/configuration data is stored in ProcessConfigEntityDocument.
     """
-
-    ONLINE_THRESHOLD = timedelta(minutes=5)
 
     meta = {
         "collection": "process_classes",
@@ -153,7 +153,7 @@ class ProcessClassEntity(Document):
     icon = StringField(required=True, default="mage:broadcast", description="Icon for this process class.")
 
     form = ListField(DictField(), default=list, description="FormKit elements defining the process configuration form.")
-    process_config_specs = EmbeddedDocumentField(ProcessConfigSpecsEntity, required=False)
+    process_config_specs = EmbeddedDocumentField(ConfigSpecsEntity, required=False)
 
     # Process-specific metadata
     human_inputs = ListField(EmbeddedDocumentField(HumanInSpecsEntity), default=list)
@@ -164,12 +164,9 @@ class ProcessClassEntity(Document):
     first_discovered = DateTimeField(required=True, default=datetime.now)
     last_discovered = DateTimeField(required=True, default=datetime.now)
 
-    @property
-    def is_online(self) -> bool:
-        """Process is online if it responded to discovery within the threshold."""
-        if self.last_discovered is None:
-            return False
-        return datetime.now() - self.last_discovered < self.ONLINE_THRESHOLD
+    def is_online_since(self, threshold: datetime) -> bool:
+        """Whether the class answered a discovery round at or after `threshold`, from `online_threshold()`."""
+        return self.last_discovered is not None and self.last_discovered >= threshold
 
     @property
     def form_elements(self) -> list["FormkitElement"]:
@@ -188,7 +185,7 @@ class ProcessClassEntity(Document):
         description: LocaleStringEntity | None,
         icon: str,
         form: list[dict],
-        process_config_specs: ProcessConfigSpecsEntity | None,
+        process_config_specs: ConfigSpecsEntity | None,
         human_inputs: list[HumanInSpecsEntity],
         program_inputs: list[ProgramInSpecsEntity],
         agent_inputs: list[AgentInSpecsEntity],
@@ -222,7 +219,7 @@ class ProcessClassEntity(Document):
         description: LocaleString,
         icon: str,
         form: list[ALL_FORM_OPTIONS],
-        process_config_specs: ProcessConfigSpecs,
+        process_config_specs: ConfigSpecs,
         human_inputs: list[HumanInSpecs],
         program_inputs: list[ProgramInSpecs],
         agent_inputs: list[AgentInSpecs],
@@ -239,7 +236,7 @@ class ProcessClassEntity(Document):
 
         # Store WITHOUT aliases - MongoDB doesn't allow keys starting with '$'
         form_dicts = [element.model_dump() for element in form]
-        process_config_specs_entity = ProcessConfigSpecsEntity.from_specs(process_config_specs)
+        process_config_specs_entity = ConfigSpecsEntity.from_specs(process_config_specs)
 
         human_inputs_entities = [HumanInSpecsEntity.from_specs(h) for h in human_inputs]
         program_inputs_entities = [ProgramInSpecsEntity.from_specs(p) for p in program_inputs]
@@ -271,6 +268,17 @@ class ProcessClassEntity(Document):
                 agent_inputs=agent_inputs_entities,
                 templates=templates,
             )
+
+    @classmethod
+    @trace_fn
+    def get_online_class_names(cls) -> set[str]:
+        online = cls.objects(last_discovered__gte=cls.online_threshold()).only("process_class")
+        return {entity.process_class for entity in online}
+
+    @classmethod
+    def online_threshold(cls) -> datetime:
+        """Read once per request and passed to `is_online_since`, so a listing costs one lookup."""
+        return DiscoveryRoundEntity.online_threshold(DiscoveryKind.PROCESS)
 
     @classmethod
     @trace_fn

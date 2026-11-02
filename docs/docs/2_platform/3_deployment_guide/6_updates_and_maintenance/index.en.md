@@ -108,6 +108,68 @@ unchanged.
 Major core updates with breaking changes require coordinated updates. Customer code must be updated to work with the new
 core version. Both core and customer code are updated together during a maintenance window.
 
+### New storage buckets
+
+`seaweedfs-init` creates every missing SeaweedFS bucket each time it runs, and `docker compose up -d` starts it again on
+every run, so the update above creates the buckets a release adds. Only an update that starts selected services, such as
+`docker compose up -d <service>` or `--no-deps`, skips it. Then run it yourself:
+
+```bash
+docker compose up seaweedfs-init
+```
+
+A missing bucket fails at runtime, not at startup. Without the `parse-cache` bucket, every MinerU document parse fails
+with `NoSuchBucket`. Office documents are still parsed, only without the cache, so every read converts them again and
+logs a warning. The bucket caches parsed documents by content hash, and entries expire after 7 days. An expired entry is
+parsed again, so nothing needs a backup.
+
+The `sandbox-files` bucket holds the one-way mirror of every user's code-sandbox home (the files behind **My Files**).
+It is created the same way, and needs `SANDBOX_MIRROR_S3_ACCESS_KEY`, `SANDBOX_MIRROR_S3_SECRET_KEY` and
+`SANDBOX_MIRROR_INTERVAL_SECONDS` in your `.env` (the review step above shows them). The mirror uses an S3 identity
+limited to this bucket, so recreate `seaweedfs-s3` for the identity to take effect. Files deleted or overwritten in the
+sandbox are kept under `.deleted/` for 7 days.
+
+### Bucket expiry
+
+Four locations expire on their own: `dagster` after 1 day, and `parse-cache`, `sandbox-files/.deleted/` and
+`agent-files` after 7 days. The one-shot `seaweedfs-ttl-init` service writes these as SeaweedFS filer TTL rules each
+time it runs, and starting `seaweedfs-init` starts it too, so `docker compose up seaweedfs-init` applies them as well.
+Its log lists every rule it verified:
+
+```bash
+docker compose logs seaweedfs-ttl-init
+```
+
+If a rule could not be written, the service shows as `Exited (1)` and its log names the missing rule. The rest of the
+stack still starts, but objects written until the next successful run never expire. Rerun it once the filer is
+reachable:
+
+```bash
+docker compose up seaweedfs-ttl-init
+```
+
+An object's expiry is fixed when it is written. Changing a rule affects new objects only.
+
+::: warning
+Never apply an S3 lifecycle configuration (`put-bucket-lifecycle-configuration`) to these buckets. Since SeaweedFS 4.32,
+lifecycle configurations expire objects only through an admin and worker service the platform does not run, and since
+4.24 applying one deletes the TTL rule SeaweedFS 4.01 created for that bucket, so nothing written afterwards expires. See ADR
+`2026_10_27_bucket_expiry_via_filer_ttl`.
+:::
+
+### SeaweedFS master state
+
+The master keeps the cluster's identity in its data directory. If that directory is lost, or restored from a different
+point in time than the volume data, the master stops creating volumes as soon as a volume server reports the identity it
+knew, and writes fail once the existing volumes are full. After checking that no data is missing, resume volume
+creation:
+
+```bash
+docker compose exec seaweedfs-master sh -c 'echo volume.growth.resume | weed shell -master=localhost:9333'
+```
+
+Snapshot all `seaweedfs-*` volumes and etcd together before upgrading SeaweedFS, and restore them together.
+
 ### Customer code updates
 
 Customer code can be updated independently when the core version pin remains unchanged. Update the customer image tags
@@ -147,6 +209,19 @@ docker compose up -d
 
 Core and customer code can be rolled back independently if they were updated separately. If both were updated together,
 roll back core first, then customer code.
+
+::: warning Services with forward-only migrations cannot be rolled back this way
+"If data remains compatible" is the operative condition, and it does not hold for every service. Langfuse applies
+forward-only Postgres and ClickHouse migrations on startup, so once an update has run them, downloading the previous
+bundle restores the older **binaries** against the newer **schema**. There is no supported downgrade path.
+
+Restoring a pre-update backup is not a rollback either: the restore validates only that the expected artifacts are
+present, carries no schema-version stamp, and reverts Postgres and ClickHouse independently with no cross-consistency
+check and no post-restore migration step.
+
+Before updating a release that bumps Langfuse, take a backup you are willing to treat as one-way, and plan forward
+recovery rather than rollback.
+:::
 
 ______________________________________________________________________
 

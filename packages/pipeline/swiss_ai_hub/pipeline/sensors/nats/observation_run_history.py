@@ -47,14 +47,16 @@ class ObservationRunHistory:
     def latest_truncating_run_id(
         instance: Annotated[DagsterInstance, "Instance whose run records are queried"],
         job_name: Annotated[str, "Observation job to inspect"],
+        extra_tags: Annotated[dict[str, str] | None, "Narrows the lookup, e.g. to one bucket's runs"] = None,
     ) -> str | None:
         """Run id of the most recent observation that hit the ``max_partitions`` cap.
 
         Such a run only partitioned part of the corpus, so the sensor has to observe again rather
-        than wait for the nightly schedule.
+        than wait for the nightly schedule. ``extra_tags`` keeps one bucket's truncation from
+        re-arming every other bucket sharing the job.
         """
         run_records = instance.get_run_records(
-            RunsFilter(job_name=job_name, tags=PARTITIONS_TRUNCATED_TAG),
+            RunsFilter(job_name=job_name, tags=PARTITIONS_TRUNCATED_TAG | (extra_tags or {})),
             limit=1,
         )
         return run_records[0].dagster_run.run_id if run_records else None

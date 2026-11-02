@@ -23,6 +23,13 @@ presets:
   user_all_models:
     name: Use all models
     description: Use every available model.
+  user_knowledge:
+    name: Use all knowledge bases
+    description: Browse and search every knowledge base and its documents.
+  admin_knowledge_create:
+    name: Create knowledge bases
+    description: Create new knowledge bases. Pair with "Manage knowledge bases" to
+      also administer them.
   admin_knowledge:
     name: Manage knowledge bases
     description: Full control over knowledge bases and their documents.
@@ -75,6 +82,9 @@ capabilities:
         label: Configure & delete
         description: Edit the configuration of, or delete, this workflow.
     knowledge:
+      create:
+        label: Create knowledge bases
+        description: Create new knowledge bases and their folders.
       see:
         label: See knowledge bases
         description: View the list of knowledge bases.
@@ -84,12 +94,19 @@ capabilities:
       manage:
         label: Manage
         description: Configure and ingest documents into this namespace.
+      manage_database:
+        label: Manage
+        description: Configure this knowledge base, add folders and delete it.
     model:
       use:
         description: Use this model.
         conversation_metadata_description: Use this model. It also generates chat
           titles and follow-up questions — without access to it, both features are
           unavailable.
+    files:
+      own:
+        label: Use your own file space
+        description: Browse, upload, download and manage your own files.
     memory:
       org:
         label: Use organization memory

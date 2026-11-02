@@ -32,13 +32,13 @@
 
 <script setup lang="ts">
 import type {
-  AddMemoryToChatHistoryEventReadable,
+  AddMemoryToChatHistoryEvent,
   ThreadDto,
-  AgentEventReadable,
+  ContextualizedAgentEvent,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: AddMemoryToChatHistoryEventReadable }
+  event: ContextualizedAgentEvent & { event: AddMemoryToChatHistoryEvent }
   thread: ThreadDto
 }>()
 

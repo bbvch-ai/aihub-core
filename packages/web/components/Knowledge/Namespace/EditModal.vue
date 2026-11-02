@@ -30,6 +30,7 @@
         <InputText
           id="edit-namespace-display-name-input"
           v-model="displayName"
+          :maxlength="displayNameMaxLength"
           :placeholder="t('knowledge.form.display_name.placeholder')"
         />
         <small class="text-gray-500">{{ t('knowledge.form.display_name.help') }}</small>
@@ -45,6 +46,7 @@
         </label>
         <Textarea
           v-model="description"
+          :maxlength="descriptionMaxLength"
           input-id="edit-namespace-description-textarea"
           :placeholder="t('knowledge.form.description.placeholder')"
           rows="3"
@@ -75,12 +77,15 @@
 </template>
 
 <script setup lang="ts">
+import { UpdateNamespaceRequestSchema } from '@core/sdk/client/schemas.gen'
+
 import type { NamespaceDto, UpdateNamespaceRequest } from '@core/sdk/client'
 
 import { useI18n } from '#i18n'
 
 const props = defineProps<{
   modelValue: boolean
+  database: string
   namespace: NamespaceDto | null
 }>()
 
@@ -90,6 +95,9 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const displayNameMaxLength = schemaMaxLength(UpdateNamespaceRequestSchema, 'display_name')
+const descriptionMaxLength = schemaMaxLength(UpdateNamespaceRequestSchema, 'description')
 const { mutateAsync: updateNamespace } = useUpdateNamespace()
 const { tenantId } = useTenant()
 
@@ -106,16 +114,14 @@ const handleSave = async () => {
 
   error.value = ''
 
-  const namespaceId = props.namespace.id
-  const databaseId = props.namespace.database_id
   const updatePayload: UpdateNamespaceRequest = {
     display_name: displayName.value || props.namespace.name,
     description: description.value || null,
   }
 
   await updateNamespace({
-    namespace: namespaceId,
-    database: databaseId,
+    namespace: props.namespace.name,
+    database: props.database,
     payload: ref(updatePayload),
     tenantId: tenantId.value!,
   })

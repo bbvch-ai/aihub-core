@@ -12,11 +12,11 @@ You do not need to write or read any code to use this. Describe the document you
 
 ::: warning Requirements
 File generation runs on the same code-execution path as [Coding / Software Development](../6_coding/), so it inherits
-that path's constraints: it works only with **plain LLM models that support function (tool) calling**, **Native Function
-Calling must be enabled** for the model (Admin → Settings → Models → the model's advanced params), **a terminal has to
-be selected in the chat** — the sandbox tools are resolved only then — and **AI-Hub agents are not supported yet**. See
-that page for the sandbox mechanics, the per-user isolation model, and the fact that generated files are kept
-indefinitely.
+that path's constraints: it works only with **plain LLM models that support function (tool) calling**, the model must
+use **Native Function Calling** (Kimi-K2.6 does by default; for another model, switch it in the chat's Controls →
+Advanced Params), **a terminal has to be selected in the chat** — the sandbox tools are resolved only then — and AI-Hub
+agents other than the [Universal Agent](../../5_agents/13_universal_agent/) do not run code. See that page for the
+sandbox mechanics, the per-user isolation model, and the fact that generated files are kept indefinitely.
 :::
 
 ::: tip Recommended model — Workspace → Kimi-K2.6
@@ -29,7 +29,8 @@ but declaring it is not the same as carrying a multi-step build through to a fin
 format matrix below was verified against. If another model answers without producing a file, try Kimi-K2.6 before
 concluding that the format is unsupported.
 
-**Native Function Calling** still has to be switched on for the chosen model — it is not enabled by default.
+Kimi-K2.6 uses **Native Function Calling** by default. Any other model needs it switched on in the chat's Controls →
+Advanced Params.
 :::
 
 ## Supported output formats
@@ -41,7 +42,7 @@ This says nothing about whether the same format can be read back in as an upload
 | Category           | File formats                                            | Can be generated |
 | ------------------ | ------------------------------------------------------- | ---------------- |
 | Text documents     | DOCX, RTF, TXT, Markdown (`.md`), HTML                  | Yes              |
-| Portable documents | PDF                                                     | Yes              |
+| Portable documents | PDF, including from LaTeX or via `pandoc` from Markdown | Yes              |
 | Spreadsheets       | XLSX, XLS, CSV                                          | Yes              |
 | Presentations      | PPTX, PDF                                               | Yes              |
 | Images (raster)    | PNG, JPG/JPEG, TIFF, WebP, BMP                          | Yes              |
@@ -62,8 +63,15 @@ This says nothing about whether the same format can be read back in as an upload
   you need a picture rather than a source file. Note that Mermaid returned *in a chat response* is a separate path: the
   chat UI renders that inline as a diagram, which is why a Mermaid answer can look rendered while a Mermaid **file**
   stays source.
-- **Visio (`.vsdx`) cannot be generated.** There is no Visio library in the sandbox and no LibreOffice to convert
-  through. Ask for `.drawio` or SVG source instead.
+- **Visio (`.vsdx`) cannot be generated.** There is no Visio library in the sandbox, and LibreOffice imports Visio but
+  does not export it. Ask for `.drawio` or SVG source instead.
+- **Pivot tables need LibreOffice.** `openpyxl` keeps the pivot tables of a workbook it edits but cannot create one, and
+  XlsxWriter has no pivot support. The sandbox ships headless LibreOffice with `python3-uno`, which creates real Excel
+  pivot tables. Its UNO bindings belong to `/usr/bin/python3`, not the default `python3`. To fill a template that
+  already has pivot tables, edit its data with `openpyxl` and set the pivot cache to refresh on load.
+- **LaTeX is compiled offline.** The sandbox ships TeX Live (recommended, extra, science, fonts, XeLaTeX, LuaLaTeX,
+  German/French/Italian) but has no internet, so a package outside those collections cannot be installed on demand.
+  `pandoc` turns Markdown into PDF through it, and `pdftoppm` renders PDF pages to PNG.
 - **Reading a format is not the same as writing it.** TIFF and Visio files could not be read back into the sandbox as
   input during capability testing, even though TIFF generation works.
 - **The format list is tied to the sandbox image.** It reflects `open-terminal-office:0.11.34`. Bumping that tag can add

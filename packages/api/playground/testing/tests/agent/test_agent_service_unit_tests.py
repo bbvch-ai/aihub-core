@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -8,6 +9,7 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.form import ConfigSpecs, Repeater, VectorStoreInput
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
@@ -24,8 +26,16 @@ from swiss_ai_hub.api.routes.agent.dto.create_agent_instance_request import Crea
 from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
+from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 enable_logging()
+
+
+@pytest.fixture(autouse=True)
+def online_threshold():
+    """The threshold is read from completed discovery rounds in Mongo; these tests run without one."""
+    with patch.object(AgentClassEntity, "online_threshold", return_value=datetime(2026, 1, 1)) as threshold:
+        yield threshold
 
 
 @pytest.fixture
@@ -54,7 +64,7 @@ def sample_agent_class_entity():
     mock_entity.hitl_response_events = []
     mock_entity.network_graph = {}
     mock_entity.form = []
-    mock_entity.is_online = True
+    mock_entity.is_online_since.return_value = True
     return mock_entity
 
 
@@ -162,7 +172,7 @@ class TestAgentServiceUnit:
                     mock_get_class.assert_called_once_with("TestAgent")
                     mock_get_config.assert_called_once_with("TestAgent", "test_agent_1")
                     mock_from.assert_called_once_with(
-                        sample_agent_class_entity, sample_config_entity, mock_locale_handler
+                        sample_agent_class_entity, sample_config_entity, mock_locale_handler, is_online=True
                     )
                     assert result == expected_dto
 
@@ -467,15 +477,17 @@ class TestCreateAgentInstanceGrantWiring:
     @staticmethod
     def _mock_create_dependencies(stack: ExitStack):
         class_entity = Mock()
-        class_entity.is_online = True
-        class_entity.agent_config_specs.agent_class = "TestAgent"
-        class_entity.agent_config_specs.agent_config_schema = {}
+        class_entity.is_online_since.return_value = True
+        class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
         config_entity = Mock()
         grant = stack.enter_context(patch.object(AgentService, "_grant_instance_access"))
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
         stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        stack.enter_context(
+            patch(f"{_MODULE}.ModelLimitValidator.reject_values_beyond_model_limits", AsyncMock(return_value=None))
+        )
         config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
         config_auth.validate_for_user_or_raise = AsyncMock()
         stack.enter_context(patch(f"{_MODULE}.FullAgentInstanceDTO"))
@@ -547,8 +559,7 @@ class TestUpdateAgentInstanceLocksAgentId:
     @staticmethod
     def _mock_update_dependencies(stack: ExitStack, config_entity: Mock) -> None:
         class_entity = Mock()
-        class_entity.agent_config_specs.agent_class = "TestAgent"
-        class_entity.agent_config_specs.agent_config_schema = {}
+        class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
         class_entity.form = []
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
@@ -556,6 +567,9 @@ class TestUpdateAgentInstanceLocksAgentId:
         config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
         config_auth.validate_for_user_or_raise = AsyncMock()
         helper = stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        stack.enter_context(
+            patch(f"{_MODULE}.ModelLimitValidator.reject_values_beyond_model_limits", AsyncMock(return_value=None))
+        )
         helper.normalize_form_configuration.side_effect = lambda configuration: configuration
         helper.apply_metadata_to_entity.side_effect = lambda _config_instance, entity: entity
         config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
@@ -602,3 +616,66 @@ class TestAgentConfigDTOEmptyLocale:
 
         assert dto.name == ""
         assert dto.description == ""
+
+
+_EMPTY_SCOPE_CONFIG = {
+    "retrievers": [{"vector_store": {"collection_name": "handbook", "index_namespaces": [], "all_namespaces": False}}]
+}
+
+
+class TestAgentSaveRejectsEmptyNamespaceScope:
+    """#1836: the generated model drops the scope validator, so the save path must refuse what a run would abort on."""
+
+    @staticmethod
+    def _mock_save_dependencies(stack: ExitStack) -> tuple[Mock, AsyncMock]:
+        class_entity = Mock()
+        class_entity.is_online_since.return_value = True
+        class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="RAGAgent")
+        class_entity.form_elements = [
+            Repeater(name="retrievers", children=[VectorStoreInput(label="Vector store", name="vector_store")])
+        ]
+        stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
+        stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
+        stack.enter_context(patch.object(InstanceConfigHelper, "validate_config_for_create"))
+        stack.enter_context(patch.object(InstanceConfigHelper, "validate_config_for_update"))
+        config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        config_auth.validate_for_user_or_raise = AsyncMock()
+        config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
+        config_doc.find_for_class_and_id.return_value = None
+        return config_doc, config_auth.validate_for_user_or_raise
+
+    @staticmethod
+    def _assert_rejected(raised: pytest.ExceptionInfo[HTTPException]) -> None:
+        assert raised.value.status_code == 400
+        assert raised.value.detail == (
+            "Configuration validation failed: retrievers.0.vector_store: "
+            "Select at least one namespace to search, or enable all_namespaces."
+        )
+
+    @pytest.mark.asyncio
+    async def test_create_is_rejected(self):
+        request = CreateAgentInstanceRequest(agent_id="handbook", configuration=_EMPTY_SCOPE_CONFIG)
+
+        with ExitStack() as stack:
+            config_doc, authorize = self._mock_save_dependencies(stack)
+            with pytest.raises(HTTPException) as raised:
+                await AgentService.create_agent_instance("RAGAgent", request, LocaleHandler(locale="en"), user=Mock())
+
+        self._assert_rejected(raised)
+        authorize.assert_not_awaited()
+        config_doc.return_value.save.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_update_is_rejected(self):
+        with ExitStack() as stack:
+            config_doc, authorize = self._mock_save_dependencies(stack)
+            stored = Mock()
+            config_doc.find_for_class_and_id.return_value = stored
+            with pytest.raises(HTTPException) as raised:
+                await AgentService.update_agent_instance(
+                    "RAGAgent", "handbook", dict(_EMPTY_SCOPE_CONFIG), LocaleHandler(locale="en"), user=Mock()
+                )
+
+        self._assert_rejected(raised)
+        authorize.assert_not_awaited()
+        stored.save.assert_not_called()

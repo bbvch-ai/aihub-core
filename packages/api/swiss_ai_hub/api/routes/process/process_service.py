@@ -5,7 +5,8 @@ from bson import ObjectId
 from fastapi import HTTPException
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalProcessEvent, ExternalProcessEventDistributor
-from swiss_ai_hub.core.events.process import ProcessConfigSpecs, ProcessStartEvent, WorkEvent
+from swiss_ai_hub.core.events.process import ProcessStartEvent, WorkEvent
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_process_event_entity import PersistedProcessEventEntity
@@ -29,6 +30,7 @@ from swiss_ai_hub.api.services.model_creation_service import ModelCreationServic
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
+from swiss_ai_hub.api.util.model_limit_validator import ModelLimitValidator
 
 
 class ProcessService:
@@ -263,10 +265,12 @@ class ProcessService:
     async def get_process_classes(t: LocaleHandler, online: bool | None = None) -> list[ProcessClassDTO]:
         """Returns all process classes from the database."""
         process_classes = []
+        online_threshold = ProcessClassEntity.online_threshold()
         for class_entity in ProcessClassEntity.get_all():
-            if online is not None and class_entity.is_online != online:
+            is_online = class_entity.is_online_since(online_threshold)
+            if online is not None and is_online != online:
                 continue
-            process_classes.append(ProcessClassDTO.from_entity(class_entity, t))
+            process_classes.append(ProcessClassDTO.from_entity(class_entity, t, is_online=is_online))
         return process_classes
 
     @staticmethod
@@ -276,7 +280,8 @@ class ProcessService:
         class_entity = ProcessClassEntity.get_by_process_class(process_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
-        return ProcessClassDTO.from_entity(class_entity, t)
+        is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
+        return ProcessClassDTO.from_entity(class_entity, t, is_online=is_online)
 
     @staticmethod
     @trace_fn
@@ -286,12 +291,13 @@ class ProcessService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
 
+        is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
         instances = []
         configs = ProcessConfigEntityDocument.find_for_class(process_class)
         for config_entity in configs:
             dto = InstanceDtoBuilder.build_or_skip(
                 lambda config_entity=config_entity: FullProcessInstanceDTO.from_class_and_config(
-                    class_entity, config_entity, t
+                    class_entity, config_entity, t, is_online=is_online
                 ),
                 kind="process instance",
                 key=f"{process_class}/{getattr(config_entity, 'process_id', '?')}",
@@ -312,7 +318,8 @@ class ProcessService:
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Process instance {process_class}/{process_id} not found.")
 
-        return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+        is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
+        return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
     @staticmethod
     @trace_fn
@@ -328,7 +335,7 @@ class ProcessService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Process class '{process_class}' not found.")
 
-        if not class_entity.is_online:
+        if not class_entity.is_online_since(ProcessClassEntity.online_threshold()):
             raise HTTPException(
                 status_code=503,
                 detail=f"Process class '{process_class}' is not online. Make sure the process is running.",
@@ -342,19 +349,12 @@ class ProcessService:
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
-        config_model = ModelCreationService.create_process_config_model(
-            ProcessConfigSpecs(
-                process_class=(
-                    class_entity.process_config_specs.process_class
-                    if class_entity.process_config_specs
-                    else process_class
-                ),
-                process_config_schema=(
-                    class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
-                ),
-            )
+        config_model = ModelCreationService.create_config_model(
+            class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
+        await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, config, user, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -384,7 +384,7 @@ class ProcessService:
         )
         config_entity.save()
 
-        return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+        return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=True)
 
     @staticmethod
     @trace_fn
@@ -402,19 +402,12 @@ class ProcessService:
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
-        config_model = ModelCreationService.create_process_config_model(
-            ProcessConfigSpecs(
-                process_class=(
-                    class_entity.process_config_specs.process_class
-                    if class_entity.process_config_specs
-                    else process_class
-                ),
-                process_config_schema=(
-                    class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
-                ),
-            )
+        config_model = ModelCreationService.create_config_model(
+            class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
+        InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
+        await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, configuration, user, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -445,15 +438,19 @@ class ProcessService:
     async def get_all_process_instances(t: LocaleHandler, online: bool | None = None) -> list[FullProcessInstanceDTO]:
         """Returns all registered process instances from the database."""
         instances = []
+        online_threshold = ProcessClassEntity.online_threshold()
         for class_entity in ProcessClassEntity.get_all():
-            if online is not None and class_entity.is_online != online:
+            is_online = class_entity.is_online_since(online_threshold)
+            if online is not None and is_online != online:
                 continue
 
             configs = ProcessConfigEntityDocument.find_for_class(class_entity.process_class)
             for config_entity in configs:
                 dto = InstanceDtoBuilder.build_or_skip(
-                    lambda class_entity=class_entity, config_entity=config_entity: (
-                        FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                    lambda class_entity=class_entity, config_entity=config_entity, is_online=is_online: (
+                        FullProcessInstanceDTO.from_class_and_config(
+                            class_entity, config_entity, t, is_online=is_online
+                        )
                     ),
                     kind="process instance",
                     key=f"{class_entity.process_class}/{getattr(config_entity, 'process_id', '?')}",

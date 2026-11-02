@@ -4,6 +4,10 @@ metadata:
   description: Assistant IA qui vous aide à trouver et sélectionner les bonnes sources
     de connaissances pour vos questions
 config:
+  restrict_to_user_access:
+    label: Limiter aux droits de l'utilisateur
+    help: Ne proposer que les espaces de noms que la personne qui pose la question
+      peut lire dans l'espace de connaissances.
   bucket_names:
     label: Bases de connaissances
     help: Sélectionnez les bases de connaissances à interroger
@@ -32,6 +36,12 @@ thoughts:
   forwarding_to_rag: Recherche d'informations pertinentes
   rag_error: "Une erreur s'est produite lors de la recherche : %{error_message}"
 messages:
+  no_accessible_knowledge: Aucune des connaissances entre lesquelles cet agent oriente
+    ne vous est accessible. Demandez un accès à un administrateur si vous en avez
+    besoin.
+  determination_failed: Je n'ai pas pu déterminer quelles sources de connaissances
+    consulter pour cette demande. Pourriez-vous la reformuler ou m'indiquer le sujet
+    qui vous intéresse ?
   default_follow_up: Pourriez-vous fournir plus de détails sur votre demande afin
     que je puisse déterminer les sources de connaissances les plus pertinentes ?
   user_rejected_selection: J'ai rejeté la sélection de namespaces proposée. Veuillez
@@ -55,7 +65,9 @@ prompts:
     \ DOIT avoir exactement UN namespace sélectionné - ni plus, ni moins.\n- Votre\
     \ follow_up_question DOIT lister les noms exacts des namespaces de <available_namespaces>\
     \ ci-dessus comme options.\n- N'inventez PAS de noms - utilisez uniquement les\
-    \ noms réels affichés ci-dessus.\n"
+    \ noms réels affichés ci-dessus.\n- Incluez TOUJOURS les quatre champs - has_enough_information,\
+    \ selected_namespaces, follow_up_question et reasoning - même lorsqu'une valeur\
+    \ est null. N'omettez jamais un champ.\n"
 steps:
   initialize_determination:
     name: Initialiser la détermination de namespace
