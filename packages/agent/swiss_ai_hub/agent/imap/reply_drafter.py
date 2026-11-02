@@ -41,7 +41,8 @@ class ReplyDrafter:
         """Draft the reply body with the LLM (no IMAP connection held) and wrap it in a threaded envelope.
 
         Inbound mail is untrusted and enters the LLM prompt as written: this step adds no sanitisation, and the
-        gateway's Presidio guardrails are off unless a deployment switches them on.
+        gateway anonymises PII only when the deployment's Presidio guardrails or the profile's ``anonymise`` setting
+        turn it on.
         """
         await displayer.display_thought(f"Drafting a reply to: {parsed.subject}")
         messages = [
