@@ -19,9 +19,9 @@ Owned by this package: `TenantAdminController` (six endpoints under `/admin/tena
 sysadmin-gated.
 
 Re-mounted from `packages/api` (Apache-2.0) so sysadmin-web's inherited composables resolve same-origin against
-sysadmin-api: `MyAccountController.get_my_identity()`, `MyTenantController.get_my_tenants()`, `UserController` (get/list + role assign/revoke),
-`RoleController`, `AuthProviderController`. Code ownership stays in `packages/api`; sysadmin-api only picks the surface
-it needs. See `packages/sysadmin-api/CLAUDE.md` for the full mount table.
+sysadmin-api: `MyAccountController.get_my_identity()`, `MyTenantController.get_my_tenants()`, `UserController` (get/list
+\+ role assign/revoke), `RoleController`, `AuthProviderController`. Code ownership stays in `packages/api`; sysadmin-api
+only picks the surface it needs. See `packages/sysadmin-api/CLAUDE.md` for the full mount table.
 
 In future: anything that requires the `AIHubSysAdmin` Keycloak realm role and is not tenant-scoped (platform-wide
 sysadmin operations beyond tenant lifecycle).

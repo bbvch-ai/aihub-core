@@ -2,8 +2,8 @@
 
 ## Context
 
-Callers want an agent's answer in a JSON shape they choose. A typical request is an invoice PDF plus a schema with date,
-issuer and total, answered with those fields instead of prose (#2342, #2343). Plain models already do this through
+Callers want an agent's answer in a JSON shape they choose: fields read from an attached document, a classification, a
+summary with a fixed structure, answered as JSON instead of prose (#2342, #2343). Plain models already do this through
 OpenAI's `response_format` and forced function calls. Agents did not:
 
 - the answer travelled only as text in `LLMStopEvent.output_messages`;
@@ -27,27 +27,32 @@ primitive fields only, because jambo reads nothing but `properties`. A caller's 
 
 - **The request is `UserMessageEvent.response_schema`**, a core `ResponseSchema` (`name`, `description`, `json_schema`,
   `strict`). A `json_schema` of `None` means any JSON object, OpenAI's `json_object`. The schema is passed to the model
-  as is and validated with `jsonschema`, so nested objects and arrays work. There is no separate forced-function
-  variant: whether the result comes back as `content` or as a tool call is decided by the OpenAI endpoint, which
-  remembers how it was asked.
+  as is and validated with `jsonschema`, so nested objects and arrays work. A schema may reference only its own
+  definitions (`#/...`) and is validated against an empty registry, since resolving any other `$ref` would make the
+  agent worker fetch a URL the caller chose. `NaN`, `Infinity` and numbers beyond a float are violations: Python parses
+  them, but strict JSON clients do not. There is no separate forced-function variant: whether the result comes back as
+  `content` or as a tool call is decided by the OpenAI endpoint, which remembers how it was asked.
 - **The result is `LLMStopEvent.structured_output`**, the parsed and validated JSON. The answer text holds the same
   JSON, so clients that read text keep working. RAG and Expert RAG end on their own stop events and have no place for
   it.
 - **The answering model call is asked for the shape.** `EventDisplayer.display_llm_stream(..., response_schema=...)`
   sends `response_format` next to `tools` when the model declares `supports_response_schema`.
   - LLM Wrapping, Web Fetch and Few-Shot pass the schema in their answering step.
-  - The tool loop passes it only on a turn without tools. Sent next to the tools on a live check, the shape decided
-    the first turn: the Universal Agent answered at once with an invoice it made up instead of reading the attached
-    one. A reply given with tools is put into the shape by the completion.
-  - Every call asked for a shape is told, in its leading system message (`ResponseSchemaInstruction`), to take values
-    only from the conversation and its documents and to use null otherwise. Without it an undated invoice came back
-    dated with the day from the agent's system prompt.
+  - The tool loop passes it only on a turn without tools. Sent next to the tools on a live check, the shape decided the
+    first turn: the Universal Agent answered at once from the schema alone instead of reading the attached file. A reply
+    given with tools is put into the shape by the completion.
+  - Nothing is added to the prompt. How a value is filled, including whether a missing one is null, is the caller's to
+    say in the schema's descriptions and their message, as with OpenAI itself. An instruction such as "take values only
+    from the documents" was tried and dropped: it suits extraction and contradicts schemas that ask the model to derive
+    values.
   - The schema reaches these steps through the run context, read with `RequestedResponseSchema`, a sibling of
     `RequestedFeatures`.
 - **`Conversation.complete` validates.** With a schema requested, the completion parses the answer instead of generating
   follow-up questions.
-  - When the answer does not match, `StructuredAnswer` asks the model once more, non-streamed, from the same prompt with
-    the validation error and the schema. A second miss fails the run.
+  - When the answer does not match, `StructuredAnswer` asks the model once more, non-streamed and with thinking off
+    (`ReasoningFreeChat`), from the same prompt with the validation error and the schema. A second miss fails the run.
+  - A stop the blueprint hands over is the answer validated. Its `answer` may be only the summary the follow-ups are
+    grounded on: Knowledge Extraction's table and Release Notes' text in every language sit on the stop.
   - This covers a model without structured outputs, one that ignored them, and a blueprint that did not pass the schema
     (MCP ReAct, Knowledge Extraction).
 - **The meta-question gate is skipped** for a message with a schema. Its answer is prose that ends the run before the
@@ -73,7 +78,7 @@ Rejected alternatives:
 - The answering step streams the JSON as chunks, so the chat shows the JSON as it is written. A corrected answer shows a
   thought, and the corrected JSON arrives only on the stop event; API clients must read the result from the stop event.
 - The answering call keeps the model's thinking. A reasoning model whose provider breaks JSON with thinking on is
-  corrected by the completion's second call, which runs without streaming.
+  corrected by the completion's second call, which runs without streaming and without thinking.
 - `UserMessageEvent` grows by one optional field. Chat clients ignore it.
 - The API's model rebuild (`ModelCreationService`) now also restores free-form maps announced as optional (`anyOf` map
   or null) and maps inside optional nested models. Before, the caller's `json_schema` lost every key but `properties`.

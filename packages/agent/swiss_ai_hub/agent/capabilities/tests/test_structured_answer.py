@@ -28,8 +28,11 @@ from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalA
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.conversation.structured_answer import StructuredAnswer
 from swiss_ai_hub.agent.capabilities.requested_response_schema import RequestedResponseSchema
+from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
 CONVERSATION_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation"
+T = AgentLocaleHandler("en")
+THINKING_OFF = {"extra_body": {"chat_template_kwargs": {"thinking": False, "enable_thinking": False}}}
 
 INVOICE = ResponseSchema(
     name="invoice",
@@ -85,7 +88,7 @@ def _displayer() -> MagicMock:
 
 
 async def _stop_for(answer: LLMEvent, conversation: MagicMock) -> LLMStopEvent:
-    return await StructuredAnswer.stop_for(answer, INVOICE, conversation, _displayer(), MagicMock(), user=None)
+    return await StructuredAnswer.stop_for(answer, INVOICE, conversation, _displayer(), T, user=None)
 
 
 class TestStructuredAnswer:
@@ -110,7 +113,7 @@ class TestStructuredAnswer:
         sent = conversation.achat.await_args.args[0]
         assert [message.content for message in sent[:2]] == ["Read the invoice.", "The invoice is from ACME AG."]
         assert '"required": ["issuer", "total"]' in sent[-1].content
-        assert conversation.achat.await_args.kwargs == {"response_format": INVOICE.response_format()}
+        assert conversation.achat.await_args.kwargs == {**THINKING_OFF, "response_format": INVOICE.response_format()}
 
     @pytest.mark.asyncio
     async def test_a_model_without_structured_outputs_is_corrected_from_the_prompt_alone(self):
@@ -118,7 +121,7 @@ class TestStructuredAnswer:
 
         await _stop_for(_answer("ACME AG, 3 francs"), conversation)
 
-        assert conversation.achat.await_args.kwargs == {}
+        assert conversation.achat.await_args.kwargs == THINKING_OFF
 
     @pytest.mark.asyncio
     async def test_a_second_miss_fails_the_run_instead_of_returning_prose(self):
@@ -138,7 +141,7 @@ class TestConversationWithASchema:
                 conversation=_conversation(),
                 run_context=_requesting(INVOICE),
                 displayer=_displayer(),
-                t=MagicMock(),
+                t=T,
             )
 
         follow_ups.assert_not_awaited()
@@ -155,10 +158,33 @@ class TestConversationWithASchema:
                 conversation=_conversation(),
                 run_context=_requesting(INVOICE),
                 displayer=_displayer(),
-                t=MagicMock(),
+                t=T,
             )
 
         assert stop is refusal
+
+    @pytest.mark.asyncio
+    async def test_a_supplied_stop_is_the_answer_validated_not_the_summary_beside_it(self):
+        conversation = _conversation('{"issuer": "ACME AG", "total": 12}')
+        summary = _answer("One invoice found.")
+        table = LLMStopEvent(
+            input_messages=summary.input_messages,
+            output_messages=[Message.from_string(role="assistant", content="| issuer | total |\n| ACME AG | 12 |")],
+        )
+
+        with patch(f"{CONVERSATION_MODULE}.generate_follow_up_questions", new=AsyncMock()) as follow_ups:
+            stop = await Conversation.complete_conversation_step(
+                LLMWrappingAgent(),
+                request=Conversation.complete(answer=summary, stop=table),
+                conversation=conversation,
+                run_context=_requesting(INVOICE),
+                displayer=_displayer(),
+                t=T,
+            )
+
+        follow_ups.assert_not_awaited()
+        assert stop.structured_output == {"issuer": "ACME AG", "total": 12}
+        assert "| ACME AG | 12 |" in conversation.achat.await_args.args[0][1].content
 
     @pytest.mark.asyncio
     async def test_a_message_asking_for_a_shape_is_not_inspected_for_a_meta_question(self):
@@ -169,7 +195,7 @@ class TestConversationWithASchema:
                 conversation=MagicMock(),
                 run_context=_requesting(INVOICE),
                 displayer=_displayer(),
-                t=MagicMock(),
+                t=T,
             )
 
         detect.assert_not_awaited()
@@ -189,3 +215,12 @@ class TestSupport:
         assert await RequestedResponseSchema.of(_requesting(INVOICE), RAGAgent) is None
         assert await RequestedResponseSchema.of(_requesting(INVOICE), LLMWrappingAgent) == INVOICE
         assert await RequestedResponseSchema.of(_requesting(None), LLMWrappingAgent) is None
+
+
+class TestPrompts:
+    @pytest.mark.parametrize("locale", ["de", "fr", "it"])
+    def test_every_locale_translates_the_correction(self, locale):
+        for key in ("correct_structured_answer", "structured_answer_schema"):
+            path = f"agent.conversation.prompt.{key}"
+            translated = AgentLocaleHandler(locale)(path, violation="v", schema="s")
+            assert translated != T(path, violation="v", schema="s")

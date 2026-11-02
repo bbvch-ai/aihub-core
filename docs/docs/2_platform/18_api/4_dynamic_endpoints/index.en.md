@@ -195,10 +195,11 @@ curl -X POST "https://<host>/api/v1/active/agents/classes/UniversalAgent/instanc
 ```
 
 - **`json_schema`** is any JSON schema, nested objects and arrays included. Leave it out to accept any JSON object.
-- **A value the document does not state** comes back as `null` when the schema allows it. Allow `null` for such fields
-  rather than letting the model guess.
+- **How values are filled is up to your schema and message.** The agent adds nothing to its prompt. A model must fill
+  every field, so for a value that may be missing, allow `null` and say in the field's `description` or in your message
+  when to use it. Otherwise the model may guess a value.
 - **The answer is validated against the schema.** An answer that does not match is corrected once, and a second miss
   ends the run with an error rather than prose.
-- **Which agents support it:** agents that answer through the conversation spine (LLM Wrapping, Web Fetch, Few-Shot,
-  MCP ReAct, Universal). The agent's `supports_response_schema` says so. RAG and Expert RAG do not support it, and a
-  request with a `response_schema` to such an agent is rejected with `400`.
+- **Which agents support it:** agents that answer through the conversation spine (LLM Wrapping, Web Fetch, Few-Shot, MCP
+  ReAct, Universal). The agent's `supports_response_schema` says so. RAG and Expert RAG do not support it, and a request
+  with a `response_schema` to such an agent is rejected with `400`.
