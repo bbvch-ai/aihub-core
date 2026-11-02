@@ -24,13 +24,20 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </attached_files>
     {% endchat %}
-  excerpted: Only the parts of "%{filename}" most relevant to the question fit into
-    your context. If your answer rests on this text, tell the user it is based on
-    excerpts of this file; results you compute from the whole file with code are not
-    partial.
-  truncated: Only the beginning of "%{filename}" fit into your context. If your answer
-    rests on this text, tell the user it is based on part of this file; results you
-    compute from the whole file with code are not partial.
+  excerpted: Only %{kept} of the %{total} sections of "%{filename}", those most relevant
+    to the question, fit into your context. If your answer rests on this text, tell
+    the user it is based on excerpts of this file; results you compute from the whole
+    file with code are not partial.
+  truncated: Only the beginning of "%{filename}", its first %{kept} of %{total} sections,
+    fit into your context. If your answer rests on this text, tell the user it is
+    based on part of this file; results you compute from the whole file with code
+    are not partial.
+  page_count: The file has %{pages} pages.
+  whole_file_in_code: A total, a count or any other figure over all of "%{filename}"
+    cannot come from these sections, neither by adding them up nor by typing them
+    into code. Compute it now with code over the whole file in run_command, without
+    asking the user first; the file lies unchanged in the conversation folder of the
+    code sandbox.
   unreadable: The user attached "%{filename}", but it could not be read (%{error}).
     Tell the user that this file could not be read, and suggest attaching it in another
     format or pasting its text.

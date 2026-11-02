@@ -32,6 +32,7 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_cut_note import AttachedFileCutNote
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_fit_mode import FitMode
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_page_range import AttachedFilePageRange
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader import AttachedFileReader
@@ -206,7 +207,11 @@ class AttachedFiles(Capability):
         fitted = await AttachedFiles._fit(sections, rooms, picker, request.query, by_page, hashes)
 
         events = [AttachedFiles._with_status(event, fitted) for _, event in outcomes]
-        block = AttachedFiles._block(outcomes, fitted, t, request.cite_sources, pages)
+        cut = AttachedFileCutNote(
+            section_counts={file_id: len(found) for file_id, found in sections.items()},
+            code_sandbox_offered=request.code_sandbox_offered,
+        )
+        block = AttachedFiles._block(outcomes, fitted, t, request.cite_sources, pages, cut)
         if request.kept_for_code:
             block.append(
                 ChatMessage(role=MessageRole.SYSTEM, content=AttachedFiles._kept_for_code(request.kept_for_code, t))
@@ -262,6 +267,7 @@ class AttachedFiles(Capability):
         return ReadAttachedFilesEvent(
             files=[file for file in chosen if file not in kept],
             kept_for_code=kept,
+            code_sandbox_offered=code_runs,
             query=arguments.query,
             first_page=arguments.first_page,
             last_page=arguments.last_page,
@@ -347,7 +353,8 @@ class AttachedFiles(Capability):
         fitted: dict[str, tuple[list[IngestedNode], FitMode]],
         t: LocaleHandler,
         cite_sources: bool,
-        pages: AttachedFilePageRange | None = None,
+        pages: AttachedFilePageRange | None,
+        cut: AttachedFileCutNote,
     ) -> list[ChatMessage]:
         """The files as retrieved knowledge is rendered, followed by what the model must tell the user about them."""
         chosen = [section for sections, _ in fitted.values() for section in sections]
@@ -360,7 +367,7 @@ class AttachedFiles(Capability):
             )
             if cite_sources:
                 block.append(ChatMessage(role=MessageRole.SYSTEM, content=t("lib.prompt.citations.instruction")))
-        notes = [AttachedFiles._note(event, fitted, t, pages) for _, event in outcomes]
+        notes = [AttachedFiles._note(event, fitted, t, pages, cut) for _, event in outcomes]
         if any(notes):
             block.append(ChatMessage(role=MessageRole.SYSTEM, content="\n".join(note for note in notes if note)))
         return block
@@ -370,7 +377,8 @@ class AttachedFiles(Capability):
         event: AttachedFileEvent,
         fitted: dict[str, tuple[list[IngestedNode], FitMode]],
         t: LocaleHandler,
-        pages: AttachedFilePageRange | None = None,
+        pages: AttachedFilePageRange | None,
+        cut: AttachedFileCutNote,
     ) -> str:
         if event.file_id not in fitted:
             return t("agent.attached_files.prompt.unreadable", filename=event.filename, error=event.error)
@@ -378,13 +386,7 @@ class AttachedFiles(Capability):
         if mode in (FitMode.PAGES, FitMode.PAGES_CUT) and pages:
             return AttachedFiles._pages_note(event, sections, mode, pages, t)
         unknown_pages = t("agent.attached_files.prompt.pages_unknown", filename=event.filename) if pages else ""
-        match mode:
-            case FitMode.EXCERPTS:
-                fit = t("agent.attached_files.prompt.excerpted", filename=event.filename)
-            case FitMode.BEGINNING:
-                fit = t("agent.attached_files.prompt.truncated", filename=event.filename)
-            case _:
-                fit = ""
+        fit = cut.of(event, mode, len(sections), t)
         return "\n".join(note for note in (unknown_pages, fit) if note)
 
     @staticmethod
