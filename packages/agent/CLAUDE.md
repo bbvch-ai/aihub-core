@@ -202,15 +202,17 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
   outcome events) or an `LLMStopEvent` carrying the answer. Return it **last** from the step, behind anything that must
   be published before teardown.
 
-**Structured answers** (`UserMessageEvent.response_schema`, ADR `2026_11_02_structured_answers_from_conversational_agents`):
-a caller may ask for the answer as JSON matching a schema. The answering call asks for it natively: pass
-`response_schema=await RequestedResponseSchema.of(run_context, type(self))` to `display_llm_stream`, which sends
-`response_format` to a model with `supports_response_schema`, together with `ResponseSchemaInstruction` (values only from
-the conversation, null otherwise). LLM Wrapping and Few-Shot do; the tool loop only on a turn without tools, since the
-shape next to the tools made a model answer at once without reading the attached file. `Conversation.complete` then validates the answer instead of generating follow-ups, corrects it once with the
-schema and the error (`StructuredAnswer`) and ends with `LLMStopEvent.structured_output`; a second miss fails the run.
-With a schema, the meta-question gate is skipped. `Agent.supports_response_schema()` is derived: a blueprint that
-returns `Conversation.complete(...)` and declares only `LLMStopEvent` completion stops supports it, so RAG does not.
+**Structured answers** (`UserMessageEvent.response_schema`, ADR
+`2026_11_02_structured_answers_from_conversational_agents`): a caller may ask for the answer as JSON matching a schema.
+The answering call asks for it natively: read
+`response_schema = await RequestedResponseSchema.of(run_context, type(self))` and pass it to `display_llm_stream`, which
+sends `response_format` to a model with `supports_response_schema`; nothing is added to the prompt. LLM Wrapping and
+Few-Shot do; the tool loop only on a turn without tools, since the shape next to the tools made a model answer at once
+without reading the attached file. `Conversation.complete` then validates the answer (the supplied stop, if a
+non-refusal one was handed over) instead of generating follow-ups, corrects it once with the schema and the error,
+thinking off (`StructuredAnswer`) and ends with `LLMStopEvent.structured_output`; a second miss fails the run. With a
+schema, the meta-question gate is skipped. `Agent.supports_response_schema()` is derived: a blueprint that returns
+`Conversation.complete(...)` and declares only `LLMStopEvent` completion stops supports it, so RAG does not.
 
 **`Memory`** (needs `MemoryFields`): `recall(query, org_memory_namespaces)` → `MemoryRecalledEvent` with one block per
 scope; `remember(...)` builds the memory-storage delegation directly, no step behind it, so returning it ahead of the

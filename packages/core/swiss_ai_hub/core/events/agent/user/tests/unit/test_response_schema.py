@@ -84,3 +84,31 @@ def test_a_name_openai_would_reject_is_refused():
 def test_the_request_is_part_of_the_api_input_and_optional():
     assert "response_schema" in UserMessageEvent.api_input_model().model_fields
     assert UserMessageEvent.model_fields["response_schema"].default is None
+
+
+@pytest.mark.parametrize(
+    "reference", ["http://169.254.169.254/latest/meta-data", "https://example.com/invoice.json", "invoice.json"]
+)
+def test_a_schema_referencing_anything_outside_itself_is_refused(reference: str):
+    with pytest.raises(ValidationError, match="may only reference its own definitions"):
+        ResponseSchema(name="remote", json_schema={"type": "object", "properties": {"a": {"$ref": reference}}})
+
+
+def test_references_to_the_schemas_own_definitions_are_resolved():
+    local = ResponseSchema(
+        name="local",
+        json_schema={
+            "type": "object",
+            "properties": {"a": {"$ref": "#/$defs/text"}},
+            "$defs": {"text": {"type": "string"}},
+        },
+    )
+
+    with pytest.raises(ResponseSchemaViolation, match="a: 1 is not of type 'string'"):
+        local.validated('{"a": 1}')
+
+
+@pytest.mark.parametrize("answer", ['{"a": NaN}', '{"a": [Infinity]}', '{"a": {"b": -Infinity}}', '{"a": 1e309}'])
+def test_numbers_json_cannot_carry_are_violations(answer: str):
+    with pytest.raises(ResponseSchemaViolation, match="not a JSON number"):
+        ResponseSchema(name="any").validated(answer)

@@ -325,11 +325,14 @@ class Conversation(Capability):
 
         Follow-ups are grounded on the answer, so they cannot start earlier, and emitting them before the stop
         event puts them on the wire ahead of teardown. An answer asked for in a JSON shape gets none, since its
-        caller is a program; it ends on the answer validated against the shape instead (`StructuredAnswer`).
+        caller is a program; it ends on the answer validated against the shape instead (`StructuredAnswer`). A stop
+        the blueprint supplies is that answer, since its `answer` may be only the summary the follow-ups are grounded
+        on (the extraction's table, the release notes in every language); a refusal ends the run as it is.
         """
         response_schema = await RequestedResponseSchema.of(run_context, type(agent))
-        if response_schema is not None and request.stop is None:
-            return await StructuredAnswer.stop_for(request.answer, response_schema, conversation, displayer, t, user)
+        if response_schema is not None and not isinstance(request.stop, RefusalStopEvent):
+            answered = request.stop if isinstance(request.stop, LLMStopEvent) else request.answer
+            return await StructuredAnswer.stop_for(answered, response_schema, conversation, displayer, t, user)
         await generate_follow_up_questions(request.answer.chat_messages, conversation.task_llm, displayer, t, user)
         if request.stop is not None:
             return request.stop

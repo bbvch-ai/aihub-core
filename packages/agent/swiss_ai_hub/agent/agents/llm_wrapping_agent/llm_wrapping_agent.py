@@ -178,12 +178,13 @@ class LLMWrappingAgent(Agent):
         message they accept.
         """
         history = merge_consecutive_messages(event.history)
+        response_schema = await RequestedResponseSchema.of(run_context, type(self))
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
             answer = await displayer.display_llm_stream(
                 agent_config.llm,
                 llm,
                 history,
-                response_schema=await RequestedResponseSchema.of(run_context, type(self)),
+                response_schema=response_schema,
             )
         remember = Memory.remember(
             query=ctx.query,
