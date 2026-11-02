@@ -37,11 +37,11 @@ def _config(**options) -> FakeStructuredSyncConfig:
 
 
 class TestAnnouncedForm:
-    def test_the_shipped_pipeline_offers_jira_and_confluence(self):
+    def test_the_shipped_pipeline_offers_jira_confluence_and_mediawiki(self):
         elements = StructuredSyncConfig.as_form().to_formkit_form()
 
-        assert [element.name for element in elements] == ["source_kind", "jira", "confluence"]
-        assert [option["value"] for option in elements[0].options] == ["jira", "confluence"]
+        assert [element.name for element in elements] == ["source_kind", "jira", "confluence", "mediawiki"]
+        assert [option["value"] for option in elements[0].options] == ["jira", "confluence", "mediawiki"]
 
     def test_a_validation_error_never_quotes_the_decrypted_configuration(self):
         """The configuration is validated after decryption, and the error reaches the run's log."""

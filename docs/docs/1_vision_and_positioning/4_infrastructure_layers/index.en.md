@@ -61,9 +61,10 @@ when users ask a plain LLM model to analyze data or run calculations. The model 
 isolated per-user sandbox with common document libraries pre-installed; generated files (reports, spreadsheets, charts)
 appear in the chat for download. **SearXNG** provides web search capabilities when users need current information,
 aggregating results from multiple search engines while preserving privacy. **Playwright** loads web pages: the pages
-users link for an agent to read, and the full text of search results when snippets aren't sufficient. **MinerU** parses
-documents users upload to the chat, extracting text and structure from PDFs, Word documents, and presentations while
-preserving tables and formatting needed for accurate question-answering.
+users link for an agent to read, and the full text of search results when snippets aren't sufficient. It reaches the
+internet only through a filtering proxy that refuses private and internal addresses. **MinerU** parses documents users
+upload to the chat, extracting text and structure from PDFs, Word documents, and presentations while preserving tables
+and formatting needed for accurate question-answering.
 
 Observability starts from day one with **OpenTelemetry** collecting metrics, traces, and logs from every component. The
 data flows to appropriate backends: metrics to Prometheus, traces to Jaeger, logs to Loki. This standardized

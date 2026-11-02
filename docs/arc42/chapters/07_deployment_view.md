@@ -64,6 +64,7 @@ graph TB
 
         subgraph browser["browser  · browser + callers only"]
             PW["Playwright :3036"]
+            BP["browser-proxy :3128 (also on egress)"]
         end
 
         subgraph codesandbox["code-sandbox  · sandbox + callers only"]
@@ -113,7 +114,8 @@ graph TB
     LfWeb --- CH2
     LiteLLM --- PG
 
-    PW -->|"outbound via egress"| Internet
+    PW -->|"only route out"| BP
+    BP -->|"public addresses only, via egress"| Internet
     SearX -->|"outbound only"| Internet
 
     style proxy fill:#fef3c7,stroke:#d97706
@@ -160,11 +162,12 @@ the sandbox can reach only its callers. `internal: true` in non-dev stages addit
 ADR `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
 The **browser** network applies the same pattern to Playwright, which loads the web pages users link. Its only resident
-is the browser; its callers, OpenWebUI's web loader and the agents that read linked pages, join in addition to their own
-networks. The agents check each URL before the browser loads it, but the browser resolves the name again, so a name
-re-pointed to an internal address in between (DNS rebinding) would pass the check. Off `backend`, such a page load has
-no path to LiteLLM, Langfuse, MinerU or the Docker socket proxy. See ADR
-`docs/arc42/decisions/2026_10_20_agents_read_linked_web_pages_through_playwright.md`.
+is the browser, which sits on `browser` only; its callers, OpenWebUI's web loader and the agents that read linked pages,
+join in addition to their own networks. Its only way to the internet is `browser-proxy` (Squid, on `browser` and
+`egress`), which resolves every host itself, refuses non-public addresses and connects to the address it checked, so DNS
+rebinding cannot swap it. Off `backend`, a page load has no path to LiteLLM, Langfuse, MinerU or the Docker socket
+proxy. See ADR `docs/arc42/decisions/2026_10_29_browser_reaches_the_internet_only_through_a_filtering_proxy.md` and, for
+the original zone, `docs/arc42/decisions/2026_10_20_agents_read_linked_web_pages_through_playwright.md`.
 
 The **pii-detection** network holds the Presidio analyzer, which receives the personal data the platform anonymises,
 plus only its callers (LiteLLM and the Universal Agent). Its models are baked into the image, so `internal: true` in
@@ -172,7 +175,7 @@ non-dev stages denies it outbound internet without breaking it.
 
 The API service is the most connected, attaching to four networks (proxy, backend, data, storage) because it must accept
 external requests, communicate with application services, query databases, and access file storage. A database like
-PostgreSQL attaches only to data. Playwright attaches to browser (for its callers) and egress (for internet access).
+PostgreSQL attaches only to data. Playwright attaches to browser only; browser-proxy attaches to browser and egress.
 
 ## Infrastructure level 2
 

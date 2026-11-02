@@ -67,6 +67,8 @@ class FullAgentInstanceDTO(MinimalAgentInstanceDTO):
         class_entity: AgentClassEntity,
         config_entity: "AgentConfigEntityDocument",
         t: LocaleHandler,
+        *,
+        is_online: bool,
     ) -> Self:
         """
         Creates a FullAgentInstanceDTO from a class entity and a config entity.
@@ -123,7 +125,7 @@ class FullAgentInstanceDTO(MinimalAgentInstanceDTO):
             hitl_request_events=hitl_request_events,
             hitl_response_events=hitl_response_events,
             network_graph=network_graph,
-            is_online=class_entity.is_online,
+            is_online=is_online,
             configuration=InstanceConfigHelper.with_schema_defaults(
                 config_entity.config_data or {},
                 class_entity.agent_config_specs.config_schema if class_entity.agent_config_specs else {},

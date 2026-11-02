@@ -28,32 +28,30 @@ class TestMarkdownStructuralNodeParserResource:
     def test_resource_can_be_constructed_with_both_dependencies(self) -> None:
         assert build_resource() is not None
 
-    def test_max_embedding_tokens_comes_from_the_embedding_model(self) -> None:
+    def test_parser_is_sized_for_the_embedding_model(self) -> None:
         resource = build_resource()
+        declared = {"max_input_tokens": 4096, "aihub_tokenizer": "bge-m3", "aihub_input_overhead_tokens": 2}
 
-        with patch.object(
-            EmbeddingModelConfig, "get_model_info", return_value={"model_info": {"max_input_tokens": 4096}}
-        ):
-            assert resource._resolve_max_embedding_tokens(resource.embedding_config) == 4096
+        with patch.object(EmbeddingModelConfig, "get_model_info", return_value={"model_info": declared}):
+            parser = resource.get_node_parser_for_ref_doc(ref_doc=_ref_doc(), document_store_name="store")
 
-    def test_null_max_input_tokens_falls_back_to_the_default(self) -> None:
+        budget = parser.node_builder_from_splits.ceiling_budget
+        assert parser.embedding_model_name == "embedding/bge-m3"
+        assert budget.exact
+        assert budget.max_input_tokens == 4096
+
+    def test_undeclared_embedding_model_keeps_the_tiktoken_ceiling(self) -> None:
         """LiteLLM reports null for any model it holds no metadata for."""
         resource = build_resource()
 
         with patch.object(
             EmbeddingModelConfig, "get_model_info", return_value={"model_info": {"max_input_tokens": None}}
         ):
-            assert resource._resolve_max_embedding_tokens(resource.embedding_config) == 8192
-
-    def test_parser_receives_the_resolved_ceiling(self) -> None:
-        resource = build_resource()
-
-        with patch.object(
-            EmbeddingModelConfig, "get_model_info", return_value={"model_info": {"max_input_tokens": 4096}}
-        ):
             parser = resource.get_node_parser_for_ref_doc(ref_doc=_ref_doc(), document_store_name="store")
 
-        assert parser.max_embedding_tokens == 4096
+        budget = parser.node_builder_from_splits.ceiling_budget
+        assert not budget.exact
+        assert budget.max_input_tokens == 8192
 
 
 def _ref_doc():

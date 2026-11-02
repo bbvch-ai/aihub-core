@@ -1,5 +1,6 @@
-"""The knowledge capability's contract: `search` always answers, searches only the referenced collections the asking
-user may read, and names the others in the block so the answer can say it could not use them.
+"""The knowledge capability's contract: `search` always answers, searches only the referenced collections that exist
+and the asking user may read, and names the others in the block, gone and inaccessible apart, so the answer can say
+why it could not use them.
 
 A turn without references answers with an empty block so a waiting step never hangs.
 """
@@ -76,7 +77,7 @@ async def _search(
 async def test_no_reference_answers_empty_without_searching():
     event, retrieve = await _search([], _access({"policies"}), [])
 
-    assert (event.block, event.grounding_nodes, event.refused) == ([], [], [])
+    assert (event.block, event.grounding_nodes, event.missing, event.refused) == ([], [], [], [])
     retrieve.assert_not_awaited()
 
 
@@ -111,7 +112,20 @@ async def test_a_collection_the_user_may_not_read_is_named_and_not_searched():
     assert event.refused == [REPORTS]
     assert event.grounding_nodes == []
     assert '"SFTP Live / Reports"' in event.block[0].content
-    assert "not available to the user" in event.block[0].content
+    assert "has no access" in event.block[0].content
+
+
+@pytest.mark.asyncio
+async def test_a_deleted_collection_is_named_as_gone_not_as_inaccessible():
+    archive = KnowledgeReference(database="sftplive", namespace="archive")
+
+    event, retrieve = await _search([archive], _access({"archive"}), [])
+
+    retrieve.assert_not_awaited()
+    assert (event.missing, event.refused) == ([archive], [])
+    assert '"SFTP Live / Archive"' in event.block[0].content
+    assert "no longer exist" in event.block[0].content
+    assert len(event.block) == 1
 
 
 @pytest.mark.asyncio

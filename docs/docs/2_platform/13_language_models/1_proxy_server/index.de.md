@@ -1,6 +1,6 @@
 ---
 title: Proxy-Server
-source_sha: f1021f95bcc58de1dc6793dbd5a73d613f50056e498a9a0c2f434ce4019d6297
+source_sha: 83e72f2ffc22be4fa93a69269a7f673551f36afd3ba7b847fb5a2ce6a2997926
 ---
 
 # LLM-Proxy
@@ -50,6 +50,39 @@ Der Abschnitt `litellm_params` enthält anbieterspezifische Verbindungsdetails. 
 Fähigkeiten und Preise pro Token für die Kostenverfolgung über Langfuse.
 :::
 
+### Embedding- und Reranking-Modelle
+
+Die Plattform bemisst jede Eingabe an ein Embedding- oder Reranking-Modell, bevor sie sie sendet: Dokument-Chunks bei
+der Ingestion, Suchanfragen und jedes Anfrage/Dokument-Paar eines Rerankings. Ein Modell weist eine Eingabe, die sein
+Fenster überschreitet, mit einem Fehler ab, statt sie zu kürzen; die Zählung muss deshalb die des Modells selbst sein.
+Jeder Eintrag mit `mode: embedding` oder `mode: rerank` deklariert daher neben `max_input_tokens` zwei Schlüssel:
+
+- **`aihub_tokenizer`:** die ID eines Tokenizers, der in `packages/core` unter
+  `swiss_ai_hub/core/generative_ai/resources/tokenizers/vendored/` mitgeliefert wird. Die Plattform zählt damit im
+  Prozess, ohne Netzwerkaufruf. `bge-m3` deckt BAAI/bge-m3 und BAAI/bge-reranker-v2-m3 ab, die denselben Tokenizer
+  verwenden.
+- **`aihub_input_overhead_tokens`:** die Spezial-Tokens, die das Modell jeder Eingabe hinzufügt. bge-m3 fügt 2 hinzu
+  (`<s> text </s>`), der bge-Reranker 4 pro Paar (`<s> query </s></s> document </s>`).
+
+```yaml
+  - model_name: embedding/bge-m3
+    model_info:
+      mode: embedding
+      max_input_tokens: 8192
+      aihub_tokenizer: bge-m3
+      aihub_input_overhead_tokens: 2
+```
+
+Ein Modell ohne `aihub_tokenizer` funktioniert weiterhin: Seine Eingaben werden mit tiktoken gezählt und deutlich
+innerhalb seines Fensters gehalten, wie vor der Einführung dieser Schlüssel, und jeder Prozess protokolliert eine
+Warnung mit dem Namen des Modells. Um ein neues Modell exakt zu zählen, legen Sie unter `vendored/` einen Ordner mit der
+Tokenizer-Datei, ihrer `LICENSE` und einer `SOURCE.json` (Repository, Revision, Datei, sha256, Format) an und nennen Sie
+die ID des Ordners in der Konfiguration. Ein Unit-Test prüft, dass jedes Embedding- und Reranking-Modell in den
+generierten Konfigurationen einen mitgelieferten Tokenizer nennt.
+
+Die Apps lesen diese Schlüssel einmal pro Prozess. Erstellen Sie nach einer Änderung zuerst den LiteLLM-Container neu
+und starten Sie danach die Apps neu.
+
 ## Kernfunktionen
 
 Vereinheitlichte Schnittstelle: LiteLLM bietet eine OpenAI-kompatible API, die mit Swiss LLM Cloud, lokal gehosteten
@@ -67,8 +100,9 @@ Kostenverfolgung: Die Nutzungsverfolgung erfasst den Token-Verbrauch pro Anfrage
 Modell konfiguriert, sodass die Plattform die Kosten pro Konversation berechnen und anzeigen kann. Weitere Informationen
 zur Kostenverfolgung und -optimierung finden Sie unter [Kostenkontrolle](../../14_cost_control/).
 
-PII-Schutz: Die Presidio-Integration (sofern aktiviert) scannt Anfragen nach persönlich identifizierbaren Informationen,
-bevor sie an externe Anbieter gesendet werden. Details finden Sie unter [Datenanonymisierung](../2_anonymization/).
+PII-Schutz: Die Guardrail `pii-anonymisation` ersetzt personenbezogene Daten in jeder Chat-Anfrage an ein Modell, das
+ausserhalb des Deployments gehostet wird, durch Platzhalter und stellt sie in der Antwort wieder her, gestreamt oder
+nicht. Details finden Sie unter [Datenanonymisierung](../2_anonymization/).
 
 Wiederholungsrichtlinien: Die Konfiguration spezifiziert die Anzahl der Wiederholungsversuche für Timeout-Fehler,
 Ratenbegrenzungsfehler und interne Serverfehler.
