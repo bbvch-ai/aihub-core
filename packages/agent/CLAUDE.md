@@ -580,7 +580,7 @@ These are `AfterValidator`s that skip validation when the value is a `FormkitEle
 3. **Storage**: Admin creates a profile via Admin UI. API validates submission against
    `agent_config_specs.config_schema`, saves to `AgentConfigEntityDocument` (MongoDB `agent_configs` collection) with
    `(agent_class, agent_id)` compound unique index. Secret fields (`Password`, `SecretFileInput`, found by
-   `AgentConfig.secret_field_paths()`) are stored encrypted and masked in every response (#1587).
+   `SecretFieldWalker` on the stored announced form) are stored encrypted and masked in every response (#1587).
 
 4. **Runtime Fetch**: On each `StartEvent`, dispatcher calls `AgentConfigClient.fetch_config(agent_class, agent_id)` →
    NATS RPC (`aihub.rpc.config.agent.{class}.{id}`) → `AgentConfigResponder` (API side) →

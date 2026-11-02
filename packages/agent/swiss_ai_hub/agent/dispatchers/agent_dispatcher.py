@@ -208,11 +208,8 @@ class AgentDispatcher(BaseDispatcher):
     def _decrypted(
         self, config: Annotated[dict[str, Any], "Runtime config as fetched, secrets encrypted"]
     ) -> dict[str, Any]:
-        """The config with its secrets in plaintext, for validation only.
-
-        RunContext and the RPC reply keep the ciphertext, so plaintext lives only in the validated config of the
-        event being handled. Only the secret paths are decrypted; ciphertext anywhere else stays inert.
-        """
+        """Decrypted for validation only, so RunContext and the RPC reply keep the ciphertext. Only the secret paths are
+        decrypted; ciphertext anywhere else stays inert."""
         if not self._holds_ciphertext(config):
             return config
         if self._secret_field_paths is None:
@@ -220,7 +217,7 @@ class AgentDispatcher(BaseDispatcher):
         return SecretEncryptionService.from_settings().decrypt_paths(config, self._secret_field_paths)
 
     @classmethod
-    def _holds_ciphertext(cls, value: Any) -> bool:
+    def _holds_ciphertext(cls, value: Annotated[Any, "A config, or any value nested in one"]) -> bool:
         if isinstance(value, dict):
             return any(cls._holds_ciphertext(item) for item in value.values())
         if isinstance(value, list):

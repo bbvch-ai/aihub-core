@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from typing import Annotated, Any
 
 from fastapi import HTTPException
@@ -11,8 +12,7 @@ class ConfigSecrets:
     """
     Encrypts, masks and restores the secret fields of an agent profile, found through its class's announced form.
 
-    The key is only needed once a non-empty secret sits at a secret path, so a class without secrets, or a profile
-    leaving its secrets blank, keeps working on a deployment that has no key.
+    The key is needed only once a non-empty secret sits at a secret path, so profiles without one work without a key.
     """
 
     @staticmethod
@@ -47,9 +47,8 @@ class ConfigSecrets:
         stored: Annotated[dict[str, Any] | None, "Configuration currently persisted; None on create"],
         elements: Annotated[list[FormkitElement], "Announced form elements of the class"],
     ) -> dict[str, Any] | None:
-        """Every mask swapped back for the stored secret it stands for. With nothing stored, as on a create from a
-        cloned or imported form, a mask is the client's mistake and answered with a 400 rather than failing later in
-        ``encrypt``. Submitted ciphertext is refused the same way, and neither 400 echoes the submitted value."""
+        """With nothing stored, as on a create from a cloned or imported form, a mask is the client's mistake: a 400
+        rather than a failure in ``encrypt``. Neither this nor the refusal of submitted ciphertext echoes the value."""
         paths = ConfigSecrets.secret_paths(elements)
         if not ConfigSecrets.has_secret_values(submitted, paths):
             return submitted
@@ -71,12 +70,8 @@ class ConfigSecrets:
         return SecretEncryptionService.from_settings().encrypt_paths(config, paths)
 
     @staticmethod
-    def ensure_key_for_stored_secrets() -> None:
-        """Raise when a stored profile holds a secret and the key is unset or malformed.
-
-        Masking needs a usable key, and every listing masks. Without this check a missing key would surface only at
-        runtime, where discovery drops the profile it cannot build and the OpenWebUI sync then deletes its model.
-        """
+    def stored_profiles_with_secret_paths() -> Iterator[tuple[AgentConfigEntityDocument, set[str]]]:
+        """Every stored profile with its class's secret paths; a class not announced yet has none."""
         paths_by_class: dict[str, set[str]] = {}
         for document in AgentConfigEntityDocument.find_all():
             if document.agent_class not in paths_by_class:
@@ -84,6 +79,14 @@ class ConfigSecrets:
                 paths_by_class[document.agent_class] = (
                     ConfigSecrets.secret_paths(class_entity.form_elements) if class_entity else set()
                 )
-            if ConfigSecrets.has_secret_values(document.config_data, paths_by_class[document.agent_class]):
-                SecretEncryptionService.from_settings()
-                return
+            yield document, paths_by_class[document.agent_class]
+
+    @staticmethod
+    def ensure_key_for_stored_secrets() -> None:
+        """Raise when a stored secret could not be masked for lack of a usable key, before discovery would drop its
+        profile and the OpenWebUI sync delete its model."""
+        if any(
+            ConfigSecrets.has_secret_values(document.config_data, paths)
+            for document, paths in ConfigSecrets.stored_profiles_with_secret_paths()
+        ):
+            SecretEncryptionService.from_settings()

@@ -124,6 +124,20 @@ async def test_the_step_receives_plaintext_while_run_context_keeps_ciphertext(ke
 
 
 @async_test
+async def test_ciphertext_outside_a_secret_path_stays_as_it_is(key: str):
+    served = _encrypted_dump(key)
+    username_ciphertext = SecretEncryptionService(key).encrypt("a@test")
+    served["imap"]["username"] = username_ciphertext
+    runner = _ServedConfigRunner(served=served, agent_type=ImapAgent, agent_config=_imap_config())
+
+    opened, _ = await _read_mail(runner)
+
+    assert not runner.has_exception_event
+    assert {config.username for config in opened} == {username_ciphertext}
+    assert {config.password for config in opened} == {_PASSWORD}
+
+
+@async_test
 async def test_ciphertext_without_a_key_ends_the_run_naming_the_variable(key: str, no_key: None):
     runner = _ServedConfigRunner(served=_encrypted_dump(key), agent_type=ImapAgent, agent_config=_imap_config())
 
@@ -153,5 +167,5 @@ async def test_plaintext_passes_through_without_a_key(no_key: None):
         (ReleaseNotesAgentConfig, {"jira.api_token"}),
     ],
 )
-def test_secret_field_paths_are_read_off_the_announced_form(config_type: type, paths: set[str]):
+def test_secret_field_paths_are_read_off_the_class_form(config_type: type, paths: set[str]):
     assert config_type.secret_field_paths() == paths

@@ -99,6 +99,14 @@ class TestEnsureKeyForStoredSecrets:
         with pytest.raises(ValueError, match=_KEY_VARIABLE):
             ConfigSecrets.ensure_key_for_stored_secrets()
 
+    def test_an_empty_key_refuses_naming_the_variable(self, monkeypatch: pytest.MonkeyPatch):
+        """Compose hands an unset variable on as an empty string."""
+        monkeypatch.setenv(_KEY_VARIABLE, "")
+        _agent("hunter2")
+
+        with pytest.raises(ValueError, match=_KEY_VARIABLE):
+            ConfigSecrets.ensure_key_for_stored_secrets()
+
     def test_a_malformed_key_refuses(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv(_KEY_VARIABLE, "not-a-fernet-key")
         _agent("hunter2")
