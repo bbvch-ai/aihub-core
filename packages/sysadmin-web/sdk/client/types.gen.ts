@@ -386,6 +386,12 @@ export type CreateTenantMetadataRequest = {
    * Access rules granted to this tenant. Omit to start from this instance's default ceiling (every served model minus the configured exclusions); pass an empty list for a tenant that starts with no access at all.
    */
   access_rules?: Array<string> | null;
+  /**
+   * Lcdm Tenant Id
+   *
+   * Originating LCDM Hub tenant id (numeric). Set when the tenant is pushed in from the LCDM Hub; it is the value the LCDM MCP expects in its X-LCDM-Tenant header.
+   */
+  lcdm_tenant_id?: number | null;
 };
 
 /**
@@ -810,6 +816,12 @@ export type TenantResponse = {
    * Chat disclaimer in each supported language.
    */
   chat_disclaimer: LocaleString;
+  /**
+   * Lcdm Tenant Id
+   *
+   * Originating LCDM Hub tenant id (numeric), if this tenant was pushed in from the LCDM Hub.
+   */
+  lcdm_tenant_id?: number | null;
   /**
    * Whether the tenant also exists in Keycloak (active) or not (orphaned).
    */
@@ -1320,6 +1332,33 @@ export type UpdateTenantMetadataResponses = {
 
 export type UpdateTenantMetadataResponse =
   UpdateTenantMetadataResponses[keyof UpdateTenantMetadataResponses];
+
+export type ProvisionTenantData = {
+  body: CreateTenantMetadataRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/tenants/provision";
+};
+
+export type ProvisionTenantErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ProvisionTenantError =
+  ProvisionTenantErrors[keyof ProvisionTenantErrors];
+
+export type ProvisionTenantResponses = {
+  /**
+   * Successful Response
+   */
+  200: TenantResponse;
+};
+
+export type ProvisionTenantResponse =
+  ProvisionTenantResponses[keyof ProvisionTenantResponses];
 
 export type GetMyIdentityData = {
   body?: never;

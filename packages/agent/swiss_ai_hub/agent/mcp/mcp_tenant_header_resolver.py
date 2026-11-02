@@ -17,9 +17,7 @@ class McpTenantHeaderResolver:
     TENANT_HEADER_VALUE_KEY = "mcp_tenant_header_value"
 
     @staticmethod
-    async def apply(
-        mcp_config: McpClientConfig, run_context: RunContext, user: UserIdentity | None
-    ) -> McpClientConfig:
+    async def apply(mcp_config: McpClientConfig, run_context: RunContext, user: UserIdentity | None) -> McpClientConfig:
         header_name = mcp_config.forward_tenant_id_header
         if not header_name:
             return mcp_config
