@@ -1060,6 +1060,9 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home:z
       - ./configs/backup/backup-dagster.dev.yml:/dagster_home/dagster.yaml:ro,z
       - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt: [label=disable]
     healthcheck:
       test:
         - CMD
