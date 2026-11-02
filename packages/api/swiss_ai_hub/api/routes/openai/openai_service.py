@@ -807,6 +807,7 @@ class OpenaiService:
     ) -> list[UserUploadedFile] | None:
         """The files uploaded beforehand and named in the metadata, then those sent inline as `file` parts, stored
         first so the event carries only their references."""
+        ChatService.existing_thread_of(context.user, str_to_object_id(context.thread_id))
         uploaded = chat_completion_request.metadata.files if chat_completion_request.metadata else None
         inline = await InlineFile.store_all(chat_completion_request.inline_files(), context)
         return [*(uploaded or []), *inline] or None

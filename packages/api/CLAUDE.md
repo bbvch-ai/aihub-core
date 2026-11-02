@@ -38,7 +38,7 @@ packages/api/
 │   │   ├── i18n/               # Locale endpoints
 │   │   └── parsing/            # Document parsing (MinerU)
 │   ├── services/               # Dynamic endpoint discovery (NATS-based)
-│   ├── request_limits/         # JSON body-size middleware (API_REQUEST_* settings)
+│   ├── request_limits/         # Request body-size middleware (API_REQUEST_* settings)
 │   ├── events/                 # EventModelCreationService (Jambo)
 │   ├── rpc/                    # NATS RPC responders (agent/process config)
 │   ├── sockets/                # WebSocket manager, sender, event wrapping
@@ -236,9 +236,11 @@ registered class (or its closest parent), validates against the real input model
 and locale. Never add field- or event-specific logic to the API for this; see ADR
 `2026_10_30_events_own_their_api_input`.
 
-**Request size**: `request_limits/JsonBodySizeLimitMiddleware` refuses JSON bodies over
-`API_REQUEST_MAX_JSON_BODY_BYTES` (64 MB) while they arrive. It is registered first in `ApiRunner._get_api_app`, so CORS
-still wraps its 413. Multipart and binary endpoints bound their bodies themselves.
+**Request size**: `request_limits/BodySizeLimitMiddleware` refuses any request body over `API_REQUEST_MAX_BODY_BYTES`
+(64 MB) while it arrives, whatever its content type: FastAPI reads the whole body of every endpoint that takes one, so a
+JSON-only limit could be bypassed by sending another type or none. Multipart uploads (spooled to disk) and the paths
+passed as `exempt_path_suffixes` (the parsing upload, which streams and bounds itself at 100 MB) are left out. It is
+registered first in `ApiRunner._get_api_app`, so CORS still wraps its 413.
 
 ## Agent-API Communication
 

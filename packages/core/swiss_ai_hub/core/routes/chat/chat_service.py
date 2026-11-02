@@ -102,6 +102,20 @@ class ChatService:
     """
 
     @staticmethod
+    def existing_thread_of(user: UserIdentity, thread_id: ObjectId | None) -> ThreadEntity | None:
+        """The thread a message continues, or None when it does not exist yet. A thread the user is no member of is
+        refused, before anything the message carries is stored."""
+        if not thread_id:
+            return None
+        try:
+            thread = ThreadEntity.get_thread_by_id(str(thread_id))
+        except mongoengine.errors.DoesNotExist:
+            return None
+        if thread and user.id not in [u.user_id for u in thread.users]:
+            raise HTTPException(status_code=403, detail="User not part of the thread")
+        return thread or None
+
+    @staticmethod
     async def iter_streamed_display_events(
         resources: StreamingResources,
         drain_grace_seconds: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
@@ -160,17 +174,7 @@ class ChatService:
         Common initialization steps for both streaming and JSON interactions.
         """
         messages = ChatService._without_earlier_tables(messages)
-        thread = None
-        if thread_id:
-            try:
-                thread = ThreadEntity.get_thread_by_id(str(thread_id))
-                if not thread:
-                    raise mongoengine.errors.DoesNotExist()
-                if user.id not in [u.user_id for u in thread.users]:
-                    raise HTTPException(status_code=403, detail="User not part of the thread")
-            except mongoengine.errors.DoesNotExist:
-                pass
-
+        thread = ChatService.existing_thread_of(user, thread_id)
         if not thread:
             thread = ThreadEntity.create_thread(
                 "chat",

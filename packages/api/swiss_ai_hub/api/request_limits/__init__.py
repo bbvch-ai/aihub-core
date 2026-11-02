@@ -4,16 +4,16 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.api.request_limits.api_request_limit_settings import ApiRequestLimitSettings
-    from swiss_ai_hub.api.request_limits.json_body_size_limit_middleware import JsonBodySizeLimitMiddleware
+    from swiss_ai_hub.api.request_limits.body_size_limit_middleware import BodySizeLimitMiddleware
 
 __all__ = [
     "ApiRequestLimitSettings",
-    "JsonBodySizeLimitMiddleware",
+    "BodySizeLimitMiddleware",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
     "ApiRequestLimitSettings": "swiss_ai_hub.api.request_limits.api_request_limit_settings",
-    "JsonBodySizeLimitMiddleware": "swiss_ai_hub.api.request_limits.json_body_size_limit_middleware",
+    "BodySizeLimitMiddleware": "swiss_ai_hub.api.request_limits.body_size_limit_middleware",
 }
 
 

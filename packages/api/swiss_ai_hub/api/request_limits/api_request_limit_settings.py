@@ -9,10 +9,10 @@ class ApiRequestLimitSettings(EnvironmentSettings):
 
     model_config = EnvironmentSettings.create_settings_config("API_REQUEST_")
 
-    MAX_JSON_BODY_BYTES: Annotated[
+    MAX_BODY_BYTES: Annotated[
         int,
         Field(
-            description="Largest JSON request body accepted, in bytes. It bounds base64 files sent inline too, which "
-            "grow by a third when encoded."
+            description="Largest request body accepted, in bytes, except multipart uploads and the document parsing "
+            "upload, which bound their own. It bounds base64 files sent inline too, which grow by a third when encoded."
         ),
     ] = 64 * 1024 * 1024

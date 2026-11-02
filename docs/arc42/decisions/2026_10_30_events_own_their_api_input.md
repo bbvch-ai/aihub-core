@@ -44,8 +44,9 @@ Images sent as `data:` URLs already travel inside `UserMessageEvent` today, whic
   `AGENT_INLINE_FILE_*`.
 - **The OpenAI-compatible endpoint stays custom code.** It turns the `file` parts of the last user message into
   `InlineFile`s and stores them with the same `store_all`.
-- **A pure-ASGI `JsonBodySizeLimitMiddleware` rejects any JSON body over `API_REQUEST_MAX_JSON_BODY_BYTES`** (64 MiB)
-  while it arrives, before it is parsed. Multipart and binary endpoints keep their own limits.
+- **A pure-ASGI `BodySizeLimitMiddleware` rejects any request body over `API_REQUEST_MAX_BODY_BYTES`** (64 MiB) while it
+  arrives, before it is read. It applies whatever the content type, since FastAPI reads every body whole. Multipart
+  uploads and the document parsing upload, which streams and bounds itself, are left out.
 
 Rejected alternatives:
 
