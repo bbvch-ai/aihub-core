@@ -453,6 +453,10 @@ agent:
         nicht verfügbar.
   export:
     button: Exportieren
+  storedSecrets:
+    title: Geheimnisse erneut eingeben
+    detail: 'Gespeicherte Geheimnisse werden nie in ein neues Profil übernommen. Geben
+      Sie sie vor dem Speichern erneut ein: {fields}'
   configuration:
     title: Agentenkonfiguration
     description: Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für
