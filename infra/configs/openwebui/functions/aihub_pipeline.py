@@ -1043,6 +1043,17 @@ class HumanInTheLoopHandler(EventHandler):
 
         logger.info(f"Received HITL request (type={hitl_type}): {question}")
 
+        # Chat type with choice questions: show Open WebUI's question dialog; the text question stays the fallback
+        if hitl_type == "chat" and event.get("questions"):
+            answers = await self._ask_questions(event["questions"], context)
+            if answers is not None:
+                context.state_manager.start_text_block(f"\n\n{self._chosen_answers(event['questions'], answers)}\n\n")
+                await context.emitter(
+                    {"type": "replace", "data": {"content": context.state_manager.serialize_to_html()}}
+                )
+                await self._send_response(json.dumps(answers, ensure_ascii=False), event, context)
+                return True
+
         # Chat type: Display question as regular chat message, no popup
         # User will respond by typing a normal chat message
         if hitl_type == "chat":
@@ -1081,18 +1092,65 @@ class HumanInTheLoopHandler(EventHandler):
             result = result.get("value", "") if isinstance(result, dict) else str(result)
 
         if result is not None and result != "":
-            response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")
-            hitl_display_id = topic.get("display_id", "")
-            agent_class = topic.get("agent_class", "")
-            agent_id = topic.get("agent_id", "")
-
-            response_payload = {"response": result, "request_event": event}
-
-            await context.stream_service.send_hitl_response(
-                response_event_name, response_payload, hitl_display_id, context, agent_class, agent_id
-            )
+            await self._send_response(result, event, context)
 
         return True
+
+    @staticmethod
+    async def _send_response(
+        result: Annotated[Any, "The human's answer"],
+        event: Annotated[dict[str, Any], "HITL request event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> None:
+        topic = event.get("topic", {})
+        await context.stream_service.send_hitl_response(
+            topic.get("event_name", "HumanInTheLoopResponseEvent"),
+            {"response": result, "request_event": event},
+            topic.get("display_id", ""),
+            context,
+            topic.get("agent_class", ""),
+            topic.get("agent_id", ""),
+        )
+
+    @staticmethod
+    async def _ask_questions(
+        questions: Annotated[list[dict[str, Any]], "Choice questions of the request"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[Optional[dict[str, Any]], "The answers by question id, or None to fall back to the text question"]:
+        """Open WebUI's question dialog; a cancelled, failed or unsupported dialog leaves the question to the chat."""
+        try:
+            result = await context.caller(
+                {
+                    "type": "request:user_input",
+                    "data": {"questions": questions, "allow_other": True, "timeout_ms": None},
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Question dialog failed, asking in the chat instead: {e}")
+            return None
+        if not isinstance(result, dict) or result.get("status") != "answered" or not result.get("answers"):
+            logger.info(f"Question dialog not answered ({result!r}), asking in the chat instead")
+            return None
+        return result["answers"]
+
+    @staticmethod
+    def _chosen_answers(
+        questions: Annotated[list[dict[str, Any]], "Choice questions of the request"],
+        answers: Annotated[dict[str, Any], "The answers by question id"],
+    ) -> Annotated[str, "The answers as a short list"]:
+        lines = []
+        for question in questions:
+            answer = answers.get(question.get("id"), {})
+            if answer.get("type") == "other":
+                chosen = answer.get("text", "")
+            else:
+                option = answer.get("option_index", 0)
+                options = question.get("options", [])
+                label = answer.get("label") or (options[option].get("label") if option < len(options) else "")
+                description = options[option].get("description", "") if option < len(options) else ""
+                chosen = f"{label} ({description})" if description else label
+            lines.append(f"- **{question.get('header', question.get('id'))}:** {chosen}")
+        return "\n".join(lines)
 
 
 class ExceptionEventHandler(EventHandler):

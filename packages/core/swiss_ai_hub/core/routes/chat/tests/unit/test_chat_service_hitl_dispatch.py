@@ -22,6 +22,10 @@ from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_chat_respons
 from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_input_response_event import (
     HumanInTheLoopInputResponseEvent,
 )
+from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_event import (
+    HumanInTheLoopResponseEvent,
+)
+from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity, User
 from swiss_ai_hub.core.routes.chat.chat_service import ChatService
@@ -51,25 +55,50 @@ def _install_stubs(
     open_request: HumanInTheLoopRequestEvent,
     user_id: str,
 ) -> SimpleNamespace:
+    return _install_thread(monkeypatch, [open_request], [], user_id)
+
+
+def _install_thread(
+    monkeypatch: pytest.MonkeyPatch,
+    requests: list[HumanInTheLoopRequestEvent],
+    responses: list[HumanInTheLoopResponseEvent],
+    user_id: str,
+) -> SimpleNamespace:
+    """The thread's persisted requests and responses, as the entity's control-event queries return them."""
     thread = SimpleNamespace(id=ObjectId(), users=[User(user_id=user_id)])
-
-    def _create_thread(*args, **kwargs):
-        return thread
-
-    persisted = SimpleNamespace(event_data=open_request.model_dump())
+    persisted_requests = [SimpleNamespace(event_data=request.model_dump()) for request in requests]
+    persisted_responses = [SimpleNamespace(event_data=response.model_dump()) for response in responses]
 
     monkeypatch.setattr(ThreadEntity, "create_thread", classmethod(lambda cls, *a, **kw: thread))
     monkeypatch.setattr(
         PersistedAgentEventEntity,
         "human_in_the_loop_request_events_for_thread",
-        classmethod(lambda cls, thread_id: [persisted]),
+        classmethod(lambda cls, thread_id: persisted_requests),
     )
     monkeypatch.setattr(
         PersistedAgentEventEntity,
         "human_in_the_loop_response_events_for_thread",
-        classmethod(lambda cls, thread_id: []),
+        classmethod(lambda cls, thread_id: persisted_responses),
     )
     return thread
+
+
+def _chat_request(question: str) -> HumanInTheLoopChatRequestEvent:
+    topic = _build_hitl_topic(event_name=HumanInTheLoopChatResponseEvent.event_name_from_class())
+    return HumanInTheLoopChatRequestEvent(question=question, topic=topic)
+
+
+def _answer(request: HumanInTheLoopChatRequestEvent, text: str) -> HumanInTheLoopChatResponseEvent:
+    return HumanInTheLoopChatResponseEvent(response=text, request_event=request.model_dump())
+
+
+def _send(text: str):
+    return ChatService._initialize_interaction(
+        user=fake_user(),
+        agent_class=AGENT_CLASS,
+        agent_id=AGENT_ID,
+        messages=[ChatMessage(role=MessageRole.USER, content=text)],
+    )[0].event
 
 
 @pytest.mark.parametrize(
@@ -116,3 +145,32 @@ def test_hitl_dispatch_rejects_unsupported_request_type(monkeypatch: pytest.Monk
             agent_id=AGENT_ID,
             messages=[ChatMessage(role=MessageRole.USER, content="yes")],
         )
+
+
+def test_a_message_after_an_answered_form_starts_a_new_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    form = _chat_request("Please confirm the request")
+    _install_thread(monkeypatch, [form], [_answer(form, '{"where": {"type": "option", "option_index": 0}}')], "u")
+
+    assert isinstance(_send("Extract the 2024 invoices too"), UserMessageEvent)
+
+
+def test_a_reply_answers_the_open_request_not_an_answered_one(monkeypatch: pytest.MonkeyPatch) -> None:
+    first = _chat_request("First form")
+    second = _chat_request("Second form")
+    _install_thread(monkeypatch, [first, second], [_answer(first, "yes")], "u")
+
+    event = _send("yes")
+
+    assert isinstance(event, HumanInTheLoopChatResponseEvent)
+    assert event.request_event.event_id == second.event_id
+
+
+def test_a_reply_answers_the_open_request_even_when_a_newer_one_was_answered(monkeypatch: pytest.MonkeyPatch) -> None:
+    older = _chat_request("Older form")
+    newer = _chat_request("Newer form")
+    _install_thread(monkeypatch, [older, newer], [_answer(newer, "yes")], "u")
+
+    event = _send("yes")
+
+    assert isinstance(event, HumanInTheLoopChatResponseEvent)
+    assert event.request_event.event_id == older.event_id

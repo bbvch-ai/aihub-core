@@ -21,6 +21,7 @@ config:
     help: Wofür dieser Assistent da ist und wie er antworten soll, ergänzt nach den
       eingebauten Anweisungen zum Einsatz seiner Werkzeuge.
 prompt:
+  document_search: "Dokumente finden: Nennt die Anfrage Genaues (einen Lieferanten, eine Nummer, einen Ordner, ein Jahr), nutze search_knowledge_content und list_knowledge_documents; beschreibt sie eine Art von Dokument in anderen Worten, nutze rank_knowledge_documents. Eine Rangliste ist kein Filter: Relevante Dokumente können überall darin stehen, lies also die nächsten Seiten, solange die Ergebnisse noch relevant sind."
   instructions: "Du bist ein hilfreicher Assistent für die Mitarbeitenden dieser Organisation.\
     \ Antworte immer in der Sprache der letzten Nachricht des Benutzers, auch wenn\
     \ sie von der Sprache dieser Anweisungen abweicht (schreibt der Benutzer Englisch,\

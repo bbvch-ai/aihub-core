@@ -1,5 +1,8 @@
 ---
 steps:
+  answer_form:
+    name: "Répondre au formulaire"
+    description: "Exécute l'extraction que l'utilisateur a confirmée ou corrigée dans le formulaire de la demande"
   plan:
     name: Planifier le tableau
     description: Détermine les documents sélectionnés et conçoit les colonnes du tableau
@@ -38,17 +41,7 @@ tools:
     label: Extraire un tableau
     approval: 'Extraire un tableau avec ces colonnes des documents de connaissances
       : {fields}'
-    description: Extrait un tableau de nombreux documents de connaissances, une ligne
-      par enregistrement trouvé, chaque ligne indiquant son fichier. Utilise-le quand
-      l'utilisateur veut des enregistrements rassemblés à travers plusieurs documents,
-      par exemple chaque position de matériel sur les factures 2025 d'un fournisseur
-      ; pas pour une question à laquelle un seul document ou la recherche de connaissances
-      répond. Trouve d'abord les documents avec les outils de liste et de recherche
-      et vérifie-les avec select_knowledge_documents ; puis appelle-le avec les mêmes
-      conditions. L'utilisateur voit le tableau directement et peut le télécharger
-      en entier ; tu reçois son résumé. Quand plus de documents correspondent qu'une
-      réponse n'en extrait sans demander, l'utilisateur reçoit un échantillon et décide
-      ; extrais-les tous seulement s'il est d'accord, avec confirm_sample à true.
+    description: "Extrait un tableau de nombreux documents de connaissances, une ligne par enregistrement trouvé, chaque ligne indiquant son fichier. Utilise-le quand l'utilisateur veut des enregistrements rassemblés à travers plusieurs documents, par exemple chaque position de matériel sur les factures 2025 d'un fournisseur ; pas pour une question à laquelle un seul document ou la recherche de connaissances répond. Trouve d'abord les documents avec les outils de liste et de recherche et vérifie-les avec select_knowledge_documents ; puis appelle-le avec les mêmes conditions. L'utilisateur voit le tableau directement et peut le télécharger en entier ; tu reçois son résumé. Quand plus de documents correspondent qu'une réponse n'en extrait sans demander, l'utilisateur reçoit un échantillon et décide ; extrais-les tous seulement s'il est d'accord, avec confirm_sample à true. Avant qu'une nouvelle extraction ne s'exécute, l'utilisateur la confirme ou la corrige dans un formulaire ; suis ensuite ce que dit le résultat."
   select:
     label: Sélectionner des documents
     approval: 'Sélectionner des documents de connaissances pour un tableau avec ces
@@ -114,3 +107,50 @@ progress:
   reading: Lecture de %{path}, un long document.
   still_reading: Lecture de %{path} en cours (%{minutes} min).
   extracted_rows: '%{done} sur %{files} · %{path} : %{rows} lignes — %{first}'
+form:
+  intro: "Avant de lire les documents, merci de confirmer ce que j'ai compris :"
+  reply_hint: "Réponds *oui* pour continuer, ou écris ce qu'il faut changer :"
+  as_understood: "Comme compris"
+  where:
+    header: "Emplacement"
+    question: "Quels documents dois-je lire ? J'ai compris : %{value}."
+    hint: "Pour n'en lire qu'une partie, nomme un dossier, un fichier ou une année."
+    folders: "Dossiers : %{folders}"
+    anything: "Tous les documents"
+    anything_description: "Lire chaque document du périmètre de cet agent"
+    everything: "tous les documents du périmètre"
+    line: "**Emplacement :** %{value}"
+  rows:
+    header: "Condition de filtre"
+    question: "Quels enregistrements le tableau doit-il garder ? J'ai compris : %{value}."
+    hint: "Une condition sur les enregistrements, pas un calcul, p. ex. de Lieferant GmbH · datées de 2018 · seulement le matériel."
+    anything: "Chaque ligne"
+    anything_description: "Garder chaque ligne des documents"
+    everything: "chaque ligne"
+    line: "**Condition de filtre :** %{value}"
+  columns:
+    header: "Valeurs à extraire"
+    question: "Quelles valeurs chaque ligne doit-elle contenir ? J'ai compris : %{value}."
+    hint: "Les valeurs décident de ce qu'est une ligne, p. ex. numéro de facture, date, total net → une ligne par facture ; article, quantité, montant net → une ligne par position."
+    anything: "L'agent choisit"
+    anything_description: "Des valeurs adaptées aux enregistrements demandés"
+    unnamed: "aucune nommée"
+    line: "**Valeurs à extraire :** %{value}"
+  exact:
+    header: "Mots-clés exacts"
+    question: "Quels mots les documents voulus contiennent-ils tels quels ? J'ai compris : %{value}."
+    hint: "Facultatif, p. ex. un nom de fournisseur comme Lieferant GmbH · un numéro de facture ou de contrat. Ils guident la recherche et ne filtrent jamais."
+    anything: "Aucun"
+    anything_description: "La recherche décide"
+    none: "aucun"
+    line: "**Mots-clés exacts :** %{value}"
+  semantic:
+    header: "Mots-clés sémantiques"
+    question: "De quoi parlent les documents voulus ? J'ai compris : %{value}."
+    hint: "Facultatif, p. ex. facture fournisseur avec positions · contrat de location · police d'assurance. Ils classent les documents par le sens et ne filtrent jamais."
+    anything: "Aucun"
+    anything_description: "La recherche décide"
+    none: "aucun"
+    line: "**Mots-clés sémantiques :** %{value}"
+  declined: "L'utilisateur a refusé cette extraction dans le formulaire de la demande. N'extrais pas ; demande-lui ce qu'il souhaite à la place."
+  rewritten: "L'utilisateur a répondu au formulaire de cette extraction par : \"%{reply}\". Appelle à nouveau extract_records avec les arguments modifiés en conséquence ; l'appel s'exécute sans nouvelle question."

@@ -215,6 +215,8 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 ├── ControlAndDisplayEvent (dual purpose)                          [events/agent/control_and_display_event.py]
 │   ├── StartEvent, StopEvent (workflow lifecycle)                 [events/agent/control/]
 │   ├── HumanInTheLoopRequest/Response (HITL)                     [events/agent/hitl/]
+│   │   ├── Input, Confirmation, Chat requests (popup, yes/no, next chat message answers)
+│   │   └── QuestionsRequest (a Chat request + ≤5 HumanInTheLoopChoiceQuestion: OpenWebUI's dialog, else `question` as text)
 │   ├── AgentInTheLoopRequest/Response (AITL)                     [events/agent/aitl/]
 │   ├── BotInTheLoopRequest/Response (BITL)                       [events/agent/bitl/]
 │   ├── SemanticEvent (OpenInference tracing)                     [events/agent/semantic/]
@@ -515,6 +517,16 @@ display metadata — name, description, access rules; **NOT** the source of trut
 role assignments), `ThreadEntity` (conversations), `PersistedAgentEventEntity` / `PersistedProcessEventEntity` (event
 storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserDashboardEntity` (dashboard config),
 `NotificationEntity`, `LocaleStringEntity`.
+
+**Open HITL requests are matched by id**: `PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread` returns
+the thread's requests no response names in `request_event.event_id`, oldest first; the request query reads control
+events only, since every request is persisted as a control and as a display event. `ChatService` answers the newest open
+input or chat request with the next chat message, and the API's open-chat-HITL check uses the same method. Comparing
+request and response counts, as before, routed the second message of a thread with an earlier, answered HITL to that
+request. `HumanInTheLoopQuestionsRequestEvent` is a chat request, so every client can answer it: the OpenWebUI pipe
+sends the dialog's answers as JSON in the response event itself, and a typed reply (any client, or OpenWebUI after a
+cancelled dialog) takes the path above. Its `HumanInTheLoopChoiceQuestion` (1–3 `HumanInTheLoopChoiceOption`, the
+recommended one first) and option lengths are capped as OpenWebUI's `request:user_input` caps them.
 
 **Vector store — children are not persisted**: `PartitionAwareMilvusVectorStore.add` strips `NodeRelationship.CHILD`
 before serializing. LlamaIndex packs every relationship into `_node_content` inside Milvus' dynamic field, which is

@@ -20,6 +20,7 @@ config:
     help: What this assistant is for and how it should answer, added after the built-in
       instructions on using its tools.
 prompt:
+  document_search: "Finding documents: when the request names exact things (a supplier, a number, a folder, a year), use search_knowledge_content and list_knowledge_documents; when it describes a kind of document in other words, use rank_knowledge_documents. A ranking is not a filter: relevant documents can stand anywhere in it, so keep reading its next pages while the results are still relevant."
   instructions: "You are a helpful assistant for the people of this organisation.\
     \ Always answer in the language of the user's last message, even when it differs\
     \ from the language of these instructions.\n\nChoosing tools:\n- Use your tools\

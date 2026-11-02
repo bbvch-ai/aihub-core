@@ -6442,6 +6442,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/HumanInTheLoopConfirmationRequestEvent",
         },
         {
+          $ref: "#/components/schemas/HumanInTheLoopQuestionsRequestEvent",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopChatRequestEvent",
         },
         {
@@ -11631,6 +11634,76 @@ export const HumanInTheLoopChatResponseEventSchema = {
   description: "Response containing chat-style input from a human operator.",
 } as const;
 
+export const HumanInTheLoopChoiceOptionSchema = {
+  properties: {
+    label: {
+      type: "string",
+      maxLength: 80,
+      minLength: 1,
+      title: "Label",
+      description: "The answer's short label.",
+    },
+    description: {
+      type: "string",
+      maxLength: 240,
+      minLength: 1,
+      title: "Description",
+      description: "What choosing the answer means.",
+    },
+  },
+  type: "object",
+  required: ["label", "description"],
+  title: "HumanInTheLoopChoiceOption",
+  description:
+    "One answer a choice question offers; lengths are capped as OpenWebUI's dialog caps them.",
+} as const;
+
+export const HumanInTheLoopChoiceQuestionSchema = {
+  properties: {
+    id: {
+      type: "string",
+      maxLength: 64,
+      minLength: 1,
+      title: "Id",
+      description: "Key the answer is returned under.",
+    },
+    header: {
+      type: "string",
+      maxLength: 48,
+      title: "Header",
+      description: "A short title for the question.",
+    },
+    question: {
+      type: "string",
+      maxLength: 500,
+      minLength: 1,
+      title: "Question",
+      description: "The question itself.",
+    },
+    options: {
+      items: {
+        $ref: "#/components/schemas/HumanInTheLoopChoiceOption",
+      },
+      type: "array",
+      maxItems: 3,
+      minItems: 1,
+      title: "Options",
+      description: "The answers offered, the recommended one first.",
+    },
+    allow_other: {
+      type: "boolean",
+      title: "Allow Other",
+      description: "Whether the user may write an answer of their own.",
+      default: true,
+    },
+  },
+  type: "object",
+  required: ["id", "header", "question", "options"],
+  title: "HumanInTheLoopChoiceQuestion",
+  description:
+    "A question a client with a dialog shows with its options; the first option is the one the agent recommends.",
+} as const;
+
 export const HumanInTheLoopConfirmationRequestEventSchema = {
   properties: {
     event_id: {
@@ -11935,6 +12008,106 @@ export const HumanInTheLoopInputResponseEventSchema = {
   title: "HumanInTheLoopInputResponseEvent",
   description:
     "Response containing free-form text input from a human operator.",
+} as const;
+
+export const HumanInTheLoopQuestionsRequestEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    question: {
+      type: "string",
+      title: "Question",
+      description: "The query or prompt presented to the human operator.",
+    },
+    topic: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/PartialAgentTopic",
+        },
+        {
+          $ref: "#/components/schemas/AgentInstanceTopic",
+        },
+      ],
+      title: "Topic",
+      description:
+        "A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+    },
+    hitl_type: {
+      type: "string",
+      const: "chat",
+      title: "Hitl Type",
+      default: "chat",
+    },
+    questions: {
+      items: {
+        $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
+      },
+      type: "array",
+      maxItems: 5,
+      minItems: 1,
+      title: "Questions",
+      description: "The question's parts, for clients that show a dialog.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "question",
+    "topic",
+    "questions",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "HumanInTheLoopQuestionsRequestEvent",
+  description:
+    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nfive questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -35795,6 +35968,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/HumanInTheLoopConfirmationRequestEventWritable",
         },
         {
+          $ref: "#/components/schemas/HumanInTheLoopQuestionsRequestEventWritable",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopChatRequestEventWritable",
         },
         {
@@ -38827,6 +39003,83 @@ export const HumanInTheLoopInputResponseEventWritableSchema = {
   title: "HumanInTheLoopInputResponseEvent",
   description:
     "Response containing free-form text input from a human operator.",
+} as const;
+
+export const HumanInTheLoopQuestionsRequestEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    question: {
+      type: "string",
+      title: "Question",
+      description: "The query or prompt presented to the human operator.",
+    },
+    topic: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/PartialAgentTopic",
+        },
+        {
+          $ref: "#/components/schemas/AgentInstanceTopic",
+        },
+      ],
+      title: "Topic",
+      description:
+        "A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+    },
+    hitl_type: {
+      type: "string",
+      const: "chat",
+      title: "Hitl Type",
+      default: "chat",
+    },
+    questions: {
+      items: {
+        $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
+      },
+      type: "array",
+      maxItems: 5,
+      minItems: 1,
+      title: "Questions",
+      description: "The question's parts, for clients that show a dialog.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["question", "topic", "questions"],
+  title: "HumanInTheLoopQuestionsRequestEvent",
+  description:
+    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nfive questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
 } as const;
 
 export const HumanInTheLoopRequestEventWritableSchema = {
