@@ -62,7 +62,9 @@ class SandboxTools(BaseToolSpec):
           which code reads natively. Read PDF and Word files with the tool for attached files, but a PDF table you
           need every row of with pdfplumber.
         - Print what the next step needs, such as counts, totals or the first rows, not whole tables: long output is
-          cut.
+          cut. A parser that skips what it cannot read should print how many lines it skipped.
+        - Write a script of more than one statement with write_file and run it, rather than `python3 -c`: a `with`
+          or `for` block cannot follow a semicolon.
         - The result says whether the command succeeded and which files it created or changed. A command that
           succeeded has done its work: do not run it again unless you changed it or need its effect again.
         - A file you made for the user only reaches them through display_file."""
