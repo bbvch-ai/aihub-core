@@ -41,6 +41,47 @@ The encryption does **not** protect against threats while the system is running 
 memory-based attacks or compromised application credentials. These threats are addressed through complementary controls
 in access management, network segmentation, and runtime security monitoring.
 
+## Secret Configuration Fields
+
+Independently of the volume encryption, the platform encrypts the secret fields of agent profiles and knowledge source
+configurations itself. A field is secret when its form declares it as a password input or a key file; no field name is
+hard-coded. For agents these are the mailbox password and the Entra ID client secret of the Email Agent, the API key of
+an MCP Tool Agent connection, and the Jira token of the Release Notes Assistant.
+
+- **Encrypted at rest**: The API encrypts a secret before it stores it, with the key in `AIHUB_CONFIG_ENCRYPTION_KEY`.
+  The database, its backups and the configuration an agent fetches over NATS hold only the ciphertext.
+- **Decrypted only where it is used**: An agent decrypts its secrets only when it validates the profile for a run. The
+  run state it keeps in Valkey holds the ciphertext.
+- **Masked in responses**: The API never returns a secret or its ciphertext. A stored secret is shown as a mask, and
+  saving the form with the mask unchanged keeps the stored secret. A mask is bound to its field and profile and is
+  refused anywhere else.
+- **Export, import and clone**: An exported profile holds masks, never secrets. Importing such a file or cloning a
+  profile clears the masked fields, and the Admin UI names them so you can enter them again before saving.
+
+### The Key
+
+`AIHUB_CONFIG_ENCRYPTION_KEY` is a Fernet key, the url-safe base64 encoding of 32 random bytes. Generate one with
+`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. The same key must reach the
+API, the knowledge pipelines and every agent whose profiles hold a secret: `imap_agent`, `email_classification_agent`
+and `release_notes_agent` in the shipped compose files, and any custom SDK agent that declares a password field.
+
+- **Required once a secret is stored**: The API refuses to start while a stored profile holds a secret and the key is
+  missing or malformed. Profiles that leave every secret blank need no key.
+- **No rotation**: Changing the key makes every stored secret unreadable. Enter the secrets again after a change.
+- **Backups are tied to the key**: A database backup restores usable secrets only together with the key in use when it
+  was taken. Keep the key safe, and separate from the backups.
+
+### Upgrading to Encrypted Agent Secrets
+
+Agent profiles saved before agent secrets were encrypted still hold them in plaintext, and the API encrypts them on its
+first start. Upgrade the agent containers first, or in the same deployment, and the API last: an agent that cannot
+decrypt would use the ciphertext as its credential. Custom SDK agents with password fields must be upgraded, and given
+the key, before the API. After the upgrade:
+
+- Rotate the IMAP, MCP and Jira credentials. Exports, traces and backups made before the upgrade may still hold them in
+  plaintext.
+- Reload any profile form left open during the upgrade. Saving it may be refused with a request to resubmit the form.
+
 # Data Encryption in Transit
 
 All data transmitted between the platform and external clients, as well as connections to external services, is

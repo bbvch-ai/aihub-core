@@ -713,8 +713,8 @@ Read-only Jira access for agents (#1951), Jira Cloud and Jira Data Center alike.
 agent configuration: the agent embeds the group and passes it in.
 
 - **`JiraConnectionConfig`** is a `StepConfig` with `base_url`, `deployment` (`cloud` | `data_center`), `email` (Cloud
-  only) and `api_token` (a `Password`, so #1587 will encrypt it with every other secret field). A step receives it by
-  its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
+  only) and `api_token` (a `Password`, so it is stored encrypted like every other secret field, #1587). A step receives
+  it by its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
   deployment-fixed: absent from the form, but bounded in the schema because a direct API save can set them. Cross-field
   rules (Cloud needs an e-mail) are `problems()`, checked when a search starts, never a validator.
 - **`JiraTicketSearch.find_tickets(connection, project_keys, clauses)`** returns every matching `JiraTicket` (key, url,

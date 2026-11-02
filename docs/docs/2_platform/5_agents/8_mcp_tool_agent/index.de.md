@@ -1,7 +1,7 @@
 ---
 title: MCP Tool Agent
 description: Verbindet sich mit einem externen Tool-Server (MCP) und nutzt dessen Tools, um Schritt für Schritt Aktionen auszuführen, bis die Aufgabe erledigt ist.
-source_sha: 59834e65a50dab0c26c0de4e12c5f35267301bf9fe37537da168b2710f9d90c7
+source_sha: 7760f63d6133dccd38b5edde1fc4de9517846f61ca9d155aaf18053cbd6519d7
 ---
 
 # MCP Tool Agent
@@ -115,13 +115,13 @@ Der Agent wird als **Blueprint** geliefert, aus dem Sie konfigurierte **Profile*
 
 Wie der Agent den externen Tool-Server erreicht.
 
-| Feld              | Typ             | Standard  | Beschreibung                                                                         |
-| :---------------- | :-------------- | :-------- | :----------------------------------------------------------------------------------- |
-| **Name**          | Text            | —         | Ein logischer Name für diese Verbindung. Erforderlich.                               |
-| **URL**           | Text            | —         | Die URL des MCP-Servers. Der Transport wird automatisch abgeleitet. Erforderlich.    |
-| **Auth-Modus**    | Auswahl         | `api_key` | Wie authentifiziert werden soll (siehe unten).                                       |
-| **API-Schlüssel** | Passwort        | *(leer)*  | Der statische Schlüssel, nur sichtbar, wenn **Auth-Modus** *API key* ist.            |
-| **Timeout**       | Zahl (Sekunden) | `30`      | Wie lange auf den Server gewartet werden soll, bevor aufgegeben wird. Bereich 1–300. |
+| Feld              | Typ             | Standard  | Beschreibung                                                                                                                                                                      |
+| :---------------- | :-------------- | :-------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Name**          | Text            | —         | Ein logischer Name für diese Verbindung. Erforderlich.                                                                                                                            |
+| **URL**           | Text            | —         | Die URL des MCP-Servers. Der Transport wird automatisch abgeleitet. Erforderlich.                                                                                                 |
+| **Auth-Modus**    | Auswahl         | `api_key` | Wie authentifiziert werden soll (siehe unten).                                                                                                                                    |
+| **API-Schlüssel** | Passwort        | *(leer)*  | Der statische Schlüssel, nur sichtbar, wenn **Auth-Modus** *API key* ist. Wird verschlüsselt gespeichert und maskiert angezeigt; lassen Sie die Maske stehen, um ihn zu behalten. |
+| **Timeout**       | Zahl (Sekunden) | `30`      | Wie lange auf den Server gewartet werden soll, bevor aufgegeben wird. Bereich 1–300.                                                                                              |
 
 **Authentifizierungsmodi:**
 
