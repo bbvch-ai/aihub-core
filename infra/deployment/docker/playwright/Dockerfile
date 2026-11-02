@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.63.0-jammy
+FROM mcr.microsoft.com/playwright:v1.64.1-jammy
 
 # The base image's CA store predates the eMudhra intermediate CA compromise (2026-10) and trusts emSign ECC Root CA - G3.
 # This refreshes the system store only: Chromium and Firefox compile their own root stores in, which change only with a
