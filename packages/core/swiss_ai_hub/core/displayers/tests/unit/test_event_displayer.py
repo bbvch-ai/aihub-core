@@ -141,3 +141,28 @@ def test_a_model_without_structured_outputs_gets_no_response_format_and_tools_st
     llm = SimpleNamespace(should_use_structured_outputs=False)
 
     assert EventDisplayer._answer_kwargs(llm, tools, ResponseSchema(name="any")) == {"tools": tools}
+
+
+def test_the_instruction_against_invented_values_joins_the_leading_system_message():
+    from swiss_ai_hub.core.generative_ai.prompting.response_schema_instruction import ResponseSchemaInstruction
+
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are helpful. Today is 2026-11-02."),
+        ChatMessage(role=MessageRole.USER, content="Extract the invoice."),
+    ]
+
+    instructed = ResponseSchemaInstruction.added_to(messages)
+
+    assert [message.role for message in instructed] == [MessageRole.SYSTEM, MessageRole.USER]
+    assert instructed[0].content.startswith("You are helpful. Today is 2026-11-02.")
+    assert "never use today's date" in instructed[0].content
+    assert messages[0].content == "You are helpful. Today is 2026-11-02."
+
+
+def test_without_a_system_message_the_instruction_becomes_one():
+    from swiss_ai_hub.core.generative_ai.prompting.response_schema_instruction import ResponseSchemaInstruction
+
+    instructed = ResponseSchemaInstruction.added_to([ChatMessage(role=MessageRole.USER, content="Extract.")])
+
+    assert instructed[0].role == MessageRole.SYSTEM
+    assert instructed[0].content == ResponseSchemaInstruction.TEXT

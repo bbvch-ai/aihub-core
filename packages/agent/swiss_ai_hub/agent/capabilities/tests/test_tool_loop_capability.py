@@ -14,12 +14,12 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
-    ResponseSchema,
     ChatFeature,
     KnowledgeReference,
     KnowledgeSearchedEvent,
     LLMEvent,
     Message,
+    ResponseSchema,
     RunToolLoopEvent,
     SearchKnowledgeEvent,
     TextContent,
@@ -315,13 +315,27 @@ class TestDecisions:
         assert displayer.display_llm_stream.await_args.kwargs["tools"][0]["function"]["name"] == "echo"
 
     @pytest.mark.asyncio
-    async def test_an_answering_turn_asks_for_the_requested_json_shape_next_to_the_tools(self):
-        schema = ResponseSchema(name="clock", json_schema={"type": "object", "properties": {"time": {"type": "string"}}})
+    async def test_a_turn_offering_tools_does_not_ask_for_the_json_shape(self):
+        """Asked for the shape next to the tools, a model answered at once instead of reading the attached file."""
+        schema = ResponseSchema(
+            name="clock", json_schema={"type": "object", "properties": {"time": {"type": "string"}}}
+        )
         with patch(f"{MODULE}.RequestedResponseSchema.of", new=AsyncMock(return_value=schema)):
             _, displayer = await _decide(_state(), ANSWER)
 
-        assert displayer.display_llm_stream.await_args.kwargs["response_schema"] == schema
+        assert displayer.display_llm_stream.await_args.kwargs["response_schema"] is None
         assert displayer.display_llm_stream.await_args.kwargs["tools"][0]["function"]["name"] == "echo"
+
+    @pytest.mark.asyncio
+    async def test_the_turn_answering_without_tools_asks_for_the_json_shape(self):
+        schema = ResponseSchema(
+            name="clock", json_schema={"type": "object", "properties": {"time": {"type": "string"}}}
+        )
+        with patch(f"{MODULE}.RequestedResponseSchema.of", new=AsyncMock(return_value=schema)):
+            _, displayer = await _decide(_state(iteration=5), ANSWER, max_iterations=5)
+
+        assert displayer.display_llm_stream.await_args.kwargs["tools"] is None
+        assert displayer.display_llm_stream.await_args.kwargs["response_schema"] == schema
 
     @pytest.mark.asyncio
     async def test_tool_calls_become_one_tool_event_each_and_a_join_point(self):

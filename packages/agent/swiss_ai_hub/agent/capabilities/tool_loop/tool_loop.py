@@ -551,12 +551,13 @@ class ToolLoop(Capability):
     ) -> LLMEvent:
         """The model's turn: streamed when it may be the reply, silent when the loop only gathers.
 
-        A reply asked for in a JSON shape is asked for on every answering turn, as OpenAI does: the model may still
-        call tools, and its reply is the JSON."""
+        A reply asked for in a JSON shape is asked for only on a turn without tools. Sent next to them, the shape
+        decided the first turn on a live check: the model answered at once with an invoice it made up, never reading
+        the attached one. A reply given on a turn with tools is put into the shape by `Conversation.complete`."""
         async with conversation.llm.cost_reporting_llm(displayer, user=user) as llm:
             if mode == ToolLoopMode.ANSWER:
                 return await displayer.display_llm_stream(
-                    conversation.llm, llm, messages, tools=tools, response_schema=response_schema
+                    conversation.llm, llm, messages, tools=tools, response_schema=None if tools else response_schema
                 )
             response = await (llm.achat(messages, tools=tools) if tools else llm.achat(messages))
         return LLMEvent(
