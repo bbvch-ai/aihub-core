@@ -1,6 +1,6 @@
 ---
 title: Datenverschlüsselung
-source_sha: 2947bd8ab525f84d11f173ea3986220f4bc95067dc27d1e226a96523cc5ccd14
+source_sha: 73fa26f8efa021b88de883df4decf745f3f70b4b3d04d1f9a7a2979998475f5c
 ---
 
 # Datenverschlüsselung im Ruhezustand
@@ -84,13 +84,18 @@ sowie jeden eigenen SDK-Agenten, der ein Passwortfeld deklariert.
 
 ### Upgrade auf verschlüsselte Agent-Geheimnisse
 
-Agent-Profile, die gespeichert wurden, bevor Agent-Geheimnisse verschlüsselt wurden, enthalten sie noch im Klartext; die
-API verschlüsselt sie bei ihrem ersten Start. Aktualisieren Sie zuerst die Agent-Container, oder im selben Deployment,
-und die API zuletzt: Ein Agent, der nicht entschlüsseln kann, würde den Chiffretext als Zugangsdaten verwenden. Eigene
-SDK-Agenten mit Passwortfeldern müssen vor der API aktualisiert werden und den Schlüssel erhalten. Nach dem Upgrade:
+Agent-Profile, die gespeichert wurden, bevor Agent-Geheimnisse verschlüsselt wurden, enthalten sie noch im Klartext. Die
+API verschlüsselt sie beim Start, sobald der Agent seinen Blueprint angekündigt hat; ein Profil wird daher unter
+Umständen erst bei einem späteren Neustart verschlüsselt. Aktualisieren Sie zuerst die Agent-Container, oder im selben
+Deployment, und die API zuletzt: Ein Agent, der nicht entschlüsseln kann, würde den Chiffretext als Zugangsdaten
+verwenden. Eigene SDK-Agenten mit Passwortfeldern müssen vor der API aktualisiert werden und den Schlüssel erhalten.
+Ersetzen Sie alle API-Replikate gemeinsam: Ein Replikat von vor dem Upgrade gibt gespeicherten Chiffretext zurück, wo
+die neuen eine Maske liefern. Nach dem Upgrade:
 
-- Erneuern Sie die IMAP-, MCP- und Jira-Zugangsdaten. Exporte, Traces und Backups von vor dem Upgrade können sie noch im
+- Erneuern Sie die IMAP-, MCP- und Jira-Zugangsdaten. Exporte und Backups von vor dem Upgrade können sie noch im
   Klartext enthalten.
+- Schritt-Traces in Langfuse können die entschlüsselten Werte enthalten, mit denen ein Lauf gearbeitet hat, vor dem
+  Upgrade wie danach. Ihre Schwärzung ist eine separate Änderung.
 - Laden Sie jedes Profilformular neu, das während des Upgrades offen war. Das Speichern kann sonst mit der Aufforderung
   abgelehnt werden, das Formular erneut abzusenden.
 

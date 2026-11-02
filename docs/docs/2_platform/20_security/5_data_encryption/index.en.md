@@ -73,13 +73,17 @@ and `release_notes_agent` in the shipped compose files, and any custom SDK agent
 
 ### Upgrading to Encrypted Agent Secrets
 
-Agent profiles saved before agent secrets were encrypted still hold them in plaintext, and the API encrypts them on its
-first start. Upgrade the agent containers first, or in the same deployment, and the API last: an agent that cannot
-decrypt would use the ciphertext as its credential. Custom SDK agents with password fields must be upgraded, and given
-the key, before the API. After the upgrade:
+Agent profiles saved before agent secrets were encrypted still hold them in plaintext. The API encrypts them when it
+starts, once the agent has announced its blueprint, so a profile may only be encrypted on a later restart. Upgrade the
+agent containers first, or in the same deployment, and the API last: an agent that cannot decrypt would use the
+ciphertext as its credential. Custom SDK agents with password fields must be upgraded, and given the key, before the
+API. Replace all API replicas together: a replica from before the upgrade returns stored ciphertext where the new ones
+return a mask. After the upgrade:
 
-- Rotate the IMAP, MCP and Jira credentials. Exports, traces and backups made before the upgrade may still hold them in
+- Rotate the IMAP, MCP and Jira credentials. Exports and backups made before the upgrade may still hold them in
   plaintext.
+- Step traces in Langfuse may hold the decrypted values a run used, before the upgrade and after it. Redacting them is a
+  separate change.
 - Reload any profile form left open during the upgrade. Saving it may be refused with a request to resubmit the form.
 
 # Data Encryption in Transit

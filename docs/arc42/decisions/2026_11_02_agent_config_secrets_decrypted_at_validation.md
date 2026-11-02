@@ -22,9 +22,14 @@ decrypts when it builds the source. #2263 added the refusal of submitted ciphert
 
 ## Decision
 
-1. **Secret paths come from the class form.** `AgentConfig.secret_field_paths()` walks `as_form()` for `Password` and
-   `SecretFileInput` elements, mirroring `SourcePipelineConfig.secret_field_paths()`. Many configs (playground ones
-   among them) do not override `as_form()` and cannot build a form, so the paths are only ever computed lazily.
+1. **Secret paths come from the form, on each side its own.** The agent calls `AgentConfig.secret_field_paths()`, which
+   walks `as_form()` for `Password` and `SecretFileInput` elements, mirroring
+   `SourcePipelineConfig.secret_field_paths()`. Many configs (playground ones among them) do not override `as_form()`
+   and cannot build a form, so the agent computes the paths only lazily. The API never sees the Python class: it walks
+   the form the class announced and the API stored on `AgentClassEntity`, with `SecretFieldWalker`. A stored form that
+   is stale or not the class's own, for example one announced by a test runner under the same class name, yields the
+   wrong paths, and the API then fails open for that class: its secrets are neither encrypted nor masked until the real
+   agent announces its form again.
 2. **The API encrypts on create and update** (`ConfigSecrets`, `packages/api/.../util/config_secrets.py`). Masks are
    restored against the stored row before validation; on create there is no stored row, so a mask carried over by a
    clone or an import is a 400. Submitted ciphertext is refused with `reject_submitted_ciphertext` from #2263, and the
@@ -45,8 +50,10 @@ decrypts when it builds the source. #2263 added the refusal of submitted ciphert
    connection, before the config responder and discovery start, and refuses to start the API when a profile holds such a
    value and the key is unset or malformed. Together the two make masking unable to raise at runtime, so
    `InstanceDtoBuilder.build_or_skip` never drops a profile and the OpenWebUI sync never deletes its model; internal
-   callers therefore keep using `FullAgentInstanceDTO` unchanged. Separately, `PlaintextAgentSecretMigration`, wired
-   with the other transitional migrations, encrypts the profiles stored before #1587 with a compare-and-swap write.
+   callers therefore keep using `FullAgentInstanceDTO` unchanged. This holds for the forms stored when the API starts:
+   should a class announce secret paths only later, while no usable key is set, masking its profiles raises until the
+   key is set. Separately, `PlaintextAgentSecretMigration`, wired with the other transitional migrations, encrypts the
+   profiles stored before #1587 with a compare-and-swap write.
 7. **Clone and import clear masks in the Admin UI** and name the cleared fields in a toast. The export is unchanged: it
    already holds masks, which is what lets the import detect them.
 
@@ -54,7 +61,8 @@ decrypts when it builds the source. #2263 added the refusal of submitted ciphert
 
 - **Rollout order**: agent images first or in the same deployment, the API last. An agent from before #1587 receiving
   ciphertext would use it as its credential. Custom SDK agents with `Password` fields must upgrade and receive the key
-  before the API.
+  before the API. All API replicas are replaced together: a replica from before #1587 returns the stored ciphertext
+  instead of a mask once the migration has run.
 - **The API refuses to start** for every tenant while a non-empty secret is stored and the key is missing or a
   placeholder. This is intended; the release note says so.
 - **A wrong but well-formed key** lets the API start and mask; agent runs then fail with Fernet's generic `InvalidToken`
