@@ -111,6 +111,14 @@ class TestAgentFiles:
     def test_key_outside_the_agent_file_layout_is_refused(self, s3_service, file_path):
         _assert_forbidden(_access("aihub.user.>"), "agent-files", file_path, s3_service)
 
+    @pytest.mark.parametrize(
+        "file_path",
+        ["rag/bad!/0b6c9a52/report.pdf", "rag class/my-agent/0b6c9a52/report.pdf"],
+        ids=["invalid-id", "invalid-class"],
+    )
+    def test_key_naming_no_valid_agent_is_refused(self, s3_service, file_path):
+        _assert_forbidden(_access("aihub.user.>"), "agent-files", file_path, s3_service)
+
 
 class TestAnonymousLinkSignature:
     @pytest.fixture

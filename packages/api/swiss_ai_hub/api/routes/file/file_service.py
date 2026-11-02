@@ -51,11 +51,18 @@ class FileService:
 
     @staticmethod
     def _ensure_may_read_agent_file(access: AccessChecker, segments: list[str]) -> None:
-        """Agent files live at ``{agent_class}/{agent_id}/{file_id}/{filename}``, readable by the agent's users."""
+        """Agent files live at ``{agent_class}/{agent_id}/{file_id}/{filename}``, readable by the agent's users.
+
+        A class or id that is not a permission token names no agent, so it is refused like any foreign key.
+        """
         if len(segments) != _AGENT_FILE_KEY_SEGMENTS:
             raise FileService._not_authorized()
         agent_class, agent_id = segments[0], segments[1]
-        if not access.has_access_to_agent(agent_class, agent_id):
+        try:
+            may_read = access.has_access_to_agent(agent_class, agent_id)
+        except ValueError:
+            raise FileService._not_authorized()
+        if not may_read:
             raise FileService._not_authorized()
 
     @staticmethod
