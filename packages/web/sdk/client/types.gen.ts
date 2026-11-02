@@ -4704,7 +4704,7 @@ export type CreateNamespaceRequest = {
   /**
    * Folder Name
    *
-   * The name of the folder to which the namespace belongs.
+   * The name of the folder to which the namespace belongs. A single path segment, because ingestion files every document under the first segment of its key.
    */
   folder_name: string;
   /**

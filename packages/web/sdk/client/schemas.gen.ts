@@ -7001,8 +7001,10 @@ export const CreateNamespaceRequestSchema = {
     folder_name: {
       type: "string",
       maxLength: 100,
+      pattern: "^[^/]+$",
       title: "Folder Name",
-      description: "The name of the folder to which the namespace belongs.",
+      description:
+        "The name of the folder to which the namespace belongs. A single path segment, because ingestion files every document under the first segment of its key.",
     },
     display_name: {
       anyOf: [
