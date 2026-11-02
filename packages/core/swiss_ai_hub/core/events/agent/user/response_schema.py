@@ -63,10 +63,17 @@ class ResponseSchema(BaseModel):
         return next(filter(None, map(ResponseSchema._external_reference, schema.values())), None)
 
     def response_format(self) -> dict[str, Any]:
-        """The OpenAI `response_format` that asks a model for this shape."""
-        if self.json_schema is None:
-            return {"type": "json_object"}
-        json_schema: dict[str, Any] = {"name": self.name, "schema": self.json_schema, "strict": self.strict}
+        """The OpenAI `response_format` that asks a model for this shape.
+
+        Any JSON object is asked for as a `json_schema` of `{"type": "object"}`, not as `json_object`: providers retire
+        `json_object` (Infomaniak refuses it), and the schema says the same.
+        """
+        schema = self.json_schema if self.json_schema is not None else {"type": "object"}
+        json_schema: dict[str, Any] = {
+            "name": self.name,
+            "schema": schema,
+            "strict": self.strict and schema is self.json_schema,
+        }
         if self.description:
             json_schema["description"] = self.description
         return {"type": "json_schema", "json_schema": json_schema}
