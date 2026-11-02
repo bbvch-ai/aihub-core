@@ -10610,6 +10610,12 @@ export type KnowledgeSearchedEvent = {
    */
   grounding_nodes?: Array<IngestedNode>;
   /**
+   * Missing
+   *
+   * Referenced collections that were not searched, because they no longer exist.
+   */
+  missing?: Array<KnowledgeReference>;
+  /**
    * Refused
    *
    * Referenced collections that were not searched, because the user may not read them.
@@ -27701,6 +27707,12 @@ export type KnowledgeSearchedEventWritable = {
    * The document sections the block holds, for listing as sources.
    */
   grounding_nodes?: Array<IngestedNodeWritable>;
+  /**
+   * Missing
+   *
+   * Referenced collections that were not searched, because they no longer exist.
+   */
+  missing?: Array<KnowledgeReference>;
   /**
    * Refused
    *

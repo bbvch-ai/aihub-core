@@ -12,6 +12,7 @@ from swiss_ai_hub.core.generative_ai import (
     EmbeddingModelConfig,
     ExtractedDocument,
     IngestedNode,
+    ModelTokenBudget,
     ParseCacheBucket,
 )
 
@@ -30,6 +31,22 @@ from swiss_ai_hub.agent.capabilities.attached_files.attached_files_config import
 
 SECTIONS_MODULE = "swiss_ai_hub.agent.capabilities.attached_files.attached_file_sections"
 READER_MODULE = "swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader"
+CACHE_MODULE = "swiss_ai_hub.agent.capabilities.attached_files.attached_file_section_cache"
+DECLARED_EMBEDDER = {
+    "mode": "embedding",
+    "max_input_tokens": 8192,
+    "aihub_tokenizer": "bge-m3",
+    "aihub_input_overhead_tokens": 2,
+}
+EMBEDDING_BUDGET = ModelTokenBudget.for_model("embedding/bge-m3", DECLARED_EMBEDDER)
+
+
+@pytest.fixture(autouse=True)
+def declared_embedder(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Parsing sizes sections for the embedding model; answered here, not by LiteLLM."""
+    monkeypatch.setattr(EmbeddingModelConfig, "get_model_info", lambda _self: {"model_info": DECLARED_EMBEDDER})
+
+
 IDENTIFIER = "ORD-145678"
 MODEL_KEY = "embedding/bge-m3:native"
 
@@ -273,8 +290,12 @@ class TestSectionCache:
     async def test_a_second_read_of_the_same_upload_needs_neither_download_nor_parse(self):
         extract = AsyncMock(return_value=_document())
         with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=extract):
-            first, _ = await AttachedFileReader.read(_upload(), "UniversalAgent", "a", AttachedFileSectionCache())
-            second, event = await AttachedFileReader.read(_upload(), "UniversalAgent", "a", AttachedFileSectionCache())
+            first, _ = await AttachedFileReader.read(
+                _upload(), "UniversalAgent", "a", EMBEDDING_BUDGET, AttachedFileSectionCache()
+            )
+            second, event = await AttachedFileReader.read(
+                _upload(), "UniversalAgent", "a", EMBEDDING_BUDGET, AttachedFileSectionCache()
+            )
 
         assert extract.await_count == 1
         assert [s.content for s in second.sections] == [s.content for s in first.sections]
@@ -285,8 +306,12 @@ class TestSectionCache:
     async def test_the_same_file_id_under_another_profile_is_read_afresh(self):
         extract = AsyncMock(return_value=_document())
         with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=extract):
-            await AttachedFileReader.read(_upload(), "UniversalAgent", "a", AttachedFileSectionCache())
-            await AttachedFileReader.read(_upload(), "UniversalAgent", "b", AttachedFileSectionCache())
+            await AttachedFileReader.read(
+                _upload(), "UniversalAgent", "a", EMBEDDING_BUDGET, AttachedFileSectionCache()
+            )
+            await AttachedFileReader.read(
+                _upload(), "UniversalAgent", "b", EMBEDDING_BUDGET, AttachedFileSectionCache()
+            )
 
         assert extract.await_count == 2
 
@@ -298,9 +323,11 @@ class TestSectionCache:
             patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=extract),
             patch(f"{READER_MODULE}.AttachedFileSections.parse", wraps=AttachedFileSections.parse) as parse,
         ):
-            first, _ = await AttachedFileReader.read(_upload(), "UniversalAgent", "a", AttachedFileSectionCache())
+            first, _ = await AttachedFileReader.read(
+                _upload(), "UniversalAgent", "a", EMBEDDING_BUDGET, AttachedFileSectionCache()
+            )
             again, _ = await AttachedFileReader.read(
-                _upload(other, "copy.pdf"), "UniversalAgent", "a", AttachedFileSectionCache()
+                _upload(other, "copy.pdf"), "UniversalAgent", "a", EMBEDDING_BUDGET, AttachedFileSectionCache()
             )
 
         assert parse.call_count == 1
@@ -312,7 +339,9 @@ class TestSectionCache:
     async def test_the_same_content_twice_in_one_turn_gets_unique_node_ids(self):
         other = "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
         with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document())):
-            outcomes = await AttachedFileReader.read_all([_upload(), _upload(other, "copy.pdf")], "UniversalAgent", "a")
+            outcomes = await AttachedFileReader.read_all(
+                [_upload(), _upload(other, "copy.pdf")], "UniversalAgent", "a", EMBEDDING_BUDGET
+            )
 
         ids = [s.id for text, _ in outcomes for s in text.sections]
         assert len(ids) == len(set(ids))
@@ -321,10 +350,14 @@ class TestSectionCache:
     async def test_a_record_whose_sections_expired_reads_the_file_again(self, in_memory_parse_cache):
         extract = AsyncMock(return_value=_document())
         with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=extract):
-            await AttachedFileReader.read(_upload(), "UniversalAgent", "a", AttachedFileSectionCache())
-            for key in [key for key in in_memory_parse_cache if key.endswith("sections.json")]:
+            await AttachedFileReader.read(
+                _upload(), "UniversalAgent", "a", EMBEDDING_BUDGET, AttachedFileSectionCache()
+            )
+            for key in [key for key in in_memory_parse_cache if key.endswith("/sections/bge-m3.json")]:
                 del in_memory_parse_cache[key]
-            text, _ = await AttachedFileReader.read(_upload(), "UniversalAgent", "a", AttachedFileSectionCache())
+            text, _ = await AttachedFileReader.read(
+                _upload(), "UniversalAgent", "a", EMBEDDING_BUDGET, AttachedFileSectionCache()
+            )
 
         assert extract.await_count == 2
         assert text.sections
@@ -337,7 +370,9 @@ class TestSectionCache:
         monkeypatch.setattr(ParseCacheBucket, "read", unreachable)
         monkeypatch.setattr(ParseCacheBucket, "write", unreachable)
         with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document())):
-            text, _ = await AttachedFileReader.read(_upload(), "UniversalAgent", "a", AttachedFileSectionCache())
+            text, _ = await AttachedFileReader.read(
+                _upload(), "UniversalAgent", "a", EMBEDDING_BUDGET, AttachedFileSectionCache()
+            )
 
         assert text.sections
 
@@ -420,7 +455,19 @@ class TestSectionCache:
         assert await cache.embeddings("content-1", MODEL_KEY, "d") == {}
 
     def test_a_new_chunking_starts_a_fresh_cache(self, monkeypatch):
-        before = AttachedFileSectionCache.sections_key("content-1")
+        before = AttachedFileSectionCache.sections_key("content-1", "bge-m3")
         monkeypatch.setattr(AttachedFileSectionCache, "FORMAT", AttachedFileSectionCache.FORMAT + 1)
 
-        assert AttachedFileSectionCache.sections_key("content-1") != before
+        assert AttachedFileSectionCache.sections_key("content-1", "bge-m3") != before
+
+    def test_sections_cut_for_another_tokenizer_are_kept_apart(self):
+        """Sections are sized in the embedding model's tokens; another model's would not fit or would waste room."""
+        assert AttachedFileSectionCache.sections_key("content-1", "bge-m3") != AttachedFileSectionCache.sections_key(
+            "content-1", "cl100k_base"
+        )
+
+    def test_a_new_node_cap_starts_a_fresh_cache(self, monkeypatch):
+        before = AttachedFileSectionCache.sections_key("content-1", "bge-m3")
+        monkeypatch.setattr(f"{CACHE_MODULE}.MAX_NODE_TOKENS", 4096)
+
+        assert AttachedFileSectionCache.sections_key("content-1", "bge-m3") != before
