@@ -7,6 +7,7 @@ from time import time
 
 import pytest
 from llama_index.core.schema import Document, MetadataMode, TextNode
+from llama_index.core.utils import get_tokenizer
 
 from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
     MAX_NODE_TOKENS,
@@ -114,3 +115,50 @@ def test_ordinary_text_keeps_its_512_token_splits(parser: MarkdownStructuralNode
     fallback_nodes = fallback.get_nodes_from_node(Document(text=f"# Terms\n{body}"))
 
     assert [node.text for node in exact_nodes] == [node.text for node in fallback_nodes]
+
+
+def _report_table(dense: bool) -> str:
+    """Padded `to_markdown` output costs far more bge-m3 tokens than its unpadded row text suggests."""
+    rows = [
+        f"| {1000 + row}.{row % 90 + 10} | "
+        + " | ".join(
+            f"{(row * 7919 + column * 104729) % 9_000_000 + 100_000:,}.{column}{row % 10}" for column in range(4)
+        )
+        + f" | {row % 61 - 30}.{row % 100:02d}% |"
+        if dense
+        else f"| Account {row} | "
+        + " | ".join(str(row * column % 999) for column in range(1, 5))
+        + f" | {row % 9}.5% |"
+        for row in range(400)
+    ]
+    header = "| Account | Q1 2025 | Q2 2025 | Q3 2025 | Q4 2025 | Change |\n|---|---|---|---|---|---|\n"
+    return "# Report\n\n## Figures\n\n<table>" + header + "\n".join(rows) + "</table>\n"
+
+
+@pytest.mark.parametrize("dense", [True, False], ids=["dense numbers", "plain"])
+def test_attached_file_tables_keep_their_header_and_whole_rows(monkeypatch, dense: bool) -> None:
+    """Attached files parse without an LLM config; their table splits must still fit the cap, or the limiter cuts
+    them mid-row and every later piece loses its column names."""
+    monkeypatch.setattr(EmbeddingModelConfig, "get_model_info", lambda self: {"model_info": DECLARED})
+    attached_file_parser = MarkdownStructuralNodeParser.from_defaults(
+        metadata={SOURCE: "report.md"}, embedding_model_name="embedding/bge-m3"
+    )
+
+    nodes = attached_file_parser.get_nodes_from_node(Document(text=_report_table(dense)))
+
+    tables = [node for node in nodes if node.metadata[NODE_CONTENT_TYPE] == "table"]
+    assert len(tables) > 1
+    _assert_every_node_fits(tables)
+    for table in tables:
+        lines = table.text.strip().splitlines()
+        assert "Q1 2025" in lines[0]
+        assert all(line.startswith("|") and line.endswith("|") for line in lines)
+    assert sum(len(table.text.strip().splitlines()) - 2 for table in tables) == 400
+
+
+def test_attached_file_table_splits_are_sized_in_tiktoken_like_ingestion(monkeypatch) -> None:
+    monkeypatch.setattr(EmbeddingModelConfig, "get_model_info", lambda self: {"model_info": DECLARED})
+    attached_file_parser = MarkdownStructuralNodeParser.from_defaults(embedding_model_name="embedding/bge-m3")
+    row = "|      8,146,183.47 |      1,234,567.89 |   -12.50% |"
+
+    assert attached_file_parser.node_builder_from_splits._count_tokens(row) == len(get_tokenizer()(row))

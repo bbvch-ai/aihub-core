@@ -13,7 +13,11 @@ from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk import TextChun
 from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk_size_limiter import TextChunkSizeLimiter
 from swiss_ai_hub.core.generative_ai.resources.tokenizers.measured_text_cut import MeasuredTextCut
 from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_tokenizer import ModelTokenizer
-from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE, NODE_CONTENT_TYPE_TEXT
+from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
+    NODE_CONTENT_TYPE_FIGURE,
+    NODE_CONTENT_TYPE_TABLE,
+    NODE_CONTENT_TYPE_TEXT,
+)
 
 BUDGET = 2048
 CORE_SOURCES = Path(__file__).resolve().parents[4]
@@ -103,3 +107,31 @@ def test_a_piece_still_over_budget_after_every_round_is_cut_by_measured_characte
     assert final_cut.called
     assert all(strict_count(piece.content) <= 100 for piece in pieces)
     assert "".join("".join(piece.content.split()) for piece in pieces) == "".join(content.split())
+
+
+TABLE_HEADER = "| id | value | check | date |\n|---|---|---|---|"
+
+
+def test_an_oversized_table_is_cut_between_rows_with_its_header_repeated(limiter: TextChunkSizeLimiter) -> None:
+    table = _numeric_table()
+
+    pieces = limiter.enforce([TextChunk(table, NODE_CONTENT_TYPE_TABLE)])
+
+    bge_m3 = ModelTokenizer.shared("bge-m3")
+    assert len(pieces) > 1
+    assert all(bge_m3.count(piece.content) <= BUDGET for piece in pieces)
+    assert all(piece.content.startswith(TABLE_HEADER + "\n") for piece in pieces)
+    body_rows = [row for piece in pieces for row in piece.content.splitlines()[2:]]
+    assert body_rows == table.splitlines()[2:]
+
+
+def test_a_table_row_too_long_for_the_budget_alone_falls_back_to_the_text_cut(limiter: TextChunkSizeLimiter) -> None:
+    long_row = "| 1 | " + "lorem ipsum dolor " * 2000 + "| 2 | 2026-01-15 |"
+
+    pieces = limiter.enforce(
+        [TextChunk(f"{TABLE_HEADER}\n| 0 | short | 1 | 2026-01-14 |\n{long_row}", NODE_CONTENT_TYPE_TABLE)]
+    )
+
+    bge_m3 = ModelTokenizer.shared("bge-m3")
+    assert all(bge_m3.count(piece.content) <= BUDGET for piece in pieces)
+    assert pieces[0].content == f"{TABLE_HEADER}\n| 0 | short | 1 | 2026-01-14 |"

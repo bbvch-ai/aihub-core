@@ -10,7 +10,7 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.node_parser.node_utils import build_nodes_from_splits
 from llama_index.core.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.core.utils import get_tqdm_iterable
+from llama_index.core.utils import get_tokenizer, get_tqdm_iterable
 from pydantic import ConfigDict, Field, model_validator
 
 from swiss_ai_hub.core.generative_ai.document.extractors import MetadataExtractor
@@ -203,15 +203,12 @@ class NodeCreatorFromSplits:
 
     def _count_tokens(self, text: str) -> int:
         """
-        The 512-token text splits and table splits are sized with this count, not the embedding model's, so
-        chunk boundaries stay where existing indexes have them; only the ceiling is counted in the model's tokens.
+        Text and table splits are sized in tiktoken, not the embedding model's tokens, so chunk boundaries stay where
+        existing indexes have them; attached files (no LLM config) too, as a length / 4 estimate let table splits
+        reach twice the node cap.
         """
-        if not self.llm_config:
-            # according to OpenAI 1 token is around 4 characters
-            return len(text) // 4
-
-        token_list = self.llm_config.token_counter(text)
-        return len(token_list)
+        token_counter = self.llm_config.token_counter if self.llm_config else get_tokenizer()
+        return len(token_counter(text))
 
     def _fallback_table_chunk(self, fallback_text: str) -> list[TextChunk]:
         """

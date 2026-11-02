@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 from typing import Annotated
 
@@ -5,6 +6,10 @@ from llama_index.core.node_parser import SentenceSplitter
 
 from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk import TextChunk
 from swiss_ai_hub.core.generative_ai.resources.tokenizers.measured_text_cut import MeasuredTextCut
+from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_TABLE
+
+# The separator line under a markdown table's header, alignment markers included (same rule as parse_markdown_table).
+TABLE_SEPARATOR = re.compile(r"^\|[\s:\-|]+\|$")
 
 # Worst-case tokens per character assumed by `_within_budget`'s accept short-circuit -- see the identical
 # constant and rationale in recursive_summary_parser.py. Kept separate since the two budgets are independent
@@ -64,8 +69,31 @@ class TextChunkSizeLimiter:
             if self._within_budget(chunk.content):
                 limited.append(chunk)
             else:
-                limited.extend(TextChunk(piece, chunk.content_type) for piece in self._split(chunk.content))
+                limited.extend(TextChunk(piece, chunk.content_type) for piece in self._split_chunk(chunk))
         return limited
+
+    def _split_chunk(self, chunk: TextChunk) -> list[str]:
+        """A markdown table is cut between rows with its header repeated; the text splitter would cut mid-row and
+        leave every later piece without the column names."""
+        lines = chunk.content.strip().splitlines()
+        if chunk.content_type == NODE_CONTENT_TYPE_TABLE and len(lines) > 2 and TABLE_SEPARATOR.match(lines[1].strip()):
+            return self._split_table("\n".join(lines[:2]), lines[2:])
+        return self._split(chunk.content)
+
+    def _split_table(self, header: str, rows: list[str]) -> list[str]:
+        pieces: list[str] = []
+        current: list[str] = []
+        for row in rows:
+            if current and not self._within_budget("\n".join([header, *current, row])):
+                pieces.append("\n".join([header, *current]))
+                current = []
+            current.append(row)
+        pieces.append("\n".join([header, *current]))
+        return [fitted for piece in pieces for fitted in self._split_oversized_row(piece)]
+
+    def _split_oversized_row(self, piece: str) -> list[str]:
+        """Only a single row too long for the budget with its header reaches the text splitter."""
+        return [piece] if self._within_budget(piece) else self._split(piece)
 
     def _split(self, text: str) -> list[str]:
         if self.exact:
