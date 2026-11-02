@@ -48,6 +48,36 @@ section contains provider-specific connection details. The `model_info` section 
 pricing for cost tracking through Langfuse.
 :::
 
+### Embedding and reranking models
+
+The platform sizes every input to an embedding or reranking model before sending it: document chunks at ingestion,
+search queries, and each query/document pair of a rerank. A model rejects an input over its window with an error instead
+of truncating it, so the count must be the model's own. Each `mode: embedding` or `mode: rerank` entry therefore
+declares two keys next to `max_input_tokens`:
+
+- **`aihub_tokenizer`:** the id of a tokenizer vendored in `packages/core` under
+  `swiss_ai_hub/core/generative_ai/resources/tokenizers/vendored/`. The platform counts with it in-process, without a
+  network call. `bge-m3` covers BAAI/bge-m3 and BAAI/bge-reranker-v2-m3, which share one tokenizer.
+- **`aihub_input_overhead_tokens`:** the special tokens the model adds to every input. bge-m3 adds 2 (`<s> text </s>`),
+  the bge reranker 4 per pair (`<s> query </s></s> document </s>`).
+
+```yaml
+  - model_name: embedding/bge-m3
+    model_info:
+      mode: embedding
+      max_input_tokens: 8192
+      aihub_tokenizer: bge-m3
+      aihub_input_overhead_tokens: 2
+```
+
+A model without `aihub_tokenizer` still works: its inputs are counted with tiktoken and kept well inside its window, as
+before these keys existed, and each process logs one warning naming the model. To count a new model exactly, add a
+folder under `vendored/` with the tokenizer file, its `LICENSE` and a `SOURCE.json` (repository, revision, file, sha256,
+format), then name the folder's id in the config. A unit test checks that every embedding and reranking model in the
+generated configs names a vendored tokenizer.
+
+Apps read these keys once per process. After changing them, recreate the LiteLLM container first, then restart the apps.
+
 ## Core functions
 
 Unified interface: LiteLLM provides an OpenAI-compatible API that works with Swiss LLM Cloud, locally hosted vLLM
