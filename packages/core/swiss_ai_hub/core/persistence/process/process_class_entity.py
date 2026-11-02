@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import TYPE_CHECKING, Self
 
 from bson import ObjectId
@@ -15,6 +15,7 @@ from mongoengine import (
 )
 from pydantic import TypeAdapter
 
+from swiss_ai_hub.core.discovery.discovery_kind import DiscoveryKind
 from swiss_ai_hub.core.events.process.discovery.agent_in.agent_in_specs import AgentInSpecs
 from swiss_ai_hub.core.events.process.discovery.human_in.human_in_specs import HumanInSpecs
 from swiss_ai_hub.core.events.process.discovery.program_in.program_in_specs import ProgramInSpecs
@@ -23,6 +24,7 @@ from swiss_ai_hub.core.form.config_specs import ConfigSpecs
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import EventSpec
+from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
 from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
@@ -130,13 +132,11 @@ class ProcessClassEntity(Document):
 
     Stores the class-level metadata (name, description, icon), form schema for
     creating process instances, and the validation specs.
-    Online status is determined by the last_discovered timestamp.
+    Online status compares the last_discovered timestamp with the completed discovery rounds.
 
     NOTE: This entity stores CLASS information only (one record per process_class).
     Instance/configuration data is stored in ProcessConfigEntityDocument.
     """
-
-    ONLINE_THRESHOLD = timedelta(minutes=5)
 
     meta = {
         "collection": "process_classes",
@@ -164,12 +164,9 @@ class ProcessClassEntity(Document):
     first_discovered = DateTimeField(required=True, default=datetime.now)
     last_discovered = DateTimeField(required=True, default=datetime.now)
 
-    @property
-    def is_online(self) -> bool:
-        """Process is online if it responded to discovery within the threshold."""
-        if self.last_discovered is None:
-            return False
-        return datetime.now() - self.last_discovered < self.ONLINE_THRESHOLD
+    def is_online_since(self, threshold: datetime) -> bool:
+        """Whether the class answered a discovery round at or after `threshold`, from `online_threshold()`."""
+        return self.last_discovered is not None and self.last_discovered >= threshold
 
     @property
     def form_elements(self) -> list["FormkitElement"]:
@@ -271,6 +268,17 @@ class ProcessClassEntity(Document):
                 agent_inputs=agent_inputs_entities,
                 templates=templates,
             )
+
+    @classmethod
+    @trace_fn
+    def get_online_class_names(cls) -> set[str]:
+        online = cls.objects(last_discovered__gte=cls.online_threshold()).only("process_class")
+        return {entity.process_class for entity in online}
+
+    @classmethod
+    def online_threshold(cls) -> datetime:
+        """Read once per request and passed to `is_online_since`, so a listing costs one lookup."""
+        return DiscoveryRoundEntity.online_threshold(DiscoveryKind.PROCESS)
 
     @classmethod
     @trace_fn

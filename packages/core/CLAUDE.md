@@ -19,6 +19,7 @@ packages/core/swiss_ai_hub/core/
 │   └── identity/                    # Identity models (UserIdentity, TenantIdentity)
 ├── context/                         # Context utilities
 ├── dependencies/                    # NATS client dependency injection (use_nats)
+├── discovery/                       # DiscoverySettings (DISCOVERY_*) + DiscoveryKind for the API's class discovery rounds
 ├── dispatcher/                      # Workflow orchestration
 │   ├── base_dispatcher.py            # Abstract: event routing, step execution, state management
 │   └── stores/                      # JetStreamEventStore (event replay), StepStore (Redis)
@@ -115,6 +116,7 @@ packages/core/swiss_ai_hub/core/
 ├── persistence/                     # Database abstractions (MongoEngine ODM)
 │   ├── access/                      # RoleEntity, TenantMetadataEntity, UserTenantRoleEntity
 │   ├── agents/                      # AgentConfigEntity
+│   ├── discovery/                   # DiscoveryRoundEntity: completed rounds that online status is judged against
 │   ├── process/                     # ProcessConfigEntity
 │   ├── messaging/                   # ThreadEntity, PersistedAgentEventEntity, PersistedProcessEventEntity
 │   ├── user/                        # UserDashboardEntity (user dashboard config)

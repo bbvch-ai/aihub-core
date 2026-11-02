@@ -1793,7 +1793,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
     container_name: open-terminal
-    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-2
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-4
     restart: always
     ports: [8200:8000]
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
@@ -2765,6 +2765,13 @@ services:
       SCHEDULER_RETENTION_INTERVAL_SECONDS: ${SCHEDULER_RETENTION_INTERVAL_SECONDS}
       SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH: ${SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH}
       SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH: ${SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH}
+
+      # Agent/process discovery rounds
+      DISCOVERY_INTERVAL_SECONDS: ${DISCOVERY_INTERVAL_SECONDS}
+      DISCOVERY_RESPONSE_WAIT_SECONDS: ${DISCOVERY_RESPONSE_WAIT_SECONDS}
+      DISCOVERY_ROUND_TIMEOUT_SECONDS: ${DISCOVERY_ROUND_TIMEOUT_SECONDS}
+      DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE: ${DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE}
+      DISCOVERY_MAX_SILENCE_SECONDS: ${DISCOVERY_MAX_SILENCE_SECONDS}
 
       # Neo4j
       NEO4J_URL: bolt://neo4j:7687
