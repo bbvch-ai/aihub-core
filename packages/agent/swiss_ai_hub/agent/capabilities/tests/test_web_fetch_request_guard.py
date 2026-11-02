@@ -1,4 +1,3 @@
-import ipaddress
 from typing import Any
 
 import pytest
@@ -7,7 +6,6 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from swiss_ai_hub.core.events.agent import WebFetchFailureReason
 
 from swiss_ai_hub.agent.capabilities.web_fetch.request_guard import RequestGuard
-from swiss_ai_hub.agent.capabilities.web_fetch.url_safety_policy import UrlSafetyPolicy
 
 
 class FakeResponse:
@@ -69,17 +67,14 @@ def redirect(location: str, status: int = 302) -> FakeResponse:
     return FakeResponse(status, {"location": location})
 
 
-@pytest.fixture(autouse=True)
-def public_dns(monkeypatch: pytest.MonkeyPatch):
-    async def resolve(hostname: str) -> list:
-        return [ipaddress.ip_address("93.184.215.14")]
-
-    monkeypatch.setattr(UrlSafetyPolicy, "_resolve", staticmethod(resolve))
+def proxy_refusal(status: int, error_code: str) -> FakeResponse:
+    """What `browser-proxy` (Squid) answers in the site's place: an empty page and the reason in a header."""
+    return FakeResponse(status, {"content-type": "text/html;charset=utf-8", "x-squid-error": f"{error_code} 0"})
 
 
 @pytest.fixture
 def guard() -> RequestGuard:
-    return RequestGuard(UrlSafetyPolicy(), timeout_seconds=5)
+    return RequestGuard(timeout_seconds=5)
 
 
 class TestReasonForResponse:
@@ -143,6 +138,25 @@ class TestMainDocument:
     )
     async def test_records_why_it_refused(self, guard: RequestGuard, response: FakeResponse, reason):
         route = document("https://example.com/doc", **{"https://example.com/doc": response})
+
+        await guard.handle(route)
+
+        assert route.fulfilled_with is None
+        assert guard.outcome.rejection == reason
+
+    @pytest.mark.parametrize(
+        ("response", "reason"),
+        [
+            (proxy_refusal(403, "ERR_ACCESS_DENIED"), WebFetchFailureReason.BLOCKED_HOST),
+            (proxy_refusal(503, "ERR_DNS_FAIL"), WebFetchFailureReason.NOT_FOUND),
+            (proxy_refusal(503, "ERR_CONNECT_FAIL"), WebFetchFailureReason.HTTP_ERROR),
+            (FakeResponse(403, {"content-type": "text/html"}), WebFetchFailureReason.ACCESS_DENIED),
+        ],
+    )
+    async def test_tells_the_proxy_refusing_apart_from_the_site(self, guard: RequestGuard, response, reason):
+        """A name that resolves inside passes the policy, and only the proxy sees where it leads: its 403 means a
+        blocked host, not a site that denied access."""
+        route = document("https://inside.example/", **{"https://inside.example/": response})
 
         await guard.handle(route)
 

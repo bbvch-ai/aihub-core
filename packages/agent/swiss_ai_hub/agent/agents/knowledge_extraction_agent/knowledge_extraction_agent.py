@@ -4,6 +4,7 @@ from typing import ClassVar
 from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
+    ExtractRecordsEvent,
     ToolCallApprovedEvent,
     ToolCallsDecidedEvent,
     ToolLoopMode,
@@ -16,19 +17,32 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.discovery_prompt import DiscoveryPrompt
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_answer import ExtractionAnswer
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_notices import ExtractionNotices
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_answer import ExtractionRequestAnswer
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_answers import ExtractionRequestAnswers
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_form import ExtractionRequestForm
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_form_request_event import (
+    ExtractionRequestFormRequestEvent,
+)
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_form_response_event import (
+    ExtractionRequestFormResponseEvent,
+)
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_parts import ExtractionRequestParts
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.knowledge_extraction_agent_config import (
     KnowledgeExtractionAgentConfig,
 )
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selected_extraction import SelectedExtraction
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_call import SelectionCall
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback import SelectionFallback
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.whole_scope_request import WholeScopeRequest
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_scope import KnowledgeDocumentScope
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_tools import KnowledgeDocumentTools
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import ExtractionForm
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import RecordExtraction
 from swiss_ai_hub.agent.capabilities.record_extraction.record_selection_tools import RecordSelectionTools
 from swiss_ai_hub.agent.capabilities.record_extraction.sample_awaiting_confirmation import SampleAwaitingConfirmation
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -37,11 +51,12 @@ from swiss_ai_hub.agent.workflow.decorators.step import step
 class KnowledgeExtractionAgent(Agent):
     """Turns one chat message into one table across many knowledge documents, every row naming its file.
 
-    By default every document in the profile's collections and glob is read, narrowed only by the folders, files or
-    years the user names, so the table cannot miss a document for its wording; one structured call reads the columns
-    and the row condition from the message. With `discovery`, the model instead finds the documents in a bounded loop
-    over the document tools and settles them with `select_knowledge_documents`. Either way the selection is resolved
-    within the profile's glob and ceiling, `RecordExtraction` extracts every document in parallel (a large selection
+    One structured call reads where, which rows and which columns from the message, and the user confirms or corrects
+    them in a form before any document is read. By default every document in the profile's collections and glob is
+    then read, narrowed only by the folders, files or years the user named, so the table cannot miss a document for its
+    wording. With `knowledge_documents.discovery`, the model instead finds the documents in a bounded loop over the
+    document tools and settles them with `select_knowledge_documents`. Either way the selection is resolved within the
+    profile's glob and ceiling, `RecordExtraction` extracts every document in parallel (a large selection
     after the user confirmed its sample), and the table's preview is the answer, its whole as a file.
     """
 
@@ -79,7 +94,6 @@ class KnowledgeExtractionAgent(Agent):
             instructions,
             agent_config.input_budget,
             t,
-            semantic=agent_config.knowledge_documents.semantic_search is True,
         )
         return Conversation.contextualize(history=history, message=event)
 
@@ -96,12 +110,12 @@ class KnowledgeExtractionAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         thread: ThreadContext,
+        run_context: RunContext,
         access: AccessChecker | None = None,
         user: UserIdentity | None = None,
-    ) -> ToolLoop.RunRequest | RecordExtraction.ExtractRequest | Conversation.CompleteRequest:
-        """Read the request and extract from the whole scope, or, with discovery, let the model find the documents.
-        With no collection the user may read, say so instead of looping over nothing. While a sample awaits the
-        user's decision, the message is read first in either mode, since only that tells a "yes" from a new request."""
+    ) -> ExtractionRequestFormRequestEvent | RecordExtraction.ExtractRequest | Conversation.CompleteRequest:
+        """Read the request and ask the user to confirm it, in either mode. A "yes" to a waiting sample extracts it
+        without a form; with no collection the user may read, say so instead of reading the request."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
@@ -112,18 +126,73 @@ class KnowledgeExtractionAgent(Agent):
             ]
             return await ExtractionAnswer.notice("\n\n".join(notices), ctx.query, displayer)
         awaiting = await SampleAwaitingConfirmation.load(thread, agent_config.agent_id)
-        if not agent_config.discovery or awaiting is not None:
-            extraction = await WholeScopeRequest.extraction(
-                ctx.history, scope, agent_config, awaiting, displayer, user, t, event.locale
-            )
-            if isinstance(extraction, str):
-                return await ExtractionAnswer.notice(extraction, ctx.query, displayer)
-            if extraction is not None:
-                return extraction
-        loop = KnowledgeExtractionAgent.tools.run(
-            ctx.history, mode=ToolLoopMode.GATHER, knowledge_references=event.knowledge_references
+        understood = await WholeScopeRequest.reading(
+            ctx.history, scope, agent_config, awaiting, displayer, user, t, event.locale
         )
-        return loop.model_copy(update={"hands_back_results": False})
+        if isinstance(understood, str):
+            return await ExtractionAnswer.notice(understood, ctx.query, displayer)
+        if isinstance(understood, ExtractRecordsEvent):
+            return understood
+        folders = await WholeScopeRequest.folders(scope)
+        searches = agent_config.knowledge_documents.discovery is True
+        return await ExtractionRequestForm.ask(understood, folders, searches, run_context, t)
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.steps.confirm_request.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.knowledge_extraction_agent.steps.confirm_request.description"
+        ),
+        icon="mdi:form-select",
+    )
+    async def confirm_request_step(
+        self,
+        response: ExtractionRequestFormResponseEvent,
+        ctx: Conversation.Contextualized,
+        event: UserMessageEvent,
+        agent_config: KnowledgeExtractionAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+        run_context: RunContext,
+        access: AccessChecker | None = None,
+        user: UserIdentity | None = None,
+    ) -> ToolLoop.RunRequest | RecordExtraction.ExtractRequest | Conversation.CompleteRequest:
+        """Extract what the user confirmed: from the whole scope, or, with discovery, from the documents the model
+        finds for the confirmed parts and keywords. What the user wrote in the form is read once more, with no second
+        form; a typed "no" extracts nothing."""
+        if ExtractionForm.is_no(response.response):
+            return await ExtractionAnswer.notice(
+                t("agent.knowledge_extraction_agent.messages.declined"), ctx.query, displayer
+            )
+        scope = await asyncio.to_thread(
+            KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
+        )
+        searches = agent_config.knowledge_documents.discovery is True
+        understood = await ExtractionRequestForm.understood(run_context)
+        answers = ExtractionRequestAnswers.of(response.response, understood, t, searches)
+        reading: ExtractionRequestAnswer | None = answers.reading
+        if answers.correction is not None:
+            history = ExtractionRequestForm.answered(ctx.history, response.request_event.question, answers.correction)
+            reading = await WholeScopeRequest.read(
+                history, scope, agent_config, False, displayer, user, t, event.locale
+            )
+        if reading is None or not reading.is_table_request:
+            return await ExtractionAnswer.notice(
+                t("agent.knowledge_extraction_agent.messages.no_request"), ctx.query, displayer
+            )
+        reading = answers.applied(reading)
+        await ExtractionRequestForm.confirm(run_context, reading)
+        confirmed = ExtractionRequestParts.of(reading, t, searches).lines(t)
+        await displayer.display_thought("\n".join(confirmed))
+        if searches:
+            history = ExtractionRequestForm.answered(ctx.history, response.request_event.question, "\n".join(confirmed))
+            loop = KnowledgeExtractionAgent.tools.run(
+                history, mode=ToolLoopMode.GATHER, knowledge_references=event.knowledge_references
+            )
+            return loop.model_copy(update={"hands_back_results": False})
+        extraction = await WholeScopeRequest.extraction_of(reading, scope, t)
+        if isinstance(extraction, str):
+            return await ExtractionAnswer.notice(extraction, ctx.query, displayer)
+        return extraction
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.steps.plan.name"),
@@ -139,24 +208,29 @@ class KnowledgeExtractionAgent(Agent):
         agent_config: KnowledgeExtractionAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        run_context: RunContext,
         decided: list[ToolCallsDecidedEvent] | None = None,
         calls: list[ToolCallApprovedEvent] | None = None,
         results: list[ToolResultEvent] | None = None,
         access: AccessChecker | None = None,
         user: UserIdentity | None = None,
     ) -> RecordExtraction.ExtractRequest | Conversation.CompleteRequest:
-        """Extract from the documents the model settled on, re-resolved within the profile's limits. A model that
-        ended its search without stating a selection is asked once for the selection its searches point to; one stopped
-        at its limit before it did is asked for folders and paths only, since its hits are incomplete. A stopped search
-        whose own selection stands still marks the table as possibly incomplete."""
+        """Extract from the documents the model settled on, re-resolved within the profile's limits and the places the
+        user confirmed. A model that ended its search without stating a selection is asked once for the selection its
+        searches point to; one stopped at its limit before it did is asked for folders and paths only, since its hits
+        are incomplete. A stopped search whose own selection stands still marks the table as possibly incomplete. The
+        confirmed values and condition are what is extracted, whatever the model passed; the confirmed exact keywords
+        order the documents when the model named none, and a confirmed calculation is named under the table."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
+        confirmed = await ExtractionRequestForm.confirmed(run_context)
         selection = SelectionCall.last(decided, calls, results)
         by_location = selection is None and finished.stopped_early
         if selection is None:
+            lines = ExtractionRequestParts.of(confirmed, t, True).lines(t) if confirmed else []
             selection = await SelectionFallback.ask(
-                ctx.query, calls or [], results or [], scope, agent_config.llm, displayer, user, t, by_location
+                ctx.query, calls or [], results or [], scope, agent_config.llm, displayer, user, t, by_location, lines
             )
         if selection is None:
             notices = [
@@ -164,16 +238,22 @@ class KnowledgeExtractionAgent(Agent):
                 *ExtractionNotices.for_table(scope, False, t),
             ]
             return await ExtractionAnswer.notice("\n\n".join(notices), ctx.query, displayer)
-        return RecordExtraction.extract(
-            selection.selection,
-            selection.fields,
-            scope.pairs(),
-            selection.instructions,
-            selection.row_terms,
-            notices=ExtractionNotices.for_table(scope, finished.stopped_early, t, by_location),
-            cut_short=finished.stopped_early and not by_location,
-            document_terms=selection.document_terms,
+        if confirmed is None:
+            return SelectedExtraction.of(selection, scope, finished, by_location, t)
+        within = await WholeScopeRequest.within(selection.selection, confirmed.locations, scope, t)
+        if isinstance(within, str):
+            return await ExtractionAnswer.notice(within, ctx.query, displayer)
+        as_confirmed = selection.model_copy(
+            update={
+                "any_of": within.any_of,
+                "fields": confirmed.fields,
+                "instructions": confirmed.instructions,
+                "row_terms": confirmed.row_terms,
+                "document_terms": selection.document_terms or confirmed.document_terms,
+            }
         )
+        calculation = confirmed.calculation
+        return SelectedExtraction.of(as_confirmed, scope, finished, by_location, t, calculation)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.steps.complete.name"),

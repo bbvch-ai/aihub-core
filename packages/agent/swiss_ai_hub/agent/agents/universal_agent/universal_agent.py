@@ -62,10 +62,13 @@ class UniversalAgent(Agent):
         self, event: UserMessageEvent, agent_config: UniversalAgentConfig, t: LocaleHandler
     ) -> Conversation.ContextualizeRequest:
         """The agent's instructions and the profile's lead a single system message, ahead of the client's own,
-        followed by what it should know about the pages the message links."""
+        followed by what it should know about the pages the message links. With the document tools on, the
+        instructions say when to search by keyword and when to rank by meaning."""
         links_note = WebFetch.links_note(event, agent_config, t)
+        documents = agent_config.knowledge_documents.enabled is True
         instructions = [
             t("agent.universal_agent.prompt.instructions"),
+            *([t("agent.universal_agent.prompt.document_search")] if documents else []),
             *([agent_config.instructions.in_locale(event.locale)] if agent_config.instructions else []),
             *([links_note] if links_note else []),
         ]

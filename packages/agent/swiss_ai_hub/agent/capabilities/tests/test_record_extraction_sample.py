@@ -92,13 +92,13 @@ class _Thread:
         return True
 
 
-def _config(semantic: bool = False, **settings: Any) -> SampleConfig:
+def _config(discovery: bool = False, **settings: Any) -> SampleConfig:
     return SampleConfig(
         agent_id="tables",
         name=LocaleString(en="Tables"),
         description=LocaleString(en="Tables fixture"),
         llm=LLMConfig(model_name="text-generation/main"),
-        knowledge_documents=KnowledgeDocumentConfig(enabled=True, path_glob="invoices/**", semantic_search=semantic),
+        knowledge_documents=KnowledgeDocumentConfig(enabled=True, path_glob="invoices/**", discovery=discovery),
         record_extraction=RecordExtractionConfig(**settings),
     )
 
@@ -529,18 +529,28 @@ class TestRankingByMeaning:
         assert all(call.args[2].remaining_seconds() > 0 for call in scan.await_args_list)
 
     @pytest.mark.asyncio
-    async def test_the_profiles_semantic_search_orders_even_a_small_selection_by_the_request(self):
+    async def test_a_small_selection_is_extracted_without_waiting_for_a_ranking(self):
         documents = _documents(4)
         planning = _Planning(
             KnowledgeDocumentSelectionResult(documents=documents), rank=AsyncMock(return_value=_ranking(documents[2]))
         )
 
         planned = await planning.plan(
-            _request(document_terms="Hooli", instructions="only hardware"), _config(semantic=True), _Thread()
+            _request(document_terms="Hooli", instructions="only hardware"), _config(), _Thread()
         )
 
-        assert planned[0].document.path == documents[2].path
-        assert len(planned) == 4
+        assert [request.document.path for request in planned] == [doc.path for doc in documents]
+        planning.rank.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_the_sample_is_ranked_by_the_request_in_the_users_words(self):
+        documents = _documents(150)
+        planning = _Planning(
+            KnowledgeDocumentSelectionResult(documents=documents), rank=AsyncMock(return_value=_ranking(documents[2]))
+        )
+
+        await planning.plan(_request(document_terms="Hooli", instructions="only hardware"), _config(), _Thread())
+
         assert planning.rank.await_args.args[1] == "Hooli only hardware item, amount"
 
     @pytest.mark.asyncio
@@ -551,7 +561,7 @@ class TestRankingByMeaning:
             rank=AsyncMock(return_value=_ranking(*documents[140:145])),
         )
 
-        planned = await planning.plan(_request(), _config(semantic=True), _Thread())
+        planned = await planning.plan(_request(), _config(), _Thread())
 
         assert [request.document.path for request in planned] == [doc.path for doc in documents[140:145]]
         assert planning.rank.await_args.kwargs["path_globs"] == ["invoices/**"]
@@ -566,16 +576,16 @@ class TestRankingByMeaning:
             rank=AsyncMock(return_value=_ranking(outside)),
         )
 
-        planned = await planning.plan(_request(document_terms="Hooli"), _config(semantic=True), _Thread())
+        planned = await planning.plan(_request(document_terms="Hooli"), _config(), _Thread())
 
         assert planned[0].document.path == documents[90].path
 
     @pytest.mark.parametrize("count", [4, 150])
     @pytest.mark.asyncio
-    async def test_without_the_profiles_semantic_search_nothing_is_ranked(self, count: int):
+    async def test_after_a_discovery_search_nothing_is_ranked_again(self, count: int):
         planning = _Planning(KnowledgeDocumentSelectionResult(documents=_documents(count)))
 
-        await planning.plan(_request(document_terms="Hooli"), _config(), _Thread())
+        await planning.plan(_request(document_terms="Hooli"), _config(discovery=True), _Thread())
 
         planning.rank.assert_not_awaited()
         assert planning.matching.await_count == (1 if count > SAMPLE_ABOVE_DOCUMENTS else 0)

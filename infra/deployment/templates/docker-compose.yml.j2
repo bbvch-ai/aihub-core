@@ -70,6 +70,8 @@
 {%- set OPEN_TERMINAL_BASE_URL = "http://open-terminal:8000" %}
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
+{#- Resolved by the Playwright server, on the browser network, so the same name works in every stage, dev included. #}
+{%- set PLAYWRIGHT_PROXY_URL = "http://browser-proxy:3128" %}
 {%- set SEARXNG_QUERY_URL = "http://localhost:8881/search?q=<query>&format=json" if stage == 'dev' else "http://searxng:8080/search?q=<query>&format=json" %}
 {%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
 {%- set NOTIFICATION_DAGSTER_UI_BASE_URL = "http://localhost:3000" if stage == 'dev' else "https://dagster.${DOMAIN}" %}
@@ -2069,7 +2071,15 @@ services:
       OPEN_TERMINAL_SYSTEM_PROMPT: >-
         You have access to a sandboxed Linux computer with Python and common
         document libraries (pandas, openpyxl, python-docx, reportlab, fpdf2,
-        weasyprint, matplotlib). Use your tools to run commands, read and write
+        weasyprint, matplotlib), headless LibreOffice (soffice) with UNO for
+        Excel pivot tables, LaTeX, pandoc and pdftoppm. Run Python with python3
+        as usual. Only a script that imports uno needs /usr/bin/python3, which
+        has uno but none of the libraries above: prepare data with python3 and
+        keep the UNO step in its own script. A pivot table is a DataPilot
+        (sheet.getDataPilotTables(), createDataPilotDescriptor(),
+        insertNewByName()); save it as xlsx with the filter "Calc Office Open
+        XML". When the user uploads a file as a template, edit a copy of it
+        instead of rebuilding it. Use your tools to run commands, read and write
         files, and search the filesystem. Verify the current state before making
         changes and check command output to confirm success. Files you create in
         your working directory automatically appear in the user's Files panel,
@@ -2114,8 +2124,27 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - browser  # Reached only by its callers, never by the rest of backend
-      - egress   # Outbound internet access for web browsing
+      - browser  # Its only network: the internet only through browser-proxy
+
+  {{ service_license('browser-proxy') }}
+  browser-proxy:
+    container_name: browser-proxy
+    image: {{ global.registry_prefix }}{{ image_tags.browser_proxy }}
+    restart: always
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "127.0.0.1", "3128" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - browser  # Reached by the Playwright browser, whose only way out it is
+      - egress   # Outbound internet; refuses every destination whose address is not public
 
   {{ service_license('searxng') }}
   searxng:
@@ -2349,7 +2378,7 @@ services:
     environment:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
-      DEFAULT_LOCALE: de
+      DEFAULT_LOCALE: en-US
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: False
       ENABLE_COMMUNITY_SHARING: False
@@ -3126,6 +3155,13 @@ services:
       SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH: ${SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH}
       SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH: ${SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH}
 
+      # Agent/process discovery rounds
+      DISCOVERY_INTERVAL_SECONDS: ${DISCOVERY_INTERVAL_SECONDS}
+      DISCOVERY_RESPONSE_WAIT_SECONDS: ${DISCOVERY_RESPONSE_WAIT_SECONDS}
+      DISCOVERY_ROUND_TIMEOUT_SECONDS: ${DISCOVERY_ROUND_TIMEOUT_SECONDS}
+      DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE: ${DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE}
+      DISCOVERY_MAX_SILENCE_SECONDS: ${DISCOVERY_MAX_SILENCE_SECONDS}
+
       # Neo4j
       NEO4J_URL: bolt://neo4j:7687
       NEO4J_USERNAME: ${NEO4J_USERNAME}
@@ -3166,7 +3202,7 @@ services:
       INCIDENT_GITHUB_APP_ID: ${INCIDENT_GITHUB_APP_ID}
       INCIDENT_GITHUB_INSTALLATION_ID: ${INCIDENT_GITHUB_INSTALLATION_ID}
       INCIDENT_GITHUB_PRIVATE_KEY: ${INCIDENT_GITHUB_PRIVATE_KEY}
-      API_REQUEST_MAX_JSON_BODY_BYTES: ${API_REQUEST_MAX_JSON_BODY_BYTES}
+      API_REQUEST_MAX_BODY_BYTES: ${API_REQUEST_MAX_BODY_BYTES}
       AGENT_INLINE_FILE_MAX_FILE_BYTES: ${AGENT_INLINE_FILE_MAX_FILE_BYTES}
       AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST: ${AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST}
       AGENT_INLINE_IMAGE_MAX_BYTES: ${AGENT_INLINE_IMAGE_MAX_BYTES}
@@ -3518,6 +3554,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -3616,6 +3653,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -3740,6 +3778,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -3910,6 +3949,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -4009,6 +4049,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -5252,7 +5293,7 @@ services:
 # - egress:  Outbound internet only, ICC disabled (containers isolated)
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
-# - browser:       The Playwright browser plus only its callers (open-webui, the web-fetching agents)
+# - browser:       The Playwright browser, browser-proxy (its only way out) and its callers (open-webui, the web-fetching agents)
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -5292,9 +5333,9 @@ networks:
     {%- if stage != 'dev' %}
     internal: true
     {%- endif %}
-  # Single-purpose zone: the Playwright browser plus only its callers (open-webui, the web-fetching agents).
-  # Keeps a page the browser loads from reaching the rest of backend, which a URL check alone cannot
-  # guarantee (DNS rebinding). Outbound internet comes from egress.
+  # Single-purpose zone: the Playwright browser, browser-proxy and the browser's callers (open-webui, the
+  # web-fetching agents). Playwright has no other network: it reaches the internet only through browser-proxy,
+  # which refuses every address that is not public, so a page reaches neither the platform, the host nor the LAN.
   browser:
     name: browser
     driver: bridge

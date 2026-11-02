@@ -79,6 +79,11 @@ model_list:
       # The dimension of a knowledge database's Milvus collection is derived from this. It must be the
       # model's real output width — a wrong value is not rejected, it silently truncates or pads vectors.
       output_vector_size: 1024
+      # Counts inputs in-process with the model's own tokenizer, vendored in packages/core under
+      # generative_ai/resources/tokenizers/vendored/. Without it, inputs are sized with tiktoken and a safety factor.
+      aihub_tokenizer: bge-m3
+      # Special tokens the model adds to every input: <s> text </s>.
+      aihub_input_overhead_tokens: 2
       input_cost_per_token: 0
 
   # ===================================================================
@@ -94,6 +99,10 @@ model_list:
       aihub_hosting_location: local
       mode: rerank
       max_input_tokens: 8192
+      # bge-reranker-v2-m3 ships the same sentencepiece model as bge-m3, so one vendored tokenizer counts both.
+      aihub_tokenizer: bge-m3
+      # Special tokens per query/document pair: <s> query </s></s> document </s>.
+      aihub_input_overhead_tokens: 4
       input_cost_per_token: 0
 
   # ===================================================================

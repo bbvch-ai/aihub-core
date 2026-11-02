@@ -271,6 +271,12 @@
       "notes": "Permissive license"
     },
     {
+      "service": "browser-proxy",
+      "license": "GPL-2.0-or-later",
+      "status": "⚠️",
+      "notes": "Squid, run unmodified as a separate container; only its config and emptied error pages are ours. GPL has no network copyleft, so proxying traffic does not propagate to our code."
+    },
+    {
       "service": "presidio-analyzer",
       "license": "MIT",
       "status": "✅",

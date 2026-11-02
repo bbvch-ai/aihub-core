@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
     from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
         DEFAULT_METADATA,
+        MAX_NODE_TOKENS,
         MarkdownStructuralNodeParser,
     )
     from swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser import RecursiveNodeSummarizer
@@ -144,6 +145,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat import ReasoningFreeChat
     from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config import RerankingModelConfig
     from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
+    from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_token_budget import ModelTokenBudget
+    from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_tokenizer import ModelTokenizer
     from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import (
         combine_nodes_in_order,
         sanitize_metadata_value,
@@ -243,6 +246,8 @@ __all__ = [
     "ExtractedDocument",
     "EmbeddingModelConfig",
     "EmbeddingQueryClamp",
+    "ModelTokenBudget",
+    "ModelTokenizer",
     "FIGURES_DIRECTORY_NAME",
     "FewShotExample",
     "FewShotGuardExample",
@@ -260,6 +265,7 @@ __all__ = [
     "MarkItDownLoader",
     "MarkdownStructuralNodeParser",
     "DEFAULT_METADATA",
+    "MAX_NODE_TOKENS",
     "MemorySettings",
     "MetadataFilterPair",
     "RetrievalRuntimeConfig",
@@ -328,6 +334,8 @@ _LAZY_IMPORTS = {
     "UnsupportedDocumentTypeError": "swiss_ai_hub.core.generative_ai.document.extraction.unsupported_document_type_error",
     "EmbeddingModelConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config",
     "EmbeddingQueryClamp": "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp",
+    "ModelTokenBudget": "swiss_ai_hub.core.generative_ai.resources.tokenizers.model_token_budget",
+    "ModelTokenizer": "swiss_ai_hub.core.generative_ai.resources.tokenizers.model_tokenizer",
     "FIGURES_DIRECTORY_NAME": "swiss_ai_hub.core.generative_ai.utils.path_utils",
     "FewShotExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_example",
     "FewShotGuardExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_guard_example",
@@ -384,6 +392,7 @@ _LAZY_IMPORTS = {
     "MarkItDownLoader": "swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader",
     "MarkdownStructuralNodeParser": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
     "DEFAULT_METADATA": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
+    "MAX_NODE_TOKENS": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
     "MemorySettings": "swiss_ai_hub.core.generative_ai.memory.memory_settings",
     "MetadataFilterPair": "swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair",
     "RetrievalRuntimeConfig": "swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config",

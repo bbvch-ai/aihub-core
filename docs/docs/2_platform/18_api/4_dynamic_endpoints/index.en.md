@@ -153,7 +153,7 @@ A request is checked as a whole before any of its files is stored, so a rejected
 | ------------- | --------------------------------------------------------------------------------------- |
 | `413`         | A file exceeds `AGENT_INLINE_FILE_MAX_FILE_BYTES` (25 MB by default)                    |
 | `413`         | A request carries more than `AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST` (10) inline files |
-| `413`         | A JSON body exceeds `API_REQUEST_MAX_JSON_BODY_BYTES` (64 MB), checked as it arrives    |
+| `413`         | A request body exceeds `API_REQUEST_MAX_BODY_BYTES` (64 MB), checked as it arrives      |
 | `415`         | Agents cannot read the file type, or the file is an image (send images in the message)  |
 | `422`         | The content is not valid base64                                                         |
 

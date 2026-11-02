@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import binascii
 import hashlib
 import math
 import mimetypes
@@ -97,7 +96,7 @@ class StoredImage(BaseModel):
             raise too_large
         try:
             data = base64.b64decode(content, validate=True)
-        except binascii.Error as decode_error:
+        except ValueError as decode_error:
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_CONTENT, "An image is not valid base64."
             ) from decode_error

@@ -110,6 +110,7 @@ class TestImagesInMessages:
         ("block", "status_code"),
         [
             (data_url("not base64!"), 422),
+            (data_url("é"), 422),
             (data_url(media_type="application/pdf"), 415),
             (data_url(base64.b64encode(b"<svg onload=alert(1)/>").decode(), "image/svg+xml"), 415),
             (data_url(base64.b64encode(b"x" * 64).decode()), 413),

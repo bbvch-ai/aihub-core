@@ -136,8 +136,8 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/jso
        "files":[{"filename":"invoice.pdf","file_type":"application/pdf","content":"'"$(base64 -w0 invoice.pdf)"'"}]}'
 ```
 
-Each file may have 25 MB and a request 10 files (`AGENT_INLINE_FILE_*`); a JSON body above 64 MB
-(`API_REQUEST_MAX_JSON_BODY_BYTES`) is refused before it is parsed.
+Each file may have 25 MB and a request 10 files (`AGENT_INLINE_FILE_*`); a request body above 64 MB
+(`API_REQUEST_MAX_BODY_BYTES`) is refused before it is parsed.
 
 ______________________________________________________________________
 

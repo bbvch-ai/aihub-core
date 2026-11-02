@@ -105,7 +105,7 @@ then starts without the guardrail and drops the requested anonymisation too. The
 key as external; `generate_compose.py` rejects a missing or unknown location anyway, so a typo cannot silently anonymise
 a local model. Each handled call also leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`,
 mounted next to the guardrail, sent to `OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
-`uv run --with "litellm==1.106.2" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
+`uv run --with "litellm==1.106.4" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
 (unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
 on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. LiteLLM follows its plain release tags (no
 more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollback path are in ADR
@@ -229,7 +229,9 @@ continues to build locally so developers test Dockerfile edits without round-tri
 
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
 libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/xlsxwriter/python-docx/python-pptx/weasyprint/
-pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and is published manually via
+pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and headless LibreOffice with
+`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX
+and `pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
 `make -C infra/deployment build-and-push-open-terminal-image` (requires `docker login ghcr.io`). Re-publish whenever:
 
 - The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
@@ -241,7 +243,7 @@ in `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` whenever the
 After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
 `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
-> **Deployment checklist:** Publish `open-terminal-office:0.11.34-1` to ghcr **before any non-dev stage pulls it**.
+> **Deployment checklist:** Publish `open-terminal-office:0.11.34-4` to ghcr **before any non-dev stage pulls it**.
 > Non-dev stages (`local`/`build` build locally, but `nightly`/`latest` pull from the registry) reference this exact
 > tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
 > stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.
@@ -268,6 +270,38 @@ character mail thread with personal data in every message) 46 s, and the contain
 The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
 for.
 
+### Publishing the browser-proxy image
+
+The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages, built
+from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image` (requires
+`docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and `image_tags.browser_proxy`
+with every change to that folder. Three settings look optional and are not (each verified against Playwright 1.63):
+`CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://` with `CONNECT` too; the
+error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted` instead of a 403 with
+`X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that form and the range
+would refuse all of IPv4.
+
+Check the [Squid advisories](https://github.com/squid-cache/squid/security/advisories) when bumping the base, not an
+image scan. Alpine 3.22 froze Squid at 6.12, which upstream no longer fixes, and Alpine's secdb lists only the CVEs
+Alpine patched, so Trivy and Grype reported that image clean despite 11 published advisories.
+
+> **Deployment checklist:** publish `browser-proxy:7.6-1` to ghcr **before any non-dev stage pulls it**. Without it the
+> pull fails and with it the whole `docker compose up`.
+
+### Images rebuilt for a current CA bundle
+
+Upstream images freeze their CA bundles at build time. After the eMudhra intermediate CA compromise (2026-10), releases
+built earlier still trust `emSign ECC Root CA - G3`, so three images refresh their bundles in our own Dockerfile:
+
+- `docker/rclone/` (`rclone:1.71.2-1`, `make -C infra/deployment build-and-push-rclone-image`): Alpine
+  `ca-certificates`. Drop it for the plain mirror once an upstream rclone release ships a clean bundle.
+- `docker/playwright/` (`build-and-push-playwright-image`): Ubuntu `ca-certificates` and `libnss3`. Chromium and Firefox
+  compile their own root stores in, which change only with a Playwright release.
+- `docker/open-webui/` (`build-and-push-openwebui-image`): Debian `ca-certificates`, `certifi`, and
+  `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` pointing gRPC at the system bundle instead of its bundled root list.
+
+Keep these lines when bumping the base tag, and publish the new tag **before** pinning it in `compose-config.yml`.
+
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
 
@@ -288,16 +322,16 @@ routes through Traefik.
 
 ## Network Isolation (7 Zones)
 
-| Network         | Purpose                           | Internal | ICC | Key Services                                                                       |
-| --------------- | --------------------------------- | -------- | --- | ---------------------------------------------------------------------------------- |
-| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                                        |
-| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel                                 |
-| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click                             |
-| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                                                 |
-| `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents, release notes agent |
-| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up)                      |
-| `browser`       | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)                              |
-| `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent, anonymiser_agent)                   |
+| Network         | Purpose                           | Internal | ICC | Key Services                                                                          |
+| --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------------------------------- |
+| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                                           |
+| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel                                    |
+| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click                                |
+| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                                                    |
+| `egress`        | Outbound internet only            | No       | No  | browser-proxy, searxng, rclone, structured_pipeline, mail agents, release notes agent |
+| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up)                         |
+| `browser`       | Playwright browser + callers      | Yes\*    | Yes | playwright, browser-proxy (+ open-webui and the web-fetching agents)                  |
+| `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent, anonymiser_agent)                      |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
 
@@ -311,12 +345,17 @@ service. Callers (open-webui now, agents later) opt in by adding `code-sandbox` 
 itself never joins another zone, so it can reach only its callers. `internal: true` in non-dev also denies it outbound
 internet.
 
-**`browser` rationale**: the same pattern for `playwright`, which loads pages users link. The agents' URL guard refuses
-internal hosts, but cannot stop a public name re-resolving to an internal address between the check and the browser's
-connection (DNS rebinding), so the browser must not share `backend`. It sits on `browser` (internal in non-dev) for its
-callers and on `egress` for the internet. Callers (open-webui's web loader; the LLM wrapping, Web Page Assistant, RAG,
-Expert RAG and Universal agents) add `browser` to their network list; a new web-fetching agent must too, or it cannot
-reach `ws://playwright:3000`. In dev, agents and open-webui reach it through `localhost:3036` instead.
+**`browser` rationale**: the same pattern for `playwright`, which loads pages users link, so the browser must not share
+`backend`. It sits on `browser` only (internal in non-dev): its one way to the internet is `browser-proxy` (Squid, on
+`browser` + `egress`), which resolves each name, refuses every address that is not public, and connects to the address
+it checked. That is what stops a page reaching the Docker host, the LAN or cloud metadata, including through DNS
+rebinding; the agents' URL guard checks only the URL text, because agents have no outside DNS (ADR
+`2026_10_29_browser_reaches_the_internet_only_through_a_filtering_proxy`). Callers (open-webui's web loader; the LLM
+wrapping, Web Page Assistant, RAG, Expert RAG and Universal agents) add `browser` to their network list; a new
+web-fetching agent must too, or it cannot reach `ws://playwright:3000`, and must get `PLAYWRIGHT_PROXY_URL` or it reads
+nothing. Open WebUI needs no proxy: its loader performs every request itself and only renders in the browser. In dev,
+agents and open-webui reach Playwright through `localhost:3036`, and dev networks are not internal, so only the `local`
+stage proves the isolation.
 
 **`pii-detection` rationale**: `presidio-analyzer` receives the personal data the platform anonymises, so it lives alone
 in `pii-detection` and only its callers (litellm, agents) join that network. With its models baked in it needs no
