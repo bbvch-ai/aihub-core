@@ -1,4 +1,4 @@
-# Custom Open Terminal image: pinned upstream sandbox + the two missing file libs.
+# Custom Open Terminal image: pinned upstream sandbox + the missing file libs.
 #
 # OpenWebUI reaches this sandbox through its terminal-server integration
 # (TERMINAL_SERVER_CONNECTIONS on the open-webui service), which resolves the sandbox's
@@ -6,8 +6,10 @@
 # tool, which only handles the pyodide and jupyter engines. The base image
 # already ships Python 3.12 with pandas, openpyxl, xlsxwriter, python-docx,
 # python-pptx, weasyprint, pypdf, matplotlib, Pillow, numpy, scipy, lxml and PyYAML,
-# plus the ffmpeg and pandoc binaries — only reportlab and fpdf2 are missing, so we
-# add just those. That inventory is what the user-facing format matrix in
+# plus the ffmpeg and pandoc binaries. We add reportlab and fpdf2 for writing PDFs,
+# pdfplumber for reading a PDF table row by row (models reach for it first, and the
+# sandbox has no internet to install it), and cryptography, without which pypdf
+# cannot open AES-encrypted PDFs. That inventory is what the user-facing format matrix in
 # docs/docs/2_platform/10_chat_ui/13_file_generation is verified against: re-verify it
 # there when bumping the base tag below, because it decides which file formats the
 # sandbox can actually produce.
@@ -28,7 +30,10 @@
 FROM ghcr.io/open-webui/open-terminal:0.11.34
 
 USER root
-RUN pip install --no-cache-dir reportlab fpdf2
+# The base image's pypdf 6.9.2 and Pillow 12.2.0 carry known advisories (pip-audit: 62 and 64), and the sandbox parses
+# PDFs and images users upload, so both are raised to the first releases that fix them.
+RUN pip install --no-cache-dir reportlab==5.0.1 fpdf2==2.8.9 pdfplumber==0.11.10 cryptography==50.0.2 \
+    pypdf==6.21.2 pillow==13.0.0
 COPY confine_file_api_to_home.py /tmp/confine_file_api_to_home.py
 RUN python3 /tmp/confine_file_api_to_home.py && rm /tmp/confine_file_api_to_home.py
 USER user

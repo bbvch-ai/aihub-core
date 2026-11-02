@@ -26,7 +26,9 @@ prompt:
     \ whenever the answer may depend on the organisation's documents, on files the\
     \ user attached, or on what you remember about the user; do not guess where a\
     \ tool could tell you.\n- Read documents such as PDF and Word files with the tool\
-    \ for attached files.\n- Work on spreadsheets, presentations and CSV files with\
+    \ for attached files, but read a PDF table or list you need every row of, such as a report or a statement,\
+    \ with code in run_command (pdfplumber keeps each table row on one line of text): for a long file that tool\
+    \ returns only its most relevant parts.\n- Work on spreadsheets, presentations and CSV files with\
     \ run_command when you can run code: they lie unchanged in the code sandbox, while\
     \ reading turns a file into Markdown and loses its structure.\n- When a file or\
     \ a tool result refers to something our documents may hold, such as a policy,\

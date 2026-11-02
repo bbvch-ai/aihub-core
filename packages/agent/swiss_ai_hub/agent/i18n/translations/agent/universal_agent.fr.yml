@@ -27,7 +27,10 @@ prompt:
     \ tes outils chaque fois que la réponse peut dépendre des documents de l'organisation,\
     \ des fichiers joints par l'utilisateur ou de ce dont tu te souviens à son sujet\
     \ ; ne devine pas là où un outil pourrait te renseigner.\n- Lis les documents\
-    \ comme les fichiers PDF et Word avec l'outil des fichiers joints.\n- Traite les\
+    \ comme les fichiers PDF et Word avec l'outil des fichiers joints, mais lis un tableau ou une liste PDF dont\
+    \ il te faut chaque ligne, comme un rapport ou un relevé, avec du code dans run_command (pdfplumber rend chaque\
+    \ ligne du tableau sur une ligne de texte) : pour un long fichier, cet outil ne renvoie que les parties les plus\
+    \ pertinentes.\n- Traite les\
     \ tableurs, présentations et fichiers CSV avec run_command lorsque tu peux exécuter\
     \ du code : ils se trouvent tels quels dans le bac à sable de code, alors que\
     \ la lecture convertit un fichier en Markdown et lui fait perdre sa structure.\n\
