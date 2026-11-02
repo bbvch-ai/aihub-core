@@ -37,6 +37,7 @@ from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     carry_over_bucket_model_columns,
     carry_over_pre_pair_knowledge_collections,
+    encrypt_plaintext_agent_secrets,
     finalize_role_setup,
     initialize_knowledge_buckets,
     initialize_startup_tenant,
@@ -49,6 +50,7 @@ from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEnd
 from swiss_ai_hub.api.services.process_endpoints_discovery_service import ProcessEndpointsDiscoveryService
 from swiss_ai_hub.api.sockets.manager.web_socket_manager import WebSocketManager
 from swiss_ai_hub.api.sockets.sender.web_socket_sender import WebSocketSender
+from swiss_ai_hub.api.util.config_secrets import ConfigSecrets
 
 logger = logging.getLogger(__name__)
 _background_tasks: set[asyncio.Task] = set()
@@ -114,6 +116,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
         uuidRepresentation="standard",
     )
+
+    # Permanent, not a transitional migration: it must outlive `encrypt_plaintext_agent_secrets`. Every response
+    # holding a profile masks its secrets, which needs the key, so without this a missing key surfaces only at
+    # runtime, where discovery drops each profile it cannot build and the OpenWebUI sync deletes its model. Runs
+    # before the config responder and discovery start, and needs nothing but Mongo.
+    ConfigSecrets.ensure_key_for_stored_secrets()
 
     # Connect to Redis
     redis = RedisSettings.create_client()
@@ -281,6 +289,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         carry_over_pre_pair_knowledge_collections()
         lower_llm_request_timeouts()
         unset_oversized_input_limits()
+        encrypt_plaintext_agent_secrets()
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.
         # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.

@@ -31,6 +31,7 @@ from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.generative_ai import AgentMemory, GatewayGuardrails
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.rpc import AgentConfigClient
+from swiss_ai_hub.core.secrets import SecretEncryptionService
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentClassTopicManager, AgentThreadTopicManager, AgentTopicManager
 from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic, Topic
@@ -103,6 +104,9 @@ class AgentDispatcher(BaseDispatcher):
 
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
+        # Filled by `_decrypted` on the first config holding ciphertext, never here: `secret_field_paths` builds the
+        # form, which a config not overriding `as_form()` cannot do.
+        self._secret_field_paths: set[str] | None = None
 
         # Strong references to the in-flight AITL deadline timers; see _schedule_agent_in_the_loop_timeout.
         self._aitl_timeout_tasks: set[asyncio.Task] = set()
@@ -140,7 +144,9 @@ class AgentDispatcher(BaseDispatcher):
             if agent_config_dict is None:
                 return
             # Transform FormKit-style arrays (dict with numeric keys) to Python lists
-            run_agent_config = self.agent_config_type.model_validate(transform_formkit_arrays(agent_config_dict))
+            run_agent_config = self.agent_config_type.model_validate(
+                self._decrypted(transform_formkit_arrays(agent_config_dict))
+            )
         except Exception as unusable_config_exception:
             await self._report_unusable_config(topic, unusable_config_exception)
             return
@@ -198,6 +204,28 @@ class AgentDispatcher(BaseDispatcher):
             return None
 
         raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
+
+    def _decrypted(
+        self, config: Annotated[dict[str, Any], "Runtime config as fetched, secrets encrypted"]
+    ) -> dict[str, Any]:
+        """The config with its secrets in plaintext, for validation only.
+
+        RunContext and the RPC reply keep the ciphertext, so plaintext lives only in the validated config of the
+        event being handled. Only the secret paths are decrypted; ciphertext anywhere else stays inert.
+        """
+        if not self._holds_ciphertext(config):
+            return config
+        if self._secret_field_paths is None:
+            self._secret_field_paths = self.agent_config_type.secret_field_paths()
+        return SecretEncryptionService.from_settings().decrypt_paths(config, self._secret_field_paths)
+
+    @classmethod
+    def _holds_ciphertext(cls, value: Any) -> bool:
+        if isinstance(value, dict):
+            return any(cls._holds_ciphertext(item) for item in value.values())
+        if isinstance(value, list):
+            return any(cls._holds_ciphertext(item) for item in value)
+        return SecretEncryptionService.is_encrypted(value)
 
     async def _report_unusable_config(
         self,

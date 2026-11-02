@@ -8,6 +8,7 @@ from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 
 from swiss_ai_hub.api.routes.agent.dto.agent_config_dto import AgentConfigDTO
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
+from swiss_ai_hub.api.util.config_secrets import ConfigSecrets
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 if TYPE_CHECKING:
@@ -57,7 +58,9 @@ class FullAgentInstanceDTO(MinimalAgentInstanceDTO):
         dict[str, Any],
         Field(
             description="The saved configuration data for this agent instance. "
-            "Contains the actual values that were submitted via the configuration form.",
+            "Contains the actual values that were submitted via the configuration form, except secret fields "
+            "(password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep "
+            "the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.",
         ),
     ] = {}
 
@@ -73,6 +76,9 @@ class FullAgentInstanceDTO(MinimalAgentInstanceDTO):
         """
         Creates a FullAgentInstanceDTO from a class entity and a config entity.
         Class entity provides class-level data (events, graph, form), config entity provides instance data.
+
+        The single place secrets are masked: get, list, list-by-class, create, update, `/mcp` and export all
+        answer through here, so none of them can return a stored secret or its ciphertext.
         """
         agent_config_dto = AgentConfigDTO.from_class_and_config(class_entity, config_entity, t)
 
@@ -127,7 +133,7 @@ class FullAgentInstanceDTO(MinimalAgentInstanceDTO):
             network_graph=network_graph,
             is_online=is_online,
             configuration=InstanceConfigHelper.with_schema_defaults(
-                config_entity.config_data or {},
+                ConfigSecrets.masked(config_entity.config_data or {}, class_entity.form_elements),
                 class_entity.agent_config_specs.config_schema if class_entity.agent_config_specs else {},
             ),
         )
