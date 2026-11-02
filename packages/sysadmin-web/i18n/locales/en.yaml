@@ -34,7 +34,6 @@ tenant_admin:
   form:
     chat_disclaimer: Chat disclaimer
     chat_disclaimer_help: Shown below the chat input. Up to 100 characters per language.
-    chat_disclaimer_too_long: Use at most 100 characters per language.
     name: Tenant Name
     description: Description
   table:

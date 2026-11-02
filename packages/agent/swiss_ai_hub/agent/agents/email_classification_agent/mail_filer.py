@@ -55,7 +55,7 @@ class MailFiler:
                     "[classify] uid=%s subject=%r -> %s (%s)",
                     mail.parsed.message_id,
                     mail.parsed.subject,
-                    verdict.target_folder(classification),
+                    verdict.target_folder(classification) or "the inbox (kept)",
                     verdict.outcome,
                 )
                 await MailFiler._report_verdict(mail.parsed.subject, verdict, classification, displayer)
@@ -77,6 +77,9 @@ class MailFiler:
                 f"inbox and can be retried by hand."
             )
             return
+        if verdict.target_folder(classification) is None:
+            await displayer.display_thought(f"{subject} fits no category and stays in the inbox: {verdict.reason}")
+            return
         await displayer.display_thought(
             f"{subject} → {verdict.category_name or classification.fallback_folder}: {verdict.reason}"
         )
@@ -95,16 +98,23 @@ class MailFiler:
         and re-list the mailbox for each one.
 
         A failure here aborts the run: messages already filed stay filed, and everything still in the inbox is
-        unread, so the next run picks it up. Filing is the only dedup mechanism, so a partial batch is safe. A
-        folder the server refuses fails before anything has moved at all.
+        unread, so the next run picks it up. Filing is the dedup mechanism, so a partial batch is safe. A folder the
+        server refuses fails before anything has moved at all.
 
         A message the classifier could not reach a verdict on is filed too, into `failure_folder`. Leaving it in the
         inbox would have `list_unread` re-select it oldest-first on every run forever; the dedicated folder is what
         makes moving it safe — it keeps its unread flag through the `MOVE`, so an operator dragging it back is the
         retry, and it is never mixed in with mail the model deliberately declined.
+
+        A decline kept in the inbox is not touched at all: the inbox watermark, advanced by the caller once this
+        returns, is what keeps the next run from classifying it again. Its ref names the inbox as its folder.
         """
         targets = [verdict.target_folder(classification) for verdict in verdicts]
-        assignments = [(mail.parsed.message_id, folder) for mail, folder in zip(fetched, targets, strict=True)]
+        assignments = [
+            (mail.parsed.message_id, folder)
+            for mail, folder in zip(fetched, targets, strict=True)
+            if folder is not None
+        ]
         created = await do_file_messages(imap_config, assignments)
 
         for folder in sorted(created):
@@ -116,7 +126,7 @@ class MailFiler:
                 sender=mail.parsed.sender,
                 subject=mail.parsed.subject,
                 category=verdict.category_name,
-                target_folder=target_folder,
+                target_folder=target_folder or imap_config.inbox_folder,
                 reason=verdict.reason,
                 folder_created=target_folder in created,
                 attachments=mail.attachments,

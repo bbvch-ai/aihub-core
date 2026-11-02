@@ -8,6 +8,7 @@ from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig, ParsedM
 
 from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
+from swiss_ai_hub.agent.imap.quoted_original import QuotedOriginal
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
 
 logger = logging.getLogger(__name__)
@@ -54,7 +55,9 @@ class ReplyDrafter:
         async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
             llm_event = await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=False)
         body = llm_event.chat_messages[-1].content or ""
-        return ReplyComposer.compose_from_parsed(parsed, from_address=imap_config.username, body=body)
+        return ReplyComposer.compose_from_parsed(
+            parsed, from_address=imap_config.username, body=body, quoted=QuotedOriginal.for_draft(parsed, draft)
+        )
 
     @staticmethod
     async def persist(

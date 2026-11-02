@@ -17,6 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parents[8]
 TEMPLATE_PIPE = REPO_ROOT / "infra/deployment/templates/openwebui_functions/aihub_pipeline.py"
 OPEN_WEBUI_MODULES = ["open_webui", "open_webui.models", "open_webui.models.chats", "open_webui.models.files"]
 OPEN_WEBUI_MODULES += ["open_webui.models.users", "open_webui.utils", "open_webui.utils.chat_id"]
+OPEN_WEBUI_MODULES += ["open_webui.models.notes", "open_webui.models.access_grants"]
 
 AGENT_CLASS, AGENT_ID = "RAGAgent", "hr"
 THREAD = "65f1c0ffee00000000000001"
@@ -313,6 +314,73 @@ async def test_another_user_never_reuses_a_temporary_chat_s_upload(pipe: Any, mo
 
     assert mine[0]["file_id"] != theirs[0]["file_id"]
     assert api.uploads == [b"hello", b"hello"]
+
+
+def _notes(*notes: MagicMock, shared_with: str | None = None) -> None:
+    """Open WebUI's notes and the read grants on them, which the pipe imports only once a note is attached."""
+    by_id = {note.id: note for note in notes}
+    sys.modules["open_webui.models.notes"].Notes.get_note_by_id = AsyncMock(side_effect=by_id.get)
+    sys.modules["open_webui.models.access_grants"].AccessGrants.has_access = AsyncMock(
+        side_effect=lambda user_id, **_: user_id == shared_with
+    )
+
+
+def _note(markdown: str, updated_at: int = 1, owner: str = USER) -> MagicMock:
+    note = MagicMock(id="note-1", user_id=owner, updated_at=updated_at, data={"content": {"md": markdown}})
+    note.title = "Vocabulary"
+    return note
+
+
+@pytest.mark.asyncio
+async def test_an_attached_note_reaches_the_agent_as_markdown_once_per_version(
+    pipe: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    redis = _Redis()
+    item = {"type": "note", "id": "note-1", "name": "Vocabulary"}
+
+    _notes(_note("# Words"))
+    first, owui_file_ids = await _turn(service, [item], redis)
+    second, _ = await _turn(service, [item], redis)
+    _notes(_note("# Words\n- abate", updated_at=2))
+    edited, _ = await _turn(service, [item], redis)
+
+    assert api.uploads == [b"# Words", b"# Words\n- abate"]
+    assert (
+        first == second == [{"filename": "Vocabulary.md", "file_type": "text/markdown", "file_id": first[0]["file_id"]}]
+    )
+    assert edited[0]["file_id"] != first[0]["file_id"]
+    assert owui_file_ids == {}
+    assert redis.values[f"aihub:temp-upload:{USER}:{THREAD}:note:note-1:1"] == first[0]["file_id"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("owner", "shared_with", "read"), [("user-2", USER, True), ("user-2", None, False)])
+async def test_another_user_s_note_reaches_the_agent_only_when_shared_with_the_user(
+    pipe: Any, monkeypatch: pytest.MonkeyPatch, owner: str, shared_with: str | None, read: bool
+) -> None:
+    """The pipe reads Open WebUI's database with its own rights, so a note id alone must not reveal the note."""
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    _notes(_note("secret", owner=owner), shared_with=shared_with)
+
+    files, _ = await _turn(service, [{"type": "note", "id": "note-1"}])
+
+    assert api.uploads == ([b"secret"] if read else [])
+    assert len(files) == int(read)
+
+
+@pytest.mark.asyncio
+async def test_a_deleted_note_is_left_out_of_the_turn(pipe: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    _notes()
+
+    files, _ = await _turn(service, [{"type": "note", "id": "note-1"}])
+
+    assert files == []
+    assert api.uploads == []
 
 
 @pytest.mark.asyncio

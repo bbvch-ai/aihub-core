@@ -36,7 +36,6 @@ tenant_admin:
     chat_disclaimer: Avertissement du chat
     chat_disclaimer_help: Affiché sous le champ de saisie du chat. Maximum 100 caractères
       par langue.
-    chat_disclaimer_too_long: Utilisez au maximum 100 caractères par langue.
     name: Nom du tenant
     description: Description
   table:

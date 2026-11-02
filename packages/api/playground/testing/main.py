@@ -43,7 +43,8 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread()
-        .get_open_chat_hitl(),
+        .get_open_chat_hitl()
+        .get_extracted_table_download_url(),
         AgentController(auth=auth)
         .get_agent_classes()
         .get_agent_class()

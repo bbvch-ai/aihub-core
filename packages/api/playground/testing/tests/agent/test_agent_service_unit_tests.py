@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -30,6 +31,13 @@ from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 enable_logging()
 
 
+@pytest.fixture(autouse=True)
+def online_threshold():
+    """The threshold is read from completed discovery rounds in Mongo; these tests run without one."""
+    with patch.object(AgentClassEntity, "online_threshold", return_value=datetime(2026, 1, 1)) as threshold:
+        yield threshold
+
+
 @pytest.fixture
 def sample_agent_config():
     """Create a sample AgentConfig for testing."""
@@ -56,7 +64,7 @@ def sample_agent_class_entity():
     mock_entity.hitl_response_events = []
     mock_entity.network_graph = {}
     mock_entity.form = []
-    mock_entity.is_online = True
+    mock_entity.is_online_since.return_value = True
     return mock_entity
 
 
@@ -164,7 +172,7 @@ class TestAgentServiceUnit:
                     mock_get_class.assert_called_once_with("TestAgent")
                     mock_get_config.assert_called_once_with("TestAgent", "test_agent_1")
                     mock_from.assert_called_once_with(
-                        sample_agent_class_entity, sample_config_entity, mock_locale_handler
+                        sample_agent_class_entity, sample_config_entity, mock_locale_handler, is_online=True
                     )
                     assert result == expected_dto
 
@@ -469,7 +477,7 @@ class TestCreateAgentInstanceGrantWiring:
     @staticmethod
     def _mock_create_dependencies(stack: ExitStack):
         class_entity = Mock()
-        class_entity.is_online = True
+        class_entity.is_online_since.return_value = True
         class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
         config_entity = Mock()
         grant = stack.enter_context(patch.object(AgentService, "_grant_instance_access"))
@@ -621,7 +629,7 @@ class TestAgentSaveRejectsEmptyNamespaceScope:
     @staticmethod
     def _mock_save_dependencies(stack: ExitStack) -> tuple[Mock, AsyncMock]:
         class_entity = Mock()
-        class_entity.is_online = True
+        class_entity.is_online_since.return_value = True
         class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="RAGAgent")
         class_entity.form_elements = [
             Repeater(name="retrievers", children=[VectorStoreInput(label="Vector store", name="vector_store")])

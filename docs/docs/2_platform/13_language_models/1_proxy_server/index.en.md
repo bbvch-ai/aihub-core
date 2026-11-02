@@ -63,8 +63,9 @@ Cost tracking: Usage tracking captures token consumption per request. Cost per t
 allowing the platform to calculate and display costs per conversation. See [Cost control](../../14_cost_control/) for
 details on cost tracking and optimization.
 
-PII protection: Presidio integration (when enabled) scans requests for personally identifiable information before
-sending them to external providers. See [Data Anonymization](../2_anonymization/) for details.
+PII protection: the `pii-anonymisation` guardrail replaces personal data in every chat request to a model hosted outside
+the deployment with placeholders and restores them in the answer, streamed or not. See
+[Data Anonymization](../2_anonymization/) for details.
 
 Retry policies: The configuration specifies retry counts for timeout errors, rate limit errors, and internal server
 errors.

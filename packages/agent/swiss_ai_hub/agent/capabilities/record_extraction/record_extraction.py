@@ -14,7 +14,12 @@ from swiss_ai_hub.core.events.agent import (
     ToolDefinition,
     ToolResultEvent,
 )
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair, KnowledgeDocumentSelection
+from swiss_ai_hub.core.generative_ai import (
+    BucketNamespacePair,
+    KnowledgeDocumentListing,
+    KnowledgeDocumentReader,
+    KnowledgeDocumentSelection,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -28,11 +33,19 @@ from swiss_ai_hub.agent.capabilities.record_extraction.document_record_extractio
 from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_tool_arguments import (
     ExtractRecordsToolArguments,
 )
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form import REWRITTEN_KEY, ExtractionCallForm
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form_request_event import (
+    ExtractionCallFormRequestEvent,
+)
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_call_form_response_event import (
+    ExtractionCallFormResponseEvent,
+)
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import ExtractionForm
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_planner import ExtractionPlanner
-from swiss_ai_hub.agent.capabilities.record_extraction.extraction_progress import ExtractionProgress
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import ExtractionTable
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields import RecordExtractionFields
 from swiss_ai_hub.agent.capabilities.record_extraction.records_tool_result import RecordsToolResult
+from swiss_ai_hub.agent.capabilities.record_extraction.selection_facets import SelectionFacets
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
@@ -43,12 +56,12 @@ from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 EXTRACT_RECORDS_TOOL = "extract_records"
-# One part per answer keeps each answer within the profile's minutes; the user, not the model, starts the next part.
-# The key holds the call that used up this answer: a continuation, or an extraction that left work for later.
-_CONTINUED_KEY = "record_extraction:continued"
-_ONE_PART_PER_ANSWER = (
-    "This answer has already extracted all one answer may; the rest waits for the user. Do not call extract_records "
-    "with continue_pending now: tell the user what is left and that they can reply to continue."
+# The user, not the model, confirms a sample: an answer that showed one cannot also extract the whole selection.
+# The key holds the call that used up this answer: a sample, or the confirmed extraction itself.
+_ANSWER_USED_KEY = "record_extraction:answer_used"
+_ONE_EXTRACTION_PER_ANSWER = (
+    "This answer has already shown a sample or extracted a confirmed selection; the rest waits for the user. Do not "
+    "call extract_records with confirm_sample now: tell the user what the sample shows and ask whether to go on."
 )
 
 
@@ -84,11 +97,13 @@ class RecordExtraction(Capability):
     One table across many knowledge documents, every row naming the file it came from:
 
     - `extract(selection, fields, collections, instructions, row_terms)` is answered with `RecordsExtractedEvent`:
-      the selection is resolved within the profile's glob and file limit, the columns are designed from `fields`, and
-      every document is extracted in parallel before one table is assembled. A document that fails is listed, never
-      fatal.
-    - In a tool set the model chooses when to extract (`extract_records`); the table then reaches the user from the
-      result event itself, and the model reads its summary.
+      the selection is resolved within the profile's glob and ceiling, the columns are designed from `fields`, and
+      every document is extracted in parallel before one table is assembled and stored as a file. A document that
+      fails is listed, never fatal. A selection too large to extract unasked is sampled first, and `confirm_sample`
+      extracts it whole once the user agrees.
+    - In a tool set the model chooses when to extract (`extract_records`); a new extraction is first asked back in
+      the request form (`ExtractionCallForm`), which replaces the yes/no approval, and the table then reaches the user
+      from the result event itself, and the model reads its summary.
     """
 
     calls: ClassVar[dict] = {ExtractRecordsEvent: (RecordsExtractedEvent,)}
@@ -102,7 +117,8 @@ class RecordExtraction(Capability):
     tool_options: ClassVar[ToolOptions] = ToolOptions(
         label=AgentLocaleString.from_i18n_path("agent.record_extraction.tools.extract.label"),
         approval_summary=AgentLocaleString.from_i18n_path("agent.record_extraction.tools.extract.approval"),
-        default_approval=ToolApprovalPolicy.EVERY_CALL,
+        # The request form asks every new extraction back; a yes/no approval on top would ask twice.
+        default_approval=ToolApprovalPolicy.NEVER,
     )
 
     @classmethod
@@ -121,13 +137,9 @@ class RecordExtraction(Capability):
         )
 
     @staticmethod
-    def continue_pending(
-        collections: list[BucketNamespacePair], notices: list[str] | None = None
-    ) -> ExtractRecordsEvent:
-        """The next part of the extraction this conversation left pending, over the run's own collections."""
-        return ExtractRecordsEvent(
-            fields="", collections=collections, notices=list(notices or []), continue_pending=True
-        )
+    def confirm_sample(collections: list[BucketNamespacePair], notices: list[str] | None = None) -> ExtractRecordsEvent:
+        """Every document of the selection this conversation showed a sample of, within the run's own collections."""
+        return ExtractRecordsEvent(fields="", collections=collections, notices=list(notices or []), confirmed=True)
 
     @staticmethod
     def extract(
@@ -138,12 +150,14 @@ class RecordExtraction(Capability):
         row_terms: str | None = None,
         notices: list[str] | None = None,
         cut_short: bool = False,
+        document_terms: str | None = None,
     ) -> ExtractRecordsEvent:
         return ExtractRecordsEvent(
             selection=selection,
             fields=fields,
             instructions=instructions,
             row_terms=row_terms,
+            document_terms=document_terms,
             collections=collections,
             notices=list(notices or []),
             cut_short=cut_short,
@@ -164,8 +178,8 @@ class RecordExtraction(Capability):
         thread: ThreadContext,
         user: UserIdentity | None = None,
     ) -> list[DocumentExtractionRequestedEvent] | RecordsExtractedEvent:
-        """Resolve the documents and design the columns, then ask for every document of this answer at once so they
-        run in parallel; a selection too large for one answer gets a sample and waits in the conversation."""
+        """Resolve the documents and design the columns, then ask for every document at once so they run in parallel;
+        a selection too large to extract unasked gets a sample and waits in the conversation for the user's go-ahead."""
         return await ExtractionPlanner.plan(request, config, displayer, t, thread, user)
 
     @staticmethod
@@ -197,16 +211,13 @@ class RecordExtraction(Capability):
         agent: Agent,
         extracted: DocumentExtractedEvent,
         results: list[DocumentExtractedEvent],
-        config: RecordExtractionFields,
         t: LocaleHandler,
-        thread: ThreadContext,
     ) -> RecordsExtractedEvent:
-        """Join every document of the extraction the arriving result completes into one table; rows and documents
-        that do not fit this answer wait in the conversation for the next."""
+        """Join every document of the extraction the arriving result completes into one table, stored whole as a file
+        and previewed on the event."""
         run = extracted.run
         own = [result for result in results if result.run.extraction_id == run.extraction_id]
-        table, overflow = ExtractionTable.assemble(run, own, config.record_extraction.max_rows, t)
-        return await ExtractionProgress.record(run, table, overflow, config, thread, t)
+        return await ExtractionTable.assemble(run, own, t)
 
     @staticmethod
     @step(
@@ -223,8 +234,9 @@ class RecordExtraction(Capability):
         t: LocaleHandler,
         run_context: RunContext,
         access: AccessChecker | None = None,
-    ) -> ExtractRecordsEvent | ToolResultEvent:
-        """The model chose to extract: the same extraction as an explicit call, over the collections of this run."""
+    ) -> ExtractRecordsEvent | ToolResultEvent | ExtractionCallFormRequestEvent:
+        """The model chose to extract: the same extraction as an explicit call, over the collections of this run. A new
+        extraction is asked back in the request form first, unless it is the one the user's typed answer asked for."""
         scope = await asyncio.to_thread(KnowledgeDocumentScope.of, tool, request.knowledge_references, access, t.locale)
         try:
             arguments = ExtractRecordsToolArguments.model_validate(call.arguments)
@@ -232,16 +244,63 @@ class RecordExtraction(Capability):
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id, name=call.name, content=f"Invalid arguments: {error}", is_error=True
             )
-        if arguments.continue_pending:
-            if await run_context.get(_CONTINUED_KEY, call.tool_call_id) != call.tool_call_id:
-                return ToolResultEvent(tool_call_id=call.tool_call_id, name=call.name, content=_ONE_PART_PER_ANSWER)
-            await run_context.set(_CONTINUED_KEY, call.tool_call_id)
-            event = RecordExtraction.continue_pending(scope.pairs())
+        if arguments.confirm_sample:
+            claimed = await run_context.set_if_absent(_ANSWER_USED_KEY, call.tool_call_id)
+            if not claimed and await run_context.get(_ANSWER_USED_KEY) != call.tool_call_id:
+                return ToolResultEvent(
+                    tool_call_id=call.tool_call_id, name=call.name, content=_ONE_EXTRACTION_PER_ANSWER
+                )
+            event = RecordExtraction.confirm_sample(scope.pairs())
             return event.model_copy(update={"tool_call_id": call.tool_call_id})
-        event = RecordExtraction.extract(
-            arguments.selection, arguments.fields, scope.pairs(), arguments.instructions, arguments.row_terms
+        if await run_context.pop(REWRITTEN_KEY):
+            return RecordExtraction._called(call.tool_call_id, arguments, scope.pairs())
+        form = ExtractionCallForm(
+            tool_call_id=call.tool_call_id,
+            arguments=arguments,
+            collections=scope.pairs(),
+            restricting_glob=scope.restricting_glob,
         )
-        return event.model_copy(update={"tool_call_id": call.tool_call_id})
+        listing = await RecordExtraction._listing(form)
+        return await form.ask(SelectionFacets.folders(listing.documents), run_context, t)
+
+    @staticmethod
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.record_extraction.steps.answer_form.name"),
+        description=AgentLocaleString.from_i18n_path("agent.record_extraction.steps.answer_form.description"),
+        icon="mdi:form-select",
+    )
+    async def answer_extraction_form_step(
+        agent: Agent, response: ExtractionCallFormResponseEvent, t: LocaleHandler, run_context: RunContext
+    ) -> ExtractRecordsEvent | ToolResultEvent:
+        """Run the extraction the user confirmed or corrected; a decline, or a correction only the model can apply,
+        goes back to the model as the call's result, and the corrected call then runs without a second form."""
+        form = await ExtractionCallForm.pending(response, run_context)
+        listing = await RecordExtraction._listing(form)
+        answered = form.answered(response.response, listing, t)
+        if isinstance(answered, ExtractRecordsToolArguments):
+            return RecordExtraction._called(form.tool_call_id, answered, form.collections)
+        if not ExtractionForm.is_no(response.response):
+            await run_context.set(REWRITTEN_KEY, True)
+        return ToolResultEvent(tool_call_id=form.tool_call_id, name=EXTRACT_RECORDS_TOOL, content=answered)
+
+    @staticmethod
+    async def _listing(form: ExtractionCallForm) -> KnowledgeDocumentListing:
+        listing = await KnowledgeDocumentReader.list_documents(form.collections)
+        return listing.matching_glob(form.restricting_glob) if form.restricting_glob else listing
+
+    @staticmethod
+    def _called(
+        tool_call_id: str, arguments: ExtractRecordsToolArguments, collections: list[BucketNamespacePair]
+    ) -> ExtractRecordsEvent:
+        event = RecordExtraction.extract(
+            arguments.selection,
+            arguments.fields,
+            collections,
+            arguments.instructions,
+            arguments.row_terms,
+            document_terms=arguments.document_terms,
+        )
+        return event.model_copy(update={"tool_call_id": tool_call_id})
 
     @staticmethod
     @step(
@@ -254,10 +313,10 @@ class RecordExtraction(Capability):
         agent: Agent, extracted: RecordsExtractedEvent, decided: ToolCallsDecidedEvent, run_context: RunContext
     ) -> ToolResultEvent:
         """Hand the extraction back to the loop: the summary and the first rows for the model, which must not retype
-        the table the user is already shown. An extraction that left documents or rows for later, such as a sample
-        of a too broad selection, uses up the answer, so the model cannot go on before the user agrees."""
-        if extracted.remaining_documents or extracted.remaining_rows:
-            await run_context.set(_CONTINUED_KEY, extracted.tool_call_id)
+        the table the user is already shown. A sample uses up the answer, so the model cannot extract the whole
+        selection before the user agrees."""
+        if extracted.awaiting_confirmation:
+            await run_context.set(_ANSWER_USED_KEY, extracted.tool_call_id)
         return ToolResultEvent(
             tool_call_id=extracted.tool_call_id or "",
             name=EXTRACT_RECORDS_TOOL,

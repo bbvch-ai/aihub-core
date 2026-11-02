@@ -76,3 +76,30 @@ async def test_short_query_reaches_the_reranker_unchanged():
 
     assert captured["query_str"] is query
     config_cls.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_reranked_nodes_keep_their_record_fields_and_take_the_new_scores():
+    """The reranker only orders and scores; a synced record's fields must still reach the prompt afterwards."""
+    first = _node().model_copy(update={"id": "node-1", "score": 0.2, "record_fields": {"status": "To Do"}})
+    second = _node().model_copy(update={"id": "node-2", "score": 0.9, "record_fields": {"status": "Done"}})
+    third = _node().model_copy(update={"id": "node-3", "score": 0.5})
+    service = MagicMock()
+
+    def postprocess_nodes(query_str, nodes):
+        by_id = {scored.node.node_id: scored for scored in nodes}
+        return [
+            by_id["node-1"].model_copy(update={"score": 0.95}),
+            by_id["node-3"].model_copy(update={"score": 0.6}),
+            by_id["node-2"].model_copy(update={"score": 0.1}),
+        ]
+
+    service.postprocess_nodes.side_effect = postprocess_nodes
+
+    with patch.object(RerankingModelConfig, "to_llama_index", return_value=(service, MagicMock())):
+        result = await rerank_nodes([first, second, third], "status?", RerankingModelConfig(model_name="r", top_n=2))
+
+    assert [(node.id, node.score, node.record_fields) for node in result] == [
+        ("node-1", 0.95, {"status": "To Do"}),
+        ("node-3", 0.6, {}),
+    ]

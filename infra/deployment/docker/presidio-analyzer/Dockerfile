@@ -13,9 +13,11 @@
 # "Build Presidio analyzer image" workflow after editing this file, then bump image_tags.presidio_analyzer.
 FROM python:3.12-slim
 
-# Torch's default thread count oversubscribes a shared host: a short request took seconds instead of ~250 ms.
-ENV PIP_NO_CACHE_DIR=1 PORT=3000 ANALYZER_CONF_FILE=/app/analyzer.yaml HF_HOME=/app/hf OMP_NUM_THREADS=4 \
-    MKL_NUM_THREADS=4
+# Torch's default thread count oversubscribes a shared host: a short request took seconds instead of ~250 ms. Every
+# request thread runs its own torch threads, so 4 request threads x 2 torch threads oversubscribe the 4 CPUs at most
+# twice when all are busy. 2 x 4 let a third long text block everything; 4 x 1 doubled an idle request.
+ENV PIP_NO_CACHE_DIR=1 PORT=3000 ANALYZER_CONF_FILE=/app/analyzer.yaml HF_HOME=/app/hf OMP_NUM_THREADS=2 \
+    MKL_NUM_THREADS=2 GUNICORN_THREADS=4 GUNICORN_TIMEOUT=300
 
 WORKDIR /app
 
@@ -40,5 +42,7 @@ COPY --chown=1001:1001 app.py word_aligned_text_chunker.py logging.ini /app/
 ENV HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 
 EXPOSE 3000
-# A 20k-token prompt takes about a minute on 4 CPU threads; the stock 120 s worker timeout leaves too little headroom.
-CMD ["sh", "-c", "gunicorn -w 1 -b 0.0.0.0:${PORT} --timeout 300 'app:create_app()'"]
+# One worker keeps one copy of the models; its threads serve a short request or the health probe while a long text is
+# analysed. A threaded worker keeps signalling the master while its threads work, so the timeout no longer limits one
+# analysis; it still bounds the 1-2 minutes the worker spends loading the models before it starts signalling.
+CMD ["sh", "-c", "gunicorn -k gthread -w 1 --threads ${GUNICORN_THREADS} -b 0.0.0.0:${PORT} --timeout ${GUNICORN_TIMEOUT} 'app:create_app()'"]

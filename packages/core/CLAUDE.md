@@ -19,6 +19,7 @@ packages/core/swiss_ai_hub/core/
 │   └── identity/                    # Identity models (UserIdentity, TenantIdentity)
 ├── context/                         # Context utilities
 ├── dependencies/                    # NATS client dependency injection (use_nats)
+├── discovery/                       # DiscoverySettings (DISCOVERY_*) + DiscoveryKind for the API's class discovery rounds
 ├── dispatcher/                      # Workflow orchestration
 │   ├── base_dispatcher.py            # Abstract: event routing, step execution, state management
 │   └── stores/                      # JetStreamEventStore (event replay), StepStore (Redis)
@@ -92,7 +93,9 @@ packages/core/swiss_ai_hub/core/
 │   ├── locale_handler.py             # Runtime locale resolution with fallback chains
 │   └── translations/                # YAML files: {scope}/{name}.{locale}.yml
 ├── imap/                            # Mail config + MIME parsing (MailParser, ParsedMessage, ImapClientConfig)
+├── jira/                            # Read-only Jira for agents: JiraConnectionConfig, JiraTicketSearch, JiraHtml (shared with the pipeline)
 ├── mcp/                             # MCP client configuration (McpClientConfig StepConfig)
+├── network/                         # SourceHostGuard: refuses admin-set URLs that point inside the platform (SSRF)
 ├── infrastructure/                  # External service settings (Pydantic BaseSettings)
 │   ├── api/                         # AIHubSettings (buckets, CORS, OpenAI endpoint)
 │   ├── nats/                        # NatsSettings (broker connection)
@@ -113,6 +116,7 @@ packages/core/swiss_ai_hub/core/
 ├── persistence/                     # Database abstractions (MongoEngine ODM)
 │   ├── access/                      # RoleEntity, TenantMetadataEntity, UserTenantRoleEntity
 │   ├── agents/                      # AgentConfigEntity
+│   ├── discovery/                   # DiscoveryRoundEntity: completed rounds that online status is judged against
 │   ├── process/                     # ProcessConfigEntity
 │   ├── messaging/                   # ThreadEntity, PersistedAgentEventEntity, PersistedProcessEventEntity
 │   ├── user/                        # UserDashboardEntity (user dashboard config)
@@ -211,6 +215,8 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 ├── ControlAndDisplayEvent (dual purpose)                          [events/agent/control_and_display_event.py]
 │   ├── StartEvent, StopEvent (workflow lifecycle)                 [events/agent/control/]
 │   ├── HumanInTheLoopRequest/Response (HITL)                     [events/agent/hitl/]
+│   │   ├── Input, Confirmation, Chat requests (popup, yes/no, next chat message answers)
+│   │   └── QuestionsRequest (a Chat request + ≤5 HumanInTheLoopChoiceQuestion: OpenWebUI's dialog, else `question` as text)
 │   ├── AgentInTheLoopRequest/Response (AITL)                     [events/agent/aitl/]
 │   ├── BotInTheLoopRequest/Response (BITL)                       [events/agent/bitl/]
 │   ├── SemanticEvent (OpenInference tracing)                     [events/agent/semantic/]
@@ -512,6 +518,16 @@ role assignments), `ThreadEntity` (conversations), `PersistedAgentEventEntity` /
 storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserDashboardEntity` (dashboard config),
 `NotificationEntity`, `LocaleStringEntity`.
 
+**Open HITL requests are matched by id**: `PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread` returns
+the thread's requests no response names in `request_event.event_id`, oldest first; the request query reads control
+events only, since every request is persisted as a control and as a display event. `ChatService` answers the newest open
+input or chat request with the next chat message, and the API's open-chat-HITL check uses the same method. Comparing
+request and response counts, as before, routed the second message of a thread with an earlier, answered HITL to that
+request. `HumanInTheLoopQuestionsRequestEvent` is a chat request, so every client can answer it: the OpenWebUI pipe
+sends the dialog's answers as JSON in the response event itself, and a typed reply (any client, or OpenWebUI after a
+cancelled dialog) takes the path above. Its `HumanInTheLoopChoiceQuestion` (1–3 `HumanInTheLoopChoiceOption`, the
+recommended one first) and option lengths are capped as OpenWebUI's `request:user_input` caps them.
+
 **Vector store — children are not persisted**: `PartitionAwareMilvusVectorStore.add` strips `NodeRelationship.CHILD`
 before serializing. LlamaIndex packs every relationship into `_node_content` inside Milvus' dynamic field, which is
 capped at 65536 bytes, and a hierarchical summary node carries one entry per descendant — so a wide summary tree fails
@@ -548,6 +564,7 @@ must be loaded explicitly when constructing settings instances.
 | `LiteLLMProxySettings` | LiteLLM gateway        | `LITELLM_`  |
 | `MineruSettings`       | Document parsing       | `MINERU_`   |
 | `RcloneSettings`       | Cloud sync             | `RCLONE_`   |
+| `JiraSettings`         | Jira read by agents    | `JIRA_`     |
 
 OpenTelemetry: `SmartTracer` for span creation, `@trace_fn` decorator for automatic function tracing.
 
@@ -579,6 +596,15 @@ Real-time event emission for streaming LLM output to the UI:
 | `chat_history/`          | Chat context management                   | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22))                                                                                                                                     |
 | `routing/`               | LLM-based event routing                   | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `structured_extraction/` | Records from one document, runtime schema | `RecordSchemaBuilder.build()`, `RecordExtractor.extract()`                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+
+`retrieval/combine_nodes_in_order()` renders retrieved nodes as `<REFERENCE_DOCUMENT …>` blocks, one per document. The
+header carries the document's id, source, title, version and timestamps, then the fields of the record it was synced
+from (`IngestedNode.record_fields`: a Jira issue's status, a Confluence page's space), each cut at
+`MAX_RECORD_FIELD_CHARACTERS`. `IngestedNode.from_llama_index_node` fills `record_fields` from the keys the pipeline's
+frontmatter step listed in `excluded_embed_metadata_keys`, the one marker that tells them apart from platform metadata
+(aihub-core-private#362). A round trip through a llama-index node drops that list, so code holding `IngestedNode`s keeps
+them (`rerank_nodes` returns the nodes it was given, re-scored) instead of converting back. `language` is not in the
+header: ingestion detects none.
 
 `knowledge_documents/` gives agents whole-file access to knowledge collections next to vector search.
 `KnowledgeDocumentReader.list_documents(collections)` returns a `KnowledgeDocumentListing` of fully ingested documents
@@ -616,6 +642,18 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
   sort. The regex is listed first and candidates are ids only (sorted by `_id`; the source only for a glob); metadata
   and text are read for one page. Measured at 5,000 × 100k characters: about 1 s per search on lz4-compressed rows, 2.5
   s on PostgreSQL's default pglz (#1024).
+- **Ranking by meaning.**
+  `KnowledgeSemanticSearch.rank(collections, query, *, path_globs=, passages_per_document=2, user=, budget=)` returns a
+  `KnowledgeSemanticRanking`: the documents in scope ordered by their closest chunks (Milvus `group_by_field` on
+  `document_id`, `PartitionAwareMilvusVectorStore.passages_grouped_by_document`), with `documents_in_scope`, `unranked`
+  (documents without any indexed passage) and `capped` (more had passages than `MAX_RANKED_DOCUMENTS`, 1,000). The chunk
+  index has no path field, so the globs are resolved through the listing into document ids and each search is filtered
+  to exactly those (`IDS_PER_FILTER` 10,000; 200,000 ids were measured to work on Milvus 2.6). Each database is searched
+  with its own embedding model (`ReferencedKnowledge.embedding_model_of`); raw scores order documents within one model
+  only, and the models' rankings are merged by reciprocal rank fusion (k=60). Stores come from
+  `ExistingMilvusVectorStores.find`, which returns None for a missing collection instead of creating it, and builds each
+  store once per process. Milvus failures raise `KnowledgeSemanticSearchUnavailableError`; the `budget` bounds the
+  listing and every search.
 - **Selections.** `KnowledgeDocumentSelector.resolve(collections, selection, limit, restricting_glob)` turns a
   `KnowledgeDocumentSelection` (`any_of` `KnowledgeDocumentCriteria`: path glob, path regex, content query, ids; AND
   within one, OR across) into the documents it describes, sorted and cut at `limit` with `truncated`. One
@@ -668,6 +706,54 @@ on the config: an unconfigured profile reports `None` and `Mem0Settings.get_conf
 a blueprint offering a picker overrides it. Embedding and reranking stay global: memories written with one embedding
 model cannot be searched with another. Only inferring writes run a model, so `MemoryAdded.llm_model_name` and the store
 events report `None` for organization memory, which stores its text verbatim.
+
+## Jira (`jira/`)
+
+Read-only Jira access for agents (#1951), Jira Cloud and Jira Data Center alike. Like `imap/` and `mcp/`, it reads no
+agent configuration: the agent embeds the group and passes it in.
+
+- **`JiraConnectionConfig`** is a `StepConfig` with `base_url`, `deployment` (`cloud` | `data_center`), `email` (Cloud
+  only) and `api_token` (a `Password`, so #1587 will encrypt it with every other secret field). A step receives it by
+  its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
+  deployment-fixed: absent from the form, but bounded in the schema because a direct API save can set them. Cross-field
+  rules (Cloud needs an e-mail) are `problems()`, checked when a search starts, never a validator.
+- **`JiraTicketSearch.find_tickets(connection, project_keys, clauses)`** returns every matching `JiraTicket` (key, url,
+  type, status, summary, markdown description, labels, components, fix versions), sorted by project and number. Each
+  clause is parenthesised and ANDed after `project in (…)`. A value taken from a chat message goes through
+  `JiraJql.string_literal()`, or it can widen the query.
+- **`JiraTicketSearch.find_versions(connection, project_keys)`** lists every `JiraVersion` (id, name, project, released,
+  archived, release date) after the same checks. Versions belong to a project, so one name can be two versions; search a
+  release with `JiraJql.fix_version_clause(versions)`, which matches by id (`fixVersion in (10200, 10305)`), rather than
+  by a quoted name.
+- **Errors are typed and English**, so the agent words them in the user's language. `JiraConfigurationError` (a missing
+  value, an internal host, a URL without Jira's REST API behind it), `JiraAuthenticationError`,
+  `JiraProjectNotFoundError` (unknown, invisible or renamed), `JiraInvalidQueryError` (Jira's own text, e.g. an unknown
+  fix version), `JiraTooManyTicketsError` and `JiraRequestError` all derive from `JiraError`. None of their messages
+  carries the token or the query string. The checks run in that order (configuration, host, `/myself`, each project, the
+  query), so each mistake surfaces as itself.
+
+Rules, each guarding a failure that would otherwise be silent:
+
+- **REST v2 only**, with `expand=renderedFields`; descriptions are converted by `JiraHtml`, which the pipeline shares.
+  v3 returns rich text as JSON (ADF).
+- **Cloud answers an invalid query with zero tickets**, so it is checked first with
+  `POST /rest/api/3/jql/parse?validation=strict`; Data Center's search answers 400 itself.
+- **Data Center pages by offset, not by `id > N`.** Its `ORDER BY id` sorts by key, so a keyset skips the tickets of
+  every project but the first (found live on 11.3: 149 counted, 134 returned). Offsets past 10,000 fail with OpenSearch,
+  and `max_tickets` (≤ 10,000) keeps a read below that. Cloud pages by `nextPageToken`. Both stop only on an empty page
+  or Jira's end marker, never on a short page. A repeated issue, or Data Center returning fewer than it counted, fails
+  the search.
+- **Retries are bounded**: 429, 502, 503, 504 and refused connections, at most four attempts, honouring `Retry-After`
+  (seconds or a date). A wait over 30 s fails at once instead of stalling the chat; read timeouts are not retried.
+- **No redirects, and only public hosts.** `SourceHostGuard` (`network/`) runs before the first request; an operator
+  allows an internal Jira with `JIRA_ALLOWED_PRIVATE_HOSTS` (`JiraSettings`), which the `release_notes_agent` container
+  receives (`.env.dev`: `localhost`, `.env.prod`: empty).
+- **Classic API tokens only on Cloud.** Scoped tokens and service accounts answer only at
+  `api.atlassian.com/ex/jira/{cloudId}`, which the ticket links would then point at too.
+
+Tests: `tests/unit/fake_jira.py` serves both editions through `httpx.MockTransport`; `tests/unit/recorded/` holds real
+search hits from Cloud and Data Center 11.3 (site names replaced). `tests/integration/test_jira_live.py` checks the
+acceptance criteria against sites seeded with `packages/pipeline/playground/jira_seed` (`JIRA_LIVE_ENV_FILES`).
 
 ## FastAPI Controllers
 
