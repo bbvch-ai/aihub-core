@@ -26,7 +26,8 @@ primitive fields only, because jambo reads nothing but `properties`. A caller's 
 ## Decision
 
 - **The request is `UserMessageEvent.response_schema`**, a core `ResponseSchema` (`name`, `description`, `json_schema`,
-  `strict`). A `json_schema` of `None` means any JSON object, OpenAI's `json_object`. The schema is passed to the model
+  `strict`). A `json_schema` of `None` means any JSON object, OpenAI's `json_object`, asked of the model as the schema
+  `{"type": "object"}`, since providers retire `json_object` (Infomaniak refuses it). The schema is passed to the model
   as is and validated with `jsonschema`, so nested objects and arrays work. A schema may reference only its own
   definitions (`#/...`) and is validated against an empty registry, since resolving any other `$ref` would make the
   agent worker fetch a URL the caller chose. `NaN`, `Infinity` and numbers beyond a float are violations: Python parses

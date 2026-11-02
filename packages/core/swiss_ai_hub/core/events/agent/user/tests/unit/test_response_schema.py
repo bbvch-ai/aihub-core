@@ -57,10 +57,13 @@ def test_prose_and_non_objects_are_violations(answer: str):
         ResponseSchema(name="any").validated(answer)
 
 
-def test_without_a_schema_any_object_is_accepted_as_json_object_mode():
-    any_object = ResponseSchema(name="any")
+def test_without_a_schema_any_object_is_asked_for_as_an_open_object_schema():
+    any_object = ResponseSchema(name="any", strict=True)
 
-    assert any_object.response_format() == {"type": "json_object"}
+    assert any_object.response_format() == {
+        "type": "json_schema",
+        "json_schema": {"name": "any", "schema": {"type": "object"}, "strict": False},
+    }
     assert any_object.validated('{"anything": [1]}') == {"anything": [1]}
 
 
