@@ -18,6 +18,7 @@ from swiss_ai_hub.core.generative_ai import (
     ExtractedDocument,
     IngestedNode,
     MarkdownStructuralNodeParser,
+    ModelTokenBudget,
     rerank_nodes,
 )
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
@@ -71,7 +72,7 @@ class AttachedFileSections:
 
     @staticmethod
     def parse(
-        document: ExtractedDocument, file_id: str, filename: str, embedding_model_name: str
+        document: ExtractedDocument, file_id: str, filename: str, embedding_budget: ModelTokenBudget
     ) -> list[IngestedNode]:
         """Text only: an upload's image links point nowhere the model could open. Sized for the embedding model that
         ranks the sections, as ingestion sizes nodes for the one that indexes them."""
@@ -86,9 +87,7 @@ class AttachedFileSections:
             UPDATED_AT: now,
             INSERTED_AT: now,
         }
-        parser = MarkdownStructuralNodeParser.from_defaults(
-            metadata=metadata, embedding_model_name=embedding_model_name
-        )
+        parser = MarkdownStructuralNodeParser.from_defaults(metadata=metadata, embedding_budget=embedding_budget)
         nodes = parser.get_nodes_from_documents([Document(id_=file_id, text=document.content)])
         return [
             IngestedNode.from_llama_index_node(node).model_copy(update={"content_type": NODE_CONTENT_TYPE_TEXT})

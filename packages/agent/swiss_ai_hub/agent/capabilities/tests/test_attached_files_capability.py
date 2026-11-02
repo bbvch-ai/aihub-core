@@ -16,7 +16,13 @@ from swiss_ai_hub.core.events.agent import (
     AttachedFileStatus,
     UserUploadedFile,
 )
-from swiss_ai_hub.core.generative_ai import CitationId, EmbeddingModelConfig, ExtractedDocument, LLMConfig
+from swiss_ai_hub.core.generative_ai import (
+    CitationId,
+    EmbeddingModelConfig,
+    ExtractedDocument,
+    LLMConfig,
+    ModelTokenBudget,
+)
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
@@ -38,6 +44,7 @@ DECLARED_EMBEDDER = {
     "aihub_tokenizer": "bge-m3",
     "aihub_input_overhead_tokens": 2,
 }
+BGE_M3_BUDGET = ModelTokenBudget.for_model("embedding/bge-m3", DECLARED_EMBEDDER)
 
 
 @pytest.fixture(autouse=True)
@@ -299,7 +306,7 @@ class TestAttachedFileSections:
     def test_a_file_is_split_along_its_headings_like_ingested_knowledge(self):
         document = _document("# Handbook\n\nIntro.\n\n## Vacation\n\n25 days.\n\n## Remote\n\nThree days.")
 
-        sections = AttachedFileSections.parse(document, "file-1", "handbook.pdf", "embedding/bge-m3")
+        sections = AttachedFileSections.parse(document, "file-1", "handbook.pdf", BGE_M3_BUDGET)
 
         assert [(section.h1, section.h2) for section in sections] == [
             ("Handbook", None),
@@ -311,7 +318,7 @@ class TestAttachedFileSections:
 
     def test_fills_the_room_in_rank_order_and_keeps_document_order(self):
         document = _document("# A\n\n" + "alpha " * 50 + "\n\n# B\n\n" + "beta " * 50 + "\n\n# C\n\n" + "gamma " * 50)
-        alpha, beta, gamma = AttachedFileSections.parse(document, "file-1", "doc.pdf", "embedding/bge-m3")
+        alpha, beta, gamma = AttachedFileSections.parse(document, "file-1", "doc.pdf", BGE_M3_BUDGET)
         picker = AttachedFileSections(AttachedFilesConfig(), self._counter, None)
 
         chosen = picker.fill([gamma, alpha, beta], room=110)
@@ -383,3 +390,20 @@ async def test_a_file_without_page_marks_is_read_whole_and_the_model_is_told():
 
     assert "Office text without pages." in (read.block[0].content or "")
     assert 'The pages of "handbook.docx" are not known' in (read.block[-1].content or "")
+
+
+@pytest.mark.asyncio
+async def test_files_are_read_when_litellm_cannot_resolve_the_embedding_model(monkeypatch: pytest.MonkeyPatch):
+    """Before exact counting, reading never asked LiteLLM about the embedder; a missing entry must not cost the turn
+    every attachment, small files included."""
+
+    def unknown_model(config: EmbeddingModelConfig) -> dict:
+        raise ValueError(f"Model {config.model_name} not found in LiteLLM Proxy.")
+
+    monkeypatch.setattr(EmbeddingModelConfig, "get_model_info", unknown_model)
+    text = "Section 4: vacation is 25 days."
+
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(text))):
+        events = await _read([_file("handbook.pdf")])
+
+    assert text in (events[-1].block[0].content or "")

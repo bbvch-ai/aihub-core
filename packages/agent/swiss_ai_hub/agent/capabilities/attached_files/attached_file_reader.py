@@ -125,7 +125,7 @@ class AttachedFileReader:
         known = await cache.sections(content_sha256, embedding_budget.tokenizer_id)
         if known is None:
             sections = await asyncio.to_thread(
-                AttachedFileSections.parse, document, file.file_id, file.filename, embedding_budget.model_name
+                AttachedFileSections.parse, document, file.file_id, file.filename, embedding_budget
             )
             await cache.put_sections(content_sha256, embedding_budget.tokenizer_id, sections)
         else:

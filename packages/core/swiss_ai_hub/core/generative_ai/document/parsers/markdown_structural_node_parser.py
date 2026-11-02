@@ -441,6 +441,11 @@ class MarkdownStructuralNodeParser(NodeParser):
         Field(description="Input limit assumed when no embedding model is named."),
     ] = DEFAULT_EMBEDDING_MAX_INPUT_TOKENS
 
+    embedding_budget: Annotated[
+        ModelTokenBudget | None,
+        Field(description="The embedding model's budget, already resolved by the caller; wins over the model name."),
+    ] = None
+
     llm_config: Annotated[
         LLMConfig | None, Field(description="LLM configuration for table header detection and tokenization.")
     ] = None
@@ -473,7 +478,8 @@ class MarkdownStructuralNodeParser(NodeParser):
                 chunk_size=values.get("chunk_size", 512),
                 chunk_overlap=values.get("chunk_overlap", 20),
                 llm_config=values.get("llm_config", None),
-                ceiling_budget=cls._ceiling_budget(
+                ceiling_budget=values.get("embedding_budget")
+                or cls._ceiling_budget(
                     values.get("embedding_model_name"),
                     values.get("max_embedding_tokens", DEFAULT_EMBEDDING_MAX_INPUT_TOKENS),
                 ),
@@ -495,7 +501,7 @@ class MarkdownStructuralNodeParser(NodeParser):
         chunk_size: int = 512,
         chunk_overlap: int = 0,
         callback_manager: CallbackManager | None = None,
-        embedding_model_name: str | None = None,
+        embedding_budget: ModelTokenBudget | None = None,
     ) -> Self:
         return cls(
             include_metadata=include_metadata,
@@ -503,7 +509,7 @@ class MarkdownStructuralNodeParser(NodeParser):
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             callback_manager=callback_manager or CallbackManager([]),
-            embedding_model_name=embedding_model_name,
+            embedding_budget=embedding_budget,
         )
 
     @classmethod

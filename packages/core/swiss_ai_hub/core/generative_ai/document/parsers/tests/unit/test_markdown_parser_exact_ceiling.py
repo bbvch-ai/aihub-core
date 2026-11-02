@@ -14,6 +14,7 @@ from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_p
     MarkdownStructuralNodeParser,
 )
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_token_budget import ModelTokenBudget
 from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_tokenizer import ModelTokenizer
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
@@ -34,6 +35,7 @@ DECLARED = {
     "aihub_input_overhead_tokens": 2,
 }
 PARSERS_SOURCE = Path(__file__).resolve().parents[2]
+BGE_M3_BUDGET = ModelTokenBudget.for_model("embedding/bge-m3", DECLARED)
 
 
 @pytest.fixture
@@ -136,12 +138,11 @@ def _report_table(dense: bool) -> str:
 
 
 @pytest.mark.parametrize("dense", [True, False], ids=["dense numbers", "plain"])
-def test_attached_file_tables_keep_their_header_and_whole_rows(monkeypatch, dense: bool) -> None:
+def test_attached_file_tables_keep_their_header_and_whole_rows(dense: bool) -> None:
     """Attached files parse without an LLM config; their table splits must still fit the cap, or the limiter cuts
     them mid-row and every later piece loses its column names."""
-    monkeypatch.setattr(EmbeddingModelConfig, "get_model_info", lambda self: {"model_info": DECLARED})
     attached_file_parser = MarkdownStructuralNodeParser.from_defaults(
-        metadata={SOURCE: "report.md"}, embedding_model_name="embedding/bge-m3"
+        metadata={SOURCE: "report.md"}, embedding_budget=BGE_M3_BUDGET
     )
 
     nodes = attached_file_parser.get_nodes_from_node(Document(text=_report_table(dense)))
@@ -156,9 +157,8 @@ def test_attached_file_tables_keep_their_header_and_whole_rows(monkeypatch, dens
     assert sum(len(table.text.strip().splitlines()) - 2 for table in tables) == 400
 
 
-def test_attached_file_table_splits_are_sized_in_tiktoken_like_ingestion(monkeypatch) -> None:
-    monkeypatch.setattr(EmbeddingModelConfig, "get_model_info", lambda self: {"model_info": DECLARED})
-    attached_file_parser = MarkdownStructuralNodeParser.from_defaults(embedding_model_name="embedding/bge-m3")
+def test_attached_file_table_splits_are_sized_in_tiktoken_like_ingestion() -> None:
+    attached_file_parser = MarkdownStructuralNodeParser.from_defaults(embedding_budget=BGE_M3_BUDGET)
     row = "|      8,146,183.47 |      1,234,567.89 |   -12.50% |"
 
     assert attached_file_parser.node_builder_from_splits._count_tokens(row) == len(get_tokenizer()(row))
