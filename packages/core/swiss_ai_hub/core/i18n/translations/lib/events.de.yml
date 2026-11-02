@@ -347,3 +347,7 @@ extract_records_event:
 records_extracted_event:
   name: Datensätze extrahiert
   description: Die aus den ausgewählten Dokumenten extrahierte Tabelle
+hitl_questions_request_event:
+  name: Fragen zur Bestätigung
+  description: Der Agent bittet den Benutzer, die Teile einer Anfrage zu bestätigen oder
+    zu korrigieren, als Formular, wo der Client eines zeigt, sonst als Chat-Nachricht.
