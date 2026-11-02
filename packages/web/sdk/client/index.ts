@@ -1078,6 +1078,7 @@ export {
   type ResponseFormatJsonObject,
   type ResponseFormatJsonSchema,
   type ResponseFormatText,
+  type ResponseSchema,
   type RetrieveOrganizationMemoryEvent,
   type RetrieveOrganizationMemoryEventWritable,
   type RetrieverEvent,

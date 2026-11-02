@@ -565,6 +565,13 @@ export const AgentClassDTOSchema = {
         "Whether the agent class can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
     is_online: {
       anyOf: [
         {
@@ -10175,6 +10182,13 @@ export const FullAgentInstanceDTOSchema = {
         "Whether the agent can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -16782,6 +16796,20 @@ export const LLMStopEventSchema = {
       description:
         "List of tools that are advertised to the LLM to be able to call.",
     },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -18984,6 +19012,13 @@ export const MinimalAgentInstanceDTOSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
   },
@@ -24421,6 +24456,20 @@ export const RefusalStopEventSchema = {
       description:
         "List of tools that are advertised to the LLM to be able to call.",
     },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
+    },
     reason: {
       $ref: "#/components/schemas/RefusalReason",
       description: "What about the input made the turn unanswerable.",
@@ -24989,6 +25038,56 @@ export const ResponseFormatTextSchema = {
   required: ["type"],
   title: "ResponseFormatText",
   description: "Default response format. Used to generate text responses.",
+} as const;
+
+export const ResponseSchemaSchema = {
+  properties: {
+    name: {
+      type: "string",
+      pattern: "^[a-zA-Z0-9_-]{1,64}$",
+      title: "Name",
+      description:
+        "A name for the shape, as OpenAI's `json_schema.name` or a function name.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "What the shape is for; the model reads it.",
+    },
+    json_schema: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Json Schema",
+      description:
+        "The JSON schema the answer must match. Without one, any JSON object is accepted.",
+    },
+    strict: {
+      type: "boolean",
+      title: "Strict",
+      description:
+        "Ask the model to follow the schema exactly, as OpenAI's structured outputs `strict`.",
+      default: false,
+    },
+  },
+  type: "object",
+  required: ["name"],
+  title: "ResponseSchema",
+  description:
+    "The JSON shape a caller wants the agent's answer in.\n\nOne request whatever the caller's API calls it: the OpenAI endpoint maps both `response_format` and a forced\nfunction call onto it, and decides on its own how to hand the result back.",
 } as const;
 
 export const RetrieveOrganizationMemoryEventSchema = {
@@ -31894,6 +31993,18 @@ export const UserMessageEventSchema = {
         "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
       default: [],
     },
+    response_schema: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ResponseSchema",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -33121,6 +33232,13 @@ export const AgentClassDTOWritableSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent class can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
     is_online: {
@@ -37700,6 +37818,13 @@ export const FullAgentInstanceDTOWritableSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
     start_events: {
@@ -42730,6 +42855,20 @@ export const LLMStopEventWritableSchema = {
       description:
         "List of tools that are advertised to the LLM to be able to call.",
     },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -43975,6 +44114,13 @@ export const MinimalAgentInstanceDTOWritableSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
   },
@@ -47325,6 +47471,20 @@ export const RefusalStopEventWritableSchema = {
       title: "Tools",
       description:
         "List of tools that are advertised to the LLM to be able to call.",
+    },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
     },
     reason: {
       $ref: "#/components/schemas/RefusalReason",
@@ -52586,6 +52746,18 @@ export const UserMessageEventWritableSchema = {
       description:
         "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
       default: [],
+    },
+    response_schema: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ResponseSchema",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.",
     },
   },
   additionalProperties: true,
