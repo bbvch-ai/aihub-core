@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import binascii
 import math
 import uuid
 from typing import Annotated
@@ -55,7 +54,7 @@ class InlineFile(BaseModel):
             raise self._too_large(settings)
         try:
             data = base64.b64decode(self.content, validate=True)
-        except binascii.Error as decode_error:
+        except ValueError as decode_error:
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_CONTENT, f"The content of '{self.filename}' is not valid base64."
             ) from decode_error

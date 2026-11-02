@@ -233,8 +233,8 @@ class ReplyDrafting:
         The connection is deliberately absent for the whole of this: one model call per message over a batch is
         exactly the stretch of time a mail server drops an idle socket in.
 
-        Inbound mail is untrusted and enters the prompt; the platform's Presidio guard anonymizes PII at the LLM
-        gateway, so this adds no sanitisation of its own.
+        Inbound mail is untrusted and enters the prompt as written: this adds no sanitisation, and the gateway
+        anonymises PII only when the deployment's Presidio guardrails or the profile's ``anonymise`` setting turn it on.
         """
         llm_config = agent_config.drafting_llm
         builder = DraftPromptBuilder(draft.number_of_input_tokens, llm_config.token_counter, draft.draft_prompt)

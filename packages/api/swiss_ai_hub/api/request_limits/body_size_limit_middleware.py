@@ -4,20 +4,22 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
-class JsonBodySizeLimitMiddleware:
-    """Rejects a JSON body past the limit while it arrives, before anything parses it.
+class BodySizeLimitMiddleware:
+    """Rejects a request body past the limit while it arrives, before anything reads it whole.
 
-    The API runs a single worker, and a parsed JSON body sits in memory several times over (the bytes, the decoded
-    objects, the validated model), so one oversized request would stall or exhaust it for every other caller.
-    Multipart and binary uploads are left to their endpoints, which stream and bound them themselves.
+    FastAPI reads the full body of every endpoint that takes one, whatever its content type, so the bound applies to all
+    bodies: limiting only JSON would let a caller pass any other type, or none, and still be buffered. The API runs a
+    single worker, so one oversized body would stall or exhaust it for every other caller. Multipart uploads are spooled
+    to disk by Starlette, and the exempt paths stream and bound their bodies themselves.
     """
 
-    def __init__(self, app: ASGIApp, max_bytes: int) -> None:
+    def __init__(self, app: ASGIApp, max_bytes: int, exempt_path_suffixes: tuple[str, ...] = ()) -> None:
         self.app = app
         self.max_bytes = max_bytes
+        self.exempt_path_suffixes = exempt_path_suffixes
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http" or not self._is_json(Headers(scope=scope)):
+        if scope["type"] != "http" or self._is_exempt(scope):
             await self.app(scope, receive, send)
             return
         content_length = Headers(scope=scope).get("content-length", "")
@@ -25,6 +27,10 @@ class JsonBodySizeLimitMiddleware:
             await JSONResponse({"detail": self._detail()}, status.HTTP_413_CONTENT_TOO_LARGE)(scope, receive, send)
             return
         await self.app(scope, self._bounded(receive), send)
+
+    def _is_exempt(self, scope: Scope) -> bool:
+        media_type = Headers(scope=scope).get("content-type", "").split(";")[0].strip().lower()
+        return media_type == "multipart/form-data" or scope["path"].endswith(self.exempt_path_suffixes)
 
     def _bounded(self, receive: Receive) -> Receive:
         """Counts what a chunked body, which announces no length, actually delivers."""
@@ -42,9 +48,4 @@ class JsonBodySizeLimitMiddleware:
         return bounded_receive
 
     def _detail(self) -> str:
-        return f"The request body is larger than the {self.max_bytes} bytes a JSON request may have."
-
-    @staticmethod
-    def _is_json(headers: Headers) -> bool:
-        media_type = headers.get("content-type", "").split(";")[0].strip().lower()
-        return media_type == "application/json" or media_type.endswith("+json")
+        return f"The request body is larger than the {self.max_bytes} bytes a request may have."

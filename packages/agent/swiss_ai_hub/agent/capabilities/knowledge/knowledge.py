@@ -125,16 +125,20 @@ class Knowledge(Capability):
         """Search the referenced collections the user may read, and answer with the best of it as one block."""
         if not request.references:
             return KnowledgeSearchedEvent(tool_call_id=request.tool_call_id)
-        searchable, refused = await asyncio.to_thread(
+        searchable, missing, refused = await asyncio.to_thread(
             ReferencedKnowledge.partition, request.references, access, UserScopedRetrievers.namespaces_of
         )
         found = await Knowledge._find(searchable, request.query, knowledge.knowledge, t, user) if searchable else []
-        refused_labels = await asyncio.to_thread(
-            lambda: [KnowledgeCollectionLabel.of_reference(reference, t.locale) for reference in refused]
+        missing_labels, refused_labels = await asyncio.to_thread(
+            lambda: (
+                [KnowledgeCollectionLabel.of_reference(reference, t.locale) for reference in missing],
+                [KnowledgeCollectionLabel.of_reference(reference, t.locale) for reference in refused],
+            )
         )
         return KnowledgeSearchedEvent(
-            block=Knowledge._block(found, refused_labels, t, request.cite_sources),
+            block=Knowledge._block(found, missing_labels, refused_labels, t, request.cite_sources),
             grounding_nodes=found,
+            missing=missing,
             refused=refused,
             tool_call_id=request.tool_call_id,
         )
@@ -218,9 +222,13 @@ class Knowledge(Capability):
 
     @staticmethod
     def _block(
-        found: list[IngestedNode], refused_labels: list[str], t: LocaleHandler, cite_sources: bool
+        found: list[IngestedNode],
+        missing_labels: list[str],
+        refused_labels: list[str],
+        t: LocaleHandler,
+        cite_sources: bool,
     ) -> list[ChatMessage]:
-        """The documents as retrieved knowledge is rendered, followed by the collections the answer must not use."""
+        """The documents as retrieved knowledge is rendered, followed by the collections the answer could not use."""
         block = []
         if found:
             block.append(
@@ -228,13 +236,14 @@ class Knowledge(Capability):
             )
             if cite_sources:
                 block.append(ChatMessage(role=MessageRole.SYSTEM, content=t("lib.prompt.citations.instruction")))
-        if refused_labels:
-            collections = ", ".join(f'"{label}"' for label in refused_labels)
-            block.append(
-                ChatMessage(
-                    role=MessageRole.SYSTEM, content=t("agent.knowledge.prompt.refused", collections=collections)
+        for key, labels in (("missing", missing_labels), ("refused", refused_labels)):
+            if labels:
+                collections = ", ".join(f'"{label}"' for label in labels)
+                block.append(
+                    ChatMessage(
+                        role=MessageRole.SYSTEM, content=t(f"agent.knowledge.prompt.{key}", collections=collections)
+                    )
                 )
-            )
-        if not found and not refused_labels:
+        if not found and not missing_labels and not refused_labels:
             block.append(ChatMessage(role=MessageRole.SYSTEM, content=t("agent.knowledge.prompt.nothing_found")))
         return block

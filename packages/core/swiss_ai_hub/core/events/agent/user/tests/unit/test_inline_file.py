@@ -129,11 +129,10 @@ class TestFromApiPayload:
 
 @pytest.mark.asyncio
 class TestStoreAll:
-    async def test_rejects_invalid_base64(self, context: ApiPayloadContext):
+    @pytest.mark.parametrize("content", ["not base64!", "é"])
+    async def test_rejects_invalid_base64(self, context: ApiPayloadContext, content: str):
         with pytest.raises(HTTPException) as rejected:
-            await InlineFile.store_all(
-                [InlineFile(filename="a.txt", file_type="text/plain", content="not base64!")], context
-            )
+            await InlineFile.store_all([InlineFile(filename="a.txt", file_type="text/plain", content=content)], context)
         assert rejected.value.status_code == 422
 
     async def test_rejects_a_file_over_the_limit(self, context: ApiPayloadContext, monkeypatch: pytest.MonkeyPatch):

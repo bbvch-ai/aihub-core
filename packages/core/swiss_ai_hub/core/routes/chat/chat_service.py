@@ -103,6 +103,20 @@ class ChatService:
     """
 
     @staticmethod
+    def existing_thread_of(user: UserIdentity, thread_id: ObjectId | None) -> ThreadEntity | None:
+        """The thread a message continues, or None when it does not exist yet. A thread the user is no member of is
+        refused, before anything the message carries is stored."""
+        if not thread_id:
+            return None
+        try:
+            thread = ThreadEntity.get_thread_by_id(str(thread_id))
+        except mongoengine.errors.DoesNotExist:
+            return None
+        if thread and user.id not in [u.user_id for u in thread.users]:
+            raise HTTPException(status_code=403, detail="User not part of the thread")
+        return thread or None
+
+    @staticmethod
     async def iter_streamed_display_events(
         resources: StreamingResources,
         drain_grace_seconds: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
@@ -161,17 +175,7 @@ class ChatService:
         Common initialization steps for both streaming and JSON interactions.
         """
         messages = ChatService._without_earlier_tables(messages)
-        thread = None
-        if thread_id:
-            try:
-                thread = ThreadEntity.get_thread_by_id(str(thread_id))
-                if not thread:
-                    raise mongoengine.errors.DoesNotExist()
-                if user.id not in [u.user_id for u in thread.users]:
-                    raise HTTPException(status_code=403, detail="User not part of the thread")
-            except mongoengine.errors.DoesNotExist:
-                pass
-
+        thread = ChatService.existing_thread_of(user, thread_id)
         if not thread:
             thread = ThreadEntity.create_thread(
                 "chat",
@@ -181,17 +185,14 @@ class ChatService:
             )
         logger.debug(f"Created thread: {thread.id}")
 
-        hitl_requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
-        logger.debug(f"hitl_requests: {hitl_requests}")
-
-        hitl_responses = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(str(thread.id))
-        logger.debug(f"hitl_responses: {hitl_responses}")
+        open_hitl_requests = PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(str(thread.id))
+        logger.debug(f"open_hitl_requests: {open_hitl_requests}")
 
         thread_id = str(thread.id)
         display_id = display_id or str(ObjectId())
 
-        if len(hitl_requests) != len(hitl_responses):
-            open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
+        if open_hitl_requests:
+            open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(open_hitl_requests[-1].event_data)
             topic = open_hitl_request.topic
 
             if isinstance(open_hitl_request, HumanInTheLoopInputRequestEvent):

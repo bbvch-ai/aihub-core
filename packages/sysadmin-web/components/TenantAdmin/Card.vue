@@ -30,6 +30,13 @@
             severity="warn"
             icon="pi pi-exclamation-triangle"
           />
+          <Tag
+            v-else-if="isNotMember"
+            v-tooltip.top="{ value: t('tenant_admin.state.not_member_tooltip') }"
+            :value="t('tenant_admin.state.not_member_label')"
+            severity="secondary"
+            icon="pi pi-lock"
+          />
         </div>
         <span class="text-xs text-surface-500 dark:text-surface-500">
           {{ tenant.id }}
@@ -107,6 +114,11 @@ const isActive = computed(() => {
 })
 
 const isOrphaned = computed(() => props.tenant.state === 'orphaned')
+
+const { tenants: memberTenants } = useTenantMemberships()
+const isNotMember = computed(() =>
+  memberTenants.value !== undefined && !memberTenants.value.some(tenant => tenant.id === props.tenant.id),
+)
 
 // A wildcard ceiling is one rule; a curated one enumerates every permitted model and runs to a dozen or
 // more. Rendering them all turned the card into a wall of badges, so the tail moves into a tooltip.

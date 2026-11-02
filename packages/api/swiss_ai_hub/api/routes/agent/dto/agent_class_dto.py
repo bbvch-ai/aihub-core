@@ -105,8 +105,8 @@ class AgentClassDTO(BaseModel):
         )
 
     @classmethod
-    def from_entity(cls, entity: "AgentClassEntity", t: LocaleHandler) -> Self:
-        """Creates an AgentClassDTO from a database entity (for offline classes)."""
+    def from_entity(cls, entity: "AgentClassEntity", t: LocaleHandler, *, is_online: bool) -> Self:
+        """Creates an AgentClassDTO from a database entity; `is_online` comes from one threshold per request."""
         start_events = [event.to_specs() for event in entity.start_events]
 
         stop_events = [event.to_specs() for event in entity.stop_events]
@@ -136,7 +136,7 @@ class AgentClassDTO(BaseModel):
             hitl_request_events=hitl_request_events,
             hitl_response_events=hitl_response_events,
             network_graph=network_graph,
-            is_online=entity.is_online,
+            is_online=is_online,
             templates=[TemplateData.model_validate(td) for td in entity.templates] if entity.templates else [],
         )
         return dto.in_locale(t)

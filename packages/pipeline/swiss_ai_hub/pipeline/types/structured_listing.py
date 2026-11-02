@@ -8,3 +8,7 @@ class StructuredListing(BaseModel):
 
     listed_keys: Annotated[list[str], Field(description="Object key of every record currently in scope.")]
     written_keys: Annotated[list[str], Field(description="Object keys the sync of this run wrote.")]
+    unread_file_keys: Annotated[
+        list[str],
+        Field(description="Keys of files the source would not serve this run; tried again next run, never missing."),
+    ] = []

@@ -19,6 +19,11 @@ STATUS_REASONS = {
     429: WebFetchFailureReason.ACCESS_DENIED,
     451: WebFetchFailureReason.ACCESS_DENIED,
 }
+PROXY_ERROR_HEADER = "x-squid-error"
+PROXY_ERROR_REASONS = {
+    "ERR_ACCESS_DENIED": WebFetchFailureReason.BLOCKED_HOST,
+    "ERR_DNS_FAIL": WebFetchFailureReason.NOT_FOUND,
+}
 
 
 class RequestGuard:
@@ -27,12 +32,12 @@ class RequestGuard:
     Playwright routes the first request of a navigation and lets the browser follow redirects unseen, even when
     the redirect was handed over by `route.fulfill` (verified against the 1.60 server). A redirect therefore never
     reaches the browser: the main document's target is recorded for the fetcher to open as a new, routed page,
-    and a subresource's hops are followed here, each checked by the policy.
+    and a subresource's hops are followed here, each checked by the policy. Every fetch goes through the context's
+    proxy, `browser-proxy`, which refuses a host whose address is not public.
     """
 
-    def __init__(self, policy: UrlSafetyPolicy, timeout_seconds: float) -> None:
+    def __init__(self, timeout_seconds: float) -> None:
         self.outcome = NavigationOutcome()
-        self._policy = policy
         self._timeout_ms = timeout_seconds * 1000
 
     async def handle(self, route: Route) -> None:
@@ -40,7 +45,7 @@ class RequestGuard:
         if request.resource_type in SKIPPED_RESOURCE_TYPES:
             await route.abort("blockedbyclient")
             return
-        reason = await self._policy.check(request.url)
+        reason = UrlSafetyPolicy.check(request.url)
         if reason is not None:
             await self._refuse(route, reason)
             return
@@ -74,6 +79,13 @@ class RequestGuard:
         return None
 
     @staticmethod
+    def reason_for_proxy_refusal(headers: dict[str, str]) -> WebFetchFailureReason | None:
+        """`browser-proxy` answers in the site's place when it does not connect, so its 403 means the address is
+        not public, not that the site denied access."""
+        error_code = headers.get(PROXY_ERROR_HEADER, "").split(" ")[0]
+        return PROXY_ERROR_REASONS.get(error_code)
+
+    @staticmethod
     def redirect_location(url: str, response: APIResponse) -> str | None:
         location = response.headers.get("location")
         if 300 <= response.status < 400 and location:
@@ -96,7 +108,9 @@ class RequestGuard:
             self.outcome.redirect_to = location
             await route.abort("aborted")
             return
-        reason = self.reason_for_response(response.status, response.headers.get("content-type", ""))
+        reason = self.reason_for_proxy_refusal(response.headers) or self.reason_for_response(
+            response.status, response.headers.get("content-type", "")
+        )
         if reason is not None:
             await self._refuse(route, reason)
             return
@@ -110,7 +124,7 @@ class RequestGuard:
             if location is None:
                 await route.fulfill(response=response)
                 return
-            if await self._policy.check(location) is not None:
+            if UrlSafetyPolicy.check(location) is not None:
                 await route.abort("blockedbyclient")
                 return
             url = location

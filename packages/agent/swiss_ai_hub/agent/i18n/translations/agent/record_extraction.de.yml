@@ -1,5 +1,8 @@
 ---
 steps:
+  answer_form:
+    name: "Anfrageformular beantworten"
+    description: "Führt die Extraktion aus, die der Benutzer im Anfrageformular bestätigt oder korrigiert hat"
   plan:
     name: Tabelle planen
     description: Ermittelt die ausgewählten Dokumente und entwirft die Spalten der
@@ -40,16 +43,7 @@ tools:
     label: Tabelle extrahieren
     approval: 'Eine Tabelle mit diesen Spalten aus Wissensdokumenten extrahieren:
       {fields}'
-    description: Extrahiert eine Tabelle aus vielen Wissensdokumenten, eine Zeile
-      pro gefundenem Eintrag, jede Zeile mit ihrer Datei. Verwende es, wenn der Benutzer
-      Einträge aus mehreren Dokumenten gesammelt haben möchte, etwa jede Hardware-Position
-      auf den Rechnungen 2025 eines Lieferanten; nicht für eine Frage, die ein Dokument
-      oder die Wissenssuche beantwortet. Finde zuerst die Dokumente mit den Listen-
-      und Suchwerkzeugen und prüfe sie mit select_knowledge_documents; rufe dies dann
-      mit denselben Bedingungen auf. Der Benutzer sieht die Tabelle direkt und kann
-      sie ganz herunterladen; du erhältst ihre Zusammenfassung. Passen mehr Dokumente,
-      als eine Antwort ungefragt extrahiert, erhält der Benutzer eine Stichprobe und
-      entscheidet; extrahiere alle nur, wenn er zustimmt, mit confirm_sample auf true.
+    description: "Extrahiert eine Tabelle aus vielen Wissensdokumenten, eine Zeile pro gefundenem Eintrag, jede Zeile mit ihrer Datei. Verwende es, wenn der Benutzer Einträge aus mehreren Dokumenten gesammelt haben möchte, etwa jede Hardware-Position auf den Rechnungen 2025 eines Lieferanten; nicht für eine Frage, die ein Dokument oder die Wissenssuche beantwortet. Finde zuerst die Dokumente mit den Listen- und Suchwerkzeugen und prüfe sie mit select_knowledge_documents; rufe dies dann mit denselben Bedingungen auf. Der Benutzer sieht die Tabelle direkt und kann sie ganz herunterladen; du erhältst ihre Zusammenfassung. Passen mehr Dokumente, als eine Antwort ungefragt extrahiert, erhält der Benutzer eine Stichprobe und entscheidet; extrahiere alle nur, wenn er zustimmt, mit confirm_sample auf true. Bevor eine neue Extraktion läuft, bestätigt oder korrigiert der Benutzer sie in einem Formular; folge dann dem, was das Ergebnis sagt."
   select:
     label: Dokumente auswählen
     approval: 'Wissensdokumente für eine Tabelle mit diesen Spalten auswählen: {fields}'
@@ -112,3 +106,50 @@ progress:
   reading: Lese %{path}, ein langes Dokument.
   still_reading: Lese noch %{path} (%{minutes} Min.).
   extracted_rows: '%{done} von %{files} · %{path}: %{rows} Zeilen — %{first}'
+form:
+  intro: "Bevor ich die Dokumente lese, bestätige bitte, was ich verstanden habe:"
+  reply_hint: "Antworte mit *ja*, um fortzufahren, oder schreibe, was zu ändern ist:"
+  as_understood: "Wie verstanden"
+  where:
+    header: "Ablageort"
+    question: "Welche Dokumente soll ich lesen? Verstanden habe ich: %{value}."
+    hint: "Um nur einen Teil zu lesen, nenne einen Ordner, eine Datei oder ein Jahr."
+    folders: "Ordner: %{folders}"
+    anything: "Alle Dokumente"
+    anything_description: "Jedes Dokument im Bereich dieses Agenten lesen"
+    everything: "alle Dokumente im Bereich"
+    line: "**Ablageort:** %{value}"
+  rows:
+    header: "Filterbedingung"
+    question: "Welche Datensätze soll die Tabelle behalten? Verstanden habe ich: %{value}."
+    hint: "Eine Bedingung an die Datensätze, keine Berechnung, z. B. von Lieferant GmbH · datiert 2018 · nur Hardware-Positionen."
+    anything: "Jede Zeile"
+    anything_description: "Jede Zeile der Dokumente behalten"
+    everything: "jede Zeile"
+    line: "**Filterbedingung:** %{value}"
+  columns:
+    header: "Zu extrahierende Werte"
+    question: "Welche Werte soll jede Zeile enthalten? Verstanden habe ich: %{value}."
+    hint: "Die Werte bestimmen, was eine Zeile ist, z. B. Rechnungsnummer, Datum, Nettobetrag → eine Zeile pro Rechnung; Artikel, Menge, Nettobetrag → eine Zeile pro Position."
+    anything: "Der Agent wählt"
+    anything_description: "Werte, die zu den gewünschten Datensätzen passen"
+    unnamed: "keine genannt"
+    line: "**Zu extrahierende Werte:** %{value}"
+  exact:
+    header: "Exakte Stichwörter"
+    question: "Welche Wörter enthalten die gesuchten Dokumente wörtlich? Verstanden habe ich: %{value}."
+    hint: "Optional, z. B. ein Lieferantenname wie Lieferant GmbH · eine Rechnungs- oder Vertragsnummer. Sie leiten die Suche und filtern nie."
+    anything: "Keine"
+    anything_description: "Die Suche entscheidet"
+    none: "keine"
+    line: "**Exakte Stichwörter:** %{value}"
+  semantic:
+    header: "Semantische Stichwörter"
+    question: "Worum geht es in den gesuchten Dokumenten? Verstanden habe ich: %{value}."
+    hint: "Optional, z. B. Lieferantenrechnung mit Positionen · Mietvertrag · Versicherungspolice. Sie ordnen die Dokumente nach Bedeutung und filtern nie."
+    anything: "Keine"
+    anything_description: "Die Suche entscheidet"
+    none: "keine"
+    line: "**Semantische Stichwörter:** %{value}"
+  declined: "Der Benutzer hat diese Extraktion im Anfrageformular abgelehnt. Extrahiere nicht; frag, was er stattdessen möchte."
+  rewritten: "Der Benutzer hat das Anfrageformular dieser Extraktion so beantwortet: \"%{reply}\". Rufe extract_records erneut mit entsprechend geänderten Argumenten auf; es läuft dann ohne erneute Rückfrage."

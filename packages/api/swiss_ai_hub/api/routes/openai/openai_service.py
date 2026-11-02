@@ -823,6 +823,7 @@ class OpenaiService:
                 status_code=400, detail="At least one message is required when reconstruct_history is enabled."
             )
         sent = messages[-1:] if reconstruct else messages
+        ChatService.existing_thread_of(context.user, str_to_object_id(context.thread_id))
         images = StoredImage.checked_all(sent, context)
         inline_files = await InlineFile.store_all(chat_completion_request.inline_files(), context)
         await StoredImage.store_all(images, context)

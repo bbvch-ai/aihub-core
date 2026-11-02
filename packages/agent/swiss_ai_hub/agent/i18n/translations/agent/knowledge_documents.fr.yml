@@ -9,11 +9,9 @@ config:
     help: Uniquement les documents dont le chemin dans leur collection correspond
       à ce motif, p. ex. invoices/2025/** ou **/*.pdf. S'applique aux outils de documents
       seulement, pas à la recherche de connaissances. Laisser vide pour tous les documents.
-  semantic_search:
-    label: Classer les documents par sens
-    help: Le modèle peut aussi classer par sens les documents du filtre de chemins,
-      et trouve ainsi des documents rédigés avec d'autres mots ou dans une autre langue
-      que la demande.
+  discovery:
+    label: "Mode découverte"
+    help: "Désactivé : chaque document des collections et du filtre de chemin est lu, aucun n'est donc oublié ; l'utilisateur précise en nommant des dossiers, des fichiers ou des années. Activé : le modèle trouve d'abord les documents, en cherchant par mots-clés ce que la demande nomme exactement (un fournisseur, un numéro, un dossier) et en classant par le sens ce qu'elle décrit seulement ; seuls les documents qu'il sélectionne sont lus. C'est plus rapide sur de grandes collections mais peut oublier des documents. Le formulaire de la demande demande alors aussi des mots-clés exacts et sémantiques. La durée de la recherche est fixée par Décisions maximales et Appels d'outils maximaux sous Tools."
 tools:
   rank_knowledge_documents:
     label: Classer les documents de connaissances

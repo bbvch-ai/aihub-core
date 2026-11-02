@@ -19,7 +19,7 @@ Owned by this package: `TenantAdminController` (six endpoints under `/admin/tena
 sysadmin-gated.
 
 Re-mounted from `packages/api` (Apache-2.0) so sysadmin-web's inherited composables resolve same-origin against
-sysadmin-api: `MyAccountController.get_my_identity()`, `UserController` (get/list + role assign/revoke),
+sysadmin-api: `MyAccountController.get_my_identity()`, `MyTenantController.get_my_tenants()`, `UserController` (get/list + role assign/revoke),
 `RoleController`, `AuthProviderController`. Code ownership stays in `packages/api`; sysadmin-api only picks the surface
 it needs. See `packages/sysadmin-api/CLAUDE.md` for the full mount table.
 
