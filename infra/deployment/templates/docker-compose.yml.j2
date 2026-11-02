@@ -32,8 +32,10 @@
     Docker without SELinux (Ubuntu, Docker Desktop) ignores the suffix; servers keep their mounts unchanged. #}
 {%- set selinux_rw = ':z' if stage == 'dev' else '' %}
 {%- set selinux_ro = ',z' if stage == 'dev' else '' %}
-{#- Rootless Podman serves its Docker API under the user's runtime dir, so the dev stack takes the path from DOCKER_SOCKET. #}
-{%- set docker_socket = '${DOCKER_SOCKET}' if stage == 'dev' else '/var/run/docker.sock' %}
+{#- Rootless Podman serves its Docker API under the user's runtime dir, so the dev stack takes the path from DOCKER_SOCKET.
+    The default is deliberate, unlike elsewhere: a local .env predating the variable would otherwise leave the mount empty,
+    and compose then refuses the whole file. #}
+{%- set docker_socket = '${DOCKER_SOCKET:-/var/run/docker.sock}' if stage == 'dev' else '/var/run/docker.sock' %}
 {%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if gpu_enabled else 'text-generation/gemma-4-31B-it' %}
 {#- OpenWebUI resolves TASK_MODEL against its own registry and denies non-admins any model without a
     read grant. The provisioner registers this raw LiteLLM id directly as the base-registry row — no

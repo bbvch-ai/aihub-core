@@ -1059,7 +1059,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home:z
       - ./configs/backup/backup-dagster.dev.gpu.yml:/dagster_home/dagster.yaml:ro,z
-      - ${DOCKER_SOCKET}:/var/run/docker.sock:ro
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
     healthcheck:
       test:
         - CMD
