@@ -16,8 +16,13 @@ NAMESPACE = "legal"
 AGENT_FILE = "rag/my-agent/0b6c9a52-3f7e-4d8a-9c1e-2f4b5a6d7e8f/report.pdf"
 
 
-def _access(*rules: str) -> AccessChecker:
-    return AccessChecker(user_access_rules=list(rules), tenant_access_rules=["aihub.user.>", "aihub.admin.>"])
+def _access(*rules: str, tenant_rules: tuple[str, ...] = ("aihub.user.>", "aihub.admin.>")) -> AccessChecker:
+    return AccessChecker(user_access_rules=list(rules), tenant_access_rules=list(tenant_rules))
+
+
+def _ceiling_of_tenant_owning(database: str) -> tuple[str, ...]:
+    """What a tenant's ceiling holds for knowledge: the grant made when it created the database, no wildcard."""
+    return ("aihub.user.agent.>", f"aihub.admin.knowledge.{database}", f"aihub.admin.knowledge.{database}.>")
 
 
 @pytest.fixture
@@ -69,7 +74,19 @@ class TestKnowledgeFiles:
     def test_reader_of_another_database_is_refused(self, knowledge, s3_service):
         _assert_forbidden(_access("aihub.user.knowledge.other-db.>"), BUCKET, f"{FOLDER}/report.pdf", s3_service)
 
-    @pytest.mark.parametrize("container", ["backups", "dagster", "langfuse", "other-tenant-bucket"])
+    def test_database_of_the_users_tenant_gets_a_url(self, knowledge, s3_service):
+        access = _access("aihub.user.>", tenant_rules=_ceiling_of_tenant_owning(DB))
+
+        assert FileService.get_file_url(access, BUCKET, f"{FOLDER}/report.pdf", s3_service) == "https://public/signed"
+
+    def test_database_of_another_tenant_is_refused(self, knowledge, s3_service):
+        """Buckets are one collection across tenants, so another tenant's bucket resolves like the user's own; only
+        the tenant ceiling keeps it out, even for a user whose roles allow everything."""
+        access = _access("aihub.user.>", tenant_rules=_ceiling_of_tenant_owning("own-db"))
+
+        _assert_forbidden(access, BUCKET, f"{FOLDER}/report.pdf", s3_service)
+
+    @pytest.mark.parametrize("container", ["backups", "dagster", "langfuse", "sandbox-files"])
     def test_bucket_without_knowledge_database_is_refused(self, knowledge, s3_service, container):
         knowledge.bucket_entity.get_bucket_by_bucket_name.side_effect = DoesNotExist
         _assert_forbidden(_access("aihub.user.>"), container, f"{FOLDER}/report.pdf", s3_service)
