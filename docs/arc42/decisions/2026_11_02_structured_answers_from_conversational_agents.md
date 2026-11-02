@@ -36,7 +36,12 @@ primitive fields only, because jambo reads nothing but `properties`. A caller's 
 - **The answering model call is asked for the shape.** `EventDisplayer.display_llm_stream(..., response_schema=...)`
   sends `response_format` next to `tools` when the model declares `supports_response_schema`.
   - LLM Wrapping, Web Fetch and Few-Shot pass the schema in their answering step.
-  - The tool loop passes it on every answering turn, tools included, as OpenAI does.
+  - The tool loop passes it only on a turn without tools. Sent next to the tools on a live check, the shape decided
+    the first turn: the Universal Agent answered at once with an invoice it made up instead of reading the attached
+    one. A reply given with tools is put into the shape by the completion.
+  - Every call asked for a shape is told, in its leading system message (`ResponseSchemaInstruction`), to take values
+    only from the conversation and its documents and to use null otherwise. Without it an undated invoice came back
+    dated with the day from the agent's system prompt.
   - The schema reaches these steps through the run context, read with `RequestedResponseSchema`, a sibling of
     `RequestedFeatures`.
 - **`Conversation.complete` validates.** With a schema requested, the completion parses the answer instead of generating
@@ -63,7 +68,8 @@ Rejected alternatives:
 
 ## Consequences
 
-- One structured answer costs one model call when the model honours `response_format`, and two when it does not.
+- One structured answer costs one model call when the model honours `response_format`, and two when it does not. A
+  tool-loop answer usually costs the correction call too, since its last turn still offers tools.
 - The answering step streams the JSON as chunks, so the chat shows the JSON as it is written. A corrected answer shows a
   thought, and the corrected JSON arrives only on the stop event; API clients must read the result from the stop event.
 - The answering call keeps the model's thinking. A reasoning model whose provider breaks JSON with thinking on is
