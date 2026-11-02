@@ -44,7 +44,7 @@ from swiss_ai_hub.core.topic_managers import AgentTopicManager
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
 from swiss_ai_hub.agent.capabilities.record_extraction.document_extracted_event import DocumentExtractedEvent
-from swiss_ai_hub.agent.capabilities.record_extraction.extraction_sample import SAMPLE_DOCUMENTS
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_sample import SAMPLE_DOCUMENTS, ExtractionSample
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import PREVIEW_ROWS
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import RecordExtraction
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_config import RecordExtractionConfig
@@ -183,7 +183,11 @@ def _stub(monkeypatch: pytest.MonkeyPatch, selections: dict[str, list[KnowledgeD
     async def cost_reporting(self, displayer, user=None):
         yield MagicMock()
 
+    async def no_ranking(*_args, **_kwargs):
+        return None
+
     monkeypatch.setattr(f"{PLANNER}.KnowledgeDocumentSelector.resolve", resolve)
+    monkeypatch.setattr(ExtractionSample, "_ranked", staticmethod(no_ranking))
     monkeypatch.setattr(f"{PLANNER}.RecordSchemaBuilder.build", build)
     monkeypatch.setattr(f"{EXTRACTION}.KnowledgeDocumentReader.load_document", load)
     monkeypatch.setattr(f"{EXTRACTION}.RecordExtractor.extract", extract)

@@ -68,8 +68,9 @@ async def test_a_page_the_fetched_page_opens_sends_nothing():
 @pytest.mark.flaky
 @pytest.mark.asyncio
 async def test_reads_real_pages_through_the_playwright_server(monkeypatch: pytest.MonkeyPatch):
-    """Needs the dev stack's Playwright server and internet access. Marked flaky because it depends on third-party
-    sites, which CI must not; run it locally after changing the fetcher or `RequestGuard`."""
+    """Needs the dev stack's Playwright server and `browser-proxy`, and internet access. Marked flaky because it
+    depends on third-party sites, which CI must not; run it locally after changing the fetcher, `RequestGuard` or the
+    proxy. `127.0.0.1.nip.io` is a public name for a private address, so only the proxy can refuse it."""
     monkeypatch.setenv("PLAYWRIGHT_WS_URL", os.environ.get("PLAYWRIGHT_WS_URL", "ws://localhost:3036"))
     urls = [
         "https://httpbin.org/redirect-to?url=https%3A%2F%2Fexample.com%2F",
@@ -77,6 +78,7 @@ async def test_reads_real_pages_through_the_playwright_server(monkeypatch: pytes
         "https://httpbin.org/status/404",
         "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
         "http://litellm:4000/",
+        "http://127.0.0.1.nip.io:3000/",
     ]
 
     results = await WebPageFetcher.fetch_all(urls, timeout_seconds=15, max_page_characters=4000)
@@ -88,4 +90,5 @@ async def test_reads_real_pages_through_the_playwright_server(monkeypatch: pytes
         WebFetchFailure(url=urls[2], reason=WebFetchFailureReason.NOT_FOUND),
         WebFetchFailure(url=urls[3], reason=WebFetchFailureReason.UNSUPPORTED_CONTENT),
         WebFetchFailure(url=urls[4], reason=WebFetchFailureReason.BLOCKED_HOST),
+        WebFetchFailure(url=urls[5], reason=WebFetchFailureReason.BLOCKED_HOST),
     ]

@@ -4385,6 +4385,7 @@ export type ContextualizedAgentEvent = {
     | HumanInTheLoopInputRequestEvent
     | ToolApprovalRequestEvent
     | HumanInTheLoopConfirmationRequestEvent
+    | HumanInTheLoopQuestionsRequestEvent
     | HumanInTheLoopChatRequestEvent
     | HumanInTheLoopRequestEvent
     | AgentInTheLoopRequestEvent
@@ -7946,6 +7947,64 @@ export type HumanInTheLoopChatResponseEvent = {
 };
 
 /**
+ * HumanInTheLoopChoiceOption
+ *
+ * One answer a choice question offers; lengths are capped as OpenWebUI's dialog caps them.
+ */
+export type HumanInTheLoopChoiceOption = {
+  /**
+   * Label
+   *
+   * The answer's short label.
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * What choosing the answer means.
+   */
+  description: string;
+};
+
+/**
+ * HumanInTheLoopChoiceQuestion
+ *
+ * A question a client with a dialog shows with its options; the first option is the one the agent recommends.
+ */
+export type HumanInTheLoopChoiceQuestion = {
+  /**
+   * Id
+   *
+   * Key the answer is returned under.
+   */
+  id: string;
+  /**
+   * Header
+   *
+   * A short title for the question.
+   */
+  header: string;
+  /**
+   * Question
+   *
+   * The question itself.
+   */
+  question: string;
+  /**
+   * Options
+   *
+   * The answers offered, the recommended one first.
+   */
+  options: Array<HumanInTheLoopChoiceOption>;
+  /**
+   * Allow Other
+   *
+   * Whether the user may write an answer of their own.
+   */
+  allow_other?: boolean;
+};
+
+/**
  * HumanInTheLoopConfirmationRequestEvent
  *
  * Request yes/no confirmation from a human operator.
@@ -8141,6 +8200,72 @@ export type HumanInTheLoopInputResponseEvent = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopInputRequestEvent;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * HumanInTheLoopQuestionsRequestEvent
+ *
+ * A chat question that also carries its parts as choice questions.
+ *
+ * Clients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows
+ * `question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to
+ * five questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
+ */
+export type HumanInTheLoopQuestionsRequestEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Question
+   *
+   * The query or prompt presented to the human operator.
+   */
+  question: string;
+  /**
+   * Topic
+   *
+   * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+   */
+  topic: PartialAgentTopic | AgentInstanceTopic;
+  /**
+   * Hitl Type
+   */
+  hitl_type?: "chat";
+  /**
+   * Questions
+   *
+   * The question's parts, for clients that show a dialog.
+   */
+  questions: Array<HumanInTheLoopChoiceQuestion>;
   /**
    * Event Name
    *
@@ -10492,6 +10617,12 @@ export type KnowledgeSearchedEvent = {
    * The document sections the block holds, for listing as sources.
    */
   grounding_nodes?: Array<IngestedNode>;
+  /**
+   * Missing
+   *
+   * Referenced collections that were not searched, because they no longer exist.
+   */
+  missing?: Array<KnowledgeReference>;
   /**
    * Refused
    *
@@ -23917,6 +24048,7 @@ export type ContextualizedAgentEventWritable = {
     | HumanInTheLoopInputRequestEventWritable
     | ToolApprovalRequestEventWritable
     | HumanInTheLoopConfirmationRequestEventWritable
+    | HumanInTheLoopQuestionsRequestEventWritable
     | HumanInTheLoopChatRequestEventWritable
     | HumanInTheLoopRequestEventWritable
     | AgentInTheLoopRequestEventWritable
@@ -25811,6 +25943,59 @@ export type HumanInTheLoopInputResponseEventWritable = {
 };
 
 /**
+ * HumanInTheLoopQuestionsRequestEvent
+ *
+ * A chat question that also carries its parts as choice questions.
+ *
+ * Clients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows
+ * `question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to
+ * five questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
+ */
+export type HumanInTheLoopQuestionsRequestEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Question
+   *
+   * The query or prompt presented to the human operator.
+   */
+  question: string;
+  /**
+   * Topic
+   *
+   * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+   */
+  topic: PartialAgentTopic | AgentInstanceTopic;
+  /**
+   * Hitl Type
+   */
+  hitl_type?: "chat";
+  /**
+   * Questions
+   *
+   * The question's parts, for clients that show a dialog.
+   */
+  questions: Array<HumanInTheLoopChoiceQuestion>;
+  [key: string]: unknown;
+};
+
+/**
  * HumanInTheLoopRequestEvent
  *
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
@@ -27530,6 +27715,12 @@ export type KnowledgeSearchedEventWritable = {
    * The document sections the block holds, for listing as sources.
    */
   grounding_nodes?: Array<IngestedNodeWritable>;
+  /**
+   * Missing
+   *
+   * Referenced collections that were not searched, because they no longer exist.
+   */
+  missing?: Array<KnowledgeReference>;
   /**
    * Refused
    *

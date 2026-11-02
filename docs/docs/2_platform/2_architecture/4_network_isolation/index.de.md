@@ -1,6 +1,6 @@
 ---
 title: Docker-Netzwerkisolation
-source_sha: 7da34c45a037796a2c11a06ffe647e2e0139ef81e3ba32196e280a05302a6003
+source_sha: 14ae497cb76a7ae32e6360c650f8c1ef75fe827e1fd2a4b67243e223d41f86bb
 ---
 
 # Docker-Netzwerkisolation
@@ -13,16 +13,16 @@ Prinzip der geringsten Rechte auf der Netzwerkebene.
 
 Die Plattform verwendet sieben isolierte Docker-Netzwerke:
 
-| Netzwerk        | Zweck                                | Externer Zugriff | ICC aktiviert |
-| --------------- | ------------------------------------ | ---------------- | ------------- |
-| `proxy`         | Externer Traffic über Traefik        | Ingress + Egress | Ja            |
-| `backend`       | Interne Anwendungs-Services          | Nein             | Ja            |
-| `data`          | Datenbanken und Message Broker       | Nein             | Ja            |
-| `storage`       | SeaweedFS Objekt-Speicher            | Nein             | Ja            |
-| `egress`        | Nur ausgehender Internetzugriff      | Nur Egress       | Nein          |
-| `code-sandbox`  | Code-Execution-Sandbox + ihre Caller | Nein             | Ja            |
-| `browser`       | Playwright-Browser + seine Caller    | Nein             | Ja            |
-| `pii-detection` | PII-Erkennung + ihre Caller          | Nein             | Ja            |
+| Netzwerk        | Zweck                                               | Externer Zugriff | ICC aktiviert |
+| --------------- | --------------------------------------------------- | ---------------- | ------------- |
+| `proxy`         | Externer Traffic über Traefik                       | Ingress + Egress | Ja            |
+| `backend`       | Interne Anwendungs-Services                         | Nein             | Ja            |
+| `data`          | Datenbanken und Message Broker                      | Nein             | Ja            |
+| `storage`       | SeaweedFS Objekt-Speicher                           | Nein             | Ja            |
+| `egress`        | Nur ausgehender Internetzugriff                     | Nur Egress       | Nein          |
+| `code-sandbox`  | Code-Execution-Sandbox + ihre Caller                | Nein             | Ja            |
+| `browser`       | Playwright-Browser + seine Caller + `browser-proxy` | Nein             | Ja            |
+| `pii-detection` | PII-Erkennung + ihre Caller                         | Nein             | Ja            |
 
 Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht aus dem
 Internet erreichbar sein sollten (kein Ingress). Die Inter-Container-Kommunikation (ICC) ist in diesem Netzwerk
@@ -39,11 +39,18 @@ der Sandbox zusätzlich jeden ausgehenden Internetzugriff.
 
 Das `browser`-Netzwerk wendet dasselbe Muster auf `playwright` an, den Headless-Browser, der die von Benutzern
 verlinkten Webseiten lädt (siehe [Verlinkte Webseiten](../../10_chat_ui/15_linked_web_pages/)). Seine Mitglieder sind
-der Browser plus **genau seine Caller**: `open-webui` (dessen Web Loader) und die Agents, die verlinkte Seiten lesen.
-Die Agents prüfen jede URL, bevor der Browser sie lädt, aber der Browser löst den Namen erneut auf, sodass ein Name, der
-zuerst mit einer öffentlichen und dann mit einer internen Adresse antwortet (DNS-Rebinding), durchrutschen würde. Durch
-den Ausschluss des Browsers aus `backend` hat das Laden einer solchen Seite keinen Netzwerkpfad zu `litellm`,
-`langfuse`, `mineru` oder dem Docker-Socket-Proxy. Der Browser erreicht das Internet über `egress`.
+der Browser plus **genau seine Caller**: `open-webui` (dessen Web Loader) und die Agents, die verlinkte Seiten lesen,
+sowie `browser-proxy`. Der Browser befindet sich **ausschliesslich** in `browser` und hat selbst keine Route ins
+Internet. Sein einziger Weg nach draussen ist `browser-proxy`, ein Squid-Forward-Proxy in `browser` und `egress`. Der
+Proxy löst jeden Host selbst auf, lehnt jedes Ziel ab, dessen Adresse nicht öffentlich ist (privat, Loopback, Link-Local
+einschliesslich der Cloud-Metadaten-Adresse, CGNAT, Multicast, reserviert sowie die IPv6-Entsprechungen einschliesslich
+NAT64 und 6to4), und verbindet sich mit der geprüften Adresse, sodass DNS-Rebinding die Adresse nicht austauschen kann.
+Er erlaubt nur die Ports 80, 443 und 1025-65535 und lehnt seine eigene Cache-Manager-Seite ab. Websites sehen weder die
+Adressen der Plattform noch den Proxy. Da der Browser weder in `backend` noch in `egress` liegt, hat das Laden einer
+Seite keinen Netzwerkpfad zu `litellm`, `langfuse`, `mineru` oder dem Docker-Socket-Proxy und keinen ins Internet ausser
+über den Proxy. Die URL-Prüfung der Agents lehnt nur ab, was der URL-Text zeigt (Schemas, interne Namen,
+nicht-öffentliche IP-Literale); ob ein Name auf eine private Adresse führt, entscheidet der Proxy. Siehe ADR
+`docs/arc42/decisions/2026_10_29_browser_reaches_the_internet_only_through_a_filtering_proxy.md`.
 
 Das `pii-detection`-Netzwerk enthält den `presidio-analyzer`, der die Personendaten erhält, die die Plattform
 anonymisiert, plus **genau seine Caller** (`litellm` und `universal-agent`). Seine Modelle sind im Image enthalten und
@@ -109,7 +116,7 @@ Verteilter Objektspeicher-Cluster:
 
 Services, die ausgehenden Internetzugriff, aber keinen eingehenden Zugriff benötigen:
 
-- **playwright**: Headless-Browser, der die von Benutzern verlinkten Webseiten lädt (muss Webseiten abrufen)
+- **browser-proxy**: Filternder Forward-Proxy, der der einzige Weg des Browsers ins Internet ist
 - **searxng**: Websuche (fragt externe Suchmaschinen ab)
 - **rclone**: Der Daemon, den die rclone-Source-Pipeline steuert (erreicht den Cloud-Speicher, aus dem sie
   synchronisiert)
@@ -120,7 +127,7 @@ Services, die ausgehenden Internetzugriff, aber keinen eingehenden Zugriff benö
 
 Dieses Netzwerk hat die ICC (Inter-Container Communication) deaktiviert, was die laterale Bewegung zwischen Containern
 in diesem Netzwerk verhindert. Services nutzen `egress` ausschließlich für den ausgehenden Internetzugriff und müssen
-andere Netzwerke (z.B. `browser` für `playwright`) für die Inter-Service-Kommunikation verwenden.
+andere Netzwerke (z.B. `browser` für `browser-proxy`) für die Inter-Service-Kommunikation verwenden.
 
 ### Code-Sandbox-Netzwerk-Services
 
@@ -146,11 +153,16 @@ Die Zone für den Headless-Browser:
 - **playwright**: Lädt die von Benutzern verlinkten Webseiten für den Web Loader von Open WebUI und den Webseitenabruf
   der Agents (siehe ADR `docs/arc42/decisions/2026_10_20_agents_read_linked_web_pages_through_playwright.md`)
 
-Der Browser ist der **einzige** Bewohner; für das Internet befindet er sich außerdem in `egress`. Seine Caller treten
+Der Browser befindet sich nur in `browser`; `browser-proxy` tritt ebenfalls bei (und `egress`). Seine Caller treten
 `browser` zusätzlich zu ihren eigenen Netzwerken bei: `open-webui` und die Agents, die verlinkte Seiten lesen
 (`llm-wrapping-agent`, `web-fetch-agent`, `rag-agent`, `expert-rag-agent` und `universal-agent`). Ein neuer Agent, der
-Webseiten liest, muss ebenfalls beitreten, sonst kann er `ws://playwright:3000` nicht erreichen. Im Dev-Stage erreichen
-Open WebUI und die Agents den Browser stattdessen über den veröffentlichten Port `localhost:3036`.
+Webseiten liest, muss ebenfalls beitreten, sonst kann er `ws://playwright:3000` und `browser-proxy` nicht erreichen. Die
+Agents übergeben dem Browser-Kontext den Proxy (`PLAYWRIGHT_PROXY_URL=http://browser-proxy:3128`, ein fester Wert im
+Compose-Template; Betreiber setzen nichts). Open WebUI erhält keine Proxy-Einstellung: Sein Loader führt jede Anfrage
+selbst aus und nutzt Playwright nur zum Rendern. Im Dev-Stage erreichen Open WebUI und die Agents den Browser
+stattdessen über den veröffentlichten Port `localhost:3036`; die Dev-Netzwerke sind nicht internal, daher belegt nur der
+`local`-Stage die Isolation. Das Zugriffsprotokoll des Proxys (Container-Stdout) erfasst Host und Port jeder Anfrage,
+nie den Pfad. Kubernetes (Helm-Chart) ist noch nicht abgedeckt.
 
 ## Netzwerk-Topologie
 
@@ -183,7 +195,7 @@ flowchart TB
     end
 
     subgraph egress[EGRESS NETWORK - ICC Disabled]
-        playwright_egress[playwright]
+        proxy_egress[browser-proxy]
     end
 
     subgraph pii-detection[PII-DETECTION NETWORK - analyzer + callers only]
@@ -199,6 +211,7 @@ flowchart TB
 
     subgraph browser[BROWSER NETWORK - browser + callers only]
         playwright[playwright]
+        browser_proxy[browser-proxy]
         openwebui_br[open-webui]
         agents_br[web-fetching agents]
     end
@@ -247,7 +260,8 @@ flowchart TB
     swfiler --> swvolume
     swvolume --> swmaster
 
-    playwright_egress -->|outbound only| websites
+    playwright -->|only route out| browser_proxy
+    proxy_egress -->|public addresses only| websites
 ```
 
 ## Sicherheitsimplikationen
@@ -293,10 +307,10 @@ sodass die Sandbox ihre Caller, aber keinen anderen Tier erreichen kann.
 
 \*\*\*`internal: true` in Nicht-Dev-Stages blockiert ausgehenden Internetzugriff über dieses Netzwerk; im `dev`-Stage
 ist das Netzwerk nicht-internal (localhost-Zugriff), sodass diese Garantie nur für `local`/`build`/`nightly`/`latest`
-gilt. `playwright` erreicht das Internet stattdessen über `egress`.
+gilt. `playwright` erreicht das Internet stattdessen nur über `browser-proxy` (in `egress`).
 
-\*\*\*\*Nur `playwright` und seine Caller (`open-webui` und die Agents, die verlinkte Seiten lesen) befinden sich in
-`browser`, sodass der Browser seine Caller, aber keinen anderen Tier erreichen kann.
+\*\*\*\*Nur `playwright`, `browser-proxy` und die Caller (`open-webui` und die Agents, die verlinkte Seiten lesen)
+befinden sich in `browser`, sodass der Browser seine Caller und den Proxy, aber keinen anderen Tier erreichen kann.
 
 ## Betriebliche Überlegungen
 

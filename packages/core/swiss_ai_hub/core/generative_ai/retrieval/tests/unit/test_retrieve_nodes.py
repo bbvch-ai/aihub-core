@@ -14,6 +14,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.retrieval.retrieve_nodes import retrieve_nodes
 from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE, TYPE
@@ -194,10 +195,9 @@ class TestRetrieveNodesQueryClamp:
         embed.model_name = "embedding/bge-m3"
         store, _ = _capturing_vector_store()
 
-        with patch(
-            "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp.EmbeddingModelConfig"
-        ) as config_cls:
-            config_cls.return_value.get_model_info.return_value = {"model_info": {"max_input_tokens": 8192}}
+        with patch.object(
+            EmbeddingModelConfig, "get_model_info", return_value={"model_info": {"max_input_tokens": 8192}}
+        ):
             retrieve_nodes(
                 message=message,
                 embed_model=embed,

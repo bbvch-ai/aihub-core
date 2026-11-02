@@ -184,17 +184,14 @@ class ChatService:
             )
         logger.debug(f"Created thread: {thread.id}")
 
-        hitl_requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
-        logger.debug(f"hitl_requests: {hitl_requests}")
-
-        hitl_responses = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(str(thread.id))
-        logger.debug(f"hitl_responses: {hitl_responses}")
+        open_hitl_requests = PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(str(thread.id))
+        logger.debug(f"open_hitl_requests: {open_hitl_requests}")
 
         thread_id = str(thread.id)
         display_id = display_id or str(ObjectId())
 
-        if len(hitl_requests) != len(hitl_responses):
-            open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
+        if open_hitl_requests:
+            open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(open_hitl_requests[-1].event_data)
             topic = open_hitl_request.topic
 
             if isinstance(open_hitl_request, HumanInTheLoopInputRequestEvent):

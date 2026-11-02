@@ -35,10 +35,12 @@ class MinimalProcessInstanceDTO(BaseModel):
         class_entity: "ProcessClassEntity",
         config_entity: "ProcessConfigEntityDocument",
         t: LocaleHandler,
+        *,
+        is_online: bool,
     ) -> Self:
         """
         Creates a MinimalProcessInstanceDTO from a class entity and a config entity.
-        Class entity provides is_online, config entity provides instance-specific data.
+        Class entity provides class-level data, config entity provides instance-specific data.
         """
         process_config_dto = ProcessConfigDTO(
             process_id=config_entity.process_id,
@@ -52,5 +54,5 @@ class MinimalProcessInstanceDTO(BaseModel):
             process_class=class_entity.process_class,
             process_id=config_entity.process_id,
             process_config=process_config_dto,
-            is_online=class_entity.is_online,
+            is_online=is_online,
         )

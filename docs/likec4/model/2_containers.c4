@@ -287,7 +287,15 @@ model {
       technology "Playwright (Chromium)"
       icon tech:playwright
       style { color gray }
-      description "Headless browser server. OpenWebUI's web loader and the agents' web fetch load pages through it. Lives in the dedicated browser network (callers only) plus egress for the internet — no path to backend/data."
+      description "Headless browser server. OpenWebUI's web loader and the agents' web fetch load pages through it. Lives in the dedicated browser network (callers only) and has no internet access of its own — its only way out is Browser Proxy. No path to backend/data."
+    }
+
+    browser_proxy = container "Browser Proxy" {
+      #tier-utility
+      technology "Squid"
+      icon bootstrap:shield-check
+      style { color gray }
+      description "Forward proxy that is the browser's only route to the internet (browser + egress networks). Resolves every host itself, refuses non-public addresses (private, loopback, link-local/cloud metadata, CGNAT, multicast, reserved; IPv6 equivalents), connects to the address it checked (no DNS rebinding), allows only ports 80, 443 and 1025-65535."
     }
 
     attu = container "Attu" {
@@ -443,6 +451,7 @@ model {
     openwebui -> open_terminal "Code execution (plain LLM models via TERMINAL_SERVER_CONNECTIONS; bearer auth)"
     openwebui -> playwright    "Web loader (# page attachments)"
     openwebui -> searxng       "Web search"
+    playwright -> browser_proxy "Every page request (http://browser-proxy:3128); the only route to the internet"
 
     // Agents read the web pages a message links through the shared browser (browser network zone)
     agent_runtime -> playwright "Reads linked web pages (web fetch, ws://playwright:3000)"

@@ -12,16 +12,16 @@ privilege at the network layer.
 
 The platform uses seven isolated Docker networks:
 
-| Network         | Purpose                              | External Access  | ICC Enabled |
-| --------------- | ------------------------------------ | ---------------- | ----------- |
-| `proxy`         | External traffic via Traefik         | Ingress + Egress | Yes         |
-| `backend`       | Internal application services        | No               | Yes         |
-| `data`          | Databases and message broker         | No               | Yes         |
-| `storage`       | SeaweedFS object storage             | No               | Yes         |
-| `egress`        | Outbound internet access only        | Egress only      | No          |
-| `code-sandbox`  | Code-execution sandbox + its callers | No               | Yes         |
-| `browser`       | Playwright browser + its callers     | No               | Yes         |
-| `pii-detection` | PII detection + its callers          | No               | Yes         |
+| Network         | Purpose                                            | External Access  | ICC Enabled |
+| --------------- | -------------------------------------------------- | ---------------- | ----------- |
+| `proxy`         | External traffic via Traefik                       | Ingress + Egress | Yes         |
+| `backend`       | Internal application services                      | No               | Yes         |
+| `data`          | Databases and message broker                       | No               | Yes         |
+| `storage`       | SeaweedFS object storage                           | No               | Yes         |
+| `egress`        | Outbound internet access only                      | Egress only      | No          |
+| `code-sandbox`  | Code-execution sandbox + its callers               | No               | Yes         |
+| `browser`       | Playwright browser + its callers + `browser-proxy` | No               | Yes         |
+| `pii-detection` | PII detection + its callers                        | No               | Yes         |
 
 The `egress` network is designed for services that need to reach the internet (outbound) but should not be reachable
 from the internet (no ingress). Inter-Container Communication (ICC) is disabled on this network, meaning containers
@@ -36,11 +36,17 @@ bidirectional, keeping the sandbox off `backend` is what prevents a sandbox brea
 
 The `browser` network applies the same pattern to `playwright`, the headless browser that loads the web pages users link
 (see [Linked web pages](../../10_chat_ui/15_linked_web_pages/)). Its members are the browser plus **exactly its
-callers**: `open-webui` (its web loader) and the agents that read linked pages. The agents check every URL before the
-browser loads it, but the browser resolves the name again, so a name that answers with a public address first and an
-internal one second (DNS rebinding) would slip through. Keeping the browser off `backend` means such a page load has no
-network path to `litellm`, `langfuse`, `mineru` or the Docker socket proxy. The browser reaches the internet through
-`egress`.
+callers**: `open-webui` (its web loader) and the agents that read linked pages, plus `browser-proxy`. The browser is on
+`browser` **only** and has no route to the internet itself. Its single way out is `browser-proxy`, a Squid forward proxy
+that sits on `browser` and `egress`. The proxy resolves every host itself, refuses any destination whose address is not
+public (private, loopback, link-local including the cloud metadata address, CGNAT, multicast, reserved, and the IPv6
+equivalents including NAT64 and 6to4), and connects to the address it checked, so DNS rebinding cannot swap the address.
+It allows only ports 80, 443 and 1025-65535 and refuses its own cache-manager page. Sites see neither the platform's
+addresses nor the proxy. Keeping the browser off `backend` and `egress` means a page load has no network path to
+`litellm`, `langfuse`, `mineru` or the Docker socket proxy, and none to the internet except through the proxy. The
+agents' own URL check only refuses what the URL text shows (schemes, internal names, non-public IP literals); whether a
+name leads to a private address is decided by the proxy. See ADR
+`docs/arc42/decisions/2026_10_29_browser_reaches_the_internet_only_through_a_filtering_proxy.md`.
 
 The `pii-detection` network holds the `presidio-analyzer`, which receives the personal data the platform anonymises,
 plus **exactly its callers** (`litellm` and `universal-agent`). Its models are baked into the image and the Hugging Face
@@ -106,7 +112,7 @@ Distributed object storage cluster:
 
 Services that require outbound internet access but no inbound access:
 
-- **playwright**: Headless browser that loads the web pages users link (needs to fetch web pages)
+- **browser-proxy**: Filtering forward proxy that is the browser's only route to the internet
 - **searxng**: Web search (queries external search engines)
 - **rclone**: The daemon the rclone source pipeline drives (reaches the cloud storage it syncs from)
 - **structured_pipeline**: The structured source pipeline (calls business application APIs such as Jira)
@@ -116,7 +122,7 @@ Services that require outbound internet access but no inbound access:
 
 This network has ICC (Inter-Container Communication) disabled, preventing lateral movement between containers on this
 network. Services use `egress` solely for outbound internet access and must use other networks (e.g., `browser` for
-`playwright`) for inter-service communication.
+`browser-proxy`) for inter-service communication.
 
 ### Code-Sandbox Network Services
 
@@ -140,11 +146,15 @@ The zone for the headless browser:
 - **playwright**: Loads the web pages users link, for Open WebUI's web loader and the agents' web fetch (see ADR
   `docs/arc42/decisions/2026_10_20_agents_read_linked_web_pages_through_playwright.md`)
 
-The browser is the **only** resident; it also sits on `egress` for the internet. Its callers join `browser` in addition
-to their own networks: `open-webui`, and the agents that read linked pages (`llm-wrapping-agent`, `web-fetch-agent`,
+The browser is on `browser` only; `browser-proxy` joins it too (and `egress`). Its callers join `browser` in addition to
+their own networks: `open-webui`, and the agents that read linked pages (`llm-wrapping-agent`, `web-fetch-agent`,
 `rag-agent`, `expert-rag-agent` and `universal-agent`). A new agent that reads web pages must join it too, or it cannot
-reach `ws://playwright:3000`. In dev, Open WebUI and the agents reach the browser via the published `localhost:3036`
-port instead.
+reach `ws://playwright:3000` and `browser-proxy`. The agents hand the proxy to the browser context
+(`PLAYWRIGHT_PROXY_URL=http://browser-proxy:3128`, a fixed value in the compose template; operators set nothing). Open
+WebUI gets no proxy setting: its loader performs every request itself and only uses Playwright to render. In dev, Open
+WebUI and the agents reach the browser via the published `localhost:3036` port instead, and dev networks are not
+internal, so only the `local` stage proves the isolation. The proxy's access log (container stdout) records host and
+port of each request, never the path. Kubernetes (Helm chart) is not covered yet.
 
 ## Network Topology
 
@@ -177,7 +187,7 @@ flowchart TB
     end
 
     subgraph egress[EGRESS NETWORK - ICC Disabled]
-        playwright_egress[playwright]
+        proxy_egress[browser-proxy]
     end
 
     subgraph code-sandbox[CODE-SANDBOX NETWORK - sandbox + callers only]
@@ -187,6 +197,7 @@ flowchart TB
 
     subgraph browser[BROWSER NETWORK - browser + callers only]
         playwright[playwright]
+        browser_proxy[browser-proxy]
         openwebui_br[open-webui]
         agents_br[web-fetching agents]
     end
@@ -241,7 +252,8 @@ flowchart TB
     swfiler --> swvolume
     swvolume --> swmaster
 
-    playwright_egress -->|outbound only| websites
+    playwright -->|only route out| browser_proxy
+    proxy_egress -->|public addresses only| websites
 ```
 
 ## Security Implications
@@ -287,10 +299,10 @@ sandbox can reach its callers but no other tier.
 
 \*\*\*`internal: true` in non-dev stages blocks outbound internet through this network; in `dev` the network is
 non-internal (localhost access), so this guarantee applies to `local`/`build`/`nightly`/`latest` only. `playwright`
-reaches the internet through `egress` instead.
+reaches the internet only through `browser-proxy` (which sits on `egress`).
 
-\*\*\*\*Only `playwright` and its callers (`open-webui` and the agents that read linked pages) reside on `browser`, so
-the browser can reach its callers but no other tier.
+\*\*\*\*Only `playwright`, `browser-proxy` and the callers (`open-webui` and the agents that read linked pages) reside
+on `browser`, so the browser can reach its callers and the proxy but no other tier.
 
 ## Operational Considerations
 

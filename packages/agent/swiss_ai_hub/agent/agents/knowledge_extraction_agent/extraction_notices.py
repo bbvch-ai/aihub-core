@@ -28,6 +28,14 @@ class ExtractionNotices:
         return notices
 
     @staticmethod
+    def for_calculation(calculation: str | None, t: LocaleHandler) -> list[str]:
+        """Why a table answers a request for a sum or another calculation: the agent lists values, it does not
+        calculate."""
+        if not calculation:
+            return []
+        return [t("agent.knowledge_extraction_agent.form.calculation_notice", calculation=calculation)]
+
+    @staticmethod
     def without_selection(agent_config: KnowledgeExtractionAgentConfig, stopped_early: bool, t: LocaleHandler) -> str:
         if agent_config.tool_loop.is_disabled(SELECT_KNOWLEDGE_DOCUMENTS_TOOL):
             return t("agent.knowledge_extraction_agent.messages.select_disabled")
