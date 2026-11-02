@@ -612,7 +612,9 @@ class KnowledgeService:
 
         Submitted ciphertext is refused, masked secrets are restored from the stored row before validation so the
         schema sees real values, and every secret path is encrypted before the result is persisted. Which paths are
-        secrets is read off the announced form, so the API never learns a pipeline's field names.
+        secrets is read off the announced form, so the API never learns a pipeline's field names. With nothing stored
+        (a new database, or a switch to another source) masks are restored against an empty row, so a mask carried
+        over from an imported or copied form is refused as the client's mistake rather than failing in ``encrypt``.
         """
         source_pipeline = SourcePipelineEntity.find(source_id)
         if source_pipeline is None or source_pipeline.config_specs is None:
@@ -630,8 +632,7 @@ class KnowledgeService:
         config = InstanceConfigHelper.normalize_form_configuration(submitted) or {}
         try:
             encryption.reject_submitted_ciphertext(config, secret_paths)
-            if stored is not None:
-                config = encryption.restore_masked_paths(config, stored, secret_paths)
+            config = encryption.restore_masked_paths(config, stored or {}, secret_paths)
         except ValueError as unusable_secret:
             raise HTTPException(status_code=400, detail=str(unusable_secret)) from None
         InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
