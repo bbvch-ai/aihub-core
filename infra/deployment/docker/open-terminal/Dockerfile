@@ -34,6 +34,16 @@ USER root
 # PDFs and images users upload, so both are raised to the first releases that fix them.
 RUN pip install --no-cache-dir reportlab==5.0.1 fpdf2==2.8.9 pdfplumber==0.11.10 cryptography==50.0.2 \
     pypdf==6.21.2 pillow==13.0.0
+# Headless LibreOffice: openpyxl and XlsxWriter cannot create pivot tables, and nothing else in the image can recalculate
+# a workbook or render a deck to look at. python3-uno binds to Debian's /usr/bin/python3, not the image's Python 3.12.
+# The base's TeX Live is latex-base only, too little for pandoc's PDF template; Tectonic is not an option because it
+# fetches packages on first use and the sandbox has no internet. poppler-utils renders PDF pages to PNG (pdftoppm).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libreoffice-calc-nogui libreoffice-impress-nogui libreoffice-writer-nogui python3-uno fonts-dejavu-core \
+        texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-xetex texlive-luatex \
+        texlive-science texlive-lang-german texlive-lang-french texlive-lang-italian poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
 COPY confine_file_api_to_home.py /tmp/confine_file_api_to_home.py
 RUN python3 /tmp/confine_file_api_to_home.py && rm /tmp/confine_file_api_to_home.py
 USER user
