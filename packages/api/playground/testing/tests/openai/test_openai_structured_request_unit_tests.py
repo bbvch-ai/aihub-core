@@ -52,12 +52,30 @@ def test_required_with_its_only_function_forces_it():
     assert structured.response_schema.name == "extract_invoice"
 
 
-def test_a_function_without_parameters_asks_for_an_empty_object():
+def test_a_function_without_parameters_asks_for_an_empty_object_and_nothing_else():
     function = {"type": "function", "function": {"name": "mark_done"}}
 
     structured = OpenaiStructuredRequest.from_request(_request(tools=[function], tool_choice="required"))
 
-    assert structured.response_schema.json_schema == {"type": "object", "properties": {}}
+    assert structured.response_schema.json_schema == {"type": "object", "properties": {}, "additionalProperties": False}
+
+
+def test_explicitly_open_parameters_stay_open():
+    function = {"type": "function", "function": {"name": "note", "parameters": {}}}
+
+    structured = OpenaiStructuredRequest.from_request(_request(tools=[function], tool_choice="required"))
+
+    assert structured.response_schema.json_schema == {}
+
+
+@pytest.mark.parametrize(
+    "tool_choice",
+    ["required", {"type": "function", "function": {"name": "extract_invoice"}}],
+    ids=["required", "named"],
+)
+@pytest.mark.parametrize("tools", [None, []], ids=["no-tools", "empty-tools"])
+def test_forcing_a_function_without_offering_one_is_refused(tools, tool_choice):
+    assert _refusal(tools=tools, tool_choice=tool_choice)["param"] == "tool_choice"
 
 
 def test_forcing_another_function_than_the_one_offered_is_refused():

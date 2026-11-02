@@ -9,7 +9,14 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport
 from pydantic import BaseModel
-from swiss_ai_hub.core.events.agent import ChunkEvent, LLMCostEvent, LLMStopEvent, Message, RefusalReason, RefusalStopEvent
+from swiss_ai_hub.core.events.agent import (
+    ChunkEvent,
+    LLMCostEvent,
+    LLMStopEvent,
+    Message,
+    RefusalReason,
+    RefusalStopEvent,
+)
 from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController

@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, ClassVar, Literal, Self
 
 from fastapi import HTTPException, status
 from openai.types.chat import ChatCompletionMessage
@@ -30,6 +30,8 @@ class OpenaiStructuredRequest(BaseModel):
     presentation: Annotated[StructuredPresentation, Field(description="Content or a tool call.")]
     param: Annotated[str, Field(description="The request field that asked for it, named in errors.")]
 
+    _NO_PARAMETERS: ClassVar[dict[str, Any]] = {"type": "object", "properties": {}, "additionalProperties": False}
+
     @classmethod
     def from_request(cls, request: ChatCompletionRequest) -> Self | None:
         """The structured request, None for a plain answer; a 400 for anything an agent cannot honour."""
@@ -42,6 +44,8 @@ class OpenaiStructuredRequest(BaseModel):
         tools = list(request.tools or [])
         if tools and request.tool_choice != "none":
             return cls._forced_function(request, tools)
+        if not tools and cls._forces_a_tool(request.tool_choice):
+            raise cls._invalid("tool_choice", "`tool_choice` forces a function, but `tools` offers none.")
         return cls._response_format(request.response_format)
 
     @classmethod
@@ -86,10 +90,14 @@ class OpenaiStructuredRequest(BaseModel):
             "tools",
             name=function["name"],
             description=function.get("description"),
-            json_schema=function.get("parameters") or {"type": "object", "properties": {}},
+            json_schema=function["parameters"] if "parameters" in function else cls._NO_PARAMETERS,
             strict=bool(function.get("strict")),
         )
         return cls(response_schema=schema, presentation=StructuredPresentation.TOOL_CALL, param="tool_choice")
+
+    @staticmethod
+    def _forces_a_tool(tool_choice: Any) -> bool:
+        return tool_choice == "required" or (isinstance(tool_choice, dict) and tool_choice.get("type") == "function")
 
     @staticmethod
     def _is_forced(tool_choice: Any, function_name: str) -> bool:

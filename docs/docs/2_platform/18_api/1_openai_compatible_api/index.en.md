@@ -120,8 +120,8 @@ stored once. An image must be PNG, JPEG, GIF or WebP and may have 5 MB (`AGENT_I
 refused with `413`. Links to images on the web are passed on as they are.
 
 **Parameters.** Agents choose their own model and its settings, so `temperature`, `top_p`, `max_tokens`, `stop`, `seed`,
-`n` and `logprobs` have no effect on an agent call. The answer ends with `finish_reason: "stop"` (`"tool_calls"` for
-a forced function, see below) and names the agent (`AgentClass/agent_id`) as its `model`.
+`n` and `logprobs` have no effect on an agent call. The answer ends with `finish_reason: "stop"` (`"tool_calls"` for a
+forced function, see below) and names the agent (`AgentClass/agent_id`) as its `model`.
 
 **Structured output.** An agent answers in a JSON shape the same two ways a model does:
 
@@ -171,14 +171,15 @@ completion = client.chat.completions.create(
 arguments = completion.choices[0].message.tool_calls[0].function.arguments
 ```
 
-- **Missing values**: a value the document does not state comes back as `null` where the schema allows it, so declare
-  such fields optional rather than letting the model guess.
+- **Missing values**: the agent adds nothing to its prompt, so how a value is filled is up to your schema and message. A
+  model must fill every field: for a value that may be missing, allow `null` and say in the field's description when to
+  use it, or the model may guess one.
 - **Validation**: the agent validates its answer against the schema and corrects it once. An answer it still cannot fit
   ends the call with an error, never with prose.
 - **Refusals**: an agent that refuses the request or asks a question back returns its text as `message.refusal` and no
   content.
-- **Streaming**: the JSON, or the tool call, arrives in one chunk once the agent has validated it, followed by the finish
-  chunk.
+- **Streaming**: the JSON, or the tool call, arrives in one chunk once the agent has validated it, followed by the
+  finish chunk.
 - **Which agents**: agents that answer through the conversation (LLM Wrapping, Web Fetch, Few-Shot, MCP ReAct,
   Universal). RAG and Expert RAG do not; asking them for structured output is refused with `400`.
 - **Caller tools**: agents do not call caller tools. `tools` with `tool_choice: "auto"` or without `tool_choice`, more
