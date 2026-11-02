@@ -17,6 +17,7 @@ from swiss_ai_hub.core.events.agent.semantic.llm.llm_event import LLMEvent
 from swiss_ai_hub.core.events.agent.semantic.llm.llm_stop_event import LLMStopEvent
 from swiss_ai_hub.core.events.agent.semantic.llm.message import Message
 from swiss_ai_hub.core.events.agent.user.response_schema import ResponseSchema
+from swiss_ai_hub.core.generative_ai.prompting.response_schema_instruction import ResponseSchemaInstruction
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.publishers.js_publisher import JSPublisher
@@ -170,6 +171,8 @@ class EventDisplayer:
         processor = StreamProcessor(self, llm_config.model_name)
         tool_calls = None
 
+        if response_schema is not None:
+            messages = ResponseSchemaInstruction.added_to(messages)
         stream = await llm.astream_chat(messages, **EventDisplayer._answer_kwargs(llm, tools, response_schema))
         async for chunk in stream:
             await processor.process_chunk(chunk.delta)
