@@ -136,3 +136,12 @@ Known limits of this amendment, until tables and rows move out of events into st
 Consequences: an answer may now end with a question to the user instead of a cut table, and a non-interactive caller (a
 coordinating agent or a scheduled run, root phases 2 and 3) will need a mode that extracts all parts or none; the
 pending state is per thread and is cleared by the last part or by a new selection.
+
+## Amendment 2026-10-26: whole scope, one answer, tables by reference
+
+Superseded in part by ADR `2026_10_26_whole_scope_extraction_and_tables_by_reference`: the Knowledge Extraction Agent
+reads every document of its scope by default and searches for documents only with the profile setting `discovery`;
+parts, *continue* and the settings `max_files`, `minutes_per_turn` and `max_rows` are removed, so one answer extracts
+the whole selection, after a sample and the user's confirmation above 100 documents; rows and tables are stored in the
+`agent-files` bucket and events carry a reference and a preview, so the byte caps and the known limits listed in the
+2026-10-21 amendment no longer apply.

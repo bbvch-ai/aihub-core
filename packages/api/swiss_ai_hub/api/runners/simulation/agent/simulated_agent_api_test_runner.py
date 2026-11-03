@@ -105,6 +105,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.discovery_subscriber: NCSubscriber[ClassDiscoveryRequestEvent] | None = None
 
         self.simulated_events: list[BaseEvent] = simulated_events or []
+        self.received_events: list[ControlEvent] = []
 
         self.start_events: list[EventSpecs] | None = start_events
         self.stop_events: list[EventSpecs] | None = stop_events
@@ -125,6 +126,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         This simulates an agent run, where after receiving a start signal, the agent responds
         with chunks, cost events, etc., and finally a stop signal.
         """
+        self.received_events.append(event)
         if event.is_start_event:
             for sim_event in self.simulated_events:
                 await self.publish_event(sim_event, topic)
@@ -237,7 +239,6 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 controller=self._api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 redis=MagicMock(),
-                discovery_interval=60,
             )._register_class_endpoints(
                 agent_class=self.agent_class,
                 start_events=self.start_events,

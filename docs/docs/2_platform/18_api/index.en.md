@@ -6,9 +6,10 @@ title: API
 
 ## Concept and Purpose
 
-The OpenAI-Compatible REST API provides a standards-based HTTP interface built on FastAPI that mirrors the OpenAI API
-specification exactly. This design enables organizations to migrate existing AI-powered applications to the Swiss AI Hub
-platform without modifying application code - only the API endpoint URL and authentication token need to change.
+The OpenAI-Compatible REST API provides a standards-based HTTP interface built on FastAPI that follows the OpenAI API
+specification. Applications built on the OpenAI SDKs call language models on the Swiss AI Hub by changing only the API
+endpoint URL and the authentication token. Agents are called through the same interface; how much of the OpenAI request
+they honour is described in [Calling Agents](#calling-agents).
 
 The strategic value of this compatibility layer lies in reducing migration friction and protecting existing technology
 investments. Organizations can adopt Swiss AI Hub infrastructure for data sovereignty, cost control, or compliance
@@ -18,14 +19,14 @@ reasons while preserving their application ecosystem built on OpenAI SDKs and li
 
 ### Seamless Migration and Integration
 
-The API implements complete compatibility with OpenAI's interface, supporting all major capabilities including
-conversational AI (chat completions), semantic search (embeddings), image generation, and audio processing
-(speech-to-text and text-to-speech). Applications developed using OpenAI's Python or JavaScript SDKs function without
-modification, enabling rapid platform adoption and reducing implementation risk.
+The API covers the major OpenAI capabilities: conversational AI (chat completions), semantic search (embeddings), image
+generation, and audio processing (speech-to-text and text-to-speech). Requests to language models are forwarded to the
+model gateway with their parameters, so applications developed with OpenAI's Python or JavaScript SDKs keep working,
+within what the configured model supports.
 
-This compatibility extends to both request and response formats, streaming behaviors, and error handling patterns.
-Organizations can validate the platform using existing test suites and migration scripts, accelerating evaluation and
-deployment timelines.
+Responses follow the OpenAI formats, including server-sent events ending in `data: [DONE]` for streamed chat
+completions. Errors raised by the model gateway carry OpenAI's `error` object; errors raised by the platform itself,
+such as a missing permission, carry a `detail` field instead.
 
 ### Vendor-Neutral Model Access
 
@@ -52,9 +53,10 @@ sophisticated agents without architectural changes - the same API interface serv
 
 The API provides full-spectrum AI functionality compatible with modern LLM applications:
 
-**Conversational AI**: Complete chat completion support with both synchronous and streaming response modes, enabling
-interactive applications and progressive UI updates. The interface supports multi-turn conversations, function calling,
-and multimodal inputs (text and images) for vision-capable models.
+**Conversational AI**: Chat completions with both synchronous and streaming response modes, enabling interactive
+applications and progressive UI updates. For language models the interface supports multi-turn conversations, function
+calling and multimodal inputs (text and images) for vision-capable models. Agents additionally accept documents as
+`file` content parts.
 
 **Semantic Search**: Embedding generation converts text into vector representations for semantic search, similarity
 matching, and retrieval-augmented generation workflows. This capability supports batch processing and multiple embedding
@@ -64,8 +66,8 @@ model configurations.
 transcription (supporting multiple audio formats and languages) and text-to-speech synthesis with configurable voices
 and streaming output.
 
-**Model Discovery**: Dynamic model listing enables applications to discover available LLM models and Swiss AI Hub
-assistants at runtime, supporting adaptive interfaces and centralized model governance.
+**Model Discovery**: The model listing returns the language models a user may access. An agent does not appear in the
+listing, but can be looked up and called by its id (`AgentClass/agent_id`).
 
 ## Business Value
 
@@ -116,12 +118,11 @@ The Swiss AI Hub platform exposes multiple API types, each optimized for specifi
 
 ### 1. OpenAI-Compatible REST API
 
-A standards-based HTTP API providing full compatibility with OpenAI's API specification, enabling seamless migration for
-applications built on OpenAI SDKs. The API supports chat completions, embeddings, image generation, and audio processing
-(speech-to-text and text-to-speech) with identical endpoint structures and request/response formats. This serves as a
-drop-in replacement for OpenAI endpoints, allowing existing applications to leverage Swiss AI Hub infrastructure without
-code changes. The API supports both direct LLM model access and Swiss AI Hub assistants (agents), with both streaming
-and non-streaming modes for all capabilities.
+A standards-based HTTP API following OpenAI's API specification, so applications built on OpenAI SDKs reach language
+models on the Swiss AI Hub by changing the endpoint URL and token. The API supports chat completions, embeddings, image
+generation, and audio processing (speech-to-text and text-to-speech) with OpenAI's endpoint structures and
+request/response formats. Agents are called through the same chat completions endpoint, in streaming and non-streaming
+mode; see [Calling Agents](./1_openai_compatible_api/#calling-agents) for what they accept.
 
 ### 2. Agent Interaction REST API
 

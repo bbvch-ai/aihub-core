@@ -67,14 +67,15 @@ address, the guard redacts it before the user sees it, replacing it with `[REDAC
 
 Guards and [Presidio anonymization](../2_anonymization/) operate at different layers to provide complete PII protection:
 
-| Layer                          | Component                            | Purpose                                                                  |
-| ------------------------------ | ------------------------------------ | ------------------------------------------------------------------------ |
-| LiteLLM proxy (platform-level) | Presidio                             | Removes PII from user questions before they reach external LLM providers |
-| Agent (application-level)      | Input guards                         | Validate question appropriateness and scope                              |
-| Agent (application-level)      | Output guards (Sensitive info guard) | Detect PII in responses from retrieved documents                         |
+| Layer                          | Component                            | Purpose                                                                               |
+| ------------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------- |
+| LiteLLM proxy (platform-level) | Presidio                             | Replaces PII in requests to external models with placeholders, restores it in answers |
+| Agent (application-level)      | Input guards                         | Validate question appropriateness and scope                                           |
+| Agent (application-level)      | Output guards (Sensitive info guard) | Detect PII in responses from retrieved documents                                      |
 
-Presidio protects **user input** from being sent to external providers. The sensitive info guard protects **agent
-responses** that might contain PII from your knowledge base documents. Both are needed for complete PII protection.
+Presidio keeps personal data in every request (questions, history, RAG context, tool results) from reaching external
+providers. The sensitive info guard protects **agent responses** that might contain PII from your knowledge base
+documents. Both are needed for complete PII protection.
 
 ## Configuration
 

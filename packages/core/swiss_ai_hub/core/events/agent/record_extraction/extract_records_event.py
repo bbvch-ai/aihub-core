@@ -26,13 +26,13 @@ class ExtractRecordsEvent(ControlAndDisplayEvent):
 
     selection: Annotated[
         KnowledgeDocumentSelection | None,
-        Field(description="The documents to extract from; none when the request continues a pending extraction."),
+        Field(description="The documents to extract from; none when the request confirms a sample."),
     ] = None
-    continue_pending: Annotated[
+    confirmed: Annotated[
         bool,
         Field(
-            description="Whether to extract the next part of the extraction this conversation left pending, with "
-            "its documents and columns, instead of a new selection."
+            description="Whether the user confirmed extracting every document of the selection this conversation "
+            "showed a sample of, with its columns, instead of a new selection."
         ),
     ] = False
     fields: Annotated[str, Field(description="What each row holds, in the user's words, e.g. 'date, item, amount'.")]
@@ -44,6 +44,13 @@ class ExtractRecordsEvent(ControlAndDisplayEvent):
         Field(
             description="Words or a regular expression the lines holding wanted records usually contain; used only "
             "to find the right parts of a long document, never to choose documents."
+        ),
+    ] = None
+    document_terms: Annotated[
+        str | None,
+        Field(
+            description="Words or a regular expression the documents holding wanted records likely contain, such as a "
+            "supplier's name; used only to choose which documents are sampled and read first, never to leave one out."
         ),
     ] = None
     collections: Annotated[

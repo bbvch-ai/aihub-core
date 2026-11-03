@@ -2,9 +2,9 @@ from datetime import datetime
 from typing import Annotated, Any, Self
 
 from pydantic import BaseModel, Field
+from swiss_ai_hub.core.jira import JiraHtml
 
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_comment import JiraComment
-from swiss_ai_hub.pipeline.source_pipelines.jira.jira_html import JiraHtml
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_timestamp import JiraTimestamp
 from swiss_ai_hub.pipeline.types.structured_record_file import StructuredRecordFile
 

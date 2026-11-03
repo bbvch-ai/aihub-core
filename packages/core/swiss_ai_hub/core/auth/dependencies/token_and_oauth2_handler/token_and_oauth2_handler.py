@@ -1,6 +1,7 @@
 import logging
+from typing import NoReturn
 
-from fastapi import HTTPException, Request, Security
+from fastapi import HTTPException, Request, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
@@ -26,46 +27,59 @@ class TokenAndOauth2Handler:
         bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer(auto_error=False)),
         oauth_token: str | None = Security(KeycloakSettings().OPTIONAL_SCHEMA),
     ) -> UserIdentity:
-        errors = []
+        failures: list[tuple[str, Exception]] = []
 
         for bearer_handler in self.bearer_handlers:
             try:
                 return await bearer_handler(request, bearer_token)
             except Exception as e:
-                logger.warning(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {e}")
-                errors.append(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {str(e)}")
+                failures.append(self._log_failure("Bearer", bearer_handler, e))
 
         if oauth_token:
             for oauth2_handler in self.oauth2_handlers:
                 try:
                     return await oauth2_handler.authenticate_token(oauth_token, request)
                 except Exception as e:
-                    logger.warning(f"OAuth2 authentication {oauth2_handler.__class__.__name__} failed: {e}")
-                    errors.append(f"OAuth2 authentication {oauth2_handler.__class__.__name__} failed: {str(e)}")
+                    failures.append(self._log_failure("OAuth2", oauth2_handler, e))
 
-        logger.error("Authentication failed for both OAuth2 and Bearer: %s", errors)
-        raise HTTPException(status_code=401, detail=" | ".join(errors))
+        self._raise_failure(failures)
 
     async def authenticate_token(self, token: str) -> UserIdentity:
         """Attempts to authenticate with the provided token using both OAuth2 and Bearer strategies."""
-        errors = []
+        failures: list[tuple[str, Exception]] = []
 
         for oauth2_handler in self.oauth2_handlers:
             try:
                 return await oauth2_handler.authenticate_token(token)
             except Exception as e:
-                logger.warning(f"OAuth2 authentication {oauth2_handler.__class__.__name__} failed: {e}")
-                errors.append(f"OAuth2 authentication {oauth2_handler.__class__.__name__} failed: {str(e)}")
+                failures.append(self._log_failure("OAuth2", oauth2_handler, e))
 
         for bearer_handler in self.bearer_handlers:
             try:
                 return await bearer_handler.authenticate_token(token)
             except Exception as e:
-                logger.warning(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {e}")
-                errors.append(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {str(e)}")
+                failures.append(self._log_failure("Bearer", bearer_handler, e))
 
-        logger.error("Authentication failed for both OAuth2 and Bearer: %s", errors)
-        raise HTTPException(status_code=401, detail=" | ".join(errors))
+        self._raise_failure(failures)
+
+    @staticmethod
+    def _log_failure(scheme: str, handler: object, error: Exception) -> tuple[str, Exception]:
+        message = f"{scheme} authentication {handler.__class__.__name__} failed: {error}"
+        logger.warning(message)
+        return message, error
+
+    @staticmethod
+    def _raise_failure(failures: list[tuple[str, Exception]]) -> NoReturn:
+        """A 403 is only raised after a handler has accepted the credentials — tenant access is resolved
+        once the user is known — so it is the actual answer. Folding it into the combined 401 would tell
+        the client its login failed when it is in fact not allowed into the requested tenant."""
+        for _, error in failures:
+            if isinstance(error, HTTPException) and error.status_code == status.HTTP_403_FORBIDDEN:
+                raise error
+
+        messages = [message for message, _ in failures]
+        logger.error("Authentication failed for both OAuth2 and Bearer: %s", messages)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=" | ".join(messages))
 
     @classmethod
     def from_auth_settings(cls):

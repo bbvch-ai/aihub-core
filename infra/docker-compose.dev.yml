@@ -31,21 +31,23 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-master:
     container_name: seaweedfs-master
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     expose:
       - '9333'   # Master HTTP port
       - '19333'  # Master gRPC port
+    # Since 4.41 the master reports cluster statistics to telemetry.seaweedfs.com unless -telemetry=false.
     command: >
       master
       -ip=seaweedfs-master
+      -telemetry=false
       -ip.bind=0.0.0.0
       -defaultReplication=000
       -volumeSizeLimitMB=1024
       -volumePreallocate=false
     environment:
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data']
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data:z']
     healthcheck:
       test:
         - CMD
@@ -69,19 +71,19 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-volume:
     container_name: seaweedfs-volume
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     expose: ['8080', '18080']
     command: >
       volume
-      -mserver="seaweedfs-master:9333"
+      -master="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
       -port=8080
       -max=500
       -dataCenter=dc1
     environment:
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume:/data']
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume:/data:z']
     depends_on:
       seaweedfs-master:
         condition: service_healthy
@@ -101,12 +103,13 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-filer:
     container_name: seaweedfs-filer
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     ports: [8889:8888, '18888']
     command: >
       filer
       -master="seaweedfs-master:9333"
+      -ip=seaweedfs-filer
       -ip.bind=0.0.0.0
     environment:
       # Internal JWT Authentication
@@ -121,7 +124,7 @@ services:
 
       # Disable default leveldb2 store when using etcd
       WEED_LEVELDB2_ENABLED: 'false'
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data']
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data:z']
     depends_on:
       seaweedfs-master:
         condition: service_started
@@ -153,11 +156,11 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-s3:
     container_name: seaweedfs-s3
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     ports: [9000:9000]
     volumes:
-      - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
+      - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro,z
     entrypoint: [/bin/sh, /usr/local/bin/s3-entrypoint.sh]
     environment:
       # S3 Authentication
@@ -173,7 +176,9 @@ services:
       S3_PORT: '9000'
       S3_FILER: seaweedfs-filer:8888
       S3_BIND_IP: 0.0.0.0
-      S3_ALLOW_EMPTY_FOLDER: true
+      # The gateway registers with the master like the filer does; on two networks it would otherwise
+      # advertise whichever address it detects first.
+      S3_ADVERTISED_IP: seaweedfs-s3
     depends_on:
       seaweedfs-filer:
         condition: service_healthy
@@ -199,6 +204,27 @@ services:
       - backend  # Internal access from application services
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  seaweedfs-ttl-init:
+    container_name: seaweedfs-ttl-init
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
+    restart: 'no'
+    depends_on:
+      seaweedfs-filer:
+        condition: service_healthy
+    environment:
+      SEAWEEDFS_MASTER: seaweedfs-master:9333
+      SEAWEEDFS_FILER: seaweedfs-filer:8888
+    volumes: ['./configs/seaweedfs/ttl-init.sh:/usr/local/bin/ttl-init.sh:ro,z']
+    entrypoint: [/bin/sh, /usr/local/bin/ttl-init.sh]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - storage
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-init:
     container_name: seaweedfs-init
     image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
@@ -206,6 +232,8 @@ services:
     depends_on:
       seaweedfs-s3:
         condition: service_healthy
+      seaweedfs-ttl-init:
+        condition: service_started
     environment:
       AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
@@ -214,7 +242,7 @@ services:
       AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
       AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
     volumes:
-      - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
+      - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro,z
     entrypoint: [/bin/sh, /usr/local/bin/init-buckets.sh]
     logging:
       driver: json-file
@@ -234,7 +262,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   etcd:
     container_name: etcd
-    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
+    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.35
     restart: always
     command:
       - etcd
@@ -253,7 +281,7 @@ services:
       ETCD_SNAPSHOT_COUNT: 50000
       # Token for healthcheck (used after auth is enabled by etcd-init)
       ETCD_TOKEN: ${ETCD_TOKEN}
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd']
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd:z']
     healthcheck:
       # Use credentials for healthcheck to work after auth is enabled
       test: [CMD, etcdctl, '--user=root:${ETCD_TOKEN}', endpoint, health]
@@ -296,7 +324,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   milvus-standalone:
     container_name: milvus
-    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7
+    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.25
     restart: always
     command: [milvus, run, standalone]
     security_opt: [seccomp:unconfined]
@@ -313,8 +341,8 @@ services:
       # Token-based authentication - root password for Milvus
       COMMON_SECURITY_DEFAULTROOTPASSWORD: ${MILVUS_ROOT_PASSWORD}
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus-config.dev.yml:/milvus/configs/milvus.yaml
+      - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus:z
+      - ./configs/milvus/milvus-config.dev.yml:/milvus/configs/milvus.yaml:z
     healthcheck:
       test: [CMD, curl, -f, http://localhost:9091/healthz]
       start_period: 90s
@@ -371,8 +399,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_MULTIPLE_DATABASES: openwebui,langfuse,dagster,litellm,keycloak
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
-      - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+      - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data:z
+      - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro,z
     ports: [5432:5432]
     healthcheck:
       test: [CMD-SHELL, 'pg_isready -U ${POSTGRES_USER}']
@@ -404,7 +432,7 @@ services:
       POSTGRES_PASSWORD: ${MONGO_PASSWORD}
       POSTGRES_DB: postgres
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data:z
     healthcheck:
       test: [CMD-SHELL, 'pg_isready -U ${MONGO_USERNAME} -d postgres']
       interval: 10s
@@ -454,14 +482,14 @@ services:
   # License: GPL-3.0 — third-party (see LICENSE_REPORT.md)
   neo4j:
     container_name: neo4j
-    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community
+    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.32-community-trixie
     restart: always
     ports: [7474:7474, 7687:7687]
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/logs:/logs
-      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/config:/config
-      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/data:/data
-      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/plugins:/plugins
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/logs:/logs:z
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/config:/config:z
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/data:/data:z
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/plugins:/plugins:z
     environment:
       NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
     healthcheck:
@@ -511,7 +539,7 @@ services:
       # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
-      - ./configs/clickhouse/clickhouse-backup.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
+      - ./configs/clickhouse/clickhouse-backup.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro,z
     ports: [127.0.0.1:8123:8123, 127.0.0.1:9009:9000]
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit
@@ -532,7 +560,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-worker:
     container_name: langfuse-worker
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3.225.8
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3.225.14
     restart: always
     depends_on:
       postgres:
@@ -602,7 +630,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-web:
     container_name: langfuse-web
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3.225.8
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3.225.14
     restart: always
     depends_on:
       postgres:
@@ -703,7 +731,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   keycloak:
     container_name: keycloak
-    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.5
+    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.8.1
     restart: unless-stopped
     entrypoint: /bin/bash
     ports: [8180:8080]
@@ -738,9 +766,9 @@ services:
       KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
     volumes:
-      - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
-      - ./configs/keycloak/aihub-realm.dev.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
-      - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro
+      - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro,z
+      - ./configs/keycloak/aihub-realm.dev.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro,z
+      - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro,z
     healthcheck:
       test:
         - CMD-SHELL
@@ -802,11 +830,11 @@ services:
       # bootstrap-only (seeded by the keycloak container's --import-realm), not
       # reconciled by keycloak-config-cli.
     volumes:
-      - ./configs/keycloak/managed/10-roles.dev.json:/config/10-roles.json:ro
-      - ./configs/keycloak/managed/20-client-scopes.dev.json:/config/20-client-scopes.json:ro
-      - ./configs/keycloak/managed/30-clients.dev.json:/config/30-clients.json:ro
-      - ./configs/keycloak/managed/40-auth-flows.dev.json:/config/40-auth-flows.json:ro
-      - ./configs/keycloak/managed/60-service-accounts.dev.json:/config/60-service-accounts.json:ro
+      - ./configs/keycloak/managed/10-roles.dev.json:/config/10-roles.json:ro,z
+      - ./configs/keycloak/managed/20-client-scopes.dev.json:/config/20-client-scopes.json:ro,z
+      - ./configs/keycloak/managed/30-clients.dev.json:/config/30-clients.json:ro,z
+      - ./configs/keycloak/managed/40-auth-flows.dev.json:/config/40-auth-flows.json:ro,z
+      - ./configs/keycloak/managed/60-service-accounts.dev.json:/config/60-service-accounts.json:ro,z
     depends_on:
       keycloak:
         condition: service_healthy
@@ -835,8 +863,8 @@ services:
       # Token-based authentication for NATS clients
       NATS_TOKEN: ${NATS_TOKEN}
     volumes:
-      - ./configs/nats/nats-config.dev.conf:/etc/nats/nats-server.conf
-      - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats
+      - ./configs/nats/nats-config.dev.conf:/etc/nats/nats-server.conf:z
+      - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats:z
     healthcheck:
       test: [NONE]
     ports: [4222:4222, 8222:8222]
@@ -862,7 +890,7 @@ services:
     # --appendonly yes enables AOF persistence for durability between RDB snapshots.
     command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN}
       --appendonly yes --appendfsync everysec
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data']
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data:z']
     ports: [6379:6379]
     healthcheck:
       # Use REDISCLI_AUTH to authenticate for health check
@@ -888,7 +916,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   rclone:
     container_name: rclone
-    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2-1
     restart: unless-stopped
     command:
       - rcd
@@ -916,7 +944,7 @@ services:
   # License: MIT — rclone (see LICENSES.md)
   sandbox-mirror:
     container_name: sandbox-mirror
-    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2-1
     restart: unless-stopped
     depends_on:
       seaweedfs-s3:
@@ -944,7 +972,7 @@ services:
       RCLONE_CONFIG_MIRROR_ACCESS_KEY_ID: ${SANDBOX_MIRROR_S3_ACCESS_KEY}
       RCLONE_CONFIG_MIRROR_SECRET_ACCESS_KEY: ${SANDBOX_MIRROR_S3_SECRET_KEY}
       RCLONE_CONFIG_MIRROR_NO_CHECK_BUCKET: 'true'
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home:ro']
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home:ro,z']
     networks:
       - backend  # reaches seaweedfs-s3; never code-sandbox, so the sandbox has no path to it
     logging:
@@ -1029,9 +1057,12 @@ services:
       BACKUP_DAGSTER_CLEANUP_BATCH_LIMIT: ${DAGSTER_CLEANUP_BATCH_LIMIT}
       BACKUP_MAINTENANCE_DISABLED: ${MAINTENANCE_DISABLED}
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
-      - ./configs/backup/backup-dagster.dev.yml:/dagster_home/dagster.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home:z
+      - ./configs/backup/backup-dagster.dev.yml:/dagster_home/dagster.yaml:ro,z
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt: [label=disable]
     healthcheck:
       test:
         - CMD
@@ -1078,9 +1109,9 @@ services:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
-      - ./configs/backup/backup-dagster.dev.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/backup/backup-workspace.dev.yml:/etc/dagster/workspace.yaml:ro
+      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home:z
+      - ./configs/backup/backup-dagster.dev.yml:/dagster_home/dagster.yaml:ro,z
+      - ./configs/backup/backup-workspace.dev.yml:/etc/dagster/workspace.yaml:ro,z
     healthcheck:
       test: [CMD, curl, -f, http://localhost:3000/server_info]
       interval: 30s
@@ -1111,9 +1142,9 @@ services:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
-      - ./configs/backup/backup-dagster.dev.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/backup/backup-workspace.dev.yml:/etc/dagster/workspace.yaml:ro
+      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home:z
+      - ./configs/backup/backup-dagster.dev.yml:/dagster_home/dagster.yaml:ro,z
+      - ./configs/backup/backup-workspace.dev.yml:/etc/dagster/workspace.yaml:ro,z
     healthcheck:
       test: [CMD, dagster-daemon, liveness-check]
       interval: 30s
@@ -1142,15 +1173,21 @@ services:
   # its callers, and needs no outbound internet (models baked in, hub offline).
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-2
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-4
     restart: always
     ports: [5002:3000]
     environment:
       ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
-      # Without these torch oversubscribes the CPU and a short request takes seconds instead of ~250 ms
-      OMP_NUM_THREADS: '4'
-      MKL_NUM_THREADS: '4'
-    volumes: [./configs/presidio/analyzer.yaml:/app/analyzer.yaml:ro]
+      # Sized per deployment (.env): workers x request threads x torch threads should match the CPU limit, and every
+      # worker needs about 3 GiB of the memory limit. Torch threads stay at 2: one makes a long text 3 to 4 times slower.
+      # The `:-` defaults here and on the limits are a deliberate exception to "defaults live in .env": an unset CPU or
+      # memory limit is an empty string that stops Compose from parsing the whole file (every `docker compose` call
+      # without --env-file, CI's cleanup included), and an empty worker count stops gunicorn from starting.
+      GUNICORN_WORKERS: ${PRESIDIO_ANALYZER_WORKERS:-1}
+      GUNICORN_THREADS: ${PRESIDIO_ANALYZER_THREADS:-4}
+      OMP_NUM_THREADS: ${PRESIDIO_ANALYZER_TORCH_THREADS:-2}
+      MKL_NUM_THREADS: ${PRESIDIO_ANALYZER_TORCH_THREADS:-2}
+    volumes: ['./configs/presidio/analyzer.yaml:/app/analyzer.yaml:ro,z']
     healthcheck:
       test:
         - CMD
@@ -1165,8 +1202,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4'
-          memory: 4G  # Measured: 2.6-2.9 GiB after a run over 50K-character inputs
+          cpus: ${PRESIDIO_ANALYZER_CPUS:-4}
+          memory: ${PRESIDIO_ANALYZER_MEMORY:-4G}  # Measured: about 3.1 GiB per worker under load
     logging:
       driver: json-file
       options:
@@ -1176,27 +1213,9 @@ services:
       - pii-detection  # Isolated zone: callers (litellm, agents) join it to reach the analyzer
 
   # License: MIT — third-party (see LICENSE_REPORT.md)
-  presidio-anonymizer:
-    container_name: presidio-anonymizer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359
-    restart: always
-    labels:
-      healthcheck.enabled: 'true'
-      healthcheck.protocol: http
-      healthcheck.port: '3000'
-      healthcheck.path: /health
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - backend
-
-  # License: MIT — third-party (see LICENSE_REPORT.md)
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.83.10-stable
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.106.4
     restart: always
     ports: [4000:4000]
     environment:
@@ -1223,8 +1242,11 @@ services:
       SWISS_LLM_CLOUD_OCR_API_KEY: ${SWISS_LLM_CLOUD_OCR_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
+      # Read by the pii-anonymisation guardrail (litellm_functions/pii_anonymisation_guardrail.py)
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
-      PRESIDIO_ANONYMIZER_API_BASE: http://presidio-anonymizer:3000
+      PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
+      PRESIDIO_ANALYZER_TIMEOUT_SECONDS: ${PRESIDIO_ANALYZER_TIMEOUT_SECONDS:-150}  # optional, like the analyzer sizing
+      PII_ANONYMISE_EXTERNAL_MODELS: ${PII_ANONYMISE_EXTERNAL_MODELS}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
@@ -1238,19 +1260,20 @@ services:
       RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
     volumes:
       # LITELLM_CONFIG_VARIANT picks one mounted variant; an unknown value makes LiteLLM fail to start.
-      - ./configs/litellm/litellm-config.infomaniak.dev.yml:/app/config.infomaniak.yml
-      - ./configs/litellm/litellm-config.stoney.dev.yml:/app/config.stoney.yml
-      - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
+      - ./configs/litellm/litellm-config.infomaniak.dev.yml:/app/config.infomaniak.yml:z
+      - ./configs/litellm/litellm-config.stoney.dev.yml:/app/config.stoney.yml:z
+      - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro,z
+      - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro,z
+      - ./configs/litellm/pii_anonymisation_audit.py:/app/pii_anonymisation_audit.py:ro,z
     command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
       otel-collector:
         condition: service_started
       postgres:
         condition: service_healthy
+      # The guardrail blocks calls to external models while the analyzer cannot answer
       presidio-analyzer:
-        condition: service_started
-      presidio-anonymizer:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test:
         - CMD
@@ -1281,10 +1304,10 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
     container_name: open-terminal
-    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-4
     restart: always
     ports: [8200:8000]
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home:z']
     environment:
       OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
       OPEN_TERMINAL_MULTI_USER: 'true'  # Per-user home directories (/home/<user>)
@@ -1295,7 +1318,15 @@ services:
       OPEN_TERMINAL_SYSTEM_PROMPT: >-
         You have access to a sandboxed Linux computer with Python and common
         document libraries (pandas, openpyxl, python-docx, reportlab, fpdf2,
-        weasyprint, matplotlib). Use your tools to run commands, read and write
+        weasyprint, matplotlib), headless LibreOffice (soffice) with UNO for
+        Excel pivot tables, LaTeX, pandoc and pdftoppm. Run Python with python3
+        as usual. Only a script that imports uno needs /usr/bin/python3, which
+        has uno but none of the libraries above: prepare data with python3 and
+        keep the UNO step in its own script. A pivot table is a DataPilot
+        (sheet.getDataPilotTables(), createDataPilotDescriptor(),
+        insertNewByName()); save it as xlsx with the filter "Calc Office Open
+        XML". When the user uploads a file as a template, edit a copy of it
+        instead of rebuilding it. Use your tools to run commands, read and write
         files, and search the filesystem. Verify the current state before making
         changes and check command output to confirm success. Files you create in
         your working directory automatically appear in the user's Files panel,
@@ -1320,7 +1351,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy-1
     restart: always
     ports: [3036:3000]
     environment:
@@ -1337,16 +1368,35 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend  # Internal service communication
-      - egress  # Outbound internet access for web browsing
+      - browser  # Its only network: the internet only through browser-proxy
+
+  # License: GPL-2.0-or-later — third-party (see LICENSE_REPORT.md)
+  browser-proxy:
+    container_name: browser-proxy
+    image: ghcr.io/bbvch-ai/aihub-core/browser-proxy:7.6-1
+    restart: always
+    healthcheck:
+      test: [CMD, nc, -z, 127.0.0.1, '3128']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - browser  # Reached by the Playwright browser, whose only way out it is
+      - egress  # Outbound internet; refuses every destination whose address is not public
 
   # License: AGPL-3.0 — third-party (see LICENSE_REPORT.md)
   searxng:
     container_name: searxng
-    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.9.5-c7f3080aa
+    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.10.27-cb74e7f81
     restart: always
     ports: [8881:8080]
-    volumes: [./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro]
+    volumes: ['./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro,z']
     environment:
       SEARXNG_BASE_URL: http://searxng:8080
       SEARXNG_SECRET: ${SEARXNG_SECRET_KEY}
@@ -1428,7 +1478,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   otel-collector:
     container_name: otel-collector
-    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.154.0
+    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.164.0
     restart: always
     command: [--config=/etc/otel-config.yml]
     environment:
@@ -1447,7 +1497,7 @@ services:
       - OTEL_HOST_NAME=${OTEL_HOST_NAME:-unset-dev}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
-    volumes: [./configs/otel/otel-config.dev.yml:/etc/otel-config.yml]
+    volumes: [./configs/otel/otel-config.dev.yml:/etc/otel-config.yml:z]
     ports:
       - 4317:4317
       - 4318:4318
@@ -1473,8 +1523,8 @@ services:
     # This collector is dual-homed, so its container name is registered in Docker DNS on
     # both networks — and the egress address is NOT reachable container-to-container,
     # because egress sets enable_icc=false (an iptables DROP, so a client hangs on connect
-    # rather than getting a refusal). Two OTLP clients sit on egress as well (imap_agent,
-    # email_classification_agent), so for them the bare name is ambiguous by construction.
+    # rather than getting a refusal). Three OTLP clients sit on egress as well (imap_agent,
+    # email_classification_agent, release_notes_agent), so for them the bare name is ambiguous by construction.
     # The alias below is registered on backend only and can therefore resolve to nothing
     # but the reachable address; every OTLP client targets it instead of the name.
     networks:
@@ -1493,12 +1543,13 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-playwright1.63.0
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
     restart: always
     network_mode: host
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
-      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro
+      - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data:z
+      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro,z
+      - ./configs/openwebui/style/custom.css:/app/build/static/custom.css:ro,z
     configs:
       - source: openwebui-disclaimer
         target: /app/build/static/aihub-disclaimer.json
@@ -1522,7 +1573,7 @@ services:
     environment:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
-      DEFAULT_LOCALE: de
+      DEFAULT_LOCALE: en-US
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: false
       ENABLE_COMMUNITY_SHARING: false
@@ -1765,8 +1816,8 @@ services:
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
       FUNCTIONS_DIR: /functions
     volumes:
-      - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro
-      - ./configs/openwebui/functions:/functions:ro
+      - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro,z
+      - ./configs/openwebui/functions:/functions:ro,z
     entrypoint: [/bin/sh, /init-openwebui.sh]
     logging:
       driver: json-file
@@ -1796,6 +1847,7 @@ services:
 # - egress:  Outbound internet only, ICC disabled (containers isolated)
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
+# - browser:       The Playwright browser, browser-proxy (its only way out) and its callers (open-webui, the web-fetching agents)
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -1822,6 +1874,12 @@ networks:
   # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
   code-sandbox:
     name: code-sandbox
+    driver: bridge
+  # Single-purpose zone: the Playwright browser, browser-proxy and the browser's callers (open-webui, the
+  # web-fetching agents). Playwright has no other network: it reaches the internet only through browser-proxy,
+  # which refuses every address that is not public, so a page reaches neither the platform, the host nor the LAN.
+  browser:
+    name: browser
     driver: bridge
   # The Presidio analyzer receives the personal data the platform protects: alone with its callers, no egress
   pii-detection:

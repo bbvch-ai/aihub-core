@@ -1,15 +1,17 @@
+import base64
+import uuid
+
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
 from swiss_ai_hub.core.events.agent import UserMessageEvent
-from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.infrastructure import create_s3_client, enable_logging
 from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
 from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import SimulatedAgentApiTestRunner
-from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 
 AGENT_CLASS = "TestAgent"
 AGENT_ID = "test_agent_1"
@@ -82,7 +84,7 @@ async def test_send_event_to_agent(agent_api_client):
     Note: The response model is based on StopEvent (not LLMStopEvent) because LLMStopEvent's
     complex Message type with ContentBlock unions causes schema parsing issues with Jambo.
     """
-    user_message = ModelCreationService.create_input_model_from_event_class(UserMessageEvent)(
+    user_message = UserMessageEvent.api_input_model()(
         agent_id=AGENT_ID, messages=[ChatMessage(role="user", content="Hey!")]
     )
     path = f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/{UserMessageEvent.event_name_from_class()}"
@@ -97,3 +99,69 @@ async def test_send_event_to_agent(agent_api_client):
     # Response should contain display fields from StopEvent
     assert data.get("display_name"), f"Expected display_name, got: {data}"
     assert data.get("display_description"), f"Expected display_description, got: {data}"
+
+
+@pytest_asyncio.fixture
+async def simulated_agent():
+    auth = TestAuthHandler()
+    runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()
+    runner.mount(AgentController(auth=auth))
+    await runner.start_simulation()
+    app = runner.create_app()
+
+    async with LifespanManager(app) as lifespan:
+        runner.create_agent_config_in_db()
+        async with AsyncClient(
+            transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1/active"
+        ) as client:
+            yield client, runner
+
+    await runner.stop_simulation()
+
+
+@pytest.mark.asyncio
+async def test_send_event_with_an_inline_file(simulated_agent):
+    """The file is stored before publishing, so the agent receives only its reference, next to an uploaded one."""
+    client, runner = simulated_agent
+    uploaded = {"filename": "old.txt", "file_type": "text/plain", "file_id": str(uuid.uuid4())}
+    inline = {"filename": "invoice.txt", "file_type": "text/plain", "content": base64.b64encode(b"Total: 42").decode()}
+
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/{UserMessageEvent.event_name_from_class()}",
+        json={
+            "messages": [{"role": "user", "blocks": [{"block_type": "text", "text": "Total?"}]}],
+            "files": [inline, uploaded],
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    received = next(event for event in runner.received_events if event.is_user_message_event)
+    assert [file.filename for file in received.files] == ["invoice.txt", "old.txt"]
+    assert "content" not in received.model_dump_json()
+    bucket, key = received.files[0].resolve_s3_location(AGENT_CLASS, AGENT_ID)
+    assert create_s3_client().get_object(Bucket=bucket, Key=key)["Body"].read() == b"Total: 42"
+
+
+@pytest.mark.asyncio
+async def test_a_rejected_inline_file_publishes_nothing(simulated_agent):
+    client, runner = simulated_agent
+    inline = {"filename": "archive.zip", "file_type": "application/zip", "content": base64.b64encode(b"PK").decode()}
+
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/{UserMessageEvent.event_name_from_class()}",
+        json={"messages": [], "files": [inline]},
+    )
+
+    assert response.status_code == 415, response.text
+    assert not any(event.is_user_message_event for event in runner.received_events)
+
+
+@pytest.mark.asyncio
+async def test_openapi_documents_the_inline_file_form(simulated_agent):
+    client, _ = simulated_agent
+    response = await client.get("http://test/api/v1/openapi.json")
+    assert response.status_code == 200, response.text[:300]
+    schemas = response.json()["components"]["schemas"]
+    assert "content" in schemas["InlineFile"]["properties"]
+    files = str(schemas["UserMessageEventInput"]["properties"]["files"])
+    assert "InlineFile" in files and "UserUploadedFile" in files

@@ -8,5 +8,13 @@ This repository is fully open-source under a dual-license model (Apache-2.0
 and AGPL-3.0-or-later). Unless otherwise noted, its contents are licensed
 under the Apache License, Version 2.0 (see LICENSE); some subtrees are
 distributed under the GNU Affero General Public License, version 3 or later.
-The per-package LICENSE file is authoritative for everything in that subtree.
-See LICENSES.md for the full per-package matrix and rationale.
+The per-package LICENSE file is authoritative for everything in that subtree,
+except for vendored third-party files that carry their own LICENSE file next
+to them. See LICENSES.md for the full per-package matrix and rationale.
+
+packages/core/swiss_ai_hub/core/generative_ai/resources/tokenizers/vendored/
+holds model tokenizer files under their upstream licenses:
+
+- bge_m3/sentencepiece.bpe.model: the tokenizer of BAAI/bge-m3, MIT License,
+  Copyright (c) 2022 staoxiao (FlagEmbedding); originating from XLM-RoBERTa,
+  MIT License, Copyright (c) Facebook, Inc. and its affiliates.

@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from email.message import EmailMessage
 from email.utils import parsedate_to_datetime
@@ -5,6 +6,8 @@ from email.utils import parsedate_to_datetime
 from swiss_ai_hub.core.events.agent.imap.unread_mail_summary import UnreadMailSummary
 from swiss_ai_hub.core.imap.parsed_attachment import ParsedAttachment
 from swiss_ai_hub.core.imap.parsed_message import ParsedMessage
+
+logger = logging.getLogger(__name__)
 
 # A subject longer than this is not a subject. Both mail prompts put it in a fixed part they do not trim — the
 # drafting envelope and the classification header — so without a bound here one inbound message could exceed any
@@ -78,6 +81,8 @@ class MailParser:
             rfc_message_id=message.get("Message-ID"),
             references=message.get("References"),
             reply_to=message.get("Reply-To"),
+            to=MailParser._quoted_recipients(message, message_id, "To"),
+            cc=MailParser._quoted_recipients(message, message_id, "Cc"),
             body_text=body_text,
             body_html=body_html,
             attachments=attachments,
@@ -95,6 +100,22 @@ class MailParser:
         mailbox before this existed.
         """
         return message.get("Subject", "")[:MAX_SUBJECT_CHARACTERS]
+
+    @staticmethod
+    def _quoted_recipients(message: EmailMessage, message_id: str, header: str) -> str | None:
+        """The To or Cc header for the quote block, or None when the sender made it unreadable.
+
+        An encoded CR or LF (`=?utf-8?q?x=0D=0A…?=`) makes the address parser raise `ValueError`. These headers only
+        feed the quote shown below a draft, and a message that cannot be parsed is listed again on every run, so
+        letting that error through would let one inbound mail stop the mailbox for good.
+        """
+        try:
+            return message.get(header)
+        except ValueError:
+            logger.warning(
+                "[imap] uid=%s has an unreadable %s header — leaving it out of the quote", message_id, header
+            )
+            return None
 
     @staticmethod
     def _decode_text(part: EmailMessage, max_bytes: int) -> str:

@@ -24,7 +24,11 @@ class SelectionFallbackAnswer(BaseModel):
     ]
     fields: Annotated[str, Field(description="The table's columns in the user's words.", min_length=1)]
     instructions: Annotated[
-        str | None, Field(description="Which rows to keep, in the user's words; null when every row is wanted.")
+        str | None,
+        Field(
+            description="Which rows to keep, in the user's words; null when every row is wanted. Never what the "
+            "searches showed about particular documents."
+        ),
     ] = None
     row_terms: Annotated[
         str | None, Field(description="Words or a regular expression the lines holding the wanted rows contain.")

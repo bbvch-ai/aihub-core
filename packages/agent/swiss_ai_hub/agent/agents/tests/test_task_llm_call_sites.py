@@ -16,6 +16,7 @@ from swiss_ai_hub.core.events.agent import (
     LLMEvent,
     MemoryRecalledEvent,
     NotAMetaQuestionEvent,
+    WebPagesFetchedEvent,
 )
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.testing.auth_utils import fake_user
@@ -149,6 +150,7 @@ async def test_context_sufficient_guard_uses_task_llm(request, config_fixture: s
             memories=MemoryRecalledEvent(),
             files=AttachedFilesReadEvent(),
             knowledge=KnowledgeSearchedEvent(),
+            pages=WebPagesFetchedEvent(),
             run_context=MagicMock(),
         )
 

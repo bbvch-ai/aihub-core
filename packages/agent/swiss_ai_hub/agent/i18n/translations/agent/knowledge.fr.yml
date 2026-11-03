@@ -18,9 +18,12 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </referenced_knowledge>
     {% endchat %}
-  refused: "%{collections} n'ont pas pu être consultées, car ces collections ne sont\
-    \ pas accessibles à l'utilisateur. Dis à l'utilisateur que tu n'as pas pu les\
-    \ utiliser."
+  missing: "%{collections} n'ont pas pu être consultées, car ces collections n'existent\
+    \ plus ; elles ont été supprimées après que l'utilisateur les a référencées. Dis\
+    \ à l'utilisateur que tu n'as pas pu les utiliser et qu'il doit référencer une\
+    \ collection existante."
+  refused: "%{collections} n'ont pas pu être consultées, car l'utilisateur n'a pas\
+    \ accès à ces collections. Dis à l'utilisateur que tu n'as pas pu les utiliser."
   nothing_found: Rien dans les collections consultées ne correspondait à la question.
     Dis-le à l'utilisateur si la question en dépendait.
 tool:

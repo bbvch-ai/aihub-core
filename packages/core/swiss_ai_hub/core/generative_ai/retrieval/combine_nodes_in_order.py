@@ -19,7 +19,6 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     H5,
     H6,
     INSERTED_AT,
-    LANGUAGE,
     NODE_CONTENT_TYPE_FIGURE,
     NODE_TYPE_CONTENT,
     SOURCE,
@@ -29,13 +28,42 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
 
 _ordered_headers = [H1, H2, H3, H4, H5, H6]
 
+# A record field rides in every document's header; a long one (a Confluence page's ancestors) is cut, not dropped.
+MAX_RECORD_FIELD_CHARACTERS = 300
 
-def sanitize_metadata_value(value: str) -> str:
-    if not isinstance(value, str):
-        return str(value)
-    sanitized_value = value.replace("'", "").strip()
+
+def sanitize_metadata_value(value: object) -> str:
+    sanitized_value = str(value).replace("'", "").strip()
     sanitized_value = html.escape(sanitized_value)
     return sanitized_value
+
+
+def _record_field_value(value: str | int | float | list[str]) -> str:
+    text = ", ".join(value) if isinstance(value, list) else str(value)
+    if len(text) <= MAX_RECORD_FIELD_CHARACTERS:
+        return text
+    return f"{text[:MAX_RECORD_FIELD_CHARACTERS].rstrip()}…"
+
+
+def _document_header(node: IngestedNode) -> str:
+    """The document's own attributes, then the fields of the record it was synced from (a Jira issue's status), so the
+    model can answer about them. `language` is left out: ingestion detects none, so any value there is a default."""
+    attributes = {
+        "id": node.citation_id,
+        SOURCE: node.source,
+        DOCUMENT_TITLE: node.document_title,
+        VERSION: node.version,
+        CREATED_AT: node.created_at,
+        UPDATED_AT: node.updated_at,
+        INSERTED_AT: node.inserted_at,
+    }
+    attributes = {key: value for key, value in attributes.items() if value is not None}
+    record_fields = {
+        key: _record_field_value(value) for key, value in node.record_fields.items() if key not in attributes
+    }
+    return " ".join(
+        f"{key}='{sanitize_metadata_value(value)}'" for key, value in {**attributes, **record_fields}.items()
+    )
 
 
 def combine_nodes_in_order(
@@ -61,26 +89,7 @@ def combine_nodes_in_order(
         if not nodes:
             continue
 
-        node: IngestedNode = nodes[0]
-
-        metadata_fields = {
-            "id": node.citation_id,
-            SOURCE: node.source,
-            DOCUMENT_TITLE: node.document_title,
-            LANGUAGE: node.language,
-            VERSION: node.version,
-            CREATED_AT: node.created_at,
-            UPDATED_AT: node.updated_at,
-            INSERTED_AT: node.inserted_at,
-        }
-
-        metadata_fields = {k: v for k, v in metadata_fields.items() if v is not None}
-
-        metadata_string = " ".join(f"{k}='{sanitize_metadata_value(v)}'" for k, v in metadata_fields.items())
-
-        doc_header = f"<REFERENCE_DOCUMENT {metadata_string}>\n"
-
-        context_blocks.append(TextBlock(text=doc_header))
+        context_blocks.append(TextBlock(text=f"<REFERENCE_DOCUMENT {_document_header(nodes[0])}>\n"))
         last_headings = [None] * len(_ordered_headers)
         sorted_nodes = sorted(nodes, key=lambda x: (x.section_start_line or 0, x.type == NODE_TYPE_CONTENT))
 

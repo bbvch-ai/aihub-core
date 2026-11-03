@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 from typing import Annotated, Literal, Self
 
 from fastapi import Body, Depends, File, Form, HTTPException, Request, Security, UploadFile
+from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
@@ -15,6 +16,7 @@ from swiss_ai_hub.core.auth.usage import UsageLimits, use_usage_limits
 from swiss_ai_hub.core.dependencies import use_nats
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.infrastructure import use_s3
 from swiss_ai_hub.core.routes import TenantScopedController
 from swiss_ai_hub.core.tracing import NATSMessageHeaders
 
@@ -212,6 +214,7 @@ class OpenaiController(TenantScopedController):
             completion_request: Annotated[ChatCompletionRequest, Body],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
+            s3_client: Annotated[S3Client, Depends(use_s3)],
         ) -> ChatCompletion | StreamingResponse:
             completion_request.user = completion_request.user or user.id
             return await OpenaiService.chat_completion(
@@ -245,6 +248,7 @@ class OpenaiController(TenantScopedController):
             ],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
+            s3_client: Annotated[S3Client, Depends(use_s3)],
         ) -> ChatCompletion | StreamingResponse:
             completion_request.user = completion_request.user or user.id
             model_name = completion_request.model
@@ -259,6 +263,7 @@ class OpenaiController(TenantScopedController):
                 usage_limits=usage_limits,
                 external_agent_event_distributor=external_agent_event_distributor,
                 t=t,
+                s3_client=s3_client,
                 aihub_headers=aihub_headers,
             )
 

@@ -26,7 +26,6 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT,
     NODE_CONTENT_TYPE,
     NODE_CONTENT_TYPE_TEXT,
-    NODE_LANGUAGE_GERMAN,
     NODE_TYPE_CONTENT,
     NUMBER_OF_PAGES,
     SECTION_END_LINE,
@@ -84,6 +83,14 @@ class IngestedNode(IngestedBase):
         None
     )
 
+    record_fields: Annotated[
+        dict[str, str | int | float | list[str]],
+        Field(
+            description="Fields of the record the document was synced from, e.g. a Jira issue's status, as its "
+            "markdown frontmatter carried them."
+        ),
+    ] = {}
+
     score: Annotated[float | None, Field(description="Score representing the relevance of the document.")] = None
 
     @classmethod
@@ -97,6 +104,8 @@ class IngestedNode(IngestedBase):
         )
 
         metadata = node.metadata.copy() if node.metadata else {}
+        # Ingestion keeps exactly the frontmatter's own keys out of the embedded text, so that list names them.
+        record_fields = {key: metadata.pop(key) for key in node.excluded_embed_metadata_keys if key in metadata}
         inst = cls(
             id=node.node_id,
             content=node.text,
@@ -109,7 +118,7 @@ class IngestedNode(IngestedBase):
             type=metadata.pop(TYPE, NODE_TYPE_CONTENT),
             content_type=metadata.pop(NODE_CONTENT_TYPE, NODE_CONTENT_TYPE_TEXT),
             document_title=metadata.pop(DOCUMENT_TITLE, ""),
-            language=metadata.pop(LANGUAGE, NODE_LANGUAGE_GERMAN),
+            language=metadata.pop(LANGUAGE, None),
             version=metadata.pop(VERSION, 1),
             index=metadata.pop(INDEX, 0),
             section_start_line=metadata.pop(SECTION_START_LINE, None),
@@ -125,6 +134,7 @@ class IngestedNode(IngestedBase):
             updated_at=to_iso(metadata.pop(UPDATED_AT, 0)),
             inserted_at=to_iso(metadata.pop(INSERTED_AT, 0)),
             metadata=metadata,
+            record_fields=record_fields,
         )
 
         return inst
@@ -168,6 +178,7 @@ class IngestedNode(IngestedBase):
                 UPDATED_AT: from_iso(self.updated_at),
                 INSERTED_AT: from_iso(self.inserted_at),
                 **self.metadata,
+                **self.record_fields,
             },
             ref_doc_id=self.document_id,
         )

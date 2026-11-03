@@ -73,7 +73,7 @@ class AgentService:
     async def get_agent_instance(agent_class: str, agent_id: str, t: LocaleHandler) -> FullAgentInstanceDTO:
         """
         Returns details for a given agent instance from the database.
-        Online status is derived from the last_discovered timestamp on the class entity.
+        Online status compares the class's last_discovered timestamp with the completed discovery rounds.
         """
         class_entity = AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
@@ -83,7 +83,8 @@ class AgentService:
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent instance {agent_class}/{agent_id} not found.")
 
-        return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+        return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
     @staticmethod
     @trace_fn
@@ -95,12 +96,14 @@ class AgentService:
     ) -> list[FullAgentInstanceDTO]:
         """
         Returns all registered agent instances from the database.
-        Online status is determined by the last_discovered timestamp - agents that responded
-        to a discovery broadcast within AgentClassEntity.ONLINE_THRESHOLD are considered online.
+        Online status is read once for the whole listing: a class is online while it has answered one of the
+        last `DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE` completed discovery rounds.
         """
         agents = []
+        online_threshold = AgentClassEntity.online_threshold()
         for class_entity in AgentClassEntity.get_all():
-            if online is not None and class_entity.is_online != online:
+            is_online = class_entity.is_online_since(online_threshold)
+            if online is not None and is_online != online:
                 continue
             if agent_class is not None and class_entity.agent_class != agent_class:
                 continue
@@ -108,8 +111,8 @@ class AgentService:
             configs = AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
             for config_entity in configs:
                 dto = InstanceDtoBuilder.build_or_skip(
-                    lambda class_entity=class_entity, config_entity=config_entity: (
-                        FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                    lambda class_entity=class_entity, config_entity=config_entity, is_online=is_online: (
+                        FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
                     ),
                     kind="agent instance",
                     key=f"{class_entity.agent_class}/{getattr(config_entity, 'agent_id', '?')}",
@@ -176,33 +179,21 @@ class AgentService:
         nc: NATS,
         agent_class: str,
         agent_id: str,
-        input_event_parents: list[str],
-        input_event_name: str,
-        raw_event_data: dict,
+        input_event: StartEvent | HumanInTheLoopResponseEvent,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None,
         display_id: ObjectId | None,
         user: UserIdentity,
-        t: LocaleHandler,
-        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
     ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
         """Sends an event (start or HITL response) to a specific agent and waits for a response."""
-        event: StartEvent | HumanInTheLoopResponseEvent = expected_type.from_raw_data(
-            raw_event_data=raw_event_data,
-            user=user,
-            start_event_name=input_event_name,
-            start_event_parents=input_event_parents,
-            t=t,
-        )
-
         return await AgentService._send_event(
             nc=nc,
             external_agent_event_distributor=external_agent_event_distributor,
             user=user,
-            input_event=event,
+            input_event=input_event,
             agent_class=agent_class,
             agent_id=agent_id,
             thread_id=thread_id,
@@ -217,15 +208,11 @@ class AgentService:
         nc: NATS,
         agent_class: str,
         agent_id: str,
-        input_event_parents: list[str],
-        input_event_name: str,
-        raw_event_data: dict,
+        input_event: StartEvent | HumanInTheLoopResponseEvent,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None,
         display_id: ObjectId | None,
         user: UserIdentity,
-        t: LocaleHandler,
-        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
@@ -234,14 +221,6 @@ class AgentService:
         Sends an event (start or HITL response) to a specific agent and returns streaming resources for SSE.
         Yields ALL events (not just chunks) as raw events without conversion.
         """
-        event: StartEvent | HumanInTheLoopResponseEvent = expected_type.from_raw_data(
-            raw_event_data=raw_event_data,
-            user=user,
-            start_event_name=input_event_name,
-            start_event_parents=input_event_parents,
-            t=t,
-        )
-
         if thread_id:
             thread = ThreadEntity.get_thread_by_id(str(thread_id))
         else:
@@ -262,7 +241,7 @@ class AgentService:
         external_event = ExternalAgentEvent(
             thread_id=topic_manager.thread_id,
             display_id=topic_manager.display_id,
-            event=event,
+            event=input_event,
         )
 
         stop_signal = asyncio.Event()
@@ -405,10 +384,12 @@ class AgentService:
     async def get_agent_classes(t: LocaleHandler, online: bool | None = None) -> list[AgentClassDTO]:
         """Returns all agent classes from the database."""
         agent_classes = []
+        online_threshold = AgentClassEntity.online_threshold()
         for class_entity in AgentClassEntity.get_all():
-            if online is not None and class_entity.is_online != online:
+            is_online = class_entity.is_online_since(online_threshold)
+            if online is not None and is_online != online:
                 continue
-            agent_classes.append(AgentClassDTO.from_entity(class_entity, t))
+            agent_classes.append(AgentClassDTO.from_entity(class_entity, t, is_online=is_online))
         return agent_classes
 
     @staticmethod
@@ -418,7 +399,8 @@ class AgentService:
         class_entity = AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
-        return AgentClassDTO.from_entity(class_entity, t)
+        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+        return AgentClassDTO.from_entity(class_entity, t, is_online=is_online)
 
     @staticmethod
     @trace_fn
@@ -428,10 +410,13 @@ class AgentService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
+        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
         instances = []
         configs = AgentConfigEntityDocument.find_for_class(agent_class)
         for config_entity in configs:
-            instances.append(FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t))
+            instances.append(
+                FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
+            )
         return instances
 
     @staticmethod
@@ -451,7 +436,7 @@ class AgentService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class '{agent_class}' not found.")
 
-        if not class_entity.is_online:
+        if not class_entity.is_online_since(AgentClassEntity.online_threshold()):
             raise HTTPException(
                 status_code=503,
                 detail=f"Agent class '{agent_class}' is not online. Make sure the agent is running.",
@@ -506,7 +491,7 @@ class AgentService:
         if user.acting_within_tenant is not None:
             AgentService._grant_instance_access(agent_class, request.agent_id, user, config_entity)
 
-        return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+        return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=True)
 
     @staticmethod
     @trace_fn
