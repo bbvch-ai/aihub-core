@@ -12,15 +12,6 @@ from swiss_ai_hub.jambo import SchemaConverter
 class ModelCreationService:
     _input_suffix = "Input"
     _output_suffix = "Output"
-    _input_excluded_fields = {
-        "event_id",
-        "created_at",
-        "user",
-        "locale",
-        "display_name",
-        "display_description",
-        "agent_config",
-    }
     _output_excluded_fields = {"event_id", "created_at", "_event_name", "_parent_event_names"}
     _model_config_dict = ConfigDict(
         arbitrary_types_allowed=False,
@@ -35,12 +26,6 @@ class ModelCreationService:
     }
 
     @staticmethod
-    def create_input_model_from_event_class(event_class: type[BaseModel]) -> type[BaseModel]:
-        return ModelCreationService._create_model_from_class(
-            event_class, ModelCreationService._input_excluded_fields, ModelCreationService._input_suffix
-        )
-
-    @staticmethod
     def create_output_model_from_event_class(event_class: type[BaseModel]) -> type[BaseModel]:
         return ModelCreationService._create_model_from_class(
             event_class, ModelCreationService._output_excluded_fields, ModelCreationService._output_suffix
@@ -48,14 +33,18 @@ class ModelCreationService:
 
     @staticmethod
     def create_input_model_from_event_specs(event_specs: EventSpecs) -> type[BaseModel]:
-        event_class = ModelCreationService._create_model_from_event_specs(event_specs)
-        return ModelCreationService._create_model_from_class(
-            event_class, ModelCreationService._input_excluded_fields, ModelCreationService._input_suffix
+        """Built from the input the event announces, which already leaves out what the server fills in and carries
+        the shapes the event converts itself, such as files sent inline."""
+        if event_specs.api_input_schema is None:
+            raise ValueError(f"{event_specs.event_name} announces no API input schema.")
+        input_class = ModelCreationService._create_model_from_schema(
+            event_specs.api_input_schema, event_specs.event_name
         )
+        return ModelCreationService._create_model_from_class(input_class, set(), ModelCreationService._input_suffix)
 
     @staticmethod
     def create_output_model_from_event_specs(event_specs: EventSpecs) -> type[BaseModel]:
-        event_class = ModelCreationService._create_model_from_event_specs(event_specs)
+        event_class = ModelCreationService._create_model_from_schema(event_specs.event_schema, event_specs.event_name)
         return ModelCreationService._create_model_from_class(
             event_class, ModelCreationService._output_excluded_fields, ModelCreationService._output_suffix
         )
@@ -66,7 +55,7 @@ class ModelCreationService:
         return SchemaConverter.build(schema)
 
     @staticmethod
-    def _create_model_from_event_specs(event_specs: EventSpecs) -> type[BaseModel]:
+    def _create_model_from_schema(event_schema: dict[str, Any], event_name: str) -> type[BaseModel]:
         """Reconstructs the event's Pydantic model from its JSON Schema.
 
         jambo's ``SchemaConverter`` only ever reads a node's ``properties`` — it has no concept of
@@ -76,8 +65,8 @@ class ModelCreationService:
         Map fields are pulled out of the schema before jambo ever sees them and reattached afterwards
         with their real type, so they survive the round-trip like every fixed-shape field already does.
         """
-        schema = copy.deepcopy(event_specs.event_schema)
-        schema["title"] = event_specs.event_name
+        schema = copy.deepcopy(event_schema)
+        schema["title"] = event_name
         original = copy.deepcopy(schema)
 
         map_fields = ModelCreationService._extract_free_form_map_fields(schema)
