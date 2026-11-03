@@ -38,7 +38,9 @@ API callers can send files to an agent as base64 inside the request. These are c
 stored:
 
 - A request body larger than `API_REQUEST_MAX_BODY_BYTES` (64 MB) is refused with `413` while it arrives, before it is
-  read, whatever its content type. Multipart uploads and the document parsing upload bound their own size.
+  read, whatever its content type. Only an endpoint that takes a form upload, whose files are spooled to disk, and the
+  document parsing upload bound their own size; a request merely labelled `multipart/form-data` is bounded like any
+  other.
 - Each file is limited to `AGENT_INLINE_FILE_MAX_FILE_BYTES` (25 MB), and a request to
   `AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST` (10) files.
 - The filename may not contain path separators, the content must be valid base64, and the type must be one the agents'
