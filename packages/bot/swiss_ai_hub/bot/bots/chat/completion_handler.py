@@ -21,7 +21,7 @@ from swiss_ai_hub.bot.bots.chat.content_extractor import ContentExtractor
 from swiss_ai_hub.bot.bots.chat.unverified_bot_user_error import UnverifiedBotUserError
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import Content, ConversationEntity, Message
 from swiss_ai_hub.bot.persistence.entities.path_entity import PathEntity
-from swiss_ai_hub.bot.routes.bot_in_the_loop.slack_utils import SlackUtils
+from swiss_ai_hub.bot.routes.bot_in_the_loop.slack_utils import SlackUser, SlackUtils
 
 logger = logging.getLogger(__name__)
 
@@ -83,14 +83,14 @@ class CompletionHandler:
         """
         match turn_context.activity.channel_id:
             case Channels.ms_teams:
-                return await CompletionHandler._resolve_teams_user_email(turn_context)
+                return await CompletionHandler._resolve_teams_user_email(turn_context, path)
             case Channels.slack:
                 return await CompletionHandler._resolve_slack_user_email(turn_context, path)
             case channel_id:
                 raise UnverifiedBotUserError(channel_id, "the channel offers no verified user lookup")
 
     @staticmethod
-    async def _resolve_teams_user_email(turn_context: TurnContext) -> str:
+    async def _resolve_teams_user_email(turn_context: TurnContext, path: str) -> str:
         """Teams stores the display name in `from.name`, so the email comes from the Teams member roster."""
         user_id = turn_context.activity.from_property.id
         connector_client = turn_context.turn_state.get("ConnectorClient")
@@ -99,9 +99,26 @@ class CompletionHandler:
         teams_account: TeamsChannelAccount = await connector_client.get_conversation_member(
             turn_context.activity.conversation.id, user_id
         )
+        CompletionHandler._assert_member_of_bot_tenant(teams_account, path)
         if not teams_account.email:
             raise UnverifiedBotUserError(Channels.ms_teams, f"Teams member {user_id} has no email")
         return teams_account.email
+
+    @staticmethod
+    def _assert_member_of_bot_tenant(teams_account: TeamsChannelAccount, path: str) -> None:
+        """
+        A roster email is only as trustworthy as the tenant that issued it, so only the bot's own tenant counts.
+
+        The member's tenant is used, not the conversation's: in a shared channel the conversation belongs to the host
+        tenant while external members keep their home tenant.
+        """
+        bot_tenant_id = PathEntity.get_credentials_by_path(path).APP_TENANTID
+        if not bot_tenant_id:
+            raise UnverifiedBotUserError(Channels.ms_teams, f"no tenant is configured for {path}")
+        if (teams_account.tenant_id or "").lower() != bot_tenant_id.lower():
+            raise UnverifiedBotUserError(
+                Channels.ms_teams, f"Teams member {teams_account.id} belongs to tenant {teams_account.tenant_id!r}"
+            )
 
     @staticmethod
     async def _resolve_slack_user_email(turn_context: TurnContext, path: str) -> str:
@@ -112,10 +129,22 @@ class CompletionHandler:
         slack_token = PathEntity.get_slack_token_by_path(path)
         if not slack_token:
             raise UnverifiedBotUserError(Channels.slack, f"no Slack token is configured for {path}")
-        email = await SlackUtils.get_user_email(slack_token, slack_user_id)
-        if not email:
-            raise UnverifiedBotUserError(Channels.slack, f"Slack user {slack_user_id} has no email")
-        return email
+        slack_user = await SlackUtils.get_user(slack_token, slack_user_id)
+        await CompletionHandler._assert_member_of_bot_workspace(slack_user, slack_token)
+        if not slack_user.email:
+            raise UnverifiedBotUserError(
+                Channels.slack, f"Slack user {slack_user_id} has no email, or the bot token lacks users:read.email"
+            )
+        return slack_user.email
+
+    @staticmethod
+    async def _assert_member_of_bot_workspace(slack_user: SlackUser, slack_token: str) -> None:
+        """Slack Connect shows members of other workspaces too, and their own workspace vouches for their email."""
+        bot_team_id = (await SlackUtils.get_slack_ids(slack_token)).team_id
+        if slack_user.team_id != bot_team_id:
+            raise UnverifiedBotUserError(
+                Channels.slack, f"Slack user {slack_user.id} belongs to workspace {slack_user.team_id!r}"
+            )
 
     @staticmethod
     async def resolve_user_identity(turn_context: TurnContext, path: str) -> UserIdentity:

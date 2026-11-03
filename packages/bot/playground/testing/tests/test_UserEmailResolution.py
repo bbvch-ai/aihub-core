@@ -4,9 +4,12 @@ The identity must come from the channel (Teams member roster, Slack user profile
 sender-controlled ``from.name``; channels without such a lookup are rejected.
 """
 
+from collections.abc import Callable
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
+from cachetools import TTLCache
 from microsoft_agents.activity import Activity, ChannelAccount, Channels, ConversationAccount
 from microsoft_agents.activity.teams import TeamsChannelAccount
 from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
@@ -24,17 +27,21 @@ from swiss_ai_hub.bot.bots.chat.bot_access_denied_error import BotAccessDeniedEr
 from swiss_ai_hub.bot.bots.chat.completion_handler import CompletionHandler
 from swiss_ai_hub.bot.bots.chat.openai.openai_completion_handler import OpenaiCompletionHandler
 from swiss_ai_hub.bot.bots.chat.unverified_bot_user_error import UnverifiedBotUserError
-from swiss_ai_hub.bot.persistence.entities.path_entity import PathEntity
-from swiss_ai_hub.bot.routes.bot_in_the_loop.slack_utils import SlackUtils
+from swiss_ai_hub.bot.persistence.entities.path_entity import Credentials, PathEntity
+from swiss_ai_hub.bot.routes.bot_in_the_loop.slack_utils import SlackIds, SlackUser, SlackUtils
 
 DISPLAY_NAME = "John Doe"
 RESOLVED_EMAIL = "john.doe@example.com"
 VICTIM_EMAIL = "victim@example.com"
 USER_AAD_ID = "29:aad-object-id"
 SLACK_USER_ID = "U012AB3CD"
-SLACK_SENDER_ID = f"{SLACK_USER_ID}:T0123ABC"
+SLACK_TEAM_ID = "T0123ABC"
+SLACK_SENDER_ID = f"{SLACK_USER_ID}:{SLACK_TEAM_ID}"
+BOT_TENANT_ID = "bot-tenant-id"
 CONVERSATION_ID = "conversation-1"
 PATH = "/api/v1/agent/chat/completions/Agent/agent-1/json"
+
+type SlackUsersInfo = Callable[[dict], list[httpx.Request]]
 
 
 def _make_turn_context(
@@ -61,9 +68,9 @@ def _make_turn_context(
     return turn_context
 
 
-def _teams_connector(email: str | None) -> MagicMock:
-    """A fake ``TeamsConnectorClient`` whose ``get_conversation_member`` yields the given email."""
-    account_fields = {"id": USER_AAD_ID, "name": DISPLAY_NAME}
+def _teams_connector(email: str | None, tenant_id: str = BOT_TENANT_ID) -> MagicMock:
+    """A fake ``TeamsConnectorClient`` whose ``get_conversation_member`` yields the given email and tenant."""
+    account_fields = {"id": USER_AAD_ID, "name": DISPLAY_NAME, "tenant_id": tenant_id}
     if email is not None:
         account_fields["email"] = email
     connector = MagicMock(spec=TeamsConnectorClient)
@@ -71,12 +78,51 @@ def _teams_connector(email: str | None) -> MagicMock:
     return connector
 
 
+@pytest.fixture(autouse=True)
+def bot_tenant(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Every path in these tests belongs to a SingleTenant bot of ``BOT_TENANT_ID``."""
+    credentials = Credentials(
+        APP_TYPE="SingleTenant", APP_ID="app-id", APP_PASSWORD="secret", APP_TENANTID=BOT_TENANT_ID
+    )
+    monkeypatch.setattr(PathEntity, "get_credentials_by_path", MagicMock(return_value=credentials))
+
+
 @pytest.fixture
 def slack_lookup(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     monkeypatch.setattr(PathEntity, "get_slack_token_by_path", MagicMock(return_value="xoxb-token"))
-    lookup = AsyncMock(return_value=RESOLVED_EMAIL)
-    monkeypatch.setattr(SlackUtils, "get_user_email", lookup)
+    workspace = SlackIds(bot_id="B0123", team_id=SLACK_TEAM_ID)
+    monkeypatch.setattr(SlackUtils, "get_slack_ids", AsyncMock(return_value=workspace))
+    lookup = AsyncMock(return_value=SlackUser(id=SLACK_USER_ID, team_id=SLACK_TEAM_ID, email=RESOLVED_EMAIL))
+    monkeypatch.setattr(SlackUtils, "get_user", lookup)
     return lookup
+
+
+@pytest.fixture
+def slack_users_info(monkeypatch: pytest.MonkeyPatch) -> SlackUsersInfo:
+    """Answers `users.info` with a given body and `auth.test` with our workspace, so the real lookups run."""
+    monkeypatch.setattr(PathEntity, "get_slack_token_by_path", MagicMock(return_value="xoxb-token"))
+    monkeypatch.setattr(SlackUtils, "_slack_ids_cache", TTLCache(maxsize=100, ttl=60))
+
+    def answer_with(body: dict) -> list[httpx.Request]:
+        requests: list[httpx.Request] = []
+
+        def respond(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            if request.url.path == "/api/auth.test":
+                return httpx.Response(200, json={"ok": True, "bot_id": "B0123", "team_id": SLACK_TEAM_ID})
+            return httpx.Response(200, json=body)
+
+        transport = httpx.MockTransport(respond)
+        original = httpx.AsyncClient.__init__
+
+        def patched(self, *args, **kwargs):
+            kwargs["transport"] = transport
+            original(self, *args, **kwargs)
+
+        monkeypatch.setattr(httpx.AsyncClient, "__init__", patched)
+        return requests
+
+    return answer_with
 
 
 @pytest.fixture
@@ -142,6 +188,32 @@ async def test_teams_missing_sender_id_skips_lookup_and_is_rejected():
 
 
 @pytest.mark.asyncio
+async def test_teams_member_of_another_tenant_is_rejected():
+    turn_context = _make_turn_context(connector_client=_teams_connector(RESOLVED_EMAIL, tenant_id="other-tenant"))
+
+    with pytest.raises(UnverifiedBotUserError, match="other-tenant"):
+        await CompletionHandler.resolve_user_email(turn_context, PATH)
+
+
+@pytest.mark.asyncio
+async def test_teams_is_refused_on_a_path_without_a_tenant(monkeypatch: pytest.MonkeyPatch):
+    credentials = Credentials(APP_TYPE="MultiTenant", APP_ID="app-id", APP_PASSWORD="secret")
+    monkeypatch.setattr(PathEntity, "get_credentials_by_path", MagicMock(return_value=credentials))
+    turn_context = _make_turn_context(connector_client=_teams_connector(RESOLVED_EMAIL))
+
+    with pytest.raises(UnverifiedBotUserError, match="no tenant is configured"):
+        await CompletionHandler.resolve_user_email(turn_context, PATH)
+
+
+@pytest.mark.asyncio
+async def test_teams_tenant_ids_match_regardless_of_case():
+    connector = _teams_connector(RESOLVED_EMAIL, tenant_id=BOT_TENANT_ID.upper())
+    turn_context = _make_turn_context(connector_client=connector)
+
+    assert await CompletionHandler.resolve_user_email(turn_context, PATH) == RESOLVED_EMAIL
+
+
+@pytest.mark.asyncio
 async def test_slack_email_comes_from_slack_user_profile(slack_lookup: AsyncMock):
     turn_context = _make_turn_context(channel_id=Channels.slack, from_name=VICTIM_EMAIL, from_id=SLACK_SENDER_ID)
 
@@ -171,10 +243,58 @@ async def test_slack_without_token_is_rejected(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.mark.asyncio
 async def test_slack_user_without_email_is_rejected(slack_lookup: AsyncMock):
-    slack_lookup.return_value = None
+    slack_lookup.return_value = SlackUser(id=SLACK_USER_ID, team_id=SLACK_TEAM_ID, email=None)
     turn_context = _make_turn_context(channel_id=Channels.slack, from_id=SLACK_SENDER_ID)
 
     with pytest.raises(UnverifiedBotUserError):
+        await CompletionHandler.resolve_user_email(turn_context, PATH)
+
+
+@pytest.mark.asyncio
+async def test_slack_member_of_another_workspace_is_rejected(slack_lookup: AsyncMock):
+    slack_lookup.return_value = SlackUser(id=SLACK_USER_ID, team_id="T0OTHER", email=VICTIM_EMAIL)
+    turn_context = _make_turn_context(channel_id=Channels.slack, from_id=SLACK_SENDER_ID)
+
+    with pytest.raises(UnverifiedBotUserError, match="T0OTHER"):
+        await CompletionHandler.resolve_user_email(turn_context, PATH)
+
+
+@pytest.mark.asyncio
+async def test_slack_workspace_is_looked_up_once_per_token(slack_users_info: SlackUsersInfo):
+    profile = {"id": SLACK_USER_ID, "team_id": SLACK_TEAM_ID, "profile": {"email": RESOLVED_EMAIL}}
+    requests = slack_users_info({"ok": True, "user": profile})
+    turn_context = _make_turn_context(channel_id=Channels.slack, from_id=SLACK_SENDER_ID)
+
+    assert await CompletionHandler.resolve_user_email(turn_context, PATH) == RESOLVED_EMAIL
+    assert await CompletionHandler.resolve_user_email(turn_context, PATH) == RESOLVED_EMAIL
+    assert [request.url.path for request in requests].count("/api/auth.test") == 1
+
+
+@pytest.mark.asyncio
+async def test_slack_token_without_users_read_scope_is_rejected(slack_users_info: SlackUsersInfo):
+    slack_users_info({"ok": False, "error": "missing_scope", "needed": "users:read", "provided": "chat:write"})
+    turn_context = _make_turn_context(channel_id=Channels.slack, from_id=SLACK_SENDER_ID)
+
+    with pytest.raises(UnverifiedBotUserError, match="lacks the users:read scope"):
+        await CompletionHandler.resolve_user_email(turn_context, PATH)
+
+
+@pytest.mark.asyncio
+async def test_slack_token_without_email_scope_is_rejected(slack_users_info: SlackUsersInfo):
+    profile = {"id": SLACK_USER_ID, "team_id": SLACK_TEAM_ID, "profile": {"real_name": DISPLAY_NAME}}
+    slack_users_info({"ok": True, "user": profile})
+    turn_context = _make_turn_context(channel_id=Channels.slack, from_id=SLACK_SENDER_ID)
+
+    with pytest.raises(UnverifiedBotUserError, match="users:read.email"):
+        await CompletionHandler.resolve_user_email(turn_context, PATH)
+
+
+@pytest.mark.asyncio
+async def test_other_slack_api_errors_are_not_reported_as_unverified_users(slack_users_info: SlackUsersInfo):
+    slack_users_info({"ok": False, "error": "invalid_auth"})
+    turn_context = _make_turn_context(channel_id=Channels.slack, from_id=SLACK_SENDER_ID)
+
+    with pytest.raises(ValueError, match="invalid_auth"):
         await CompletionHandler.resolve_user_email(turn_context, PATH)
 
 

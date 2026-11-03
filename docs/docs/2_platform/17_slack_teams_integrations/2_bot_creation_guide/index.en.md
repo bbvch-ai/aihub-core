@@ -58,7 +58,7 @@ Understanding these terms is crucial for successful bot configuration:
 | **MongoDB `path` Field**             | Internal routing path that determines which bot implementation handles a conversation. Examples: `/api/v1/agent/chat/completions/...` or `/api/v1/openai/chat/completions`. Configured in MongoDB `bot_paths` collection (Step 7). |
 | **App ID / Client ID**               | Azure AD application identifier (UUID format). Same value used as Bot ID and in MongoDB `credentials.APP_ID`.                                                                                                                      |
 | **Client Secret / App Password**     | Azure AD application secret. Stored in MongoDB as `credentials.APP_PASSWORD`. Expires and must be rotated.                                                                                                                         |
-| **Tenant ID**                        | Microsoft 365 tenant identifier. Required for SingleTenant bots, stored as `credentials.APP_TENANTID`.                                                                                                                             |
+| **Tenant ID**                        | Microsoft 365 tenant identifier, stored as `credentials.APP_TENANTID`. The bot only answers Teams users of this tenant, so a MultiTenant bot (no tenant) cannot serve Teams users.                                                 |
 | **Bot-in-the-Loop**                  | Pattern where AI agents request human input via Slack channels during workflow execution.                                                                                                                                          |
 | **Slack Bot OAuth Token**            | Token for Slack integration (format: `xoxb-...`). Stored in MongoDB as `slack_token`.                                                                                                                                              |
 
@@ -215,7 +215,7 @@ Add a new document to the `bot_paths` collection with the following structure:
   - `APP_TYPE`: Authentication type (`"SingleTenant"` or `"MultiTenant"`)
   - `APP_ID`: Teams app client ID from Step 6
   - `APP_PASSWORD`: Client secret from Step 4
-  - `APP_TENANTID`: Microsoft 365 tenant ID from Step 6 (required for SingleTenant)
+  - `APP_TENANTID`: Microsoft 365 tenant ID from Step 6 (required: Teams users outside it are refused)
 - `system_message`: Default system message/instructions for the bot
 - `slack_token`: Empty string initially (populated in Step 14 for Slack integration)
 

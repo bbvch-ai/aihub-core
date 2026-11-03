@@ -93,8 +93,10 @@ Every activity route goes through `RoutesService.process_activity()`, which vali
 the path's credentials (signature via Microsoft's JWKS, audience = `APP_ID`, issuer, no agent-to-agent tokens,
 `serviceurl` claim = the activity's `serviceUrl`) and answers `401` otherwise. The bot then resolves the user from the
 channel itself — the Teams member roster or the Slack profile (`users.info`, needs `users:read` + `users:read.email`) —
-never from `from.name`, and checks that the user may use the endpoint's agent or model. Other channels (web chat, Direct
-Line, emulator) cannot be mapped to an account and get a "cannot verify who you are" reply.
+never from `from.name`. Only members of the path's own tenant (`APP_TENANTID`; a path without one refuses Teams users)
+or of the workspace its Slack token belongs to are accepted, because any other tenant or workspace vouches for its
+members' emails itself. Finally the bot checks that the user may use the endpoint's agent or model. Other channels (web
+chat, Direct Line, emulator) cannot be mapped to an account and get a "cannot verify who you are" reply.
 
 ## BaseChatBot Message Pipeline
 
@@ -116,7 +118,7 @@ Line, emulator) cannot be mapped to an account and get a "cannot verify who you 
 
 - Conversation reuse: Teams reuses conversation IDs. On `on_conversation_update_activity` (bot re-added), delete
   `ConversationEntity` + mark `ConversationTracker` as explicitly deleted.
-- User identity: email via `TeamsConnectorClient.get_conversation_member`
+- User identity: email via `TeamsConnectorClient.get_conversation_member`, only for members of the path's `APP_TENANTID`
 
 **Slack**:
 
@@ -124,7 +126,8 @@ Line, emulator) cannot be mapped to an account and get a "cannot verify who you 
   storage (`_clean_conversation_id()`).
 - Thread detection: `conversation.conversation_type == "channel"` + `thread_ts` in conversation ID
 - Mention tracking: `is_mentioned` flag on `ConversationEntity`
-- User identity: email via Slack `users.info` for the `U…` part of `from.id`, using the path's `slack_token`
+- User identity: email via Slack `users.info` for the `U…` part of `from.id`, using the path's `slack_token`, only for
+  members of that token's workspace (`auth.test`)
 - Markdown conversion: `**text**` → `*text*`, `[text](url)` → `<url|text>`
 
 **Web Chat**:
@@ -155,7 +158,8 @@ Human expert escalation flow — an agent pauses, asks a human via Slack/Teams, 
 6. `BotInTheLoopBot` (via `POST /bot_in_the_loop/response`) receives reply, matches to thread in registry
 7. Bot publishes `BotInTheLoopResponseEvent` via `ExternalAgentEventDistributor` → agent workflow resumes
 
-Slack IDs cached via `TTLCache(maxsize=100, ttl=30d)` from `SlackUtils.get_slack_ids()` (`auth.test` API).
+Slack IDs are cached per token for 30 days inside `SlackUtils.get_slack_ids()` (`auth.test` API), shared with the chat
+bots' workspace check.
 
 ## Conversation Management
 
