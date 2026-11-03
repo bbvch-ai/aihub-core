@@ -43,7 +43,7 @@ image_tags:
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
   presidio_analyzer: presidio-analyzer:2.2.364-swiss-4
   oauth2proxy: oauth2-proxy:v7.15.5
-  open_webui: open-webui:v0.11.4-playwright1.63.0-1
+  open_webui: open-webui:v0.11.4-playwright1.63.0-2
   open_webui_init: postgres:17
   playwright: playwright:v1.63.0-jammy-1
   browser_proxy: browser-proxy:7.6-1

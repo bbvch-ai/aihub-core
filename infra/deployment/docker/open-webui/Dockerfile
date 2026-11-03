@@ -10,3 +10,8 @@ RUN apt-get update && \
 RUN pip install --no-cache-dir playwright==1.63.0 certifi==2026.10.23
 
 ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/ssl/certs/ca-certificates.crt
+
+# OpenWebUI serves its HTML without Cache-Control, so browsers keep booting the previous frontend after an upgrade.
+# The patch fails the build when a new release moves the code it edits.
+COPY patch_spa_cache_control.py /tmp/patch_spa_cache_control.py
+RUN python /tmp/patch_spa_cache_control.py && rm /tmp/patch_spa_cache_control.py

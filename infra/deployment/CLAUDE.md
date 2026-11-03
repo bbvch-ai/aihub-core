@@ -313,6 +313,17 @@ built earlier still trust `emSign ECC Root CA - G3`, so three images refresh the
 
 Keep these lines when bumping the base tag, and publish the new tag **before** pinning it in `compose-config.yml`.
 
+### OpenWebUI HTML caching patch
+
+OpenWebUI serves its HTML (`/`, `/auth`, `/c/…`, every SPA route) with `ETag` and `Last-Modified` but no
+`Cache-Control`, and neither Traefik nor the k8s ingress adds one. Browsers then cache it heuristically for 10% of its
+age, which is days for an image built weeks ago. After an upgrade, the Chat iframe boots the previous frontend against
+the new backend until the user presses F5, or until a route chunk 404s and SvelteKit reloads the page.
+`docker/open-webui/patch_spa_cache_control.py` edits `SPAStaticFiles` at build time so everything it serves gets
+`Cache-Control: no-cache` (a cheap 304 when nothing changed). The exception is the content-hashed `_app/immutable/`
+files. The script fails the build when a new release no longer contains the exact code it edits. Re-check it on every
+OpenWebUI bump instead of deleting it.
+
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
 
