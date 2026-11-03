@@ -1,18 +1,19 @@
+import asyncio
 import logging
 from typing import Annotated, Any
 
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
-from pydantic import BaseModel
 
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document import KnowledgeDocument
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result import DocumentExtractionResult
-from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record import RecordValue
+from swiss_ai_hub.core.generative_ai.structured_extraction.extraction_window_call import ExtractionWindowCall
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_merger import RecordMerger
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_provenance import RecordProvenance
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_schema import RecordSchema
 from swiss_ai_hub.core.generative_ai.structured_extraction.text_windows import TextWindows
+from swiss_ai_hub.core.generative_ai.structured_extraction.window_selection import WindowSelection
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -52,52 +53,51 @@ class RecordExtractor:
         llm_config: Annotated[LLMConfig, "Config of `llm`, for its context window, output limit and tokenizer"],
         t: LocaleHandler,
         instructions: Annotated[str | None, "Which records to keep, e.g. 'only hardware positions'"] = None,
+        *,
+        limiter: Annotated[
+            asyncio.Semaphore | None, "Bounds the caller's concurrent model calls; windows run one by one if None"
+        ] = None,
+        max_windows: Annotated[int | None, "Read at most this many windows; the result is then partial"] = None,
+        row_terms: Annotated[str | None, "What wanted lines usually contain, to choose windows by"] = None,
     ) -> DocumentExtractionResult:
         """Malformed model output becomes a failed result for this document instead of a raise.
 
         A deliberate departure from fail-fast: a caller extracts from many documents, and one document a model
         cannot handle must not cost the records of the others. A document fails as a whole, never with the records of
-        the windows that worked, because a partial list would read as complete. Infrastructure errors still raise.
+        the windows that worked, because a partial list would read as complete. For the same reason a document read
+        only in part, because it has more windows than `max_windows`, says so in the result. Infrastructure errors
+        still raise.
         """
         RecordExtractor._require_whole(document)
         provenance = RecordProvenance.from_summary(document.summary)
         prompt = RichPromptTemplate(t("lib.prompt.structured_extraction.extraction_prompt"))
+        schema = schema.with_match() if instructions else schema
         prompt_args = RecordExtractor._prompt_args(schema, document, instructions)
         window_tokens = RecordExtractor._window_tokens(prompt, prompt_args, llm_config)
         windows = TextWindows.split(
             document.text, window_tokens, int(window_tokens * WINDOW_OVERLAP_RATIO), llm_config.token_counter
         )
         opening = RecordExtractor._opening(document.text, window_tokens, llm_config) if len(windows) > 1 else ""
-        records_model = schema.to_records_model()
-
-        per_window = []
-        for position, window in enumerate(windows, start=1):
-            window_args = {
-                **prompt_args,
-                "text": window,
-                "position": position,
-                "total": len(windows),
-                "opening": opening if position > 1 else "",
-            }
-            try:
-                per_window.append(await RecordExtractor._extract_window(llm, records_model, prompt, window_args))
-            except ValueError as malformed_output:
-                logger.warning("[extract] %s: excerpt %d of %d failed", provenance.path, position, len(windows))
-                reason = f"Excerpt {position} of {len(windows)}: {type(malformed_output).__name__}: {malformed_output}"
+        positions = WindowSelection.choose(windows, max_windows or len(windows), row_terms)
+        limiter = limiter or asyncio.Semaphore(1)
+        call = ExtractionWindowCall(llm, schema.to_records_model(), prompt, prompt_args, windows, opening, limiter)
+        try:
+            async with asyncio.TaskGroup() as group:
+                tasks = [group.create_task(call.records(position)) for position in positions]
+        except ExceptionGroup as failed_calls:
+            # The group cancelled the other windows; callers expect the infrastructure error itself, as before the
+            # windows ran side by side.
+            raise failed_calls.exceptions[0] from failed_calls
+        outcomes = [task.result() for task in tasks]
+        for position, outcome in zip(positions, outcomes, strict=True):
+            if isinstance(outcome, ValueError):
+                logger.warning("[extract] %s: excerpt %d of %d failed", provenance.path, position + 1, len(windows))
+                reason = f"Excerpt {position + 1} of {len(windows)}: {type(outcome).__name__}: {outcome}"
                 return DocumentExtractionResult.failed_with(
                     provenance, reason[:MAX_FAILURE_REASON_CHARACTERS], len(windows)
                 )
-
-        return DocumentExtractionResult.succeeded(provenance, RecordMerger.merge(per_window), len(windows))
-
-    @staticmethod
-    async def _extract_window(
-        llm: LLM, records_model: type[BaseModel], prompt: RichPromptTemplate, window_args: dict[str, Any]
-    ) -> list[dict[str, RecordValue]]:
-        """Records of one window, without the all-null ones strict mode lets a model emit for "nothing here"."""
-        result = await llm.astructured_predict(records_model, prompt, **window_args)
-        records = [record.model_dump() for record in result.records]
-        return [record for record in records if any(value is not None for value in record.values())]
+        merged = RecordMerger.merge([outcome for outcome in outcomes if not isinstance(outcome, ValueError)], positions)
+        return DocumentExtractionResult.succeeded(provenance, merged, len(windows), len(positions) < len(windows))
 
     @staticmethod
     def _prompt_args(schema: RecordSchema, document: KnowledgeDocument, instructions: str | None) -> dict[str, Any]:

@@ -204,6 +204,7 @@ import {
   buildFormKitSchema,
   type FormElement,
   hydrateFormData,
+  pickDeclaredFields,
   serializeFormData,
 } from '@core/composables/form/useFormKitTransform'
 import { getNode } from '@formkit/core'
@@ -340,6 +341,13 @@ function triggerFormSubmit() {
   }
 }
 
+// Switching the ingestor or the source swaps forms inside the same FormKit form, and a FormKit group handed a value
+// that lacks a still-mounted input writes that input's value back into it. The API refuses every key the announced
+// form does not declare, so the previous form's fields would fail the create.
+function submittable(data: Record<string, unknown>, elements: FormElement[]): Record<string, unknown> {
+  return pickDeclaredFields(serializeFormData(data, elements), elements)
+}
+
 async function handleFormSubmit() {
   const database = databaseName.value
   const { source_configuration, ...ingestorData } = formData.value
@@ -349,10 +357,10 @@ async function handleFormSubmit() {
       tenantId: tenantId.value!,
       request: {
         ingestor: selectedClass.value,
-        configuration: serializeFormData(ingestorData, configForm.value as FormElement[]),
+        configuration: submittable(ingestorData, configForm.value as FormElement[]),
         source: selectedSourceData.value?.name ?? null,
         source_configuration: selectedSourceData.value
-          ? serializeFormData((source_configuration ?? {}) as Record<string, unknown>, sourceForm.value)
+          ? submittable((source_configuration ?? {}) as Record<string, unknown>, sourceForm.value)
           : {},
       },
     })
@@ -360,7 +368,8 @@ async function handleFormSubmit() {
     toast.add({
       severity: 'success',
       summary: t('knowledge.form.create_database.success'),
-      life: 3000,
+      detail: selectedSourceData.value ? t('knowledge.source.next_sync') : undefined,
+      life: selectedSourceData.value ? 6000 : 3000,
     })
 
     emit('success', { database })

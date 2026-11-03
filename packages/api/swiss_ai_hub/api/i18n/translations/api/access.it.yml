@@ -105,8 +105,8 @@ capabilities:
           funzioni non sono disponibili.
     files:
       own:
-        label: "Usare il proprio spazio file"
-        description: "Sfogliare, caricare, scaricare e gestire i propri file."
+        label: Usare il proprio spazio file
+        description: Sfogliare, caricare, scaricare e gestire i propri file.
     memory:
       org:
         label: Usa memoria organizzazione

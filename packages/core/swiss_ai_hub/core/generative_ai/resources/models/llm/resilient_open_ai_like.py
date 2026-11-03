@@ -1,12 +1,14 @@
 import logging
 from collections.abc import Sequence
-from typing import Any, ClassVar, override
+from typing import Annotated, Any, ClassVar, override
 
+import httpx
 from llama_index.core.base.llms.types import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.llms.openai_like import OpenAILike
 from openai import BadRequestError
-from pydantic import ValidationError
+from pydantic import Field, ValidationError
 
+from swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails import GatewayGuardrails
 from swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat import ReasoningFreeChat
 
 logger = logging.getLogger(__name__)
@@ -38,9 +40,46 @@ class ResilientOpenAILike(OpenAILike):
     safe default. Streamed calls additionally request usage on the final chunk, falling back to a plain
     stream for endpoints that reject ``stream_options``. Mirrors the provider-quirk subclassing of
     ``PatchedOpenAILLM``.
+
+    The connection to the gateway is bounded by ``connect_timeout`` rather than the request ``timeout``, and the
+    owner closes the instance with ``aclose``: see those two members for why.
     """
 
     _models_rejecting_stream_options: ClassVar[set[str]] = set()
+
+    connect_timeout: Annotated[float, Field(description="Seconds allowed to open the connection to the gateway.")]
+
+    @override
+    def _get_credential_kwargs(self, is_async: bool = False) -> dict[str, Any]:
+        """
+        A connect that never completes has nothing in flight, so it fails in seconds and the SDK retries at once.
+
+        llama-index only takes a float, which httpx would apply to the connect phase too, and the OpenAI SDK sends
+        its timeout with every request, overriding any timeout set on a passed-in http client.
+        """
+        return {
+            **super()._get_credential_kwargs(is_async=is_async),
+            "timeout": httpx.Timeout(self.timeout, connect=self.connect_timeout),
+        }
+
+    async def aclose(self) -> None:
+        """
+        Close the OpenAI clients this instance opened, if any.
+
+        Left to the garbage collector, the OpenAI SDK's finalizer schedules the close on the event loop after the
+        sockets are already gone; if a new connection reuses a socket's number meanwhile, that late close drops the
+        new connection's event-loop watch and its connect hangs until the request timeout (aihub-core-private#349).
+        """
+        if self._aclient is not None:
+            await self._aclient.close()
+        if self._client is not None:
+            self._client.close()
+
+    @override
+    def _get_model_kwargs(self, **kwargs: Any) -> dict[str, Any]:
+        """Every request path (chat, stream, complete, tools) builds its kwargs here, so the guardrails a profile
+        requests reach the gateway on every call. Merged last: `additional_kwargs` replace a call's `extra_body`."""
+        return GatewayGuardrails.merged_into(super()._get_model_kwargs(**kwargs))
 
     @override
     async def astream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseAsyncGen:

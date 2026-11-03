@@ -93,9 +93,9 @@ die Validierung von Berechtigungen vor ressourcenintensiven Operationen.
 ## Dynamische Erkennung von Identity Providern
 
 Die Anmeldeseite erkennt dynamisch verfügbare Identity Provider von Keycloak zur Laufzeit. Wenn ein Benutzer die
-Anmeldeseite besucht, ruft das Frontend `GET /api/v1/{tenant_id}/auth-providers/` auf – einen nicht authentifizierten
-API-Endpunkt, der die Keycloak Admin API unter Verwendung eines dedizierten, auf das geringste Privileg beschränkten
-Service-Accounts (`aihub-api-service`) mit nur der `view-identity-providers`-Berechtigung abfragt.
+Anmeldeseite besucht, ruft das Frontend `GET /api/v1/auth-providers/` auf – einen nicht authentifizierten API-Endpunkt,
+der die Keycloak Admin API unter Verwendung eines dedizierten, auf das geringste Privileg beschränkten Service-Accounts
+(`aihub-api-service`) mit nur der `view-identity-providers`-Berechtigung abfragt.
 
 Die API filtert die Providerliste, um nur aktivierte, sichtbare Provider einzuschliessen, und gibt deren Alias,
 Anzeigenamen und Symbol zurück. Die Ergebnisse werden 5 Minuten lang gecached. Das Frontend rendert für jeden Provider
@@ -137,6 +137,38 @@ nicht link-only ist, andernfalls `null`. Provider, die auf Keycloaks Login-Seite
 aufgelöst, weil Keycloak `kc_idp_hint` für sie weiterhin berücksichtigt. Ein unbekannter Alias führt zurück zur
 allgemeinen Anmeldeseite. Tenants, die sich einen Identity Provider teilen, teilen sich auch dessen Link.
 
+### Tenant-Adresse als Login-Link
+
+Die eigene Adresse eines Tenants kann zugleich sein Login-Link sein. Öffnet ein nicht angemeldeter Besucher
+`/<tenant-id>` oder eine Seite darunter, mit oder ohne Sprachpräfix (`/acme`, `/en/acme/service/openai`), leitet das
+Frontend ihn mit `kc_idp_hint` direkt zum Identity Provider dieses Tenants weiter – ohne Providerliste und ohne
+Login-Button. Nach dem Login kehrt der Benutzer auf die geöffnete Seite zurück, und der Tenant wird zu seinem aktiven
+Tenant, sofern er Mitglied ist.
+
+Die Zuordnung von Tenant-ID zu IdP-Alias wird pro Instanz über `KEYCLOAK_TENANT_IDP_ALIASES` festgelegt
+(API-Umgebungsvariable, Standard: leer):
+
+```bash
+KEYCLOAK_TENANT_IDP_ALIASES='acme=acme-entra,beta=shared-idp,gamma=shared-idp'
+```
+
+- Tenants, die sich einen Identity Provider teilen, werden demselben Alias zugeordnet.
+- Leer schaltet die Funktion aus: Besucher gelangen wie bisher auf die Anmeldeseite. Das ist der Standard, dedizierte
+  Kundeninstanzen sind also nicht betroffen.
+- Ein fehlerhafter Eintrag oder ein doppelt aufgeführter Tenant verhindert den Start der API.
+- Ein Alias wird nach derselben Regel verwendet wie ein Login-Link pro Tenant: Sein Identity Provider muss aktiviert und
+  nicht auf "Account Linking Only" gesetzt sein, und auf Keycloaks Login-Seite ausgeblendete Provider werden akzeptiert.
+
+Das Frontend löst den Tenant über `GET /api/v1/auth-providers/tenants/{tenant_id}` auf – einen nicht authentifizierten
+Endpunkt, der `{"alias": "<alias>"}` oder `{"alias": null}` zurückgibt. Er liest nur die konfigurierte Zuordnung und
+prüft nie, ob ein Tenant existiert: Ein unbekannter und ein existierender, aber nicht aufgeführter Tenant erhalten
+dieselbe Antwort und landen beide auf der Anmeldeseite, oder auf der Willkommensseite, wenn
+`KEYCLOAK_LOGIN_WELCOME_PAGE` eingeschaltet ist. Ein aufgeführter Tenant gibt sich durch die Weiterleitung zu seinem
+Identity Provider zu erkennen, wie es jeder funktionierende Login-Link muss.
+
+Kann eine Sitzung auf einer Tenant-Seite nicht erneuert werden, nimmt der Benutzer denselben Weg: zum Identity Provider
+des Tenants und danach zurück auf die Seite. Login-Links pro Tenant funktionieren neben Tenant-Adressen weiter.
+
 ### Willkommensseite für geteilte Instanzen
 
 Auf einer Instanz, die mehrere Organisationen bedient, würde die allgemeine Anmeldeseite jedem den Identity Provider
@@ -155,7 +187,8 @@ Zwei Dinge deckt der Schalter nicht ab:
   die Anmeldung in OpenWebUI und jede von Hand gebaute Autorisierungs-URL führen dorthin. Aktivieren Sie auf einer
   geteilten Instanz in der Keycloak Admin Console **Hide on login page** für den Identity Provider jedes Tenants.
   Login-Links pro Tenant sind davon nicht betroffen.
-- **Tenants ohne Link** haben keinen Zugang. Geben Sie jedem Tenant seinen Link, bevor Sie den Schalter einschalten.
+- **Tenants ohne Link** haben keinen Zugang. Geben Sie jedem Tenant seinen Link oder tragen Sie ihn in
+  `KEYCLOAK_TENANT_IDP_ALIASES` ein, damit seine Adresse als Link dient, bevor Sie den Schalter einschalten.
 
 ## Admin Service Authentifizierung über OAuth2 Proxy
 

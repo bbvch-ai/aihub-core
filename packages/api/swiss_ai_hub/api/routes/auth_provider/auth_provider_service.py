@@ -7,6 +7,7 @@ from swiss_ai_hub.core.infrastructure import trace_fn
 
 from swiss_ai_hub.api.routes.auth_provider.dto.auth_provider_response import AuthProviderResponse
 from swiss_ai_hub.api.routes.auth_provider.dto.login_options_response import LoginOptionsResponse
+from swiss_ai_hub.api.routes.auth_provider.dto.tenant_auth_provider_response import TenantAuthProviderResponse
 
 DEFAULT_ICON = "pi-sign-in"
 CACHE_KEY = "auth_providers"
@@ -55,6 +56,17 @@ class AuthProviderService:
         """Resolves one provider for a per-tenant login link, so the link works without the full provider list."""
         linkable_providers = await AuthProviderService._get_linkable_providers(redis)
         return next((provider for provider in linkable_providers if provider.alias == alias), None)
+
+    @staticmethod
+    @trace_fn
+    async def get_tenant_auth_provider(redis: Redis, tenant_id: str) -> TenantAuthProviderResponse:
+        """Consults only the configured mapping, never tenant existence, so unknown and unlisted tenants look alike."""
+        alias = KeycloakSettings().TENANT_IDP_ALIASES.get(tenant_id)
+        if alias is None:
+            return TenantAuthProviderResponse(alias=None)
+
+        provider = await AuthProviderService.get_auth_provider(redis, alias)
+        return TenantAuthProviderResponse(alias=provider.alias if provider else None)
 
     @staticmethod
     async def _get_linkable_providers(redis: Redis) -> list[AuthProviderResponse]:

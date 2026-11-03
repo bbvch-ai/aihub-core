@@ -5,6 +5,7 @@
 `-s` to see the table. It measures rather than asserts, because which model is consistent enough is a team decision.
 """
 
+import asyncio
 import os
 from collections import Counter
 from datetime import UTC, datetime
@@ -56,6 +57,11 @@ _LINE_SCHEMA = RecordSchema(
         RecordField(name="amount", type="number", description="Billed amount of the line in CHF"),
     ]
 )
+
+
+def _windows_at_once() -> asyncio.Semaphore:
+    """As the agents call the extractor: windows side by side, bounded."""
+    return asyncio.Semaphore(4)
 
 
 def _document(text: str, title: str = "Invoice INV-2025-0412") -> KnowledgeDocument:
@@ -142,7 +148,12 @@ async def test_long_document_is_extracted_completely_without_duplicates() -> Non
     llm_config, llm, _ = _llm()
 
     result = await RecordExtractor.extract(
-        _LINE_SCHEMA, _document(_long_contract(), title="Hardware contract"), llm, llm_config, LocaleHandler("en")
+        _LINE_SCHEMA,
+        _document(_long_contract(), title="Hardware contract"),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        limiter=_windows_at_once(),
     )
 
     assert not result.failed, result.failure_reason
@@ -164,7 +175,12 @@ async def test_values_stated_once_in_the_header_reach_records_on_later_pages() -
     )
 
     result = await RecordExtractor.extract(
-        schema, _document(header + _long_contract(), title="Hardware contract"), llm, llm_config, LocaleHandler("en")
+        schema,
+        _document(header + _long_contract(), title="Hardware contract"),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        limiter=_windows_at_once(),
     )
 
     assert not result.failed, result.failure_reason
@@ -189,7 +205,12 @@ async def test_long_markdown_table_is_extracted_once_per_row_with_exact_amounts(
     table = f"# Invoice INV-2025-0977\n\n| Pos | Description | Amount | Currency |\n|---|---|---|---|\n{rows}\n"
 
     result = await RecordExtractor.extract(
-        _LINE_SCHEMA, _document(table, title="Invoice INV-2025-0977"), llm, llm_config, LocaleHandler("en")
+        _LINE_SCHEMA,
+        _document(table, title="Invoice INV-2025-0977"),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        limiter=_windows_at_once(),
     )
 
     assert not result.failed, result.failure_reason

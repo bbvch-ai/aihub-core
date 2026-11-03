@@ -10,6 +10,7 @@ from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.auth_provider.auth_provider_service import AuthProviderService
 from swiss_ai_hub.api.routes.auth_provider.dto.auth_provider_response import AuthProviderResponse
 from swiss_ai_hub.api.routes.auth_provider.dto.login_options_response import LoginOptionsResponse
+from swiss_ai_hub.api.routes.auth_provider.dto.tenant_auth_provider_response import TenantAuthProviderResponse
 
 
 class AuthProviderController(Controller):
@@ -36,5 +37,15 @@ class AuthProviderController(Controller):
             redis: Annotated[Redis, Depends(use_redis)],
         ) -> AuthProviderResponse | None:
             return await AuthProviderService.get_auth_provider(redis, alias)
+
+        return self
+
+    def get_tenant_auth_provider(self, route: str = "/tenants/{tenant_id}") -> Self:
+        @self.router.get(route, tags=self.tags)
+        async def get_tenant_auth_provider(
+            tenant_id: Annotated[str, Path(description="Tenant ID taken from the tenant's login link")],
+            redis: Annotated[Redis, Depends(use_redis)],
+        ) -> TenantAuthProviderResponse:
+            return await AuthProviderService.get_tenant_auth_provider(redis, tenant_id)
 
         return self

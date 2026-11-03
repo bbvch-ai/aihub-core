@@ -15,6 +15,7 @@ from swiss_ai_hub.core.events.agent import UnreadMailSummary
 from swiss_ai_hub.core.imap import ImapClientConfig, MailParser, ParsedMessage
 
 from swiss_ai_hub.agent.imap.entra_token_provider import EntraTokenProvider
+from swiss_ai_hub.agent.imap.inbox_position import InboxPosition
 from swiss_ai_hub.agent.imap.message_vanished_error import MessageVanishedError
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ _MAX_ORDERING_CANDIDATES = 1000
 _DRAFT_FLAG = b"\\Draft"
 _DRAFTS_SPECIAL_USE = b"\\Drafts"
 _PERMANENT_FLAGS_KEY = b"PERMANENTFLAGS"
+_UIDVALIDITY_KEY = b"UIDVALIDITY"
 _CUSTOM_KEYWORDS_WILDCARD = b"\\*"
 _DRAFTED_KEYWORD = "$AiHubDrafted"
 _ANSWERED_FLAG = "\\Answered"
@@ -72,6 +74,33 @@ class ImapClient:
         await self._select_source_folder(self._inbox_folder, readonly=True)
         uids = await self._search_oldest_first(["UNSEEN"], self._max_messages)
         return await self._fetch_summaries(uids)
+
+    async def list_unread_above(self, position: InboxPosition | None) -> tuple[int, list[UnreadMailSummary]]:
+        """List the lowest-UID unread messages above ``position``, with the inbox UIDVALIDITY they were listed under.
+
+        Lowest UID first rather than oldest sent: the caller advances its watermark to the highest UID it listed, and
+        that is only sound when every unread UID below it was in the batch. A position from another UID space — the
+        server renumbered the folder — counts as none, so the whole unread inbox is listed again instead of skipped.
+
+        The search result is filtered against the position as well as bounded by it, because ``UID n:*`` always
+        includes the highest UID, even one below ``n`` (RFC 3501 reads a range in either direction).
+        """
+        response = await self._select_source_folder(self._inbox_folder, readonly=True)
+        uid_validity = int(response[_UIDVALIDITY_KEY])
+        above = 0
+        if position is not None and position.uid_validity == uid_validity:
+            above = position.uid
+        elif position is not None:
+            logger.warning(
+                "[imap] %s UIDVALIDITY changed from %s to %s — listing every unread message again",
+                self._inbox_folder,
+                position.uid_validity,
+                uid_validity,
+            )
+        criteria = ["UNSEEN", "UID", f"{above + 1}:*"] if above else ["UNSEEN"]
+        uids = await asyncio.to_thread(self._connection.search, criteria)
+        batch = sorted(uid for uid in uids if uid > above)[: self._max_messages]
+        return uid_validity, await self._fetch_summaries(batch)
 
     async def list_undrafted(self, folder: str, limit: int) -> tuple[str, list[UnreadMailSummary]]:
         """List the ``limit`` oldest not-yet-drafted messages in ``folder``, with the dedup flag identifying them.
@@ -273,7 +302,7 @@ class ImapClient:
         response = await asyncio.to_thread(self._connection.append, target, raw_message, flags=[_DRAFT_FLAG])
         return target, self._parse_appenduid(response)
 
-    async def _select_source_folder(self, folder: str, readonly: bool) -> None:
+    async def _select_source_folder(self, folder: str, readonly: bool) -> dict[bytes, Any]:
         """`SELECT` a folder the admin typed, resolving it to the server's exact bytes first.
 
         Resolved once per connection and cached: `relocate_message` selects the source folder for every message it
@@ -296,7 +325,7 @@ class ImapClient:
             if match != folder:
                 logger.info("[imap] resolved configured folder %r to the server's name %r", folder, match)
             self._resolved_source_folder = match
-        await asyncio.to_thread(self._connection.select_folder, self._resolved_source_folder, readonly=readonly)
+        return await asyncio.to_thread(self._connection.select_folder, self._resolved_source_folder, readonly=readonly)
 
     async def _resolve_folder(self, configured: str, special_use_flag: bytes) -> str:
         """Return the server's exact folder name: the configured one if it exists verbatim, else the special-use

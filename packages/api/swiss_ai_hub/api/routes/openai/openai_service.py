@@ -504,15 +504,19 @@ class OpenaiService:
     @staticmethod
     async def _sse_event_generator(resources: StreamingResources) -> AsyncGenerator[str]:
         streamed_parts: list[str] = []
+        downloads: list[str] = []
         async for chunk_event in ChatService.iter_streamed_display_events(resources):
+            if ChatService.is_table_download(chunk_event):
+                downloads.append(chunk_event.content)
+                continue
             streamed_parts.append(chunk_event.content)
             yield OpenaiService._build_chunk_sse(content=chunk_event.content, model=chunk_event.model_name)
 
-        yield OpenaiService._build_chunk_sse(
-            content=OpenaiService._resolve_final_content(resources.stop_event, streamed="".join(streamed_parts)),
-            model="",
-            finish_reason="stop",
+        # Download links end the answer, also after the part of it an agent did not stream.
+        final = OpenaiService._resolve_final_content(
+            resources.stop_event, streamed=ChatService.answer_text(streamed_parts)
         )
+        yield OpenaiService._build_chunk_sse(content=final + "".join(downloads), model="", finish_reason="stop")
 
     @staticmethod
     def _resolve_final_content(

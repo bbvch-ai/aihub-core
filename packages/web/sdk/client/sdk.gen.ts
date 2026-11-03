@@ -167,6 +167,9 @@ import type {
   GetEmbeddingsData,
   GetEmbeddingsError,
   GetEmbeddingsResponse,
+  GetExtractedTableDownloadUrlData,
+  GetExtractedTableDownloadUrlError,
+  GetExtractedTableDownloadUrlResponse,
   GetFileUrlData,
   GetFileUrlError,
   GetFileUrlResponse,
@@ -258,6 +261,9 @@ import type {
   GetSummaryNodesForDocumentResponse,
   GetSupportedFileTypesData,
   GetSupportedFileTypesResponse,
+  GetTenantAuthProviderData,
+  GetTenantAuthProviderError,
+  GetTenantAuthProviderResponse,
   GetThreadData,
   GetThreadError,
   GetThreadResponse,
@@ -289,6 +295,9 @@ import type {
   MoveUserFileData,
   MoveUserFileError,
   MoveUserFileResponse,
+  PreviewUserFileData,
+  PreviewUserFileError,
+  PreviewUserFileResponse,
   ProcessDocumentData,
   ProcessDocumentError,
   ProcessDocumentResponse,
@@ -476,6 +485,28 @@ export const getAuthProvider = <
     GetAuthProviderError,
     DefaultT
   >({ url: "/auth-providers/{alias}", ...options });
+
+/**
+ * Get Tenant Auth Provider
+ */
+export const getTenantAuthProvider = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetTenantAuthProviderResponse =
+    GetTenantAuthProviderResponse,
+>(
+  options: Options<
+    TComposable,
+    GetTenantAuthProviderData,
+    GetTenantAuthProviderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetTenantAuthProviderResponse | DefaultT,
+    GetTenantAuthProviderError,
+    DefaultT
+  >({ url: "/auth-providers/tenants/{tenant_id}", ...options });
 
 /**
  * Get Suite
@@ -1394,6 +1425,39 @@ export const getOpenChatHitl = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/threads/{thread_id}/open-chat-hitl",
+    ...options,
+  });
+
+/**
+ * Get Extracted Table Download Url
+ *
+ * Returns a link that downloads the whole table of an extraction in the thread as CSV, valid for 24 hours.
+ *
+ * Events carry only a preview of the table; the link is signed for thread members only.
+ */
+export const getExtractedTableDownloadUrl = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetExtractedTableDownloadUrlResponse =
+    GetExtractedTableDownloadUrlResponse,
+>(
+  options: Options<
+    TComposable,
+    GetExtractedTableDownloadUrlData,
+    GetExtractedTableDownloadUrlResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetExtractedTableDownloadUrlResponse | DefaultT,
+    GetExtractedTableDownloadUrlError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/threads/{thread_id}/extracted-tables/{extraction_id}/download-url",
     ...options,
   });
 
@@ -3861,6 +3925,34 @@ export const getUserFileContent = <
   });
 
 /**
+ * Preview User File
+ */
+export const previewUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends PreviewUserFileResponse = PreviewUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    PreviewUserFileData,
+    PreviewUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    PreviewUserFileResponse | DefaultT,
+    PreviewUserFileError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/preview",
+    ...options,
+  });
+
+/**
  * Upload User File
  */
 export const uploadUserFile = <
@@ -4284,10 +4376,10 @@ export const processDocument = <
 /**
  * Translate Text
  *
- * Translate a LocaleString to all supported locales.
+ * Fill in the empty locales of a LocaleString by translating its source locale.
  *
- * Takes a LocaleString with at least one locale populated and translates it
- * to all other supported locales (de, en, fr, it) using an LLM.
+ * Locales that already have a value are left unchanged, so retrying after a partial failure
+ * fills in only the rest. Locales that could not be translated stay empty and are listed in failed_locales.
  */
 export const translateText = <
   TComposable extends Composable = "$fetch",

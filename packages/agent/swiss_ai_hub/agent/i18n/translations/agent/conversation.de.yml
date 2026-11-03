@@ -2,8 +2,10 @@
 config:
   number_of_input_tokens:
     label: Maximale Eingabe-Tokens
-    help: Maximale Anzahl von Tokens in der LLM-Eingabe. Begrenzt die Kontextgrösse
-      zur Kostenkontrolle und Vermeidung von Modellgrenzen.
+    help: Wie viel Gesprächsverlauf und Kontext das Modell höchstens erhält. Ohne
+      eigenes Limit nutzt der Agent das Eingabefenster des Modells (abzüglich einer
+      Reserve); ein tieferes Limit senkt die Kosten.
+    toggle_label: Eigenes Eingabe-Limit festlegen
   condense_question:
     label: Frage kondensieren
     help: Formuliert die letzte Nachricht anhand des bisherigen Gesprächs in eine
@@ -39,7 +41,17 @@ thoughts:
   input_too_large: 'Die Eingabe passt nicht in das Kontextfenster des Modells: rund
     %{tokens} Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des
     Modells wird abgelehnt.'
+  images_not_accepted: Die Nachricht enthält %{images} Bilder, dieser Assistent gibt
+    seinem Modell %{model} jedoch keine Bilder weiter. Der Aufruf des Modells wird
+    abgelehnt.
+  too_many_images: Die Nachricht enthält %{images} Bilder, mehr als die %{max_images},
+    die das Modell %{model} pro Anfrage annimmt. Der Aufruf des Modells wird abgelehnt.
 messages:
+  images_not_accepted: Dieser Assistent kann keine Bilder ansehen. Bitte beschreiben
+    Sie den Bildinhalt in Textform, oder wechseln Sie zu einem Assistenten mit einem
+    Modell, das Bilder unterstützt.
+  too_many_images: Sie haben %{images} Bilder gesendet, ich kann aber höchstens %{max_images}
+    auf einmal ansehen. Bitte senden Sie weniger Bilder pro Nachricht.
   condensation_empty: Ich konnte aus dieser Nachricht nicht ableiten, wonach ich suchen
     soll. Bitte formulieren Sie Ihre Frage neu und versuchen Sie es erneut.
   input_too_large: Diese Datei ist zu gross, als dass ich sie auf einmal lesen könnte.

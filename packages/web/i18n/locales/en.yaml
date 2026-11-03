@@ -339,6 +339,37 @@ event:
     error: Error
     stop: Ends with
     targetAgent: Memory writer
+    links: Links
+    webReferences: Referenced web pages
+    pagesRead: Pages read
+    notRead: Not read
+    webFetchFailure:
+      malformed_url: Malformed link
+      unsupported_url: Unsupported link
+      blocked_host: Blocked address
+      not_found: Not found
+      access_denied: Access denied
+      http_error: Server error
+      timeout: Timed out
+      unsupported_content: Not a web page
+      empty_content: No readable content
+      url_limit_reached: Over the link limit
+  extraction:
+    fields: Columns
+    instructions: Rows to keep
+    criteria: Selected documents
+    collections: Collections
+    notices: Notices
+    documentIds: '{count} chosen documents'
+    files: Files
+    failedFiles: Files that failed
+    rows: Rows shown / found
+    truncated: Cut short
+    confirmed: Extracts every document the user confirmed
+    awaitingConfirmation: Sample awaiting the user's go-ahead
+    previewRows: Showing {shown} of {total} rows
+    download: Download the whole table (CSV)
+    downloadFailed: The table could not be downloaded
   toolLoop:
     loop: Tool set
     mode: Mode
@@ -587,6 +618,13 @@ knowledge:
   source:
     description: Synchronised from {name}
     edit: Edit source
+    next_sync: The source syncs once a day, so its content appears after the next
+      scheduled sync.
+    awaiting_sync:
+      title: Nothing synced yet
+      description: The source syncs this database once a day, so its collections appear
+        here after the next scheduled sync. If they still do not, check the source
+        settings.
   manual_management:
     description: Collections can be created and managed manually
   pipeline: 'Pipeline: {name}'
@@ -695,7 +733,8 @@ auth:
     welcomeProvider: Welcome to the AI Hub — sign in with {provider}
     pleaseLogin: Please log in
     pleaseLoginWith: Please log in with {provider}
-    useOrganisationLink: "Please use the login link your organisation gave you. If you don't have it, contact your administrator."
+    useOrganisationLink: Please use the login link your organisation gave you. If
+      you don't have it, contact your administrator.
     adminLogin: Administrator login
     loginWith: Login with {provider}
     customSolutions: Custom AI solutions for your company
@@ -763,6 +802,8 @@ evaluation:
 role:
   title: Access Roles
   name: Name
+  name_immutable_hint: The name cannot be changed after the role is created, because
+    users are assigned to roles by name.
   description: Description
   edit: Edit Role
   create_new: New Role
@@ -938,10 +979,26 @@ form:
     invalid_json: The file is not valid JSON.
   locale_input:
     translate_tooltip: Translate to all languages
+    translate_partial_summary: Some languages were not translated
+    translate_partial_detail: Could not translate into {locales}. The other languages
+      were updated — try again to fill in the rest.
+    translate_failed_summary: Translation didn't work this time
+    translate_failed_detail: None of the languages could be translated. Your text
+      is unchanged — please try again in a moment.
   warnings:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  modelBound:
+    providerDefault: provider default
+    overrideRequired: Enter a value, or untick the override to use the default.
+    defaultPlaceholder: 'Model default: {value}'
+    maximumHint: At most {maximum} for {model}.
+    maximumHintWithFill: "At most {maximum} for {model}: {percent} of the model's\
+      \ {modelMaximum} tokens, as a margin for token-count differences."
+    aboveMaximum: At most {maximum} is allowed for {model}.
+  modelGated:
+    unavailable: '{model} does not support this.'
   cron:
     errors:
       required: Every position is required — a blank one is not a valid schedule.
@@ -972,6 +1029,8 @@ lib:
       offered.
     empty: The selected agent is not configured to retrieve from any collection.
     unavailable: Saved, but not retrieved by the selected agent
+  knowledgeDatabases:
+    unavailable: '{name} (deleted or not visible to you)'
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search
@@ -1072,7 +1131,8 @@ tenant:
   mismatch_warning: Tenant Mismatch
   mismatch_description: Your active tenant was changed to {tenant} in another session.
     The chat interface uses the active tenant for all requests.
-  mismatch_switch_action: Switch Tenant
+  mismatch_switch_action: Go to {tenant}
+  mismatch_use_this_tenant: Chat in {tenant}
   administration_title: Tenant Administration
   administration_description: Manage tenants across the platform
 support:
@@ -1089,43 +1149,50 @@ support:
   unavailable: Reporting is not configured on this deployment. Please contact your
     administrator.
 userFiles:
-  title: "My Files"
-  description: "The files you and your agents work with: chat attachments, files agents made for you and your own uploads."
-  conversation: "Chat"
+  title: My Files
+  description: 'The files you and your agents work with: chat attachments, files agents
+    made for you and your own uploads.'
+  conversation: Chat
   actions:
-    move: "Move"
-    upload: "Upload"
-    newFolder: "New folder"
-    refresh: "Refresh"
-    download: "Download"
-    rename: "Rename"
-    delete: "Delete"
-    close: "Close"
-    cancel: "Cancel"
-    save: "Save"
-    openFolder: "Open folder {name}"
-    preview: "Preview {name}"
+    move: Move
+    upload: Upload
+    newFolder: New folder
+    refresh: Refresh
+    download: Download
+    rename: Rename
+    delete: Delete
+    close: Close
+    cancel: Cancel
+    save: Save
+    openFolder: Open folder {name}
+    preview: Preview {name}
   columns:
-    name: "Name"
-    size: "Size"
-    modified: "Changed"
+    name: Name
+    size: Size
+    modified: Changed
   empty:
-    folder: "This folder is empty. Drop files here to upload them."
-    noSpace: "Your file space is set up with your chat account. Open the chat once, then come back."
+    folder: This folder is empty. Drop files here to upload them.
+    noSpace: Your file space is set up with your chat account. Open the chat once,
+      then come back.
   error:
-    load: "This folder could not be loaded. Try again with Refresh."
+    load: This folder could not be loaded. Try again with Refresh.
   move:
-    header: "Move {name} to"
-    noTargets: "No folder to move it to."
+    header: Move {name} to
+    noTargets: No folder to move it to.
   preview:
-    unavailable: "No preview for this file type. Download it to open it."
+    unavailable: No preview for this file type. Download it to open it.
+    truncated: This preview shows only the beginning of the document. Download it
+      to see all of it.
+    failed: This file could not be previewed. Download it to open it.
+    empty: This document has no text to show.
+    tooLarge: This file is too large to preview. Download it to open it.
   name:
-    invalid: "A name must not be empty or contain a slash."
+    invalid: A name must not be empty or contain a slash.
   delete:
-    header: "Delete"
-    file: "Delete {name}?"
-    folder: "Delete the folder {name} with everything in it?"
+    header: Delete
+    file: Delete {name}?
+    folder: Delete the folder {name} with everything in it?
   toast:
-    uploaded: "Uploaded {count} file(s)"
-    uploadFailed: "Upload failed"
-    changeFailed: "The change failed"
+    uploaded: Uploaded {count} file(s)
+    uploadFailed: Upload failed
+    changeFailed: The change failed

@@ -11,6 +11,9 @@ knowledge_searched_event:
   name: Wissen durchsucht
   description: Der Agent hat die Wissenssammlungen durchsucht, auf die der Benutzer
     verwiesen hat.
+web_pages_fetched_event:
+  name: Webseiten gelesen
+  description: Der Agent hat die Webseiten gelesen, die der Benutzer verlinkt hat.
 tool_result_event:
   name: Werkzeugergebnis
   description: Was ein vom Agenten gewähltes Werkzeug zurückgegeben hat.
@@ -19,7 +22,8 @@ tool_loop_status_event:
   description: Was die Werkzeugschleife des Agenten gerade tut.
 sandbox_file_displayed_event:
   name: Datei angezeigt
-  description: Der Agent hat dem Benutzer eine Datei aus seiner Code-Sandbox als Anhang gezeigt.
+  description: Der Agent hat dem Benutzer eine Datei aus seiner Code-Sandbox als Anhang
+    gezeigt.
 tool_loop_condensed_event:
   name: Werkzeugschleife verdichtet
   description: Der Agent hat frühere Werkzeugergebnisse und Gesprächsrunden verdichtet,
@@ -304,6 +308,9 @@ memory_recalled_event:
 search_knowledge_event:
   name: Wissen durchsuchen
   description: Wissenssammlungen werden durchsucht
+fetch_web_pages_event:
+  name: Webseiten lesen
+  description: Verlinkte Webseiten werden gelesen
 read_attached_files_event:
   name: Angehängte Dateien lesen
   description: Angehängte Dateien werden gelesen
@@ -334,3 +341,13 @@ memory_storage_requested_event:
 not_a_meta_question_event:
   name: Keine Metafrage
   description: Anfrage wird beantwortet
+extract_records_event:
+  name: Datensätze extrahieren
+  description: Extrahiert eine Tabelle aus den ausgewählten Dokumenten
+records_extracted_event:
+  name: Datensätze extrahiert
+  description: Die aus den ausgewählten Dokumenten extrahierte Tabelle
+hitl_questions_request_event:
+  name: Fragen zur Bestätigung
+  description: Der Agent bittet den Benutzer, die Teile einer Anfrage zu bestätigen oder
+    zu korrigieren, als Formular, wo der Client eines zeigt, sonst als Chat-Nachricht.

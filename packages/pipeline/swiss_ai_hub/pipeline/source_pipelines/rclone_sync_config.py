@@ -12,7 +12,7 @@ from swiss_ai_hub.core.source_pipelines import SourcePipelineConfig
 
 _I18N = "lib.source_pipelines.rclone.config"
 _BACKEND_REF = "rclone_backend_type"
-_TESTED_BACKENDS = (RcloneBackendType.S3, RcloneBackendType.DRIVE)
+_TESTED_BACKENDS = (RcloneBackendType.S3, RcloneBackendType.DRIVE, RcloneBackendType.ONEDRIVE)
 _KEY_FILE_MAX_BYTES = 65536
 
 
@@ -49,6 +49,18 @@ def _secret_file(backend: RcloneBackendType, key: str, accept: str) -> SecretFil
     )
 
 
+def _onedrive_setup_answers(drive_id: str) -> dict[str, str]:
+    """rclone's OneDrive setup asks how to find the drive even when ``drive_id`` is given. Answering with that ID
+    makes rclone check the drive against Microsoft Graph while the remote is created, so a wrong ID or a missing
+    permission fails before anything is listed. rclone never stores ``config_*`` answers in the remote."""
+    return {
+        "config_type": "driveid",
+        "config_driveid_fixed": drive_id,
+        "config_driveid": drive_id,
+        "config_drive_ok": "true",
+    }
+
+
 def _choice(backend: RcloneBackendType, key: str, values: list[str]) -> Select:
     return Select(
         label=LocaleString.from_i18n_path(f"{_I18N}.{backend.value}.{key}.label"),
@@ -59,7 +71,8 @@ def _choice(backend: RcloneBackendType, key: str, values: list[str]) -> Select:
 
 
 class OneDriveOptions(Form):
-    """rclone ``onedrive``; a SharePoint document library is OneDrive with ``drive_type=documentLibrary``."""
+    """rclone ``onedrive``; a SharePoint document library is OneDrive with ``drive_type=documentLibrary``. rclone
+    replaces ``drive_type`` with what Microsoft Graph reports for the drive when the remote is created."""
 
     client_id: Annotated[str | InputText, Field(description="Entra ID application (client) id.")] = ""
     client_secret: Annotated[str | Password, Field(description="Entra ID client secret.")] = ""
@@ -252,7 +265,15 @@ class RcloneSyncConfig(SourcePipelineConfig):
             backend_type=Select(
                 label=LocaleString.from_i18n_path(f"{_I18N}.backend_type.label"),
                 help=LocaleString.from_i18n_path(f"{_I18N}.backend_type.help"),
-                options=[backend.value for backend in cls.offered_backends()],
+                options=[
+                    {
+                        "label": LocaleString.from_i18n_path(f"{_I18N}.backend_type.options.{backend.value}"),
+                        "value": backend.value,
+                    }
+                    for backend in cls.offered_backends()
+                ],
+                option_label="label",
+                option_value="value",
                 ref=_BACKEND_REF,
                 required=True,
             ),
@@ -297,8 +318,10 @@ class RcloneSyncConfig(SourcePipelineConfig):
             if value not in ("", None) and not key.startswith("_")
         }
         self._require(options)
-        if self.backend is RcloneBackendType.ONEDRIVE and "token" not in options:
-            options["client_credentials"] = "true"
+        if self.backend is RcloneBackendType.ONEDRIVE:
+            options |= _onedrive_setup_answers(options["drive_id"])
+            if "token" not in options:
+                options["client_credentials"] = "true"
         if self.backend is RcloneBackendType.DRIVE:
             options.setdefault("scope", "drive.readonly")
         return RcloneSourceConfig(name=remote_name, backend_type=self.backend, options=options)

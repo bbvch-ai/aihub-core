@@ -18,6 +18,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.elements.knowledge_collection_selector import KnowledgeCollectionSelector
     from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
     from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
+    from swiss_ai_hub.core.form.elements.model_bound_input_number import ModelBoundInputNumber
+    from swiss_ai_hub.core.form.elements.model_gated_checkbox import ModelGatedCheckbox
     from swiss_ai_hub.core.form.elements.model_select import ModelSelect
     from swiss_ai_hub.core.form.elements.multi_select import MultiSelect
     from swiss_ai_hub.core.form.elements.password import Password
@@ -56,6 +58,8 @@ __all__ = [
     "KnowledgeCollectionSelector",
     "KnowledgeDatabaseSelector",
     "LocaleInput",
+    "ModelBoundInputNumber",
+    "ModelGatedCheckbox",
     "ModelSelect",
     "MultiSelect",
     "Password",
@@ -93,6 +97,8 @@ _LAZY_IMPORTS = {
     "KnowledgeCollectionSelector": "swiss_ai_hub.core.form.elements.knowledge_collection_selector",
     "KnowledgeDatabaseSelector": "swiss_ai_hub.core.form.elements.knowledge_database_selector",
     "LocaleInput": "swiss_ai_hub.core.form.elements.locale_input",
+    "ModelBoundInputNumber": "swiss_ai_hub.core.form.elements.model_bound_input_number",
+    "ModelGatedCheckbox": "swiss_ai_hub.core.form.elements.model_gated_checkbox",
     "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",
     "MultiSelect": "swiss_ai_hub.core.form.elements.multi_select",
     "Password": "swiss_ai_hub.core.form.elements.password",

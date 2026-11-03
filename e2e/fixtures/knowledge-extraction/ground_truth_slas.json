@@ -1,0 +1,70 @@
+{
+  "legal/slas/sla-acme.md": {
+    "supplier": "ACME AG",
+    "availability": "99.9%",
+    "priorities": {
+      "P1": {
+        "response": "30 minutes",
+        "resolution": "4 hours"
+      },
+      "P2": {
+        "response": "2 hours",
+        "resolution": "1 business day"
+      },
+      "P3": {
+        "response": "1 business day",
+        "resolution": "5 business days"
+      }
+    },
+    "penalty": "5% of the monthly fee per 0.1% below the target"
+  },
+  "legal/slas/sla-globex.md": {
+    "supplier": "Globex GmbH",
+    "availability": "99.5%",
+    "priorities": {
+      "P1": {
+        "response": "1 hour",
+        "resolution": "8 hours"
+      },
+      "P2": {
+        "response": "4 hours",
+        "resolution": "2 business days"
+      }
+    },
+    "penalty": null
+  },
+  "legal/slas/sla-initech.md": {
+    "supplier": "Initech SA",
+    "availability": "99.95%",
+    "priorities": {
+      "P1": {
+        "response": "15 minutes",
+        "resolution": "2 hours"
+      },
+      "P2": {
+        "response": "1 hour",
+        "resolution": "8 hours"
+      },
+      "P3": {
+        "response": "4 hours",
+        "resolution": "3 business days"
+      },
+      "P4": {
+        "response": "2 business days",
+        "resolution": "10 business days"
+      }
+    },
+    "penalty": "a credit of 10% of the monthly fee"
+  },
+  "legal/slas/sla-hooli.md": {
+    "supplier": "Hooli AG",
+    "availability": "99.0%",
+    "priorities": {
+      "P1": {
+        "response": "2 hours",
+        "resolution": "1 business day"
+      }
+    },
+    "penalty": null
+  }
+}

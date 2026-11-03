@@ -50,14 +50,26 @@ run-namespace-selection-agent:
 run-universal-agent:
 	uv run python app/universal_agent/main.py
 
+run-web-fetch-agent:
+	uv run python app/web_fetch_agent/main.py
+
+run-knowledge-extraction-agent:
+	uv run python app/knowledge_extraction_agent/main.py
+
 run-retrieval-agent:
 	uv run python app/retrieval_agent/main.py
 
 run-memory-writer-agent:
 	uv run python app/memory_writer_agent/main.py
 
+run-anonymiser-agent:
+	uv run python app/anonymiser_agent/main.py
+
 run-imap-agent:
 	uv run python app/imap_agent/main.py
 
 run-email-classification-agent:
 	uv run python app/email_classification_agent/main.py
+
+run-release-notes-agent:
+	uv run python app/release_notes_agent/main.py

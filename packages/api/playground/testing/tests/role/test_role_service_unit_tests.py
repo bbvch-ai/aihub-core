@@ -1,5 +1,8 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
+from fastapi import HTTPException
+
 from swiss_ai_hub.api.routes.role.dto.create_role_request import CreateRoleRequest
 from swiss_ai_hub.api.routes.role.dto.update_role_request import UpdateRoleRequest
 from swiss_ai_hub.api.routes.role.role_service import RoleService
@@ -68,3 +71,49 @@ class TestNormalizesModelAccessRulesOnWrite:
 
         passed_rules = mock_entity.create_tenant_role.call_args.kwargs["access_rules"]
         assert passed_rules == ["aihub.user.model.text-generation.Kimi-K2_6"]
+
+
+class TestRejectsRoleRename:
+    """Users are assigned roles by name, so renaming a role would leave every assignment pointing at a
+    name that no longer exists."""
+
+    @pytest.mark.parametrize("new_name", ["Demo Admin", None])
+    def test_update_role_rejects_changed_name(self, new_name: str | None):
+        role = MagicMock()
+        role.tenant_id = "tenant-1"
+        role.name = "Admin"
+
+        with (
+            patch(f"{_ROLE_SERVICE}.RoleEntity") as mock_entity,
+            patch(f"{_ROLE_SERVICE}.RoleResponse"),
+            pytest.raises(HTTPException) as raised,
+        ):
+            mock_entity.objects.get.return_value = role
+            RoleService.update_role(
+                role_id="role-1",
+                data=UpdateRoleRequest(name=new_name),
+                tenant_id="tenant-1",
+            )
+
+        assert raised.value.status_code == 400
+        role.save.assert_not_called()
+        assert role.name == "Admin"
+
+    def test_update_role_accepts_unchanged_name(self):
+        role = MagicMock()
+        role.tenant_id = "tenant-1"
+        role.name = "Admin"
+
+        with (
+            patch(f"{_ROLE_SERVICE}.RoleEntity") as mock_entity,
+            patch(f"{_ROLE_SERVICE}.RoleResponse"),
+        ):
+            mock_entity.objects.get.return_value = role
+            RoleService.update_role(
+                role_id="role-1",
+                data=UpdateRoleRequest(name="Admin", description="new description"),
+                tenant_id="tenant-1",
+            )
+
+        role.save.assert_called_once()
+        assert role.description == "new description"

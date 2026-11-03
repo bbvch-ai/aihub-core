@@ -156,7 +156,7 @@ def _conversation(reply: Message) -> MagicMock:
     conversation.llm.cost_reporting_llm = cost_reporting_llm
     conversation.llm.model_name = "text-generation/test"
     conversation.llm.token_counter = lambda text: text.split()
-    conversation.input_budget.return_value = 100_000
+    conversation.input_budget = 100_000
     return conversation
 
 
@@ -674,6 +674,21 @@ class TestJoin:
             ("tool", "c2", "second"),
         ]
         assert [message.content for message in state.gathered] == [block[0].content, "echo: second"]
+
+    @pytest.mark.asyncio
+    async def test_an_answering_loop_keeps_no_gathered_context(self):
+        decided = ToolCallsDecidedEvent(state=_state(ToolLoopMode.ANSWER), tool_call_ids=["c1", "c2"])
+
+        event = await ToolLoop.join_step(
+            LoopAgent(),
+            decided=decided,
+            results=[self._result("c1", "first"), self._result("c2", "second")],
+            loop=_config(),
+            conversation=_conversation(ANSWER),
+        )
+
+        assert event.state.gathered == []
+        assert [message.content for message in event.state.messages[-2:]] == ["first", "second"]
 
     @pytest.mark.asyncio
     async def test_a_result_larger_than_its_room_is_cut(self):

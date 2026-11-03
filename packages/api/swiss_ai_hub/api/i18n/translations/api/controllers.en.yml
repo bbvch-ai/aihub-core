@@ -66,8 +66,9 @@ user:
   name: User Management
   description: Manage users and their access
 user_knowledge:
-  name: "My Files"
-  description: "The files you and your agents work with: attachments, generated files and your uploads"
+  name: My Files
+  description: 'The files you and your agents work with: attachments, generated files
+    and your uploads'
 user_memory:
   name: User Memories
   description: View and manage your personal memories from mem0

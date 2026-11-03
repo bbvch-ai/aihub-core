@@ -39,10 +39,21 @@ class RunToolLoopEvent(ControlAndDisplayEvent):
     cite_sources: Annotated[
         bool, Field(description="Whether tools tell the model to cite what they return, off where it cannot resolve.")
     ] = True
+    hands_back_results: Annotated[
+        bool,
+        Field(
+            description="Whether a gathering loop hands its tool results back as context; off where the "
+            "blueprint reads the calls themselves, so the results do not ride on every iteration's event."
+        ),
+    ] = True
     files: Annotated[
         list[UserUploadedFile], Field(description="The files attached to the message, for tools that read them.")
     ] = []
     knowledge_references: Annotated[
         list[KnowledgeReference],
         Field(description="The collections the user referenced on the message, for tools that search knowledge."),
+    ] = []
+    web_references: Annotated[
+        list[str],
+        Field(description="The web pages the message links or references, for tools that read them."),
     ] = []

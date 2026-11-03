@@ -5,8 +5,11 @@ metadata:
     réponses éclairées et contextuelles
 config:
   restrict_to_user_access:
-    label: "Limiter aux droits de l'utilisateur"
-    help: "Ne rechercher que dans les collections configurées que la personne qui pose la question peut lire dans l'espace de connaissances. Sans ce réglage, toute personne pouvant utiliser cet agent reçoit des réponses issues de toutes ses collections."
+    label: Limiter aux droits de l'utilisateur
+    help: Ne rechercher que dans les collections configurées que la personne qui pose
+      la question peut lire dans l'espace de connaissances. Sans ce réglage, toute
+      personne pouvant utiliser cet agent reçoit des réponses issues de toutes ses
+      collections.
   number_of_input_tokens:
     label: Tokens d'entrée max
     help: Nombre maximum de tokens autorisés dans l'entrée du LLM. Limite la taille
@@ -36,11 +39,16 @@ config:
       format cohérent, commençant par `<REFERENCE_DOCUMENT [metadata]>` et se terminant\
       \ par `</REFERENCE_DOCUMENT>`. Ces documents contiennent\ndes détails essentiels\
       \ qui doivent être utilisés pour comprendre et répondre précisément à la requête\
-      \ de l'utilisateur.\n\nChaque document comprend des métadonnées telles que la\
-      \ source, l'espace de noms, le type, la langue, la version et les horodatages.\
-      \ Le contenu\nde ces documents fournit des informations cruciales pertinentes\
-      \ pour le contexte donné.\n\nVoici les documents pertinents :\n\n<context_documents>\n\
-      {% for block in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+      \ de l'utilisateur.\n\nLes métadonnées de chaque document indiquent sa source,\
+      \ son titre, sa version et ses horodatages : created_at est\nla date de création\
+      \ de l'enregistrement ou du fichier, updated_at et inserted_at celles de son\
+      \ dernier traitement\npar la plateforme. Un document synchronisé depuis une\
+      \ application métier, comme un ticket Jira ou une page\nConfluence, porte aussi\
+      \ les champs propres à cet enregistrement, par exemple status, priority, issue_type,\
+      \ project,\nlabels ou space, ainsi que sa propre date updated. Le contenu\n\
+      de ces documents fournit des informations cruciales pertinentes pour le contexte\
+      \ donné.\n\nVoici les documents pertinents :\n\n<context_documents>\n{% for\
+      \ block in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
       {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url | string | image}}\n\
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction : En utilisant\
       \ les informations des documents fournis, générez une réponse détaillée et bien\
@@ -121,7 +129,9 @@ thoughts:
     \ environ %{tokens} jetons pour un budget utilisable de %{budget}. L'appel au\
     \ modèle est refusé."
 messages:
-  no_accessible_knowledge: "Les connaissances de cet agent ne vous sont pas accessibles : vous n'avez accès à aucune des collections à partir desquelles il répond. Demandez un accès à un administrateur si vous en avez besoin."
+  no_accessible_knowledge: "Les connaissances de cet agent ne vous sont pas accessibles\
+    \ : vous n'avez accès à aucune des collections à partir desquelles il répond.\
+    \ Demandez un accès à un administrateur si vous en avez besoin."
   condensation_empty: Je n'ai pas réussi à déterminer ce qu'il fallait rechercher
     à partir de ce message. Veuillez reformuler votre question et réessayer.
   input_too_large: Ce fichier est trop volumineux pour que je le lise en une seule

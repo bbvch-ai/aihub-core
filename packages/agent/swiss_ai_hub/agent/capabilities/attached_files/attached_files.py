@@ -3,6 +3,7 @@ import logging
 from collections.abc import Sequence
 from typing import ClassVar
 
+from httpx import HTTPError
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pydantic import ValidationError
 from swiss_ai_hub.core.auth import UserIdentity
@@ -21,7 +22,9 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     CitationId,
+    EmbeddingModelConfig,
     IngestedNode,
+    ModelTokenBudget,
     combine_nodes_in_order,
     estimate_prompt_tokens,
 )
@@ -121,6 +124,20 @@ class AttachedFiles(Capability):
         )
 
     @staticmethod
+    def _embedding_budget(embedding_model: EmbeddingModelConfig) -> ModelTokenBudget:
+        """Reading attachments must not hinge on LiteLLM knowing the embedder: most files need no ranking at all, so a
+        failed lookup sizes sections with the tiktoken estimate instead of losing every attachment of the turn."""
+        try:
+            return embedding_model.token_budget()
+        except (ValueError, KeyError, TypeError, HTTPError) as lookup_failure:
+            logger.warning(
+                "[attached-files] No token budget for %s (%s); sizing sections with tiktoken.",
+                embedding_model.model_name,
+                type(lookup_failure).__name__,
+            )
+            return ModelTokenBudget.tiktoken_fallback(model_name=embedding_model.model_name)
+
+    @staticmethod
     def _kept_for_code(files: Sequence[UserUploadedFile], t: LocaleHandler) -> str:
         return "\n".join(t("agent.attached_files.prompt.kept_for_code", filename=file.filename) for file in files)
 
@@ -166,7 +183,10 @@ class AttachedFiles(Capability):
 
         # One cache for the turn: its S3 client is built once, not by every read at the same moment.
         cache = AttachedFileSectionCache()
-        outcomes = await AttachedFileReader.read_all(files, topic.agent_class, topic.agent_id, cache)
+        embedding_budget = await asyncio.to_thread(
+            AttachedFiles._embedding_budget, files_config.attached_files.embedding_model
+        )
+        outcomes = await AttachedFileReader.read_all(files, topic.agent_class, topic.agent_id, embedding_budget, cache)
         readable = {event.file_id: text for text, event in outcomes if text is not None}
         pages = AttachedFilePageRange.of(request.first_page, request.last_page)
         by_page = {file_id for file_id, text in readable.items() if pages and text.is_paged}
@@ -175,7 +195,7 @@ class AttachedFiles(Capability):
         )
         counter = conversation.llm.token_counter
         available = (
-            conversation.input_budget() - estimate_prompt_tokens(request.history, counter) - request.reserve_tokens
+            conversation.input_budget - estimate_prompt_tokens(request.history, counter) - request.reserve_tokens
         )
         budget = AttachedFilesBudget(available, files_config.attached_files.share_of_input_budget, counter)
         rooms = budget.allocate(
@@ -245,7 +265,7 @@ class AttachedFiles(Capability):
             query=arguments.query,
             first_page=arguments.first_page,
             last_page=arguments.last_page,
-            reserve_tokens=max(conversation.input_budget() - loop.tool_loop.max_result_tokens, 0),
+            reserve_tokens=max(conversation.input_budget - loop.tool_loop.max_result_tokens, 0),
             cite_sources=call.cite_sources,
             tool_call_id=call.tool_call_id,
         )

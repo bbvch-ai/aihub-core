@@ -1,6 +1,5 @@
 from dagster import ConfigurableResource, ResourceDependency
 from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
-    DEFAULT_EMBEDDING_MAX_INPUT_TOKENS,
     MarkdownStructuralNodeParser,
 )
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
@@ -57,21 +56,11 @@ class MarkdownStructuralNodeParserResource(ConfigurableResource):
         metadata[DOCUMENT_STORE_NAME] = document_store_name
         llm_config = llm_config_for_bucket(bucket) if bucket else self.llm_config
         embedding_config = embedding_config_for_bucket(bucket) if bucket else self.embedding_config
+        # The node ceiling comes from the embedding model that will consume the nodes, so the chunker cannot emit
+        # something the model rejects. The parser resolves it per ref doc, not at Definitions build time: the lookup
+        # goes over the network, and a code location must still load when LiteLLM is down.
         return MarkdownStructuralNodeParser(
             metadata=metadata,
             llm_config=llm_config,
-            max_embedding_tokens=self._resolve_max_embedding_tokens(embedding_config),
+            embedding_model_name=embedding_config.model_name,
         )
-
-    @staticmethod
-    def _resolve_max_embedding_tokens(embedding_config: EmbeddingModelConfig) -> int:
-        """
-        Source the node ceiling from the embedding model that will actually consume the nodes, so the chunker
-        cannot emit something the model rejects.
-
-        Resolved per ref doc rather than at Definitions build time: the lookup goes over the network, and a
-        code location must still load when LiteLLM is down. LiteLLM reports null for models it holds no
-        metadata for, hence the fallback.
-        """
-        max_input_tokens = embedding_config.get_model_info()["model_info"].get("max_input_tokens")
-        return max_input_tokens or DEFAULT_EMBEDDING_MAX_INPUT_TOKENS

@@ -250,6 +250,7 @@ function buildLocaleInputProperties(
   const inputType = element.inputType || element.input_type
   if (inputType) cleanNode.inputType = inputType
   if (element.rows !== undefined) cleanNode.rows = element.rows
+  if (element.maxLength) cleanNode.maxLength = element.maxLength
 
   if (element.validation) cleanNode.validation = element.validation
 
@@ -442,6 +443,27 @@ function transformChildren(
   return list.flatMap(child => (typeof child === 'string' ? child : transform(child as FormElement))) as FormKitSchemaNode[]
 }
 
+function transformGroupToSchema(
+  element: FormElement,
+  children: FormKitSchemaNode[],
+  label: string | undefined,
+  locale: string,
+  warningNode: FormKitSchemaNode | undefined,
+): FormKitSchemaNode | FormKitSchemaNode[] {
+  const isNullable = element.nullable === true
+  // A group whose fields are all repeaters (rendered on their own) or fixed by the backend
+  // would show only its heading, an empty wizard step. Its values still live in the form
+  // data, which the repeaters write to directly.
+  if (!isNullable && children.length === 0) return []
+  if (!isNullable) return withFieldWarning(createGroupNode(element, children, label), warningNode, false)
+  const toggleId = nullableToggleId(element)
+  const groupNode = createGroupNode(gateElement(element, `$get(${toggleId}).value`), children, label)
+  const toggledNodes = applyNullableToggle(
+    element, groupNode, label, toggleId, locale, getLocalizedString(element.help, locale),
+  )
+  return withFieldWarning(toggledNodes, warningNode, true)
+}
+
 export function transformElementToSchema(
   element: FormElement,
   options: TransformOptions = {},
@@ -468,13 +490,7 @@ export function transformElementToSchema(
   const warningNode = warningText ? buildFieldWarningNode(element, warningText) : undefined
 
   if (formkitType === 'group') {
-    const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
-    const groupNode = createGroupNode(gatedElement, children, label)
-    if (!isNullable) return withFieldWarning(groupNode, warningNode, false)
-    const toggledNodes = applyNullableToggle(
-      element, groupNode, label, toggleId, locale, getLocalizedString(element.help, locale),
-    )
-    return withFieldWarning(toggledNodes, warningNode, true)
+    return transformGroupToSchema(element, children, label, locale, warningNode)
   }
 
   const cleanNode = buildNodeProperties(element, formkitType, label, locale, optionsResolver)
@@ -873,6 +889,42 @@ export function seedNullableToggles(
 }
 
 /**
+ * Keeps only the keys the form declares, at every depth — the walk the API's `reject_undeclared_fields` refuses a
+ * submission by. A FormKit form can still hold the values of inputs it no longer renders.
+ */
+export function pickDeclaredFields(
+  data: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+
+  for (const element of elements) {
+    const name = element.name as string | undefined
+    if (!name || !(name in data)) continue
+
+    const formkitType = getFormkitType(element)
+    const children = (element.children as FormElement[] | undefined) ?? []
+    const value = data[name]
+
+    if (formkitType === 'group' && value && typeof value === 'object' && !Array.isArray(value)) {
+      result[name] = pickDeclaredFields(value as Record<string, unknown>, children)
+    }
+    else if (formkitType === 'repeater' && Array.isArray(value)) {
+      result[name] = value.map(item =>
+        item && typeof item === 'object' && !Array.isArray(item)
+          ? pickDeclaredFields(item as Record<string, unknown>, children)
+          : item,
+      )
+    }
+    else {
+      result[name] = value
+    }
+  }
+
+  return result
+}
+
+/**
  * Strips FormKit submission artifacts: the `slots` helper key and the repeater validation
  * mirror keys (`__validate__*`) registered by Repeater.vue. Recurses into nested group objects.
  */
@@ -961,6 +1013,7 @@ export function extractGroupConfigs(
     try {
       const schema = transformElementToSchema(element, { locale })
       const schemaArray = Array.isArray(schema) ? schema : [schema]
+      if (schemaArray.length === 0) continue
 
       groups.push({
         name: element.name as string,

@@ -18,6 +18,7 @@ from swiss_ai_hub.core.generative_ai.utils.image_processor import (
     embed_images_as_base64,
     extract_and_upload_images,
     extract_base64_images_from_markdown,
+    strip_base64_images_from_markdown,
 )
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -119,6 +120,8 @@ class MarkItDownLoader(BaseReader):
 
         if include_images:
             md_content = await self._process_images(md_content, file, fs)
+        else:
+            md_content = strip_base64_images_from_markdown(md_content)
 
         md_content = wrap_markdown_tables(md_content)
 
@@ -168,6 +171,8 @@ class MarkItDownLoader(BaseReader):
 
         if include_images:
             md_content = await self._process_images(md_content, synthetic_file, fs, embed_base64)
+        else:
+            md_content = strip_base64_images_from_markdown(md_content)
 
         md_content = wrap_markdown_tables(md_content)
 

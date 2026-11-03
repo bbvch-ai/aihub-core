@@ -11,6 +11,7 @@ Feature: Milvus Vector Store Factory Configuration
     When I create a vector store with 1024 partitions
     Then the collection should exist in Milvus
     And the collection should have 1024 physical partitions
+    And the vector store should see a complete partition layout
     And the collection schema should have these fields:
       | field_name       | data_type            | is_primary | is_partition_key |
       | id               | VARCHAR              | true       | false            |

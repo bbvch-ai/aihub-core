@@ -157,6 +157,12 @@ Jemand könnte sein:
 Sie wechseln zwischen den Mandanten über die Auswahlleiste oben. Die Benutzeroberfläche zeigt nur das an, was im
 ausgewählten Mandanten verfügbar ist. Ihre Berechtigungen ändern sich basierend auf ihren Rollen in diesem Mandanten.
 
+Verwaltungsseiten verschiedener Mandanten können nebeneinander in mehreren Tabs geöffnet bleiben. Der Chat nicht: Er
+arbeitet jeweils in einem Mandanten, dem aktiven Mandanten des Benutzers, egal in welchem Tab oder auf welchem Gerät
+dieser festgelegt wurde. Eine Chat-Seite, deren Mandant nicht der aktive ist, fragt den Benutzer, ob er in diesem
+Mandanten chatten oder zum aktiven wechseln möchte. Wählt er den Chat dort, wird dieser zum aktiven Mandanten, und
+Chat-Seiten in anderen Tabs desselben Browsers stellen sofort dieselbe Frage.
+
 ## Vererbung von Berechtigungen
 
 Berechtigungen werden nicht zwischen Mandanten vererbt. Ein Admin in einem Mandanten gewährt keine Privilegien in einem

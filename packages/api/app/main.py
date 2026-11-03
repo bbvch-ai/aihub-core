@@ -47,7 +47,7 @@ auth = TokenAndOauth2Handler.from_auth_settings()
 
 runner.mount(
     ApiHealthController(auth=auth).get_health().get_ready(),
-    AuthProviderController(auth=auth).get_auth_providers().get_auth_provider(),
+    AuthProviderController(auth=auth).get_auth_providers().get_auth_provider().get_tenant_auth_provider(),
     SuiteController(auth=auth).get_suite(),
     MyTenantController(auth=auth).get_my_tenants().get_my_active_tenant().set_my_active_tenant(),
     MyAccountController(auth=auth)
@@ -74,7 +74,8 @@ runner.mount(
     .remove_agent_from_thread()
     .add_user_to_thread()
     .remove_user_from_thread()
-    .get_open_chat_hitl(),
+    .get_open_chat_hitl()
+    .get_extracted_table_download_url(),
     AgentController(auth=auth)
     .get_agent_classes()
     .get_agent_class()
@@ -116,7 +117,7 @@ runner.mount(
     DatasetController(auth=auth).create_dataset().get_datasets().get_dataset().update_dataset(),
     KnowledgeController(
         auth=auth,
-        translation_llm_config=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
+        translation_llm_config=LLMConfig.deterministic("text-generation/gemma-4-31B-it"),
     )
     .get_ingestors()
     .get_source_pipelines()
@@ -144,6 +145,7 @@ runner.mount(
     UserKnowledgeController(auth=auth)
     .list_user_files()
     .get_user_file_content()
+    .preview_user_file()
     .upload_user_file()
     .create_user_folder()
     .move_user_file()

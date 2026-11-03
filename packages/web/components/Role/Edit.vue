@@ -1,22 +1,33 @@
 <template>
   <div class="flex flex-col gap-4">
     <div class="flex flex-col gap-2">
-      <FloatLabel variant="in">
-        <InputText
-          id="in_label_name"
-          v-model="role.name"
-          rows="5"
-          cols="30"
-          class="w-full"
-        />
-        <label for="in_label_name">
-          {{ t('role.name') }}
-        </label>
-      </FloatLabel>
+      <div class="flex flex-col gap-1">
+        <FloatLabel variant="in">
+          <InputText
+            id="in_label_name"
+            v-model="role.name"
+            :maxlength="nameMaxLength"
+            rows="5"
+            cols="30"
+            class="w-full"
+            :disabled="nameReadonly"
+          />
+          <label for="in_label_name">
+            {{ t('role.name') }}
+          </label>
+        </FloatLabel>
+        <small
+          v-if="nameReadonly"
+          class="text-surface-500"
+        >
+          {{ t('role.name_immutable_hint') }}
+        </small>
+      </div>
       <FloatLabel variant="in">
         <Textarea
           id="in_label_description"
           v-model="role.description"
+          :maxlength="descriptionMaxLength"
           rows="3"
           cols="30"
           class="w-full"
@@ -37,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import { CreateRoleRequestSchema } from '@core/sdk/client/schemas.gen'
 import { useI18n } from 'vue-i18n'
 
 import AccessRulesEditor from './AccessRulesEditor.vue'
@@ -46,8 +58,12 @@ import type { CreateRoleRequest, RoleResponse } from '@core/sdk/client'
 
 const { t } = useI18n()
 
+const nameMaxLength = schemaMaxLength(CreateRoleRequestSchema, 'name')
+const descriptionMaxLength = schemaMaxLength(CreateRoleRequestSchema, 'description')
+
 const props = defineProps<{
   modelValue: RoleResponse | CreateRoleRequest
+  nameReadonly?: boolean
 }>()
 
 const emit = defineEmits<{

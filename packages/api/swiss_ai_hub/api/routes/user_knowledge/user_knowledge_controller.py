@@ -9,6 +9,7 @@ from swiss_ai_hub.api.decorators.access_catalog import access_catalog_entry
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.user_knowledge.dto.create_folder_request import CreateFolderRequest
 from swiss_ai_hub.api.routes.user_knowledge.dto.file_path_dto import FilePathDTO
+from swiss_ai_hub.api.routes.user_knowledge.dto.file_preview_dto import FilePreviewDTO
 from swiss_ai_hub.api.routes.user_knowledge.dto.folder_listing_dto import FolderListingDTO
 from swiss_ai_hub.api.routes.user_knowledge.dto.move_file_request import MoveFileRequest
 from swiss_ai_hub.api.routes.user_knowledge.user_knowledge_service import UserKnowledgeService
@@ -49,6 +50,16 @@ class UserKnowledgeController(TenantScopedController):
             ] = False,
         ) -> Response:
             return await UserKnowledgeService.file_content(user, path, download)
+
+        return self
+
+    def preview_user_file(self, route: str = "/preview") -> Self:
+        @self.router.get(route, tags=self.tags, response_model=FilePreviewDTO)
+        async def preview_user_file(
+            user: Annotated[UserIdentity, Security(self.user_with_permission(OWN_FILES))],
+            path: Annotated[str, Query(description="The office document to preview.")],
+        ) -> FilePreviewDTO:
+            return await UserKnowledgeService.preview(user, path)
 
         return self
 

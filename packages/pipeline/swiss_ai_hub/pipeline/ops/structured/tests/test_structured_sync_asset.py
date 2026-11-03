@@ -1,5 +1,6 @@
 """Real syncs of the structured asset, in process: dlt runs for real, every system around it is faked."""
 
+import json
 from typing import Annotated, ClassVar
 from unittest.mock import MagicMock, patch
 
@@ -20,6 +21,8 @@ from swiss_ai_hub.pipeline.resources.structured.tests.fake_s3_client import Fake
 from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter import AbstractStructuredSourceAdapter
 from swiss_ai_hub.pipeline.source_pipelines.structured_sync_config import StructuredSyncConfig
 from swiss_ai_hub.pipeline.source_pipelines.tests.fake_structured_source_adapter import (
+    FAKE_ATTACHMENTS,
+    FAKE_DOWNLOADS,
     FAKE_TRACKERS,
     FakeStructuredSyncConfig,
     FakeTrackerAdapter,
@@ -142,16 +145,33 @@ def world():
         patch(f"{_OPS}.structured.reconcile_structured_bucket.build_s3_data_lake_client", side_effect=client),
         patch(f"{_OPS}.source.routed.delete_data_lake_files_from_bucket.build_s3_data_lake_client", side_effect=client),
         patch(f"{_OPS}.source.routed.announce_removed_files.notify_source_updated", world.removed_events),
-        patch(f"{_STRUCTURED}.markdown_data_lake_destination.build_s3_data_lake_client", side_effect=client),
-        patch(f"{_STRUCTURED}.markdown_data_lake_destination.notify_source_updated", world.written_events),
+        patch(f"{_OPS}.source.routed.delete_emptied_namespaces.build_s3_data_lake_client", side_effect=client),
+        patch(f"{_OPS}.source.routed.delete_emptied_namespaces.ensure_main_db_connection"),
+        patch(f"{_OPS}.source.routed.delete_emptied_namespaces.BucketEntity"),
+        patch(f"{_OPS}.source.routed.delete_emptied_namespaces.NamespaceEntity") as namespace_entity,
+        patch(f"{_STRUCTURED}.structured_data_lake_destination.build_s3_data_lake_client", side_effect=client),
+        patch(f"{_STRUCTURED}.structured_data_lake_destination.notify_source_updated", world.written_events),
         patch(f"{_STRUCTURED}.structured_source_state_store.build_s3_data_lake_client", side_effect=client),
     ):
         bucket_entity.get_bucket_by_bucket_name.side_effect = row
+        namespace_entity.get_namespaces_by_bucket.return_value = []
         yield world
 
 
 def _issue(project: str, key: str, day: int, body: str = "Body text") -> dict:
     return fake_issue(project, key, f"2026-09-{day:02}T10:00:00Z", body=body)
+
+
+def _create_during_the_next_listing(monkeypatch: pytest.MonkeyPatch, issues: list[dict], issue: dict) -> None:
+    """The record appears at the source after the sync fetched it but before the listing does."""
+    list_record_paths = FakeTrackerAdapter.list_record_paths
+
+    def created_in_the_gap(self, options):
+        if issue not in issues:
+            issues.append(issue)
+        return list_record_paths(self, options)
+
+    monkeypatch.setattr(FakeTrackerAdapter, "list_record_paths", created_in_the_gap)
 
 
 class TestWrites:
@@ -300,17 +320,49 @@ class TestGuards:
 
         assert world.files("db-a") == ["ABC/ABC-1.md", "XYZ/XYZ-1.md"]
 
-    def test_a_listed_record_without_its_file_makes_the_next_run_read_everything(self, world):
+    def test_a_record_missing_in_two_runs_in_a_row_makes_the_next_run_read_everything(self, world):
         """The cursor passed a record whose file is gone: only a full re-read writes it again."""
         world.database("db-a", [_issue("ABC", "ABC-1", 1), _issue("XYZ", "XYZ-1", 2)])
         world.sync("db-a")
         world.s3.delete_object(Bucket="db-a", Key="XYZ/XYZ-1.md")
 
-        assert world.sync("db-a").success
+        first = world.step_metadata(world.sync("db-a"), "reconcile_structured_bucket")
+        assert (first["Listed records without a file"], first["State discarded"]) == (1, False)
+        assert world.state("db-a") is not None
+
+        second = world.step_metadata(world.sync("db-a"), "reconcile_structured_bucket")
+        assert (second["Missing in two runs in a row"], second["State discarded"]) == (1, True)
         assert world.state("db-a") is None
 
         assert world.sync("db-a").success
         assert world.files("db-a") == ["ABC/ABC-1.md", "XYZ/XYZ-1.md"]
+
+    def test_a_record_created_between_the_sync_and_the_listing_is_fetched_without_a_full_read(self, world, monkeypatch):
+        """The listing sees a record the sync could not: the next incremental run fetches it, so no state is lost."""
+        issues = world.database("db-a", [_issue("ABC", "ABC-1", 1)])
+        world.sync("db-a")
+        _create_during_the_next_listing(monkeypatch, issues, _issue("ABC", "ABC-2", 5))
+
+        gap = world.step_metadata(world.sync("db-a"), "reconcile_structured_bucket")
+        assert (gap["Listed records without a file"], gap["State discarded"]) == (1, False)
+
+        result = world.sync("db-a")
+        assert world.step_metadata(result, "sync_structured_records")["Resumed from stored state"] is True
+        assert world.step_metadata(result, "reconcile_structured_bucket")["Listed records without a file"] == 0
+        assert world.files("db-a") == ["ABC/ABC-1.md", "ABC/ABC-2.md"]
+        assert json.loads(world.state("db-a"))["missing_keys"] == []
+
+    def test_different_records_missing_in_consecutive_runs_keep_the_state(self, world, monkeypatch):
+        """A busy source creates a record in the gap of every run; each is fetched by the run after."""
+        issues = world.database("db-a", [_issue("ABC", "ABC-1", 1)])
+        world.sync("db-a")
+
+        for number, day in ((2, 5), (3, 6)):
+            _create_during_the_next_listing(monkeypatch, issues, _issue("ABC", f"ABC-{number}", day))
+            reconcile = world.step_metadata(world.sync("db-a"), "reconcile_structured_bucket")
+            assert (reconcile["Listed records without a file"], reconcile["State discarded"]) == (1, False)
+
+        assert world.state("db-a") is not None
 
     def test_a_second_sync_of_a_database_still_syncing_is_refused(self, world):
         world.database("db-a", [_issue("ABC", "ABC-1", 1)])
@@ -386,3 +438,70 @@ class TestGuards:
         world.sync("db-a")
 
         assert world.state("db-a") == before
+
+
+class TestFiles:
+    """A source offering files next to its records, run after run."""
+
+    @pytest.fixture
+    def attachments(self, world: World):
+        world.database("db-files", [_issue("ABC", "ABC-1", 1)])
+        FAKE_ATTACHMENTS["https://tracker.test/db-files"] = {"handbook.pdf": b"%PDF-1.7 v1"}
+        FAKE_DOWNLOADS.clear()
+        yield FAKE_ATTACHMENTS["https://tracker.test/db-files"]
+        FAKE_ATTACHMENTS.pop("https://tracker.test/db-files")
+
+    def test_an_unchanged_file_is_not_downloaded_again(self, world: World, attachments):
+        assert world.sync("db-files").success
+        downloads = len(FAKE_DOWNLOADS)
+
+        assert world.sync("db-files").success
+
+        assert world.files("db-files") == ["ABC/ABC-1.md", "Attachments/handbook.pdf"]
+        assert len(FAKE_DOWNLOADS) == downloads == 1
+
+    def test_a_changed_file_is_downloaded_and_rewritten(self, world: World, attachments):
+        world.sync("db-files")
+        attachments["handbook.pdf"] = b"%PDF-1.7 v2"
+
+        assert world.sync("db-files").success
+
+        assert world.s3.objects[("db-files", "Attachments/handbook.pdf")]["Body"] == b"%PDF-1.7 v2"
+
+    def test_a_file_deleted_at_the_source_is_removed(self, world: World, attachments):
+        world.sync("db-files")
+        attachments.pop("handbook.pdf")
+
+        assert world.sync("db-files").success
+
+        assert world.files("db-files") == ["ABC/ABC-1.md"]
+        assert world.announced(world.removed_events) == ["Attachments/handbook.pdf"]
+
+    def test_a_file_the_source_refuses_is_tried_each_run_without_the_state_being_discarded(
+        self, world: World, attachments
+    ):
+        """Counted as missing, it would discard the state after two runs and re-read the whole source."""
+        attachments["secret.pdf"] = None
+
+        results = [world.sync("db-files") for _ in range(3)]
+
+        assert all(result.success for result in results)
+        assert FAKE_DOWNLOADS.count("https://tracker.test/db-files/files/secret.pdf") == 3
+        assert "Attachments/secret.pdf" not in world.files("db-files")
+        assert [
+            world.step_metadata(result, "reconcile_structured_bucket")["State discarded"] for result in results
+        ] == [
+            False,
+            False,
+            False,
+        ]
+        assert world.step_metadata(results[-1], "sync_structured_records")["Files not served by the source"] == 1
+
+    def test_a_refused_file_is_written_once_the_source_serves_it(self, world: World, attachments):
+        attachments["secret.pdf"] = None
+        world.sync("db-files")
+        attachments["secret.pdf"] = b"%PDF-1.7 released"
+
+        assert world.sync("db-files").success
+
+        assert "Attachments/secret.pdf" in world.files("db-files")

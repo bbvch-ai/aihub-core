@@ -61,6 +61,11 @@
               v-if="!database.source"
               @add="openNewNamespaceModal(database.name)"
             />
+            <!-- A source fills its database only on its daily scheduled sync, so a new one stays empty until then. -->
+            <KnowledgeDatabaseAwaitingSyncCard
+              v-else-if="!database.namespaces?.length"
+              class="col-span-2"
+            />
           </div>
         </div>
       </div>
