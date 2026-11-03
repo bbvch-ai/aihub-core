@@ -36,11 +36,11 @@ If the analyzer cannot be reached, the request is refused with an error instead 
 
 Three switches decide, and any one of them is enough:
 
-| Switch | Who sets it | What it anonymises |
-| --- | --- | --- |
-| `PII_ANONYMISE_EXTERNAL_MODELS=true` | The operator, per deployment (off by default) | Every call to a model hosted outside the deployment, for every caller: plain chats, agents (including titles, follow-ups and memory extraction) and bots |
-| **Anonymise personal data** on an agent profile | The profile's admin | Every call of that profile's runs, whatever the model |
-| The [Anonymiser](../../5_agents/14_anonymiser/) agent | Each user, by hand | The text the user sends it |
+| Switch                                                | Who sets it                                   | What it anonymises                                                                                                                                       |
+| ----------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PII_ANONYMISE_EXTERNAL_MODELS=true`                  | The operator, per deployment (off by default) | Every call to a model hosted outside the deployment, for every caller: plain chats, agents (including titles, follow-ups and memory extraction) and bots |
+| **Anonymise personal data** on an agent profile       | The profile's admin                           | Every call of that profile's runs, whatever the model                                                                                                    |
+| The [Anonymiser](../../5_agents/14_anonymiser/) agent | Each user, by hand                            | The text the user sends it                                                                                                                               |
 
 Every model in the gateway configuration declares where it runs (`model_info.aihub_hosting_location`); every model that
 is not `local` (the Swiss cloud providers and any other external provider) counts as outside the deployment. Turn the
@@ -60,8 +60,8 @@ Only chat requests are anonymised. Embeddings, reranking, transcription and imag
 ::: warning Answers can get worse
 The model reasons over placeholders, not values. It cannot tell that two spellings of one value are the same ("Herr
 Meier" in the question, "Hans-Peter Meier" in a document, or "Genf" and "Genève" get different placeholders), compute an
-age from a masked birth date, or use what it knows about a masked city. Knowledge agents then answer that the
-documents hold no answer. Anonymise where the data requires it, not by default.
+age from a masked birth date, or use what it knows about a masked city. Knowledge agents then answer that the documents
+hold no answer. Anonymise where the data requires it, not by default.
 :::
 
 ### Anonymising an agent profile
@@ -95,9 +95,9 @@ Other dates, company names and descriptions that identify a person only through 
 company) are not masked.
 
 Pronouns, roles, salutations, field and room labels ("Sie", "vous", "Benutzer", "Patientin", "Grüezi", "Adresse",
-"IBAN", "Zimmer") are never masked, in German, French, Italian or English, also with a short number ("Position 2",
-"Art. 5", "Zimmer 12"): the detection model tags them as names or as the type they name, and masking them would garble
-the request. The list is `pii_allow_list` in the gateway configuration.
+"IBAN", "Zimmer") are never masked, in German, French, Italian or English, also with a short number ("Position 2", "Art.
+5", "Zimmer 12"): the detection model tags them as names or as the type they name, and masking them would garble the
+request. The list is `pii_allow_list` in the gateway configuration.
 
 ## Checking it in Langfuse
 
