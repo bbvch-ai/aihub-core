@@ -466,6 +466,8 @@ class AgentDispatcher(BaseDispatcher):
                     await self._handle_step_result_event(event, topic)
             except Exception as e:
                 await self._report_step_failure(step_method, e, topic, step_span)
+                return
+            self.agent_run_tracer.trace_step_ok(step_span)
 
     async def _report_step_failure(
         self,
