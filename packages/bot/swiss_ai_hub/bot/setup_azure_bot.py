@@ -1,22 +1,51 @@
 import argparse
 import json
+import re
 import subprocess
 import sys
+from collections.abc import Callable
+from pathlib import Path
 
 from pymongo import MongoClient
 
+# Every pattern rejects a leading "-" so no value can be parsed by the Azure CLI as an option of its own.
+BOT_NAME_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{1,63}")
+RESOURCE_GROUP_PATTERN = re.compile(r"(?!-)[\w().-]{0,89}[\w()-]")
+LOCATION_PATTERN = re.compile(r"[a-z0-9]{2,40}")
+TENANT_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9.-]{0,252}")
+TOKEN_URL_PATTERN = re.compile(r"https://[A-Za-z0-9.-]+(?::\d{1,5})?(?:/[A-Za-z0-9._~-]+)*")
+TOKEN_PATH_PATTERN = re.compile(r"/[A-Za-z0-9._~/-]*")
+BOT_SKUS = ["F0", "S1"]
 
-def run_command(cmd, parse_json=True):
+
+def matching(pattern: re.Pattern[str], description: str) -> Callable[[str], str]:
+    def validate(value: str) -> str:
+        match = pattern.fullmatch(value)
+        if match is None:
+            raise argparse.ArgumentTypeError(f"invalid {description}: {value!r}")
+        return match.group(0)
+
+    return validate
+
+
+def read_system_message_file(path: str) -> str:
+    """Confine the file to the working directory, since the script also runs with Azure and MongoDB credentials."""
+    base_dir = Path.cwd().resolve()
+    file_path = (base_dir / path).resolve()
+    if not file_path.is_relative_to(base_dir):
+        print(f"System message file must be inside {base_dir}: {path}")
+        sys.exit(1)
+    return file_path.read_text(encoding="utf-8")
+
+
+def run_command(cmd: list[str], parse_json=True):
     """
-    Run a shell command and return its stdout, or exit if the command fails.
+    Run a command without a shell and return its stdout, or exit if the command fails.
     If parse_json is True, attempt to parse the output as JSON.
     """
-    cmd_str = cmd if isinstance(cmd, str) else " ".join(cmd)
-    print(f"Running command: {cmd_str}")
+    print(f"Running command: {' '.join(cmd)}")
 
-    # Use shell=False for security when passing command as a list
-    shell_mode = isinstance(cmd, str)
-    result = subprocess.run(cmd, capture_output=True, text=True, shell=shell_mode, check=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
 
     output = result.stdout
 
@@ -190,17 +219,45 @@ def main():
         description="Set up an Azure Bot using the Azure CLI by creating an Azure AD app "
         "registration and saving its credentials to MongoDB."
     )
-    parser.add_argument("--resource-group", "-rg", required=True, help="Name of the Azure resource group.")
-    parser.add_argument("--bot-name", "-bot", required=True, help="Name for the Azure Bot.")
     parser.add_argument(
-        "--token-path", "-path", required=True, help="API endpoint path for the bot (e.g. '/token/messages')."
+        "--resource-group",
+        "-rg",
+        required=True,
+        type=matching(RESOURCE_GROUP_PATTERN, "resource group"),
+        help="Name of the Azure resource group.",
     )
-    parser.add_argument("--token-url", "-url", required=True, help="API URL for the bot (e.g. 'https://example.com').")
     parser.add_argument(
-        "--location", "-loc", default="westeurope", help="Azure location for the bot (default: 'westeurope')."
+        "--bot-name", "-bot", required=True, type=matching(BOT_NAME_PATTERN, "bot name"), help="Name for the Azure Bot."
     )
-    parser.add_argument("--tenant-id", "-tid", default=None, help="Azure tenant ID for the Azure Bot (default: None).")
-    parser.add_argument("--sku", "-sku", default="F0", help="Azure Bot SKU (default: 'F0').")
+    parser.add_argument(
+        "--token-path",
+        "-path",
+        required=True,
+        type=matching(TOKEN_PATH_PATTERN, "token path"),
+        help="API endpoint path for the bot (e.g. '/token/messages').",
+    )
+    parser.add_argument(
+        "--token-url",
+        "-url",
+        required=True,
+        type=matching(TOKEN_URL_PATTERN, "token URL"),
+        help="HTTPS API URL for the bot (e.g. 'https://example.com').",
+    )
+    parser.add_argument(
+        "--location",
+        "-loc",
+        default="westeurope",
+        type=matching(LOCATION_PATTERN, "location"),
+        help="Azure location for the bot (default: 'westeurope').",
+    )
+    parser.add_argument(
+        "--tenant-id",
+        "-tid",
+        default=None,
+        type=matching(TENANT_ID_PATTERN, "tenant ID"),
+        help="Azure tenant ID for the Azure Bot (default: None).",
+    )
+    parser.add_argument("--sku", "-sku", default="F0", choices=BOT_SKUS, help="Azure Bot SKU (default: 'F0').")
 
     # MongoDB parameters
     parser.add_argument(
@@ -209,7 +266,12 @@ def main():
 
     # System message
     parser.add_argument("--system-message", "-sys", required=False, help="System message for the bot.")
-    parser.add_argument("--system-message-file", "-sysf", required=False, help="File containing the system message.")
+    parser.add_argument(
+        "--system-message-file",
+        "-sysf",
+        required=False,
+        help="File containing the system message, inside the working directory.",
+    )
 
     # Slack OAuth token
     parser.add_argument("--slack-token", "-slack", required=False, help="Slack OAuth token for the bot.")
@@ -224,8 +286,7 @@ def main():
     if args.system_message:
         system_message = args.system_message
     elif args.system_message_file:
-        with open(args.system_message_file) as f:
-            system_message = f.read()
+        system_message = read_system_message_file(args.system_message_file)
 
     save_credentials_in_mongo(
         connection_string=args.mongo_connection_string,
@@ -241,8 +302,8 @@ def main():
         resource_group=args.resource_group,
         bot_name=args.bot_name,
         app_id=app_id,
-        api_url=args.api_url,
-        api_path=args.api_path,
+        api_url=args.token_url,
+        api_path=args.token_path,
         location=args.location,
         tenant_id=args.tenant_id,
         sku=args.sku,
