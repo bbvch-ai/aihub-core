@@ -30,7 +30,7 @@ verwaltet, nicht in Keycloak:
 
 | Rolle           | Wirkung                                                                                                                                                |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `AIHubAccess`   | Voraussetzung für jeden Login. Benutzer ohne diese Rolle werden bei der Post-Login-Prüfung des IdP abgewiesen.                                         |
+| `AIHubAccess`   | Voraussetzung für jeden Login. Benutzer ohne diese Rolle werden beim Login abgewiesen, ob über den IdP oder direkt mit Keycloak-Passwort.               |
 | `AIHubSysAdmin` | Plattform-Administrator: schützt die OAuth2-Proxy-Admin-Tools (Dagster, Attu, SeaweedFS, Backup) sowie Langfuse und kennzeichnet Superuser in der API. |
 
 ## Tenant-Gruppen
@@ -81,8 +81,10 @@ Zwei eigene Mechanismen erweitern die eingebauten Flows:
 
 - **`Post Broker Login - AIHubAccess Check`** — läuft nach jedem Azure-AD-Login und weist Benutzer ohne die Realm-Rolle
   `AIHubAccess` ab.
-- **`browser-aihub` + das Langfuse-Sysadmin-Gate** — der Browser-Flow des Realms mit einer bedingten
-  Zugriffsverweigerung, die Langfuse-Logins auf `AIHubSysAdmin` beschränkt. Mechanismus, Gründe für die Replikation des
+- **`browser-aihub` + seine Gates** — der Browser-Flow des Realms. Nach der Authentifizierung laufen zwei bedingte
+  Zugriffsverweigerungen: der Sub-Flow `aihub-access-gate-browser` weist Benutzer ohne `AIHubAccess` ab (der
+  Post-Broker-Flow läuft für lokale Realm-Benutzer nie, daher ist dies ihre einzige Prüfung), danach beschränkt das
+  Langfuse-Sysadmin-Gate Langfuse-Logins auf `AIHubSysAdmin`. Mechanismus, Gründe für die Replikation des
   eingebauten Browser-Flows und die strukturellen Fallstricke sind in
   [Langfuse-Sysadmin-Gate](1_langfuse_sysadmin_gate/) dokumentiert.
 

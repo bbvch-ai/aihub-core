@@ -58,3 +58,37 @@ def test_the_jira_form_is_labelled_in_every_language(path: str):
 )
 def test_the_confluence_form_is_labelled_in_every_language(path: str):
     _assert_translated(f"lib.source_pipelines.structured.config.confluence.{path}")
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "display_name",
+        *(
+            f"{field}.{part}"
+            for field in (
+                "base_url",
+                "auth_method",
+                "username",
+                "password",
+                "access_token",
+                "namespaces",
+                "include_categories",
+                "exclude_categories",
+                "include_subcategories",
+                "sync_documents",
+                "sync_images",
+                "max_file_size_mb",
+                "min_image_pixels",
+                "user_agent",
+            )
+            for part in ("label", "help")
+        ),
+        "auth_method.bot_password",
+        "auth_method.web_form",
+        "auth_method.oauth",
+        "auth_method.anonymous",
+    ],
+)
+def test_the_mediawiki_form_is_labelled_in_every_language(path: str):
+    _assert_translated(f"lib.source_pipelines.structured.config.mediawiki.{path}")

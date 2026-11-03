@@ -3,29 +3,32 @@
     class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
     :class="{ 'bg-surface-100 dark:bg-surface-800': isActive }"
   >
-    <div class="flex items-center justify-between gap-4">
-      <div class="flex items-center justify-start gap-2">
+    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div class="flex min-w-0 flex-1 basis-48 items-center justify-start gap-2">
         <div
-          class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
+          class="flex shrink-0 items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
         >
           <Icon
             name="mage:book"
             size="1.5em"
           />
         </div>
-        <div>
-          <h3 class="font-semibold opacity-80">
+        <div class="min-w-0">
+          <h3
+            v-tooltip.top="displayName"
+            class="truncate font-semibold opacity-80"
+          >
             {{ displayName }}
           </h3>
           <p
             v-if="namespace.description"
-            class="text-sm text-surface-500 dark:text-surface-400"
+            class="line-clamp-3 text-sm text-surface-500 [overflow-wrap:anywhere] dark:text-surface-400"
           >
             {{ namespace.description }}
           </p>
         </div>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-2">
         <Button
           v-tooltip.top="t('knowledge.edit_namespace')"
           icon="pi pi-pencil"

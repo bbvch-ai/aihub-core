@@ -30,5 +30,6 @@ const facts = computed<EventFact[]>(() => [
     label: t('event.capability.references'),
     value: (props.event.event.knowledge_references ?? []).map(reference => `${reference.database} / ${reference.namespace}`),
   },
+  { label: t('event.capability.webReferences'), value: props.event.event.web_references ?? [] },
 ])
 </script>

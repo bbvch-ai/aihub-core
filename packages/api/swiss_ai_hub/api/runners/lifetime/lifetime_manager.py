@@ -8,6 +8,7 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
+from swiss_ai_hub.core.discovery import DiscoverySettings
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, ExternalProcessEventDistributor
 from swiss_ai_hub.core.incident import IncidentSettings
 from swiss_ai_hub.core.infrastructure import (
@@ -39,6 +40,7 @@ from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     finalize_role_setup,
     initialize_knowledge_buckets,
     initialize_startup_tenant,
+    lower_llm_request_timeouts,
     strip_retired_agent_config_keys,
     unset_oversized_input_limits,
     widen_empty_retriever_namespace_scopes,
@@ -240,6 +242,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         langfuse_provisioner = LangfuseProvisioner()
         openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
 
+        discovery_settings = DiscoverySettings()
+
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
@@ -247,7 +251,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 controller=api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 redis=redis,
-                discovery_interval=60,  # Check for new agents every 60 seconds
+                settings=discovery_settings,
             )
             await agent_discovery_service.start()
             app.state.agent_discovery_service = agent_discovery_service
@@ -260,7 +264,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 api_app=api_app,
                 controller=api_app.state.process_controller,
                 locale_handler=ApiLocaleHandler(),
-                discovery_interval=60,  # Check for new process every 60 seconds
+                redis=redis,
+                settings=discovery_settings,
             )
             await process_discovery_service.start()
             app.state.process_discovery_service = process_discovery_service
@@ -274,6 +279,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         strip_retired_agent_config_keys()
         widen_empty_retriever_namespace_scopes()
         carry_over_pre_pair_knowledge_collections()
+        lower_llm_request_timeouts()
         unset_oversized_input_limits()
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.

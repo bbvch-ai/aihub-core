@@ -31,6 +31,7 @@ from swiss_ai_hub.core.events.agent import (
     EmbeddingEvent,
     ExceptionEvent,
     ExtractRecordsEvent,
+    FetchWebPagesEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
     FollowUpQuestionsEvent,
@@ -43,6 +44,7 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopConfirmationResponseEvent,
     HumanInTheLoopInputRequestEvent,
     HumanInTheLoopInputResponseEvent,
+    HumanInTheLoopQuestionsRequestEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     KnowledgeSearchedEvent,
@@ -94,6 +96,7 @@ from swiss_ai_hub.core.events.agent import (
     ToolResultEvent,
     UnreadMailListedEvent,
     UserMessageEvent,
+    WebPagesFetchedEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
@@ -105,6 +108,7 @@ DisplayEvents = (
     | Annotated[HumanInTheLoopInputRequestEvent, Tag("HumanInTheLoopInputRequestEvent")]
     | Annotated[ToolApprovalRequestEvent, Tag("ToolApprovalRequestEvent")]
     | Annotated[HumanInTheLoopConfirmationRequestEvent, Tag("HumanInTheLoopConfirmationRequestEvent")]
+    | Annotated[HumanInTheLoopQuestionsRequestEvent, Tag("HumanInTheLoopQuestionsRequestEvent")]
     | Annotated[HumanInTheLoopChatRequestEvent, Tag("HumanInTheLoopChatRequestEvent")]
     | Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")]
@@ -126,6 +130,7 @@ DisplayEvents = (
     | Annotated[MemoryRecalledEvent, Tag("MemoryRecalledEvent")]
     | Annotated[MemoryStorageRequestedEvent, Tag("MemoryStorageRequestedEvent")]
     | Annotated[SearchKnowledgeEvent, Tag("SearchKnowledgeEvent")]
+    | Annotated[FetchWebPagesEvent, Tag("FetchWebPagesEvent")]
     | Annotated[ExtractRecordsEvent, Tag("ExtractRecordsEvent")]
     | Annotated[ReadAttachedFilesEvent, Tag("ReadAttachedFilesEvent")]
     | Annotated[AttachedFilesReadEvent, Tag("AttachedFilesReadEvent")]
@@ -142,6 +147,7 @@ DisplayEvents = (
     | Annotated[ThoughtEvent, Tag("ThoughtEvent")]
     | Annotated[AttachedFileEvent, Tag("AttachedFileEvent")]
     | Annotated[KnowledgeSearchedEvent, Tag("KnowledgeSearchedEvent")]
+    | Annotated[WebPagesFetchedEvent, Tag("WebPagesFetchedEvent")]
     | Annotated[RecordsExtractedEvent, Tag("RecordsExtractedEvent")]
     | Annotated[ToolResultEvent, Tag("ToolResultEvent")]
     | Annotated[ToolLoopStatusEvent, Tag("ToolLoopStatusEvent")]

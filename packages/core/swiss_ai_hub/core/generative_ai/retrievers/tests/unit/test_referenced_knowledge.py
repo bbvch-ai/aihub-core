@@ -25,28 +25,38 @@ def _namespaces(database: str) -> list[str]:
     return {"hr": ["policies", "reports"], "legal": ["contracts"]}.get(database, [])
 
 
-def test_readable_live_collections_are_searched_and_the_rest_refused():
+def test_readable_live_collections_are_searched_gone_ones_missing_and_unreadable_ones_refused():
     references = [_reference("hr", "policies"), _reference("hr", "reports"), _reference("hr", "gone")]
 
-    searchable, refused = ReferencedKnowledge.partition(references, _access({("hr", "policies")}), _namespaces)
+    searchable, missing, refused = ReferencedKnowledge.partition(references, _access({("hr", "policies")}), _namespaces)
 
     assert searchable == [_reference("hr", "policies")]
-    assert refused == [_reference("hr", "reports"), _reference("hr", "gone")]
+    assert missing == [_reference("hr", "gone")]
+    assert refused == [_reference("hr", "reports")]
+
+
+def test_a_gone_collection_is_missing_even_for_a_user_who_could_have_read_it():
+    references = [_reference("hr", "gone")]
+
+    _, missing, refused = ReferencedKnowledge.partition(references, _access({("hr", "gone")}), _namespaces)
+
+    assert (missing, refused) == ([_reference("hr", "gone")], [])
 
 
 def test_a_run_without_a_user_searches_every_live_reference():
     references = [_reference("hr", "reports"), _reference("vanished", "x")]
 
-    searchable, refused = ReferencedKnowledge.partition(references, None, _namespaces)
+    searchable, missing, refused = ReferencedKnowledge.partition(references, None, _namespaces)
 
     assert searchable == [_reference("hr", "reports")]
-    assert refused == [_reference("vanished", "x")]
+    assert missing == [_reference("vanished", "x")]
+    assert refused == []
 
 
 def test_a_collection_referenced_twice_is_searched_once():
     references = [_reference("hr", "policies"), _reference("hr", "policies")]
 
-    searchable, _ = ReferencedKnowledge.partition(references, None, _namespaces)
+    searchable, _, _ = ReferencedKnowledge.partition(references, None, _namespaces)
 
     assert searchable == [_reference("hr", "policies")]
 

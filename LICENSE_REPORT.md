@@ -68,7 +68,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | botocore-stubs                                   | 1.42.41         | MIT                                                     |                                                                      |
 | ✅     | cachetools                                       | 7.1.3           | MIT                                                     |                                                                      |
 | ✅     | caio                                             | 0.9.25          | Apache-2.0                                              |                                                                      |
-| ✅     | certifi                                          | 2026.4.22       | Mozilla Public License 2.0 (MPL 2.0)                    |                                                                      |
+| ✅     | certifi                                          | 2026.10.19      | Mozilla Public License 2.0 (MPL 2.0)                    |                                                                      |
 | ✅     | cffi                                             | 2.0.0           | MIT                                                     |                                                                      |
 | ✅     | charset-normalizer                               | 3.4.7           | MIT                                                     |                                                                      |
 | ✅     | click                                            | 8.4.0           | BSD-3-Clause (override)                                 |                                                                      |

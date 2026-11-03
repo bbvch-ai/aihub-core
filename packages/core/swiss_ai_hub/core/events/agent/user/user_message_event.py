@@ -80,6 +80,15 @@ class UserMessageEvent(StartEvent):
             "The agent adds what it finds there to its context, searching only those the user may read.",
         ),
     ] = []
+    web_references: Annotated[
+        list[str],
+        Field(
+            description="Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps "
+            "them out of the message text. Sent as given, so a malformed link reaches the agent and is reported "
+            "rather than rejected with the message. An agent with web fetch on reads them along with the links in "
+            "the message.",
+        ),
+    ] = []
 
     @property
     def user_query(self) -> str:

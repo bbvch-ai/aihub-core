@@ -4,7 +4,15 @@
     :loading="rolesAreLoading"
     size="normal"
   >
-    <div class="grid grid-cols-2 gap-4 2xl:grid-cols-2">
+    <TenantAdminLoadError
+      v-if="rolesError"
+      :error="rolesError"
+      :tenant-id="tenantId"
+    />
+    <div
+      v-else
+      class="grid grid-cols-2 gap-4 2xl:grid-cols-2"
+    >
       <RoleCard
         v-for="role in roles"
         :key="role.id"
@@ -91,7 +99,7 @@ const confirm = useConfirm()
 
 const tenantId = computed(() => route.params.tenant_id as string)
 
-const { roles, rolesAreLoading } = useRoles()
+const { roles, rolesAreLoading, rolesError } = useRoles()
 const { updateRole } = useUpdateRole()
 const { deleteRole } = useDeleteRole()
 

@@ -229,7 +229,9 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
   networks of the platform's own services. Before a run's first request, a host without a domain (a Docker service,
   `localhost`) or one resolving to a non-global address is refused unless the deployment allows it
   (`STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`), and redirects are never followed. A host that resolves differently
-  between that check and the request (DNS rebinding) is not covered; an egress proxy would close it.
+  between that check and the request (DNS rebinding) is not covered; an egress proxy would close it. The check
+  (`SourceHostGuard`) has since moved to core's `network/` module (#1951), because agents that read Jira face the same
+  risk; each caller names its own allow-list variable (`JIRA_ALLOWED_PRIVATE_HOSTS` for agents).
 - **A failing write is retried inside the run.** dlt retries a failed load job up to five times and re-delivers its
   batch each time, before the run fails. The ETag check makes the re-delivery harmless. A permanent error raises
   `DestinationTerminalException` so it fails at once.
@@ -239,6 +241,37 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
 - **Frontmatter is a contract with ingestion.** Since #1953, ingestion sets a document's title, link and creation date
   from `title`, `url` and `created`, and stores every other key as filterable metadata that is not embedded. Markdown
   ingested before #1953 keeps its frontmatter as text until the file changes, because that step changes no data version.
+
+## Amendment 2026-10-30: files next to records
+
+The MediaWiki kind syncs the documents and, when switched on, the images its pages link (PDF, Office and image files on
+the wiki's `File:` pages), and Confluence's and Jira's attachments were left as follow-ups for the same reason (#1954,
+#1955). The decision above assumed records small enough to travel through dlt as rendered text, uploaded in one part and
+written by one run whose failure fails everything. A 90 MB PDF breaks the first assumption, and one file a source
+refuses to serve must not stop a database from syncing.
+
+**Decision.** A record is either a markdown file, as before, or a reference to a binary file.
+
+1. **A file travels as a reference, never through dlt.** `to_record_file` may return a `StructuredFileReference`:
+   namespace, path ending in the file's own extension, download URL, size, title and link. The row carries it as JSON;
+   the destination reads the content through the adapter's `read_file(options, reference)` while loading, one file at a
+   time, so a run holds at most one file in memory. Adapters cap what they offer by size.
+2. **The same write path.** A file goes through `DataLakeFile.from_content` and one `put_object`, exactly as markdown
+   does. A single PUT's ETag is the content's MD5 whatever its size, so the existing comparison keeps a re-delivered
+   file from being written and ingested again. Ingestion reads a file's title and link from its object metadata
+   (`document_title`, `source_origin`), the way rclone files carry theirs; the reference sets those two and nothing
+   else. A content hash is still never stored as metadata, because ingestion copies every key into the document.
+3. **Changes are found by the source's own checksum**, kept in the resource state like a page's revision, so an
+   unchanged file is never downloaded.
+4. **A file the source refuses is skipped, not fatal.** `read_file` raises `StructuredFileUnavailableError` for a file
+   the source will not serve (gone, forbidden); every other error still fails the load and is retried by dlt. A skipped
+   file is reported in the run's metadata, removed from the resource state's file map (`FILES_SEEN`) before the state is
+   saved, so the next run tries it again, and left out of rule 6, so a file that stays unavailable is retried each run
+   without the state being discarded and the whole source re-read.
+
+**Consequences.** Jira and Confluence are unchanged: markdown rows take the same path, and only adapters that return
+references download anything. A first sync of a large wiki runs for hours, inside the single-sync guard of rule 7. The
+structured pipeline's container needs memory for one file of the largest size an adapter offers.
 
 ## Related Decisions
 
