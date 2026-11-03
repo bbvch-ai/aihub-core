@@ -40,10 +40,11 @@ def _timing_out_once() -> AsyncMock:
 @pytest.mark.asyncio
 async def test_an_event_above_the_payload_limit_fails_without_retrying():
     publish_async = AsyncMock(side_effect=MaxPayloadError)
+    publisher, event = _publisher(publish_async), BaseEvent()
 
     with patch("swiss_ai_hub.core.publishers.js_publisher.asyncio.sleep", new=AsyncMock()) as sleep:
         with pytest.raises(MaxPayloadError):
-            await _publisher(publish_async).publish_event(BaseEvent(), SUBJECT)
+            await publisher.publish_event(event, SUBJECT)
 
     assert publish_async.await_count == 1
     sleep.assert_not_awaited()
