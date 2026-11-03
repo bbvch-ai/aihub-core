@@ -34,7 +34,7 @@ from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event
 from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
-from swiss_ai_hub.core.persistence import TenantMetadataEntity
+from swiss_ai_hub.core.persistence import PersistedAgentEventEntity, TenantMetadataEntity
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes import ChatService, JsonResources, StreamingResources
 
@@ -800,7 +800,9 @@ class OpenaiService:
 
         Images inside the messages and files sent as `file` parts are all checked before any is stored, so a refused
         request leaves nothing behind. Only what this request sent is checked and stored: with `reconstruct_history`
-        the earlier messages come from the thread, where their images were stored on their own turn.
+        the earlier messages come from the thread, where their images were stored on their own turn. A message that
+        answers an open human-in-the-loop request becomes a response that carries text only, so inline files are
+        refused there before anything is stored, rather than stored and silently left out.
         """
         messages = chat_completion_request.llama_index_messages
         reconstruct = bool(context.thread_id and chat_completion_request.metadata.reconstruct_history)
@@ -809,9 +811,20 @@ class OpenaiService:
                 status_code=400, detail="At least one message is required when reconstruct_history is enabled."
             )
         sent = messages[-1:] if reconstruct else messages
-        ChatService.existing_thread_of(context.user, str_to_object_id(context.thread_id))
+        thread = ChatService.existing_thread_of(context.user, str_to_object_id(context.thread_id))
+        sent_files = chat_completion_request.inline_files()
+        if (
+            sent_files
+            and thread
+            and PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(str(thread.id))
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="This message answers a question the agent is waiting on, and such an answer cannot carry "
+                "files. Answer it first, then send the files with a new message.",
+            )
         images = StoredImage.checked_all(sent, context)
-        inline_files = await InlineFile.store_all(chat_completion_request.inline_files(), context)
+        inline_files = await InlineFile.store_all(sent_files, context)
         await StoredImage.store_all(images, context)
 
         uploaded = chat_completion_request.metadata.files if chat_completion_request.metadata else None

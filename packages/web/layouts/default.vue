@@ -35,16 +35,18 @@
       <div class="fixed z-50 flex h-[50px] w-full items-center justify-between bg-surface-50 pr-[50px] dark:bg-surface-950">
         <Breadcrumb
           class="!bg-transparent text-xs opacity-70"
-          :home="apps[0]"
+          :home="breadcrumbHome"
           :model="breadcrumbItems"
         >
           <template #item="{ item }">
             <NuxtLink
+              v-if="item.route"
               :to="item.route"
               class="hover:underline"
             >
               {{ item.label }}
             </NuxtLink>
+            <span v-else>{{ item.label }}</span>
           </template>
         </Breadcrumb>
         <img
@@ -77,6 +79,7 @@ import { getHealth } from '@core/sdk/client'
 import type { MenuItem } from 'primevue/menuitem'
 
 const route = useRoute()
+const router = useRouter()
 const tenantPath = useTenantPath()
 
 // Here rather than app.vue: this layout is where the language switcher lives,
@@ -99,14 +102,23 @@ const appIsActive = (app: MenuItem) => {
   return route.path.startsWith(resolvedPath)
 }
 
-const breadcrumbItems = computed(() => {
-  const segments = route.path.split('/').filter(Boolean)
-  const prefixSegments = segments.slice(0, 2)
-  const contentSegments = segments.slice(2)
-  return contentSegments.map((label: string, index: number) => ({
-    label,
-    route: '/' + [...prefixSegments, ...contentSegments.slice(0, index + 1)].join('/'),
-  }))
+const breadcrumbHome = computed<MenuItem>(() => ({ ...apps.value[0], route: tenantPath('/') }))
+
+// `service` is only the URL prefix every page shares, not a page of its own.
+const breadcrumbItems = computed<MenuItem[]>(() => {
+  const segments = route.path.split('/').filter(Boolean).slice(2)
+  const lastIndex = segments.length - 1
+  return segments
+    .map((segment: string, index: number) => {
+      const appPath = '/' + segments.slice(0, index + 1).join('/')
+      const path = tenantPath(appPath)
+      const app = apps.value.find((candidate: MenuItem) => candidate.path === appPath)
+      return {
+        label: app?.label ?? segment,
+        route: index < lastIndex && router.resolve(path).matched.length > 0 ? path : undefined,
+      }
+    })
+    .filter((_item: MenuItem, index: number) => !(index === 0 && segments[0] === 'service'))
 })
 
 try {

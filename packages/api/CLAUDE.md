@@ -262,8 +262,10 @@ and locale. Never add field- or event-specific logic to the API for this; see AD
 
 **Request size**: `request_limits/BodySizeLimitMiddleware` refuses any request body over `API_REQUEST_MAX_BODY_BYTES`
 (64 MB) while it arrives, whatever its content type: FastAPI reads the whole body of every endpoint that takes one, so a
-JSON-only limit could be bypassed by sending another type or none. Multipart uploads (spooled to disk) and the paths
-passed as `exempt_path_suffixes` (the parsing upload, which streams and bounds itself at 100 MB) are left out. It is
+JSON-only limit could be bypassed by sending another type or none. A `multipart/form-data` request is left out only when
+the route it matches parses a form (its `body_field` is a `Form`/`File`, which Starlette spools to disk) — the label
+alone is caller-controlled, and a JSON route reads a multipart-labelled body whole. The paths passed as
+`exempt_path_suffixes` (the parsing upload, which streams and bounds itself at 100 MB) are left out. It is
 registered first in `ApiRunner._get_api_app`, so CORS still wraps its 413.
 
 ## Agent-API Communication
