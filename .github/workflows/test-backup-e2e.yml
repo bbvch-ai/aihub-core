@@ -34,18 +34,20 @@ jobs:
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
       - name: Generate Docker Compose files
         run: make generate-compose
+      - name: Generate .env with fresh secrets
+        run: ./setup-env.sh -t .env.dev -o .env
       - name: Build backup image
-        run: docker compose -f infra/docker-compose.dev.yml --env-file .env.dev build
+        run: docker compose -f infra/docker-compose.dev.yml --env-file .env build
           backup-code
       - name: Pull infrastructure images
         run: |
-          docker compose -f infra/docker-compose.dev.yml --env-file .env.dev pull --quiet \
+          docker compose -f infra/docker-compose.dev.yml --env-file .env pull --quiet \
             postgres postgres-ferretdb ferretdb neo4j clickhouse valkey nats \
             seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init \
             etcd etcd-init milvus-standalone
       - name: Start services
         run: |
-          docker compose -f infra/docker-compose.dev.yml --env-file .env.dev up -d \
+          docker compose -f infra/docker-compose.dev.yml --env-file .env up -d \
             backup-code backup-webserver backup-daemon postgres postgres-ferretdb ferretdb neo4j clickhouse valkey nats \
             seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init \
             etcd etcd-init milvus-standalone
@@ -98,8 +100,6 @@ jobs:
           wait_for_port "Milvus REST API" "http://127.0.0.1:9091/healthz" 180
           wait_for_port "S3 (SeaweedFS)" "http://127.0.0.1:9000/status"
           echo "All services reachable from host."
-      - name: Copy env for tests
-        run: cp .env.dev .env
       - name: Install dependencies
         run: uv sync --all-packages --dev --frozen
       - name: Run E2E tests
@@ -109,7 +109,7 @@ jobs:
         run: uv run pytest -m integration -v --timeout=600 --junitxml=e2e-pytest.xml
       - name: Stop services
         if: always()
-        run: docker compose -f infra/docker-compose.dev.yml --env-file .env.dev down
+        run: docker compose -f infra/docker-compose.dev.yml --env-file .env down
           --remove-orphans
       - name: Upload test report
         if: always()

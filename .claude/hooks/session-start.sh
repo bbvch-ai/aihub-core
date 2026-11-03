@@ -47,10 +47,9 @@ else
   # Web session: install from scratch
   echo "Web session detected. Checking dependencies..." >&2
 
-  # Copy .env if missing
+  # Generate .env with fresh secrets if missing
   if [[ ! -f "$REPO_ROOT/.env" && -f "$REPO_ROOT/.env.dev" ]]; then
-    cp "$REPO_ROOT/.env.dev" "$REPO_ROOT/.env"
-    echo "Copied .env.dev to .env" >&2
+    "$REPO_ROOT/setup-env.sh" -t "$REPO_ROOT/.env.dev" -o "$REPO_ROOT/.env" >&2
   fi
 
   # Install uv if missing

@@ -151,6 +151,7 @@ STATIC_COPY_FILES = [
 RELEASE_STATIC_FILES = [
     (".env.prod", ".env.template"),
     ("setup-env.sh", "setup-env.sh"),
+    ("check-env-secrets.sh", "check-env-secrets.sh"),
 ]
 
 
@@ -630,6 +631,7 @@ def main():
     env.globals["litellm_variants"] = LITELLM_VARIANTS
 
     if args.check_env:
+        from dev_env_secret_check import check_dev_env_secrets
         from env_check import check_env_vs_compose
         from env_inventory import build_consumers
 
@@ -646,7 +648,8 @@ def main():
         #   strict=False → always exit 0 (report-only, useful for local runs)
         ok_cpu = check_env_vs_compose(env_file, compose_cpu, consumers, "latest CPU", strict=False)
         ok_gpu = check_env_vs_compose(env_file, compose_gpu, consumers, "latest GPU", strict=False)
-        all_ok = ok_cpu and ok_gpu
+        ok_dev_secrets = check_dev_env_secrets(REPO_ROOT / ".env.dev", env_file)
+        all_ok = ok_cpu and ok_gpu and ok_dev_secrets
         sys.exit(1 if args.strict_env_check and not all_ok else 0)
 
     if args.write_env_docs:

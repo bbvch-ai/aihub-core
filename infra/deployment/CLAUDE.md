@@ -442,7 +442,10 @@ the same level as ALTERNATIVE executions, or Keycloak ignores the alternatives a
 
 ## Env Var Conventions
 
-- `.env.dev` — local development template (copy to `.env` to get started)
+- `.env.dev` — local development template; `make setup` turns it into `.env` with `setup-env.sh`, which fills every
+  generated-secret placeholder with a fresh random value and resolves `${VAR}` references. It holds no literal secret:
+  a secret takes the same placeholder as in `.env.prod`, a value derived from one references it as `'${VAR}'`, and
+  `make check-env` fails otherwise
 - `.env.prod` — production template (all secrets as `REPLACE_WITH_RANDOM_STRING` placeholders)
 - **No `${VAR:-default}` in templates** — all defaults must be in `.env.dev` / `.env.prod`, except the two sanctioned
   groups below

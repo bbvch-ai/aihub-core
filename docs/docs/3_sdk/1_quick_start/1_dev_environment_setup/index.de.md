@@ -125,17 +125,20 @@ make setup-all
 ```
 
 `make setup-all` erledigt zweierlei: `make setup` löst alle Workspace-Pakete mit `uv sync --all-packages` auf und
-kopiert `.env.dev` nach `.env`, sofern noch keine `.env` existiert, und `make setup-frontend` installiert die
-Frontend-Abhängigkeiten mit pnpm. Führen Sie die beiden einzeln aus, wenn Sie nur eine Hälfte benötigen.
+erzeugt, sofern noch keine `.env` existiert, eine aus `.env.dev` mit `./setup-env.sh -t .env.dev -o .env`, und
+`make setup-frontend` installiert die Frontend-Abhängigkeiten mit pnpm. Führen Sie die beiden einzeln aus, wenn Sie nur
+eine Hälfte benötigen.
 
-Die erzeugte `.env` ist eine vollständige, funktionierende Entwicklungskonfiguration. Jedes Secret darin ist ein
-bekannter Dev-Wert, und die Swiss LLM Cloud Endpoints sind die einzigen Einträge, die Sie für echten Modellzugriff
+Die erzeugte `.env` ist eine vollständige, funktionierende Entwicklungskonfiguration. `.env.dev` enthält keine Secrets,
+nur Platzhalter, und `setup-env.sh` füllt jeden mit einem frischen Zufallswert, sodass jeder Checkout eigene Passwörter,
+Tokens und Signing Keys hat. Die Swiss LLM Cloud Endpoints sind die einzigen Einträge, die Sie für echten Modellzugriff
 ergänzen sollten.
 
-::: danger Ausschliesslich Entwicklungs-Zugangsdaten
-`.env.dev` enthält fest hinterlegte Passwörter, Signing Keys und API-Tokens, die im Repository öffentlich sind, darunter
-`SUPERUSER_PASSWORD='admin'`. Auf Ihrer Maschine ist das in Ordnung und anderswo unbrauchbar. Kopieren Sie die Datei
-niemals auf einen geteilten oder aus dem Internet erreichbaren Host.
+::: warning Einmal erzeugen, dann behalten
+Die Datenbanken speichern die Passwörter aus Ihrem ersten `make up-dev`. Wird `.env` danach neu erzeugt, sperrt sich der
+Stack aus seinen eigenen Volumes aus. Behalten Sie die Datei also (und kopieren Sie sie in einen weiteren Worktree, der
+denselben Stack nutzt, statt sie neu zu erzeugen). Wenn Sie neu beginnen müssen, entfernen Sie die Volumes mit dem
+Stack.
 :::
 
 ## Schritt 5: Infrastruktur starten
@@ -270,12 +273,12 @@ veröffentlicht wurde. Das ist Supply-Chain-Härtung und keine defekte Lockfile.
 Öffnen Sie `http://localhost:3333` (oder `http://localhost:3334` für das Sysadmin UI). Sie werden zu Keycloak auf Port
 8180 weitergeleitet. Melden Sie sich mit dem Superuser aus `.env` an:
 
-- Benutzername: `admin`
-- Passwort: `admin`
+- Benutzername: `admin` (`SUPERUSER_USERNAME`)
+- Passwort: das generierte `SUPERUSER_PASSWORD`
 
 Die Authentifizierung läuft in der Entwicklung über das mitgelieferte Keycloak statt über Azure Entra ID, Sie benötigen
 also weder einen Azure Tenant noch OAuth-Zugangsdaten. Die Zugangsdaten stammen aus `SUPERUSER_USERNAME` und
-`SUPERUSER_PASSWORD` in `.env.dev`, und das Konto trägt die Rollen `AIHubAccess` und `AIHubSysAdmin`, die das Admin UI,
+`SUPERUSER_PASSWORD` in `.env`, und das Konto trägt die Rollen `AIHubAccess` und `AIHubSysAdmin`, die das Admin UI,
 die Sysadmin-Endpoints und OpenWebUI prüfen. Dieselben Zugangsdaten funktionieren überall.
 
 ## Setup überprüfen

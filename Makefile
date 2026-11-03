@@ -5,10 +5,9 @@ setup:
 	@echo "Installing all Python dependencies..."
 	uv sync --all-packages
 	@if [ ! -f .env ]; then \
-		echo "Copying .env.dev to .env..."; \
-		cp .env.dev .env; \
+		./setup-env.sh -t .env.dev -o .env; \
 	else \
-		echo ".env already exists, skipping copy."; \
+		echo ".env already exists, keeping its secrets."; \
 	fi
 	@echo "Setup complete! Run 'make up-dev' to start the Docker stack."
 

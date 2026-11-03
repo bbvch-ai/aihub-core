@@ -128,8 +128,10 @@ generiert. Es erstellt automatisch einzigartige Secrets für alle Datenbankpassw
 
 ::: details Was macht setup-env.sh?
 Das Skript liest `.env.template` und ersetzt alle `REPLACE_WITH_*` Platzhalter durch kryptographisch sichere
-Zufallswerte. Jeder Platzhalter erhält sein eigenes einzigartiges Secret. Das Skript benötigt nur `openssl` und `bash` –
-keine Python- oder andere Abhängigkeiten.
+Zufallswerte, auch den Fernet-Schlüssel `AIHUB_CONFIG_ENCRYPTION_KEY`. Jeder Platzhalter erhält sein eigenes
+einzigartiges Secret. Ein Wert in der Form `${VAR}` (etwa ein Connection String mit einem generierten Passwort) erhält
+danach den endgültigen Wert dieser Variable. Das Skript benötigt nur `openssl` und `bash` – keine Python- oder andere
+Abhängigkeiten.
 
 ```bash
 # Optionen:
@@ -141,9 +143,17 @@ keine Python- oder andere Abhängigkeiten.
 
 **Für lokales Deployment:**
 
+Erzeugen Sie `.env` in einem Repository-Checkout aus dem Entwicklungs-Template. Auch sie erhält frische Secrets:
+
 ```bash
-cp .env.dev .env
+./setup-env.sh -t .env.dev -o .env
 ```
+
+::: danger Eine Entwicklungs-.env nie auf einem Server verwenden
+Bevor setup-env.sh sie generierte, enthielt `.env.dev` feste Passwörter und Tokens, die in der Historie des Repositorys
+öffentlich bleiben. `./check-env-secrets.sh .env` weist jeden davon zurück, ebenso einen nie generierten Platzhalter,
+und der Installer führt die Prüfung vor jedem Upgrade aus. Rotieren Sie alles, was sie auflistet.
+:::
 
 ### Verbleibende Werte konfigurieren
 
