@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -19,6 +20,7 @@ OUTSIDER_ID = "outsider-user"
 BROAD_USER_RULES = ["aihub.user.>"]
 BROAD_TENANT_RULES = ["aihub.admin.>"]
 FROM_USER = "swiss_ai_hub.api.routes.thread.thread_access.AccessChecker.from_user"
+RUN_STATISTICS = "swiss_ai_hub.api.routes.thread.thread_service.PersistedAgentEventEntity.get_aggregated_run_statistics"
 
 
 def _user(user_id: str, *, tenant_id: str = "tenant-a", is_sys_admin: bool = False) -> UserIdentity:
@@ -79,6 +81,50 @@ class TestCanView:
         with patch(FROM_USER, return_value=_checker(BROAD_USER_RULES)), pytest.raises(HTTPException) as raised:
             ThreadAccess.ensure_can_view(_thread(), _user(OUTSIDER_ID))
         assert raised.value.status_code == 403
+
+
+class TestProcessThreadFromEntity:
+    """The access checks read the DTO, so a process thread has to keep its process on the way from the entity.
+    Process threads have no members, so without it they would be visible to sysadmins only."""
+
+    @staticmethod
+    async def _process_thread() -> ThreadDTO:
+        entity = ThreadEntity(
+            id=ObjectId(),
+            name="Invoice review",
+            created_at=datetime.now(UTC),
+            users=[],
+            agents=[],
+            process_class="InvoiceProcess",
+            process_id="p1",
+            process_walkthrough_id="w1",
+        )
+        with patch(RUN_STATISTICS, return_value=[]):
+            return await ThreadService.thread_response_from_entity(entity, t=None)
+
+    @pytest.mark.asyncio
+    async def test_keeps_the_process_that_generated_the_thread(self):
+        thread = await self._process_thread()
+
+        assert (thread.process_class, thread.process_id, thread.process_walkthrough_id) == (
+            "InvoiceProcess",
+            "p1",
+            "w1",
+        )
+
+    @pytest.mark.asyncio
+    async def test_a_user_with_access_to_the_process_can_view_its_thread(self):
+        thread = await self._process_thread()
+
+        with patch(FROM_USER, return_value=_checker(["aihub.user.process.InvoiceProcess.p1"])):
+            assert ThreadAccess.can_view(thread, _user(OUTSIDER_ID))
+
+    @pytest.mark.asyncio
+    async def test_a_user_without_access_to_the_process_cannot_view_its_thread(self):
+        thread = await self._process_thread()
+
+        with patch(FROM_USER, return_value=_checker(["aihub.user.process.InvoiceProcess.p2"])):
+            assert not ThreadAccess.can_view(thread, _user(OUTSIDER_ID))
 
 
 class TestEnsureCanPost:

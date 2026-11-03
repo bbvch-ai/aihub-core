@@ -453,6 +453,9 @@ class ThreadService:
             name=entity.name,
             users=user_dtos,
             agents=sorted(initial_agent_dtos, key=lambda a: (a.agent_class, a.agent_id)),
+            process_class=entity.process_class,
+            process_id=entity.process_id,
+            process_walkthrough_id=entity.process_walkthrough_id,
         )
 
         # 2. Get aggregated run statistics from the database
