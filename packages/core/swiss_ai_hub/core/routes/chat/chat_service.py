@@ -176,13 +176,10 @@ class ChatService:
         messages = ChatService._without_earlier_tables(messages)
         thread = ChatService.existing_thread_of(user, thread_id)
         if not thread:
-            agent = AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
-            if thread_id and ObjectId(thread_id) == ThreadEntity.scheduled_thread_id(agent):
-                raise HTTPException(status_code=409, detail="This thread id is reserved for scheduled runs")
             thread = ThreadEntity.create_thread(
                 "chat",
                 users=[User(user_id=user.id)],
-                agents=[agent],
+                agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
                 thread_id=ObjectId(thread_id) or ObjectId(),
             )
         logger.debug(f"Created thread: {thread.id}")

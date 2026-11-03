@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytest
+from cryptography.fernet import Fernet
 from mongoengine import connect, disconnect
 
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
@@ -134,6 +135,10 @@ class TestGetOrCreateScheduledThread:
     """One thread per profile rather than per occurrence: a five-minute schedule would otherwise leave
     ~105k single-run threads a year, with nothing cleaning them up."""
 
+    @pytest.fixture(autouse=True)
+    def _instance_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("AIHUB_CONFIG_ENCRYPTION_KEY", Fernet.generate_key().decode())
+
     def test_creates_the_thread_on_first_call(self):
         agent = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
 
@@ -170,19 +175,6 @@ class TestGetOrCreateScheduledThread:
         ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", second)
 
         assert ThreadEntity.objects.count() == 2
-
-    def test_replaces_a_chat_thread_a_client_created_under_the_id(self):
-        agent = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
-        ThreadEntity.create_thread(
-            "chat", users=[User(user_id="u1")], agents=[agent], thread_id=ThreadEntity.scheduled_thread_id(agent)
-        )
-
-        thread = ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", agent)
-
-        stored = ThreadEntity.get_thread_by_id(str(thread.id))
-        assert stored.name == "Scheduled runs"
-        assert stored.users == []
-        assert ThreadEntity.objects.count() == 1
 
 
 class TestUpdateThreadName:

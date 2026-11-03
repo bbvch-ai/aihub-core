@@ -1,8 +1,12 @@
-from unittest.mock import MagicMock, patch
+import hashlib
 
 import pytest
+from bson import ObjectId
+from cryptography.fernet import Fernet
 
-from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity, User
+from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity
+
+ENCRYPTION_KEY_VARIABLE = "AIHUB_CONFIG_ENCRYPTION_KEY"
 
 
 class TestGetOrderBy:
@@ -32,7 +36,14 @@ class TestGetOrderBy:
 
 class TestScheduledThreadId:
     """Deriving the id from the profile is what lets every scheduled run of that profile land in one
-    thread, without a lookup two replicas could race into creating a second one."""
+    thread, without a lookup two replicas could race into creating a second one. The instance key in the
+    derivation is what keeps a client from computing the id and creating the thread before the first run."""
+
+    PROFILE = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
+
+    @pytest.fixture(autouse=True)
+    def _instance_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv(ENCRYPTION_KEY_VARIABLE, Fernet.generate_key().decode())
 
     def test_is_stable_for_the_same_profile(self):
         """Two equal refs, not one ref twice: the id has to survive the process that built it, since
@@ -54,51 +65,22 @@ class TestScheduledThreadId:
 
         assert ThreadEntity.scheduled_thread_id(first) != ThreadEntity.scheduled_thread_id(second)
 
+    def test_is_not_the_digest_of_the_profile_alone(self):
+        """The unkeyed digest is what scheduled threads used before, and what anyone can compute."""
+        unkeyed = ObjectId(hashlib.sha256(b"ImapAgent/inbox-1").digest()[:12])
 
-class TestScheduledThreadReclaim:
-    """The scheduled-run thread id is derivable from the profile, so a client may have created a chat thread
-    under it first. Runs must never fire into such a thread."""
+        assert ThreadEntity.scheduled_thread_id(self.PROFILE) != unkeyed
 
-    AGENT = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
-    MODULE = "swiss_ai_hub.core.persistence.messaging.entities.thread_entity"
+    def test_differs_per_instance_key(self, monkeypatch: pytest.MonkeyPatch):
+        first = ThreadEntity.scheduled_thread_id(self.PROFILE)
+        monkeypatch.setenv(ENCRYPTION_KEY_VARIABLE, Fernet.generate_key().decode())
 
-    def _existing(self, **fields) -> ThreadEntity:
-        defaults = {"name": "Scheduled runs", "users": [], "agents": [self.AGENT]}
-        return ThreadEntity(id=ThreadEntity.scheduled_thread_id(self.AGENT), **(defaults | fields))
+        assert ThreadEntity.scheduled_thread_id(self.PROFILE) != first
 
-    def _resolve(self, existing: ThreadEntity) -> tuple[ThreadEntity | dict, MagicMock, MagicMock]:
-        objects = MagicMock()
-        objects.return_value.first.return_value = existing
-        with (
-            patch.object(ThreadEntity, "objects", objects),
-            patch.object(ThreadEntity, "delete") as delete,
-            patch.object(ThreadEntity, "create_thread", side_effect=lambda *args, **kwargs: kwargs),
-            patch(f"{self.MODULE}.PersistedAgentEventEntity.delete_events_for_thread") as delete_events,
-        ):
-            thread = ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", self.AGENT)
-        return thread, delete, delete_events
+    @pytest.mark.parametrize("key", ["", "REPLACE_WITH_FERNET_KEY"])
+    def test_refuses_an_instance_without_a_real_key(self, monkeypatch: pytest.MonkeyPatch, key: str):
+        """The `.env.prod` placeholder is public, so an id keyed with it could be computed again."""
+        monkeypatch.setenv(ENCRYPTION_KEY_VARIABLE, key)
 
-    def test_keeps_the_genuine_scheduled_thread(self):
-        existing = self._existing()
-
-        thread, delete, delete_events = self._resolve(existing)
-
-        assert thread is existing
-        delete.assert_not_called()
-        delete_events.assert_not_called()
-
-    @pytest.mark.parametrize(
-        "fields",
-        [
-            {"users": [User(user_id="someone")]},
-            {"agents": [AgentInstanceRef(agent_class="RAGAgent", agent_id="other")]},
-            {"process_class": "SomeProcess"},
-        ],
-    )
-    def test_discards_a_thread_a_client_created_under_the_id(self, fields):
-        thread, delete, delete_events = self._resolve(self._existing(**fields))
-
-        delete.assert_called_once()
-        delete_events.assert_called_once_with(str(ThreadEntity.scheduled_thread_id(self.AGENT)))
-        assert thread["users"] == []
-        assert thread["thread_id"] == ThreadEntity.scheduled_thread_id(self.AGENT)
+        with pytest.raises(ValueError):
+            ThreadEntity.scheduled_thread_id(self.PROFILE)

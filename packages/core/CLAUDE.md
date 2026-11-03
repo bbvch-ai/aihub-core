@@ -85,7 +85,7 @@ packages/core/swiss_ai_hub/core/
 │   └── ingestor_config.py            # IngestorConfig: identity fields a knowledge database is created with
 ├── source_pipelines/                # Source pipeline config base (Stage 1: external system → data lake)
 │   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from secret elements
-├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
+├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes; also keys scheduled-run thread ids
 ├── secrets/                         # Secret configuration fields: encrypted at rest, masked in responses
 │   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, submitted ciphertext refused, fail-closed
 │   └── secret_path_transformer.py    # SecretPathTransformer: apply a transform at dotted paths, fans out over repeaters
@@ -497,8 +497,8 @@ and the `AIHubSysAdmin` realm role. Selected methods:
 - `.has_access_to_service(service_name)` → bool
 - `.access_level(permission_template)` → AccessLevel
 
-The agent and process instance rule builders raise `ValueError` for an id that is not one plain token (`None`, empty,
-a wildcard, a dot). A `None` id would otherwise render as `process.None.None`, which `aihub.user.>` matches.
+The agent and process instance rule builders raise `ValueError` for an id that is not one plain token (`None`, empty, a
+wildcard, a dot). A `None` id would otherwise render as `process.None.None`, which `aihub.user.>` matches.
 
 **Sysadmin short-circuit**: When `UserIdentity.is_sys_admin=True`, `access_level()` returns `ACCESS_ADMIN`
 unconditionally, bypassing both the tenant-ceiling and user-rule stages. Sysadmins may have `acting_within_tenant=None`.

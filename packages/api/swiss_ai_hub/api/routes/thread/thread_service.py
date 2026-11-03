@@ -114,14 +114,12 @@ class ThreadService:
         """The thread an event is posted into, started for the caller when the id is new.
 
         Clients name a new conversation's thread themselves (the OpenWebUI pipe derives it from the chat id),
-        so an unknown id is created rather than refused. The one id derivable by anyone, a profile's
-        scheduled-run thread, is never handed to a client.
+        so an unknown id is created rather than refused. A profile's scheduled-run thread id cannot be claimed
+        this way because it is keyed with a secret only the instance holds.
         """
         try:
             thread = await ThreadService.get_thread_by_id(thread_id, t=t)
         except DoesNotExist:
-            if ObjectId(thread_id) == ThreadEntity.scheduled_thread_id(agent):
-                raise HTTPException(status_code=409, detail="This thread id is reserved for scheduled runs")
             ThreadEntity.create_thread(
                 "chat", users=[User(user_id=user.id)], agents=[agent], thread_id=ObjectId(thread_id)
             )

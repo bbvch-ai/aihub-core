@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 from datetime import datetime
 from typing import Self
 
@@ -6,9 +7,11 @@ from bson import ObjectId
 from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
+from swiss_ai_hub.core.secrets.secret_encryption_service import SecretEncryptionService
+
+_SCHEDULED_THREAD_KEY_DOMAIN = b"swiss-ai-hub:scheduled-thread-id:"
 
 
 class User(EmbeddedDocument):
@@ -64,35 +67,25 @@ class ThreadEntity(Document):
 
         The id is derived from the profile rather than looked up by field, so two replicas racing a
         handover converge on the same document instead of creating a second thread.
-
-        Because the id is derivable, a client can create a chat thread under it before the first scheduled
-        run. Such a thread is discarded together with its events, so runs never fire into a thread that
-        has members or carries their messages as history.
         """
         thread_id = cls.scheduled_thread_id(agent)
         existing = cls.objects(id=thread_id).first()
-        if existing and existing._is_scheduled_thread_of(agent):
-            return existing
         if existing:
-            PersistedAgentEventEntity.delete_events_for_thread(str(thread_id))
-            existing.delete()
+            return existing
         return cls.create_thread(name, users=[], agents=[agent], thread_id=thread_id)
-
-    def _is_scheduled_thread_of(self, agent: AgentInstanceRef) -> bool:
-        return (
-            not self.users
-            and self.process_class is None
-            and [(ref.agent_class, ref.agent_id) for ref in self.agents] == [(agent.agent_class, agent.agent_id)]
-        )
 
     @staticmethod
     def scheduled_thread_id(agent: AgentInstanceRef) -> ObjectId:
         """The deterministic thread id of a profile's scheduled runs.
 
+        Keyed with the instance's config encryption key: clients name new threads themselves, so an id anyone
+        can compute would let them create the thread before the first run and be a member of every run after it.
+
         An ObjectId normally encodes its creation time in the leading bytes; this one does not, so read
         a scheduled thread's age from `created_at` and never from its id.
         """
-        digest = hashlib.sha256(f"{agent.agent_class}/{agent.agent_id}".encode()).digest()
+        key = SecretEncryptionService.from_settings().derived_key(_SCHEDULED_THREAD_KEY_DOMAIN)
+        digest = hmac.new(key, f"{agent.agent_class}/{agent.agent_id}".encode(), hashlib.sha256).digest()
         return ObjectId(digest[:12])
 
     @classmethod

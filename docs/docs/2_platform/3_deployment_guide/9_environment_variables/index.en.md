@@ -28,7 +28,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `ADMIN_PASSWORD_HASH` |  | `traefik` |  |
 | `AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST` | `InlineFileSettings.MAX_FILES_PER_REQUEST` | `api` | How many inline files one request may carry. |
 | `AGENT_INLINE_FILE_MAX_FILE_BYTES` | `InlineFileSettings.MAX_FILE_BYTES` | `api` | Largest decoded file accepted, in bytes. |
-| `AIHUB_CONFIG_ENCRYPTION_KEY` | `ConfigEncryptionSettings.ENCRYPTION_KEY` | `api`, `document_ingestion_pipeline`, `rclone_pipeline`, `structured_pipeline` | Fernet key (url-safe base64, 32 bytes) encrypting secret configuration fields at rest. |
+| `AIHUB_CONFIG_ENCRYPTION_KEY` | `ConfigEncryptionSettings.ENCRYPTION_KEY` | `api`, `document_ingestion_pipeline`, `rclone_pipeline`, `structured_pipeline` | Fernet key (url-safe base64, 32 bytes) encrypting secret configuration fields at rest. The API also derives the ids of scheduled-run threads from it, so changing it moves every scheduled profile to a new thread. |
 | `AIHUB_CREATE_DEFAULT_BUCKETS` | `AIHubSettings.CREATE_DEFAULT_BUCKETS` | `api`, `seaweedfs-init` | Creates default knowledge buckets and namespaces |
 | `AIHUB_DEFAULT_BUCKET_NAME` | `AIHubSettings.DEFAULT_BUCKET_NAME` | `api`, `default_rag_pipeline`, `seaweedfs-init` | Name of the default knowledge bucket |
 | `AIHUB_DEFAULT_NAMESPACE_NAME` | `AIHubSettings.DEFAULT_NAMESPACE_NAME` | `api` | Name of the default namespace |

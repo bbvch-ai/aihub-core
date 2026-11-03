@@ -167,17 +167,3 @@ class TestGetOrCreateThreadToPostIn:
         assert thread is created
         assert create_thread.call_args.kwargs["thread_id"] == ObjectId(thread_id)
         assert [user.user_id for user in create_thread.call_args.kwargs["users"]] == [MEMBER_ID]
-
-    @pytest.mark.asyncio
-    async def test_scheduled_run_thread_id_is_not_handed_to_a_client(self):
-        scheduled_thread_id = str(ThreadEntity.scheduled_thread_id(self.AGENT))
-        with (
-            patch.object(ThreadService, "get_thread_by_id", new=AsyncMock(side_effect=DoesNotExist())),
-            patch.object(ThreadEntity, "create_thread") as create_thread,
-            pytest.raises(HTTPException) as raised,
-        ):
-            await ThreadService.get_or_create_thread_to_post_in(
-                scheduled_thread_id, _user(MEMBER_ID), self.AGENT, t=None
-            )
-        assert raised.value.status_code == 409
-        create_thread.assert_not_called()
