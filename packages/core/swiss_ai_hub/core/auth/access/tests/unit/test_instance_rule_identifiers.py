@@ -23,6 +23,16 @@ def test_instance_rules_reject_an_identifier_that_is_not_one_concrete_token(buil
         builder(identifier, "some-id")
 
 
+@pytest.mark.parametrize("identifier", NOT_CONCRETE)
+def test_an_identifier_that_is_not_one_concrete_token_is_reported_as_such(identifier):
+    assert not AccessChecker.is_concrete_identifier(identifier)
+
+
+@pytest.mark.parametrize("identifier", ["RAGAgent", "p-1_a", "64f0c0ffee"])
+def test_a_concrete_identifier_is_reported_as_such(identifier):
+    assert AccessChecker.is_concrete_identifier(identifier)
+
+
 def test_process_access_for_a_missing_process_raises_instead_of_matching_a_broad_rule():
     with pytest.raises(ValueError):
         BROAD_CHECKER.has_access_to_process(None, None)

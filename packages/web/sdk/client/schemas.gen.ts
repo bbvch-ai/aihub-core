@@ -139,10 +139,12 @@ export const AddAgentRequestSchema = {
   properties: {
     agent_id: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Id",
     },
     agent_class: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Class",
     },
   },
@@ -28875,10 +28877,12 @@ export const ThreadAgentDTOSchema = {
   properties: {
     agent_id: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Id",
     },
     agent_class: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Class",
     },
   },

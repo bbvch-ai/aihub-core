@@ -186,6 +186,12 @@ class AccessChecker:
         return template_remainder in ([], ["?>"])
 
     @staticmethod
+    def is_concrete_identifier(value: str | None) -> bool:
+        """Whether an agent or process id can be checked at all. Callers holding an id from a request deny
+        one that cannot, because the instance rule builders raise on it."""
+        return value is not None and _IDENTIFIER_SEGMENT.fullmatch(value) is not None
+
+    @staticmethod
     def _identifier_segment(value: str | None) -> str:
         """A concrete resource identifier as one rule token.
 
@@ -193,7 +199,7 @@ class AccessChecker:
         by every broad rule such as ``aihub.user.>``, and a wildcard would turn a concrete check into an
         implicit one.
         """
-        if value is None or not _IDENTIFIER_SEGMENT.fullmatch(value):
+        if not AccessChecker.is_concrete_identifier(value):
             raise ValueError(f"Not a concrete resource identifier: {value!r}")
         return value
 

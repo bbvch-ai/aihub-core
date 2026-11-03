@@ -121,8 +121,8 @@ class EventController(TenantScopedController):
                 ),
             ],
             thread_id: Annotated[str, Query()] = None,
-            agent_class: Annotated[str, Query(title="Agent Class")] = None,
-            agent_id: Annotated[str, Query(title="Agent ID")] = None,
+            agent_class: Annotated[str, Query(title="Agent Class", pattern=r"^[A-Za-z0-9_-]+$")] = None,
+            agent_id: Annotated[str, Query(title="Agent ID", pattern=r"^[A-Za-z0-9_-]+$")] = None,
             event_name: Annotated[str, Query(title="Event Name")] = None,
         ) -> EventTimeseries:
             """

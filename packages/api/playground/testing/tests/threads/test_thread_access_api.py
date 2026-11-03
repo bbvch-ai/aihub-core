@@ -109,6 +109,7 @@ async def api_client() -> AsyncGenerator[AsyncClient]:
     runner.mount(AgentController(auth=auth).get_agent_instance())
     runner.mount(
         ThreadController(auth=auth)
+        .create_thread()
         .get_thread()
         .get_open_chat_hitl()
         .get_extracted_table_download_url()
@@ -234,3 +235,19 @@ async def test_access_to_the_process_does_not_allow_changing_or_posting_into_its
 
     assert response.status_code == 403, response.text
     assert _members_and_agents(process_thread) == before
+
+
+@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.parametrize("agent_id", ["a.b", "*", "a b"])
+@pytest.mark.parametrize("request_of", ["add_agent", "create_thread"])
+async def test_a_malformed_agent_reference_is_invalid_input(api_client, chat_thread, request_of, agent_id):
+    """The access check raises on a dot, a wildcard or a space instead of denying, so the body is refused first."""
+    agent = {"agent_class": AGENT_CLASS, "agent_id": agent_id}
+    method, path, body = {
+        "add_agent": ("POST", "/threads/{thread_id}/agents", agent),
+        "create_thread": ("POST", "/threads/", {"name": "chat", "agents": [agent]}),
+    }[request_of]
+
+    response = await _call(api_client, MEMBER, (method, path, body), chat_thread)
+
+    assert response.status_code == 422, response.text
