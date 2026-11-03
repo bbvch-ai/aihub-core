@@ -4,7 +4,9 @@ import httpx
 import pytest
 from scim2_models import Group
 
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
+from swiss_ai_hub.core.infrastructure.openwebui.openwebui_group_access import SYS_ADMIN_GROUP_ACCESS_RULES
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
     AIHUB_AGENT_PREFIX,
     AIHUB_LLM_MODEL_PREFIX,
@@ -431,6 +433,8 @@ class TestBuildRoleRules:
         assert result == {
             ("TenantA", "Shared"): ["aihub.user.agent.rag.*"],
             ("TenantB", "Shared"): ["aihub.user.agent.other.*"],
+            ("TenantA", SYS_ADMIN_ROLE): SYS_ADMIN_GROUP_ACCESS_RULES,
+            ("TenantB", SYS_ADMIN_ROLE): SYS_ADMIN_GROUP_ACCESS_RULES,
         }
 
     def test_role_of_unknown_tenant_is_skipped(self) -> None:
@@ -453,7 +457,65 @@ class TestBuildRoleRules:
             orphan.access_rules = ["aihub.user.agent.>"]
             mock_role.objects.return_value = [orphan]
 
-            assert OpenWebuiProvisioner._build_role_rules() == {}
+            assert OpenWebuiProvisioner._build_role_rules() == {
+                ("TenantA", SYS_ADMIN_ROLE): SYS_ADMIN_GROUP_ACCESS_RULES
+            }
+
+    def test_sys_admin_group_rules_win_over_a_same_named_tenant_role(self) -> None:
+        """A tenant role named like the sysadmin group must not narrow or widen what the group grants."""
+        with (
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+        ):
+            tenant = MagicMock()
+            tenant.id = "ta"
+            tenant.name = "TenantA"
+            mock_tenant.objects.return_value = [tenant]
+
+            legacy = MagicMock()
+            legacy.name = SYS_ADMIN_ROLE
+            legacy.tenant_id = "ta"
+            legacy.access_rules = []
+            mock_role.objects.return_value = [legacy]
+
+            assert OpenWebuiProvisioner._build_role_rules() == {
+                ("TenantA", SYS_ADMIN_ROLE): SYS_ADMIN_GROUP_ACCESS_RULES
+            }
+
+
+class TestSysAdminGroupAccess:
+    """The sysadmin group sees what a full admin of its tenant sees: everything, but under the tenant's ceiling."""
+
+    def test_sys_admin_group_gets_agent_the_tenant_allows(self) -> None:
+        groups = [_group(f"aihub:T1:{SYS_ADMIN_ROLE}", "grp-sys")]
+        tenant_rules = {"T1": ["aihub.user.agent.rag.*"]}
+        role_rules = {("T1", SYS_ADMIN_ROLE): SYS_ADMIN_GROUP_ACCESS_RULES}
+
+        result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
+
+        assert result == [AccessGrant(principal_type="group", principal_id="grp-sys", permission="read")]
+
+    def test_tenant_ceiling_blocks_sys_admin_group(self) -> None:
+        groups = [_group(f"aihub:T1:{SYS_ADMIN_ROLE}", "grp-sys")]
+        tenant_rules = {"T1": ["aihub.user.agent.other.*"]}
+        role_rules = {("T1", SYS_ADMIN_ROLE): SYS_ADMIN_GROUP_ACCESS_RULES}
+
+        result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
+
+        assert result == []
+
+    def test_sys_admin_group_gets_llm_model_the_tenant_allows(self) -> None:
+        groups = [_group(f"aihub:T1:{SYS_ADMIN_ROLE}", "grp-sys")]
+        tenant_rules = {"T1": ["aihub.user.model.text-generation.*"]}
+        role_rules = {("T1", SYS_ADMIN_ROLE): SYS_ADMIN_GROUP_ACCESS_RULES}
+
+        result = OpenWebuiProvisioner._compute_access_for_llm_model(
+            "text-generation", "Kimi-K2.6", groups, tenant_rules, role_rules
+        )
+
+        assert result == [AccessGrant(principal_type="group", principal_id="grp-sys", permission="read")]
 
 
 class TestCrossTenantIsolation:

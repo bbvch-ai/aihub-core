@@ -6,6 +6,7 @@ import pytest
 from scim2_models import Group, User
 
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
 
 _MODULE = "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner"
@@ -75,7 +76,11 @@ class TestProvisioningDuringGroupSync:
             patch(f"{_MODULE}.RoleEntity") as mock_role,
             patch(f"{_MODULE}.UserTenantRoleEntity") as mock_utr,
             patch(f"{_MODULE}.KeycloakAdminService") as mock_keycloak,
-            patch.object(provisioner._openwebui, "list_groups", return_value=[_group("aihub:T1:R1", "grp-1")]),
+            patch.object(
+                provisioner._openwebui,
+                "list_groups",
+                return_value=[_group("aihub:T1:R1", "grp-1"), _group(f"aihub:T1:{SYS_ADMIN_ROLE}", "grp-sys")],
+            ),
             patch.object(provisioner._openwebui, "list_users", return_value=[]),
             patch.object(provisioner._openwebui, "create_user", return_value=_owui_user("a@x", "owui-a")) as create,
             patch.object(provisioner._openwebui, "update_group_members") as update_members,
@@ -88,6 +93,7 @@ class TestProvisioningDuringGroupSync:
             mock_role.get_roles_for_tenant.return_value = [role]
             mock_keycloak.get_all_users = AsyncMock(return_value=[_keycloak_user("kc-a", "a@x")])
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=active_user_ids)
+            mock_keycloak.get_user_ids_with_realm_role = AsyncMock(return_value=set())
             mock_utr.objects.return_value = [MagicMock(user_id=uid) for uid in role_holders]
             yield create, update_members
 
@@ -96,7 +102,7 @@ class TestProvisioningDuringGroupSync:
         with self._group_sync(provisioner, active_user_ids={"kc-a"}, role_holders=["kc-a"]) as (_, update_members):
             await provisioner._sync_groups()
 
-        update_members.assert_awaited_once_with("grp-1", ["owui-a"], scim=ANY)
+        update_members.assert_any_await("grp-1", ["owui-a"], scim=ANY)
 
     @pytest.mark.asyncio
     async def test_should_not_create_account_before_user_has_an_active_tenant(

@@ -3,6 +3,7 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 import pytest
 from scim2_models import Group, User
 
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
     AIHUB_GROUP_PREFIX,
     OpenWebuiProvisioner,
@@ -28,7 +29,7 @@ class TestBuildDesiredGroups:
 
         result = OpenWebuiProvisioner._build_desired_groups(tenants, roles_by_tenant)
 
-        assert result == {f"{AIHUB_GROUP_PREFIX}TenantA:RoleA"}
+        assert result == {f"{AIHUB_GROUP_PREFIX}TenantA:RoleA", f"{AIHUB_GROUP_PREFIX}TenantA:{SYS_ADMIN_ROLE}"}
 
     def test_cross_product(self) -> None:
         tenants = [{"name": "T1"}, {"name": "T2"}]
@@ -44,16 +45,19 @@ class TestBuildDesiredGroups:
             f"{AIHUB_GROUP_PREFIX}T1:R2",
             f"{AIHUB_GROUP_PREFIX}T2:R1",
             f"{AIHUB_GROUP_PREFIX}T2:R2",
+            f"{AIHUB_GROUP_PREFIX}T1:{SYS_ADMIN_ROLE}",
+            f"{AIHUB_GROUP_PREFIX}T2:{SYS_ADMIN_ROLE}",
         }
 
     def test_empty_tenants(self) -> None:
         result = OpenWebuiProvisioner._build_desired_groups([], {})
         assert result == set()
 
-    def test_no_roles_for_tenant(self) -> None:
+    def test_no_roles_for_tenant_still_gets_sys_admin_group(self) -> None:
+        """A sysadmin needs no tenant role, so even a tenant without roles has a group for them."""
         tenants = [{"name": "T1"}]
         result = OpenWebuiProvisioner._build_desired_groups(tenants, {})
-        assert result == set()
+        assert result == {f"{AIHUB_GROUP_PREFIX}T1:{SYS_ADMIN_ROLE}"}
 
 
 class TestBuildUserIdMapping:
@@ -125,13 +129,17 @@ class TestSyncGroupsOrchestration:
 
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
             mock_keycloak.get_all_users = AsyncMock(return_value=[])
+            mock_keycloak.get_user_ids_with_realm_role = AsyncMock(return_value=set())
 
             mock_list_groups.return_value = []
-            mock_create.return_value = _group("aihub:T1:R1", "grp-1")
+            mock_create.side_effect = lambda name, scim: _group(name, f"grp-{name}")
 
             await provisioner._sync_groups()
 
-            mock_create.assert_called_once_with("aihub:T1:R1", scim=ANY)
+            assert {call.args[0] for call in mock_create.call_args_list} == {
+                "aihub:T1:R1",
+                f"aihub:T1:{SYS_ADMIN_ROLE}",
+            }
 
     @pytest.mark.asyncio
     async def test_sync_deletes_orphaned_groups(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -155,6 +163,7 @@ class TestSyncGroupsOrchestration:
             mock_role.get_roles_for_tenant.return_value = []
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
             mock_keycloak.get_all_users = AsyncMock(return_value=[])
+            mock_keycloak.get_user_ids_with_realm_role = AsyncMock(return_value=set())
 
             mock_list_groups.return_value = [_group("aihub:OldTenant:OldRole", "grp-orphan")]
 
@@ -184,6 +193,7 @@ class TestSyncGroupsOrchestration:
             mock_role.get_roles_for_tenant.return_value = []
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
             mock_keycloak.get_all_users = AsyncMock(return_value=[])
+            mock_keycloak.get_user_ids_with_realm_role = AsyncMock(return_value=set())
 
             mock_list_groups.return_value = [_group("custom-group", "grp-custom")]
 
@@ -227,17 +237,22 @@ class TestSyncGroupsOrchestration:
             kc_user.id = "ah-user-1"
             kc_user.email = "alice@example.com"
             mock_keycloak.get_all_users = AsyncMock(return_value=[kc_user])
+            mock_keycloak.get_user_ids_with_realm_role = AsyncMock(return_value=set())
 
             utr = MagicMock()
             utr.user_id = "ah-user-1"
             mock_utr.objects.return_value = [utr]
 
-            mock_list_groups.return_value = [_group("aihub:T1:R1", "grp-1")]
+            mock_list_groups.return_value = [
+                _group("aihub:T1:R1", "grp-1"),
+                _group(f"aihub:T1:{SYS_ADMIN_ROLE}", "grp-sys"),
+            ]
             mock_list_users.return_value = [_user("alice@example.com", "owui-1")]
 
             await provisioner._sync_groups()
 
-            mock_update_members.assert_called_once_with("grp-1", ["owui-1"], scim=ANY)
+            mock_update_members.assert_any_call("grp-1", ["owui-1"], scim=ANY)
+            mock_update_members.assert_any_call("grp-sys", [], scim=ANY)
             recorded_accounts.record_all.assert_called_once_with({"ah-user-1": "owui-1"})
 
     @pytest.mark.asyncio
@@ -272,6 +287,7 @@ class TestSyncGroupsOrchestration:
 
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
             mock_keycloak.get_all_users = AsyncMock(return_value=[])
+            mock_keycloak.get_user_ids_with_realm_role = AsyncMock(return_value=set())
 
             utr = MagicMock()
             utr.user_id = "ah-user-1"
@@ -282,7 +298,7 @@ class TestSyncGroupsOrchestration:
 
             await provisioner._sync_groups()
 
-            mock_update_members.assert_called_once_with("grp-1", [], scim=ANY)
+            mock_update_members.assert_any_call("grp-1", [], scim=ANY)
 
     @pytest.mark.asyncio
     async def test_sync_idempotent(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -315,9 +331,13 @@ class TestSyncGroupsOrchestration:
 
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
             mock_keycloak.get_all_users = AsyncMock(return_value=[])
+            mock_keycloak.get_user_ids_with_realm_role = AsyncMock(return_value=set())
             mock_utr.objects.return_value = []
 
-            mock_list_groups.return_value = [_group("aihub:T1:R1", "grp-1")]
+            mock_list_groups.return_value = [
+                _group("aihub:T1:R1", "grp-1"),
+                _group(f"aihub:T1:{SYS_ADMIN_ROLE}", "grp-sys"),
+            ]
 
             await provisioner._sync_groups()
 
@@ -343,6 +363,7 @@ class TestSyncGroupsLocking:
             mock_tenant.objects.return_value = []
             mock_role.get_roles_for_tenant.return_value = []
             mock_kc.get_all_users = AsyncMock(return_value=[])
+            mock_kc.get_user_ids_with_realm_role = AsyncMock(return_value=set())
 
             await provisioner._sync_groups()
 
@@ -360,3 +381,62 @@ class TestSyncGroupsLocking:
 
         # No group reconciliation happens when the serialization lock is contended.
         mock_list_groups.assert_not_called()
+
+
+class TestSysAdminGroupMembership:
+    """A sysadmin uses every agent without a tenant role, so the tenant they act in gives them a group of their own."""
+
+    @staticmethod
+    def _tenant(name: str, tenant_id: str) -> MagicMock:
+        tenant = MagicMock()
+        tenant.name = name
+        tenant.id = tenant_id
+        tenant.access_rules = []
+        return tenant
+
+    @pytest.mark.asyncio
+    async def test_sys_admin_without_role_joins_only_their_active_tenants_group(
+        self, provisioner: OpenWebuiProvisioner
+    ) -> None:
+        active_users_by_tenant = {"tid-1": {"kc-sys", "kc-plain"}, "tid-2": set()}
+        with (
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity") as mock_utr,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.KeycloakAdminService"
+            ) as mock_keycloak,
+            patch.object(
+                provisioner._openwebui,
+                "list_groups",
+                return_value=[
+                    _group(f"aihub:T1:{SYS_ADMIN_ROLE}", "grp-sys-1"),
+                    _group(f"aihub:T2:{SYS_ADMIN_ROLE}", "grp-sys-2"),
+                ],
+            ),
+            patch.object(
+                provisioner._openwebui,
+                "list_users",
+                return_value=[_user("sys@example.com", "owui-sys"), _user("plain@example.com", "owui-plain")],
+            ),
+            patch.object(provisioner._openwebui, "update_group_members") as mock_update_members,
+        ):
+            mock_tenant.objects.return_value = [self._tenant("T1", "tid-1"), self._tenant("T2", "tid-2")]
+            mock_role.get_roles_for_tenant.return_value = []
+            mock_utr.objects.return_value = []
+            mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(side_effect=active_users_by_tenant.get)
+            mock_keycloak.get_user_ids_with_realm_role = AsyncMock(return_value={"kc-sys"})
+            sys_admin, plain_user = MagicMock(), MagicMock()
+            sys_admin.id, sys_admin.email = "kc-sys", "sys@example.com"
+            plain_user.id, plain_user.email = "kc-plain", "plain@example.com"
+            mock_keycloak.get_all_users = AsyncMock(return_value=[sys_admin, plain_user])
+
+            await provisioner._sync_groups()
+
+            mock_keycloak.get_user_ids_with_realm_role.assert_awaited_once_with(SYS_ADMIN_ROLE)
+            assert {call.args[0]: call.args[1] for call in mock_update_members.call_args_list} == {
+                "grp-sys-1": ["owui-sys"],
+                "grp-sys-2": [],
+            }

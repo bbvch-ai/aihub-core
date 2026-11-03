@@ -6,6 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from scim2_models import Group
 
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
+from swiss_ai_hub.core.infrastructure.openwebui.openwebui_group_access import SYS_ADMIN_GROUP_ACCESS_RULES
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_knowledge_sync import OpenWebuiKnowledgeSync
 
 MODULE = "swiss_ai_hub.core.infrastructure.openwebui.openwebui_knowledge_sync"
@@ -120,3 +122,27 @@ async def test_an_entry_we_created_but_never_recorded_is_removed():
     client, _ = await _sync({}, [], existing)
 
     assert client.delete_knowledge.await_args.args[1] == "orphan"
+
+
+@pytest.mark.asyncio
+async def test_the_sys_admin_group_may_reference_every_collection_its_tenant_allows():
+    sys_admin_group = Group(id="g-sys", display_name=f"aihub:acme:{SYS_ADMIN_ROLE}")
+    role_rules = ROLE_RULES | {("acme", SYS_ADMIN_ROLE): SYS_ADMIN_GROUP_ACCESS_RULES}
+    client = _client([])
+    with (
+        patch.object(
+            OpenWebuiKnowledgeSync,
+            "listing",
+            return_value={POLICIES: ("HR / Policies", "Company policies"), ("legal", "contracts"): ("Legal", "")},
+        ),
+        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity") as entity,
+    ):
+        entity.all_entries.return_value = []
+        await OpenWebuiKnowledgeSync(client, "en").sync(
+            MagicMock(), [HR_GROUP, sys_admin_group], {"acme": ["aihub.user.knowledge.hr.>"]}, role_rules
+        )
+
+    grants_by_name = {
+        call.args[1]: [g.principal_id for g in call.args[3]] for call in client.create_knowledge.await_args_list
+    }
+    assert grants_by_name == {"HR / Policies": ["g-hr", "g-sys"], "Legal": []}

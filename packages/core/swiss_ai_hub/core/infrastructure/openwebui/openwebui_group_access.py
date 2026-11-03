@@ -7,6 +7,11 @@ from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 
 AIHUB_GROUP_PREFIX = "aihub:"
 
+# Rules of the per-tenant ``aihub:{tenant}:AIHubSysAdmin`` group. A sysadmin needs no tenant role to use every
+# agent, so the group stands in for a full tenant admin — still under the tenant's ceiling, so the picker offers
+# what the tenant offers. Admin and user rules are separate hierarchies, hence both.
+SYS_ADMIN_GROUP_ACCESS_RULES = ["aihub.admin.>", "aihub.user.>"]
+
 type TenantAccessRules = dict[str, list[str]]
 """Maps tenant name to its access rule strings."""
 

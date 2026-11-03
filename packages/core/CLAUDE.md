@@ -444,7 +444,7 @@ parsing and returns a fixed identity built from the constants in `test_identity.
 Sysadmin-only endpoints (those requiring the `AIHubSysAdmin` Keycloak realm role) are NOT protected by a separate auth
 handler. They use `Security(self.sys_admin_user())` from the `Controller` base class, which wraps `authenticated_user()`
 and gates on `UserIdentity.is_sys_admin`. The flag itself is populated by the regular auth handlers from the JWT roles
-claim (or, for static tokens, via `KeycloakAdminService.get_user_realm_roles`).
+claim (or, for static tokens and OpenWebUI's signed headers, via `KeycloakAdminService.get_user_realm_roles`).
 
 ### Permission System (AccessChecker)
 

@@ -12,6 +12,7 @@ from scim2_models import Group, User
 
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
@@ -21,6 +22,7 @@ from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_group_access import (
     AIHUB_GROUP_PREFIX,
+    SYS_ADMIN_GROUP_ACCESS_RULES,
     OpenWebuiGroupAccess,
     RoleAccessRules,
     TenantAccessRules,
@@ -88,7 +90,10 @@ type AiHubToOwuiUserIdMapping = dict[str, str]
 """Maps AI-Hub user IDs (keys) to OpenWebUI user IDs (values), matched by email or SCIM external id."""
 
 type DesiredGroupMembers = dict[str, list[str]]
-"""Maps an ``aihub:{tenant}:{role}`` group name to the AI-Hub user IDs that belong in it."""
+"""Maps an ``aihub:{tenant}:{role}`` group name to the AI-Hub user IDs that belong in it.
+
+Besides one group per tenant role, every tenant has an ``aihub:{tenant}:AIHubSysAdmin`` group holding the sysadmins
+acting in it, since a sysadmin uses every agent without any tenant role."""
 
 
 class OpenWebuiProvisioner:
@@ -264,6 +269,7 @@ class OpenWebuiProvisioner:
             tenant_name = tenant["name"]
             for role in roles_by_tenant.get(tenant_name, []):
                 groups.add(f"{AIHUB_GROUP_PREFIX}{tenant_name}:{role['name']}")
+            groups.add(f"{AIHUB_GROUP_PREFIX}{tenant_name}:{SYS_ADMIN_ROLE}")
         return groups
 
     @staticmethod
@@ -292,7 +298,12 @@ class OpenWebuiProvisioner:
         roles_by_tenant: dict[str, list[dict[str, Any]]],
         aihub_groups: dict[str, Group],
     ) -> DesiredGroupMembers:
-        """Only users whose active tenant is the group's tenant belong in it, matching the tenant they act in."""
+        """Only users whose active tenant is the group's tenant belong in it, matching the tenant they act in.
+
+        The sysadmin group is written after the role groups, so a tenant role that happens to share its name never
+        adds that role's holders to it.
+        """
+        sys_admin_ids = await KeycloakAdminService.get_user_ids_with_realm_role(SYS_ADMIN_ROLE)
         desired: DesiredGroupMembers = {}
         for tenant in tenants:
             tenant_id = tenant["id"]
@@ -305,6 +316,10 @@ class OpenWebuiProvisioner:
 
                 all_utr = UserTenantRoleEntity.objects(tenant_id=tenant_id, roles=role_data["name"])
                 desired[group_name] = [utr.user_id for utr in all_utr if utr.user_id in active_user_ids]
+
+            sys_admin_group_name = f"{AIHUB_GROUP_PREFIX}{tenant['name']}:{SYS_ADMIN_ROLE}"
+            if sys_admin_group_name in aihub_groups:
+                desired[sys_admin_group_name] = sorted(sys_admin_ids & active_user_ids)
         return desired
 
     async def _provision_missing_accounts(
@@ -323,7 +338,8 @@ class OpenWebuiProvisioner:
         account by the Keycloak ``sub`` passed as its external id.
 
         Only group members get one: an account without a group sees no model, and a user without an active
-        tenant or role yet joins a group through the sync that setting either of them triggers.
+        tenant or role yet joins a group through the sync that setting either of them triggers. A sysadmin with
+        an active tenant is a member of that tenant's sysadmin group, so they get one without any tenant role.
         """
         provisioned: AiHubToOwuiUserIdMapping = {}
         for user in keycloak_users:
@@ -699,13 +715,18 @@ class OpenWebuiProvisioner:
     def _build_role_rules() -> RoleAccessRules:
         """Keys rules by (tenant display name, role name) so same-named roles in different tenants
         stay distinct. The tenant display name matches the ``aihub:{tenant}:{role}`` group naming and
-        the ``tenant_rules`` keying, so the lookup in ``_compute_access_for_*`` lines up."""
+        the ``tenant_rules`` keying, so the lookup in ``_compute_access_for_*`` lines up.
+
+        Each tenant's sysadmin group is added last, so its rules win over a tenant role of the same name."""
         tenant_name_by_id = {str(tenant.id): tenant.name for tenant in TenantMetadataEntity.objects()}
-        return {
+        role_rules: RoleAccessRules = {
             (tenant_name_by_id[role.tenant_id], role.name): list(role.access_rules)
             for role in RoleEntity.objects()
             if role.tenant_id in tenant_name_by_id
         }
+        for tenant_name in tenant_name_by_id.values():
+            role_rules[(tenant_name, SYS_ADMIN_ROLE)] = list(SYS_ADMIN_GROUP_ACCESS_RULES)
+        return role_rules
 
     async def _delete_legacy_preset_models(self, http: httpx.AsyncClient) -> None:
         """One-time migration: removes pre-0.11.3 ``aihub-agent-*`` / ``aihub-model-*`` preset rows.

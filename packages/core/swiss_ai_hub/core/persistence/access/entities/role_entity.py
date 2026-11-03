@@ -4,6 +4,7 @@ from typing import Self
 from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentListField, IntField, ListField, StringField
 from mongoengine.errors import ValidationError
 
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.auth.usage.usage_limit_models import RoleUsageLimit, UsageLimitPeriod
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -105,7 +106,13 @@ class RoleEntity(Document):
         tenant_id: str,
         usage_limits: list["UsageLimit"] | None = None,
     ) -> Self:
-        """Creates a new tenant-scoped role."""
+        """Creates a new tenant-scoped role.
+
+        ``AIHubSysAdmin`` is reserved: the OpenWebUI provisioner gives every tenant an ``aihub:{tenant}:AIHubSysAdmin``
+        group for its sysadmins, which a tenant role of that name would share.
+        """
+        if name == SYS_ADMIN_ROLE:
+            raise ValueError(f"The role name '{SYS_ADMIN_ROLE}' is reserved for system administrators.")
         role = cls(
             name=name,
             description=description,
