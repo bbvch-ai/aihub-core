@@ -9,7 +9,7 @@ from functools import partial
 from typing import Annotated, Any, ClassVar, Literal
 
 from fastapi import HTTPException, UploadFile
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, ImageBlock
 from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from openai import APIStatusError, AsyncOpenAI, HttpxBinaryResponseContent
@@ -801,8 +801,8 @@ class OpenaiService:
         Images inside the messages and files sent as `file` parts are all checked before any is stored, so a refused
         request leaves nothing behind. Only what this request sent is checked and stored: with `reconstruct_history`
         the earlier messages come from the thread, where their images were stored on their own turn. A message that
-        answers an open human-in-the-loop request becomes a response that carries text only, so inline files are
-        refused there before anything is stored, rather than stored and silently left out.
+        answers an open human-in-the-loop request becomes a response that carries text only, so its inline files and
+        images are refused there before anything is stored, rather than stored and silently left out.
         """
         messages = chat_completion_request.llama_index_messages
         reconstruct = bool(context.thread_id and chat_completion_request.metadata.reconstruct_history)
@@ -813,15 +813,16 @@ class OpenaiService:
         sent = messages[-1:] if reconstruct else messages
         thread = ChatService.existing_thread_of(context.user, str_to_object_id(context.thread_id))
         sent_files = chat_completion_request.inline_files()
+        sends_images = any(isinstance(block, ImageBlock) for message in messages[-1:] for block in message.blocks)
         if (
-            sent_files
+            (sent_files or sends_images)
             and thread
             and PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(str(thread.id))
         ):
             raise HTTPException(
                 status_code=409,
                 detail="This message answers a question the agent is waiting on, and such an answer cannot carry "
-                "files. Answer it first, then send the files with a new message.",
+                "files or images. Answer it first, then send them with a new message.",
             )
         images = StoredImage.checked_all(sent, context)
         inline_files = await InlineFile.store_all(sent_files, context)

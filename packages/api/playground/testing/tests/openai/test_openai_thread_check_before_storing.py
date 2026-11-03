@@ -84,6 +84,24 @@ async def test_inline_files_answering_an_open_request_are_refused_before_storing
 
 
 @pytest.mark.asyncio
+async def test_images_answering_an_open_request_are_refused_before_storing(context: ApiPayloadContext):
+    request = request_with([{"type": "text", "text": "This one."}, IMAGE_PART])
+    store_images = AsyncMock()
+    with (
+        patch(f"{_SERVICE}.ChatService.existing_thread_of", return_value=Mock(id=THREAD_ID)),
+        patch(
+            f"{_SERVICE}.PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread", return_value=[Mock()]
+        ),
+        patch(f"{_SERVICE}.StoredImage.store_all", store_images),
+        pytest.raises(HTTPException) as refused,
+    ):
+        await OpenaiService._agent_turn(request, context)
+
+    assert refused.value.status_code == 409
+    store_images.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_an_answer_to_an_open_request_without_inline_files_goes_through(context: ApiPayloadContext):
     request = request_with("Yes, go ahead.", metadata={"files": [UPLOADED]})
     with (
