@@ -187,6 +187,7 @@ thread:
 chat:
   assistant: Assistente
   document: Documento
+  image: Immagine
 event:
   list:
     firstInteraction: 'Prima interazione:'

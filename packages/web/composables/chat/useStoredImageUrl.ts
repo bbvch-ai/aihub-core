@@ -22,7 +22,7 @@ export const useStoredImageUrl = (url: MaybeRefOrGetter<string | null | undefine
   type Source = [string | null | undefined, string | null | undefined]
   watch((): Source => [toValue(url), tenantId.value], async ([current, tenant]: Source) => {
     release()
-    const stored = current?.match(STORED_IMAGE)
+    const stored = current ? STORED_IMAGE.exec(current) : null
     if (!stored) {
       src.value = current ?? undefined
       return
