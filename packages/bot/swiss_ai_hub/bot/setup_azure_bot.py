@@ -3,29 +3,25 @@ import json
 import re
 import subprocess
 import sys
-from collections.abc import Callable
 from pathlib import Path
 
 from pymongo import MongoClient
 
-# Every pattern rejects a leading "-" so no value can be parsed by the Azure CLI as an option of its own.
 BOT_NAME_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{1,63}")
 RESOURCE_GROUP_PATTERN = re.compile(r"(?!-)[\w().-]{0,89}[\w()-]")
 LOCATION_PATTERN = re.compile(r"[a-z0-9]{2,40}")
 TENANT_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9.-]{0,252}")
 TOKEN_URL_PATTERN = re.compile(r"https://[A-Za-z0-9.-]+(?::\d{1,5})?(?:/[A-Za-z0-9._~-]+)*")
 TOKEN_PATH_PATTERN = re.compile(r"/[A-Za-z0-9._~/-]*")
-BOT_SKUS = ["F0", "S1"]
+BOT_SKU_PATTERN = re.compile(r"F0|S1")
 
 
-def matching(pattern: re.Pattern[str], description: str) -> Callable[[str], str]:
-    def validate(value: str) -> str:
-        match = pattern.fullmatch(value)
-        if match is None:
-            raise argparse.ArgumentTypeError(f"invalid {description}: {value!r}")
-        return match.group(0)
-
-    return validate
+def validated(value: str, pattern: re.Pattern[str], description: str) -> str:
+    match = pattern.fullmatch(value)
+    if match is None:
+        print(f"Invalid {description}: {value!r}")
+        sys.exit(2)
+    return match.group(0)
 
 
 def read_system_message_file(path: str) -> str:
@@ -214,7 +210,7 @@ def save_credentials_in_mongo(
     print("Credentials successfully saved in MongoDB.")
 
 
-def main():
+def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Set up an Azure Bot using the Azure CLI by creating an Azure AD app "
         "registration and saving its credentials to MongoDB."
@@ -223,41 +219,34 @@ def main():
         "--resource-group",
         "-rg",
         required=True,
-        type=matching(RESOURCE_GROUP_PATTERN, "resource group"),
         help="Name of the Azure resource group.",
     )
-    parser.add_argument(
-        "--bot-name", "-bot", required=True, type=matching(BOT_NAME_PATTERN, "bot name"), help="Name for the Azure Bot."
-    )
+    parser.add_argument("--bot-name", "-bot", required=True, help="Name for the Azure Bot.")
     parser.add_argument(
         "--token-path",
         "-path",
         required=True,
-        type=matching(TOKEN_PATH_PATTERN, "token path"),
         help="API endpoint path for the bot (e.g. '/token/messages').",
     )
     parser.add_argument(
         "--token-url",
         "-url",
         required=True,
-        type=matching(TOKEN_URL_PATTERN, "token URL"),
         help="HTTPS API URL for the bot (e.g. 'https://example.com').",
     )
     parser.add_argument(
         "--location",
         "-loc",
         default="westeurope",
-        type=matching(LOCATION_PATTERN, "location"),
         help="Azure location for the bot (default: 'westeurope').",
     )
     parser.add_argument(
         "--tenant-id",
         "-tid",
         default=None,
-        type=matching(TENANT_ID_PATTERN, "tenant ID"),
         help="Azure tenant ID for the Azure Bot (default: None).",
     )
-    parser.add_argument("--sku", "-sku", default="F0", choices=BOT_SKUS, help="Azure Bot SKU (default: 'F0').")
+    parser.add_argument("--sku", "-sku", default="F0", help="Azure Bot SKU, F0 or S1 (default: 'F0').")
 
     # MongoDB parameters
     parser.add_argument(
@@ -276,7 +265,24 @@ def main():
     # Slack OAuth token
     parser.add_argument("--slack-token", "-slack", required=False, help="Slack OAuth token for the bot.")
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def validate_arguments(args: argparse.Namespace) -> argparse.Namespace:
+    """Validate every value that reaches an Azure CLI command; no pattern accepts a leading "-" option marker."""
+    args.resource_group = validated(args.resource_group, RESOURCE_GROUP_PATTERN, "resource group")
+    args.bot_name = validated(args.bot_name, BOT_NAME_PATTERN, "bot name")
+    args.token_path = validated(args.token_path, TOKEN_PATH_PATTERN, "token path")
+    args.token_url = validated(args.token_url, TOKEN_URL_PATTERN, "token URL")
+    args.location = validated(args.location, LOCATION_PATTERN, "location")
+    args.sku = validated(args.sku, BOT_SKU_PATTERN, "SKU")
+    if args.tenant_id is not None:
+        args.tenant_id = validated(args.tenant_id, TENANT_ID_PATTERN, "tenant ID")
+    return args
+
+
+def main():
+    args = validate_arguments(parse_arguments())
 
     app_id = create_app_registration(bot_name=args.bot_name, tenant_id=args.tenant_id)
     app_password = reset_app_credentials(app_id=app_id)
