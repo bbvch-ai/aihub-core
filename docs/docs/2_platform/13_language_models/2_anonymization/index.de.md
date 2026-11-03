@@ -147,6 +147,43 @@ stehen in `infra/deployment/templates/configs/presidio-analyzer.yaml`; Änderung
 einen Neustart des Analyzers, keinen Image-Build.
 :::
 
+## Dimensionierung des Analyzers
+
+Eine Analyse dauert auf jeder Anzahl CPUs gleich lang: etwa 0,5 Sekunden für eine Nachricht mit 400 Zeichen,
+5 Sekunden für 4'000 Zeichen und 24 Sekunden für 20'000. Mehr CPUs lassen den Analyzer mehr Aufrufe gleichzeitig
+bedienen, sodass Benutzer weniger lange in der Warteschlange stehen. Gemessen mit den standardmässigen 4 CPUs und mit
+auf 8 erhöhtem CPU-Limit:
+
+| Text | Gleichzeitige Benutzer | 4 CPUs: Aufrufe/s, Median-Wartezeit | 8 CPUs: Aufrufe/s, Median-Wartezeit |
+| ------------ | ---------------------- | ----------------------------------- | ----------------------------------- |
+| 400 Zeichen | 16 | 2,9, 5,4 s | 5,4, 2,9 s |
+| 4'000 Zeichen | 16 | 0,29, 41 s | 0,53, 29 s |
+| 20'000 Zeichen | 4 | 0,06, 69 s | 0,11, 37 s |
+
+Das Gateway analysiert nur, was es noch nicht gesehen hat: die Nachrichten eines Aufrufs parallel und jede frühere
+Nachricht einer Konversation aus einem Cache. Runde 10 eines Chats mit einem System-Prompt von 4'000 Zeichen kostet den
+Analyzer unter 2 Sekunden statt 25.
+
+Alle sechs sind optional: ohne Wert gelten die Standardwerte unten. Setzen Sie sie in der Umgebungsdatei und starten Sie
+danach den Analyzer neu (für das Timeout `litellm`):
+
+| Variable | Standard | Was sie festlegt |
+| ------------------------------------ | -------- | ------------------------------------------------------------------------- |
+| `PRESIDIO_ANALYZER_CPUS` | `4` | CPU-Limit des Containers |
+| `PRESIDIO_ANALYZER_MEMORY` | `4G` | Speicherlimit; jeder Worker belegt etwa 3 GiB |
+| `PRESIDIO_ANALYZER_WORKERS` | `1` | Prozesse, jeder mit eigener Kopie der Modelle |
+| `PRESIDIO_ANALYZER_THREADS` | `4` | Anfragen, die ein Worker gleichzeitig analysiert |
+| `PRESIDIO_ANALYZER_TORCH_THREADS` | `2` | CPU-Threads pro Analyse |
+| `PRESIDIO_ANALYZER_TIMEOUT_SECONDS` | `150` | Wie lange das Gateway auf eine Analyse wartet, bevor es den Aufruf ablehnt |
+
+Halten Sie Worker × Threads × Torch-Threads gleich dem CPU-Limit. Für 8 CPUs genügt es, `PRESIDIO_ANALYZER_CPUS` auf
+`8` zu setzen (1 × 4 × 2). Für 16 CPUs verwenden Sie 2 Worker und `PRESIDIO_ANALYZER_MEMORY=7G`.
+
+::: warning
+Lassen Sie die Torch-Threads bei 2: mit 1 dauert ein Text mit 20'000 Zeichen 85 Sekunden statt 24. Der Gewinn über
+8 CPUs ist auf Server-Hardware noch nicht gemessen.
+:::
+
 ## Grenzen
 
 - Das Modell muss Platzhalter genau so zurückschreiben, wie es sie erhalten hat. Ein Modell, das sie verändert

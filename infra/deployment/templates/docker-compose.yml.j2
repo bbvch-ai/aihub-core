@@ -28,6 +28,14 @@
 {%- set stage_postfix = stage + ".gpu" if gpu_enabled else stage %}
 {%- set config_variant_suffix = config_file_suffix if config_file_suffix is defined else "." + stage_postfix %}
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
+{#- Bind mounts of the dev stack get SELinux's shared label, so rootless Podman on Fedora/RHEL may read and write them.
+    Docker without SELinux (Ubuntu, Docker Desktop) ignores the suffix; servers keep their mounts unchanged. #}
+{%- set selinux_rw = ':z' if stage == 'dev' else '' %}
+{%- set selinux_ro = ',z' if stage == 'dev' else '' %}
+{#- Rootless Podman serves its Docker API under the user's runtime dir, so the dev stack takes the path from DOCKER_SOCKET.
+    The default is deliberate, unlike elsewhere: a local .env predating the variable would otherwise leave the mount empty,
+    and compose then refuses the whole file. #}
+{%- set docker_socket = '${DOCKER_SOCKET:-/var/run/docker.sock}' if stage == 'dev' else '/var/run/docker.sock' %}
 {%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if gpu_enabled else 'text-generation/gemma-4-31B-it' %}
 {#- OpenWebUI resolves TASK_MODEL against its own registry and denies non-admins any model without a
     read grant. The provisioner registers this raw LiteLLM id directly as the base-registry row — no
@@ -191,7 +199,7 @@ services:
     environment:
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
     volumes:
-      - {{ global.volume_root }}/seaweedfs-master:/data
+      - {{ global.volume_root }}/seaweedfs-master:/data{{ selinux_rw }}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/dir/status"]
       interval: 30s
@@ -229,7 +237,7 @@ services:
     environment:
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
     volumes:
-      - {{ global.volume_root }}/seaweedfs-volume:/data
+      - {{ global.volume_root }}/seaweedfs-volume:/data{{ selinux_rw }}
     depends_on:
       seaweedfs-master:
         condition: service_healthy
@@ -277,7 +285,7 @@ services:
       # Disable default leveldb2 store when using etcd
       WEED_LEVELDB2_ENABLED: "false"
     volumes:
-      - {{ global.volume_root }}/seaweedfs-filer:/data
+      - {{ global.volume_root }}/seaweedfs-filer:/data{{ selinux_rw }}
     depends_on:
       seaweedfs-master:
         condition: service_started
@@ -310,7 +318,7 @@ services:
       - "9000:9000"
     {%- endif %}
     volumes:
-      - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
+      - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro{{ selinux_ro }}
     entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
     environment:
       # S3 Authentication
@@ -379,7 +387,7 @@ services:
       SEAWEEDFS_MASTER: "{{ SEAWEEDFS_MASTER_ENDPOINT }}"
       SEAWEEDFS_FILER: "{{ SEAWEEDFS_FILER_ENDPOINT }}"
     volumes:
-      - ./configs/seaweedfs/ttl-init.sh:/usr/local/bin/ttl-init.sh:ro
+      - ./configs/seaweedfs/ttl-init.sh:/usr/local/bin/ttl-init.sh:ro{{ selinux_ro }}
     entrypoint: ["/bin/sh", "/usr/local/bin/ttl-init.sh"]
     logging:
       driver: json-file
@@ -410,7 +418,7 @@ services:
       AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
       AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
     volumes:
-      - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
+      - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro{{ selinux_ro }}
     entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]
     logging:
       driver: json-file
@@ -428,7 +436,7 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
     volumes:
-      - ./configs/oauth2-proxy:/templates:ro
+      - ./configs/oauth2-proxy:/templates:ro{{ selinux_ro }}
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
       OAUTH2_PROXY_COOKIE_SECURE: "true"
@@ -520,7 +528,7 @@ services:
       # Token for healthcheck (used after auth is enabled by etcd-init)
       ETCD_TOKEN: ${ETCD_TOKEN}
     volumes:
-      - {{ global.volume_root }}/etcd-data:/etcd
+      - {{ global.volume_root }}/etcd-data:/etcd{{ selinux_rw }}
     healthcheck:
       # Use credentials for healthcheck to work after auth is enabled
       test: [ "CMD", "etcdctl", "--user=root:${ETCD_TOKEN}", "endpoint", "health" ]
@@ -581,8 +589,8 @@ services:
       # Token-based authentication - root password for Milvus
       COMMON_SECURITY_DEFAULTROOTPASSWORD: ${MILVUS_ROOT_PASSWORD}
     volumes:
-      - {{ global.volume_root }}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus-config{{ config_variant_suffix }}.yml:/milvus/configs/milvus.yaml
+      - {{ global.volume_root }}/milvus-data:/var/lib/milvus{{ selinux_rw }}
+      - ./configs/milvus/milvus-config{{ config_variant_suffix }}.yml:/milvus/configs/milvus.yaml{{ selinux_rw }}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
@@ -638,7 +646,7 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
     volumes:
-      - ./configs/oauth2-proxy:/templates:ro
+      - ./configs/oauth2-proxy:/templates:ro{{ selinux_ro }}
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4182
       OAUTH2_PROXY_COOKIE_SECURE: "true"
@@ -703,8 +711,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_MULTIPLE_DATABASES: openwebui,langfuse,dagster,litellm,keycloak
     volumes:
-      - {{ global.volume_root }}/postgres-data:/var/lib/postgresql/data
-      - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+      - {{ global.volume_root }}/postgres-data:/var/lib/postgresql/data{{ selinux_rw }}
+      - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro{{ selinux_ro }}
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "5432:5432"
@@ -783,7 +791,7 @@ services:
       POSTGRES_PASSWORD: ${MONGO_PASSWORD}
       POSTGRES_DB: postgres
     volumes:
-      - {{ global.volume_root }}/ferretdb-postgres-data:/var/lib/postgresql/data
+      - {{ global.volume_root }}/ferretdb-postgres-data:/var/lib/postgresql/data{{ selinux_rw }}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME} -d postgres"]
       interval: 10s
@@ -844,10 +852,10 @@ services:
       - "7687:7687"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/neo4j/logs:/logs
-      - {{ global.volume_root }}/neo4j/config:/config
-      - {{ global.volume_root }}/neo4j/data:/data
-      - {{ global.volume_root }}/neo4j/plugins:/plugins
+      - {{ global.volume_root }}/neo4j/logs:/logs{{ selinux_rw }}
+      - {{ global.volume_root }}/neo4j/config:/config{{ selinux_rw }}
+      - {{ global.volume_root }}/neo4j/data:/data{{ selinux_rw }}
+      - {{ global.volume_root }}/neo4j/plugins:/plugins{{ selinux_rw }}
     environment:
       NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
     healthcheck:
@@ -893,10 +901,10 @@ services:
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
     {%- else %}
-      - {{ global.volume_root }}/clickhouse-data:/var/lib/clickhouse
-      - {{ global.volume_root }}/clickhouse-logs:/var/log/clickhouse-server
+      - {{ global.volume_root }}/clickhouse-data:/var/lib/clickhouse{{ selinux_rw }}
+      - {{ global.volume_root }}/clickhouse-logs:/var/log/clickhouse-server{{ selinux_rw }}
     {%- endif %}
-      - ./configs/clickhouse/clickhouse-backup.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
+      - ./configs/clickhouse/clickhouse-backup.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro{{ selinux_ro }}
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "127.0.0.1:8123:8123"
@@ -1024,7 +1032,7 @@ services:
     # Mount the mkcert root CA (from `make local-cert`); NODE_EXTRA_CA_CERTS (below)
     # trusts it so the OIDC backchannel to Traefik's self-signed cert validates.
     volumes:
-      - "./configs/traefik/certs/rootCA.pem:/certs/rootCA.pem:ro"
+      - "./configs/traefik/certs/rootCA.pem:/certs/rootCA.pem:ro{{ selinux_ro }}"
     {%- endif %}
     environment:
       HOSTNAME: "0.0.0.0"
@@ -1194,9 +1202,9 @@ services:
       KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
     volumes:
-      - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
-      - ./configs/keycloak/aihub-realm{{ config_variant_suffix }}.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
-      - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro
+      - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro{{ selinux_ro }}
+      - ./configs/keycloak/aihub-realm{{ config_variant_suffix }}.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro{{ selinux_ro }}
+      - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro{{ selinux_ro }}
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
       interval: 10s
@@ -1285,11 +1293,11 @@ services:
       # bootstrap-only (seeded by the keycloak container's --import-realm), not
       # reconciled by keycloak-config-cli.
     volumes:
-      - ./configs/keycloak/managed/10-roles{{ config_variant_suffix }}.json:/config/10-roles.json:ro
-      - ./configs/keycloak/managed/20-client-scopes{{ config_variant_suffix }}.json:/config/20-client-scopes.json:ro
-      - ./configs/keycloak/managed/30-clients{{ config_variant_suffix }}.json:/config/30-clients.json:ro
-      - ./configs/keycloak/managed/40-auth-flows{{ config_variant_suffix }}.json:/config/40-auth-flows.json:ro
-      - ./configs/keycloak/managed/60-service-accounts{{ config_variant_suffix }}.json:/config/60-service-accounts.json:ro
+      - ./configs/keycloak/managed/10-roles{{ config_variant_suffix }}.json:/config/10-roles.json:ro{{ selinux_ro }}
+      - ./configs/keycloak/managed/20-client-scopes{{ config_variant_suffix }}.json:/config/20-client-scopes.json:ro{{ selinux_ro }}
+      - ./configs/keycloak/managed/30-clients{{ config_variant_suffix }}.json:/config/30-clients.json:ro{{ selinux_ro }}
+      - ./configs/keycloak/managed/40-auth-flows{{ config_variant_suffix }}.json:/config/40-auth-flows.json:ro{{ selinux_ro }}
+      - ./configs/keycloak/managed/60-service-accounts{{ config_variant_suffix }}.json:/config/60-service-accounts.json:ro{{ selinux_ro }}
     depends_on:
       keycloak:
         condition: service_healthy
@@ -1318,8 +1326,8 @@ services:
       # Token-based authentication for NATS clients
       NATS_TOKEN: ${NATS_TOKEN}
     volumes:
-      - ./configs/nats/nats-config{{ config_variant_suffix }}.conf:/etc/nats/nats-server.conf
-      - {{ global.volume_root }}/nats:/data/nats
+      - ./configs/nats/nats-config{{ config_variant_suffix }}.conf:/etc/nats/nats-server.conf{{ selinux_rw }}
+      - {{ global.volume_root }}/nats:/data/nats{{ selinux_rw }}
     healthcheck:
       test: [ "NONE" ]
     {%- if stage in ['dev', 'local', 'build'] %}
@@ -1349,7 +1357,7 @@ services:
     # --appendonly yes enables AOF persistence for durability between RDB snapshots.
     command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN} --appendonly yes --appendfsync everysec
     volumes:
-      - {{ global.volume_root }}/valkey-data:/data
+      - {{ global.volume_root }}/valkey-data:/data{{ selinux_rw }}
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "6379:6379"
@@ -1447,7 +1455,7 @@ services:
       RCLONE_CONFIG_MIRROR_SECRET_ACCESS_KEY: ${SANDBOX_MIRROR_S3_SECRET_KEY}
       RCLONE_CONFIG_MIRROR_NO_CHECK_BUCKET: "true"
     volumes:
-      - {{ global.volume_root }}/open-terminal:/home:ro
+      - {{ global.volume_root }}/open-terminal:/home:ro{{ selinux_ro }}
     networks:
       - backend  # reaches seaweedfs-s3; never code-sandbox, so the sandbox has no path to it
     logging:
@@ -1538,9 +1546,15 @@ services:
       BACKUP_DAGSTER_CLEANUP_BATCH_LIMIT: ${DAGSTER_CLEANUP_BATCH_LIMIT}
       BACKUP_MAINTENANCE_DISABLED: ${MAINTENANCE_DISABLED}
     volumes:
-      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
-      - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home{{ selinux_rw }}
+      - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro{{ selinux_ro }}
+      - {{ docker_socket }}:/var/run/docker.sock:ro
+    {%- if stage == 'dev' %}
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt:
+      - label=disable
+    {%- endif %}
     healthcheck:
       test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4266"]
       interval: 30s
@@ -1563,7 +1577,7 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
     volumes:
-      - ./configs/oauth2-proxy:/templates:ro
+      - ./configs/oauth2-proxy:/templates:ro{{ selinux_ro }}
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
       OAUTH2_PROXY_COOKIE_SECURE: "true"
@@ -1639,9 +1653,9 @@ services:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
     volumes:
-      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
-      - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/backup/backup-workspace{{ config_variant_suffix }}.yml:/etc/dagster/workspace.yaml:ro
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home{{ selinux_rw }}
+      - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro{{ selinux_ro }}
+      - ./configs/backup/backup-workspace{{ config_variant_suffix }}.yml:/etc/dagster/workspace.yaml:ro{{ selinux_ro }}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
       interval: 30s
@@ -1680,9 +1694,9 @@ services:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
     volumes:
-      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
-      - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/backup/backup-workspace{{ config_variant_suffix }}.yml:/etc/dagster/workspace.yaml:ro
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home{{ selinux_rw }}
+      - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro{{ selinux_ro }}
+      - ./configs/backup/backup-workspace{{ config_variant_suffix }}.yml:/etc/dagster/workspace.yaml:ro{{ selinux_ro }}
     healthcheck:
       test: ["CMD", "dagster-daemon", "liveness-check"]
       interval: 30s
@@ -1719,8 +1733,8 @@ services:
       - "8182:8000"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
-      - {{ global.volume_root }}/vllm-cache:/root/.cache/vllm
+      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface{{ selinux_rw }}
+      - {{ global.volume_root }}/vllm-cache:/root/.cache/vllm{{ selinux_rw }}
     environment:
       HF_HOME: /root/.cache/huggingface
       HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
@@ -1771,8 +1785,8 @@ services:
       - "8183:8000"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
-      - {{ global.volume_root }}/vllm-cache:/root/.cache/vllm
+      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface{{ selinux_rw }}
+      - {{ global.volume_root }}/vllm-cache:/root/.cache/vllm{{ selinux_rw }}
     environment:
       HF_HOME: /root/.cache/huggingface
       HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
@@ -1818,8 +1832,8 @@ services:
       - "8184:8000"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
-      - {{ global.volume_root }}/vllm-cache:/root/.cache/vllm
+      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface{{ selinux_rw }}
+      - {{ global.volume_root }}/vllm-cache:/root/.cache/vllm{{ selinux_rw }}
     environment:
       HF_HOME: /root/.cache/huggingface
       HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
@@ -1870,7 +1884,7 @@ services:
       - "8185:8000"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/speaches-models:/home/ubuntu/.cache/huggingface/hub
+      - {{ global.volume_root }}/speaches-models:/home/ubuntu/.cache/huggingface/hub{{ selinux_rw }}
     environment:
       WHISPER__INFERENCE_DEVICE: cuda
       PRELOAD_MODELS: Systran/faster-whisper-large-v3
@@ -1918,14 +1932,17 @@ services:
     {%- endif %}
     environment:
       ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
-      # Each request thread runs its own torch threads, so 4 x 2 oversubscribes the 4 CPUs at most twice when all are
-      # busy; torch's default oversubscribes far more and a short request takes seconds. 4 request threads let a short
-      # request and the health probe through beside long analyses.
-      GUNICORN_THREADS: "4"
-      OMP_NUM_THREADS: "2"
-      MKL_NUM_THREADS: "2"
+      # Sized per deployment (.env): workers x request threads x torch threads should match the CPU limit, and every
+      # worker needs about 3 GiB of the memory limit. Torch threads stay at 2: one makes a long text 3 to 4 times slower.
+      # The `:-` defaults here and on the limits are a deliberate exception to "defaults live in .env": an unset CPU or
+      # memory limit is an empty string that stops Compose from parsing the whole file (every `docker compose` call
+      # without --env-file, CI's cleanup included), and an empty worker count stops gunicorn from starting.
+      GUNICORN_WORKERS: ${PRESIDIO_ANALYZER_WORKERS:-1}
+      GUNICORN_THREADS: ${PRESIDIO_ANALYZER_THREADS:-4}
+      OMP_NUM_THREADS: ${PRESIDIO_ANALYZER_TORCH_THREADS:-2}
+      MKL_NUM_THREADS: ${PRESIDIO_ANALYZER_TORCH_THREADS:-2}
     volumes:
-      - ./configs/presidio/analyzer.yaml:/app/analyzer.yaml:ro
+      - ./configs/presidio/analyzer.yaml:/app/analyzer.yaml:ro{{ selinux_ro }}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health', timeout=5)"]
       interval: 15s
@@ -1935,8 +1952,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "4"
-          memory: 4G  # Measured: 2.6-2.9 GiB after a run over 50K-character inputs
+          cpus: ${PRESIDIO_ANALYZER_CPUS:-4}
+          memory: ${PRESIDIO_ANALYZER_MEMORY:-4G}  # Measured: about 3.1 GiB per worker under load
     logging:
       driver: json-file
       options:
@@ -1981,6 +1998,7 @@ services:
       # Read by the pii-anonymisation guardrail (litellm_functions/pii_anonymisation_guardrail.py)
       PRESIDIO_ANALYZER_API_BASE: {{ PRESIDIO_ANALYZER_API_BASE }}
       PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
+      PRESIDIO_ANALYZER_TIMEOUT_SECONDS: ${PRESIDIO_ANALYZER_TIMEOUT_SECONDS:-150}  # optional, like the analyzer sizing
       PII_ANONYMISE_EXTERNAL_MODELS: ${PII_ANONYMISE_EXTERNAL_MODELS}
       OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
@@ -1996,11 +2014,11 @@ services:
     volumes:
       # LITELLM_CONFIG_VARIANT picks one mounted variant; an unknown value makes LiteLLM fail to start.
       {%- for litellm_variant in litellm_variants %}
-      - ./configs/litellm/litellm-config.{{ litellm_variant }}{{ config_variant_suffix }}.yml:/app/config.{{ litellm_variant }}.yml
+      - ./configs/litellm/litellm-config.{{ litellm_variant }}{{ config_variant_suffix }}.yml:/app/config.{{ litellm_variant }}.yml{{ selinux_rw }}
       {%- endfor %}
-      - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
-      - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro
-      - ./configs/litellm/pii_anonymisation_audit.py:/app/pii_anonymisation_audit.py:ro
+      - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro{{ selinux_ro }}
+      - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro{{ selinux_ro }}
+      - ./configs/litellm/pii_anonymisation_audit.py:/app/pii_anonymisation_audit.py:ro{{ selinux_ro }}
     command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
       otel-collector:
@@ -2060,7 +2078,7 @@ services:
       - "8200:8000"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/open-terminal:/home
+      - {{ global.volume_root }}/open-terminal:/home{{ selinux_rw }}
     environment:
       OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
       OPEN_TERMINAL_MULTI_USER: "true"  # Per-user home directories (/home/<user>)
@@ -2156,7 +2174,7 @@ services:
       - "8881:8080"
     {%- endif %}
     volumes:
-      - ./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - ./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro{{ selinux_ro }}
     environment:
       SEARXNG_BASE_URL: http://searxng:8080
       SEARXNG_SECRET: ${SEARXNG_SECRET_KEY}
@@ -2298,7 +2316,7 @@ services:
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     volumes:
-      - ./configs/otel/otel-config{{ config_variant_suffix }}.yml:/etc/otel-config.yml
+      - ./configs/otel/otel-config{{ config_variant_suffix }}.yml:/etc/otel-config.yml{{ selinux_rw }}
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "4317:4317"
@@ -2352,9 +2370,9 @@ services:
     network_mode: "host"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/open-webui:/app/backend/data
-      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro
-      - ./configs/openwebui/style/custom.css:/app/build/static/custom.css:ro
+      - {{ global.volume_root }}/open-webui:/app/backend/data{{ selinux_rw }}
+      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro{{ selinux_ro }}
+      - ./configs/openwebui/style/custom.css:/app/build/static/custom.css:ro{{ selinux_ro }}
     configs:
       - source: openwebui-disclaimer
         target: /app/build/static/aihub-disclaimer.json
@@ -2707,8 +2725,8 @@ services:
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
       FUNCTIONS_DIR: /functions
     volumes:
-      - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro
-      - ./configs/openwebui/functions:/functions:ro
+      - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro{{ selinux_ro }}
+      - ./configs/openwebui/functions:/functions:ro{{ selinux_ro }}
     entrypoint: ["/bin/sh", "/init-openwebui.sh"]
     logging:
       driver: json-file
@@ -2731,7 +2749,7 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
     volumes:
-      - ./configs/oauth2-proxy:/templates:ro
+      - ./configs/oauth2-proxy:/templates:ro{{ selinux_ro }}
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
       OAUTH2_PROXY_COOKIE_SECURE: "true"
@@ -2803,8 +2821,8 @@ services:
       - -w
       - /dagster_home/workspace.yaml
     volumes:
-      - ./configs/dagster/dagster-config{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace{{ config_variant_suffix }}.yml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro{{ selinux_ro }}
+      - ./configs/dagster/workspace{{ config_variant_suffix }}.yml:/dagster_home/workspace.yaml:ro{{ selinux_ro }}
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -2845,8 +2863,8 @@ services:
       - dagster-daemon
       - run
     volumes:
-      - ./configs/dagster/dagster-config{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace{{ config_variant_suffix }}.yml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro{{ selinux_ro }}
+      - ./configs/dagster/workspace{{ config_variant_suffix }}.yml:/dagster_home/workspace.yaml:ro{{ selinux_ro }}
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -2893,7 +2911,7 @@ services:
       retries: 3
       start_period: 5s
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - {{ docker_socket }}:/var/run/docker.sock:ro
     environment:
       # Security: Only enable required Docker API sections
       CONTAINERS: 1    # Required for Traefik to discover services
@@ -2942,14 +2960,14 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - "./configs/traefik/traefik-config{{ config_variant_suffix }}.yml:/etc/traefik/traefik.yml:ro"
-      - "./configs/traefik/middlewares{{ config_variant_suffix }}.yml:/etc/traefik/dynamic/middlewares.yml:ro"
+      - "./configs/traefik/traefik-config{{ config_variant_suffix }}.yml:/etc/traefik/traefik.yml:ro{{ selinux_ro }}"
+      - "./configs/traefik/middlewares{{ config_variant_suffix }}.yml:/etc/traefik/dynamic/middlewares.yml:ro{{ selinux_ro }}"
       {%- if stage in ['dev', 'local', 'build'] %}
-      - "./configs/traefik/tls{{ config_variant_suffix }}.yml:/etc/traefik/dynamic/tls.yml:ro"
-      - "./configs/traefik/certs/dev-cert.pem:/certs/dev-cert.pem:ro"
-      - "./configs/traefik/certs/dev-key.pem:/certs/dev-key.pem:ro"
+      - "./configs/traefik/tls{{ config_variant_suffix }}.yml:/etc/traefik/dynamic/tls.yml:ro{{ selinux_ro }}"
+      - "./configs/traefik/certs/dev-cert.pem:/certs/dev-cert.pem:ro{{ selinux_ro }}"
+      - "./configs/traefik/certs/dev-key.pem:/certs/dev-key.pem:ro{{ selinux_ro }}"
       {%- else %}
-      - "/srv/app/traefik/acme.json:/etc/traefik/acme.json"
+      - "/srv/app/traefik/acme.json:/etc/traefik/acme.json{{ selinux_rw }}"
       {%- endif %}
     environment:
       TRAEFIK_LOG_LEVEL: ${LOG_LEVEL}
@@ -3598,6 +3616,9 @@ services:
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
@@ -3696,6 +3717,9 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3801,6 +3825,9 @@ services:
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
@@ -3876,6 +3903,9 @@ services:
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -4162,6 +4192,16 @@ services:
       SLACK_CHANNEL_ID: ${SLACK_CHANNEL_ID}
       SLACK_SERVICE_URL: ${SLACK_SERVICE_URL}
 
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
@@ -4327,6 +4367,9 @@ services:
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
@@ -4390,6 +4433,16 @@ services:
 
       # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -4753,6 +4806,16 @@ services:
 
       # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}

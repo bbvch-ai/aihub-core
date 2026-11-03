@@ -352,13 +352,23 @@ def test_should_ship_no_builtin_presidio_guardrail_or_anonymizer() -> None:
 
 
 def test_should_refuse_the_call_when_analyzer_is_unavailable() -> None:
-    """Last: stops the analyzer for the rest of the session."""
+    """Last two: stop the analyzer for the rest of the session. A text the gateway has not analysed yet."""
     compose("stop", "presidio-analyzer")
     calls_before = len(received())
 
-    response = chat("echo-external", PROMPT)
+    response = chat("echo-external", f"Neuer Fall: {PROMPT}")
 
     print(f"\nHTTP {response.status_code}: {response.text[:300]}")
     assert response.status_code >= 400
     assert "PII anonymisation is unavailable" in response.text
     assert len(received()) == calls_before  # nothing reached the provider
+
+
+def test_should_still_anonymise_a_text_analysed_before_when_analyzer_is_unavailable() -> None:
+    """A conversation's earlier messages come from the gateway's cache, so they need no analyzer."""
+    answer = chat("echo-external", PROMPT).json()["choices"][0]["message"]["content"]
+
+    seen = last_prompt_seen()
+    print(f"\nPROVIDER RECEIVED: {seen}")
+    assert not [value for value in PII if value in seen]
+    assert answer == PROMPT

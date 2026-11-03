@@ -8,6 +8,7 @@ from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from opentelemetry import context as otel_context
+from opentelemetry.trace import Span
 from pydantic import ValidationError
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, StepConfig
@@ -450,19 +451,7 @@ class AgentDispatcher(BaseDispatcher):
             try:
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
-                self.agent_run_tracer.trace_step_error(step_span, e)
-                # The SDK wraps a gateway failure as "Error code: N - {…}", which is what both the
-                # log line and the chat UI used to show. Unwrapping it here is what makes an agent
-                # error say "Invalid model name passed in model=…" instead.
-                cause = ModelGatewayErrorHandler.cause_of(e)
-                if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
-                    event = ExceptionEvent(message=cause)
-                    await self.publish_event(event, topic)
-                # One record, not two: this used to log the exception twice — once bare, once with
-                # the step name — so every agent failure arrived in the backend as two identical
-                # tracebacks, doubling both the volume and any count taken from it. The run id is
-                # on the record because a traceback that cannot be tied to a run is not actionable.
-                logger.exception(f"Step '{step_method.__name__}' failed in run {topic.execution_context_id}: {cause}")
+                await self._report_step_failure(step_method, e, topic, step_span)
                 return
 
             # Always finalize the span so Langfuse receives trace metadata (name, session,
@@ -470,9 +459,35 @@ class AgentDispatcher(BaseDispatcher):
             result_events = self._normalize_step_result(result)
             await self.agent_run_tracer.trace_step_stop(step_span, result_events, topic)
 
-            if result_events:
-                for event in result_events:
+            # A result the broker refuses (one above its payload limit) fails the step like an exception
+            # inside it: otherwise nothing ends the run and the chat waits forever.
+            try:
+                for event in result_events or []:
                     await self._handle_step_result_event(event, topic)
+            except Exception as e:
+                await self._report_step_failure(step_method, e, topic, step_span)
+                return
+            self.agent_run_tracer.trace_step_ok(step_span)
+
+    async def _report_step_failure(
+        self,
+        step_method: Annotated[Callable, "The step that failed."],
+        error: Annotated[Exception, "What it failed with, raised by the step or by publishing its result."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
+        step_span: Annotated[Span, "The step's span, marked as failed."],
+    ) -> None:
+        self.agent_run_tracer.trace_step_error(step_span, error)
+        # The SDK wraps a gateway failure as "Error code: N - {…}", which is what both the
+        # log line and the chat UI used to show. Unwrapping it here is what makes an agent
+        # error say "Invalid model name passed in model=…" instead.
+        cause = ModelGatewayErrorHandler.cause_of(error)
+        if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
+            await self.publish_event(ExceptionEvent(message=cause), topic)
+        # One record, not two: this used to log the exception twice — once bare, once with
+        # the step name — so every agent failure arrived in the backend as two identical
+        # tracebacks, doubling both the volume and any count taken from it. The run id is
+        # on the record because a traceback that cannot be tied to a run is not actionable.
+        logger.exception(f"Step '{step_method.__name__}' failed in run {topic.execution_context_id}: {cause}")
 
     @staticmethod
     def _normalize_step_result(result: Any) -> list[BaseEvent] | None:

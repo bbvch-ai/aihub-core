@@ -106,7 +106,21 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         return dto.agent_class
 
     @override
-    def _register_discovered_class(self, dto: AgentClassDTO) -> None:
+    def _register_discovered_class(self, dto: AgentClassDTO) -> bool:
+        """An agent on a core older than this API announces no API input schema, so its endpoints cannot be built;
+        it is skipped rather than failing the round, which would leave every class after it unregistered and stop
+        the syncs that follow a round."""
+        without_input_schema = [
+            specs.event_name
+            for specs in [*dto.start_events, *dto.hitl_response_events]
+            if specs.api_input_schema is None
+        ]
+        if without_input_schema:
+            logger.warning(
+                f"Agent class {dto.agent_class} announces no API input schema for {', '.join(without_input_schema)}; "
+                "it runs an older swiss-ai-hub core than this API, so its endpoints are registered once it is updated."
+            )
+            return False
         self._register_class_endpoints(
             agent_class=dto.agent_class,
             start_events=dto.start_events,
@@ -114,6 +128,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             hitl_request_events=dto.hitl_request_events,
             hitl_response_events=dto.hitl_response_events,
         )
+        return True
 
     @override
     def _online_class_names(self) -> set[str]:

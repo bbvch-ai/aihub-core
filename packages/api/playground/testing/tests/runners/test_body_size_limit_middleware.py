@@ -1,5 +1,7 @@
+from typing import Annotated
+
 import pytest
-from fastapi import FastAPI, Request
+from fastapi import APIRouter, FastAPI, File, Form, Request, UploadFile
 from httpx import ASGITransport, AsyncClient
 
 from swiss_ai_hub.api.request_limits import BodySizeLimitMiddleware
@@ -12,6 +14,18 @@ EXEMPT = "/parsing/process"
 def client() -> AsyncClient:
     app = FastAPI()
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=LIMIT, exempt_path_suffixes=(EXEMPT,))
+
+    @app.post("/upload")
+    async def upload(file: Annotated[UploadFile, File()], note: Annotated[str, Form()] = "") -> dict:
+        return {"length": len(await file.read())}
+
+    uploads = APIRouter()
+
+    @uploads.post("/upload")
+    async def included_upload(file: Annotated[UploadFile, File()]) -> dict:
+        return {"length": len(await file.read())}
+
+    app.include_router(uploads, prefix="/api/v1/{tenant_id}/files")
 
     @app.post("/json")
     async def echo_json(body: dict) -> dict:
@@ -62,10 +76,24 @@ async def test_a_body_of_any_other_type_or_none_is_bounded_too(client: AsyncClie
 
 
 @pytest.mark.asyncio
-async def test_multipart_uploads_and_exempt_paths_bound_themselves(client: AsyncClient):
-    upload = await client.post("/raw", files={"file": ("a.bin", b"x" * (LIMIT * 2))})
+async def test_form_uploads_and_exempt_paths_bound_themselves(client: AsyncClient):
+    upload = await client.post("/upload", files={"file": ("a.bin", b"x" * (LIMIT * 2))})
     streamed = await client.put(EXEMPT, content=b"x" * (LIMIT * 2), headers={"Content-Type": "application/pdf"})
 
-    assert upload.status_code == 200
+    assert upload.json() == {"length": LIMIT * 2}
     assert streamed.status_code == 200
     assert streamed.json() == {"length": LIMIT * 2}
+
+
+@pytest.mark.asyncio
+async def test_a_form_upload_to_a_route_of_an_included_router_is_not_bounded(client: AsyncClient):
+    """Controllers are mounted with `include_router`, which FastAPI keeps as a wrapper around the router's routes."""
+    response = await client.post("/api/v1/active/files/upload", files={"file": ("a.bin", b"x" * (LIMIT * 2))})
+    assert response.json() == {"length": LIMIT * 2}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("path", ["/json", "/raw"])
+async def test_a_multipart_label_on_a_route_without_a_form_is_bounded(client: AsyncClient, path: str):
+    response = await client.post(path, files={"file": ("a.bin", b"x" * (LIMIT * 2))})
+    assert response.status_code == 413
