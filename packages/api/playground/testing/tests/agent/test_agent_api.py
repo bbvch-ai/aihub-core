@@ -105,7 +105,7 @@ async def test_send_event_to_agent(agent_api_client):
 async def simulated_agent():
     auth = TestAuthHandler()
     runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()
-    runner.mount(AgentController(auth=auth))
+    runner.mount(AgentController(auth=auth).get_image())
     await runner.start_simulation()
     app = runner.create_app()
 
@@ -165,3 +165,42 @@ async def test_openapi_documents_the_inline_file_form(simulated_agent):
     assert "content" in schemas["InlineFile"]["properties"]
     files = str(schemas["UserMessageEventInput"]["properties"]["files"])
     assert "InlineFile" in files and "UserUploadedFile" in files
+
+
+@pytest.mark.asyncio
+async def test_an_image_in_a_message_reaches_the_agent_as_a_reference(simulated_agent):
+    client, runner = simulated_agent
+    png = base64.b64encode(b"\x89PNG not really").decode()
+    message = {
+        "role": "user",
+        "blocks": [
+            {"block_type": "text", "text": "What is this?"},
+            {"block_type": "image", "url": f"data:image/png;base64,{png}"},
+        ],
+    }
+
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/{UserMessageEvent.event_name_from_class()}",
+        json={"messages": [message]},
+    )
+
+    assert response.status_code == 200, response.text
+    received = next(event for event in runner.received_events if event.is_user_message_event)
+    reference = str(received.messages[0].blocks[1].url)
+    assert reference.startswith(f"s3://agent-files/{AGENT_CLASS}/{AGENT_ID}/images/")
+    assert png not in received.model_dump_json()
+
+    name = reference.rsplit("/", 1)[-1]
+    image = await client.get(f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/images/{name}")
+    assert image.status_code == 200
+    assert image.content == b"\x89PNG not really"
+    assert image.headers["content-type"] == "image/png"
+    assert image.headers["x-content-type-options"] == "nosniff"
+    assert "sandbox" in image.headers["content-security-policy"]
+
+
+@pytest.mark.asyncio
+async def test_a_missing_image_is_not_found(simulated_agent):
+    client, _ = simulated_agent
+    response = await client.get(f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/images/{'0' * 64}.png")
+    assert response.status_code == 404

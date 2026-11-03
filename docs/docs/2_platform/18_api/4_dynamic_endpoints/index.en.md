@@ -157,6 +157,11 @@ A request is checked as a whole before any of its files is stored, so a rejected
 | `415`         | Agents cannot read the file type, or the file is an image (send images in the message)  |
 | `422`         | The content is not valid base64                                                         |
 
-Files sent inline never travel inside the event itself, which keeps events small enough for the message bus and the
-event history. The [OpenAI-compatible API](../1_openai_compatible_api/) accepts files for agents the same way, as `file`
-content parts.
+Images inside a message (`{"block_type": "image", "url": "data:image/png;base64,…"}`) are stored the same way, up to 5
+MB each (`AGENT_INLINE_IMAGE_MAX_BYTES`), and the agent receives a reference in their place. A message may reference
+images already stored for the same agent, as the thread history returns them, but no file path and no image of another
+agent.
+
+Files and images sent inline never travel inside the event itself, which keeps events small enough for the message bus
+and the event history. The [OpenAI-compatible API](../1_openai_compatible_api/) accepts files for agents the same way,
+as `file` content parts.

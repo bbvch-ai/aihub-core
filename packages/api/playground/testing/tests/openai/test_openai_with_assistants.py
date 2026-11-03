@@ -1,3 +1,4 @@
+import base64
 import json
 
 import pytest
@@ -20,7 +21,7 @@ COMPLETIONS_ENDPOINT = "/openai/chat/completions"
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def api_client():
+async def simulation():
     auth = TestAuthHandler()
     controller = (
         OpenaiController(auth=auth)
@@ -36,9 +37,15 @@ async def api_client():
         # Create agent config in database after DB connection is established
         runner.create_agent_config_in_db()
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
-            yield client
+            yield client, runner
 
     await runner.stop_simulation()
+
+
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
+async def api_client(simulation):
+    client, _ = simulation
+    return client
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -145,3 +152,38 @@ async def test_chat_completions_json_with_custom_agent_config(api_client):
     assert message.get("content") == expected, (
         f"Expected message content '{expected}' but got '{message.get('content')}'"
     )
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_an_image_url_with_data_reaches_the_agent_as_a_reference(simulation):
+    client, runner = simulation
+    runner.create_agent_config_in_db()
+    png = base64.b64encode(b"\x89PNG for the agent").decode()
+    content = [
+        {"type": "text", "text": "What is this?"},
+        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{png}"}},
+    ]
+
+    response = await client.post(
+        COMPLETIONS_ENDPOINT,
+        json={"model": f"{AGENT_CLASS}/{AGENT_ID}", "messages": [{"role": "user", "content": content}]},
+    )
+
+    assert response.status_code == 200, response.text
+    received = [event for event in runner.received_events if event.is_user_message_event][-1]
+    assert str(received.messages[-1].blocks[1].url).startswith(f"s3://agent-files/{AGENT_CLASS}/{AGENT_ID}/images/")
+    assert png not in received.model_dump_json()
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_an_image_of_another_agent_is_refused(simulation):
+    client, runner = simulation
+    runner.create_agent_config_in_db()
+    content = [{"type": "image_url", "image_url": {"url": f"s3://agent-files/Other/agent/images/{'a' * 64}.png"}}]
+
+    response = await client.post(
+        COMPLETIONS_ENDPOINT,
+        json={"model": f"{AGENT_CLASS}/{AGENT_ID}", "messages": [{"role": "user", "content": content}]},
+    )
+
+    assert response.status_code == 400
