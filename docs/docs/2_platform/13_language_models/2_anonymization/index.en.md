@@ -141,6 +141,42 @@ The analyzer URL and key come from `PRESIDIO_ANALYZER_API_BASE` and `PRESIDIO_AN
 of the analyzer, no image rebuild.
 :::
 
+## Sizing the analyzer
+
+One analysis takes the same time on any number of CPUs: about 0.5 seconds for a 400-character message, 5 seconds for
+4,000 characters and 24 seconds for 20,000. More CPUs let the analyzer serve more calls at once, so users wait less in
+the queue. Measured on the default 4 CPUs and with the CPU limit raised to 8:
+
+| Text | Users at once | 4 CPUs: calls/s, median wait | 8 CPUs: calls/s, median wait |
+| ------------ | ------------- | ---------------------------- | ---------------------------- |
+| 400 chars | 16 | 2.9, 5.4 s | 5.4, 2.9 s |
+| 4,000 chars | 16 | 0.29, 41 s | 0.53, 29 s |
+| 20,000 chars | 4 | 0.06, 69 s | 0.11, 37 s |
+
+The gateway analyses only what it has not seen: the messages of one call side by side, and every earlier message of a
+conversation from a cache. Turn 10 of a chat with a 4,000-character system prompt costs the analyzer under 2 seconds
+instead of 25.
+
+All six are optional: unset, the defaults below apply. Set them in the environment file, then restart the analyzer (and
+`litellm` for the timeout):
+
+| Variable | Default | What it sets |
+| ------------------------------------ | ------- | ---------------------------------------------------------------------- |
+| `PRESIDIO_ANALYZER_CPUS` | `4` | CPU limit of the container |
+| `PRESIDIO_ANALYZER_MEMORY` | `4G` | Memory limit; each worker holds about 3 GiB |
+| `PRESIDIO_ANALYZER_WORKERS` | `1` | Processes, each with its own copy of the models |
+| `PRESIDIO_ANALYZER_THREADS` | `4` | Requests one worker analyses at once |
+| `PRESIDIO_ANALYZER_TORCH_THREADS` | `2` | CPU threads per analysis |
+| `PRESIDIO_ANALYZER_TIMEOUT_SECONDS` | `150` | How long the gateway waits for one analysis before it refuses the call |
+
+Keep workers × threads × torch threads equal to the CPU limit. For 8 CPUs raising `PRESIDIO_ANALYZER_CPUS` to `8` is
+enough (1 × 4 × 2). For 16 CPUs use 2 workers and `PRESIDIO_ANALYZER_MEMORY=7G`.
+
+::: warning
+Leave the torch threads at 2: with 1, a 20,000-character text takes 85 seconds instead of 24. The gain above 8 CPUs has
+not been measured on server hardware yet.
+:::
+
 ## Limits
 
 - The model has to write placeholders back exactly as it received them. A model that changes them (`<Person_1>`) leaves
