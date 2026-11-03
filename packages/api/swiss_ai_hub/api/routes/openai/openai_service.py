@@ -33,7 +33,7 @@ from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event
 from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
-from swiss_ai_hub.core.persistence import TenantMetadataEntity
+from swiss_ai_hub.core.persistence import PersistedAgentEventEntity, TenantMetadataEntity
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes import ChatService, JsonResources, StreamingResources
 
@@ -806,10 +806,25 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest, context: ApiPayloadContext
     ) -> list[UserUploadedFile] | None:
         """The files uploaded beforehand and named in the metadata, then those sent inline as `file` parts, stored
-        first so the event carries only their references."""
-        ChatService.existing_thread_of(context.user, str_to_object_id(context.thread_id))
+        first so the event carries only their references.
+
+        A message that answers an open human-in-the-loop request becomes a response that carries text only, so inline
+        files are refused there before anything is stored, rather than stored and silently left out.
+        """
+        thread = ChatService.existing_thread_of(context.user, str_to_object_id(context.thread_id))
+        inline_files = chat_completion_request.inline_files()
+        if (
+            inline_files
+            and thread
+            and PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(str(thread.id))
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="This message answers a question the agent is waiting on, and such an answer cannot carry "
+                "files. Answer it first, then send the files with a new message.",
+            )
         uploaded = chat_completion_request.metadata.files if chat_completion_request.metadata else None
-        inline = await InlineFile.store_all(chat_completion_request.inline_files(), context)
+        inline = await InlineFile.store_all(inline_files, context)
         return [*(uploaded or []), *inline] or None
 
     @staticmethod
