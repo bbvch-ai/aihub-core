@@ -103,6 +103,7 @@ async def test_the_entry_of_a_deleted_collection_is_removed_even_when_creating_a
     client = _client(existing)
     client.create_knowledge = AsyncMock(side_effect=RuntimeError("OpenWebUI rejected the entry"))
     knowledge_sync = OpenWebuiKnowledgeSync(client, "en")
+    http = MagicMock()
 
     with (
         patch.object(OpenWebuiKnowledgeSync, "listing", return_value={("hr", "reports"): ("HR / Reports", "")}),
@@ -110,7 +111,7 @@ async def test_the_entry_of_a_deleted_collection_is_removed_even_when_creating_a
     ):
         entity.all_entries.return_value = [_entry("k1", *POLICIES)]
         with pytest.raises(RuntimeError):
-            await knowledge_sync.sync(MagicMock(), [HR_GROUP], TENANT_RULES, ROLE_RULES)
+            await knowledge_sync.sync(http, [HR_GROUP], TENANT_RULES, ROLE_RULES)
 
     assert client.delete_knowledge.await_args.args[1] == "k1"
     entity.forget.assert_called_once_with("k1")
