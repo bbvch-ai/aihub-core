@@ -65,7 +65,7 @@ class Conversation(Capability):
     - `compose(history, blocks)` merges context blocks into the history, in the given order, within the input
       budget. Answered with `ContextComposedEvent`, which the chat displays as what the model saw.
     - `complete(answer, stop)` generates the follow-up questions and ends the run with the given stop event, or
-      an `LLMStopEvent` carrying the answer.
+      an `LLMStopEvent` carrying the answer. Both keep the conversation, not the context the model read.
 
     The meta-question gate lives inside `contextualize` on purpose: a blueprint that had to gate its own steps
     could forget to, and detection would race its pipeline. Here nothing downstream exists until the message
@@ -103,8 +103,15 @@ class Conversation(Capability):
 
     @staticmethod
     def complete(answer: LLMEvent, stop: StopEvent | None = None) -> CompleteConversationEvent:
-        """End the turn on this answer; return it last from a step, behind anything that must be published first."""
-        return CompleteConversationEvent(answer=answer, stop=stop)
+        """End the turn on this answer; return it last from a step, behind anything that must be published first.
+
+        Both carry the conversation only (`LLMEvent.for_hand_back`): the context the model read is on
+        `ContextComposedEvent`, and an attached file long in characters made the events ending the turn too large
+        for the broker.
+        """
+        if isinstance(stop, LLMEvent):
+            stop = stop.for_hand_back()
+        return CompleteConversationEvent(answer=answer.for_hand_back(), stop=stop)
 
     @staticmethod
     @step(
@@ -172,7 +179,7 @@ class Conversation(Capability):
             t=t,
         )
         await generate_follow_up_questions(stop_event.chat_messages, conversation.task_llm, displayer, t, user)
-        return stop_event
+        return stop_event.for_hand_back()
 
     @staticmethod
     @step(
@@ -327,12 +334,17 @@ class Conversation(Capability):
         event puts them on the wire ahead of teardown. An answer asked for in a JSON shape gets none, since its
         caller is a program; it ends on the answer validated against the shape instead (`StructuredAnswer`). A stop
         the blueprint supplies is that answer, since its `answer` may be only the summary the follow-ups are grounded
-        on (the extraction's table, the release notes in every language); a refusal ends the run as it is.
+        on (the extraction's table, the release notes in every language); a refusal ends the run as it is, without
+        follow-ups either.
         """
         response_schema = await RequestedResponseSchema.of(run_context, type(agent))
-        if response_schema is not None and not isinstance(request.stop, RefusalStopEvent):
+        if response_schema is not None:
+            if isinstance(request.stop, RefusalStopEvent):
+                return request.stop
             answered = request.stop if isinstance(request.stop, LLMStopEvent) else request.answer
-            return await StructuredAnswer.stop_for(answered, response_schema, conversation, displayer, t, user)
+            return await StructuredAnswer.stop_for(
+                answered, response_schema, conversation, run_context, displayer, t, user
+            )
         await generate_follow_up_questions(request.answer.chat_messages, conversation.task_llm, displayer, t, user)
         if request.stop is not None:
             return request.stop

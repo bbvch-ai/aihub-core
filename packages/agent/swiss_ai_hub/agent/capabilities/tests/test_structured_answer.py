@@ -7,7 +7,9 @@ import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
     CompleteConversationEvent,
+    ContextComposedEvent,
     ContextualizeConversationEvent,
+    ConversationContextualizedEvent,
     LLMEvent,
     LLMStopEvent,
     Message,
@@ -18,10 +20,13 @@ from swiss_ai_hub.core.events.agent import (
     ResponseSchemaViolation,
 )
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
+from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent import FewShotAgent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
+from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
 from swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent import McpReactAgent
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalAgent
@@ -52,6 +57,9 @@ class _RunContext:
 
     async def get(self, key: str, default: Any = None) -> Any:
         return self.values.get(key, default)
+
+    async def set(self, key: str, value: Any) -> None:
+        self.values[key] = json.loads(json.dumps(value))
 
 
 def _requesting(schema: ResponseSchema | None) -> _RunContext:
@@ -88,7 +96,7 @@ def _displayer() -> MagicMock:
 
 
 async def _stop_for(answer: LLMEvent, conversation: MagicMock) -> LLMStopEvent:
-    return await StructuredAnswer.stop_for(answer, INVOICE, conversation, _displayer(), T, user=None)
+    return await StructuredAnswer.stop_for(answer, INVOICE, conversation, _RunContext(), _displayer(), T, user=None)
 
 
 class TestStructuredAnswer:
@@ -127,8 +135,10 @@ class TestStructuredAnswer:
     async def test_a_second_miss_fails_the_run_instead_of_returning_prose(self):
         conversation = _conversation('{"issuer": "ACME AG"}')
 
+        answer = _answer("ACME AG")
+
         with pytest.raises(ResponseSchemaViolation, match="'total' is a required property"):
-            await _stop_for(_answer("ACME AG"), conversation)
+            await _stop_for(answer, conversation)
 
 
 class TestConversationWithASchema:
@@ -151,7 +161,7 @@ class TestConversationWithASchema:
     async def test_a_refusal_handed_to_the_completion_ends_the_run_as_a_refusal(self):
         refusal = RefusalStopEvent(reason=RefusalReason.INPUT_TOO_LARGE)
 
-        with patch(f"{CONVERSATION_MODULE}.generate_follow_up_questions", new=AsyncMock()):
+        with patch(f"{CONVERSATION_MODULE}.generate_follow_up_questions", new=AsyncMock()) as follow_ups:
             stop = await Conversation.complete_conversation_step(
                 LLMWrappingAgent(),
                 request=Conversation.complete(answer=_answer("Too long."), stop=refusal),
@@ -161,7 +171,9 @@ class TestConversationWithASchema:
                 t=T,
             )
 
-        assert stop is refusal
+        assert isinstance(stop, RefusalStopEvent)
+        assert stop.reason == RefusalReason.INPUT_TOO_LARGE
+        follow_ups.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_a_supplied_stop_is_the_answer_validated_not_the_summary_beside_it(self):
@@ -224,3 +236,97 @@ class TestPrompts:
             path = f"agent.conversation.prompt.{key}"
             translated = AgentLocaleHandler(locale)(path, violation="v", schema="s")
             assert translated != T(path, violation="v", schema="s")
+
+
+DOCUMENT = "<REFERENCE_DOCUMENT id='s1a2b3c'>INVOICE 2026-117, ACME AG, Total: 42.50 CHF</REFERENCE_DOCUMENT>"
+
+
+def _wrapping_config() -> LLMWrappingAgentConfig:
+    return LLMWrappingAgentConfig(
+        agent_id="structured",
+        name=LocaleString(en="Structured"),
+        description=LocaleString(en="Structured fixture"),
+        system_prompt=LocaleString(en="You extract data from the user's documents."),
+        llm=LLMConfig(model_name="text-generation/test"),
+    )
+
+
+class TestTheCorrectionAfterHandBack:
+    """`Conversation.complete` keeps only the conversation for the broker, so the correction must not rely on it."""
+
+    @pytest.mark.asyncio
+    async def test_the_correction_reads_the_prompt_the_answering_step_kept(self):
+        prompt = [
+            ChatMessage(role=MessageRole.SYSTEM, content=f"You extract data from the user's documents. {DOCUMENT}"),
+            ChatMessage(role=MessageRole.USER, content="Extract issuer and total."),
+        ]
+        first = LLMEvent(
+            input_messages=[Message.from_llama_index(message) for message in prompt],
+            output_messages=[Message.from_string(role="assistant", content='{"issuer": "ACME AG"}')],
+        )
+        displayer = _displayer()
+        displayer.display_llm_stream = AsyncMock(return_value=first)
+        run_context = _requesting(INVOICE)
+
+        @asynccontextmanager
+        async def _llm(*_args: Any, **_kwargs: Any):
+            yield MagicMock()
+
+        with patch.object(LLMConfig, "cost_reporting_llm", _llm):
+            events = await LLMWrappingAgent().respond_step(
+                event=ContextComposedEvent(history=prompt),
+                ctx=ConversationContextualizedEvent(history=prompt, query="Extract issuer and total."),
+                agent_config=_wrapping_config(),
+                run_context=run_context,
+                displayer=displayer,
+                topic=MagicMock(),
+                t=T,
+            )
+        completion = events[-1]
+        assert all(DOCUMENT not in message.content for message in completion.answer.chat_messages)
+
+        conversation = _conversation('{"issuer": "ACME AG", "total": 42.5}')
+        stop = await Conversation.complete_conversation_step(
+            LLMWrappingAgent(),
+            request=completion,
+            conversation=conversation,
+            run_context=run_context,
+            displayer=displayer,
+            t=T,
+        )
+
+        sent = conversation.achat.await_args.args[0]
+        assert DOCUMENT in sent[0].content
+        assert stop.structured_output == {"issuer": "ACME AG", "total": 42.5}
+
+    @pytest.mark.asyncio
+    async def test_without_a_kept_prompt_tool_calls_whose_results_are_gone_are_dropped(self):
+        call = {"id": "c1", "type": "function", "function": {"name": "read_attached_files", "arguments": "{}"}}
+        answer = LLMEvent(
+            input_messages=[
+                Message.from_string(role="user", content="Read the invoice."),
+                Message.from_llama_index(
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content="Reading it.", additional_kwargs={"tool_calls": [call]}
+                    )
+                ),
+                Message.from_llama_index(
+                    ChatMessage(role=MessageRole.TOOL, content="Total 42.50", additional_kwargs={"tool_call_id": "c1"})
+                ),
+            ],
+            output_messages=[Message.from_string(role="assistant", content="ACME AG, 42.50")],
+        )
+        conversation = _conversation('{"issuer": "ACME AG", "total": 42.5}')
+
+        await Conversation.complete_conversation_step(
+            LLMWrappingAgent(),
+            request=Conversation.complete(answer=answer),
+            conversation=conversation,
+            run_context=_requesting(INVOICE),
+            displayer=_displayer(),
+            t=T,
+        )
+
+        sent = conversation.achat.await_args.args[0]
+        assert not any("tool_calls" in message.additional_kwargs for message in sent)
+        assert [message.content for message in sent[:2]] == ["Read the invoice.", "Reading it."]

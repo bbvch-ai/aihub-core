@@ -31,8 +31,12 @@ primitive fields only, because jambo reads nothing but `properties`. A caller's 
   as is and validated with `jsonschema`, so nested objects and arrays work. A schema may reference only its own
   definitions (`#/...`) and is validated against an empty registry, since resolving any other `$ref` would make the
   agent worker fetch a URL the caller chose. `NaN`, `Infinity` and numbers beyond a float are violations: Python parses
-  them, but strict JSON clients do not. There is no separate forced-function variant: whether the result comes back as
-  `content` or as a tool call is decided by the OpenAI endpoint, which remembers how it was asked.
+  them, but strict JSON clients do not. The schema's patterns run on the `regex` engine against one time budget per
+  check (`ResponseSchemaValidator`), not on Python's `re`: the caller writes both the pattern and, through the prompt,
+  the answer, and one backtracking pattern on `re` froze the agent's event loop for every run. A schema may therefore
+  not combine `unevaluatedProperties` with `patternProperties`, which jsonschema matches on `re` itself. There is no
+  separate forced-function variant: whether the result comes back as `content` or as a tool call is decided by the
+  OpenAI endpoint, which remembers how it was asked.
 - **The result is `LLMStopEvent.structured_output`**, the parsed and validated JSON. The answer text holds the same
   JSON, so clients that read text keep working. RAG and Expert RAG end on their own stop events and have no place for
   it.
@@ -52,6 +56,13 @@ primitive fields only, because jambo reads nothing but `properties`. A caller's 
   follow-up questions.
   - When the answer does not match, `StructuredAnswer` asks the model once more, non-streamed and with thinking off
     (`ReasoningFreeChat`), from the same prompt with the validation error and the schema. A second miss fails the run.
+  - The same prompt is kept in the run context by the call that asked for the shape (`StructuredAnswer.keep_prompt`):
+    the completion carries only the conversation (`LLMEvent.for_hand_back`), since the documents the model read made the
+    events ending a turn too large for the broker, and a correction without them had to invent the values it was asked
+    to fix. The run context is not bound by that limit and goes with the run. A tool loop keeps the prompt with its tool
+    calls as text, and without a kept prompt the conversation is used with its result-less tool calls taken out, which
+    providers refuse.
+  - A refusal handed over ends the run as it is, without follow-ups.
   - A stop the blueprint hands over is the answer validated. Its `answer` may be only the summary the follow-ups are
     grounded on: Knowledge Extraction's table and Release Notes' text in every language sit on the stop.
   - This covers a model without structured outputs, one that ignored them, and a blueprint that did not pass the schema

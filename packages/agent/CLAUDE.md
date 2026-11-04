@@ -200,7 +200,11 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
   window instead.
 - `complete(answer, stop=None)` → generates the follow-up questions and ends the run with the given stop event (RAG's
   outcome events) or an `LLMStopEvent` carrying the answer. Return it **last** from the step, behind anything that must
-  be published before teardown.
+  be published before teardown. The answer (and a given `LLMEvent` stop) is handed back through core's
+  `LLMEvent.for_hand_back()`: user and assistant turns only, the newest within `HAND_BACK_BYTES` (200,000), the last one
+  cut when it alone is longer. The context the model read stays on `ContextComposedEvent`; carried on here, an attached
+  file long in characters (a form of `____` blanks passes the token budget) pushed the completion and the stop event
+  past the broker's payload limit and the run never ended.
 
 **Structured answers** (`UserMessageEvent.response_schema`, ADR
 `2026_11_02_structured_answers_from_conversational_agents`): a caller may ask for the answer as JSON matching a schema.
@@ -210,9 +214,14 @@ sends `response_format` to a model with `supports_response_schema`; nothing is a
 Few-Shot do; the tool loop only on a turn without tools, since the shape next to the tools made a model answer at once
 without reading the attached file. `Conversation.complete` then validates the answer (the supplied stop, if a
 non-refusal one was handed over) instead of generating follow-ups, corrects it once with the schema and the error,
-thinking off (`StructuredAnswer`) and ends with `LLMStopEvent.structured_output`; a second miss fails the run. With a
-schema, the meta-question gate is skipped. `Agent.supports_response_schema()` is derived: a blueprint that returns
-`Conversation.complete(...)` and declares only `LLMStopEvent` completion stops supports it, so RAG does not.
+thinking off (`StructuredAnswer`) and ends with `LLMStopEvent.structured_output`; a second miss fails the run, and a
+refusal ends it at once, without follow-ups. The correction needs the prompt the model read, which the completion no
+longer carries (`LLMEvent.for_hand_back`), so every call asking for the shape keeps it:
+`await StructuredAnswer.keep_prompt(run_context, answer, response_schema)` right after `display_llm_stream` (the run
+context is not bound by the broker's limit). Without a kept prompt the correction falls back to the conversation, with
+tool calls whose results are gone taken out. With a schema, the meta-question gate is skipped.
+`Agent.supports_response_schema()` is derived: a blueprint that returns `Conversation.complete(...)` and declares only
+`LLMStopEvent` completion stops supports it, so RAG does not.
 
 **`Memory`** (needs `MemoryFields`): `recall(query, org_memory_namespaces)` → `MemoryRecalledEvent` with one block per
 scope; `remember(...)` builds the memory-storage delegation directly, no step behind it, so returning it ahead of the
@@ -591,17 +600,19 @@ These are `AfterValidator`s that skip validation when the value is a `FormkitEle
 
 3. **Storage**: Admin creates a profile via Admin UI. API validates submission against
    `agent_config_specs.config_schema`, saves to `AgentConfigEntityDocument` (MongoDB `agent_configs` collection) with
-   `(agent_class, agent_id)` compound unique index.
+   `(agent_class, agent_id)` compound unique index. Secret fields (`Password`, `SecretFileInput`, found by
+   `SecretFieldWalker` on the stored announced form) are stored encrypted and masked in every response (#1587).
 
 4. **Runtime Fetch**: On each `StartEvent`, dispatcher calls `AgentConfigClient.fetch_config(agent_class, agent_id)` →
    NATS RPC (`aihub.rpc.config.agent.{class}.{id}`) → `AgentConfigResponder` (API side) →
-   `AgentConfigEntityDocument.find_for_class_and_id()` → returns `config_data` dict.
+   `AgentConfigEntityDocument.find_for_class_and_id()` → returns `config_data` dict, secrets still encrypted.
 
 5. **Merge**: `Form.deep_merge(non_configurable_values, submitted_config)` → combines deployment-fixed values with
-   user-configured values. Result stored in `RunContext`.
+   user-configured values. Result stored in `RunContext`, secrets still encrypted.
 
 6. **Injection**: `agent_config_type.model_validate(merged_dict)` reconstructs typed config in data mode. Injected into
-   `@step()` methods that declare the `AgentConfig` subclass as a parameter.
+   `@step()` methods that declare the `AgentConfig` subclass as a parameter. Secrets are decrypted only here, right
+   before validation, so plaintext never reaches RunContext or Valkey.
 
 **This runs on every dispatched event, before any step.** So a config-level validation error is not a validation error —
 it stops the whole agent for that profile. The dispatcher reports it as an `ExceptionEvent` rather than letting it
@@ -629,6 +640,10 @@ await runner.run_forever()
 **AgentDispatcher** (extends `BaseDispatcher`): The core workflow executor.
 
 - On `StartEvent`: fetches config via NATS RPC, deep-merges with non-configurable defaults, stores in `RunContext`
+- Decrypts secrets lazily in `_decrypted`, right before `model_validate` and only at the secret paths. Only a config
+  holding a value with the ciphertext prefix computes `secret_field_paths()` (cached per dispatcher) and needs
+  `AIHUB_CONFIG_ENCRYPTION_KEY`; never compute it at construction, since configs that do not override `as_form()` cannot
+  build a form. ADR `2026_11_02_agent_config_secrets_decrypted_at_validation`
 - For each event: finds waiting steps via `get_steps_waiting_for_event()`, checks preconditions, executes ready steps
 - Builds kwargs via dependency injection (events from history + injected services)
 - Instantiates a fresh `agent()` for each step execution (stateless)
@@ -637,6 +652,9 @@ await runner.run_forever()
 - On `StopEvent`/`ExceptionEvent`: cleans up `RunContext`, marks completion. Handled **before** config resolution —
   teardown needs no config, and the `ExceptionEvent` below would otherwise hit the same failure it reports and never
   retire its run
+- If a step raises, or publishing one of its results fails (e.g. `MaxPayloadError`, which `JSPublisher` does not retry),
+  `_report_step_failure` publishes an `ExceptionEvent` for a `stop_on_error` step, so the run ends instead of waiting
+  for an event the broker refused
 - If the config cannot be fetched, merged or validated: publishes an `ExceptionEvent` and aborts the run, so the chat
   shows an error instead of hanging forever. The message carries field locations and reasons only — an agent config
   holds credentials (e.g. `ImapClientConfig.password`) and this text reaches the user's chat

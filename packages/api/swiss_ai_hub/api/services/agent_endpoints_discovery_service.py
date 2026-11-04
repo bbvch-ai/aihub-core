@@ -106,7 +106,21 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         return dto.agent_class
 
     @override
-    def _register_discovered_class(self, dto: AgentClassDTO) -> None:
+    def _register_discovered_class(self, dto: AgentClassDTO) -> bool:
+        """An agent on a core older than this API announces no API input schema, so its endpoints cannot be built;
+        it is skipped rather than failing the round, which would leave every class after it unregistered and stop
+        the syncs that follow a round."""
+        without_input_schema = [
+            specs.event_name
+            for specs in [*dto.start_events, *dto.hitl_response_events]
+            if specs.api_input_schema is None
+        ]
+        if without_input_schema:
+            logger.warning(
+                f"Agent class {dto.agent_class} announces no API input schema for {', '.join(without_input_schema)}; "
+                "it runs an older swiss-ai-hub core than this API, so its endpoints are registered once it is updated."
+            )
+            return False
         self._register_class_endpoints(
             agent_class=dto.agent_class,
             start_events=dto.start_events,
@@ -114,6 +128,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             hitl_request_events=dto.hitl_request_events,
             hitl_response_events=dto.hitl_response_events,
         )
+        return True
 
     @override
     def _online_class_names(self) -> set[str]:
@@ -413,6 +428,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
 
             await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
+            await AgentEndpointsDiscoveryService._refuse_unsupported_response_schema(start_event_input, agent_class)
+
             if thread_id is not None:
                 try:
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
@@ -465,6 +482,12 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         return send_event
 
     @staticmethod
+    async def _refuse_unsupported_response_schema(start_event_input: BaseModel, agent_class: str) -> None:
+        """Called before the thread is created, so a refused request leaves no empty conversation behind."""
+        if getattr(start_event_input, "response_schema", None) is not None:
+            await to_thread(AgentService.refuse_unsupported_response_schema, agent_class)
+
+    @staticmethod
     async def _input_event(
         start_event_input: BaseModel,
         *,
@@ -473,8 +496,6 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         event_parents: list[str],
         context: ApiPayloadContext,
     ) -> StartEvent | HumanInTheLoopResponseEvent:
-        if getattr(start_event_input, "response_schema", None) is not None:
-            await to_thread(AgentService.refuse_unsupported_response_schema, context.agent_class)
         return await expected_type.from_api_payload(
             # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
             # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
@@ -525,6 +546,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             usage_status = await usage_limits.check_and_raise(
                 user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
             )
+
+            await AgentEndpointsDiscoveryService._refuse_unsupported_response_schema(start_event_input, agent_class)
 
             if thread_id is not None:
                 try:

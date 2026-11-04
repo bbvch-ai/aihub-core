@@ -1,18 +1,21 @@
 from typing import ClassVar
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
+from starlette.exceptions import HTTPException
 
 
 class OpenaiErrorHandler:
     """Errors the platform raises itself on the OpenAI-compatible routes, in OpenAI's error format.
 
-    The OpenAI SDKs read only `error.message`, and a request they consider malformed is a 400, not FastAPI's 422.
-    `detail` stays next to it, as on gateway errors, because the platform's own clients read that. Every other route
-    keeps FastAPI's default responses.
+    The OpenAI SDKs read only `error.message`, and a request they consider malformed is a 400, not FastAPI's 422,
+    whether the schema or the platform's own checks (an invalid base64 file) refused it. `detail` stays next to it, as
+    on gateway errors, because the platform's own clients read that. Starlette's base exception is handled, not only
+    FastAPI's subclass, because routing (405) and form parsing raise the base. Every other route keeps FastAPI's
+    default responses.
     """
 
     ROUTE_MARKER: ClassVar[str] = "/openai/"
@@ -36,8 +39,13 @@ class OpenaiErrorHandler:
     async def handle_http_error(request: Request, exception: HTTPException) -> Response:
         if OpenaiErrorHandler.ROUTE_MARKER not in request.url.path:
             return await http_exception_handler(request, exception)
+        status_code = (
+            status.HTTP_400_BAD_REQUEST
+            if exception.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+            else exception.status_code
+        )
         return OpenaiErrorHandler.response(
-            exception.status_code,
+            status_code,
             OpenaiErrorHandler.message_of(exception.detail),
             param=OpenaiErrorHandler.param_of(exception.detail),
             detail=exception.detail,

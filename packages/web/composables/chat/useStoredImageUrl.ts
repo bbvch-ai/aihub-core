@@ -20,9 +20,14 @@ export const useStoredImageUrl = (url: MaybeRefOrGetter<string | null | undefine
   }
 
   type Source = [string | null | undefined, string | null | undefined]
-  watch((): Source => [toValue(url), tenantId.value], async ([current, tenant]: Source) => {
+  watch((): Source => [toValue(url), tenantId.value], async ([current, tenant]: Source, _previous, onCleanup) => {
+    // A fetch outlived by a newer source or by the component must not publish, or its blob URL is never revoked.
+    let superseded = false
+    onCleanup(() => {
+      superseded = true
+    })
     release()
-    const stored = current?.match(STORED_IMAGE)
+    const stored = current ? STORED_IMAGE.exec(current) : null
     if (!stored) {
       src.value = current ?? undefined
       return
@@ -35,6 +40,7 @@ export const useStoredImageUrl = (url: MaybeRefOrGetter<string | null | undefine
       path: { tenant_id: tenant, agent_class: agentClass!, agent_id: agentId!, name: name! },
       responseType: 'blob',
     }) as Blob
+    if (superseded) return
     objectUrl = URL.createObjectURL(blob)
     src.value = objectUrl
   }, { immediate: true })

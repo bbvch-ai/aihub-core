@@ -40,6 +40,7 @@ from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
+from swiss_ai_hub.api.util.config_secrets import ConfigSecrets
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
 from swiss_ai_hub.api.util.model_limit_validator import ModelLimitValidator
@@ -330,8 +331,11 @@ class AgentService:
     @trace_fn
     async def get_agent_configuration(agent_class: str, agent_id: str) -> dict[str, Any]:
         """
-        Retrieve the current configuration data for a specific agent.
+        Retrieve the current configuration data for a specific agent, encrypted at secret paths.
         Returns empty dict if no configuration has been saved.
+
+        Deliberately not masked: the agent decrypts its secrets only when it validates the config, so the RPC
+        reply, and the RunContext the agent stores it in, carry ciphertext and never plaintext.
 
         Off the loop because `AgentConfigResponder` serves this over NATS RPC, and the requester
         (`NCRequester`) gives it one 5 s shot with no retry. A blocking query here competes with every
@@ -350,7 +354,7 @@ class AgentService:
     ) -> dict[str, Any]:
         """
         Update the configuration data for a specific agent instance.
-        Validates the configuration against the agent's schema before saving.
+        Validates the configuration against the agent's schema before saving, and stores secrets encrypted.
         """
         class_entity = AgentClassEntity.get_by_agent_class(agent_class)
         if not class_entity:
@@ -361,6 +365,9 @@ class AgentService:
             raise HTTPException(status_code=404, detail=f"Agent config {agent_class}/{agent_id} not found.")
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
+        # Before the required-field check, so a secret left untouched in the form, which comes back as its mask,
+        # counts as filled in.
+        configuration = ConfigSecrets.restored(configuration, config_entity.config_data, class_entity.form_elements)
 
         config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
         # Before the generated model, which only sees the schema's notion of required — a key being
@@ -385,6 +392,7 @@ class AgentService:
         # while the SSE handler addresses it by the entity key, and a mismatch silently fails the
         # is_primary_agent stop check (stream never closes -> no title/follow-up). Mirrors create.
         configuration["agent_id"] = agent_id
+        configuration = ConfigSecrets.encrypted(configuration, class_entity.form_elements)
         config_entity.config_data = configuration
         config_entity.save()
 
@@ -460,6 +468,8 @@ class AgentService:
             )
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
+        # Nothing is stored yet, so a mask carried over from a cloned or imported profile is refused with a 400.
+        config = ConfigSecrets.restored(config, None, class_entity.form_elements)
 
         config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
         # Before the generated model, which only sees the schema's notion of required — a key being
@@ -483,11 +493,14 @@ class AgentService:
             metadata.name, metadata.description, agent_class, metadata.icon
         )
 
-        full_config_data = {
-            **config,
-            "agent_class": agent_class,
-            "agent_id": request.agent_id,
-        }
+        full_config_data = ConfigSecrets.encrypted(
+            {
+                **config,
+                "agent_class": agent_class,
+                "agent_id": request.agent_id,
+            },
+            class_entity.form_elements,
+        )
 
         config_entity = AgentConfigEntityDocument(
             agent_class=agent_class,

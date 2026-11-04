@@ -70,7 +70,8 @@ own decision if a tenant disables IMAP altogether.
   it at any granted mailbox.
 - The client secret is stored in the agent config like the mailbox password, and carries the same risk: whoever holds it
   can read every granted mailbox. Moving mailbox secrets behind an indirection is a separate, pre-existing concern for
-  both.
+  both. *Superseded in part by #1587: secret fields are now encrypted at rest and masked in responses, see ADR
+  `2026_11_02_agent_config_secrets_decrypted_at_validation`.*
 - Client secrets expire (at most two years). An expired secret fails every run until it is renewed on the profile.
 - Exchange answers `NO AUTHENTICATE failed` for a missing service principal, a missing mailbox permission and IMAP being
   disabled on the mailbox alike, so misconfiguration is diagnosed from the documentation, not from the error.

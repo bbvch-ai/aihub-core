@@ -131,14 +131,16 @@ class TestFromApiPayload:
 class TestStoreAll:
     @pytest.mark.parametrize("content", ["not base64!", "é"])
     async def test_rejects_invalid_base64(self, context: ApiPayloadContext, content: str):
+        files = [InlineFile(filename="a.txt", file_type="text/plain", content=content)]
         with pytest.raises(HTTPException) as rejected:
-            await InlineFile.store_all([InlineFile(filename="a.txt", file_type="text/plain", content=content)], context)
+            await InlineFile.store_all(files, context)
         assert rejected.value.status_code == 422
 
     async def test_rejects_a_file_over_the_limit(self, context: ApiPayloadContext, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("AGENT_INLINE_FILE_MAX_FILE_BYTES", "4")
+        files = [InlineFile(**inline("a.txt", b"12345"))]
         with pytest.raises(HTTPException) as rejected:
-            await InlineFile.store_all([InlineFile(**inline("a.txt", b"12345"))], context)
+            await InlineFile.store_all(files, context)
         assert rejected.value.status_code == 413
 
     async def test_rejects_too_many_files(self, context: ApiPayloadContext, monkeypatch: pytest.MonkeyPatch):
@@ -149,7 +151,8 @@ class TestStoreAll:
         assert rejected.value.status_code == 413
 
     async def test_points_images_to_image_url(self, context: ApiPayloadContext):
+        files = [InlineFile(**inline("a.png", b"\x89PNG", "image/png"))]
         with pytest.raises(HTTPException) as rejected:
-            await InlineFile.store_all([InlineFile(**inline("a.png", b"\x89PNG", "image/png"))], context)
+            await InlineFile.store_all(files, context)
         assert rejected.value.status_code == 415
         assert "image_url" in rejected.value.detail

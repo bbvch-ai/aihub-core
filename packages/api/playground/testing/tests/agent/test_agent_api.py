@@ -4,10 +4,12 @@ import uuid
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
+from bson import ObjectId
 from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
 from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.infrastructure import create_s3_client, enable_logging
+from swiss_ai_hub.core.persistence import ThreadEntity
 from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
@@ -226,6 +228,23 @@ async def test_a_response_schema_is_refused_for_an_agent_that_does_not_support_i
     assert response.status_code == 400, response.text
     assert "does not support a response schema" in response.json()["detail"]
     assert not any(event.is_user_message_event for event in runner.received_events)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("suffix", ["", "/stream"])
+async def test_a_refused_response_schema_leaves_no_thread_behind(simulated_agent, suffix: str):
+    """The support check runs before the thread is created, so a refused request persists no empty conversation."""
+    client, _ = simulated_agent
+    thread_id = str(ObjectId())
+
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/{UserMessageEvent.event_name_from_class()}{suffix}",
+        params={"thread_id": thread_id},
+        json={"messages": [], "response_schema": INVOICE_SCHEMA},
+    )
+
+    assert response.status_code == 400, response.text
+    assert ThreadEntity.objects(id=ObjectId(thread_id)).first() is None
 
 
 @pytest.mark.asyncio

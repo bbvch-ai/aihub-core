@@ -267,8 +267,10 @@ and locale. Never add field- or event-specific logic to the API for this; see AD
 
 **Request size**: `request_limits/BodySizeLimitMiddleware` refuses any request body over `API_REQUEST_MAX_BODY_BYTES`
 (64 MB) while it arrives, whatever its content type: FastAPI reads the whole body of every endpoint that takes one, so a
-JSON-only limit could be bypassed by sending another type or none. Multipart uploads (spooled to disk) and the paths
-passed as `exempt_path_suffixes` (the parsing upload, which streams and bounds itself at 100 MB) are left out. It is
+JSON-only limit could be bypassed by sending another type or none. A `multipart/form-data` request is left out only when
+the route it matches parses a form (its `body_field` is a `Form`/`File`, which Starlette spools to disk) — the label
+alone is caller-controlled, and a JSON route reads a multipart-labelled body whole. The paths passed as
+`exempt_path_suffixes` (the parsing upload, which streams and bounds itself at 100 MB) are left out. It is
 registered first in `ApiRunner._get_api_app`, so CORS still wraps its 413.
 
 ## Agent-API Communication
@@ -306,11 +308,20 @@ without needing it baked into event payloads.
 
 `runners/lifetime/lifetime_manager.py` — FastAPI lifespan context manager wiring all infrastructure at startup.
 
-**Startup order**: MongoDB → Redis/Milvus/S3 → NATS + JetStream → event persistence subscribers → WebSocket
-infrastructure → event distributors → RPC responders → discovery services → DB initialization (default roles, knowledge
-buckets) → cron scheduler → Langfuse provisioning.
+**Startup order**: MongoDB → agent-secret key guard → Redis/Milvus/S3 → NATS + JetStream → event persistence subscribers
+→ WebSocket infrastructure → event distributors → RPC responders → discovery services → DB initialization (default
+roles, knowledge buckets) → cron scheduler → Langfuse provisioning.
 
 All resources stored in `app.state`, accessible via the dependencies listed above.
+
+**Agent-config secrets** (#1587, ADR `2026_11_02_agent_config_secrets_decrypted_at_validation`): `ConfigSecrets`
+(`util/config_secrets.py`) encrypts secret fields on create and update and masks them in
+`FullAgentInstanceDTO.from_class_and_config`, the single choke point every response holding a profile goes through. The
+RPC `get_agent_configuration` stays unmasked, because the agent decrypts the ciphertext itself. The key is needed only
+when a non-empty string sits at a secret path. `ConfigSecrets.ensure_key_for_stored_secrets()` runs right after the
+Mongo connection and refuses to start the API when such a value is stored and the key is unset or malformed. It is
+permanent, not a transitional migration: it keeps masking from raising at runtime, which would make discovery drop the
+profile and the OpenWebUI sync delete its model.
 
 **One event loop**: MongoEngine is synchronous, so DB calls inside `async def` handlers stall HTTP, WebSocket and NATS
 callbacks. NATS RPC handlers and discovery rounds (`AgentService.get_agent_configuration`, agent and process endpoint
