@@ -1008,6 +1008,9 @@ form:
       nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie
       sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
+  modelSelect:
+    contextWindow: 'Kontextfenster: {input} Eingabe- · {output} Ausgabe-Tokens'
+    contextWindowInputOnly: 'Kontextfenster: {input} Eingabe-Tokens'
   modelBound:
     providerDefault: Anbieter-Standard
     overrideRequired: Geben Sie einen Wert ein, oder deaktivieren Sie die Überschreibung,

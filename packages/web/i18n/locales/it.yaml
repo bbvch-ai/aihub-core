@@ -1007,6 +1007,9 @@ form:
       in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
       fino al rilascio di una correzione.
 lib:
+  modelSelect:
+    contextWindow: 'Finestra di contesto: {input} token in ingresso · {output} in uscita'
+    contextWindowInputOnly: 'Finestra di contesto: {input} token in ingresso'
   modelBound:
     providerDefault: predefinito del fornitore
     overrideRequired: Inserisci un valore, oppure deseleziona la sostituzione per

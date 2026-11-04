@@ -1,38 +1,50 @@
 <template>
-  <Select
-    v-model="selectedModel"
-    :options="models"
-    option-label="model_name"
-    option-value="model_name"
-    :aria-label="placeholder ?? t('common.selectModel')"
-    :placeholder="placeholder ?? t('common.selectModel')"
-    :filter="filter"
-    :show-clear="showClear"
-    :loading="isLoading"
-    class="w-full"
-  >
-    <template #option="{ option }">
-      <div class="flex items-center gap-2">
-        <Icon
-          :name="option.icon"
-          size="1.2em"
-        />
-        <span>{{ option.model_name }}</span>
-      </div>
-    </template>
-    <template #value="{ value }">
-      <div
-        v-if="value"
-        class="flex items-center gap-2"
-      >
-        <Icon
-          :name="getModelIcon(value)"
-          size="1.2em"
-        />
-        <span>{{ value }}</span>
-      </div>
-    </template>
-  </Select>
+  <div class="flex flex-col gap-1">
+    <Select
+      v-model="selectedModel"
+      :options="models"
+      option-label="display_name"
+      option-value="model_name"
+      :filter-fields="['display_name', 'model_name']"
+      :aria-label="placeholder ?? t('common.selectModel')"
+      :placeholder="placeholder ?? t('common.selectModel')"
+      :filter="filter"
+      :show-clear="showClear"
+      :loading="isLoading"
+      class="w-full"
+    >
+      <template #option="{ option }">
+        <div class="flex items-center gap-2">
+          <Icon
+            :name="option.icon"
+            size="1.2em"
+          />
+          <span>{{ option.display_name }}</span>
+        </div>
+      </template>
+      <template #value="{ value }">
+        <div
+          v-if="value"
+          class="flex items-center gap-2"
+        >
+          <Icon
+            :name="selectedModelEntry?.icon ?? 'meteor-icons:cpu'"
+            size="1.2em"
+          />
+          <span>{{ selectedModelEntry?.display_name ?? value }}</span>
+        </div>
+      </template>
+    </Select>
+    <!-- FormKit's own help class, as in ModelBoundNumber: each form styles .formkit-help differently. -->
+    <!-- eslint-disable tailwindcss/no-custom-classname -->
+    <div
+      v-if="contextWindow"
+      class="formkit-help"
+    >
+      {{ contextWindow }}
+    </div>
+    <!-- eslint-enable tailwindcss/no-custom-classname -->
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -65,6 +77,7 @@ const showClear = computed(() => props.context.showClear ?? false)
 
 const { t } = useI18n()
 const { tenantId } = useTenant()
+const { formatNumber } = useNumberLocale()
 
 const models = ref<ModelDto[]>([])
 const isLoading = ref(false)
@@ -76,10 +89,17 @@ const selectedModel = computed({
   },
 })
 
-function getModelIcon(modelName: string): string {
-  const model = models.value.find(m => m.model_name === modelName)
-  return model?.icon ?? 'meteor-icons:cpu'
-}
+const selectedModelEntry = computed(() => models.value.find((model: ModelDto) => model.model_name === selectedModel.value))
+
+// Input and output limits are shown apart, never summed: the sum is the provider's window only for some models.
+const contextWindow = computed(() => {
+  const info = selectedModelEntry.value?.model_info
+  if (!info?.max_input_tokens) return null
+  const input = formatNumber(info.max_input_tokens)
+  return info.max_output_tokens
+    ? t('lib.modelSelect.contextWindow', { input, output: formatNumber(info.max_output_tokens) })
+    : t('lib.modelSelect.contextWindowInputOnly', { input })
+})
 
 async function fetchModels() {
   isLoading.value = true

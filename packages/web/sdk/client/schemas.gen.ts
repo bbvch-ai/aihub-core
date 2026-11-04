@@ -19585,6 +19585,13 @@ export const ModelDTOSchema = {
       $ref: "#/components/schemas/ModelInfoDTO",
       description: "Detailed information about the model",
     },
+    display_name: {
+      type: "string",
+      title: "Display Name",
+      description:
+        "The curated display name, or the model name without its capability prefix",
+      readOnly: true,
+    },
     icon: {
       type: "string",
       title: "Icon",
@@ -19592,7 +19599,7 @@ export const ModelDTOSchema = {
     },
   },
   type: "object",
-  required: ["model_name", "model_info", "icon"],
+  required: ["model_name", "model_info", "display_name", "icon"],
   title: "ModelDTO",
 } as const;
 
@@ -19965,6 +19972,44 @@ export const ModelInfoDTOSchema = {
       title: "Mode",
       description:
         "The mode of the model (e.g., 'chat', 'completion', 'embedding')",
+    },
+    aihub_display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Aihub Display Name",
+      description: "Human-readable model name curated in the LiteLLM config",
+    },
+    aihub_hosting_location: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Aihub Hosting Location",
+      description:
+        "Where the model runs: 'local', 'swiss_cloud', 'eu' or 'global', curated per model",
+    },
+    aihub_general_purpose: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Aihub General Purpose",
+      description:
+        "False for a model built for one job, such as OCR, which model pickers leave out; a model that does not set it counts as general-purpose",
     },
     max_input_tokens: {
       anyOf: [
@@ -20455,6 +20500,8 @@ export const ModelInfoDTOSchema = {
   },
   type: "object",
   title: "ModelInfoDTO",
+  description:
+    "Fields carry their LiteLLM ``model_info`` key as name, without aliases, because the model-bound form elements\nand the frontend read limits and flags from this DTO by that key.",
 } as const;
 
 export const ModelResponseSchema = {

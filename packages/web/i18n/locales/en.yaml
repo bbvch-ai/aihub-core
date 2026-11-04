@@ -994,6 +994,9 @@ form:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  modelSelect:
+    contextWindow: 'Context window: {input} input · {output} output tokens'
+    contextWindowInputOnly: 'Context window: {input} input tokens'
   modelBound:
     providerDefault: provider default
     overrideRequired: Enter a value, or untick the override to use the default.

@@ -13023,6 +13023,12 @@ export type ModelDto = {
    */
   model_info: ModelInfoDto;
   /**
+   * Display Name
+   *
+   * The curated display name, or the model name without its capability prefix
+   */
+  readonly display_name: string;
+  /**
    * Icon
    */
   readonly icon: string;
@@ -13242,6 +13248,9 @@ export type ModelGatedCheckbox = {
 
 /**
  * ModelInfoDTO
+ *
+ * Fields carry their LiteLLM ``model_info`` key as name, without aliases, because the model-bound form elements
+ * and the frontend read limits and flags from this DTO by that key.
  */
 export type ModelInfoDto = {
   /**
@@ -13250,6 +13259,24 @@ export type ModelInfoDto = {
    * The mode of the model (e.g., 'chat', 'completion', 'embedding')
    */
   mode?: string | null;
+  /**
+   * Aihub Display Name
+   *
+   * Human-readable model name curated in the LiteLLM config
+   */
+  aihub_display_name?: string | null;
+  /**
+   * Aihub Hosting Location
+   *
+   * Where the model runs: 'local', 'swiss_cloud', 'eu' or 'global', curated per model
+   */
+  aihub_hosting_location?: string | null;
+  /**
+   * Aihub General Purpose
+   *
+   * False for a model built for one job, such as OCR, which model pickers leave out; a model that does not set it counts as general-purpose
+   */
+  aihub_general_purpose?: boolean | null;
   /**
    * Max Input Tokens
    *
@@ -35478,7 +35505,12 @@ export type GetLitellmModelsByModeData = {
      */
     mode: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Include Special Purpose
+     */
+    include_special_purpose?: boolean;
+  };
   url: "/{tenant_id}/models/mode/{mode}";
 };
 

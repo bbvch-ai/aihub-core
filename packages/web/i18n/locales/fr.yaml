@@ -1009,6 +1009,9 @@ form:
       dans certains cas. Pour éviter tout comportement inattendu, veuillez la désactiver
       temporairement jusqu'à la publication d'un correctif.
 lib:
+  modelSelect:
+    contextWindow: 'Fenêtre de contexte : {input} jetons en entrée · {output} en sortie'
+    contextWindowInputOnly: 'Fenêtre de contexte : {input} jetons en entrée'
   modelBound:
     providerDefault: valeur par défaut du fournisseur
     overrideRequired: Saisissez une valeur, ou décochez le remplacement pour utiliser
