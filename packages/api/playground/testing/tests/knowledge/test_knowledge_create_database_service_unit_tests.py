@@ -14,6 +14,7 @@ from swiss_ai_hub.core.persistence.rag.datalake.entities import Ingestor, Ingest
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.routes.knowledge.dto.create_database_request import CreateDatabaseRequest
 from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
+from swiss_ai_hub.api.routes.model.dto.model_dto import ModelDTO, ModelInfoDTO
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 
 _SERVICE_MODULE = "swiss_ai_hub.api.routes.knowledge.knowledge_service"
@@ -607,6 +608,20 @@ class TestModelSelection:
         assert exc_info.value.status_code == 400
         assert "output_vector_size" in exc_info.value.detail
         bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_rejects_a_model_built_for_one_job(self, models):
+        """The picker hides the OCR model, so the API must not accept it from a caller that skips the picker."""
+        models.side_effect = lambda user, name: ModelDTO(
+            model_name=name, model_info=ModelInfoDTO(mode="chat", aihub_general_purpose=False)
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            await KnowledgeService._validated_model("llm_model", "text-generation/ocr", "chat", _user())
+
+        assert exc_info.value.status_code == 400
+        assert "llm_model" in exc_info.value.detail
+        assert "text-generation/ocr" in exc_info.value.detail
 
 
 class TestAnnouncedFormIsRequired:

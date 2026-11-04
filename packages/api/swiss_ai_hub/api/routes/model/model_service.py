@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 import httpx
 from fastapi import HTTPException
@@ -97,7 +98,16 @@ class ModelService:
 
     @staticmethod
     @trace_fn
-    async def get_models_by_mode(user: UserIdentity, mode: str) -> list[ModelDTO]:
-        """Get all models filtered by their mode (chat, embedding, rerank, etc.)."""
+    async def get_models_by_mode(
+        user: UserIdentity,
+        mode: str,
+        include_special_purpose: Annotated[bool, "Also list models built for one job, such as OCR"] = False,
+    ) -> list[ModelDTO]:
+        """Lists the models a picker of this mode may offer, sorted by the name it shows."""
         models = await ModelService.get_model_list(user)
-        return [model for model in models if model.model_info.mode == mode]
+        selectable = [
+            model
+            for model in models
+            if model.model_info.mode == mode and (include_special_purpose or model.is_general_purpose)
+        ]
+        return sorted(selectable, key=lambda model: model.display_name.casefold())

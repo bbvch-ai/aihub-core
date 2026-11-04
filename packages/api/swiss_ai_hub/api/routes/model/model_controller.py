@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from fastapi import Security
+from fastapi import Query, Security
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.routes import TenantScopedController
@@ -55,8 +55,12 @@ class ModelController(TenantScopedController):
         async def get_litellm_models_by_mode(
             mode: str,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            include_special_purpose: Annotated[bool, Query()] = False,
         ) -> list[ModelDTO]:
-            """Retrieve all models filtered by their mode (chat, embedding, rerank, etc.)."""
-            return await ModelService.get_models_by_mode(user, mode)
+            """Retrieve the models of one mode (chat, embedding, rerank, etc.) a model picker may offer.
+
+            Models built for one job, such as the OCR model, are left out unless `include_special_purpose` is set.
+            """
+            return await ModelService.get_models_by_mode(user, mode, include_special_purpose)
 
         return self

@@ -21,8 +21,26 @@ class SearchContextCostPerQueryDTO(BaseModel):
 
 
 class ModelInfoDTO(BaseModel):
+    """Fields carry their LiteLLM ``model_info`` key as name, without aliases, because the model-bound form elements
+    and the frontend read limits and flags from this DTO by that key."""
+
     mode: Annotated[
         str | None, Field(None, description="The mode of the model (e.g., 'chat', 'completion', 'embedding')")
+    ]
+    aihub_display_name: Annotated[
+        str | None, Field(None, description="Human-readable model name curated in the LiteLLM config")
+    ]
+    aihub_hosting_location: Annotated[
+        str | None,
+        Field(None, description="Where the model runs: 'local', 'swiss_cloud', 'eu' or 'global', curated per model"),
+    ]
+    aihub_general_purpose: Annotated[
+        bool | None,
+        Field(
+            None,
+            description="False for a model built for one job, such as OCR, which model pickers leave out; "
+            "a model that does not set it counts as general-purpose",
+        ),
     ]
     max_input_tokens: Annotated[
         int | None, Field(None, description="Maximum number of input tokens the model can handle")
@@ -146,6 +164,16 @@ class ModelInfoDTO(BaseModel):
 class ModelDTO(BaseModel):
     model_name: Annotated[str, Field(description="The name/identifier of the model")]
     model_info: Annotated[ModelInfoDTO, Field(description="Detailed information about the model")]
+
+    @computed_field(description="The curated display name, or the model name without its capability prefix")
+    @property
+    def display_name(self) -> str:
+        return self.model_info.aihub_display_name or self.model_name.partition("/")[2] or self.model_name
+
+    @property
+    def is_general_purpose(self) -> bool:
+        """Only an explicit false excludes a model, so one an operator adds without the key stays selectable."""
+        return self.model_info.aihub_general_purpose is not False
 
     @computed_field
     @property
