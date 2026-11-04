@@ -1,8 +1,9 @@
 ---
-# Builds and publishes the project-managed Presidio analyzer image (infra/deployment/docker/presidio-analyzer).
-# The tag is the one pinned in compose-config.yml (image_tags.presidio_analyzer), so publishing always matches what the
-# stack pulls. Bump that tag together with any change to the image, then run this workflow on the branch that carries
-# the change. Not part of the release chain: the tag is a literal pin, which set-latest and promote skip.
+# Builds and publishes the project-managed Presidio analyzer images (infra/deployment/docker/presidio-analyzer): the CPU
+# image and, from the same Dockerfile with the CUDA torch index, the GPU image. The tags are the ones pinned in
+# compose-config.yml (image_tags.presidio_analyzer and image_tags.presidio_analyzer_gpu), so publishing always matches
+# what the stack pulls. Bump both tags together with any change to the image, then run this workflow on the branch that
+# carries the change. Not part of the release chain: the tags are literal pins, which set-latest and promote skip.
 name: Build Presidio analyzer image
 on:
   workflow_dispatch:
@@ -12,23 +13,25 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout code
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
-      - name: Read the pinned tag
+      - name: Read the pinned tags
         id: tag
         run: |
-          IMAGE=$(yq '.image_tags.presidio_analyzer' infra/deployment/compose-config.yml)
-          case "$IMAGE" in
-            presidio-analyzer:*) ;;
-            *) echo "Unexpected image_tags.presidio_analyzer: $IMAGE"; exit 1 ;;
-          esac
-          echo "version=${IMAGE#presidio-analyzer:}" >> "$GITHUB_OUTPUT"
-      - name: Build and push
+          for key in presidio_analyzer presidio_analyzer_gpu; do
+            IMAGE=$(yq ".image_tags.$key" infra/deployment/compose-config.yml)
+            case "$IMAGE" in
+              presidio-analyzer:*) ;;
+              *) echo "Unexpected image_tags.$key: $IMAGE"; exit 1 ;;
+            esac
+            echo "${key}=${IMAGE#presidio-analyzer:}" >> "$GITHUB_OUTPUT"
+          done
+      - name: Build and push the CPU image
         uses: ./.github/actions/build_image
         with:
-          release_version: ${{ steps.tag.outputs.version }}
+          release_version: ${{ steps.tag.outputs.presidio_analyzer }}
           image_name: presidio-analyzer
           github_repository_owner: ${{ github.repository_owner }}
           github_event_repository_name: ${{ github.event.repository.name }}
@@ -36,3 +39,15 @@ jobs:
           file: infra/deployment/docker/presidio-analyzer/Dockerfile
           github_token: ${{ secrets.GITHUB_TOKEN }}
           secondary_tag: ''
+      - name: Build and push the GPU image
+        uses: ./.github/actions/build_image
+        with:
+          release_version: ${{ steps.tag.outputs.presidio_analyzer_gpu }}
+          image_name: presidio-analyzer
+          github_repository_owner: ${{ github.repository_owner }}
+          github_event_repository_name: ${{ github.event.repository.name }}
+          context: infra/deployment/docker/presidio-analyzer
+          file: infra/deployment/docker/presidio-analyzer/Dockerfile
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          secondary_tag: ''
+          build_args: TORCH_INDEX=https://download.pytorch.org/whl/cu130

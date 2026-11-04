@@ -1924,7 +1924,9 @@ services:
   # its callers, and needs no outbound internet (models baked in, hub offline).
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: {{ global.registry_prefix }}{{ image_tags.presidio_analyzer }}
+    {#- GLiNER is 99% of an analysis and runs 8 times faster on a small GPU (T600) than on 4 CPUs; spaCy and the
+        patterns stay on the CPU, so the CPU limits below still apply. #}
+    image: {{ global.registry_prefix }}{{ image_tags.presidio_analyzer_gpu if gpu_enabled else image_tags.presidio_analyzer }}
     restart: always
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
@@ -1954,6 +1956,15 @@ services:
         limits:
           cpus: ${PRESIDIO_ANALYZER_CPUS:-4}
           memory: ${PRESIDIO_ANALYZER_MEMORY:-4G}  # Measured: about 3.1 GiB per worker under load
+      {%- if gpu_enabled %}
+        # GLiNER needs about 1.3 GiB of GPU memory per worker (T600, batch size 8, CUDA context included). It takes
+        # it beside vLLM, whose --gpu-memory-utilization shares are fractions of the whole card.
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+      {%- endif %}
     logging:
       driver: json-file
       options:
