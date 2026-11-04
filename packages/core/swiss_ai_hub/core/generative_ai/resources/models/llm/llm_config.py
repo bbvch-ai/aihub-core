@@ -20,6 +20,7 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
+from swiss_ai_hub.core.infrastructure.litellm.model_requirements import ModelRequirements
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
@@ -156,7 +157,13 @@ class LLMConfig(LiteLLMBase[ResilientOpenAILike]):
     ] = LLMParameter()
 
     @classmethod
-    def as_form(cls, include_default_parameter: bool = True) -> Self:
+    def as_form(
+        cls,
+        include_default_parameter: bool = True,
+        requirements: Annotated[
+            ModelRequirements | None, "What the picked model must offer; any general-purpose chat model when unset"
+        ] = None,
+    ) -> Self:
         """
         Factory method to create a form-mode LLMConfig.
 
@@ -168,6 +175,7 @@ class LLMConfig(LiteLLMBase[ResilientOpenAILike]):
                 label=LocaleString.from_i18n_path("lib.llm.config.model.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.model.help"),
                 mode="chat",
+                requirements=requirements or ModelRequirements(),
             ),
             default_parameter=LLMParameter.as_form() if include_default_parameter else LLMParameter(),
         )
