@@ -67,3 +67,14 @@ def test_a_hosted_file_reference_is_refused():
 
 def test_a_text_only_request_has_no_files():
     assert request_with({"role": "user", "content": "Hi"}).inline_files() == []
+
+
+def test_an_audio_part_sent_to_an_agent_is_refused():
+    from swiss_ai_hub.api.routes.openai.openai_service import OpenaiService
+
+    request = request_with(
+        {"role": "user", "content": [{"type": "input_audio", "input_audio": {"data": "AAAA", "format": "wav"}}]}
+    )
+    with pytest.raises(HTTPException) as refused:
+        OpenaiService._refuse_audio_parts(request)
+    assert refused.value.status_code == 400

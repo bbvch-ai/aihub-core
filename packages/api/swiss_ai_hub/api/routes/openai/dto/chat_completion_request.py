@@ -154,7 +154,7 @@ class ChatCompletionRequest(BaseModel):
     reasoning_effort: ChatCompletionReasoningEffort | None = None
     response_format: completion_create_params.ResponseFormat | None = None
     seed: int | None = None
-    service_tier: Literal["auto", "default"] | None = None
+    service_tier: Literal["auto", "default", "flex", "scale", "priority"] | None = None
     stop: str | None | list[str] = None
     store: bool | None = None
     stream_options: ChatCompletionStreamOptionsParam | None = None

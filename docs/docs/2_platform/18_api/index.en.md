@@ -25,8 +25,9 @@ model gateway with their parameters, so applications developed with OpenAI's Pyt
 within what the configured model supports.
 
 Responses follow the OpenAI formats, including server-sent events ending in `data: [DONE]` for streamed chat
-completions. Errors raised by the model gateway carry OpenAI's `error` object; errors raised by the platform itself,
-such as a missing permission, carry a `detail` field instead.
+completions. Every error carries OpenAI's `error` object (`message`, `type`, `param`, `code`), whether the model gateway
+or the platform raised it, and a request the API cannot accept is a `400`. A `detail` field with the same content stays
+next to it for the platform's own clients.
 
 ### Vendor-Neutral Model Access
 
@@ -66,8 +67,9 @@ model configurations.
 transcription (supporting multiple audio formats and languages) and text-to-speech synthesis with configurable voices
 and streaming output.
 
-**Model Discovery**: The model listing returns the language models a user may access. An agent does not appear in the
-listing, but can be looked up and called by its id (`AgentClass/agent_id`).
+**Model Discovery**: The model listing returns the language models a user may access, and with `?include_agents=true`
+also the agents they may call, under their ids (`AgentClass/agent_id`). Agents are left out by default because OpenWebUI
+lists this endpoint and shows agents through its own pipe.
 
 ## Business Value
 

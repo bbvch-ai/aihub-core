@@ -2,7 +2,7 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Annotated, Literal, Self
 
-from fastapi import Body, Depends, File, Form, HTTPException, Request, Security, UploadFile
+from fastapi import Body, Depends, File, Form, HTTPException, Query, Request, Security, UploadFile
 from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse
@@ -86,47 +86,29 @@ class OpenaiController(TenantScopedController):
             route,
             summary="List Models",
             description="Lists the currently available models, and provides basic information about each one "
-            "such as the owner and availability.",
+            "such as the owner and availability. With `include_agents`, the agents the user may call are listed too, "
+            "as models named `AgentClass/agent_id`.",
             response_model=ModelResponse,
             tags=self.tags,
         )
         async def get_models(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+            include_agents: Annotated[
+                bool,
+                Query(
+                    description="Also list the agents the user may call. Off by default: OpenWebUI lists this "
+                    "endpoint and shows agents through its own pipe, so listing them here would show each twice."
+                ),
+            ] = False,
         ) -> ModelResponse:
             access_checker = AccessChecker.from_user(user)
             model_response = await OpenaiService.get_models()
-
             model_response.data = [
                 m for m in model_response.data if OpenaiService._has_model_access(access_checker, m.id)
             ]
-
-            return model_response
-
-        return self
-
-    def get_models_with_assistants(
-        self,
-        route: str = "/models",
-    ) -> Self:
-        @self.router.get(
-            route,
-            summary="List Models (including ai-hub assistants)",
-            description="Lists the currently available models and ai-hub assistants, and provides basic information "
-            "about each one such as the owner and availability.",
-            response_model=ModelResponse,
-            tags=self.tags,
-        )
-        async def get_models_with_assistants(
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> ModelResponse:
-            model_response = await OpenaiService.get_models_with_assistants(t=t)
-            access_checker = AccessChecker.from_user(user)
-            model_response.data = [
-                m
-                for m in model_response.data
-                if m.object != "assistant" or access_checker.has_access_to_agent(m.agent_class, m.agent_id)
-            ]
+            if include_agents:
+                model_response.data += await OpenaiService.agent_models(access_checker, t)
             return model_response
 
         return self
@@ -162,7 +144,7 @@ class OpenaiController(TenantScopedController):
         ) -> ModelDetails:
             model = await OpenaiService.get_model_with_assistants(model_name=full_path, t=t)
             access_checker = AccessChecker.from_user(user)
-            if model.object == "assistant":
+            if model.agent_class is not None:
                 permitted = access_checker.has_access_to_agent(model.agent_class, model.agent_id)
             else:
                 permitted = OpenaiService._has_model_access(access_checker, model.id)

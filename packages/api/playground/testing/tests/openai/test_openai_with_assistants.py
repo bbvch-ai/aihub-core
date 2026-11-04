@@ -23,12 +23,7 @@ COMPLETIONS_ENDPOINT = "/openai/chat/completions"
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def simulation():
     auth = TestAuthHandler()
-    controller = (
-        OpenaiController(auth=auth)
-        .get_models_with_assistants()
-        .get_model_with_assistants()
-        .chat_completion_with_assistants()
-    )
+    controller = OpenaiController(auth=auth).get_models().get_model_with_assistants().chat_completion_with_assistants()
     runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()
     runner.mount(controller)
     await runner.start_simulation()
@@ -51,7 +46,7 @@ async def api_client(simulation):
 @pytest.mark.asyncio(loop_scope="module")
 async def test_get_models(api_client):
     """Test GET /openai/models returns a valid model list."""
-    response = await api_client.get(MODELS_ENDPOINT)
+    response = await api_client.get(MODELS_ENDPOINT, params={"include_agents": True})
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
     assert data.get("object") == "list"
@@ -61,13 +56,21 @@ async def test_get_models(api_client):
 
 
 @pytest.mark.asyncio(loop_scope="module")
+async def test_agents_are_not_listed_by_default(api_client):
+    """OpenWebUI lists this endpoint and shows agents through its own pipe, so they are opt-in."""
+    response = await api_client.get(MODELS_ENDPOINT)
+    assert f"{AGENT_CLASS}/{AGENT_ID}" not in [model.get("id") for model in response.json()["data"]]
+
+
+@pytest.mark.asyncio(loop_scope="module")
 async def test_get_model(api_client):
     """Test GET /openai/models/{full_path} returns valid model details."""
     response = await api_client.get(f"{MODELS_ENDPOINT}/{AGENT_CLASS}/{AGENT_ID}")
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
     assert data.get("id") == f"{AGENT_CLASS}/{AGENT_ID}"
-    assert data.get("object") == "assistant"
+    assert data.get("object") == "model"
+    assert data.get("agent_class") == AGENT_CLASS
     assert isinstance(data.get("created"), int)
     assert data.get("owned_by") == "aihub"
 
