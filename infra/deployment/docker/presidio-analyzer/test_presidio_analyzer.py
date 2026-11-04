@@ -370,10 +370,10 @@ def test_should_detect_the_same_spans_under_concurrent_load_as_one_at_a_time() -
     assert concurrent == one_at_a_time * 3
 
 
-def compose_image() -> str:
-    tag = re.search(r"^  presidio_analyzer: (\S+)$", (repo_root() / "infra/deployment/compose-config.yml")
+def compose_image(key: str = "presidio_analyzer") -> str:
+    tag = re.search(rf"^  {key}: (\S+)$", (repo_root() / "infra/deployment/compose-config.yml")
                     .read_text(encoding="utf-8"), re.M)
-    assert tag, "image_tags.presidio_analyzer not found"
+    assert tag, f"image_tags.{key} not found"
     return f"ghcr.io/bbvch-ai/aihub-core/{tag.group(1)}"
 
 
@@ -382,12 +382,22 @@ def repo_root() -> Path:
 
 
 def test_should_pin_the_built_image_in_every_compose_file() -> None:
-    image = compose_image()
+    cpu_image, gpu_image = compose_image(), compose_image("presidio_analyzer_gpu")
     for compose in sorted((repo_root() / "infra").glob("docker-compose.*.yml")):
+        image = gpu_image if compose.name.endswith(".gpu.yml") else cpu_image
         assert f"image: {image}\n" in compose.read_text(encoding="utf-8"), compose.name
     workflow = (repo_root() / ".github/workflows/build-presidio-analyzer.yml").read_text(encoding="utf-8")
-    assert ".image_tags.presidio_analyzer" in workflow
+    assert "presidio_analyzer presidio_analyzer_gpu" in workflow
+    assert "TORCH_INDEX=https://download.pytorch.org/whl/cu" in workflow
     assert "context: infra/deployment/docker/presidio-analyzer" in workflow
+
+
+def test_should_reserve_the_gpu_for_the_analyzer_only_in_gpu_compose_files() -> None:
+    for compose in sorted((repo_root() / "infra").glob("docker-compose.*.yml")):
+        text = compose.read_text(encoding="utf-8")
+        analyzer = text[text.index("  presidio-analyzer:\n"):]
+        analyzer = analyzer[:analyzer.index("\n\n")]
+        assert ("driver: nvidia" in analyzer) == compose.name.endswith(".gpu.yml"), compose.name
 
 
 def docker(*args: str, check: bool = True) -> subprocess.CompletedProcess:
