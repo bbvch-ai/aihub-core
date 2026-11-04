@@ -117,10 +117,10 @@ Model pickers read three more curated keys from `/v1/model/info`:
 - **`aihub_display_name`** is the name a picker shows instead of the LiteLLM id. Set it on every model; it is not
   validated, and the API falls back to the id without its prefix.
 - **`aihub_general_purpose`** is `false` only for a model built for one job (today MinerU, an OCR model).
-  `/models/mode/{mode}` and every model picker leave such a model out, and a knowledge database cannot be created with
-  it. It is ours rather than a LiteLLM `mode` on purpose: `mode` decides how LiteLLM calls and health-probes a model, and
-  MinerU is served over `/chat/completions`. A model without the key counts as general-purpose, which covers models an
-  operator adds through the LiteLLM UI.
+  `/models/mode/{mode}` and every model picker leave such a model out, and neither an agent or process profile nor a
+  knowledge database can be saved with it. It is ours rather than a LiteLLM `mode` on purpose: `mode` decides how
+  LiteLLM calls and health-probes a model, and MinerU is served over `/chat/completions`. A model without the key counts
+  as general-purpose, which covers models an operator adds through the LiteLLM UI.
 - **`supports_reasoning`** says whether the model can produce a thinking phase at all, not whether it does by default
   (gemma only thinks when asked). LiteLLM forwards `reasoning_effort` to every model it does not know, whatever this
   flag says, so a provider that rejects it needs `reasoning_effort` in `additional_drop_params` (Ministral does).

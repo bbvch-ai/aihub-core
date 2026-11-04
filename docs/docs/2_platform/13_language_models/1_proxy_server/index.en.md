@@ -57,8 +57,8 @@ Model pickers in the Admin UI read three more keys from `model_info`:
 - **`aihub_general_purpose`:** `false` for a model built for one job, which pickers then never offer. Only the OCR model
   `MinerU2.5-2509-1.2B` sets it to `false`: it is served over the chat API, so its `mode` stays `chat`, but it cannot
   hold a conversation. `GET /models/mode/{mode}` leaves such models out unless the call sets
-  `include_special_purpose=true`, and a knowledge database that names one is refused when created. A model without the
-  key counts as general-purpose.
+  `include_special_purpose=true`, and an agent or process profile or a knowledge database that names one is refused when
+  saved. A model without the key counts as general-purpose.
 - **`supports_reasoning`:** whether the model can produce a thinking phase at all, next to the existing
   `supports_function_calling`, `supports_response_schema` and `supports_vision`. A picker that requires a capability
   treats a flag that is not set as unsupported.

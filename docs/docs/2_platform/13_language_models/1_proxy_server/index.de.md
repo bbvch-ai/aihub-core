@@ -1,6 +1,6 @@
 ---
 title: Proxy-Server
-source_sha: 4ea96272823259eae11c08b808a1404af8c8fef3ea476b3987a04732eed38ff5
+source_sha: efac4ae443008a50a4bbe8609a50ec9a80b8275ddc454868e5f80689fde27580
 ---
 
 # LLM-Proxy
@@ -60,8 +60,9 @@ Die Modellauswahl in der Admin-UI liest drei weitere Schlüssel aus `model_info`
 - **`aihub_general_purpose`:** `false` für ein Modell, das für eine einzige Aufgabe gebaut ist und das eine
   Modellauswahl deshalb nie anbietet. Nur das OCR-Modell `MinerU2.5-2509-1.2B` setzt ihn auf `false`: Es wird über die
   Chat-API bereitgestellt, sein `mode` bleibt also `chat`, aber es kann kein Gespräch führen. `GET /models/mode/{mode}`
-  lässt solche Modelle weg, ausser der Aufruf setzt `include_special_purpose=true`, und eine Wissensdatenbank, die eines
-  nennt, wird beim Anlegen abgewiesen. Ein Modell ohne den Schlüssel gilt als Allzweckmodell.
+  lässt solche Modelle weg, ausser der Aufruf setzt `include_special_purpose=true`, und ein Agenten- oder Prozessprofil
+  oder eine Wissensdatenbank, die eines nennt, wird beim Speichern abgewiesen. Ein Modell ohne den Schlüssel gilt als
+  Allzweckmodell.
 - **`supports_reasoning`:** ob das Modell überhaupt eine Denkphase erzeugen kann, neben den bestehenden
   `supports_function_calling`, `supports_response_schema` und `supports_vision`. Eine Modellauswahl, die eine Fähigkeit
   verlangt, behandelt ein nicht gesetztes Flag als nicht unterstützt.
