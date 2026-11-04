@@ -65,7 +65,7 @@ class Conversation(Capability):
     - `compose(history, blocks)` merges context blocks into the history, in the given order, within the input
       budget. Answered with `ContextComposedEvent`, which the chat displays as what the model saw.
     - `complete(answer, stop)` generates the follow-up questions and ends the run with the given stop event, or
-      an `LLMStopEvent` carrying the answer.
+      an `LLMStopEvent` carrying the answer. Both keep the conversation, not the context the model read.
 
     The meta-question gate lives inside `contextualize` on purpose: a blueprint that had to gate its own steps
     could forget to, and detection would race its pipeline. Here nothing downstream exists until the message
@@ -103,8 +103,15 @@ class Conversation(Capability):
 
     @staticmethod
     def complete(answer: LLMEvent, stop: StopEvent | None = None) -> CompleteConversationEvent:
-        """End the turn on this answer; return it last from a step, behind anything that must be published first."""
-        return CompleteConversationEvent(answer=answer, stop=stop)
+        """End the turn on this answer; return it last from a step, behind anything that must be published first.
+
+        Both carry the conversation only (`LLMEvent.for_hand_back`): the context the model read is on
+        `ContextComposedEvent`, and an attached file long in characters made the events ending the turn too large
+        for the broker.
+        """
+        if isinstance(stop, LLMEvent):
+            stop = stop.for_hand_back()
+        return CompleteConversationEvent(answer=answer.for_hand_back(), stop=stop)
 
     @staticmethod
     @step(
@@ -172,7 +179,7 @@ class Conversation(Capability):
             t=t,
         )
         await generate_follow_up_questions(stop_event.chat_messages, conversation.task_llm, displayer, t, user)
-        return stop_event
+        return stop_event.for_hand_back()
 
     @staticmethod
     @step(

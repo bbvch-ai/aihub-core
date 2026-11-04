@@ -46,7 +46,7 @@ class StoredImage(BaseModel):
         return bucket, key
 
     @staticmethod
-    def folder(agent_class: str, agent_id: str) -> str:
+    def key_prefix(agent_class: str, agent_id: str) -> str:
         safe = UserUploadedFile.sanitize_path_segment
         return f"{safe(agent_class)}/{safe(agent_id)}/{StoredImage.FOLDER}"
 
@@ -75,7 +75,7 @@ class StoredImage(BaseModel):
             media_type = header.removeprefix("data:").split(";")[0]
             return StoredImage._decoded(block, content, media_type, settings)
         if StoredImage.is_reference(url) and not StoredImage.location(url)[1].startswith(
-            f"{StoredImage.folder(context.agent_class, context.agent_id)}/"
+            f"{StoredImage.key_prefix(context.agent_class, context.agent_id)}/"
         ):
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "An image may only reference images of the called agent.")
         return None
@@ -106,7 +106,7 @@ class StoredImage(BaseModel):
 
     async def _store(self, context: ApiPayloadContext) -> None:
         extension = mimetypes.guess_extension(self.media_type) or ""
-        key = f"{StoredImage.folder(context.agent_class, context.agent_id)}/{hashlib.sha256(self.data).hexdigest()}"
+        key = f"{StoredImage.key_prefix(context.agent_class, context.agent_id)}/{hashlib.sha256(self.data).hexdigest()}"
         key += extension
         bucket = UserUploadedFile.AGENT_FILES_BUCKET
         if not await asyncio.to_thread(StoredImage._exists, context, bucket, key):

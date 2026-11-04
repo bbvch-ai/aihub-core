@@ -86,7 +86,7 @@ class AgentFileUploadService:
     @trace_fn
     def read_image(self, agent_class: str, agent_id: str, name: str) -> tuple[bytes, str]:
         """A stored image of a message, with its content type; a missing one is a 404, as an expired file is."""
-        key = f"{StoredImage.folder(agent_class, agent_id)}/{name}"
+        key = f"{StoredImage.key_prefix(agent_class, agent_id)}/{name}"
         try:
             image = self._s3_client.get_object(Bucket=self.BUCKET_NAME, Key=key)
         except ClientError as missing:

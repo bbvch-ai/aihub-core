@@ -111,7 +111,9 @@ the files of the last user message are attached: earlier messages are history, w
 turn. References to files hosted by OpenAI (`file_id`) are refused. The limits and errors are the same as for the
 [agent endpoints](../4_dynamic_endpoints/#sending-files-to-an-agent): 25 MB per file and 10 files per request by
 default, `413` above them, `415` for types agents cannot read and for images (send those as `image_url`), and nothing is
-stored when a request is refused. A request body may not exceed 64 MB.
+stored when a request is refused. A request body may not exceed 64 MB. A message that answers a question the agent is
+waiting on (a human-in-the-loop request) cannot carry inline files or images and is refused with `409`: answer first,
+then send them with a new message.
 
 **Images.** An `image_url` holding a `data:` URL is stored in the agent's file bucket, and the agent receives a
 reference in the image's place, which it turns into a URL its model can read when it calls it. Images of any message

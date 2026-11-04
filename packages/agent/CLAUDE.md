@@ -200,7 +200,11 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
   window instead.
 - `complete(answer, stop=None)` → generates the follow-up questions and ends the run with the given stop event (RAG's
   outcome events) or an `LLMStopEvent` carrying the answer. Return it **last** from the step, behind anything that must
-  be published before teardown.
+  be published before teardown. The answer (and a given `LLMEvent` stop) is handed back through core's
+  `LLMEvent.for_hand_back()`: user and assistant turns only, the newest within `HAND_BACK_BYTES` (200,000), the last one
+  cut when it alone is longer. The context the model read stays on `ContextComposedEvent`; carried on here, an attached
+  file long in characters (a form of `____` blanks passes the token budget) pushed the completion and the stop event
+  past the broker's payload limit and the run never ended.
 
 **Structured answers** (`UserMessageEvent.response_schema`, ADR
 `2026_11_02_structured_answers_from_conversational_agents`): a caller may ask for the answer as JSON matching a schema.
@@ -637,6 +641,9 @@ await runner.run_forever()
 - On `StopEvent`/`ExceptionEvent`: cleans up `RunContext`, marks completion. Handled **before** config resolution —
   teardown needs no config, and the `ExceptionEvent` below would otherwise hit the same failure it reports and never
   retire its run
+- If a step raises, or publishing one of its results fails (e.g. `MaxPayloadError`, which `JSPublisher` does not retry),
+  `_report_step_failure` publishes an `ExceptionEvent` for a `stop_on_error` step, so the run ends instead of waiting
+  for an event the broker refused
 - If the config cannot be fetched, merged or validated: publishes an `ExceptionEvent` and aborts the run, so the chat
   shows an error instead of hanging forever. The message carries field locations and reasons only — an agent config
   holds credentials (e.g. `ImapClientConfig.password`) and this text reaches the user's chat

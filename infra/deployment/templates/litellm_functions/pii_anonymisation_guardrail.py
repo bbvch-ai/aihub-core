@@ -13,7 +13,13 @@ model. With PII_ANONYMISE_EXTERNAL_MODELS=true it also runs on every call to a m
 default, because most deployments serve their models locally. Placeholders already in the input (text a
 user anonymised by hand) are passed through, never re-detected and never reused for a new value. The placeholder map
 is PII, so it lives only in this process, keyed by the request's litellm_call_id, and is never written into request
-metadata, which LiteLLM forwards to spend logs and callbacks. A failed or timed-out analysis fails the call.
+metadata, which LiteLLM forwards to spend logs and callbacks. A failed or timed-out analysis fails the call; the
+timeout is PRESIDIO_ANALYZER_TIMEOUT_SECONDS.
+
+One analysis costs seconds of analyzer CPU per few thousand characters, and every call of a conversation resends its
+whole history. So the texts of one call are analysed side by side, and the spans of a text already analysed are reused
+from an in-memory cache keyed by the text's hash: at turn 10 of a chat this cut the analyzer's work per call from 25 s
+to under 2 s.
 
 GLiNER also tags pronouns ("Sie", "vous") as PERSON and field labels ("Adresse", "IBAN") as their own type, and in
 long documents numbered labels too ("Position 2"). Masking them garbles the prompt and the answer ("Adresse: Adresse")
@@ -28,13 +34,17 @@ stdlib, httpx, LiteLLM and the audit module mounted next to it. The analyzer URL
 PRESIDIO_ANALYZER_API_BASE and PRESIDIO_ANALYZER_API_KEY.
 """
 
+import asyncio
 import copy
+import hashlib
 import json
 import logging
+import math
 import os
 import re
 import time
 import uuid
+from collections import OrderedDict
 from collections.abc import AsyncGenerator
 from typing import Any
 
@@ -57,8 +67,16 @@ LOCAL_HOSTING = "local"
 EXTERNAL_MODELS_SWITCH = "PII_ANONYMISE_EXTERNAL_MODELS"
 CHAT_CALL_TYPES = {"completion", "acompletion"}
 JSON_RESPONSE_FORMATS = {"json_object", "json_schema"}
-# A 20k-token prompt takes about 50 s on the analyzer's 4 CPU threads; past this the call fails instead of hanging.
-ANALYZER_TIMEOUT_SECONDS = 150
+TIMEOUT_SETTING = "PRESIDIO_ANALYZER_TIMEOUT_SECONDS"
+# A 20k-token prompt takes about 50 s on the analyzer's 4 CPU threads, longer while other calls queue; past the timeout
+# the call fails instead of hanging.
+DEFAULT_ANALYZER_TIMEOUT_SECONDS = 150.0
+# A conversation's history comes back with every call; spans of a text analysed within this window are reused.
+ANALYSIS_CACHE_TTL_SECONDS = 3600
+ANALYSIS_CACHE_MAX_TEXTS = 10_000
+# Texts of one call analysed at once: enough to overlap a call's messages, few enough that one long conversation does
+# not hold every analyzer thread while other calls wait.
+PARALLEL_ANALYSES_PER_CALL = 4
 # A label may carry a short number ("Position 2", "Art. 5", "Nr. 12a"); four digits at most, so no ID or phone fits.
 NUMBERED_LABEL_SUFFIX = r"(?:\s*(?:Nr\.?|No\.?|n°)?\s*\d{1,4}[a-z]?)?"
 # Maps of calls that never reached a response hook (client gone mid-stream) are dropped after this.
@@ -144,6 +162,42 @@ class StreamRestorer:
         return rest
 
 
+class AnalysisCache:
+    """The analyzer's spans per text, so a conversation's history is analysed once instead of on every call.
+
+    Keyed by the text's SHA-256 and holding only offsets, entity types and scores, so no text is kept; it lives in this
+    process's memory only. An entry older than the TTL counts as absent, and the least recently used goes when full.
+    """
+
+    def __init__(self, ttl_seconds: float, max_texts: int) -> None:
+        self.ttl_seconds = ttl_seconds
+        self.max_texts = max_texts
+        self._entries: OrderedDict[str, tuple[float, list[dict]]] = OrderedDict()
+
+    @staticmethod
+    def key(text: str) -> str:
+        return hashlib.sha256(text.encode()).hexdigest()
+
+    def get(self, text: str) -> list[dict] | None:
+        key = self.key(text)
+        entry = self._entries.get(key)
+        if entry is None:
+            return None
+        stored, spans = entry
+        if time.monotonic() - stored > self.ttl_seconds:
+            del self._entries[key]
+            return None
+        self._entries.move_to_end(key)
+        return [dict(span) for span in spans]
+
+    def put(self, text: str, spans: list[dict]) -> None:
+        key = self.key(text)
+        self._entries[key] = (time.monotonic(), [dict(span) for span in spans])
+        self._entries.move_to_end(key)
+        while len(self._entries) > self.max_texts:
+            self._entries.popitem(last=False)
+
+
 class PiiAnonymisationGuardrail(CustomGuardrail):
     """Masks chat requests through the Presidio analyzer and restores the answer, streamed or not."""
 
@@ -158,7 +212,8 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         self.entities = [str(getattr(key, "value", key)) for key in (pii_entities_config or {})]
         self.allow_list = self.allow_list_pattern(pii_allow_list or [])
         self.anonymise_external_models = self.switch(os.environ.get(EXTERNAL_MODELS_SWITCH, ""))
-        self.client = httpx.AsyncClient(timeout=ANALYZER_TIMEOUT_SECONDS)
+        self.client = httpx.AsyncClient(timeout=self.timeout_seconds(os.environ.get(TIMEOUT_SETTING, "")))
+        self.cache = AnalysisCache(ANALYSIS_CACHE_TTL_SECONDS, ANALYSIS_CACHE_MAX_TEXTS)
         self._maps: dict[str, tuple[float, dict[str, str], bool]] = {}
         self._external: dict[str, bool] = {}
         self.audit = AnonymisationAudit()
@@ -176,6 +231,22 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         if normalised != "true":
             logger.error("%s must be true or false, got %r: anonymising external models", EXTERNAL_MODELS_SWITCH, value)
         return True
+
+    @staticmethod
+    def timeout_seconds(value: str) -> float:
+        """The default when unset. Anything but a positive number is logged and falls back to the default, never raised,
+        for the same reason as the switch."""
+        if not value.strip():
+            return DEFAULT_ANALYZER_TIMEOUT_SECONDS
+        try:
+            seconds = float(value)
+        except ValueError:
+            seconds = math.nan
+        if 0 < seconds < math.inf:
+            return seconds
+        logger.error("%s must be a positive number of seconds, got %r: using %s", TIMEOUT_SETTING, value,
+                     DEFAULT_ANALYZER_TIMEOUT_SECONDS)
+        return DEFAULT_ANALYZER_TIMEOUT_SECONDS
 
     def should_run_guardrail(self, data: Any, event_type: Any) -> bool:
         if not isinstance(data, dict) or "messages" not in data:
@@ -210,6 +281,9 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         return rf"\A(?:{alternation}){NUMBERED_LABEL_SUFFIX}\Z" if words else None
 
     async def analyze(self, text: str) -> list[dict]:
+        cached = self.cache.get(text)
+        if cached is not None:
+            return cached
         request = {"text": text, "language": self.language, "entities": self.entities or None}
         if self.allow_list:
             request |= {"allow_list": [self.allow_list], "allow_list_match": "regex"}
@@ -217,11 +291,29 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
             response = await self.client.post(self.analyze_url, headers={"Authorization": f"Bearer {self.api_key}"},
                                               json=request)
             response.raise_for_status()
-            return response.json()
+            spans = response.json()
         except (httpx.HTTPError, ValueError) as error:
             logger.error("PII analysis failed, refusing the call: %s", error)
             raise AnonymisationUnavailableError(
                 f"PII anonymisation is unavailable, so the request was not sent: {type(error).__name__}") from error
+        self.cache.put(text, spans)
+        return spans
+
+    async def analyze_all(self, texts: list[str]) -> dict[str, list[dict]]:
+        """At most PARALLEL_ANALYSES_PER_CALL at once; the first failure cancels the rest, as the call is refused."""
+        slots = asyncio.Semaphore(PARALLEL_ANALYSES_PER_CALL)
+
+        async def analyze_in_slot(text: str) -> list[dict]:
+            async with slots:
+                return await self.analyze(text)
+
+        tasks = [asyncio.ensure_future(analyze_in_slot(text)) for text in texts]
+        try:
+            return dict(zip(texts, await asyncio.gather(*tasks), strict=True))
+        except BaseException:
+            for task in tasks:
+                task.cancel()
+            raise
 
     @staticmethod
     def texts_of(message: dict) -> list[str]:
@@ -232,14 +324,16 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
             return [p["text"] for p in content if isinstance(p, dict) and p.get("type") == "text" and p.get("text")]
         return []
 
-    async def mask_message(self, message: dict, masker: PlaceholderMasker) -> None:
+    @staticmethod
+    def mask_message(message: dict, masker: PlaceholderMasker, spans: dict[str, list[dict]]) -> None:
+        """Masks in message order whatever order the analyses finished in, so placeholder numbers stay stable."""
         content = message.get("content")
         if isinstance(content, str) and content:
-            message["content"] = masker.mask(content, await self.analyze(content))
+            message["content"] = masker.mask(content, spans[content])
         elif isinstance(content, list):
             for part in content:
                 if isinstance(part, dict) and part.get("type") == "text" and part.get("text"):
-                    part["text"] = masker.mask(part["text"], await self.analyze(part["text"]))
+                    part["text"] = masker.mask(part["text"], spans[part["text"]])
 
     async def async_pre_call_hook(self, user_api_key_dict: Any, cache: Any, data: dict, call_type: str) -> dict:
         if call_type not in CHAT_CALL_TYPES:
@@ -249,12 +343,14 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         messages = data.get("messages") or []
         reserved = {token for message in messages for text in self.texts_of(message) for token in TOKEN.findall(text)}
         masker = PlaceholderMasker(reserved)
+        texts = list(dict.fromkeys(text for message in messages for text in self.texts_of(message) if text))
         try:
-            for message in messages:
-                await self.mask_message(message, masker)
+            spans = await self.analyze_all(texts)
         except AnonymisationUnavailableError as refusal:
             self.audit.record(data, {}, reason, started_ns, error=str(refusal))
             raise
+        for message in messages:
+            self.mask_message(message, masker, spans)
         self.audit.record(data, masker.tokens, reason, started_ns)
         response_format = data.get("response_format") or {}
         json_output = isinstance(response_format, dict) and response_format.get("type") in JSON_RESPONSE_FORMATS

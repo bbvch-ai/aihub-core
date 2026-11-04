@@ -161,7 +161,8 @@ class TestConversationWithASchema:
                 t=T,
             )
 
-        assert stop is refusal
+        assert isinstance(stop, RefusalStopEvent)
+        assert stop.reason == RefusalReason.INPUT_TOO_LARGE
 
     @pytest.mark.asyncio
     async def test_a_supplied_stop_is_the_answer_validated_not_the_summary_beside_it(self):
