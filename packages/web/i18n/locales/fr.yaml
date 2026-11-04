@@ -454,6 +454,10 @@ agent:
         cet environnement.
   export:
     button: Exporter
+  storedSecrets:
+    title: Secrets à saisir à nouveau
+    detail: "Les secrets enregistrés ne sont jamais copiés dans un nouveau profil.\
+      \ Saisissez-les à nouveau avant d'enregistrer : {fields}"
   configuration:
     title: Configuration de l'agent
     description: Configurez le comportement d'exécution et les paramètres de cet agent

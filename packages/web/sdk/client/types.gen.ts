@@ -7074,7 +7074,7 @@ export type FullAgentInstanceDto = {
   /**
    * Configuration
    *
-   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.
+   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.
    */
   configuration?: {
     [key: string]: unknown;
@@ -25191,7 +25191,7 @@ export type FullAgentInstanceDtoWritable = {
   /**
    * Configuration
    *
-   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.
+   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.
    */
   configuration?: {
     [key: string]: unknown;

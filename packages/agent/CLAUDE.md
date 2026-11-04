@@ -583,17 +583,19 @@ These are `AfterValidator`s that skip validation when the value is a `FormkitEle
 
 3. **Storage**: Admin creates a profile via Admin UI. API validates submission against
    `agent_config_specs.config_schema`, saves to `AgentConfigEntityDocument` (MongoDB `agent_configs` collection) with
-   `(agent_class, agent_id)` compound unique index.
+   `(agent_class, agent_id)` compound unique index. Secret fields (`Password`, `SecretFileInput`, found by
+   `SecretFieldWalker` on the stored announced form) are stored encrypted and masked in every response (#1587).
 
 4. **Runtime Fetch**: On each `StartEvent`, dispatcher calls `AgentConfigClient.fetch_config(agent_class, agent_id)` →
    NATS RPC (`aihub.rpc.config.agent.{class}.{id}`) → `AgentConfigResponder` (API side) →
-   `AgentConfigEntityDocument.find_for_class_and_id()` → returns `config_data` dict.
+   `AgentConfigEntityDocument.find_for_class_and_id()` → returns `config_data` dict, secrets still encrypted.
 
 5. **Merge**: `Form.deep_merge(non_configurable_values, submitted_config)` → combines deployment-fixed values with
-   user-configured values. Result stored in `RunContext`.
+   user-configured values. Result stored in `RunContext`, secrets still encrypted.
 
 6. **Injection**: `agent_config_type.model_validate(merged_dict)` reconstructs typed config in data mode. Injected into
-   `@step()` methods that declare the `AgentConfig` subclass as a parameter.
+   `@step()` methods that declare the `AgentConfig` subclass as a parameter. Secrets are decrypted only here, right
+   before validation, so plaintext never reaches RunContext or Valkey.
 
 **This runs on every dispatched event, before any step.** So a config-level validation error is not a validation error —
 it stops the whole agent for that profile. The dispatcher reports it as an `ExceptionEvent` rather than letting it
@@ -621,6 +623,10 @@ await runner.run_forever()
 **AgentDispatcher** (extends `BaseDispatcher`): The core workflow executor.
 
 - On `StartEvent`: fetches config via NATS RPC, deep-merges with non-configurable defaults, stores in `RunContext`
+- Decrypts secrets lazily in `_decrypted`, right before `model_validate` and only at the secret paths. Only a config
+  holding a value with the ciphertext prefix computes `secret_field_paths()` (cached per dispatcher) and needs
+  `AIHUB_CONFIG_ENCRYPTION_KEY`; never compute it at construction, since configs that do not override `as_form()` cannot
+  build a form. ADR `2026_11_02_agent_config_secrets_decrypted_at_validation`
 - For each event: finds waiting steps via `get_steps_waiting_for_event()`, checks preconditions, executes ready steps
 - Builds kwargs via dependency injection (events from history + injected services)
 - Instantiates a fresh `agent()` for each step execution (stateless)
