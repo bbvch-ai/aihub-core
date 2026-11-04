@@ -77,6 +77,7 @@ BaseEvent
 │       │   ├── HumanInTheLoopInputRequestEvent
 │       │   ├── HumanInTheLoopConfirmationRequestEvent
 │       │   └── HumanInTheLoopChatRequestEvent
+│       │       └── HumanInTheLoopQuestionsRequestEvent (choice questions)
 │       ├── HumanInTheLoopResponseEvent[T] (human replied)
 │       ├── AgentInTheLoopRequestEvent (delegate to agent)
 │       ├── AgentInTheLoopResponseEvent (agent replied)
@@ -298,17 +299,18 @@ execution adds `SandboxFileDisplayedEvent` (`events/agent/sandbox/`) when an age
 
 #### Interaction Events
 
-| Event                                    | Base                         | Purpose                             |
-| ---------------------------------------- | ---------------------------- | ----------------------------------- |
-| `HumanInTheLoopInputRequestEvent`        | `HumanInTheLoopRequestEvent` | Popup with text input field         |
-| `HumanInTheLoopConfirmationRequestEvent` | `HumanInTheLoopRequestEvent` | Yes/No button selection             |
-| `HumanInTheLoopChatRequestEvent`         | `HumanInTheLoopRequestEvent` | Chat message (fallback)             |
-| `HumanInTheLoopResponseEvent[T]`         | `ControlAndDisplayEvent`     | Human replied (generic T)           |
-| `AgentInTheLoopRequestEvent`             | `ControlAndDisplayEvent`     | Delegate to another agent           |
-| `AgentInTheLoopResponseEvent`            | `ControlAndDisplayEvent`     | Delegated agent result              |
-| `AgentInTheLoopExceptionEvent`           | `ControlAndDisplayEvent`     | Delegated agent failure             |
-| `BotInTheLoopRequestEvent`               | `ControlEvent`               | Send message to Teams/Slack channel |
-| `BotInTheLoopResponseEvent`              | `ControlEvent`               | Response from Teams/Slack user      |
+| Event                                    | Base                             | Purpose                                                                                              |
+| ---------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `HumanInTheLoopInputRequestEvent`        | `HumanInTheLoopRequestEvent`     | Popup with text input field                                                                          |
+| `HumanInTheLoopConfirmationRequestEvent` | `HumanInTheLoopRequestEvent`     | Yes/No button selection                                                                              |
+| `HumanInTheLoopChatRequestEvent`         | `HumanInTheLoopRequestEvent`     | Chat message (fallback)                                                                              |
+| `HumanInTheLoopQuestionsRequestEvent`    | `HumanInTheLoopChatRequestEvent` | Up to 5 choice questions: OpenWebUI's `request:user_input` dialog, `question` as chat text elsewhere |
+| `HumanInTheLoopResponseEvent[T]`         | `ControlAndDisplayEvent`         | Human replied (generic T)                                                                            |
+| `AgentInTheLoopRequestEvent`             | `ControlAndDisplayEvent`         | Delegate to another agent                                                                            |
+| `AgentInTheLoopResponseEvent`            | `ControlAndDisplayEvent`         | Delegated agent result                                                                               |
+| `AgentInTheLoopExceptionEvent`           | `ControlAndDisplayEvent`         | Delegated agent failure                                                                              |
+| `BotInTheLoopRequestEvent`               | `ControlEvent`                   | Send message to Teams/Slack channel                                                                  |
+| `BotInTheLoopResponseEvent`              | `ControlEvent`                   | Response from Teams/Slack user                                                                       |
 
 **HITL Helper Classes** (not events, but workflow utilities):
 

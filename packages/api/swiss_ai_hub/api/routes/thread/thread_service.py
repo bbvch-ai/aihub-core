@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import UTC, datetime
+from typing import Annotated
 
 from bson import ObjectId
 from cachetools import TTLCache, cached
@@ -8,9 +9,14 @@ from fastapi import HTTPException
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
-from swiss_ai_hub.core.events.agent import HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent
+from swiss_ai_hub.core.events.agent import (
+    HumanInTheLoopRequestEvent,
+    RecordsExtractedEvent,
+)
+from swiss_ai_hub.core.generative_ai import ExtractedTableFile, ExtractionFileStore
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
@@ -22,6 +28,7 @@ from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import S
 
 from swiss_ai_hub.api.routes.agent.dto.agent_identifier import AgentIdentifier
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
+from swiss_ai_hub.api.routes.file.dto.signed_url_dto import SignedUrlDto
 from swiss_ai_hub.api.routes.openai.dto.history_response import HistoryResponse
 from swiss_ai_hub.api.routes.thread.conversation_history_projector import ConversationHistoryProjector
 from swiss_ai_hub.api.routes.thread.dto.open_chat_hitl_response import OpenChatHitlResponse
@@ -32,6 +39,7 @@ from swiss_ai_hub.api.routes.thread.dto.statistics.processed_run_results import 
 from swiss_ai_hub.api.routes.thread.dto.statistics.run_statistics import RunStatistics
 from swiss_ai_hub.api.routes.thread.dto.thread_agent_dto import ThreadAgentDTO
 from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
+from swiss_ai_hub.api.routes.thread.thread_access import ThreadAccess
 from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
 from swiss_ai_hub.api.routes.user.user_service import UserService
 
@@ -97,6 +105,30 @@ class ThreadService:
 
     @staticmethod
     @trace_fn
+    async def get_or_create_thread_to_post_in(
+        thread_id: str,
+        user: UserIdentity,
+        agent: AgentInstanceRef,
+        t: LocaleHandler,
+    ) -> ThreadDTO:
+        """The thread an event is posted into, started for the caller when the id is new.
+
+        Clients name a new conversation's thread themselves (the OpenWebUI pipe derives it from the chat id),
+        so an unknown id is created rather than refused. A profile's scheduled-run thread id cannot be claimed
+        this way because it is keyed with a secret only the instance holds.
+        """
+        try:
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+        except DoesNotExist:
+            ThreadEntity.create_thread(
+                "chat", users=[User(user_id=user.id)], agents=[agent], thread_id=ObjectId(thread_id)
+            )
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+        ThreadAccess.ensure_can_post(thread, user)
+        return thread
+
+    @staticmethod
+    @trace_fn
     async def get_paginated_threads_for_user(
         user_id: str,
         t: LocaleHandler,
@@ -143,18 +175,16 @@ class ThreadService:
     async def get_paginated_threads_for_agent(
         agent_class: str,
         agent_id: str,
+        user_id: str,
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
-        user_id: str | None = None,
     ) -> tuple[int, list[ThreadDTO]]:
-        """
-        Returns a paginated list of threads that a specific agent is part of.
-        """
+        """Returns a page of the user's threads that a specific agent is part of."""
         skip = (page - 1) * page_size
-        total = ThreadEntity.count_threads_by_agent(agent_class, agent_id)
+        total = ThreadEntity.count_threads_by_agent(agent_class, agent_id, user_id)
         threads = ThreadEntity.get_paginated_threads_by_agent(
-            agent_class, agent_id, skip=skip, limit=page_size, user_id=user_id
+            agent_class, agent_id, user_id, skip=skip, limit=page_size
         )
         thread_dtos = await asyncio.gather(
             *(ThreadService.thread_response_from_entity(thread, t) for thread in threads)
@@ -199,19 +229,49 @@ class ThreadService:
         A chat HITL is open when it has not been responded to. Only HITL requests
         with hitl_type == "chat" are considered.
         """
-        hitl_request_entities = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(thread_id)
-        hitl_response_entities = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(thread_id)
-
-        hitl_requests = [HumanInTheLoopRequestEvent.deserialize_event(e.event_data) for e in hitl_request_entities]
-        hitl_responses = [HumanInTheLoopResponseEvent.deserialize_event(e.event_data) for e in hitl_response_entities]
-
-        responded_request_ids: set[str] = {response.request_event.event_id for response in hitl_responses}
-
-        for request in hitl_requests:
-            if request.hitl_type == "chat" and request.event_id not in responded_request_ids:
+        open_entities = PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(thread_id)
+        for request in (HumanInTheLoopRequestEvent.deserialize_event(entity.event_data) for entity in open_entities):
+            if request.hitl_type == "chat":
                 return OpenChatHitlResponse(has_open_chat_hitl=True, hitl_request=request)
 
         return OpenChatHitlResponse(has_open_chat_hitl=False, hitl_request=None)
+
+    @staticmethod
+    @trace_fn
+    async def extracted_table_download_url(
+        thread_id: Annotated[str, "The thread the extraction answered in"],
+        extraction_id: Annotated[str, "The extraction whose whole table to download"],
+    ) -> SignedUrlDto:
+        """A presigned link to the whole table of an extraction in the thread; events only carry a preview.
+
+        The table is looked up in the thread's own events, so access to the thread is access to its tables, and only
+        extraction tables are signed: an event naming any other object is not a table of this thread.
+        """
+        table = await asyncio.to_thread(ThreadService._extracted_table_file, thread_id, extraction_id)
+        if table is None:
+            raise HTTPException(status_code=404, detail="No extracted table with this id in the thread")
+        if not await ExtractionFileStore.exists(table):
+            raise HTTPException(
+                status_code=410,
+                detail="The extracted table is no longer stored: tables are deleted after 7 days. Run the extraction "
+                "again to get a new one.",
+            )
+        return SignedUrlDto(url=ExtractionFileStore.download_url(table))
+
+    @staticmethod
+    def _extracted_table_file(thread_id: str, extraction_id: str) -> ExtractedTableFile | None:
+        """The file of the extraction's latest answer: a sample first, every document once the user confirms."""
+        stored = [
+            entity.event_data["file"]
+            for entity in PersistedAgentEventEntity.display_events_for_thread(
+                thread_id, event_name=RecordsExtractedEvent.__name__
+            )
+            if entity.event_data.get("extraction_id") == extraction_id and entity.event_data.get("file")
+        ]
+        if not stored:
+            return None
+        table = ExtractedTableFile.model_validate(stored[-1])
+        return table if ExtractionFileStore.holds(table) else None
 
     @staticmethod
     @trace_fn
@@ -308,7 +368,8 @@ class ThreadService:
             for agent_info in run_data.get("participating_agents_in_run", []):
                 pa_class = agent_info.get("agent_class")
                 pa_id = agent_info.get("agent_id")
-                if pa_class and pa_id:
+                # A user's own messages are published as the "UserAgent", which is no agent instance to look up.
+                if pa_class and pa_id and pa_class != "UserAgent":
                     results.participating_agent_ids.add(AgentIdentifier(agent_class=pa_class, agent_id=pa_id))
 
         return results
@@ -391,6 +452,9 @@ class ThreadService:
             name=entity.name,
             users=user_dtos,
             agents=sorted(initial_agent_dtos, key=lambda a: (a.agent_class, a.agent_id)),
+            process_class=entity.process_class,
+            process_id=entity.process_id,
+            process_walkthrough_id=entity.process_walkthrough_id,
         )
 
         # 2. Get aggregated run statistics from the database

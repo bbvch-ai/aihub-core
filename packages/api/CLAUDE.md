@@ -38,6 +38,7 @@ packages/api/
 │   │   ├── i18n/               # Locale endpoints
 │   │   └── parsing/            # Document parsing (MinerU)
 │   ├── services/               # Dynamic endpoint discovery (NATS-based)
+│   ├── request_limits/         # Request body-size middleware (API_REQUEST_* settings)
 │   ├── events/                 # EventModelCreationService (Jambo)
 │   ├── rpc/                    # NATS RPC responders (agent/process config)
 │   ├── sockets/                # WebSocket manager, sender, event wrapping
@@ -143,6 +144,11 @@ model name this deployment got wrong. Log level is the narrower signal — `ERRO
 must fix, `WARNING` for the three statuses they cannot act on (413/422/429), which also keeps a rate-limit storm from
 flooding the log pipeline.
 
+On the OpenAI-compatible routes (`/openai/`), `OpenaiErrorHandler` (`routes/openai/openai_error_handler.py`, registered
+in `ApiRunner._get_api_app`) gives the platform's own `HTTPException`s and validation errors the same shape: an OpenAI
+`error` object next to the unchanged `detail`, and `400` instead of `422` for a request it cannot accept. Every other
+route keeps FastAPI's default responses. A streamed agent answer that fails ends with an `error` event, not answer text.
+
 New upstream integrations that raise their own SDK exception types belong in the same place — do not wrap service calls
 in try/except to compensate.
 
@@ -195,6 +201,12 @@ permission validation + OpenTelemetry span enrichment (user ID, email, roles, re
 **Service-level checks**: `AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)` for fine-grained
 authorization beyond endpoint-level permissions.
 
+**Thread access**: every thread and event endpoint decides through `ThreadAccess` (`routes/thread/thread_access.py`).
+Members and sysadmins may read a thread; process access counts only for a thread that has a process. Only members post
+into a thread. A client may name a new thread itself (the OpenWebUI pipe derives the id from the chat), which
+`ThreadService.get_or_create_thread_to_post_in` creates for the caller. Scheduled-run thread ids are keyed with
+`AIHUB_CONFIG_ENCRYPTION_KEY` (`ThreadEntity.scheduled_thread_id`), so no client can compute one and claim it first.
+
 **Access capability catalog**: `AccessController` (`routes/access/`, served at `/access/capabilities` &
 `/access/presets`) builds the human-readable capability table shown in the role and tenant-ceiling editors (and
 read-only on the user page). It introspects each controller's routes at runtime and derives each capability's access
@@ -213,18 +225,59 @@ them to the main API.
 The API doesn't hardcode agent or process endpoints. Discovery services dynamically register/deregister FastAPI routes
 based on what's available on NATS.
 
-**`AgentEndpointsDiscoveryService`**: Every 60 seconds, broadcasts `ClassDiscoveryRequestEvent` via NATS. Online agents
-respond with metadata (start/stop/HITL event specs, config schema, form definition). The service creates FastAPI
-endpoints for each agent class's events — both regular and streaming variants. When agents go offline, their endpoints
-are removed and the OpenAPI schema is invalidated.
+**`AgentEndpointsDiscoveryService`**: Every `DISCOVERY_INTERVAL_SECONDS` (60), broadcasts `ClassDiscoveryRequestEvent`
+via NATS. Online agents respond with metadata (start/stop/HITL event specs, config schema, form definition). The service
+creates FastAPI endpoints for each agent class's events — both regular and streaming variants. When agents go offline,
+their endpoints are removed and the OpenAPI schema is invalidated.
 
 **`ProcessEndpointsDiscoveryService`**: Same pattern for processes. Registers form GET/POST endpoints for human input
 steps and data POST endpoints for programmatic input.
 
-**`ModelCreationService`** + **`EventModelCreationService`**: Convert agent event JSON schemas into Pydantic models at
-runtime using `jambo.SchemaConverter.build()`. Input models exclude framework fields (`event_id`, `created_at`, `user`,
-`locale`). Output models exclude internal fields (`_event_name`, `_parent_event_names`). These models power the dynamic
-endpoint request/response validation and OpenAPI documentation.
+**Online status counts completed rounds, not the clock** (#1970). The shared round lives in `EndpointsDiscoveryService`;
+the subclasses only broadcast, name and register classes.
+
+- **Rule**: a class is online while its `last_discovered` is at or after the *start* of the round
+  `DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE` (3) completed rounds back (`DiscoveryRoundEntity.online_threshold`). The
+  start, not the end, because answers are stamped after the response wait.
+- **What completes a round**: NATS connected before the broadcast and after the wait with no reconnect in between
+  (`nc.stats["reconnects"]`), and all of it inside `DISCOVERY_ROUND_TIMEOUT_SECONDS`. Anything else is logged as an
+  error and not recorded, so it moves no class towards offline. The NATS check matters because nats-py buffers a publish
+  while reconnecting instead of raising. A class whose answer cannot be saved counts as not having answered
+  (`_stamp_answer`); it does not fail the round for every other class.
+- **Max silence**: the threshold is never older than `DISCOVERY_MAX_SILENCE_SECONDS`. Without it, a fault that fails
+  every round, or the rounds left from before an API restart, would keep dead classes online indefinitely. Left empty
+  (the default) it is 2.5× the longest the missed rounds can take, `MISSED × (INTERVAL + ROUND_TIMEOUT)`: 900 s with the
+  defaults, and it follows the interval when that is raised. An explicit value must exceed that span.
+- **Several API processes**: every gunicorn worker or replica runs rounds, because each registers the dynamic endpoints
+  on its own app, but only the holder of the Redis `DiscoveryRecorderLease` (`discovery:{kind}:recorder`) records them.
+  Rounds from N processes would make "the last N rounds" span a fraction of the configured time. While Redis is
+  unreachable the lease reports not held, so rounds still reconcile endpoints and are simply not recorded.
+- **One rule everywhere**: `is_online_since(threshold)`, the scheduler, `get_online_conversational` and endpoint removal
+  all use it. Services read the threshold once per request and pass `is_online` into the DTO factories.
+- **Cold start**: until that many rounds exist, the wall-clock window they would span stands in.
+- **After the round**: the agent service's Langfuse/OpenWebUI syncs run in `_after_round`, outside the timeout.
+
+**`ModelCreationService`** + **`EventModelCreationService`**: Convert announced JSON schemas into Pydantic models at
+runtime using `jambo.SchemaConverter.build()`. Agent input models are built from `EventSpecs.api_input_schema`, which
+the event itself defines (`BaseEvent.api_input_model()`): no server-filled fields, and the shapes the event converts
+itself, such as inline files. Output models exclude internal fields (`_event_name`, `_parent_event_names`). These models
+power the dynamic endpoint request/response validation and OpenAPI documentation. Process endpoints
+(`EventModelCreationService`) still strip their own list of fields.
+
+**Events own their API input**: the dynamic agent endpoints pass the validated body to
+`expected_type.from_api_payload(payload, event_name=…, event_parents=…, context=ApiPayloadContext(…))`. It resolves the
+registered class (or its closest parent), validates against the real input model, runs the class's conversion hook (e.g.
+`UserMessageEvent` stores inline `files` in the `agent-files` bucket via `InlineFile.store_all`) and fills in the caller
+and locale. Never add field- or event-specific logic to the API for this; see ADR
+`2026_10_30_events_own_their_api_input`.
+
+**Request size**: `request_limits/BodySizeLimitMiddleware` refuses any request body over `API_REQUEST_MAX_BODY_BYTES`
+(64 MB) while it arrives, whatever its content type: FastAPI reads the whole body of every endpoint that takes one, so a
+JSON-only limit could be bypassed by sending another type or none. A `multipart/form-data` request is left out only when
+the route it matches parses a form (its `body_field` is a `Form`/`File`, which Starlette spools to disk) — the label
+alone is caller-controlled, and a JSON route reads a multipart-labelled body whole. The paths passed as
+`exempt_path_suffixes` (the parsing upload, which streams and bounds itself at 100 MB) are left out. It is registered
+first in `ApiRunner._get_api_app`, so CORS still wraps its 413.
 
 ## Agent-API Communication
 
@@ -261,11 +314,20 @@ without needing it baked into event payloads.
 
 `runners/lifetime/lifetime_manager.py` — FastAPI lifespan context manager wiring all infrastructure at startup.
 
-**Startup order**: MongoDB → Redis/Milvus/S3 → NATS + JetStream → event persistence subscribers → WebSocket
-infrastructure → event distributors → RPC responders → discovery services → DB initialization (default roles, knowledge
-buckets) → cron scheduler → Langfuse provisioning.
+**Startup order**: MongoDB → agent-secret key guard → Redis/Milvus/S3 → NATS + JetStream → event persistence subscribers
+→ WebSocket infrastructure → event distributors → RPC responders → discovery services → DB initialization (default
+roles, knowledge buckets) → cron scheduler → Langfuse provisioning.
 
 All resources stored in `app.state`, accessible via the dependencies listed above.
+
+**Agent-config secrets** (#1587, ADR `2026_11_02_agent_config_secrets_decrypted_at_validation`): `ConfigSecrets`
+(`util/config_secrets.py`) encrypts secret fields on create and update and masks them in
+`FullAgentInstanceDTO.from_class_and_config`, the single choke point every response holding a profile goes through. The
+RPC `get_agent_configuration` stays unmasked, because the agent decrypts the ciphertext itself. The key is needed only
+when a non-empty string sits at a secret path. `ConfigSecrets.ensure_key_for_stored_secrets()` runs right after the
+Mongo connection and refuses to start the API when such a value is stored and the key is unset or malformed. It is
+permanent, not a transitional migration: it keeps masking from raising at runtime, which would make discovery drop the
+profile and the OpenWebUI sync delete its model.
 
 **One event loop**: MongoEngine is synchronous, so DB calls inside `async def` handlers stall HTTP, WebSocket and NATS
 callbacks. NATS RPC handlers and discovery rounds (`AgentService.get_agent_configuration`, agent and process endpoint

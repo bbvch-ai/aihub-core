@@ -80,7 +80,7 @@ def event_specs() -> EventSpecs:
 def input_model_factory(request, event_specs):
     """Factory that creates input models using both methods"""
     if request.param == "class":
-        return lambda: ModelCreationService.create_input_model_from_event_class(TestEvent), "class"
+        return lambda: TestEvent.api_input_model(), "class"
     else:
         return lambda: ModelCreationService.create_input_model_from_event_specs(event_specs), "specs"
 
@@ -725,7 +725,7 @@ class TestSchemaValidation:
         # Step 4: Create input model instance from original event data
         original_data = original_event.model_dump()
         # Remove fields that are excluded from input models
-        excluded_fields = ModelCreationService._input_excluded_fields
+        excluded_fields = TestEvent._api_server_fields
         input_data = {k: v for k, v in original_data.items() if k not in excluded_fields}
 
         input_instance = input_model(**input_data)
@@ -913,3 +913,37 @@ class TestNestedFreeFormMapFields:
         ).model_dump()
 
         assert dumped["request_event"]["arguments"] == {"query": "vacation days"}
+
+
+class _OptionalShape(BaseModel):
+    name: Annotated[str, Field(description="The shape's name.")]
+    json_schema: Annotated[dict[str, Any] | None, Field(description="An optional free-form map.")] = None
+
+
+class _OptionalNestedMapEvent(BaseEvent):
+    shape: Annotated[_OptionalShape | None, Field(description="An optional nested model holding the map.")] = None
+
+
+class TestOptionalFreeFormMapFields:
+    """An optional map is announced as `anyOf` map-or-null, and an optional nested model as Annotated union members;
+    both used to slip past the repair, so a caller's JSON schema arrived without the keys jambo did not know."""
+
+    @pytest.fixture
+    def model(self) -> type[BaseModel]:
+        return ModelCreationService.create_input_model_from_event_specs(
+            EventSpecs.from_event_class(_OptionalNestedMapEvent)
+        )
+
+    def test_an_optional_map_inside_an_optional_model_survives_validation(self, model: type[BaseModel]) -> None:
+        schema = {"type": "object", "required": ["total"], "properties": {"total": {"type": "number"}}}
+
+        dumped = model.model_validate({"shape": {"name": "invoice", "json_schema": schema}}).model_dump()
+
+        assert dumped["shape"]["json_schema"] == schema
+
+    def test_both_stay_nullable(self, model: type[BaseModel]) -> None:
+        assert model.model_validate({"shape": None}).model_dump()["shape"] is None
+        assert model.model_validate({"shape": {"name": "any", "json_schema": None}}).model_dump()["shape"] == {
+            "name": "any",
+            "json_schema": None,
+        }

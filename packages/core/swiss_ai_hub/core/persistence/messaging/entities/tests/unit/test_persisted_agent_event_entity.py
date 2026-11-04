@@ -36,6 +36,7 @@ def _persist_event(
     agent_class: str = "TestAgent",
     run_id: str = "run",
     created_at: int = 1_730_000_000_000_000_000,
+    data: dict | None = None,
 ) -> None:
     """Insert a minimal persisted event for repository query tests."""
     PersistedAgentEventEntity(
@@ -47,7 +48,7 @@ def _persist_event(
         event_id=event_id,
         event_type=event_type,
         event_name=event_parents[0],
-        event_data={"created_at": created_at},
+        event_data={"created_at": created_at, **(data or {})},
         event_parents=event_parents,
     ).save()
 
@@ -446,3 +447,48 @@ class TestLLMSpendAggregation:
 
         assert spend[0].calls == 1
         assert spend[0].total_costs == pytest.approx(3.0)
+
+
+_REQUEST = ["ExtractionRequestFormRequestEvent", "HumanInTheLoopRequestEvent"]
+_RESPONSE = ["ExtractionRequestFormResponseEvent", "HumanInTheLoopResponseEvent"]
+
+
+def _persist_request(thread_id: str, event_id: str, created_at: int) -> None:
+    """A request as the platform persists it: once as a control and once as a display event."""
+    for event_type in (AgentTopicManager.CONTROL_EVENT, AgentTopicManager.DISPLAY_EVENT):
+        _persist_event(thread_id, _REQUEST, event_id, event_type, created_at=created_at, data={"event_id": event_id})
+
+
+def _persist_response(thread_id: str, event_id: str, request_id: str, created_at: int) -> None:
+    _persist_event(
+        thread_id,
+        _RESPONSE,
+        event_id,
+        created_at=created_at,
+        data={"event_id": event_id, "request_event": {"event_id": request_id}},
+    )
+
+
+class TestOpenHumanInTheLoopRequests:
+    def test_a_request_is_listed_once_although_persisted_as_control_and_display(self):
+        _persist_request("t_hitl", "req1", 1)
+        requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread("t_hitl")
+        assert [request.event_id for request in requests] == ["req1"]
+
+    def test_an_answered_request_is_not_open(self):
+        _persist_request("t_hitl", "req1", 1)
+        _persist_response("t_hitl", "res1", "req1", 2)
+        assert PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread("t_hitl") == []
+
+    def test_only_the_request_no_response_names_is_open(self):
+        _persist_request("t_hitl", "req1", 1)
+        _persist_response("t_hitl", "res1", "req1", 2)
+        _persist_request("t_hitl", "req2", 3)
+        _persist_request("t_hitl", "req3", 4)
+        _persist_response("t_hitl", "res3", "req3", 5)
+        open_requests = PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread("t_hitl")
+        assert [request.event_id for request in open_requests] == ["req2"]
+
+    def test_requests_of_other_threads_are_not_open_here(self):
+        _persist_request("t_other", "req1", 1)
+        assert PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread("t_hitl") == []

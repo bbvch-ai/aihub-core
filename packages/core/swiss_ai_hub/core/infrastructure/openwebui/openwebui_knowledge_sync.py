@@ -51,6 +51,10 @@ class OpenWebuiKnowledgeSync:
         }
         existing = {knowledge["id"]: knowledge for knowledge in await self._openwebui.list_own_knowledge(http)}
 
+        # Removed first: a deleted collection left pickable is refused in every chat that references it, so one
+        # failing create or update further down must not keep it in the `#` picker until the next sync succeeds.
+        await self._remove_stale(http, listing, entries, existing)
+
         for key, (name, description) in listing.items():
             reference = KnowledgeReference(database=key[0], namespace=key[1])
             grants = OpenWebuiGroupAccess.read_grants(
@@ -70,8 +74,6 @@ class OpenWebuiKnowledgeSync:
             elif self._differs(current, name, description, grants):
                 await self._openwebui.update_knowledge(http, current["id"], name, description, grants)
                 logger.info("OpenWebUI: Updated knowledge entry '%s'", name)
-
-        await self._remove_stale(http, listing, entries, existing)
 
     async def _remove_stale(
         self,

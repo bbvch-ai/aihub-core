@@ -3,19 +3,19 @@ import logging
 from asyncio import sleep, to_thread
 from collections.abc import Awaitable, Callable
 from enum import StrEnum
-from functools import reduce
+from functools import partial, reduce
 from operator import or_
 from typing import Annotated, override
 
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Security
-from mongoengine import DoesNotExist
+from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 from stringcase import snakecase
-from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.auth.usage import (
     ResourceType,
     UsageLimitMessages,
@@ -23,8 +23,9 @@ from swiss_ai_hub.core.auth.usage import (
     use_usage_limits,
 )
 from swiss_ai_hub.core.dependencies import use_nats
+from swiss_ai_hub.core.discovery import DiscoveryKind, DiscoverySettings
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
-from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
+from swiss_ai_hub.core.events import ApiPayloadContext, ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
     ExceptionEvent,
@@ -32,13 +33,11 @@ from swiss_ai_hub.core.events.agent import (
     StartEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.infrastructure import LangfuseProvisioner, OnlineAgent, OpenWebuiProvisioner
+from swiss_ai_hub.core.infrastructure import LangfuseProvisioner, OnlineAgent, OpenWebuiProvisioner, use_s3
 from swiss_ai_hub.core.persistence import (
     AgentClassEntity,
     AgentConfigEntityDocument,
     AgentInstanceRef,
-    ThreadEntity,
-    User,
 )
 from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.routes import ChatService
@@ -64,15 +63,20 @@ class SyncTarget(StrEnum):
     OPENWEBUI = "openwebui"
 
 
-class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
+class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
     """
     This service ensures that new agents in the system are automatically registered.
     This ensures that the API and the Agents are decoupled.
 
     It broadcasts NATS discovery requests to find online agents and:
     1. Updates their last_discovered timestamp (which determines online status)
-    2. Registers/deregisters dynamic API endpoints for agent events
+    2. Registers/deregisters dynamic API endpoints for agent events at the CLASS level (not instance level)
+    3. After a completed round, syncs agent instances and knowledge to the external provisioners
+
+    Endpoints use {agent_id} as a FastAPI path parameter, with instance validation at request time.
     """
+
+    discovery_kind = DiscoveryKind.AGENT
 
     _AGENTS_HASH_KEY_PREFIX = "discovery:agents:hash"
     _AGENTS_HASH_TTL = 3600
@@ -84,9 +88,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         controller: AgentController,
         locale_handler: LocaleHandler,
         redis: Redis,
-        discovery_interval: int = 60,
+        settings: DiscoverySettings | None = None,
     ):
-        super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
+        super().__init__(nc, api_app, controller, locale_handler, redis, settings)
         self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
         self._redis = redis
@@ -95,46 +99,42 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         self._synced_targets: set[SyncTarget] = set()
 
     @override
-    async def _discover_and_register(self):
-        """
-        Discovers agent classes via NATS broadcast and registers class-level endpoints.
+    def _class_name_of(self, dto: AgentClassDTO) -> str:
+        return dto.agent_class
 
-        This method:
-        1. Broadcasts a NATS discovery request to all running agents
-        2. Collects responses and updates last_discovered timestamps in database
-        3. Registers/deregisters dynamic API endpoints at the CLASS level (not instance level)
+    @override
+    def _register_discovered_class(self, dto: AgentClassDTO) -> bool:
+        """An agent on a core older than this API announces no API input schema, so its endpoints cannot be built;
+        it is skipped rather than failing the round, which would leave every class after it unregistered and stop
+        the syncs that follow a round."""
+        without_input_schema = [
+            specs.event_name
+            for specs in [*dto.start_events, *dto.hitl_response_events]
+            if specs.api_input_schema is None
+        ]
+        if without_input_schema:
+            logger.warning(
+                f"Agent class {dto.agent_class} announces no API input schema for {', '.join(without_input_schema)}; "
+                "it runs an older swiss-ai-hub core than this API, so its endpoints are registered once it is updated."
+            )
+            return False
+        self._register_class_endpoints(
+            agent_class=dto.agent_class,
+            start_events=dto.start_events,
+            stop_events=dto.stop_events,
+            hitl_request_events=dto.hitl_request_events,
+            hitl_response_events=dto.hitl_response_events,
+        )
+        return True
 
-        Endpoints use {agent_id} as a FastAPI path parameter, with instance validation at request time.
-        """
-        # Step 1: Discover which agent classes are online via NATS broadcast
-        discovered_classes: list[AgentClassDTO] = await self._broadcast_discovery()
+    @override
+    def _online_class_names(self) -> set[str]:
+        return AgentClassEntity.get_online_class_names()
 
-        online_class_names = {dto.agent_class for dto in discovered_classes}
-
-        # Step 2: Deregister endpoints for classes no longer online
-        for agent_class in list(self.registered_classes):
-            if agent_class not in online_class_names:
-                self._deregister_endpoints_for_class(agent_class)
-
-        self.app.openapi_schema = None
-
-        # Step 3: Register endpoints for newly discovered classes
-        for agent_class_dto in discovered_classes:
-            if agent_class_dto.agent_class not in self.registered_classes:
-                self._register_class_endpoints(
-                    agent_class=agent_class_dto.agent_class,
-                    start_events=agent_class_dto.start_events,
-                    stop_events=agent_class_dto.stop_events,
-                    hitl_request_events=agent_class_dto.hitl_request_events,
-                    hitl_response_events=agent_class_dto.hitl_response_events,
-                )
-                self.registered_classes.add(agent_class_dto.agent_class)
-                logger.info(f"Registered class-level endpoints for agent class: {agent_class_dto.agent_class}")
-
-        # Step 4: Sync agent instances to external provisioners (Langfuse, OpenWebUI)
+    @override
+    async def _after_round(self) -> None:
         await self._sync_agent_instances_to_provisioners()
-
-        # Step 5: Reconcile the OpenWebUI knowledge entries, since collections a pipeline creates signal nothing here
+        # Collections a pipeline creates signal nothing here, so the knowledge entries are reconciled every round
         await self._sync_knowledge_to_openwebui()
 
     async def _sync_knowledge_to_openwebui(self) -> None:
@@ -143,12 +143,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         except Exception as e:
             logger.warning(f"OpenWebUI knowledge sync failed (non-fatal): {e}")
 
+    @override
     async def _broadcast_discovery(self) -> list[AgentClassDTO]:
         """
         Broadcasts a NATS discovery request to all agents and collects responses.
         Updates the last_discovered timestamp for responding agent classes.
 
-        Returns a list of AgentClassDTO for all online agent classes.
+        Returns a list of AgentClassDTO for the agent classes that answered this round.
         """
         call_id = str(ObjectId())
         discovery_responses: list[AgentClassDiscoveryResponseEvent] = []
@@ -172,8 +173,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             subject=self.topic_manager.get_agent_class_discovery_subject_request(call_id=call_id),
         )
 
-        # Wait briefly for responses
-        await sleep(10)
+        await sleep(self.settings.RESPONSE_WAIT_SECONDS)
         await nc_subscriber.stop()
 
         unique_agents_dict: dict[str, AgentClassDTO] = {}
@@ -181,15 +181,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         for response in discovery_responses:
             unique_key = response.agent_class
 
-            if unique_key not in unique_agents_dict:
-                agent_class_dto = AgentClassDTO.from_discovery_event(response)
-                unique_agents_dict[unique_key] = agent_class_dto
-
-                # One blocking write per responding class would serialize on the loop that also serves
-                # every request in this process. Nothing else refreshes `last_discovered`, and
-                # `AgentClassEntity.is_online` is only a 5-minute window on it — so a round that stalls
-                # here marks *every* agent class offline at once, not just the slow one.
-                await to_thread(AgentClassEntity.create_or_update, response)
+            if unique_key not in unique_agents_dict and await self._stamp_answer(
+                unique_key, partial(AgentClassEntity.create_or_update, response)
+            ):
+                unique_agents_dict[unique_key] = AgentClassDTO.from_discovery_event(response)
 
         return list(unique_agents_dict.values())
 
@@ -411,6 +406,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
+            s3_client: Annotated[S3Client, Depends(use_s3)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
@@ -429,40 +425,35 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
             await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
-            if thread_id is not None:
-                try:
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-                except DoesNotExist:
-                    ThreadEntity.create_thread(
-                        "chat",
-                        users=[User(user_id=user.id)],
-                        agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
-                        thread_id=ObjectId(thread_id),
-                    )
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+            await AgentEndpointsDiscoveryService._refuse_unsupported_response_schema(start_event_input, agent_class)
 
-                user_in_thread = user.id in [u.id for u in thread.users]
-                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                    thread.process_class, thread.process_id
+            if thread_id is not None:
+                await ThreadService.get_or_create_thread_to_post_in(
+                    thread_id, user, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id), t=t
                 )
-                if not (user_in_thread or thread_belongs_to_users_process):
-                    raise agent_controller.not_authorized_to_view_exception
 
             response_event = await AgentService.send_agent_input_event(
                 nc=nc,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                input_event_parents=start_event_parents,
-                input_event_name=start_event_name,
-                # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
-                # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
-                raw_event_data=start_event_input.model_dump(mode="json", exclude_none=True),
+                input_event=await AgentEndpointsDiscoveryService._input_event(
+                    start_event_input,
+                    expected_type=expected_type,
+                    event_name=start_event_name,
+                    event_parents=start_event_parents,
+                    context=ApiPayloadContext(
+                        user=user,
+                        locale=t.locale,
+                        agent_class=agent_class,
+                        agent_id=agent_id,
+                        thread_id=thread_id,
+                        s3_client=s3_client,
+                    ),
+                ),
                 external_agent_event_distributor=external_agent_event_distributor,
                 thread_id=thread_id,
                 display_id=display_id,
                 user=user,
-                t=t,
-                expected_type=expected_type,
                 subscribe_to_thread=True,
             )
 
@@ -472,6 +463,30 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             return response_event
 
         return send_event
+
+    @staticmethod
+    async def _refuse_unsupported_response_schema(start_event_input: BaseModel, agent_class: str) -> None:
+        """Called before the thread is created, so a refused request leaves no empty conversation behind."""
+        if getattr(start_event_input, "response_schema", None) is not None:
+            await to_thread(AgentService.refuse_unsupported_response_schema, agent_class)
+
+    @staticmethod
+    async def _input_event(
+        start_event_input: BaseModel,
+        *,
+        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
+        event_name: str,
+        event_parents: list[str],
+        context: ApiPayloadContext,
+    ) -> StartEvent | HumanInTheLoopResponseEvent:
+        return await expected_type.from_api_payload(
+            # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
+            # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
+            start_event_input.model_dump(mode="json", exclude_none=True),
+            event_name=event_name,
+            event_parents=event_parents,
+            context=context,
+        )
 
     @staticmethod
     def _create_streaming_endpoint(
@@ -494,6 +509,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
+            s3_client: Annotated[S3Client, Depends(use_s3)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
@@ -514,40 +530,35 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
             )
 
-            if thread_id is not None:
-                try:
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-                except DoesNotExist:
-                    ThreadEntity.create_thread(
-                        "chat",
-                        users=[User(user_id=user.id)],
-                        agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
-                        thread_id=ObjectId(thread_id),
-                    )
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+            await AgentEndpointsDiscoveryService._refuse_unsupported_response_schema(start_event_input, agent_class)
 
-                user_in_thread = user.id in [u.id for u in thread.users]
-                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                    thread.process_class, thread.process_id
+            if thread_id is not None:
+                await ThreadService.get_or_create_thread_to_post_in(
+                    thread_id, user, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id), t=t
                 )
-                if not (user_in_thread or thread_belongs_to_users_process):
-                    raise agent_controller.not_authorized_to_view_exception
 
             resources = await AgentService.send_agent_input_event_stream(
                 nc=nc,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                input_event_parents=start_event_parents,
-                input_event_name=start_event_name,
-                # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
-                # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
-                raw_event_data=start_event_input.model_dump(mode="json", exclude_none=True),
+                input_event=await AgentEndpointsDiscoveryService._input_event(
+                    start_event_input,
+                    expected_type=expected_type,
+                    event_name=start_event_name,
+                    event_parents=start_event_parents,
+                    context=ApiPayloadContext(
+                        user=user,
+                        locale=t.locale,
+                        agent_class=agent_class,
+                        agent_id=agent_id,
+                        thread_id=thread_id,
+                        s3_client=s3_client,
+                    ),
+                ),
                 external_agent_event_distributor=external_agent_event_distributor,
                 thread_id=thread_id,
                 display_id=display_id,
                 user=user,
-                t=t,
-                expected_type=expected_type,
                 subscribe_to_thread=True,
             )
 

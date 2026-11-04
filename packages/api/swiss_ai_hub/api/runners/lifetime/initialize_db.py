@@ -24,7 +24,9 @@ from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, In
 
 from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
 from swiss_ai_hub.api.runners.lifetime.empty_namespace_scope_migration import EmptyNamespaceScopeMigration
+from swiss_ai_hub.api.runners.lifetime.llm_request_timeout_migration import LLMRequestTimeoutMigration
 from swiss_ai_hub.api.runners.lifetime.oversized_input_limit_migration import OversizedInputLimitMigration
+from swiss_ai_hub.api.runners.lifetime.plaintext_agent_secret_migration import PlaintextAgentSecretMigration
 from swiss_ai_hub.api.runners.lifetime.pre_pair_knowledge_collection_migration import (
     PrePairKnowledgeCollectionMigration,
 )
@@ -352,6 +354,16 @@ def carry_over_pre_pair_knowledge_collections() -> None:
         logger.info(f"Carried pre-pair knowledge collections over to pairs in: {', '.join(migrated)}")
 
 
+# Transitional: the LLM request timeout default dropped from 600 s to 300 s (aihub-core-private#349), and the edit form
+# stores the default it showed, so profiles saved before keep 600 s until rewritten. Delete it and
+# `LLMRequestTimeoutMigration` once deployments have upgraded past it.
+def lower_llm_request_timeouts() -> None:
+    """Rewrites every stored LLM request timeout still at the old 600 s default to the new 300 s one."""
+    migrated = LLMRequestTimeoutMigration.run()
+    if migrated:
+        logger.info(f"Lowered the LLM request timeout from 600 s to 300 s in: {', '.join(migrated)}")
+
+
 # Transitional: the input-token limit was pre-filled with 128,000 for every model, and saves are now rejected above 85%
 # of the model's window, so such a profile on a smaller model could not be saved at all. Unset, the limit fills that
 # share, which is what it ran at already. Delete it and `OversizedInputLimitMigration` once deployments have upgraded
@@ -361,6 +373,16 @@ def unset_oversized_input_limits() -> None:
     migrated = OversizedInputLimitMigration.run()
     if migrated:
         logger.info(f"Unset an input-token limit above what the model allows in: {', '.join(migrated)}")
+
+
+# Transitional: agent-config secrets are stored encrypted since #1587, and saves encrypt them, so no new plaintext
+# appears; this encrypts the ones stored before. Delete it and `PlaintextAgentSecretMigration` once deployments have
+# upgraded past it. The startup key guard in `lifetime_manager` is not part of this and stays.
+def encrypt_plaintext_agent_secrets() -> None:
+    """Encrypts every agent profile's secret still stored in plaintext."""
+    migrated = PlaintextAgentSecretMigration.run()
+    if migrated:
+        logger.info(f"Encrypted plaintext secrets in: {', '.join(migrated)}")
 
 
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:

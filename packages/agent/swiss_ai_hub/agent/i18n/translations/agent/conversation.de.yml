@@ -57,3 +57,9 @@ messages:
   input_too_large: Diese Datei ist zu gross, als dass ich sie auf einmal lesen könnte.
     Bitte laden Sie eine kleinere Datei hoch, teilen Sie sie auf, oder wechseln Sie
     zu einem Assistenten mit einem Modell mit grösserem Kontextfenster.
+prompt:
+  correct_structured_answer: "Deine vorherige Antwort entspricht nicht dem verlangten\
+    \ JSON-Format. %{violation}\nAntworte nochmals nur mit einem JSON-Objekt, ohne\
+    \ weiteren Text, und behalte den Inhalt deiner vorherigen Antwort bei."
+  structured_answer_schema: "Das JSON-Objekt muss diesem JSON-Schema entsprechen:\n\
+    %{schema}"

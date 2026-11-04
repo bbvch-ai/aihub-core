@@ -40,8 +40,6 @@ class MailTriageValidator:
         """The folders mail is filed into must be distinct from each other and from the inbox."""
         if not classification.categories:
             raise ValueError("no categories are configured — the agent has nothing to classify into")
-        if not classification.fallback_folder:
-            raise ValueError("fallback_folder is empty — mail the model is unsure about would have nowhere to go")
         if not classification.failure_folder:
             raise ValueError("failure_folder is empty — mail the classifier failed on would have nowhere to go")
 
@@ -51,31 +49,42 @@ class MailTriageValidator:
             raise ValueError(f"category names must be unique, got {names}")
         if len(set(folders)) != len(folders):
             raise ValueError(f"category folders must be unique, got {folders}")
-        if classification.fallback_folder in folders:
-            raise ValueError(
-                f"fallback_folder {classification.fallback_folder!r} is also a category folder — the run summary "
-                "could not tell a categorised message from an uncategorised one"
-            )
         if classification.failure_folder in folders:
             raise ValueError(
                 f"failure_folder {classification.failure_folder!r} is also a category folder — a message the "
                 "classifier never reached a verdict on would be indistinguishable from one it placed there"
+            )
+        targets = {*folders, classification.failure_folder}
+        # Uncategorised mail kept in the inbox never reaches the fallback folder, so its name constrains nothing.
+        if not classification.keep_uncategorised_in_inbox:
+            MailTriageValidator._validate_fallback_folder(classification, folders)
+            targets.add(classification.fallback_folder)
+
+        # A target equal to the inbox defeats the dedup filing provides. On the COPY + UID EXPUNGE path the original
+        # is replaced by a fresh unread copy in the same folder — above the inbox watermark too, when there is one —
+        # so the next run classifies the copy, archives it again, and repeats without termination. Folder names are
+        # admin-entered free text, so this is reachable by a typo rather than only by misuse.
+        if inbox_folder in targets:
+            raise ValueError(
+                f"a target folder equals the inbox folder {inbox_folder!r} — filed mail would stay unread in the "
+                "inbox and be reprocessed on every run"
+            )
+
+    @staticmethod
+    def _validate_fallback_folder(classification: EmailClassificationSettings, category_folders: list[str]) -> None:
+        """The fallback folder must exist and be told apart from both the category folders and the failure folder."""
+        if not classification.fallback_folder:
+            raise ValueError("fallback_folder is empty — mail the model is unsure about would have nowhere to go")
+        if classification.fallback_folder in category_folders:
+            raise ValueError(
+                f"fallback_folder {classification.fallback_folder!r} is also a category folder — the run summary "
+                "could not tell a categorised message from an uncategorised one"
             )
         if classification.failure_folder == classification.fallback_folder:
             raise ValueError(
                 f"failure_folder {classification.failure_folder!r} equals the fallback folder — an operator could "
                 "not tell mail the model deliberately declined from mail it never read, which is the whole reason "
                 "the two are kept apart"
-            )
-
-        # Filing out of the inbox is the only dedup this agent has, and a target equal to the inbox defeats it.
-        # On the COPY + UID EXPUNGE path the original is replaced by a fresh unread copy in the same folder, so the
-        # next run classifies the copy, archives it again, and repeats without termination. Folder names are
-        # admin-entered free text, so this is reachable by a typo rather than only by misuse.
-        if inbox_folder in {*folders, classification.fallback_folder, classification.failure_folder}:
-            raise ValueError(
-                f"a target folder equals the inbox folder {inbox_folder!r} — filed mail would stay unread in the "
-                "inbox and be reprocessed on every run"
             )
 
     @staticmethod

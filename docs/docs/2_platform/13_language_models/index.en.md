@@ -40,14 +40,14 @@ When a user asks a question:
 
 1. The question reaches the agent
 2. Agent input guards (optional) validate the question is appropriate
-3. Presidio (if enabled) scans for PII in the question at the proxy layer
+3. For a model hosted outside the deployment, the proxy replaces personal data with placeholders (Presidio)
 4. The proxy routes the request to the configured LLM provider
-5. The LLM generates a response
+5. The LLM generates a response, and the proxy restores the placeholders in it while it streams
 6. Agent output guards (optional) check response quality and redact PII from retrieved documents
 7. The response reaches the user
 
 This layered approach provides defense-in-depth for both functionality (guards ensure quality) and security (Presidio
-protects user input, output guards protect retrieved data).
+keeps personal data from external models, output guards protect retrieved data).
 
 ## Components
 

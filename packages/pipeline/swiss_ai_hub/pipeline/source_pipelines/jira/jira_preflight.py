@@ -1,13 +1,14 @@
 from typing import Annotated, Any
 
 from swiss_ai_hub.core.infrastructure import StructuredPipelineSettings
+from swiss_ai_hub.core.network import SourceHostGuard
 
 from swiss_ai_hub.pipeline.resources.jira.jira_client import JiraClient
 from swiss_ai_hub.pipeline.resources.jira.jira_request_error import JiraRequestError
-from swiss_ai_hub.pipeline.resources.structured.source_host_guard import SourceHostGuard
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_options import JiraOptions
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_scope import JiraScope
 
+_ALLOW_LIST_VARIABLE = "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"
 _REFUSED_SIGN_IN = (401, 403)
 _NOT_VISIBLE = (403, 404)
 
@@ -28,7 +29,11 @@ class JiraPreflight:
     ) -> JiraScope:
         """Returns what the sync needs again: the account's time zone and which projects are service desks. The host
         is checked first, so no request reaches an internal one."""
-        SourceHostGuard.require_public(options.base_url, StructuredPipelineSettings().private_host_allow_list())
+        SourceHostGuard.require_public(
+            options.base_url,
+            StructuredPipelineSettings().private_host_allow_list(),
+            _ALLOW_LIST_VARIABLE,
+        )
         account = cls._signed_in_account(client, options.base_url)
         name = account.get("displayName") or "this account"
         projects = {project: cls._require_visible(client, project, name) for project in options.projects()}
