@@ -53,6 +53,7 @@ from swiss_ai_hub.api.routes.openai.dto.model_details import ModelDetails
 from swiss_ai_hub.api.routes.openai.dto.model_response import ModelResponse
 from swiss_ai_hub.api.routes.openai.dto.text_to_speech_request import TextToSpeechRequest
 from swiss_ai_hub.api.routes.openai.openai_error_handler import OpenaiErrorHandler
+from swiss_ai_hub.api.routes.openai.openai_structured_request import OpenaiStructuredRequest
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 
 logger = logging.getLogger(__name__)
@@ -365,6 +366,10 @@ class OpenaiService:
         if not agent_dto.is_conversational:
             raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
 
+        structured = OpenaiStructuredRequest.from_request(chat_completion_request)
+        if structured is not None and not agent_dto.supports_response_schema:
+            raise structured.unsupported_by(model_name)
+
         if chat_completion_request.stream:
             return await OpenaiService.stream_assistant(
                 s3_client=s3_client,
@@ -377,6 +382,7 @@ class OpenaiService:
                 external_agent_event_distributor=external_agent_event_distributor,
                 locale=t.locale,
                 aihub_headers=aihub_headers,
+                structured=structured,
             )
 
         return await OpenaiService.json_assistant(
@@ -390,6 +396,7 @@ class OpenaiService:
             external_agent_event_distributor=external_agent_event_distributor,
             locale=t.locale,
             aihub_headers=aihub_headers,
+            structured=structured,
         )
 
     @staticmethod
@@ -406,6 +413,7 @@ class OpenaiService:
         s3_client: S3Client,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
+        structured: OpenaiStructuredRequest | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
@@ -434,6 +442,7 @@ class OpenaiService:
             display_id=str_to_object_id(display_id),
             files=files,
             requested_features=requested_features,
+            response_schema=structured.response_schema if structured else None,
             locale=locale,
             aihub_headers=aihub_headers,
         )
@@ -443,23 +452,17 @@ class OpenaiService:
         if resources.stop_event.is_exception_event:
             raise HTTPException(resources.stop_event.http_status_code, resources.stop_event.message)
 
-        # Construct final JSON response
-        chat_content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
+        if structured is not None:
+            message, finish_reason = structured.message(resources.stop_event)
+        else:
+            chat_content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
+            message, finish_reason = ChatCompletionMessage(role="assistant", content=chat_content.content), "stop"
         return ChatCompletion(
             id=str(uuid.uuid4()),
             object="chat.completion",
             created=int(datetime.now(UTC).timestamp()),
             model=f"{agent_class}/{agent_id}",
-            choices=[
-                JsonChoice(
-                    index=0,
-                    message=ChatCompletionMessage(
-                        role="assistant",
-                        content=chat_content.content,
-                    ),
-                    finish_reason="stop",
-                )
-            ],
+            choices=[JsonChoice(index=0, message=message, finish_reason=finish_reason)],
             usage=OpenaiService._usage(resources.costs),
         )
 
@@ -477,6 +480,7 @@ class OpenaiService:
         s3_client: S3Client,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
+        structured: OpenaiStructuredRequest | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
@@ -505,6 +509,7 @@ class OpenaiService:
             display_id=str_to_object_id(display_id),
             files=files,
             requested_features=requested_features,
+            response_schema=structured.response_schema if structured else None,
             locale=locale,
             aihub_headers=aihub_headers,
         )
@@ -514,6 +519,7 @@ class OpenaiService:
                 resources,
                 model=f"{agent_class}/{agent_id}",
                 include_usage=bool((chat_completion_request.stream_options or {}).get("include_usage")),
+                structured=structured,
             ),
             media_type="text/event-stream",
             headers={
@@ -526,17 +532,27 @@ class OpenaiService:
 
     @staticmethod
     async def _sse_event_generator(
-        resources: StreamingResources, model: str, include_usage: bool = False
+        resources: StreamingResources,
+        model: str,
+        include_usage: bool = False,
+        structured: OpenaiStructuredRequest | None = None,
     ) -> AsyncGenerator[str]:
         """Every chunk of the answer carries the same id, creation time and model, the role only the first, and the
         stream ends with `[DONE]`, as OpenAI streams it. An agent that fails ends the stream with an error event, which
-        the OpenAI SDKs raise as an error instead of showing it as part of the answer."""
+        the OpenAI SDKs raise as an error instead of showing it as part of the answer.
+
+        A structured answer is sent whole once the agent validated it: what it streamed may be an attempt it then
+        corrected."""
         chunk = partial(
             OpenaiService._build_chunk_sse,
             completion_id=f"chatcmpl-{uuid.uuid4().hex}",
             created=int(datetime.now(UTC).timestamp()),
             model=model,
         )
+        if structured is not None:
+            async for chunk_line in OpenaiService._structured_sse(resources, structured, chunk, include_usage):
+                yield chunk_line
+            return
         role: Literal["assistant"] | None = "assistant"
         streamed_parts: list[str] = []
         downloads: list[str] = []
@@ -557,6 +573,26 @@ class OpenaiService:
             resources.stop_event, streamed=ChatService.answer_text(streamed_parts)
         )
         yield chunk(content=final + "".join(downloads), role=role, finish_reason="stop")
+        if include_usage:
+            yield chunk(content=None, role=None, usage=OpenaiService._usage(resources.costs))
+        yield OpenaiService.STREAM_END
+
+    @staticmethod
+    async def _structured_sse(
+        resources: StreamingResources,
+        structured: OpenaiStructuredRequest,
+        chunk: Callable[..., str],
+        include_usage: bool,
+    ) -> AsyncGenerator[str]:
+        async for _ in ChatService.iter_streamed_display_events(resources):
+            pass
+        if resources.stop_event is not None and resources.stop_event.is_exception_event:
+            yield OpenaiService._error_sse(resources.stop_event)
+            yield OpenaiService.STREAM_END
+            return
+        delta, finish_reason = structured.delta(resources.stop_event)
+        yield chunk(content=None, role=None, delta=delta)
+        yield chunk(content=None, role=None, finish_reason=finish_reason)
         if include_usage:
             yield chunk(content=None, role=None, usage=OpenaiService._usage(resources.costs))
         yield OpenaiService.STREAM_END
@@ -592,15 +628,13 @@ class OpenaiService:
         created: int,
         model: str,
         role: Literal["assistant"] | None,
-        finish_reason: Literal["stop"] | None = None,
+        finish_reason: Literal["stop", "tool_calls"] | None = None,
         usage: CompletionUsage | None = None,
+        delta: ChoiceDelta | None = None,
     ) -> str:
         """A chunk carrying usage has no choices, the final chunk OpenAI sends when `include_usage` is set."""
-        choices = (
-            []
-            if usage is not None
-            else [Choice(index=0, delta=ChoiceDelta(content=content, role=role), finish_reason=finish_reason)]
-        )
+        delta = delta or ChoiceDelta(content=content, role=role)
+        choices = [] if usage is not None else [Choice(index=0, delta=delta, finish_reason=finish_reason)]
         chunk = ChatCompletionChunk(
             id=completion_id,
             object="chat.completion.chunk",

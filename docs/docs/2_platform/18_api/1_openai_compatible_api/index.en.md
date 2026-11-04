@@ -122,9 +122,73 @@ stored once. An image must be PNG, JPEG, GIF or WebP and may have 5 MB (`AGENT_I
 refused with `413`. Links to images on the web are passed on as they are.
 
 **Parameters.** Agents choose their own model and its settings, so `temperature`, `top_p`, `max_tokens`, `stop`, `seed`,
-`n` and `logprobs` have no effect on an agent call. Structured output through `response_format`, `tools` and
-`tool_choice` is not supported by agents yet and is ignored too. The answer ends with `finish_reason: "stop"` and names
-the agent (`AgentClass/agent_id`) as its `model`.
+`n` and `logprobs` have no effect on an agent call. The answer ends with `finish_reason: "stop"` (`"tool_calls"` for a
+forced function, see below) and names the agent (`AgentClass/agent_id`) as its `model`.
+
+**Structured output.** An agent answers in a JSON shape the same two ways a model does:
+
+- **`response_format`**: `json_schema` returns the answer as JSON matching the schema in `message.content`, and
+  `json_object` any JSON object. `chat.completions.parse` with a Pydantic model works as it does against a model.
+- **A forced function**: one function in `tools`, forced with `tool_choice` (by name, or `"required"`), returns the
+  answer as that function's arguments in `message.tool_calls`, with `finish_reason: "tool_calls"`.
+
+The extraction of an invoice's header, end to end:
+
+```python
+from pydantic import BaseModel
+
+
+class Line(BaseModel):
+    item: str
+    amount: float
+
+
+class Invoice(BaseModel):
+    issuer: str
+    date: str | None
+    total: float | None
+    lines: list[Line]
+
+
+messages = [{"role": "user", "content": [
+    {"type": "text", "text": "Extract the invoice."},
+    {"type": "file", "file": {"filename": "invoice.pdf", "file_data": f"data:application/pdf;base64,{pdf_base64}"}},
+]}]
+
+completion = client.chat.completions.parse(
+    model="UniversalAgent/assistant",
+    messages=messages,
+    response_format=Invoice,
+)
+invoice = completion.choices[0].message.parsed
+```
+
+The same request as a forced function:
+
+```python
+completion = client.chat.completions.create(
+    model="UniversalAgent/assistant",
+    messages=messages,
+    tools=[{"type": "function", "function": {"name": "record_invoice", "parameters": Invoice.model_json_schema()}}],
+    tool_choice={"type": "function", "function": {"name": "record_invoice"}},
+)
+arguments = completion.choices[0].message.tool_calls[0].function.arguments
+```
+
+- **Missing values**: the agent adds nothing to its prompt, so how a value is filled is up to your schema and message. A
+  model must fill every field: for a value that may be missing, allow `null` and say in the field's description when to
+  use it, or the model may guess one.
+- **Validation**: the agent validates its answer against the schema and corrects it once. An answer it still cannot fit
+  ends the call with an error, never with prose.
+- **Refusals**: an agent that refuses the request or asks a question back returns its text as `message.refusal` and no
+  content.
+- **Streaming**: the JSON, or the tool call, arrives in one chunk once the agent has validated it, followed by the
+  finish chunk.
+- **Which agents**: agents that answer through the conversation (LLM Wrapping, Web Fetch, Few-Shot, MCP ReAct,
+  Universal). RAG and Expert RAG do not; asking them for structured output is refused with `400`.
+- **Caller tools**: agents do not call caller tools. `tools` with `tool_choice: "auto"` or without `tool_choice`, more
+  than one tool, and the legacy `functions` are refused with `400` naming the field in `error.param`. With
+  `tool_choice: "none"` the tools are ignored.
 
 **Streaming.** A streamed answer is a sequence of `chat.completion.chunk` events with one id, the agent's id as `model`,
 the role on the first chunk only, and `data: [DONE]` at the end. With `stream_options.include_usage`, a last chunk

@@ -47,6 +47,7 @@ class OpenaiErrorHandler:
         return OpenaiErrorHandler.response(
             status_code,
             OpenaiErrorHandler.message_of(exception.detail),
+            param=OpenaiErrorHandler.param_of(exception.detail),
             detail=exception.detail,
             headers=exception.headers,
         )
@@ -57,6 +58,13 @@ class OpenaiErrorHandler:
         if isinstance(detail, dict) and isinstance(detail.get("message"), str):
             return detail["message"]
         return str(detail)
+
+    @staticmethod
+    def param_of(detail: object) -> str | None:
+        """The request field a structured detail names, which OpenAI reports as the error's `param`."""
+        if isinstance(detail, dict) and isinstance(detail.get("param"), str):
+            return detail["param"]
+        return None
 
     @staticmethod
     async def handle_validation_error(request: Request, exception: RequestValidationError) -> Response:

@@ -140,7 +140,7 @@ class ChatCompletionRequest(BaseModel):
     audio: ChatCompletionAudioParam | None = None
     frequency_penalty: float | None = None
     function_call: completion_create_params.FunctionCall | None = None
-    functions: Iterable[completion_create_params.Function] | None = None
+    functions: list[completion_create_params.Function] | None = None
     logit_bias: dict[str, int] | None = None
     logprobs: bool | None = None
     max_completion_tokens: int | None = None
@@ -160,7 +160,7 @@ class ChatCompletionRequest(BaseModel):
     stream_options: ChatCompletionStreamOptionsParam | None = None
     temperature: float | None = None
     tool_choice: ChatCompletionToolChoiceOptionParam | None = None
-    tools: Iterable[ChatCompletionToolParam] | None = None
+    tools: list[ChatCompletionToolParam] | None = None
     top_logprobs: int | None = None
     top_p: float | None = None
 
