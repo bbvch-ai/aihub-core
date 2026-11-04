@@ -177,6 +177,40 @@ Leave the torch threads at 2: with 1, a 20,000-character text takes 85 seconds i
 not been measured on server hardware yet.
 :::
 
+## Running the analyzer on a GPU
+
+On a host with an NVIDIA GPU, the analyzer runs its name and address model on the GPU and one analysis gets several
+times faster; more CPUs cannot do that. The GPU (`.gpu`) deployment variants use the GPU image of the analyzer and
+reserve the GPU for it; the CPU variants keep the CPU image and do not change.
+
+Measured on a small laptop GPU (NVIDIA T600, 4 GB) against the 4-CPU default, model time only:
+
+| Text         | 4 CPUs | T600 GPU | Faster |
+| ------------ | ------ | -------- | ------ |
+| 4,000 chars  | 5.5 s  | 0.7 s    | 7.9×   |
+| 20,000 chars | 29 s   | 3.4 s    | 8.6×   |
+
+The analyzer finds the same entities on the GPU as on the CPU. A server GPU such as a T4 or L4 has several times the T600's
+compute; its numbers are not measured yet.
+
+| What it needs |                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| Host          | NVIDIA driver and the NVIDIA Container Toolkit (`docker run --gpus all … nvidia-smi` works) |
+| GPU memory    | About 1.3 GiB for the analyzer (one worker), on top of what vLLM takes                      |
+| Image         | `presidio-analyzer:<version>-gpu`, set by the `.gpu` variants                               |
+| Download      | 4.8 GB (7.8 GB on disk), against 2.0 GB (3.3 GB) for the CPU image                          |
+
+::: warning
+The `.gpu` variants give 96% of the GPU to vLLM, the embedding and reranking models and MinerU. On a card smaller than
+about 40 GB, the remaining 4% does not hold the analyzer's 1.3 GiB, so check the free GPU memory with `nvidia-smi`
+before you switch.
+:::
+
+Only the `.gpu` variants pull the GPU image; a CPU deployment keeps downloading the CPU image.
+
+To go back to the CPU, run the CPU variant of the deployment, or set the analyzer's image to the CPU tag. The GPU image
+also runs without a GPU: it then analyses on the CPU, as fast as the CPU image.
+
 ## Limits
 
 - The model has to write placeholders back exactly as it received them. A model that changes them (`<Person_1>`) leaves
