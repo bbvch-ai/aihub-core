@@ -157,7 +157,11 @@ class OpenaiService:
     def _agent_of(model_name: str) -> tuple[str, str]:
         """An agent is addressed as `AgentClass/agent_id`; any other name that is no model is unknown."""
         agent_class, separator, agent_id = model_name.partition("/")
-        if not separator or not agent_class or not agent_id or "/" in agent_id:
+        if (
+            not separator
+            or not AccessChecker.is_concrete_identifier(agent_class)
+            or not AccessChecker.is_concrete_identifier(agent_id)
+        ):
             raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
         return agent_class, agent_id
 

@@ -1,3 +1,5 @@
+import hashlib
+
 import pytest
 from cryptography.fernet import Fernet, InvalidToken
 from pydantic import SecretStr
@@ -82,6 +84,24 @@ class TestFromSettings:
         service = SecretEncryptionService.from_settings(settings)
 
         assert service.decrypt(service.encrypt("s3cret")) == "s3cret"
+
+
+class TestDerivedKey:
+    def test_each_purpose_gets_its_own_key(self, service: SecretEncryptionService):
+        assert service.derived_key(b"purpose-a:") != service.derived_key(b"purpose-b:")
+
+    def test_depends_on_the_instance_key(self, service: SecretEncryptionService):
+        other = SecretEncryptionService(Fernet.generate_key().decode())
+
+        assert service.derived_key(b"purpose-a:") != other.derived_key(b"purpose-a:")
+
+    def test_masks_keep_their_handles(self):
+        """The mask handle key is derived the same way as before, so a mask a client still holds keeps naming
+        its secret."""
+        key = Fernet.generate_key().decode()
+        service = SecretEncryptionService(key)
+
+        assert service._handle_key == hashlib.sha256(b"swiss-ai-hub:secret-mask-handle:" + key.encode()).digest()
 
 
 class TestPaths:

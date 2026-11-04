@@ -150,6 +150,22 @@ class TestPartialReferenceAuthorization:
         assert violations[0].resource_type == "agent"
         assert violations[0].resource == expected_resource
 
+    @pytest.mark.parametrize(
+        "value",
+        [
+            {"agent_class": "My.Agent", "agent_id": "inst_1"},
+            {"agent_class": "MyAgent", "agent_id": "a.b"},
+            {"agent_class": "MyAgent", "agent_id": "*"},
+            {"agent_class": "MyAgent", "agent_id": "inst 1"},
+        ],
+    )
+    def test_malformed_reference_is_denied_without_raising(self, value: dict):
+        """A dot, a wildcard or a space makes the checker raise just as a blank segment does."""
+        violations = _violations(value, _checker("MyAgent/inst_1"))
+
+        assert len(violations) == 1
+        assert violations[0].resource == f"{value['agent_class']}/{value['agent_id']}"
+
     @pytest.mark.parametrize("value", [{}, {"agent_class": "", "agent_id": ""}, {"agent_class": " ", "agent_id": "\t"}])
     def test_fully_unset_reference_is_skipped(self, value: dict):
         """An untouched field is the `required` rule's job, not the authorization checker's."""

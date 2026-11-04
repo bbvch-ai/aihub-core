@@ -55,8 +55,12 @@ async def test_an_answer_streamed_in_one_final_chunk_still_carries_the_role():
     assert chunks[0]["choices"][0]["delta"]["role"] == "assistant"
 
 
-@pytest.mark.parametrize("model_name", ["gpt-4o", "/assistant", "UniversalAgent/", "a/b/c"])
+@pytest.mark.parametrize(
+    "model_name",
+    ["gpt-4o", "/assistant", "UniversalAgent/", "a/b/c", "UniversalAgent/a.b", "UniversalAgent/*", "Universal.Agent/x"],
+)
 def test_a_name_that_is_neither_model_nor_agent_is_not_found(model_name: str):
+    """A dot or wildcard cannot name an agent, and the access check would raise on it rather than deny."""
     with pytest.raises(HTTPException) as not_found:
         OpenaiService._agent_of(model_name)
     assert not_found.value.status_code == 404

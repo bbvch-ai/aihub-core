@@ -201,6 +201,12 @@ permission validation + OpenTelemetry span enrichment (user ID, email, roles, re
 **Service-level checks**: `AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)` for fine-grained
 authorization beyond endpoint-level permissions.
 
+**Thread access**: every thread and event endpoint decides through `ThreadAccess` (`routes/thread/thread_access.py`).
+Members and sysadmins may read a thread; process access counts only for a thread that has a process. Only members post
+into a thread. A client may name a new thread itself (the OpenWebUI pipe derives the id from the chat), which
+`ThreadService.get_or_create_thread_to_post_in` creates for the caller. Scheduled-run thread ids are keyed with
+`AIHUB_CONFIG_ENCRYPTION_KEY` (`ThreadEntity.scheduled_thread_id`), so no client can compute one and claim it first.
+
 **Access capability catalog**: `AccessController` (`routes/access/`, served at `/access/capabilities` &
 `/access/presets`) builds the human-readable capability table shown in the role and tenant-ceiling editors (and
 read-only on the user page). It introspects each controller's routes at runtime and derives each capability's access
@@ -270,8 +276,8 @@ and locale. Never add field- or event-specific logic to the API for this; see AD
 JSON-only limit could be bypassed by sending another type or none. A `multipart/form-data` request is left out only when
 the route it matches parses a form (its `body_field` is a `Form`/`File`, which Starlette spools to disk) — the label
 alone is caller-controlled, and a JSON route reads a multipart-labelled body whole. The paths passed as
-`exempt_path_suffixes` (the parsing upload, which streams and bounds itself at 100 MB) are left out. It is
-registered first in `ApiRunner._get_api_app`, so CORS still wraps its 413.
+`exempt_path_suffixes` (the parsing upload, which streams and bounds itself at 100 MB) are left out. It is registered
+first in `ApiRunner._get_api_app`, so CORS still wraps its 413.
 
 ## Agent-API Communication
 
