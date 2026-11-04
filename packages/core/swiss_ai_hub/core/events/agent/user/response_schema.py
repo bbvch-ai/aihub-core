@@ -6,8 +6,8 @@ from typing import Annotated, Any, NoReturn, Self
 from jsonschema import SchemaError
 from jsonschema.validators import validator_for
 from pydantic import BaseModel, Field, model_validator
-from referencing import Registry
 
+from swiss_ai_hub.core.events.agent.user.response_schema_validator import ResponseSchemaValidator
 from swiss_ai_hub.core.events.agent.user.response_schema_violation import ResponseSchemaViolation
 
 _CODE_FENCE = re.compile(r"^\s*```(?:json)?\s*(?P<body>.*?)\s*```\s*$", re.DOTALL)
@@ -47,6 +47,8 @@ class ResponseSchema(BaseModel):
                 raise ValueError(f"json_schema is not a valid JSON schema: {invalid_schema.message}") from None
             if external := ResponseSchema._external_reference(self.json_schema):
                 raise ValueError(f"json_schema may only reference its own definitions, not {external!r}")
+            if ResponseSchemaValidator.uses_unbounded_patterns(self.json_schema):
+                raise ValueError("json_schema may not combine unevaluatedProperties with patternProperties")
         return self
 
     @staticmethod
@@ -97,8 +99,7 @@ class ResponseSchema(BaseModel):
         if not isinstance(parsed, dict):
             raise ResponseSchemaViolation("The answer must be a JSON object.")
         if self.json_schema is not None:
-            validator = validator_for(self.json_schema)(self.json_schema, registry=Registry())
-            errors = sorted(validator.iter_errors(parsed), key=str)
+            errors = ResponseSchemaValidator.errors(self.json_schema, parsed)
             if errors:
                 raise ResponseSchemaViolation(
                     "The answer does not match the schema: "

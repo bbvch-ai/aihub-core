@@ -31,8 +31,12 @@ primitive fields only, because jambo reads nothing but `properties`. A caller's 
   as is and validated with `jsonschema`, so nested objects and arrays work. A schema may reference only its own
   definitions (`#/...`) and is validated against an empty registry, since resolving any other `$ref` would make the
   agent worker fetch a URL the caller chose. `NaN`, `Infinity` and numbers beyond a float are violations: Python parses
-  them, but strict JSON clients do not. There is no separate forced-function variant: whether the result comes back as
-  `content` or as a tool call is decided by the OpenAI endpoint, which remembers how it was asked.
+  them, but strict JSON clients do not. The schema's patterns run on the `regex` engine against one time budget per
+  check (`ResponseSchemaValidator`), not on Python's `re`: the caller writes both the pattern and, through the prompt,
+  the answer, and one backtracking pattern on `re` froze the agent's event loop for every run. A schema may therefore
+  not combine `unevaluatedProperties` with `patternProperties`, which jsonschema matches on `re` itself. There is no
+  separate forced-function variant: whether the result comes back as `content` or as a tool call is decided by the
+  OpenAI endpoint, which remembers how it was asked.
 - **The result is `LLMStopEvent.structured_output`**, the parsed and validated JSON. The answer text holds the same
   JSON, so clients that read text keep working. RAG and Expert RAG end on their own stop events and have no place for
   it.

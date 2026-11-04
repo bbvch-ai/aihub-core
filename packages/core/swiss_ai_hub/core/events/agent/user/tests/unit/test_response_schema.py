@@ -1,7 +1,11 @@
+import json
+import time
+
 import pytest
 from pydantic import ValidationError
 
 from swiss_ai_hub.core.events.agent.user.response_schema import ResponseSchema
+from swiss_ai_hub.core.events.agent.user.response_schema_validator import ResponseSchemaValidator
 from swiss_ai_hub.core.events.agent.user.response_schema_violation import ResponseSchemaViolation
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 
@@ -115,3 +119,54 @@ def test_references_to_the_schemas_own_definitions_are_resolved():
 def test_numbers_json_cannot_carry_are_violations(answer: str):
     with pytest.raises(ResponseSchemaViolation, match="not a JSON number"):
         ResponseSchema(name="any").validated(answer)
+
+
+def _schema_with(properties: dict, **extra) -> ResponseSchema:
+    return ResponseSchema(name="shape", json_schema={"type": "object", "properties": properties, **extra})
+
+
+def test_a_pattern_that_freezes_pythons_re_is_checked_at_once():
+    schema = _schema_with({"code": {"type": "string", "pattern": "^(a+)+$"}})
+    started = time.monotonic()
+
+    with pytest.raises(ResponseSchemaViolation, match="does not match"):
+        schema.validated(json.dumps({"code": "a" * 40 + "!"}))
+
+    assert time.monotonic() - started < 1
+
+
+def test_a_pattern_that_backtracks_on_any_engine_is_cut_off_within_the_budget():
+    schema = _schema_with({"code": {"type": "string", "pattern": "^(a|aa)+$"}})
+    started = time.monotonic()
+
+    with pytest.raises(ResponseSchemaViolation, match="took longer"):
+        schema.validated(json.dumps({"code": "a" * 40 + "!"}))
+
+    assert time.monotonic() - started < ResponseSchemaValidator.BUDGET_SECONDS + 1
+
+
+@pytest.mark.parametrize(("code", "matches"), [("AB-12", True), ("ab-12", False)])
+def test_patterns_are_still_checked(code: str, matches: bool):
+    schema = _schema_with({"code": {"type": "string", "pattern": "^[A-Z]{2}-[0-9]+$"}})
+    answer = json.dumps({"code": code})
+
+    if matches:
+        assert schema.validated(answer) == {"code": code}
+    else:
+        with pytest.raises(ResponseSchemaViolation, match="does not match"):
+            schema.validated(answer)
+
+
+def test_pattern_properties_and_additional_properties_are_still_checked():
+    schema = _schema_with({}, patternProperties={"^x-": {"type": "integer"}}, additionalProperties=False)
+
+    assert schema.validated('{"x-count": 3}') == {"x-count": 3}
+    with pytest.raises(ResponseSchemaViolation, match="x-count"):
+        schema.validated('{"x-count": "three"}')
+    with pytest.raises(ResponseSchemaViolation, match="'other' unexpected"):
+        schema.validated('{"other": 1}')
+
+
+def test_unevaluated_properties_next_to_pattern_properties_is_refused():
+    with pytest.raises(ValidationError, match="unevaluatedProperties"):
+        _schema_with({}, patternProperties={"^x-": {}}, unevaluatedProperties=False)
