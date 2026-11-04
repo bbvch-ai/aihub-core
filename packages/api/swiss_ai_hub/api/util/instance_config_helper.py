@@ -91,11 +91,15 @@ class InstanceConfigHelper:
         config_model: type[BaseModel],
         agent: AgentInstanceRef | None = None,
     ) -> BaseModel:
-        """Validate configuration for instance update with simple error passthrough."""
+        """Validate configuration for instance update with simple error passthrough.
+
+        The errors leave out their input: by now a masked secret has been restored to its stored ciphertext, and
+        neither that nor a submitted secret may be echoed back."""
         try:
             instance = config_model.model_validate(config)
         except ValidationError as e:
-            raise HTTPException(status_code=400, detail=f"Configuration validation failed: {e.errors()}")
+            errors = e.errors(include_url=False, include_input=False)
+            raise HTTPException(status_code=400, detail=f"Configuration validation failed: {errors}")
 
         InstanceConfigHelper.validate_identity_locale_fields(instance)
         await InstanceConfigHelper.validate_cron_field(config, agent)

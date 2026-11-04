@@ -40,6 +40,7 @@ from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
+from swiss_ai_hub.api.util.config_secrets import ConfigSecrets
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
 from swiss_ai_hub.api.util.model_limit_validator import ModelLimitValidator
@@ -67,6 +68,17 @@ class AgentService:
             raise HTTPException(status_code=404, detail=f"Agent config {agent_class}/{agent_id} not found.")
 
         return MinimalAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+
+    @staticmethod
+    @trace_fn
+    def refuse_unsupported_response_schema(agent_class: str) -> None:
+        """A caller who asked for a JSON shape must get it or an error, never prose from an agent that ignores it."""
+        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        if class_entity is None or not class_entity.supports_response_schema:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Agent class '{agent_class}' does not support a response schema (structured output).",
+            )
 
     @staticmethod
     @trace_fn
@@ -179,33 +191,21 @@ class AgentService:
         nc: NATS,
         agent_class: str,
         agent_id: str,
-        input_event_parents: list[str],
-        input_event_name: str,
-        raw_event_data: dict,
+        input_event: StartEvent | HumanInTheLoopResponseEvent,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None,
         display_id: ObjectId | None,
         user: UserIdentity,
-        t: LocaleHandler,
-        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
     ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
         """Sends an event (start or HITL response) to a specific agent and waits for a response."""
-        event: StartEvent | HumanInTheLoopResponseEvent = expected_type.from_raw_data(
-            raw_event_data=raw_event_data,
-            user=user,
-            start_event_name=input_event_name,
-            start_event_parents=input_event_parents,
-            t=t,
-        )
-
         return await AgentService._send_event(
             nc=nc,
             external_agent_event_distributor=external_agent_event_distributor,
             user=user,
-            input_event=event,
+            input_event=input_event,
             agent_class=agent_class,
             agent_id=agent_id,
             thread_id=thread_id,
@@ -220,15 +220,11 @@ class AgentService:
         nc: NATS,
         agent_class: str,
         agent_id: str,
-        input_event_parents: list[str],
-        input_event_name: str,
-        raw_event_data: dict,
+        input_event: StartEvent | HumanInTheLoopResponseEvent,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None,
         display_id: ObjectId | None,
         user: UserIdentity,
-        t: LocaleHandler,
-        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
@@ -237,14 +233,6 @@ class AgentService:
         Sends an event (start or HITL response) to a specific agent and returns streaming resources for SSE.
         Yields ALL events (not just chunks) as raw events without conversion.
         """
-        event: StartEvent | HumanInTheLoopResponseEvent = expected_type.from_raw_data(
-            raw_event_data=raw_event_data,
-            user=user,
-            start_event_name=input_event_name,
-            start_event_parents=input_event_parents,
-            t=t,
-        )
-
         if thread_id:
             thread = ThreadEntity.get_thread_by_id(str(thread_id))
         else:
@@ -265,7 +253,7 @@ class AgentService:
         external_event = ExternalAgentEvent(
             thread_id=topic_manager.thread_id,
             display_id=topic_manager.display_id,
-            event=event,
+            event=input_event,
         )
 
         stop_signal = asyncio.Event()
@@ -343,8 +331,11 @@ class AgentService:
     @trace_fn
     async def get_agent_configuration(agent_class: str, agent_id: str) -> dict[str, Any]:
         """
-        Retrieve the current configuration data for a specific agent.
+        Retrieve the current configuration data for a specific agent, encrypted at secret paths.
         Returns empty dict if no configuration has been saved.
+
+        Deliberately not masked: the agent decrypts its secrets only when it validates the config, so the RPC
+        reply, and the RunContext the agent stores it in, carry ciphertext and never plaintext.
 
         `AgentConfigResponder` serves this over NATS RPC, and the requester (`NCRequester`) gives it one 5 s shot
         with no retry. The read is awaited rather than blocking, so it no longer competes with every other
@@ -362,7 +353,7 @@ class AgentService:
     ) -> dict[str, Any]:
         """
         Update the configuration data for a specific agent instance.
-        Validates the configuration against the agent's schema before saving.
+        Validates the configuration against the agent's schema before saving, and stores secrets encrypted.
         """
         class_entity = AgentClassEntity.get_by_agent_class(agent_class)
         if not class_entity:
@@ -373,6 +364,9 @@ class AgentService:
             raise HTTPException(status_code=404, detail=f"Agent config {agent_class}/{agent_id} not found.")
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
+        # Before the required-field check, so a secret left untouched in the form, which comes back as its mask,
+        # counts as filled in.
+        configuration = ConfigSecrets.restored(configuration, config_entity.config_data, class_entity.form_elements)
 
         config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
         # Before the generated model, which only sees the schema's notion of required — a key being
@@ -397,6 +391,7 @@ class AgentService:
         # while the SSE handler addresses it by the entity key, and a mismatch silently fails the
         # is_primary_agent stop check (stream never closes -> no title/follow-up). Mirrors create.
         configuration["agent_id"] = agent_id
+        configuration = ConfigSecrets.encrypted(configuration, class_entity.form_elements)
         config_entity.config_data = configuration
         await config_entity.save_changes()
 
@@ -472,6 +467,8 @@ class AgentService:
             )
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
+        # Nothing is stored yet, so a mask carried over from a cloned or imported profile is refused with a 400.
+        config = ConfigSecrets.restored(config, None, class_entity.form_elements)
 
         config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
         # Before the generated model, which only sees the schema's notion of required — a key being
@@ -495,11 +492,14 @@ class AgentService:
             metadata.name, metadata.description, agent_class, metadata.icon
         )
 
-        full_config_data = {
-            **config,
-            "agent_class": agent_class,
-            "agent_id": request.agent_id,
-        }
+        full_config_data = ConfigSecrets.encrypted(
+            {
+                **config,
+                "agent_class": agent_class,
+                "agent_id": request.agent_id,
+            },
+            class_entity.form_elements,
+        )
 
         config_entity = AgentConfigEntityDocument(
             agent_class=agent_class,

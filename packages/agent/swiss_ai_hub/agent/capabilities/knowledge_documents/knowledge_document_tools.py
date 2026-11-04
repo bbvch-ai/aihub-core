@@ -46,8 +46,8 @@ _EXAMPLE_PATHS = 3
 
 
 class KnowledgeDocumentTools(BaseToolSpec):
-    """Whole knowledge documents for the model: list and match their paths, search their text, read them, and, when
-    the profile enables it, rank them by meaning.
+    """Whole knowledge documents for the model: list and match their paths, search their text, read them, and rank them
+    by meaning.
 
     Vector search returns similar excerpts; these return every match and whole files, which questions about exact
     terms, all documents of a kind, or one document's full content need. The ranking is vector search grouped by
@@ -69,8 +69,6 @@ class KnowledgeDocumentTools(BaseToolSpec):
         config = context.agent_config
         if not isinstance(config, KnowledgeDocumentFields) or not config.knowledge_documents.enabled:
             self.spec_functions = []
-        elif not config.knowledge_documents.semantic_search:
-            self.spec_functions = [name for name in self.spec_functions if name != RANK_KNOWLEDGE_DOCUMENTS_TOOL]
 
     @staticmethod
     def _options(tool: str) -> dict[str, Any]:

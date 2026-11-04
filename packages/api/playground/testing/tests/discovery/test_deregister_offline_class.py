@@ -51,9 +51,10 @@ def _paths(app: FastAPI) -> set[str]:
     return {route.path for route in app.routes if hasattr(route, "path")}
 
 
-def _agent_answer(agent_class: str) -> SimpleNamespace:
+def _agent_answer(agent_class: str, *, announces_input_schema: bool = True) -> SimpleNamespace:
+    start = SimpleNamespace(event_name="StartEvent", api_input_schema={} if announces_input_schema else None)
     return SimpleNamespace(
-        agent_class=agent_class, start_events=[], stop_events=[], hitl_request_events=[], hitl_response_events=[]
+        agent_class=agent_class, start_events=[start], stop_events=[], hitl_request_events=[], hitl_response_events=[]
     )
 
 
@@ -118,6 +119,35 @@ class TestAgentClassGoingOffline:
         recorded_rounds.assert_called_once()
         service._sync_agent_instances_to_provisioners.assert_awaited_once()
         service._sync_knowledge_to_openwebui.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_a_class_on_an_older_core_is_skipped_without_failing_the_round(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        service = self._service(online_by_rule={"Alive"})
+        service._broadcast_discovery = AsyncMock(
+            return_value=[_agent_answer("Old", announces_input_schema=False), _agent_answer("Fresh")]
+        )
+
+        with caplog.at_level(logging.WARNING):
+            assert await service._run_round() is True
+        await service._run_after_round()
+
+        assert service.registered_classes == {"Alive", "Fresh"}
+        assert service._register_class_endpoints.call_args.kwargs["agent_class"] == "Fresh"
+        assert "Old announces no API input schema" in caplog.text
+        service._sync_agent_instances_to_provisioners.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_a_class_skipped_once_is_registered_after_it_is_updated(self) -> None:
+        service = self._service(online_by_rule={"Alive"})
+        service._broadcast_discovery = AsyncMock(return_value=[_agent_answer("Old", announces_input_schema=False)])
+        await service._discover_and_register()
+
+        service._broadcast_discovery = AsyncMock(return_value=[_agent_answer("Old")])
+        await service._discover_and_register()
+
+        assert "Old" in service.registered_classes
 
 
 class TestARoundThatDoesNotComplete:

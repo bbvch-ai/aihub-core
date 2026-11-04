@@ -4,13 +4,22 @@
     :loading="usersAreLoading"
     size="normal"
   >
+    <TenantAdminLoadError
+      v-if="usersError"
+      :error="usersError"
+      :tenant-id="tenantId"
+    />
     <UserList
+      v-else
       :users="users"
       :available-roles="roles ?? []"
       @assign="onAssign"
       @revoke="onRevoke"
     />
-    <div class="mt-4">
+    <div
+      v-if="!usersError"
+      class="mt-4"
+    >
       <Paginator
         :rows="pageSize"
         :total-records="pagination.total"
@@ -35,6 +44,7 @@ const tenantId = computed(() => route.params.tenant_id as string)
 const {
   users,
   usersAreLoading,
+  usersError,
   pagination,
   currentPage,
   pageSize,

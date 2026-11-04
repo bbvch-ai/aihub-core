@@ -330,3 +330,7 @@ extract_records_event:
 records_extracted_event:
   name: Records Extracted
   description: The table extracted from the selected documents
+hitl_questions_request_event:
+  name: Questions to Confirm
+  description: The agent has asked the user to confirm or correct the parts of a request,
+    as a form where the client shows one and as a chat message otherwise.

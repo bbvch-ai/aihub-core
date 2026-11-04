@@ -110,10 +110,10 @@ class ExtractionPlanner:
         t: LocaleHandler,
         user: UserIdentity | None,
     ) -> list[DocumentExtractionRequestedEvent]:
-        """Every document in one answer, the likeliest first when the selection is large or the profile ranks by
-        meaning, so early progress shows what the table will hold."""
+        """Every document in one answer, the likeliest first when the selection is large, so early progress shows what
+        the table will hold; a small selection is not worth a ranking's wait."""
         query = ExtractionPlanner._semantic_query(request, config)
-        if len(documents) > SAMPLE_ABOVE_DOCUMENTS or query:
+        if len(documents) > SAMPLE_ABOVE_DOCUMENTS:
             documents, _ = await ExtractionSample.ordered(
                 documents,
                 request.collections,
@@ -184,9 +184,9 @@ class ExtractionPlanner:
 
     @staticmethod
     def _semantic_query(request: ExtractRecordsEvent, config: RecordExtractionFields) -> str | None:
-        """What the wanted documents are about, when the profile ranks by meaning: the terms that identify them and
-        the condition on their rows, in the user's words."""
-        if config.knowledge_documents.semantic_search is not True:
+        """What the wanted documents are about, to rank them by meaning: the terms that identify them and the condition
+        on their rows, in the user's words. Not after a discovery search, whose model already ranked what it chose."""
+        if config.knowledge_documents.discovery is True:
             return None
         return " ".join(part for part in (request.document_terms, request.instructions, request.fields) if part) or None
 
@@ -263,13 +263,18 @@ class ExtractionPlanner:
     def _criteria(request: ExtractRecordsEvent) -> str:
         """How the documents were chosen, short enough to ride on every document's event and in the summary."""
         any_of = request.selection.any_of if request.selection else []
-        described = " OR ".join(ExtractionPlanner._describe(criteria) for criteria in any_of)
+        described = ExtractionPlanner.describe_any_of(any_of)
         if len(described) <= CRITERIA_CHARACTERS:
             return described
         return described[: CRITERIA_CHARACTERS - 1] + "…"
 
     @staticmethod
-    def _describe(criteria: KnowledgeDocumentCriteria) -> str:
+    def describe_any_of(any_of: list[KnowledgeDocumentCriteria]) -> str:
+        """How a selection's criteria read in a summary or a form, e.g. "text contains `Acme` OR path matches ..."."""
+        return " OR ".join(ExtractionPlanner.describe(criteria) for criteria in any_of)
+
+    @staticmethod
+    def describe(criteria: KnowledgeDocumentCriteria) -> str:
         code = ExtractionPlanner._code
         searched = "matches" if criteria.content_is_regex else "contains"
         parts = [

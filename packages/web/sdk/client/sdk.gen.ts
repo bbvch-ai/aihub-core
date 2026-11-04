@@ -175,6 +175,8 @@ import type {
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetImageData,
+  GetImageError,
   GetIncidentAvailabilityData,
   GetIncidentAvailabilityResponse,
   GetIncidentFormData,
@@ -198,6 +200,7 @@ import type {
   GetLocaleData,
   GetLocaleResponse,
   GetModelsData,
+  GetModelsError,
   GetModelsResponse,
   GetModelWithAssistantsData,
   GetModelWithAssistantsError,
@@ -1816,6 +1819,33 @@ export const validateFileUpload = <
   });
 
 /**
+ * Get Image
+ *
+ * An image sent in a message to the agent, which the message references instead of carrying it.
+ *
+ * Its name is the digest of its content, so it never changes and may be cached for as long as it is kept.
+ */
+export const getImage = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, GetImageData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    unknown | DefaultT,
+    GetImageError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/images/{name}",
+    ...options,
+  });
+
+/**
  * Get Process Classes
  *
  * Retrieve all available process classes.
@@ -2588,7 +2618,7 @@ export const getChatDisclaimer = <
 /**
  * List Models
  *
- * Lists the currently available models, and provides basic information about each one such as the owner and availability.
+ * Lists the currently available models, and provides basic information about each one such as the owner and availability. With `include_agents`, the agents the user may call are listed too, as models named `AgentClass/agent_id`.
  */
 export const getModels = <
   TComposable extends Composable = "$fetch",
@@ -2599,7 +2629,7 @@ export const getModels = <
   (options.client ?? client).get<
     TComposable,
     GetModelsResponse | DefaultT,
-    unknown,
+    GetModelsError,
     DefaultT
   >({
     security: [
