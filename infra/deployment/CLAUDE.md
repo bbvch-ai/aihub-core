@@ -331,7 +331,7 @@ The template conditionally includes services based on stage and GPU mode:
 Port exposure: direct localhost ports (`8080:8080`) only in `dev`, `local`, `build`. In `nightly`/`latest`, all traffic
 routes through Traefik.
 
-## Network Isolation (7 Zones)
+## Network Isolation (8 Zones + Control-Plane Networks)
 
 | Network         | Purpose                           | Internal | ICC | Key Services                                                                          |
 | --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------------------------------- |
@@ -380,7 +380,10 @@ also need `backend`/`data`/`storage`, so they bind gRPC to an alias that only ex
 (`<container>-grpc`, `backup-grpc`) — the workspace files and healthchecks use that alias, never `localhost`. A new
 pipeline code server needs the same `entrypoint` override, alias and workspace entry. `backup-code` reaches Docker only
 through `backup-docker-proxy` (containers API + POST, no exec/images/volumes); a new Docker call outside
-`/containers/...` must be enabled there. Neither socket proxy runs `privileged`.
+`/containers/...` must be enabled there. Neither socket proxy runs `privileged`; both set `security_opt: label=disable`
+instead, which SELinux hosts need to open the socket and other hosts ignore. The webservers' localhost ports bind
+`127.0.0.1`, because the UI networks are not internal in `local`/`build` and a bare `3000:3000` would publish the
+unauthenticated UI on every interface.
 
 **Special**: `open-webui` uses `network_mode: "host"` in dev (to reach services running locally outside Docker).
 

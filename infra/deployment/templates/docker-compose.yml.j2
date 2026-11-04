@@ -1492,12 +1492,10 @@ services:
       start_period: 5s
     volumes:
       - {{ docker_socket }}:/var/run/docker.sock:ro
-    {%- if stage == 'dev' %}
     # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
     # (Ubuntu, Docker Desktop) this has no effect.
     security_opt:
       - label=disable
-    {%- endif %}
     environment:
       CONTAINERS: 1
       POST: 1
@@ -2865,7 +2863,7 @@ services:
         condition: service_healthy
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     {%- endif %}
     entrypoint:
       - dagster-webserver
@@ -2964,6 +2962,10 @@ services:
       start_period: 5s
     volumes:
       - {{ docker_socket }}:/var/run/docker.sock:ro
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt:
+      - label=disable
     environment:
       # Security: Only enable required Docker API sections
       CONTAINERS: 1    # Required for Traefik to discover services

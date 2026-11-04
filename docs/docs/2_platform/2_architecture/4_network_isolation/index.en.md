@@ -75,7 +75,8 @@ The operator control planes get networks of their own, so no application contain
 - Traefik reads container labels through `docker-socket-proxy` (read-only, containers and networks), which shares
   `docker-api` with Traefik alone. The backup code server stops, starts and creates sibling containers through its own
   `backup-docker-proxy`, which exposes the containers API and nothing else (no exec, images, volumes, networks or system
-  endpoints). Neither proxy runs privileged.
+  endpoints). Neither proxy runs privileged: each only turns off SELinux labelling for its own container, which lets it
+  open the socket on SELinux hosts and has no effect elsewhere.
 - The UI networks are not internal in `dev`/`local`/`build`, where the webservers also publish a `127.0.0.1` port; their
   only members are still the webserver and its oauth2-proxy.
 

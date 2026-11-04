@@ -1269,7 +1269,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
-    volumes: [/var/run/docker.sock:/var/run/docker.sock:ro]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt: [label=disable]
     environment:
       CONTAINERS: 1
       POST: 1
@@ -2521,7 +2525,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
-    ports: [3000:3000]
+    ports: [127.0.0.1:3000:3000]
     entrypoint:
       - dagster-webserver
       - -h
@@ -2609,7 +2613,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
-    volumes: [/var/run/docker.sock:/var/run/docker.sock:ro]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt: [label=disable]
     environment:
       # Security: Only enable required Docker API sections
       CONTAINERS: 1  # Required for Traefik to discover services
