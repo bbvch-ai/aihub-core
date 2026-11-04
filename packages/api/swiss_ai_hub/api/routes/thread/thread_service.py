@@ -338,33 +338,40 @@ class ThreadService:
             display_agg = results.display_aggregates[display_id]
 
             display_agg.update_from_run_data(run_data)
-
-            # Attempt to fetch the agent that started the run using the cached method
-            start_agent_class = run_data.get("start_agent_class")
-            start_agent_id = run_data.get("start_agent_id")
-            run_agent_dto = await ThreadService._fetch_minimal_agent_dto(start_agent_class, start_agent_id, t)
-
-            if run_agent_dto:
-                try:
-                    run_stat_dto = RunStatistics.from_run_data(run_data, run_agent_dto)
-                    display_agg.add_run_dto(run_stat_dto)
-                except Exception as e:
-                    # Log validation or other errors during DTO creation
-                    logger.exception(f"Error creating RunStatistics DTO for run {run_data.get('run_id')}: {e}")
-            else:
-                logger.warning(
-                    f"RunStatistics DTO skipped for run {run_data.get('run_id')} because starting agent "
-                    f"{start_agent_class}/{start_agent_id} could not be fetched."
-                )
-
-            for agent_info in run_data.get("participating_agents_in_run", []):
-                pa_class = agent_info.get("agent_class")
-                pa_id = agent_info.get("agent_id")
-                # A user's own messages are published as the "UserAgent", which is no agent instance to look up.
-                if pa_class and pa_id and pa_class != "UserAgent":
-                    results.participating_agent_ids.add(AgentIdentifier(agent_class=pa_class, agent_id=pa_id))
+            await ThreadService._add_run_statistics(display_agg, run_data, t)
+            results.participating_agent_ids.update(ThreadService._participating_agents(run_data))
 
         return results
+
+    @staticmethod
+    async def _add_run_statistics(display_agg: IntermediateDisplayStats, run_data: dict, t: "LocaleHandler") -> None:
+        """Adds the run's statistics under the agent that started it; a run whose agent is gone is left out."""
+        start_agent_class = run_data.get("start_agent_class")
+        start_agent_id = run_data.get("start_agent_id")
+        run_agent_dto = await ThreadService._fetch_minimal_agent_dto(start_agent_class, start_agent_id, t)
+        if not run_agent_dto:
+            logger.warning(
+                f"RunStatistics DTO skipped for run {run_data.get('run_id')} because starting agent "
+                f"{start_agent_class}/{start_agent_id} could not be fetched."
+            )
+            return
+        try:
+            display_agg.add_run_dto(RunStatistics.from_run_data(run_data, run_agent_dto))
+        except Exception as e:
+            # Log validation or other errors during DTO creation
+            logger.exception(f"Error creating RunStatistics DTO for run {run_data.get('run_id')}: {e}")
+
+    @staticmethod
+    def _participating_agents(run_data: dict) -> set[AgentIdentifier]:
+        """The agent instances that took part in the run.
+
+        A user's own messages are published as the "UserAgent", which is no agent instance to look up.
+        """
+        return {
+            AgentIdentifier(agent_class=agent_info["agent_class"], agent_id=agent_info["agent_id"])
+            for agent_info in run_data.get("participating_agents_in_run", [])
+            if agent_info.get("agent_class") and agent_info.get("agent_id") and agent_info["agent_class"] != "UserAgent"
+        }
 
     @staticmethod
     @trace_fn
