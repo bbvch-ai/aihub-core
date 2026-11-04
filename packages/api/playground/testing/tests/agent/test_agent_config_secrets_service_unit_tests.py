@@ -69,6 +69,7 @@ def _class_entity(config_type: type[AgentConfig] = _MailboxAgentConfig) -> Mock:
     class_entity.is_online_since.return_value = True
     class_entity.is_conversational = False
     class_entity.is_schedulable = False
+    class_entity.supports_response_schema = False
     class_entity.start_events = []
     class_entity.stop_events = []
     class_entity.hitl_request_events = []
