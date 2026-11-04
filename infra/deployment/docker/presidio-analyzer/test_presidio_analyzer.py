@@ -434,6 +434,48 @@ def test_should_keep_serving_other_callers_when_an_analysis_outlives_the_request
         docker("rm", "-f", container, check=False)
 
 
+BATCHED_EQUIVALENCE = """
+import json, sys
+from presidio_analyzer import AnalyzerEngineProvider
+from presidio_analyzer.predefined_recognizers import GLiNERRecognizer
+from batched_gliner_recognizer import BatchedGLiNERRecognizer
+from word_aligned_text_chunker import WordAlignedTextChunker
+engine = AnalyzerEngineProvider(analyzer_engine_conf_file="/app/analyzer.yaml").create_engine()
+stock = next(r for r in engine.registry.recognizers if isinstance(r, GLiNERRecognizer))
+stock.text_chunker = WordAlignedTextChunker(chunk_size=stock.text_chunker.chunk_size,
+                                            chunk_overlap=stock.text_chunker.chunk_overlap)
+report = []
+for batch_size in (1, 8):
+    batched = BatchedGLiNERRecognizer.from_recognizer(stock, batch_size=batch_size)
+    for text in json.loads(sys.argv[1]):
+        expected = stock.analyze(text=text, entities=stock.supported_entities)
+        actual = batched.analyze(text=text, entities=stock.supported_entities)
+        report.append({"batch_size": batch_size, "chars": len(text),
+                       "expected": [(r.entity_type, r.start, r.end) for r in expected],
+                       "actual": [(r.entity_type, r.start, r.end) for r in actual],
+                       "score_diff": max((abs(a.score - e.score) for a, e in zip(actual, expected)), default=0.0)})
+print(json.dumps(report))
+"""
+
+
+def test_should_find_the_spans_of_presidios_gliner_recognizer_when_chunks_are_batched() -> None:
+    """Batching the chunks of one text must not change what GLiNER finds; padding may move scores by float noise."""
+    container, key = "presidio-analyzer-batching-test", "batching-test-key"
+    texts = [text for text, _ in SAMPLES.values()] + [CHUNKED_PROMPT, NAME_HEAVY_THREAD]
+    try:
+        start_analyzer(container, key, "--cpus", "4", "--memory", "4g")
+        result = docker("exec", "-w", "/app", container, "python", "-c", BATCHED_EQUIVALENCE, json.dumps(texts),
+                        check=False)
+        assert result.returncode == 0, result.stderr[-2000:]
+        report = json.loads(result.stdout.splitlines()[-1])
+    finally:
+        docker("rm", "-f", container, check=False)
+
+    assert [r["actual"] for r in report] == [r["expected"] for r in report]
+    assert all(r["score_diff"] == 0.0 for r in report if r["batch_size"] == 1)
+    assert all(r["score_diff"] < 1e-4 for r in report)
+
+
 def test_should_start_and_answer_when_egress_is_blocked() -> None:
     """The analyzer runs on an internal network (no route out) and still loads its models and answers."""
     network, container, key = "pii-egress-test", "presidio-analyzer-egress-test", "egress-test-key"

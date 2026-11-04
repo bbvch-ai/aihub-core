@@ -230,8 +230,8 @@ continues to build locally so developers test Dockerfile edits without round-tri
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
 libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/xlsxwriter/python-docx/python-pptx/weasyprint/
 pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and headless LibreOffice with
-`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX
-and `pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
+`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX and
+`pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
 `make -C infra/deployment build-and-push-open-terminal-image` (requires `docker login ghcr.io`). Re-publish whenever:
 
 - The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
@@ -252,12 +252,16 @@ After publishing, all stages pull the new image automatically via `docker compos
 
 The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's multilingual PII model
 (`urchade/gliner_multi_pii-v1`, pinned revision) and spaCy's `de_core_news_lg` baked in, the hub offline at run time,
-and Presidio's stock REST server with two changes: every route but `/health` needs
-`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
-(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
-recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
-mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
-analysed under the language code `de`; see the config header.
+and Presidio's stock REST server with three changes: every route but `/health` needs
+`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`; GLiNER reads long texts in chunks that start at a word
+(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names); and
+the chunks of one text go to GLiNER `GLINER_BATCH_SIZE` at a time (`batched_gliner_recognizer.py`, image default 8)
+instead of one model call per chunk. Batching keeps Presidio's chunks, offsets and deduplication, so the spans are the
+stock recognizer's; padding moves scores by at most about 1e-5. On a 4-CPU laptop it made a 20,000-character text 28%
+faster (29 s to 21 s) at the same peak memory; 16 was no faster than 8. The recognizer config
+(`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in,
+so pattern changes need only `make generate-compose` and a container restart. Every text is analysed under the language
+code `de`; see the config header.
 
 Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
 `make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
@@ -283,14 +287,14 @@ every call.
 
 ### Publishing the browser-proxy image
 
-The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages, built
-from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image` (requires
-`docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and `image_tags.browser_proxy`
-with every change to that folder. Three settings look optional and are not (each verified against Playwright 1.63):
-`CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://` with `CONNECT` too; the
-error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted` instead of a 403 with
-`X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that form and the range
-would refuse all of IPv4.
+The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages,
+built from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image`
+(requires `docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and
+`image_tags.browser_proxy` with every change to that folder. Three settings look optional and are not (each verified
+against Playwright 1.63): `CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://`
+with `CONNECT` too; the error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted`
+instead of a 403 with `X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that
+form and the range would refuse all of IPv4.
 
 Check the [Squid advisories](https://github.com/squid-cache/squid/security/advisories) when bumping the base, not an
 image scan. Alpine 3.22 froze Squid at 6.12, which upstream no longer fixes, and Alpine's secdb lists only the CVEs
@@ -497,8 +501,8 @@ logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symli
 - `security-headers@file` sends `X-Frame-Options: DENY`, except on the `web-auth` and `sysadmin-web-auth` routers
   (`/{locale}/auth/*`), which use `auth-route-security-headers@file` with `SAMEORIGIN`. The frontend loads
   `/{locale}/auth/renew` in a hidden same-origin iframe for its SSO session probe and silent renew; under `DENY` the
-  probe always times out, users with an expired Keycloak session keep a stale login, and the OpenWebUI iframe then
-  signs in through Entra inside the frame, where OpenWebUI loses its OAuth state (`mismatching_state`).
+  probe always times out, users with an expired Keycloak session keep a stale login, and the OpenWebUI iframe then signs
+  in through Entra inside the frame, where OpenWebUI loses its OAuth state (`mismatching_state`).
 
 ## Adding a New Service
 
