@@ -65,6 +65,13 @@ class TestFromSettings:
         with pytest.raises(ValueError, match="AIHUB_CONFIG_ENCRYPTION_KEY"):
             SecretEncryptionService.from_settings(settings)
 
+    @pytest.mark.parametrize("blank", ["", "  "])
+    def test_a_blank_key_fails_closed_with_the_variable_name(self, blank: str):
+        settings = ConfigEncryptionSettings(ENCRYPTION_KEY=SecretStr(blank))
+
+        with pytest.raises(ValueError, match="AIHUB_CONFIG_ENCRYPTION_KEY"):
+            SecretEncryptionService.from_settings(settings)
+
     def test_a_malformed_key_is_rejected(self):
         settings = ConfigEncryptionSettings(ENCRYPTION_KEY=SecretStr("not-a-key"))
 

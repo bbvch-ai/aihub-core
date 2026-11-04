@@ -31,9 +31,12 @@ from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewSh
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
+from swiss_ai_hub.agent.capabilities.conversation.structured_answer import StructuredAnswer
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
+from swiss_ai_hub.agent.capabilities.requested_response_schema import RequestedResponseSchema
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -208,6 +211,7 @@ class FewShotAgent(Agent):
         event: FewShotEvent,
         ctx: Conversation.Contextualized,
         agent_config: FewShotAgentConfig,
+        run_context: RunContext,
         displayer: EventDisplayer,
         topic: AgentInstanceTopic,
         t: LocaleHandler,
@@ -215,8 +219,15 @@ class FewShotAgent(Agent):
     ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
         """Stream the answer, then hand the turn back: the memory delegation first, the completion last."""
         await displayer.display_thought(t("agent.thought.write_answer_based_on_few_shot_examples"))
+        response_schema = await RequestedResponseSchema.of(run_context, type(self))
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
-            answer = await displayer.display_llm_stream(agent_config.llm, llm, event.full_context, as_stop_step=False)
+            answer = await displayer.display_llm_stream(
+                agent_config.llm,
+                llm,
+                event.full_context,
+                response_schema=response_schema,
+            )
+        await StructuredAnswer.keep_prompt(run_context, answer, response_schema)
         remember = Memory.remember(
             query=ctx.query,
             answer=answer,

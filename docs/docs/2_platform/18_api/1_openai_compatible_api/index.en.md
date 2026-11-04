@@ -25,8 +25,9 @@ model gateway with their parameters, so applications developed with OpenAI's Pyt
 within what the configured model supports.
 
 Responses follow the OpenAI formats, including server-sent events ending in `data: [DONE]` for streamed chat
-completions. Errors raised by the model gateway carry OpenAI's `error` object; errors raised by the platform itself,
-such as a missing permission, carry a `detail` field instead.
+completions. Every error carries OpenAI's `error` object (`message`, `type`, `param`, `code`), whether the model gateway
+or the platform raised it, and a request the API cannot accept is a `400`. A `detail` field with the same content stays
+next to it for the platform's own clients.
 
 ### Vendor-Neutral Model Access
 
@@ -66,8 +67,9 @@ model configurations.
 transcription (supporting multiple audio formats and languages) and text-to-speech synthesis with configurable voices
 and streaming output.
 
-**Model Discovery**: The model listing returns the language models a user may access. An agent does not appear in the
-listing, but can be looked up and called by its id (`AgentClass/agent_id`).
+**Model Discovery**: The model listing returns the language models a user may access, and with `?include_agents=true`
+also the agents they may call, under their ids (`AgentClass/agent_id`). Agents are left out by default because OpenWebUI
+lists this endpoint and shows agents through its own pipe.
 
 ## Calling Agents
 
@@ -88,12 +90,12 @@ a question back. Because of that, an agent call honours less of the request than
 
 **Content parts**
 
-| Part        | Agents                                                                                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `text`      | Passed to the agent                                                                                                             |
-| `image_url` | Passed to the agent, which shows it to its model if that model accepts images; images sent as data are stored first (see below) |
-| `file`      | Stored and attached to the agent's run, from the last user message (see below)                                                  |
-| Others      | Ignored, for example `input_audio`                                                                                              |
+| Part          | Agents                                                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `text`        | Passed to the agent                                                                                                             |
+| `image_url`   | Passed to the agent, which shows it to its model if that model accepts images; images sent as data are stored first (see below) |
+| `file`        | Stored and attached to the agent's run, from the last user message (see below)                                                  |
+| `input_audio` | Refused with `400`: transcribe the audio with `/audio/transcriptions` and send the text                                         |
 
 **Files.** A `file` part sends a document with the question, the way the OpenAI SDKs attach PDFs:
 
@@ -120,12 +122,78 @@ stored once. An image must be PNG, JPEG, GIF or WebP and may have 5 MB (`AGENT_I
 refused with `413`. Links to images on the web are passed on as they are.
 
 **Parameters.** Agents choose their own model and its settings, so `temperature`, `top_p`, `max_tokens`, `stop`, `seed`,
-`n`, `response_format`, `tools`, `tool_choice` and `logprobs` have no effect on an agent call. The answer always ends
-with `finish_reason: "stop"`, and a streamed answer reports no token usage.
+`n` and `logprobs` have no effect on an agent call. The answer ends with `finish_reason: "stop"` (`"tool_calls"` for a
+forced function, see below) and names the agent (`AgentClass/agent_id`) as its `model`.
+
+**Structured output.** An agent answers in a JSON shape the same two ways a model does:
+
+- **`response_format`**: `json_schema` returns the answer as JSON matching the schema in `message.content`, and
+  `json_object` any JSON object. `chat.completions.parse` with a Pydantic model works as it does against a model.
+- **A forced function**: one function in `tools`, forced with `tool_choice` (by name, or `"required"`), returns the
+  answer as that function's arguments in `message.tool_calls`, with `finish_reason: "tool_calls"`.
+
+The extraction of an invoice's header, end to end:
+
+```python
+from pydantic import BaseModel
+
+
+class Line(BaseModel):
+    item: str
+    amount: float
+
+
+class Invoice(BaseModel):
+    issuer: str
+    date: str | None
+    total: float | None
+    lines: list[Line]
+
+
+messages = [{"role": "user", "content": [
+    {"type": "text", "text": "Extract the invoice."},
+    {"type": "file", "file": {"filename": "invoice.pdf", "file_data": f"data:application/pdf;base64,{pdf_base64}"}},
+]}]
+
+completion = client.chat.completions.parse(
+    model="UniversalAgent/assistant",
+    messages=messages,
+    response_format=Invoice,
+)
+invoice = completion.choices[0].message.parsed
+```
+
+The same request as a forced function:
+
+```python
+completion = client.chat.completions.create(
+    model="UniversalAgent/assistant",
+    messages=messages,
+    tools=[{"type": "function", "function": {"name": "record_invoice", "parameters": Invoice.model_json_schema()}}],
+    tool_choice={"type": "function", "function": {"name": "record_invoice"}},
+)
+arguments = completion.choices[0].message.tool_calls[0].function.arguments
+```
+
+- **Missing values**: the agent adds nothing to its prompt, so how a value is filled is up to your schema and message. A
+  model must fill every field: for a value that may be missing, allow `null` and say in the field's description when to
+  use it, or the model may guess one.
+- **Validation**: the agent validates its answer against the schema and corrects it once. An answer it still cannot fit
+  ends the call with an error, never with prose.
+- **Refusals**: an agent that refuses the request or asks a question back returns its text as `message.refusal` and no
+  content.
+- **Streaming**: the JSON, or the tool call, arrives in one chunk once the agent has validated it, followed by the
+  finish chunk.
+- **Which agents**: agents that answer through the conversation (LLM Wrapping, Web Fetch, Few-Shot, MCP ReAct,
+  Universal). RAG and Expert RAG do not; asking them for structured output is refused with `400`.
+- **Caller tools**: agents do not call caller tools. `tools` with `tool_choice: "auto"` or without `tool_choice`, more
+  than one tool, and the legacy `functions` are refused with `400` naming the field in `error.param`. With
+  `tool_choice: "none"` the tools are ignored.
 
 **Streaming.** A streamed answer is a sequence of `chat.completion.chunk` events with one id, the agent's id as `model`,
-the role on the first chunk only, and `data: [DONE]` at the end. An error the agent raises during a streamed answer is
-sent as part of the answer text.
+the role on the first chunk only, and `data: [DONE]` at the end. With `stream_options.include_usage`, a last chunk
+without choices reports the tokens the agent used. An agent that fails during a streamed answer ends the stream with an
+`error` event, which the OpenAI SDKs raise as an error.
 
 **Platform extensions.** The `metadata` object of the request carries options OpenAI does not have:
 

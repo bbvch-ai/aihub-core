@@ -20,6 +20,7 @@ from swiss_ai_hub.api.i18n.middleware.i18n_middleware import I18nMiddleware
 from swiss_ai_hub.api.request_limits.api_request_limit_settings import ApiRequestLimitSettings
 from swiss_ai_hub.api.request_limits.body_size_limit_middleware import BodySizeLimitMiddleware
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
+from swiss_ai_hub.api.routes.openai.openai_error_handler import OpenaiErrorHandler
 from swiss_ai_hub.api.routes.parsing.parsing_controller import ParsingController
 from swiss_ai_hub.api.routes.process.process_controller import ProcessController
 from swiss_ai_hub.api.runners.lifetime.lifetime_manager import lifetime_manager
@@ -164,6 +165,7 @@ class ApiRunner(Runner):
 
         # Internationalization middleware
         app.add_middleware(I18nMiddleware)
+        OpenaiErrorHandler.register(app)
         return app
 
     def mount(self, *controllers: Controller) -> Self:

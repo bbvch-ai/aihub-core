@@ -4106,6 +4106,9 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      # Decrypts the profile's secret fields (Password inputs) when a run validates its config. Every agent whose
+      # blueprint declares a Password field needs it, including mcp_react_agent once it gets a service here.
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
 
       # LiteLLM Access (draft-reply generation)
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -4171,6 +4174,8 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      # Decrypts the profile's secret fields (Password inputs) when a run validates its config.
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
 
       # LiteLLM Access (mail classification)
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -4248,6 +4253,8 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      # Decrypts the profile's secret fields (Password inputs) when a run validates its config.
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
 
       # LiteLLM Access (release notes, translations, titles and follow-ups)
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000

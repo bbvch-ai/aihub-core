@@ -26,6 +26,7 @@ from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import D
 from swiss_ai_hub.api.runners.lifetime.empty_namespace_scope_migration import EmptyNamespaceScopeMigration
 from swiss_ai_hub.api.runners.lifetime.llm_request_timeout_migration import LLMRequestTimeoutMigration
 from swiss_ai_hub.api.runners.lifetime.oversized_input_limit_migration import OversizedInputLimitMigration
+from swiss_ai_hub.api.runners.lifetime.plaintext_agent_secret_migration import PlaintextAgentSecretMigration
 from swiss_ai_hub.api.runners.lifetime.pre_pair_knowledge_collection_migration import (
     PrePairKnowledgeCollectionMigration,
 )
@@ -372,6 +373,16 @@ def unset_oversized_input_limits() -> None:
     migrated = OversizedInputLimitMigration.run()
     if migrated:
         logger.info(f"Unset an input-token limit above what the model allows in: {', '.join(migrated)}")
+
+
+# Transitional: agent-config secrets are stored encrypted since #1587, and saves encrypt them, so no new plaintext
+# appears; this encrypts the ones stored before. Delete it and `PlaintextAgentSecretMigration` once deployments have
+# upgraded past it. The startup key guard in `lifetime_manager` is not part of this and stays.
+def encrypt_plaintext_agent_secrets() -> None:
+    """Encrypts every agent profile's secret still stored in plaintext."""
+    migrated = PlaintextAgentSecretMigration.run()
+    if migrated:
+        logger.info(f"Encrypted plaintext secrets in: {', '.join(migrated)}")
 
 
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:

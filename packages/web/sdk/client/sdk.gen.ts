@@ -200,6 +200,7 @@ import type {
   GetLocaleData,
   GetLocaleResponse,
   GetModelsData,
+  GetModelsError,
   GetModelsResponse,
   GetModelWithAssistantsData,
   GetModelWithAssistantsError,
@@ -2617,7 +2618,7 @@ export const getChatDisclaimer = <
 /**
  * List Models
  *
- * Lists the currently available models, and provides basic information about each one such as the owner and availability.
+ * Lists the currently available models, and provides basic information about each one such as the owner and availability. With `include_agents`, the agents the user may call are listed too, as models named `AgentClass/agent_id`.
  */
 export const getModels = <
   TComposable extends Composable = "$fetch",
@@ -2628,7 +2629,7 @@ export const getModels = <
   (options.client ?? client).get<
     TComposable,
     GetModelsResponse | DefaultT,
-    unknown,
+    GetModelsError,
     DefaultT
   >({
     security: [

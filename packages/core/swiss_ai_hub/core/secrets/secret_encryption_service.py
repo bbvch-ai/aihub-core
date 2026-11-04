@@ -45,7 +45,8 @@ class SecretEncryptionService:
     @classmethod
     def from_settings(cls, settings: ConfigEncryptionSettings | None = None) -> Self:
         settings = settings or ConfigEncryptionSettings()
-        if settings.ENCRYPTION_KEY is None:
+        # Compose passes an unset variable on as an empty string, which is the same mistake as leaving it out.
+        if settings.ENCRYPTION_KEY is None or not settings.ENCRYPTION_KEY.get_secret_value().strip():
             raise ValueError(_MISSING_KEY_MESSAGE)
         return cls(settings.ENCRYPTION_KEY.get_secret_value())
 

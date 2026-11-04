@@ -1,7 +1,6 @@
 from fastapi import HTTPException, params, status
 from fastapi.routing import APIRoute
 from starlette.datastructures import Headers
-from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
@@ -26,21 +25,23 @@ class BodySizeLimitMiddleware:
             await self.app(scope, receive, send)
             return
         content_length = Headers(scope=scope).get("content-length", "")
-        if not self._labelled_multipart(scope) and content_length.isdigit() and int(content_length) > self.max_bytes:
-            await JSONResponse({"detail": self._detail()}, status.HTTP_413_CONTENT_TOO_LARGE)(scope, receive, send)
-            return
-        await self.app(scope, self._bounded(scope, receive), send)
+        declared_too_large = content_length.isdigit() and int(content_length) > self.max_bytes
+        await self.app(scope, self._bounded(scope, receive, declared_too_large=declared_too_large), send)
 
-    def _bounded(self, scope: Scope, receive: Receive) -> Receive:
+    def _bounded(self, scope: Scope, receive: Receive, *, declared_too_large: bool) -> Receive:
         """Counts what the body actually delivers, which a chunked body does not announce.
 
         Whether the request is a form upload is decided on the first read: an endpoint reads its body only after
-        routing has put the matched route into the scope, while the middleware runs before any route is known.
+        routing has put the matched route into the scope, while the middleware runs before any route is known. A body
+        that announces a length past the limit is refused at that first read, before a byte of it is received; raising
+        rather than answering here lets the app's exception handlers word the 413 as the route's clients expect.
         """
         received = 0
 
         async def bounded_receive() -> Message:
             nonlocal received
+            if declared_too_large and not self._is_form_upload(scope):
+                raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, self._detail())
             message = await receive()
             if message["type"] == "http.request" and not self._is_form_upload(scope):
                 received += len(message.get("body", b""))

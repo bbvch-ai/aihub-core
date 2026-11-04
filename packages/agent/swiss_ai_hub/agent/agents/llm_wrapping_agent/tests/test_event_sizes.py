@@ -58,12 +58,18 @@ def _answer_to(messages: list[ChatMessage]) -> LLMEvent:
     )
 
 
+def _without_schema() -> MagicMock:
+    """A run context whose start event asked for no JSON shape."""
+    return MagicMock(get=AsyncMock(return_value=None))
+
+
 async def _stop_after(completion: Any) -> Any:
     with patch(f"{CONVERSATION_MODULE}.generate_follow_up_questions", new=AsyncMock()):
         return await Conversation.complete_conversation_step(
             LLMWrappingAgent(),
             request=completion,
             conversation=_wrapping_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -98,6 +104,7 @@ async def test_the_llm_wrapping_turn_ends_in_events_the_broker_accepts():
             event=composed,
             ctx=ConversationContextualizedEvent(history=composed.history, query=QUESTION),
             agent_config=_wrapping_config(),
+            run_context=_without_schema(),
             displayer=displayer,
             topic=MagicMock(),
             t=LocaleHandler(locale="en"),

@@ -41,6 +41,7 @@ from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_eve
 from swiss_ai_hub.core.events.agent.record_extraction.records_extracted_event import RecordsExtractedEvent
 from swiss_ai_hub.core.events.agent.semantic.llm.message import Message
 from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
+from swiss_ai_hub.core.events.agent.user.response_schema import ResponseSchema
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_costs import LLMCosts
@@ -75,6 +76,7 @@ class StreamingResources:
         None  # Added field to store the final StopEvent
     )
     table_downloads: list[str] = field(default_factory=list)
+    costs: LLMCosts = field(default_factory=LLMCosts.from_zero)
 
 
 @dataclass
@@ -165,6 +167,7 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         requested_features: list[ChatFeature] | None = None,
+        response_schema: ResponseSchema | None = None,
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
@@ -223,6 +226,7 @@ class ChatService:
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 files=files,
                 requested_features=requested_features or [],
+                response_schema=response_schema,
             )
 
         event = ExternalAgentEvent(
@@ -254,6 +258,7 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         requested_features: list[ChatFeature] | None = None,
+        response_schema: ResponseSchema | None = None,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
     ) -> StreamingResources:
@@ -269,6 +274,7 @@ class ChatService:
             display_id=display_id,
             files=files,
             requested_features=requested_features,
+            response_schema=response_schema,
             subscribe_to_thread=True,
             locale=locale,
         )
@@ -303,6 +309,8 @@ class ChatService:
             elif event.is_stop_event and is_primary_agent:
                 logger.debug("Received stop event. Stop streaming")
                 await stop_streaming(event, topic)
+            elif event.is_llm_cost_event:
+                resources.costs += event
             elif event.is_exception_event:
                 logger.warning(f"Received exception event: {event.event_name}")
                 await stop_streaming(event, topic)
@@ -342,6 +350,7 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         requested_features: list[ChatFeature] | None = None,
+        response_schema: ResponseSchema | None = None,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
     ) -> JsonResources:
@@ -357,6 +366,7 @@ class ChatService:
             display_id=display_id,
             files=files,
             requested_features=requested_features,
+            response_schema=response_schema,
             subscribe_to_thread=True,
             locale=locale,
         )

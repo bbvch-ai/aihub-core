@@ -738,8 +738,8 @@ Read-only Jira access for agents (#1951), Jira Cloud and Jira Data Center alike.
 agent configuration: the agent embeds the group and passes it in.
 
 - **`JiraConnectionConfig`** is a `StepConfig` with `base_url`, `deployment` (`cloud` | `data_center`), `email` (Cloud
-  only) and `api_token` (a `Password`, so #1587 will encrypt it with every other secret field). A step receives it by
-  its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
+  only) and `api_token` (a `Password`, so it is stored encrypted like every other secret field, #1587). A step receives
+  it by its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
   deployment-fixed: absent from the form, but bounded in the schema because a direct API save can set them. Cross-field
   rules (Cloud needs an e-mail) are `problems()`, checked when a search starts, never a validator.
 - **`JiraTicketSearch.find_tickets(connection, project_keys, clauses)`** returns every matching `JiraTicket` (key, url,
@@ -804,6 +804,14 @@ acceptance criteria against sites seeded with `packages/pipeline/playground/jira
   `AIHubSettings()` instances resolve to the test DB (never the dev/prod `aihub` DB), and registers a session-autouse
   fixture that drops the test DB at session start. Failing to import this first means tests silently hit the dev
   database.
+- `beanie_isolation`: tests of Beanie documents (the entities ported from MongoEngine, #1634). Opt a test in with
+  `@pytest.mark.beanie`, or a whole module with `pytestmark = pytest.mark.beanie`. The test then runs on
+  pytest-asyncio's session loop, where one `AsyncMongoClient` is initialised against the test DB, and every collection
+  in `beanie_document_models` (session fixture in the package's `conftest.py`) is emptied before it. Add a ported
+  document to that list. Unmarked tests keep their own loop, and an unmarked test that touches a Beanie document fails
+  with `Cannot use AsyncMongoClient in different event loop`. Not usable from `@async_test` steps, whose `asyncio.run()`
+  always makes a new loop. A package that opts in copies the core `conftest.py` wiring: the fixture imports, the
+  `pytest_pycollect_makeitem` hook, the `beanie` marker and its own `beanie_document_models`.
 - `@async_test`: Decorator for async pytest-bdd step functions (wraps with `asyncio.run()`)
 - `fake_user()`: Creates a mock `UserIdentity` for tests (uses constants in `auth_utils/test_identity.py`)
 - `ASGIAdapter`: ASGI adapter for testing FastAPI routes without a running server

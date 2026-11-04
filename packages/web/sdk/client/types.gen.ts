@@ -431,6 +431,12 @@ export type AgentClassDto = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Is Online
    *
    * Indicates whether the agent class is online and reachable.
@@ -3118,7 +3124,7 @@ export type ChatCompletionRequest = {
   /**
    * Service Tier
    */
-  service_tier?: "auto" | "default" | null;
+  service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
   /**
    * Stop
    */
@@ -6209,9 +6215,9 @@ export type Embeddings = {
   /**
    * Embedding
    *
-   * The list of embeddings.
+   * The embedding vector, or the vector's float32 bytes as base64 when requested so.
    */
-  embedding: Array<number>;
+  embedding: Array<number> | string;
   /**
    * Index
    *
@@ -6278,6 +6284,10 @@ export type EmbeddingsResponse = {
    * The list of embeddings.
    */
   data: Array<Embeddings>;
+  /**
+   * Tokens the request used.
+   */
+  usage?: OpenaiTypesCreateEmbeddingResponseUsage | null;
 };
 
 /**
@@ -7034,6 +7044,12 @@ export type FullAgentInstanceDto = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Start Events
    *
    * A list of `EventSpecs` representing events that can start this agent's workflow.
@@ -7070,7 +7086,7 @@ export type FullAgentInstanceDto = {
   /**
    * Configuration
    *
-   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.
+   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.
    */
   configuration?: {
     [key: string]: unknown;
@@ -8835,7 +8851,7 @@ export type ImageGenerationRequest = {
   /**
    * Quality
    */
-  quality?: "standard" | "hd" | null;
+  quality?: "standard" | "hd" | "low" | "medium" | "high" | "auto" | null;
   /**
    * Response Format
    */
@@ -8843,7 +8859,16 @@ export type ImageGenerationRequest = {
   /**
    * Size
    */
-  size?: "256x256" | "512x512" | "1024x1024" | "1792x1024" | "1024x1792" | null;
+  size?:
+    | "auto"
+    | "256x256"
+    | "512x512"
+    | "1024x1024"
+    | "1536x1024"
+    | "1024x1536"
+    | "1792x1024"
+    | "1024x1792"
+    | null;
   /**
    * Style
    */
@@ -11034,6 +11059,14 @@ export type LlmStopEvent = {
     [key: string]: unknown;
   }> | null;
   /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -12640,6 +12673,12 @@ export type MinimalAgentInstanceDto = {
    * Whether the agent can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
 };
 
 /**
@@ -16194,6 +16233,14 @@ export type RefusalStopEvent = {
     [key: string]: unknown;
   }> | null;
   /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
+  /**
    * What about the input made the turn unanswerable.
    */
   reason: RefusalReason;
@@ -16536,6 +16583,43 @@ export type ResponseFormatText = {
    */
   type: "text";
   [key: string]: unknown;
+};
+
+/**
+ * ResponseSchema
+ *
+ * The JSON shape a caller wants the agent's answer in.
+ *
+ * One request whatever the caller's API calls it: the OpenAI endpoint maps both `response_format` and a forced
+ * function call onto it, and decides on its own how to hand the result back.
+ */
+export type ResponseSchema = {
+  /**
+   * Name
+   *
+   * A name for the shape, as OpenAI's `json_schema.name` or a function name.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * What the shape is for; the model reads it.
+   */
+  description?: string | null;
+  /**
+   * Json Schema
+   *
+   * The JSON schema the answer must match. Without one, any JSON object is accepted.
+   */
+  json_schema?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Strict
+   *
+   * Ask the model to follow the schema exactly, as OpenAI's structured outputs `strict`.
+   */
+  strict?: boolean;
 };
 
 /**
@@ -18904,13 +18988,17 @@ export type TextToSpeechRequest = {
   voice:
     | "alloy"
     | "ash"
+    | "ballad"
     | "coral"
     | "echo"
     | "fable"
     | "onyx"
     | "nova"
     | "sage"
-    | "shimmer";
+    | "shimmer"
+    | "verse"
+    | "marin"
+    | "cedar";
   /**
    * Response Format
    *
@@ -21267,6 +21355,10 @@ export type UserMessageEvent = {
    */
   web_references?: Array<string>;
   /**
+   * The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.
+   */
+  response_schema?: ResponseSchema | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -21869,6 +21961,23 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
 /**
  * Usage
  *
+ * The usage information for the request.
+ */
+export type OpenaiTypesCreateEmbeddingResponseUsage = {
+  /**
+   * Prompt Tokens
+   */
+  prompt_tokens: number;
+  /**
+   * Total Tokens
+   */
+  total_tokens: number;
+  [key: string]: unknown;
+};
+
+/**
+ * Usage
+ *
  * For `gpt-image-1` only, the token usage information for the image generation.
  */
 export type OpenaiTypesImagesResponseUsage = {
@@ -22124,6 +22233,12 @@ export type AgentClassDtoWritable = {
    * Whether the agent class can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
   /**
    * Is Online
    *
@@ -25121,6 +25236,12 @@ export type FullAgentInstanceDtoWritable = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Start Events
    *
    * A list of `EventSpecs` representing events that can start this agent's workflow.
@@ -25157,7 +25278,7 @@ export type FullAgentInstanceDtoWritable = {
   /**
    * Configuration
    *
-   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.
+   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.
    */
   configuration?: {
     [key: string]: unknown;
@@ -28039,6 +28160,14 @@ export type LlmStopEventWritable = {
   tools?: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
   [key: string]: unknown;
 };
 
@@ -28886,6 +29015,12 @@ export type MinimalAgentInstanceDtoWritable = {
    * Whether the agent can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
 };
 
 /**
@@ -30930,6 +31065,14 @@ export type RefusalStopEventWritable = {
   tools?: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * What about the input made the turn unanswerable.
    */
@@ -34297,6 +34440,10 @@ export type UserMessageEventWritable = {
    * Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.
    */
   web_references?: Array<string>;
+  /**
+   * The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.
+   */
+  response_schema?: ResponseSchema | null;
   [key: string]: unknown;
 };
 
@@ -37306,9 +37453,25 @@ export type GetModelsData = {
      */
     tenant_id: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Include Agents
+     *
+     * Also list the agents the user may call. Off by default: OpenWebUI lists this endpoint and shows agents through its own pipe, so listing them here would show each twice.
+     */
+    include_agents?: boolean;
+  };
   url: "/{tenant_id}/openai/models";
 };
+
+export type GetModelsErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetModelsError = GetModelsErrors[keyof GetModelsErrors];
 
 export type GetModelsResponses = {
   /**

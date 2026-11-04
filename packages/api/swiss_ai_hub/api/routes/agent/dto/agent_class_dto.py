@@ -72,6 +72,10 @@ class AgentClassDTO(BaseModel):
     is_schedulable: Annotated[
         bool, Field(description="Whether the agent class can be run automatically on a cron schedule")
     ] = False
+    supports_response_schema: Annotated[
+        bool,
+        Field(description="Whether the agent answers in the JSON shape a message's `response_schema` asks for"),
+    ] = False
     is_online: Annotated[
         bool | None, Field(description="Indicates whether the agent class is online and reachable.")
     ] = None
@@ -95,6 +99,7 @@ class AgentClassDTO(BaseModel):
             agent_config_specs=event.agent_config_specs,
             is_conversational=event.is_conversational,
             is_schedulable=event.is_schedulable,
+            supports_response_schema=event.supports_response_schema,
             start_events=event.start_events,
             stop_events=event.stop_events,
             hitl_request_events=event.hitl_request_events,
@@ -131,6 +136,7 @@ class AgentClassDTO(BaseModel):
             agent_config_specs=agent_config_specs,
             is_conversational=entity.is_conversational,
             is_schedulable=entity.is_schedulable,
+            supports_response_schema=entity.supports_response_schema,
             start_events=start_events,
             stop_events=stop_events,
             hitl_request_events=hitl_request_events,

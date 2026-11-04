@@ -425,6 +425,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
 
             await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
+            await AgentEndpointsDiscoveryService._refuse_unsupported_response_schema(start_event_input, agent_class)
+
             if thread_id is not None:
                 await ThreadService.get_or_create_thread_to_post_in(
                     thread_id, user, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id), t=t
@@ -461,6 +463,12 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             return response_event
 
         return send_event
+
+    @staticmethod
+    async def _refuse_unsupported_response_schema(start_event_input: BaseModel, agent_class: str) -> None:
+        """Called before the thread is created, so a refused request leaves no empty conversation behind."""
+        if getattr(start_event_input, "response_schema", None) is not None:
+            await to_thread(AgentService.refuse_unsupported_response_schema, agent_class)
 
     @staticmethod
     async def _input_event(
@@ -521,6 +529,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             usage_status = await usage_limits.check_and_raise(
                 user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
             )
+
+            await AgentEndpointsDiscoveryService._refuse_unsupported_response_schema(start_event_input, agent_class)
 
             if thread_id is not None:
                 await ThreadService.get_or_create_thread_to_post_in(
