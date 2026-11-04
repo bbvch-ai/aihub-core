@@ -13,9 +13,9 @@ class DiscoveryPrompt:
     run's scope, ahead of the client's own, and earlier tables replaced by a line.
 
     The scope is spelled out because tool descriptions cannot change per run; a model that does not know the glob
-    guesses paths outside it and reads the empty results as "no such document". With semantic search the model is told
-    to rank first and judge documents, not rows: lexical searches cannot settle a condition on the rows, and models
-    that tried spent the whole loop on it.
+    guesses paths outside it and reads the empty results as "no such document". The model is told to search by keyword
+    for what the request names exactly and to rank by meaning for what it only describes, and to judge documents, not
+    rows: searches cannot settle a condition on the rows, and models that tried spent the whole loop on it.
     """
 
     @staticmethod
@@ -25,13 +25,11 @@ class DiscoveryPrompt:
         profile_instructions: str | None,
         input_budget: int,
         t: LocaleHandler,
-        semantic: bool = False,
     ) -> list[ChatMessage]:
         """The instructions, then the conversation within the input budget. The budget is the profile's own, never
         an unset limit: llama-index fills that with about 3,000 tokens and drops the turn a follow-up refers to."""
-        key = "instructions_semantic" if semantic else "instructions"
         instructions = [
-            t(f"agent.knowledge_extraction_agent.prompt.{key}", scope=scope.describe()),
+            t("agent.knowledge_extraction_agent.prompt.instructions", scope=scope.describe()),
             *([profile_instructions] if profile_instructions else []),
         ]
         merged = merge_consecutive_messages(

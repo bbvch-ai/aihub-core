@@ -354,15 +354,16 @@ Option groups are non-nullable with primitive defaults, so a hidden group submit
 SharePoint is `onedrive` with `drive_type=documentLibrary`. Credentials are `str | Password`;
 `SourcePipelineConfig.secret_field_paths()` derives their dotted paths from the form, the API encrypts them with
 `SecretEncryptionService` (`AIHUB_CONFIG_ENCRYPTION_KEY`, shared with the pipeline) and returns a mask; a resubmitted
-mask keeps the stored value. The dialog offers only `RcloneSyncConfig.offered_backends()` (`_TESTED_BACKENDS` = `s3`,
-`drive`, `onedrive`, plus `local` when `RCLONE_LOCAL_SOURCE_ROOT` is set), each under a translated label; the other
-backends stay in the form and runtime so existing databases keep syncing. rclone's setup still asks questions in
-non-interactive mode: `RcloneClient` answers the fixed ones (`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered
-with the stored `drive_id` through ephemeral `config_*` parameters (rclone then checks the drive against Microsoft Graph
-while creating the remote), and a step rclone fails raises its `Error` text. The Drive service-account key is a
-`SecretFileInput` (core form element, treated as a secret by `SecretFieldWalker`). Adding a backend = one `Form`
-subclass + one field on `RcloneSyncConfig` + labels in
-`packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
+mask keeps the stored value, and a submitted `enc:v1:` value is refused (a client is only ever shown masks).
+`SourcePipelineConfig` sets `hide_input_in_errors`, because the pipeline validates after decrypting. The dialog offers
+only `RcloneSyncConfig.offered_backends()` (`_TESTED_BACKENDS` = `s3`, `drive`, `onedrive`, plus `local` when
+`RCLONE_LOCAL_SOURCE_ROOT` is set), each under a translated label; the other backends stay in the form and runtime so
+existing databases keep syncing. rclone's setup still asks questions in non-interactive mode: `RcloneClient` answers the
+fixed ones (`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered with the stored `drive_id` through ephemeral
+`config_*` parameters (rclone then checks the drive against Microsoft Graph while creating the remote), and a step
+rclone fails raises its `Error` text. The Drive service-account key is a `SecretFileInput` (core form element, treated
+as a secret by `SecretFieldWalker`). Adding a backend = one `Form` subclass + one field on `RcloneSyncConfig` + labels
+in `packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
 
 **Per-run resolution** (`util/source_builders.py`, the Stage-1 sibling of `model_builders` / `store_builders`):
 
@@ -397,6 +398,18 @@ announces each removal the same way.
 **Cleanup.** `SourceBucketCleanupSensorFor_{source}` (`sensors/source_bucket_cleanup_sensor.py`) drops the partitions
 and the daemon remote of every database that still has partitions but no live row pointing at this source. Storage
 teardown stays with the ingestion pipeline.
+
+**Emptied folders.** Removing files leaves their namespace behind, and a sourced database refuses manual namespace
+deletion. So after each removal, `ops/source/routed/delete_emptied_namespaces.py` deletes the row of every namespace of
+the run's database whose folder holds no ingestible file any more. Only the row: the folder's documents, figures and
+vectors are removed per file by the ingestion pipeline, which finds them by the namespace name each document carries.
+Do not route this through `knowledge_teardown_sensor`. A teardown deletes the whole folder prefix and every vector of
+the namespace, so a folder re-created at the source while it waited would lose its new files; with the row gone, the
+next observation simply registers a fresh one. Rows flagged `deleting` are manual deletions and stay with the teardown.
+A folder emptied at the source counts as gone, because rclone lists files only. A folder the source still lists keeps
+its row even while the data lake holds none of its files, because rclone writes each file in a run of its own. The
+structured source pipeline runs the same op after its removal, without source files, because it writes within the same
+run.
 
 **A second source pipeline type** registers the same way: a `SourcePipelineConfig` subclass for its form, a factory
 shaped like `rclone_pipeline_definitions(source="acme_sync", display_name=..., description=..., config=...)` (or

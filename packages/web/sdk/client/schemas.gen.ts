@@ -565,6 +565,13 @@ export const AgentClassDTOSchema = {
         "Whether the agent class can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
     is_online: {
       anyOf: [
         {
@@ -4468,7 +4475,7 @@ export const ChatCompletionRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["auto", "default"],
+          enum: ["auto", "default", "flex", "scale", "priority"],
         },
         {
           type: "null",
@@ -6440,6 +6447,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/HumanInTheLoopConfirmationRequestEvent",
+        },
+        {
+          $ref: "#/components/schemas/HumanInTheLoopQuestionsRequestEvent",
         },
         {
           $ref: "#/components/schemas/HumanInTheLoopChatRequestEvent",
@@ -9064,15 +9074,23 @@ export const EmbeddingsSchema = {
       type: "string",
       title: "Object",
       description: "The type of object.",
-      default: "embeddings",
+      default: "embedding",
     },
     embedding: {
-      items: {
-        type: "number",
-      },
-      type: "array",
+      anyOf: [
+        {
+          items: {
+            type: "number",
+          },
+          type: "array",
+        },
+        {
+          type: "string",
+        },
+      ],
       title: "Embedding",
-      description: "The list of embeddings.",
+      description:
+        "The embedding vector, or the vector's float32 bytes as base64 when requested so.",
     },
     index: {
       type: "integer",
@@ -9190,6 +9208,17 @@ export const EmbeddingsResponseSchema = {
       title: "Data",
       description: "The list of embeddings.",
     },
+    usage: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/openai__types__create_embedding_response__Usage",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Tokens the request used.",
+    },
   },
   type: "object",
   required: ["model", "data"],
@@ -9237,6 +9266,20 @@ export const EventSpecsSchema = {
       title: "Event Schema",
       description:
         "A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow.",
+    },
+    api_input_schema: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Api Input Schema",
+      description:
+        "The schema of what an API caller sends for this event: the event without the fields the server fills in, and with the inputs the event converts itself, such as files sent inline. Absent for a specification stored before agents announced it.",
     },
     event_parents: {
       items: {
@@ -10139,6 +10182,13 @@ export const FullAgentInstanceDTOSchema = {
         "Whether the agent can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -10197,7 +10247,7 @@ export const FullAgentInstanceDTOSchema = {
       type: "object",
       title: "Configuration",
       description:
-        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.",
+        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.",
       default: {},
     },
   },
@@ -11631,6 +11681,76 @@ export const HumanInTheLoopChatResponseEventSchema = {
   description: "Response containing chat-style input from a human operator.",
 } as const;
 
+export const HumanInTheLoopChoiceOptionSchema = {
+  properties: {
+    label: {
+      type: "string",
+      maxLength: 80,
+      minLength: 1,
+      title: "Label",
+      description: "The answer's short label.",
+    },
+    description: {
+      type: "string",
+      maxLength: 240,
+      minLength: 1,
+      title: "Description",
+      description: "What choosing the answer means.",
+    },
+  },
+  type: "object",
+  required: ["label", "description"],
+  title: "HumanInTheLoopChoiceOption",
+  description:
+    "One answer a choice question offers; lengths are capped as OpenWebUI's dialog caps them.",
+} as const;
+
+export const HumanInTheLoopChoiceQuestionSchema = {
+  properties: {
+    id: {
+      type: "string",
+      maxLength: 64,
+      minLength: 1,
+      title: "Id",
+      description: "Key the answer is returned under.",
+    },
+    header: {
+      type: "string",
+      maxLength: 48,
+      title: "Header",
+      description: "A short title for the question.",
+    },
+    question: {
+      type: "string",
+      maxLength: 500,
+      minLength: 1,
+      title: "Question",
+      description: "The question itself.",
+    },
+    options: {
+      items: {
+        $ref: "#/components/schemas/HumanInTheLoopChoiceOption",
+      },
+      type: "array",
+      maxItems: 3,
+      minItems: 1,
+      title: "Options",
+      description: "The answers offered, the recommended one first.",
+    },
+    allow_other: {
+      type: "boolean",
+      title: "Allow Other",
+      description: "Whether the user may write an answer of their own.",
+      default: true,
+    },
+  },
+  type: "object",
+  required: ["id", "header", "question", "options"],
+  title: "HumanInTheLoopChoiceQuestion",
+  description:
+    "A question a client with a dialog shows with its options; the first option is the one the agent recommends.",
+} as const;
+
 export const HumanInTheLoopConfirmationRequestEventSchema = {
   properties: {
     event_id: {
@@ -11935,6 +12055,106 @@ export const HumanInTheLoopInputResponseEventSchema = {
   title: "HumanInTheLoopInputResponseEvent",
   description:
     "Response containing free-form text input from a human operator.",
+} as const;
+
+export const HumanInTheLoopQuestionsRequestEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    question: {
+      type: "string",
+      title: "Question",
+      description: "The query or prompt presented to the human operator.",
+    },
+    topic: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/PartialAgentTopic",
+        },
+        {
+          $ref: "#/components/schemas/AgentInstanceTopic",
+        },
+      ],
+      title: "Topic",
+      description:
+        "A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+    },
+    hitl_type: {
+      type: "string",
+      const: "chat",
+      title: "Hitl Type",
+      default: "chat",
+    },
+    questions: {
+      items: {
+        $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
+      },
+      type: "array",
+      maxItems: 5,
+      minItems: 1,
+      title: "Questions",
+      description: "The question's parts, for clients that show a dialog.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "question",
+    "topic",
+    "questions",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "HumanInTheLoopQuestionsRequestEvent",
+  description:
+    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nfive questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -12835,7 +13055,7 @@ export const ImageGenerationRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["standard", "hd"],
+          enum: ["standard", "hd", "low", "medium", "high", "auto"],
         },
         {
           type: "null",
@@ -12859,7 +13079,16 @@ export const ImageGenerationRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"],
+          enum: [
+            "auto",
+            "256x256",
+            "512x512",
+            "1024x1024",
+            "1536x1024",
+            "1024x1536",
+            "1792x1024",
+            "1024x1792",
+          ],
         },
         {
           type: "null",
@@ -15877,6 +16106,16 @@ export const KnowledgeSearchedEventSchema = {
         "The document sections the block holds, for listing as sources.",
       default: [],
     },
+    missing: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Missing",
+      description:
+        "Referenced collections that were not searched, because they no longer exist.",
+      default: [],
+    },
     refused: {
       items: {
         $ref: "#/components/schemas/KnowledgeReference",
@@ -16556,6 +16795,20 @@ export const LLMStopEventSchema = {
       title: "Tools",
       description:
         "List of tools that are advertised to the LLM to be able to call.",
+    },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
     },
     _event_name: {
       type: "string",
@@ -18759,6 +19012,13 @@ export const MinimalAgentInstanceDTOSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
   },
@@ -24196,6 +24456,20 @@ export const RefusalStopEventSchema = {
       description:
         "List of tools that are advertised to the LLM to be able to call.",
     },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
+    },
     reason: {
       $ref: "#/components/schemas/RefusalReason",
       description: "What about the input made the turn unanswerable.",
@@ -24764,6 +25038,56 @@ export const ResponseFormatTextSchema = {
   required: ["type"],
   title: "ResponseFormatText",
   description: "Default response format. Used to generate text responses.",
+} as const;
+
+export const ResponseSchemaSchema = {
+  properties: {
+    name: {
+      type: "string",
+      pattern: "^[a-zA-Z0-9_-]{1,64}$",
+      title: "Name",
+      description:
+        "A name for the shape, as OpenAI's `json_schema.name` or a function name.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "What the shape is for; the model reads it.",
+    },
+    json_schema: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Json Schema",
+      description:
+        "The JSON schema the answer must match. Without one, any JSON object is accepted.",
+    },
+    strict: {
+      type: "boolean",
+      title: "Strict",
+      description:
+        "Ask the model to follow the schema exactly, as OpenAI's structured outputs `strict`.",
+      default: false,
+    },
+  },
+  type: "object",
+  required: ["name"],
+  title: "ResponseSchema",
+  description:
+    "The JSON shape a caller wants the agent's answer in.\n\nOne request whatever the caller's API calls it: the OpenAI endpoint maps both `response_format` and a forced\nfunction call onto it, and decides on its own how to hand the result back.",
 } as const;
 
 export const RetrieveOrganizationMemoryEventSchema = {
@@ -28253,6 +28577,7 @@ export const TextToSpeechRequestSchema = {
       enum: [
         "alloy",
         "ash",
+        "ballad",
         "coral",
         "echo",
         "fable",
@@ -28260,6 +28585,9 @@ export const TextToSpeechRequestSchema = {
         "nova",
         "sage",
         "shimmer",
+        "verse",
+        "marin",
+        "cedar",
       ],
       title: "Voice",
       description: "The voice to use when generating audio.",
@@ -31665,6 +31993,18 @@ export const UserMessageEventSchema = {
         "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
       default: [],
     },
+    response_schema: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ResponseSchema",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -32484,6 +32824,24 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
   title: "Function",
 } as const;
 
+export const openai__types__create_embedding_response__UsageSchema = {
+  properties: {
+    prompt_tokens: {
+      type: "integer",
+      title: "Prompt Tokens",
+    },
+    total_tokens: {
+      type: "integer",
+      title: "Total Tokens",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["prompt_tokens", "total_tokens"],
+  title: "Usage",
+  description: "The usage information for the request.",
+} as const;
+
 export const openai__types__images_response__UsageSchema = {
   properties: {
     input_tokens: {
@@ -32874,6 +33232,13 @@ export const AgentClassDTOWritableSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent class can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
     is_online: {
@@ -35795,6 +36160,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/HumanInTheLoopConfirmationRequestEventWritable",
         },
         {
+          $ref: "#/components/schemas/HumanInTheLoopQuestionsRequestEventWritable",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopChatRequestEventWritable",
         },
         {
@@ -37452,6 +37820,13 @@ export const FullAgentInstanceDTOWritableSchema = {
         "Whether the agent can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -37510,7 +37885,7 @@ export const FullAgentInstanceDTOWritableSchema = {
       type: "object",
       title: "Configuration",
       description:
-        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.",
+        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.",
       default: {},
     },
   },
@@ -38827,6 +39202,83 @@ export const HumanInTheLoopInputResponseEventWritableSchema = {
   title: "HumanInTheLoopInputResponseEvent",
   description:
     "Response containing free-form text input from a human operator.",
+} as const;
+
+export const HumanInTheLoopQuestionsRequestEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    question: {
+      type: "string",
+      title: "Question",
+      description: "The query or prompt presented to the human operator.",
+    },
+    topic: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/PartialAgentTopic",
+        },
+        {
+          $ref: "#/components/schemas/AgentInstanceTopic",
+        },
+      ],
+      title: "Topic",
+      description:
+        "A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+    },
+    hitl_type: {
+      type: "string",
+      const: "chat",
+      title: "Hitl Type",
+      default: "chat",
+    },
+    questions: {
+      items: {
+        $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
+      },
+      type: "array",
+      maxItems: 5,
+      minItems: 1,
+      title: "Questions",
+      description: "The question's parts, for clients that show a dialog.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["question", "topic", "questions"],
+  title: "HumanInTheLoopQuestionsRequestEvent",
+  description:
+    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nfive questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
 } as const;
 
 export const HumanInTheLoopRequestEventWritableSchema = {
@@ -41831,6 +42283,16 @@ export const KnowledgeSearchedEventWritableSchema = {
         "The document sections the block holds, for listing as sources.",
       default: [],
     },
+    missing: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Missing",
+      description:
+        "Referenced collections that were not searched, because they no longer exist.",
+      default: [],
+    },
     refused: {
       items: {
         $ref: "#/components/schemas/KnowledgeReference",
@@ -42392,6 +42854,20 @@ export const LLMStopEventWritableSchema = {
       title: "Tools",
       description:
         "List of tools that are advertised to the LLM to be able to call.",
+    },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
     },
   },
   additionalProperties: true,
@@ -43638,6 +44114,13 @@ export const MinimalAgentInstanceDTOWritableSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
   },
@@ -46988,6 +47471,20 @@ export const RefusalStopEventWritableSchema = {
       title: "Tools",
       description:
         "List of tools that are advertised to the LLM to be able to call.",
+    },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
     },
     reason: {
       $ref: "#/components/schemas/RefusalReason",
@@ -52249,6 +52746,18 @@ export const UserMessageEventWritableSchema = {
       description:
         "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
       default: [],
+    },
+    response_schema: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ResponseSchema",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.",
     },
   },
   additionalProperties: true,

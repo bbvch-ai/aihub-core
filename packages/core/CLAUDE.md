@@ -31,9 +31,10 @@ packages/core/swiss_ai_hub/core/
 ├── distributor/                     # External event distributors (agent + process)
 ├── exceptions/                      # HTTP-boundary exception handlers (ModelGatewayErrorHandler)
 ├── events/                          # Event type hierarchy (~100 event types)
-│   ├── base_event.py                 # Root: auto-registry, polymorphic deserialization
+│   ├── base_event.py                 # Root: auto-registry, polymorphic deserialization, API input
+│   ├── api_payload_context.py        # What an event may need to convert API input (user, agent, S3)
 │   ├── utils.py                     # Event utility functions
-│   ├── discovery/                   # Shared discovery (ClassDiscoveryRequestEvent, EventSpecs)
+│   ├── discovery/                   # Shared discovery (ClassDiscoveryRequestEvent, EventSpecs incl. api_input_schema)
 │   ├── agent/                       # Agent-scoped events
 │   │   ├── control_and_display_event.py
 │   │   ├── aitl/                    # Agent-in-the-loop delegation events
@@ -48,7 +49,7 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── memory/                  # Memory operation events (retrieve, store, history)
 │   │   ├── router/                  # LLM routing events
 │   │   ├── semantic/                # SemanticEvent + OpenInference tracing subtypes
-│   │   └── user/                    # UserMessageEvent
+│   │   └── user/                    # UserMessageEvent, UserUploadedFile, InlineFile (+ settings)
 │   ├── process/                     # Process-scoped events
 │   │   ├── process_event.py          # Process orchestration base
 │   │   ├── start/, stop/, exception/ # Process lifecycle events
@@ -86,7 +87,7 @@ packages/core/swiss_ai_hub/core/
 │   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from secret elements
 ├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
 ├── secrets/                         # Secret configuration fields: encrypted at rest, masked in responses
-│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, fail-closed
+│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, submitted ciphertext refused, fail-closed
 │   └── secret_path_transformer.py    # SecretPathTransformer: apply a transform at dotted paths, fans out over repeaters
 ├── i18n/                            # Internationalization
 │   ├── locale_string.py              # Multi-language container (de, en, fr, it)
@@ -215,6 +216,8 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 ├── ControlAndDisplayEvent (dual purpose)                          [events/agent/control_and_display_event.py]
 │   ├── StartEvent, StopEvent (workflow lifecycle)                 [events/agent/control/]
 │   ├── HumanInTheLoopRequest/Response (HITL)                     [events/agent/hitl/]
+│   │   ├── Input, Confirmation, Chat requests (popup, yes/no, next chat message answers)
+│   │   └── QuestionsRequest (a Chat request + ≤5 HumanInTheLoopChoiceQuestion: OpenWebUI's dialog, else `question` as text)
 │   ├── AgentInTheLoopRequest/Response (AITL)                     [events/agent/aitl/]
 │   ├── BotInTheLoopRequest/Response (BITL)                       [events/agent/bitl/]
 │   ├── SemanticEvent (OpenInference tracing)                     [events/agent/semantic/]
@@ -231,6 +234,27 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
 └── Discovery events                                               [events/agent/discovery/, events/process/discovery/]
 ```
+
+### Events Own Their API Input
+
+What an API caller sends for an event is defined by the event, not by the API (ADR
+`2026_10_30_events_own_their_api_input`):
+
+- `BaseEvent.api_input_model()` is the event without `_api_server_fields` (ids, timestamps, `user`, `locale`, display
+  fields, `agent_config`). Agents announce its schema as `EventSpecs.api_input_schema`, and the API builds the endpoint
+  body from it.
+- A field the caller sends in another shape is overridden in `api_input_field_overrides()` and converted back in
+  `_api_input_to_event_data()`. `UserMessageEvent` and `RAGStartEvent` accept `files` as `UserUploadedFile | InlineFile`
+  and store the inline ones with `InlineFile.store_all`, which checks every file before storing any.
+- `from_api_payload()` resolves the registered class for the event name (falling back to the closest parent, so
+  agent-only subclasses inherit the conversion), validates the whole payload, converts it, and adds `_api_server_data()`
+  (`StartEvent`: the caller and locale).
+- Images inside messages go the same way: `ApiAttachments.event_data` checks and stores them with `StoredImage`
+  (content-addressed under `agent-files/{class}/{id}/images/`) and leaves an `s3://agent-files/…` reference in the
+  `ImageBlock`. `ResilientOpenAILike` signs such references just before every chat call (`StoredImageSigner`), so no
+  agent handles them, and the API serves them to the UI from `…/instances/{id}/images/{name}`.
+- Never put bytes in an event: NATS refuses messages over 1 MB (2 MB in production) and every event is persisted. Store
+  them and carry a reference.
 
 ### Event Directory Scoping
 
@@ -516,6 +540,16 @@ role assignments), `ThreadEntity` (conversations), `PersistedAgentEventEntity` /
 storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserDashboardEntity` (dashboard config),
 `NotificationEntity`, `LocaleStringEntity`.
 
+**Open HITL requests are matched by id**: `PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread` returns
+the thread's requests no response names in `request_event.event_id`, oldest first; the request query reads control
+events only, since every request is persisted as a control and as a display event. `ChatService` answers the newest open
+input or chat request with the next chat message, and the API's open-chat-HITL check uses the same method. Comparing
+request and response counts, as before, routed the second message of a thread with an earlier, answered HITL to that
+request. `HumanInTheLoopQuestionsRequestEvent` is a chat request, so every client can answer it: the OpenWebUI pipe
+sends the dialog's answers as JSON in the response event itself, and a typed reply (any client, or OpenWebUI after a
+cancelled dialog) takes the path above. Its `HumanInTheLoopChoiceQuestion` (1–3 `HumanInTheLoopChoiceOption`, the
+recommended one first) and option lengths are capped as OpenWebUI's `request:user_input` caps them.
+
 **Vector store — children are not persisted**: `PartitionAwareMilvusVectorStore.add` strips `NodeRelationship.CHILD`
 before serializing. LlamaIndex packs every relationship into `_node_content` inside Milvus' dynamic field, which is
 capped at 65536 bytes, and a hierarchical summary node carries one entry per descendant — so a wide summary tree fails
@@ -569,21 +603,21 @@ Real-time event emission for streaming LLM output to the UI:
 
 ## Generative AI Utilities
 
-| Module                   | Purpose                                   | Key Entry Points                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `memory/`                | Agent-scoped memory (user + org)          | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `retrieval/`             | RAG node retrieval                        | `retrieve_nodes()` (dense results below `KnowledgeRetrieverConfig.min_similarity`, default 0.35, are dropped before neighbours and summaries are fetched; ADR `2026_10_12`), `condense_standalone_question()`                                                                                                                                                                                                                                                                                 |
-| `retrievers/`            | Vector store abstraction                  | `KnowledgeRetriever`, `BaseRetriever`, `MetadataFilterPair.to_llama_index()` (runtime filter: a text value matches a scalar or a list item, numbers by equality, booleans as `"true"`/`"false"` because llama-index filters reject them)                                                                                                                                                                                                                                                      |
-| `knowledge_documents/`   | Whole-document read access                | `KnowledgeDocumentReader.list_documents()`, `.load_document()`, `.load_document_by_path()`, `KnowledgeDocumentListing.matching_glob()` / `.matching_regex()`, `KnowledgeContentSearch.search()`                                                                                                                                                                                                                                                                                               |
-| `rerank/`                | Result reranking                          | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `guards/`                | Input/output guards                       | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `processors/`            | Retrieval post-processors                 | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `resources/`             | LLM/embedding model configs               | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `document/`              | Document loading and parsing              | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` and `MarkItDownLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache` / `MarkItDownParseCache`; the agent's `AttachedFileSectionCache` keeps attached files' sections and embeddings there under `attached-files/`, through the exported `ParseCacheBucket`; xlsx streamed by `XlsxMarkdownConverter`, not MarkItDown), `EmlLoader`, `MarkdownStructuralNodeParser` |
-| `prompting/`             | Few-shot examples, language detection     | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `chat_history/`          | Chat context management                   | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22))                                                                                                                                     |
-| `routing/`               | LLM-based event routing                   | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `structured_extraction/` | Records from one document, runtime schema | `RecordSchemaBuilder.build()`, `RecordExtractor.extract()`                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Module                   | Purpose                                    | Key Entry Points                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `memory/`                | Agent-scoped memory (user + org)           | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `retrieval/`             | RAG node retrieval                         | `retrieve_nodes()` (dense results below `KnowledgeRetrieverConfig.min_similarity`, default 0.35, are dropped before neighbours and summaries are fetched; ADR `2026_10_12`), `condense_standalone_question()`                                                                                                                                                                                                                                                                                                                                    |
+| `retrievers/`            | Vector store abstraction                   | `KnowledgeRetriever`, `BaseRetriever`, `MetadataFilterPair.to_llama_index()` (runtime filter: a text value matches a scalar or a list item, numbers by equality, booleans as `"true"`/`"false"` because llama-index filters reject them)                                                                                                                                                                                                                                                                                                         |
+| `knowledge_documents/`   | Whole-document read access                 | `KnowledgeDocumentReader.list_documents()`, `.load_document()`, `.load_document_by_path()`, `KnowledgeDocumentListing.matching_glob()` / `.matching_regex()`, `KnowledgeContentSearch.search()`                                                                                                                                                                                                                                                                                                                                                  |
+| `rerank/`                | Result reranking                           | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `guards/`                | Input/output guards                        | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `processors/`            | Retrieval post-processors                  | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `resources/`             | LLM/embedding model configs, token budgets | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`; `ModelTokenBudget` / `ModelTokenizer` (`tokenizers/`): an embedding or reranking model whose LiteLLM entry declares `aihub_tokenizer` and `aihub_input_overhead_tokens` is counted in-process with its vendored tokenizer (`tokenizers/vendored/`, own MIT `LICENSE` + `SOURCE.json`); undeclared models keep tiktoken and the safety factors. `LiteLLMBase.token_budget()` builds it, `token_counter` stays tiktoken (ADR `2026_10_30_count_tokens_with_the_models_own_tokenizer`) |
+| `document/`              | Document loading and parsing               | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` and `MarkItDownLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache` / `MarkItDownParseCache`; the agent's `AttachedFileSectionCache` keeps attached files' sections and embeddings there under `attached-files/`, through the exported `ParseCacheBucket`; xlsx streamed by `XlsxMarkdownConverter`, not MarkItDown), `EmlLoader`, `MarkdownStructuralNodeParser`                                                    |
+| `prompting/`             | Few-shot examples, language detection      | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `chat_history/`          | Chat context management                    | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22))                                                                                                                                                                                        |
+| `routing/`               | LLM-based event routing                    | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `structured_extraction/` | Records from one document, runtime schema  | `RecordSchemaBuilder.build()`, `RecordExtractor.extract()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 `retrieval/combine_nodes_in_order()` renders retrieved nodes as `<REFERENCE_DOCUMENT …>` blocks, one per document. The
 header carries the document's id, source, title, version and timestamps, then the fields of the record it was synced
@@ -701,8 +735,8 @@ Read-only Jira access for agents (#1951), Jira Cloud and Jira Data Center alike.
 agent configuration: the agent embeds the group and passes it in.
 
 - **`JiraConnectionConfig`** is a `StepConfig` with `base_url`, `deployment` (`cloud` | `data_center`), `email` (Cloud
-  only) and `api_token` (a `Password`, so #1587 will encrypt it with every other secret field). A step receives it by
-  its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
+  only) and `api_token` (a `Password`, so it is stored encrypted like every other secret field, #1587). A step receives
+  it by its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
   deployment-fixed: absent from the form, but bounded in the schema because a direct API save can set them. Cross-field
   rules (Cloud needs an e-mail) are `problems()`, checked when a search starts, never a validator.
 - **`JiraTicketSearch.find_tickets(connection, project_keys, clauses)`** returns every matching `JiraTicket` (key, url,
@@ -801,7 +835,7 @@ acceptance criteria against sites seeded with `packages/pipeline/playground/jira
 
 **Event system**:
 
-- `core/events/base_event.py` — event foundation (auto-registry, deserialization)
+- `core/events/base_event.py` — event foundation (auto-registry, deserialization, API input)
 - `core/events/agent/control/control_event.py` — workflow control base
 - `core/events/agent/display/display_event.py` — UI observability base
 - `core/events/agent/control_and_display_event.py` — dual-purpose base

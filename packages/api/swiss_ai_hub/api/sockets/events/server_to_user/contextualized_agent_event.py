@@ -44,6 +44,7 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopConfirmationResponseEvent,
     HumanInTheLoopInputRequestEvent,
     HumanInTheLoopInputResponseEvent,
+    HumanInTheLoopQuestionsRequestEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     KnowledgeSearchedEvent,
@@ -107,6 +108,7 @@ DisplayEvents = (
     | Annotated[HumanInTheLoopInputRequestEvent, Tag("HumanInTheLoopInputRequestEvent")]
     | Annotated[ToolApprovalRequestEvent, Tag("ToolApprovalRequestEvent")]
     | Annotated[HumanInTheLoopConfirmationRequestEvent, Tag("HumanInTheLoopConfirmationRequestEvent")]
+    | Annotated[HumanInTheLoopQuestionsRequestEvent, Tag("HumanInTheLoopQuestionsRequestEvent")]
     | Annotated[HumanInTheLoopChatRequestEvent, Tag("HumanInTheLoopChatRequestEvent")]
     | Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")]
