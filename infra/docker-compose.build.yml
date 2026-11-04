@@ -2618,6 +2618,10 @@ services:
       INCIDENT_GITHUB_APP_ID: ${INCIDENT_GITHUB_APP_ID}
       INCIDENT_GITHUB_INSTALLATION_ID: ${INCIDENT_GITHUB_INSTALLATION_ID}
       INCIDENT_GITHUB_PRIVATE_KEY: ${INCIDENT_GITHUB_PRIVATE_KEY}
+      API_REQUEST_MAX_BODY_BYTES: ${API_REQUEST_MAX_BODY_BYTES}
+      AGENT_INLINE_FILE_MAX_FILE_BYTES: ${AGENT_INLINE_FILE_MAX_FILE_BYTES}
+      AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST: ${AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST}
+      AGENT_INLINE_IMAGE_MAX_BYTES: ${AGENT_INLINE_IMAGE_MAX_BYTES}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8000/api/v1/health]
       interval: 30s
@@ -2965,6 +2969,9 @@ services:
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3057,6 +3064,9 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3155,6 +3165,9 @@ services:
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3223,6 +3236,9 @@ services:
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3488,6 +3504,16 @@ services:
       SLACK_CHANNEL_ID: ${SLACK_CHANNEL_ID}
       SLACK_SERVICE_URL: ${SLACK_SERVICE_URL}
 
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3639,6 +3665,9 @@ services:
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3695,6 +3724,16 @@ services:
 
       # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -4030,6 +4069,16 @@ services:
 
       # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}

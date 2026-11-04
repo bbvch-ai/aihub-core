@@ -87,7 +87,8 @@ runner.mount(
     .get_agent_instance_threads()
     .get_all_agent_instances()
     .initiate_file_upload()
-    .validate_file_upload(),
+    .validate_file_upload()
+    .get_image(),
     ProcessController(auth=auth)
     .get_process_classes()
     .get_process_class()

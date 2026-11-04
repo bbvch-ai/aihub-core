@@ -3118,7 +3118,7 @@ export type ChatCompletionRequest = {
   /**
    * Service Tier
    */
-  service_tier?: "auto" | "default" | null;
+  service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
   /**
    * Stop
    */
@@ -6209,9 +6209,9 @@ export type Embeddings = {
   /**
    * Embedding
    *
-   * The list of embeddings.
+   * The embedding vector, or the vector's float32 bytes as base64 when requested so.
    */
-  embedding: Array<number>;
+  embedding: Array<number> | string;
   /**
    * Index
    *
@@ -6278,6 +6278,10 @@ export type EmbeddingsResponse = {
    * The list of embeddings.
    */
   data: Array<Embeddings>;
+  /**
+   * Tokens the request used.
+   */
+  usage?: OpenaiTypesCreateEmbeddingResponseUsage | null;
 };
 
 /**
@@ -6334,6 +6338,14 @@ export type EventSpecs = {
   event_schema: {
     [key: string]: unknown;
   };
+  /**
+   * Api Input Schema
+   *
+   * The schema of what an API caller sends for this event: the event without the fields the server fills in, and with the inputs the event converts itself, such as files sent inline. Absent for a specification stored before agents announced it.
+   */
+  api_input_schema?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * Event Parents
    *
@@ -8827,7 +8839,7 @@ export type ImageGenerationRequest = {
   /**
    * Quality
    */
-  quality?: "standard" | "hd" | null;
+  quality?: "standard" | "hd" | "low" | "medium" | "high" | "auto" | null;
   /**
    * Response Format
    */
@@ -8835,7 +8847,16 @@ export type ImageGenerationRequest = {
   /**
    * Size
    */
-  size?: "256x256" | "512x512" | "1024x1024" | "1792x1024" | "1024x1792" | null;
+  size?:
+    | "auto"
+    | "256x256"
+    | "512x512"
+    | "1024x1024"
+    | "1536x1024"
+    | "1024x1536"
+    | "1792x1024"
+    | "1024x1792"
+    | null;
   /**
    * Style
    */
@@ -18896,13 +18917,17 @@ export type TextToSpeechRequest = {
   voice:
     | "alloy"
     | "ash"
+    | "ballad"
     | "coral"
     | "echo"
     | "fable"
     | "onyx"
     | "nova"
     | "sage"
-    | "shimmer";
+    | "shimmer"
+    | "verse"
+    | "marin"
+    | "cedar";
   /**
    * Response Format
    *
@@ -21855,6 +21880,23 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
   parameters?: {
     [key: string]: unknown;
   };
+  [key: string]: unknown;
+};
+
+/**
+ * Usage
+ *
+ * The usage information for the request.
+ */
+export type OpenaiTypesCreateEmbeddingResponseUsage = {
+  /**
+   * Prompt Tokens
+   */
+  prompt_tokens: number;
+  /**
+   * Total Tokens
+   */
+  total_tokens: number;
   [key: string]: unknown;
 };
 
@@ -36279,6 +36321,48 @@ export type ValidateFileUploadResponses = {
 export type ValidateFileUploadResponse =
   ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
 
+export type GetImageData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Agent Class
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     */
+    agent_id: string;
+    /**
+     * Name
+     */
+    name: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/images/{name}";
+};
+
+export type GetImageErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetImageError = GetImageErrors[keyof GetImageErrors];
+
+export type GetImageResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
 export type GetProcessClassesData = {
   body?: never;
   path: {
@@ -37256,9 +37340,25 @@ export type GetModelsData = {
      */
     tenant_id: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Include Agents
+     *
+     * Also list the agents the user may call. Off by default: OpenWebUI lists this endpoint and shows agents through its own pipe, so listing them here would show each twice.
+     */
+    include_agents?: boolean;
+  };
   url: "/{tenant_id}/openai/models";
 };
+
+export type GetModelsErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetModelsError = GetModelsErrors[keyof GetModelsErrors];
 
 export type GetModelsResponses = {
   /**

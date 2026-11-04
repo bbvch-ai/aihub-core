@@ -38,6 +38,7 @@ packages/api/
 │   │   ├── i18n/               # Locale endpoints
 │   │   └── parsing/            # Document parsing (MinerU)
 │   ├── services/               # Dynamic endpoint discovery (NATS-based)
+│   ├── request_limits/         # Request body-size middleware (API_REQUEST_* settings)
 │   ├── events/                 # EventModelCreationService (Jambo)
 │   ├── rpc/                    # NATS RPC responders (agent/process config)
 │   ├── sockets/                # WebSocket manager, sender, event wrapping
@@ -143,6 +144,11 @@ model name this deployment got wrong. Log level is the narrower signal — `ERRO
 must fix, `WARNING` for the three statuses they cannot act on (413/422/429), which also keeps a rate-limit storm from
 flooding the log pipeline.
 
+On the OpenAI-compatible routes (`/openai/`), `OpenaiErrorHandler` (`routes/openai/openai_error_handler.py`, registered
+in `ApiRunner._get_api_app`) gives the platform's own `HTTPException`s and validation errors the same shape: an OpenAI
+`error` object next to the unchanged `detail`, and `400` instead of `422` for a request it cannot accept. Every other
+route keeps FastAPI's default responses. A streamed agent answer that fails ends with an `error` event, not answer text.
+
 New upstream integrations that raise their own SDK exception types belong in the same place — do not wrap service calls
 in try/except to compensate.
 
@@ -245,10 +251,27 @@ the subclasses only broadcast, name and register classes.
 - **Cold start**: until that many rounds exist, the wall-clock window they would span stands in.
 - **After the round**: the agent service's Langfuse/OpenWebUI syncs run in `_after_round`, outside the timeout.
 
-**`ModelCreationService`** + **`EventModelCreationService`**: Convert agent event JSON schemas into Pydantic models at
-runtime using `jambo.SchemaConverter.build()`. Input models exclude framework fields (`event_id`, `created_at`, `user`,
-`locale`). Output models exclude internal fields (`_event_name`, `_parent_event_names`). These models power the dynamic
-endpoint request/response validation and OpenAPI documentation.
+**`ModelCreationService`** + **`EventModelCreationService`**: Convert announced JSON schemas into Pydantic models at
+runtime using `jambo.SchemaConverter.build()`. Agent input models are built from `EventSpecs.api_input_schema`, which
+the event itself defines (`BaseEvent.api_input_model()`): no server-filled fields, and the shapes the event converts
+itself, such as inline files. Output models exclude internal fields (`_event_name`, `_parent_event_names`). These models
+power the dynamic endpoint request/response validation and OpenAPI documentation. Process endpoints
+(`EventModelCreationService`) still strip their own list of fields.
+
+**Events own their API input**: the dynamic agent endpoints pass the validated body to
+`expected_type.from_api_payload(payload, event_name=…, event_parents=…, context=ApiPayloadContext(…))`. It resolves the
+registered class (or its closest parent), validates against the real input model, runs the class's conversion hook (e.g.
+`UserMessageEvent` stores inline `files` in the `agent-files` bucket via `InlineFile.store_all`) and fills in the caller
+and locale. Never add field- or event-specific logic to the API for this; see ADR
+`2026_10_30_events_own_their_api_input`.
+
+**Request size**: `request_limits/BodySizeLimitMiddleware` refuses any request body over `API_REQUEST_MAX_BODY_BYTES`
+(64 MB) while it arrives, whatever its content type: FastAPI reads the whole body of every endpoint that takes one, so a
+JSON-only limit could be bypassed by sending another type or none. A `multipart/form-data` request is left out only when
+the route it matches parses a form (its `body_field` is a `Form`/`File`, which Starlette spools to disk) — the label
+alone is caller-controlled, and a JSON route reads a multipart-labelled body whole. The paths passed as
+`exempt_path_suffixes` (the parsing upload, which streams and bounds itself at 100 MB) are left out. It is
+registered first in `ApiRunner._get_api_app`, so CORS still wraps its 413.
 
 ## Agent-API Communication
 

@@ -1,11 +1,7 @@
-import time
-from typing import Any, Self
+from typing import Any
 
-from bson import ObjectId
-
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
-from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.events.api_payload_context import ApiPayloadContext
 
 
 class StartEvent(ControlAndDisplayEvent):
@@ -44,28 +40,12 @@ class StartEvent(ControlAndDisplayEvent):
         return non_private
 
     @classmethod
-    def from_raw_data(
-        cls,
-        raw_event_data: dict[str, Any],
-        user: UserIdentity,
-        start_event_name: str,
-        start_event_parents: list[str],
-        t: LocaleHandler,
-    ) -> Self:
+    def _api_server_data(cls, context: ApiPayloadContext) -> dict[str, Any]:
         """
-        Creates a StartEvent from raw data.
+        Every start event runs on behalf of the caller, in their locale.
 
         Note: agent_id is NOT included in the event. It comes from the NATS subject/topic
         that the event is published to. The AgentDispatcher extracts it from the topic
         and uses it to fetch configuration via RPC.
         """
-        json_data: dict[str, Any] = {
-            "event_id": str(ObjectId()),
-            "created_at": time.time_ns(),
-            "user": user,
-            **raw_event_data,
-            "locale": t.locale,
-            "_parent_event_names": start_event_parents,
-            "_event_name": start_event_name,
-        }
-        return cls.deserialize_event(json_data)
+        return {"user": context.user, "locale": context.locale}

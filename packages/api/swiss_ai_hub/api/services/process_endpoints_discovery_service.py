@@ -69,8 +69,9 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService[ProcessClassDTO
         return dto.process_class
 
     @override
-    def _register_discovered_class(self, dto: ProcessClassDTO) -> None:
+    def _register_discovered_class(self, dto: ProcessClassDTO) -> bool:
         self._register_class_endpoints(dto)
+        return True
 
     @override
     def _online_class_names(self) -> set[str]:

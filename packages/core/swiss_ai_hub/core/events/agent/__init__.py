@@ -176,7 +176,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_status_event import ToolLoopStatusEvent
     from swiss_ai_hub.core.events.agent.tool_loop.tool_result_event import ToolResultEvent
     from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
+    from swiss_ai_hub.core.events.agent.user.inline_file import InlineFile
+    from swiss_ai_hub.core.events.agent.user.inline_file_settings import InlineFileSettings
+    from swiss_ai_hub.core.events.agent.user.inline_image_settings import InlineImageSettings
     from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
+    from swiss_ai_hub.core.events.agent.user.stored_image import StoredImage
     from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
     from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
     from swiss_ai_hub.core.events.agent.web_fetch.fetch_web_pages_event import FetchWebPagesEvent
@@ -298,6 +302,10 @@ __all__ = [
     "UnreadMailSummary",
     "ChatFeature",
     "UserMessageEvent",
+    "InlineFile",
+    "InlineFileSettings",
+    "InlineImageSettings",
+    "StoredImage",
     "UserUploadedFile",
     "RunToolLoopEvent",
     "ToolApprovalRequestEvent",
@@ -440,6 +448,10 @@ _LAZY_IMPORTS: dict[str, str] = {
     "UnreadMailSummary": "swiss_ai_hub.core.events.agent.imap.unread_mail_summary",
     "ChatFeature": "swiss_ai_hub.core.events.agent.user.chat_feature",
     "UserMessageEvent": "swiss_ai_hub.core.events.agent.user.user_message_event",
+    "InlineFile": "swiss_ai_hub.core.events.agent.user.inline_file",
+    "InlineFileSettings": "swiss_ai_hub.core.events.agent.user.inline_file_settings",
+    "InlineImageSettings": "swiss_ai_hub.core.events.agent.user.inline_image_settings",
+    "StoredImage": "swiss_ai_hub.core.events.agent.user.stored_image",
     "UserUploadedFile": "swiss_ai_hub.core.events.agent.user.user_uploaded_file",
     "RunToolLoopEvent": "swiss_ai_hub.core.events.agent.tool_loop.run_tool_loop_event",
     "ToolApprovalRequestEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_approval_request_event",
