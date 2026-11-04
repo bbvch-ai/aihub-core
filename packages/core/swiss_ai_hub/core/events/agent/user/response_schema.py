@@ -1,7 +1,6 @@
 import json
 import math
-import re
-from typing import Annotated, Any, NoReturn, Self
+from typing import Annotated, Any, ClassVar, NoReturn, Self
 
 from jsonschema import SchemaError
 from jsonschema.validators import validator_for
@@ -10,7 +9,6 @@ from pydantic import BaseModel, Field, model_validator
 from swiss_ai_hub.core.events.agent.user.response_schema_validator import ResponseSchemaValidator
 from swiss_ai_hub.core.events.agent.user.response_schema_violation import ResponseSchemaViolation
 
-_CODE_FENCE = re.compile(r"^\s*```(?:json)?\s*(?P<body>.*?)\s*```\s*$", re.DOTALL)
 _REFERENCE_KEYWORDS = ("$ref", "$dynamicRef")
 
 
@@ -38,6 +36,9 @@ class ResponseSchema(BaseModel):
         Field(description="Ask the model to follow the schema exactly, as OpenAI's structured outputs `strict`."),
     ] = False
 
+    FENCE: ClassVar[str] = "```"
+    FENCE_LANGUAGE: ClassVar[str] = "json"
+
     @model_validator(mode="after")
     def _schema_is_valid(self) -> Self:
         if self.json_schema is not None:
@@ -49,6 +50,8 @@ class ResponseSchema(BaseModel):
                 raise ValueError(f"json_schema may only reference its own definitions, not {external!r}")
             if ResponseSchemaValidator.uses_unbounded_patterns(self.json_schema):
                 raise ValueError("json_schema may not combine unevaluatedProperties with patternProperties")
+            if ResponseSchemaValidator.declares_nested_dialect(self.json_schema):
+                raise ValueError("json_schema may declare $schema only at its root")
         return self
 
     @staticmethod
@@ -87,10 +90,9 @@ class ResponseSchema(BaseModel):
         `Infinity` and numbers too large for a float are not: Python reads them, but they are not JSON, and the answer
         is handed on to strict JSON clients.
         """
-        fenced = _CODE_FENCE.match(answer)
         try:
             parsed = json.loads(
-                fenced.group("body") if fenced else answer,
+                ResponseSchema._unfenced(answer),
                 parse_constant=ResponseSchema._non_finite,
                 parse_float=ResponseSchema._finite_float,
             )
@@ -108,6 +110,16 @@ class ResponseSchema(BaseModel):
                     )
                 )
         return parsed
+
+    @staticmethod
+    def _unfenced(answer: str) -> str:
+        """The JSON inside a code fence, found by hand: a regular expression over the model's output backtracked
+        for minutes on an opening fence followed by thousands of spaces. `json.loads` skips the whitespace itself."""
+        text = answer.strip()
+        fence = ResponseSchema.FENCE
+        if len(text) < 2 * len(fence) or not (text.startswith(fence) and text.endswith(fence)):
+            return answer
+        return text[len(fence) : -len(fence)].removeprefix(ResponseSchema.FENCE_LANGUAGE)
 
     @staticmethod
     def _non_finite(constant: str) -> NoReturn:

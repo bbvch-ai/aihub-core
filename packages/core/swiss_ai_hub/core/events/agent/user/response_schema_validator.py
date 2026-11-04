@@ -46,6 +46,12 @@ class ResponseSchemaValidator:
         return {ResponseSchemaValidator.UNBOUNDED_KEYWORD, ResponseSchemaValidator.PATTERN_KEYWORD} <= keywords
 
     @staticmethod
+    def declares_nested_dialect(schema: dict[str, Any]) -> bool:
+        """A `$schema` below the root makes jsonschema validate that part with a stock validator for the dialect,
+        without the bounded pattern keywords."""
+        return any("$schema" in ResponseSchemaValidator._keywords_in(value) for value in schema.values())
+
+    @staticmethod
     def _keywords_in(schema: Any) -> set[str]:
         if isinstance(schema, list):
             return set().union(*map(ResponseSchemaValidator._keywords_in, schema))

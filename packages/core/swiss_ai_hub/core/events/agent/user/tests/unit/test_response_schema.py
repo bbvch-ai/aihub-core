@@ -48,8 +48,10 @@ def test_a_code_fence_around_the_json_is_tolerated():
 
 
 def test_every_violation_is_named_with_its_location():
+    schema = _invoice_schema()
+
     with pytest.raises(ResponseSchemaViolation) as violation:
-        _invoice_schema().validated('{"issuer": "ACME AG", "lines": [{"item": "Bolts"}]}')
+        schema.validated('{"issuer": "ACME AG", "lines": [{"item": "Bolts"}]}')
 
     assert "(root): 'total' is a required property" in str(violation.value)
     assert "lines/0: 'amount' is a required property" in str(violation.value)
@@ -57,8 +59,10 @@ def test_every_violation_is_named_with_its_location():
 
 @pytest.mark.parametrize("answer", ["The total is 12.", "[1, 2]", ""])
 def test_prose_and_non_objects_are_violations(answer: str):
+    schema = ResponseSchema(name="any")
+
     with pytest.raises(ResponseSchemaViolation):
-        ResponseSchema(name="any").validated(answer)
+        schema.validated(answer)
 
 
 def test_without_a_schema_any_object_is_asked_for_as_an_open_object_schema():
@@ -117,8 +121,13 @@ def test_references_to_the_schemas_own_definitions_are_resolved():
 
 @pytest.mark.parametrize("answer", ['{"a": NaN}', '{"a": [Infinity]}', '{"a": {"b": -Infinity}}', '{"a": 1e309}'])
 def test_numbers_json_cannot_carry_are_violations(answer: str):
+    schema = ResponseSchema(name="any")
+
     with pytest.raises(ResponseSchemaViolation, match="not a JSON number"):
-        ResponseSchema(name="any").validated(answer)
+        schema.validated(answer)
+
+
+BACKTRACKING_ANSWER = json.dumps({"code": "a" * 40 + "!"})
 
 
 def _schema_with(properties: dict, **extra) -> ResponseSchema:
@@ -130,7 +139,7 @@ def test_a_pattern_that_freezes_pythons_re_is_checked_at_once():
     started = time.monotonic()
 
     with pytest.raises(ResponseSchemaViolation, match="does not match"):
-        schema.validated(json.dumps({"code": "a" * 40 + "!"}))
+        schema.validated(BACKTRACKING_ANSWER)
 
     assert time.monotonic() - started < 1
 
@@ -140,7 +149,7 @@ def test_a_pattern_that_backtracks_on_any_engine_is_cut_off_within_the_budget():
     started = time.monotonic()
 
     with pytest.raises(ResponseSchemaViolation, match="took longer"):
-        schema.validated(json.dumps({"code": "a" * 40 + "!"}))
+        schema.validated(BACKTRACKING_ANSWER)
 
     assert time.monotonic() - started < ResponseSchemaValidator.BUDGET_SECONDS + 1
 
@@ -170,3 +179,27 @@ def test_pattern_properties_and_additional_properties_are_still_checked():
 def test_unevaluated_properties_next_to_pattern_properties_is_refused():
     with pytest.raises(ValidationError, match="unevaluatedProperties"):
         _schema_with({}, patternProperties={"^x-": {}}, unevaluatedProperties=False)
+
+
+def test_an_unclosed_fence_followed_by_spaces_is_read_at_once():
+    started = time.monotonic()
+
+    schema = ResponseSchema(name="shape")
+    answer = "```json" + " " * 20_000 + '{"a": 1}'
+
+    with pytest.raises(ResponseSchemaViolation, match="not valid JSON"):
+        schema.validated(answer)
+
+    assert time.monotonic() - started < 1
+
+
+def test_a_fenced_answer_with_surrounding_whitespace_is_still_read():
+    assert ResponseSchema(name="shape").validated('\n  ```json\n{"a": 1}\n```  \n') == {"a": 1}
+
+
+def test_a_dialect_declared_below_the_root_is_refused():
+    nested = {"$schema": "https://json-schema.org/draft/2020-12/schema", "type": "string", "pattern": "^(a+)+$"}
+
+    with pytest.raises(ValidationError, match=r"\$schema only at its root"):
+        _schema_with({"code": nested})
+    assert _schema_with({}, **{"$schema": "https://json-schema.org/draft/2020-12/schema"}).json_schema is not None
