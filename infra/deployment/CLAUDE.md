@@ -429,6 +429,9 @@ The realm config lives in standalone JSON templates under `templates/configs/key
   the superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the
   admin console survive restarts — and updating identity-provider config on an already-initialized deployment requires
   the admin console (or a fresh realm DB), since they do not reconcile automatically.
+- **Default migration in `keycloak-entrypoint.sh.j2`** — two bootstrap settings still reach existing realms: kcadm
+  writes the token and session lifespans and `smtpServer` on every start, but **only while the realm still holds the
+  Keycloak default** (so admin-console overrides survive).
 - **`managed/`** — reconciled on **every stack start** by the one-shot `keycloak-config` service
   (adorsys/keycloak-config-cli): realm roles, client scopes, clients, custom auth flows, and the `aihub-api-service`
   service account. **File wins**: admin-console edits to these objects are overwritten, and objects removed from config
@@ -450,6 +453,15 @@ Rules when editing:
   scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`). When upstream has no build for the new
   Keycloak version yet, keep the newest release and check on the dev stack that `keycloak-config` still exits 0 against
   an upgraded realm and a fresh `--import-realm` (Keycloak 26.8.1 currently runs with `6.5.1-26.5.5`).
+
+**Realm mail** (`keycloak.smtp_server` in `compose-config.yml`): every stage sends from `noreply.ai-hub@bbv.ch` through
+`smtp.office365.com` with an OAuth client-credentials token (`authType: token`); with empty `KEYCLOAK_SMTP_*` values
+(the dev default) Keycloak simply sends nothing. Invitations are Keycloak's own admin-triggered "Credential Reset" mail
+(no platform API or UI). The client secret is the one deliberate
+`${...}` placeholder in the realm: `${vault.smtp-client-secret}` is resolved by Keycloak's file vault, which the
+entrypoint fills from `KEYCLOAK_SMTP_CLIENT_SECRET` into a tmpfs at `/opt/keycloak/vault`. Operator setup:
+`docs/docs/2_platform/3_deployment_guide/11_realm_mail/`. Tests: `uv run pytest
+infra/deployment/tests/test_keycloak_realm_mail.py`.
 
 The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
 `realm-management` client roles. The current minimum required for the API to function correctly is:

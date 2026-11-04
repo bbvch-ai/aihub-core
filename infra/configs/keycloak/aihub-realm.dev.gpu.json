@@ -27,7 +27,21 @@
     "xFrameOptions": "",
     "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:*; object-src 'none';"
   },
-  "smtpServer": {},
+  "smtpServer": {
+    "auth": "true",
+    "authTokenClientId": "$(env:KEYCLOAK_SMTP_CLIENT_ID)",
+    "authTokenClientSecret": "${vault.smtp-client-secret}",
+    "authTokenScope": "https://outlook.office365.com/.default",
+    "authTokenUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_SMTP_TENANT_ID)/oauth2/v2.0/token",
+    "authType": "token",
+    "from": "noreply.ai-hub@bbv.ch",
+    "fromDisplayName": "Swiss AI-Hub",
+    "host": "smtp.office365.com",
+    "port": "587",
+    "ssl": "false",
+    "starttls": "true",
+    "user": "noreply.ai-hub@bbv.ch"
+  },
   "eventsEnabled": true,
   "eventsListeners": [
     "jboss-logging"
