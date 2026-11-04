@@ -2,6 +2,7 @@ import logging
 from typing import Annotated
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError, computed_field, model_validator
+from swiss_ai_hub.core.infrastructure import HostingLocation
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +32,7 @@ class ModelInfoDTO(BaseModel):
         str | None, Field(None, description="Human-readable model name curated in the LiteLLM config")
     ]
     aihub_hosting_location: Annotated[
-        str | None,
-        Field(None, description="Where the model runs: 'local', 'swiss_cloud', 'eu' or 'global', curated per model"),
+        HostingLocation | None, Field(None, description="Where the model runs, curated per model")
     ]
     aihub_general_purpose: Annotated[
         bool | None,

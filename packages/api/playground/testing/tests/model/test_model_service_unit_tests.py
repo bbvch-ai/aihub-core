@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException
 from openai import APIStatusError
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
+from swiss_ai_hub.core.infrastructure import HostingLocation, ModelRequirements
 from swiss_ai_hub.core.testing.auth_utils.test_identity import fake_user
 
 from swiss_ai_hub.api.routes.model.dto.model_dto import ModelDTO, ModelInfoDTO
@@ -168,6 +169,32 @@ class TestModelServiceModeListing:
     async def test_sorted_by_the_name_the_picker_shows(self):
         models = await self._chat_models(include_special_purpose=True)
         assert [model.display_name for model in models] == ["alpha-undeclared", "OCR Model", "Zeta 7B"]
+
+
+class TestUnknownHostingLocation:
+    """LiteLLM's model info is an external feed, and models added through its UI skip the generator's checks."""
+
+    _RESPONSE = httpx.Response(
+        200,
+        json={
+            "data": [
+                {"model_name": "text-generation/typo", "model_info": {"mode": "chat", "aihub_hosting_location": "mars"}}
+            ]
+        },
+    )
+
+    @pytest.mark.asyncio
+    async def test_is_dropped_to_none_instead_of_failing_the_listing(self):
+        with _patched_backend(["aihub.user.model.>"], response=self._RESPONSE):
+            models = await ModelService.get_models_by_mode(fake_user(), "chat")
+        assert [model.model_info.aihub_hosting_location for model in models] == [None]
+
+    @pytest.mark.asyncio
+    async def test_such_a_model_fails_a_location_requirement(self):
+        requirements = ModelRequirements(hosting_locations={HostingLocation.SWISS_CLOUD, HostingLocation.EU})
+        with _patched_backend(["aihub.user.model.>"], response=self._RESPONSE):
+            models = await ModelService.get_models_by_mode(fake_user(), "chat", requirements)
+        assert models == []
 
 
 class TestModelDisplayName:

@@ -3,6 +3,7 @@ from typing import Annotated, Self
 from fastapi import Query, Security
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.infrastructure import HostingLocation, ModelCapability, ModelRequirements
 from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
@@ -55,12 +56,20 @@ class ModelController(TenantScopedController):
         async def get_litellm_models_by_mode(
             mode: str,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            capability: Annotated[list[ModelCapability] | None, Query()] = None,
+            hosting_location: Annotated[list[HostingLocation] | None, Query()] = None,
             include_special_purpose: Annotated[bool, Query()] = False,
         ) -> list[ModelDTO]:
             """Retrieve the models of one mode (chat, embedding, rerank, etc.) a model picker may offer.
 
-            Models built for one job, such as the OCR model, are left out unless `include_special_purpose` is set.
+            Repeat `capability` to require several capabilities, and `hosting_location` to allow several locations; a
+            model whose flag or location is not set fails them. Models built for one job, such as the OCR model, are
+            left out unless `include_special_purpose` is set.
             """
-            return await ModelService.get_models_by_mode(user, mode, include_special_purpose)
+            requirements = ModelRequirements(
+                capabilities=frozenset(capability or ()),
+                hosting_locations=frozenset(hosting_location) if hosting_location else None,
+            )
+            return await ModelService.get_models_by_mode(user, mode, requirements, include_special_purpose)
 
         return self
