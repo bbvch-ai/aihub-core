@@ -180,6 +180,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.user.inline_file_settings import InlineFileSettings
     from swiss_ai_hub.core.events.agent.user.inline_image_settings import InlineImageSettings
     from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
+    from swiss_ai_hub.core.events.agent.user.response_schema import ResponseSchema
+    from swiss_ai_hub.core.events.agent.user.response_schema_violation import ResponseSchemaViolation
     from swiss_ai_hub.core.events.agent.user.stored_image import StoredImage
     from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
     from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
@@ -322,6 +324,8 @@ __all__ = [
     "ToolLoopStatusEvent",
     "ToolResultEvent",
     "KnowledgeReference",
+    "ResponseSchema",
+    "ResponseSchemaViolation",
     "KnowledgeSearchedEvent",
     "SearchKnowledgeEvent",
     "FetchWebPagesEvent",
@@ -468,6 +472,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ToolLoopState": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_state",
     "ToolResultEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_result_event",
     "KnowledgeReference": "swiss_ai_hub.core.events.agent.user.knowledge_reference",
+    "ResponseSchema": "swiss_ai_hub.core.events.agent.user.response_schema",
+    "ResponseSchemaViolation": "swiss_ai_hub.core.events.agent.user.response_schema_violation",
     "KnowledgeSearchedEvent": "swiss_ai_hub.core.events.agent.knowledge.knowledge_searched_event",
     "SearchKnowledgeEvent": "swiss_ai_hub.core.events.agent.knowledge.search_knowledge_event",
     "FetchWebPagesEvent": "swiss_ai_hub.core.events.agent.web_fetch.fetch_web_pages_event",

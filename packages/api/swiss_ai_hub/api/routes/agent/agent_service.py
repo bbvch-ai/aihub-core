@@ -71,6 +71,17 @@ class AgentService:
 
     @staticmethod
     @trace_fn
+    def refuse_unsupported_response_schema(agent_class: str) -> None:
+        """A caller who asked for a JSON shape must get it or an error, never prose from an agent that ignores it."""
+        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        if class_entity is None or not class_entity.supports_response_schema:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Agent class '{agent_class}' does not support a response schema (structured output).",
+            )
+
+    @staticmethod
+    @trace_fn
     async def get_agent_instance(agent_class: str, agent_id: str, t: LocaleHandler) -> FullAgentInstanceDTO:
         """
         Returns details for a given agent instance from the database.

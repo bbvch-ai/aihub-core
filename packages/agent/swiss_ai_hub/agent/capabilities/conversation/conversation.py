@@ -36,6 +36,9 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.conversation.image_admission import ImageAdmission
+from swiss_ai_hub.agent.capabilities.conversation.structured_answer import StructuredAnswer
+from swiss_ai_hub.agent.capabilities.requested_response_schema import RequestedResponseSchema
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
     generate_follow_up_questions,
@@ -120,13 +123,20 @@ class Conversation(Capability):
         agent: Agent,
         request: ContextualizeConversationEvent,
         conversation: ConversationFields,
+        run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
-        """Classify the message as a meta question or clear it; a programmatic start has no message to inspect."""
+        """Classify the message as a meta question or clear it; a programmatic start has no message to inspect.
+
+        A message asking for a JSON shape is cleared unread: the meta answer is prose that ends the run before the
+        completion could put it into the shape, and such a caller is a program, not someone asking about the agent.
+        """
         if request.user_query is None:
             return NotAMetaQuestionEvent(reasoning="Programmatic start: no user message to inspect.")
+        if await RequestedResponseSchema.of(run_context, type(agent)) is not None:
+            return NotAMetaQuestionEvent(reasoning="The message asks for a JSON shape: not inspected.")
         return await do_detect_meta_question(
             user_query=request.user_query,
             attached_file_names=request.attached_file_names,
@@ -313,6 +323,7 @@ class Conversation(Capability):
         agent: Agent,
         request: CompleteConversationEvent,
         conversation: ConversationFields,
+        run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
@@ -320,8 +331,20 @@ class Conversation(Capability):
         """Generate the follow-up questions from the answer, then end the run.
 
         Follow-ups are grounded on the answer, so they cannot start earlier, and emitting them before the stop
-        event puts them on the wire ahead of teardown.
+        event puts them on the wire ahead of teardown. An answer asked for in a JSON shape gets none, since its
+        caller is a program; it ends on the answer validated against the shape instead (`StructuredAnswer`). A stop
+        the blueprint supplies is that answer, since its `answer` may be only the summary the follow-ups are grounded
+        on (the extraction's table, the release notes in every language); a refusal ends the run as it is, without
+        follow-ups either.
         """
+        response_schema = await RequestedResponseSchema.of(run_context, type(agent))
+        if response_schema is not None:
+            if isinstance(request.stop, RefusalStopEvent):
+                return request.stop
+            answered = request.stop if isinstance(request.stop, LLMStopEvent) else request.answer
+            return await StructuredAnswer.stop_for(
+                answered, response_schema, conversation, run_context, displayer, t, user
+            )
         await generate_follow_up_questions(request.answer.chat_messages, conversation.task_llm, displayer, t, user)
         if request.stop is not None:
             return request.stop

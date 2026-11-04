@@ -83,6 +83,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         stop_events: list[EventSpecs] | None = None,
         hitl_request_events: list[EventSpecs] | None = None,
         hitl_response_events: list[EventSpecs] | None = None,
+        supports_response_schema: bool = False,
     ):
         super().__init__()
         self.agent_class = agent_class
@@ -111,6 +112,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.stop_events: list[EventSpecs] | None = stop_events
         self.hitl_request_events: list[EventSpecs] | None = hitl_request_events
         self.hitl_response_events: list[EventSpecs] | None = hitl_response_events
+        self.supports_response_schema = supports_response_schema
 
         self.agent_config: AgentConfig = AgentConfig(
             agent_id=self.agent_id,
@@ -146,6 +148,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             description=self.agent_config.description,
             icon=self.agent_config.icon,
             is_conversational=True,
+            supports_response_schema=self.supports_response_schema,
             start_events=self.start_events,
             stop_events=self.stop_events,
             hitl_request_events=self.hitl_request_events or [],
@@ -335,6 +338,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 form=self.agent_config.to_formkit_form(),
                 agent_config_specs=ConfigSpecs.from_form(self.agent_config, self.agent_class),
                 is_conversational=True,
+                supports_response_schema=self.supports_response_schema,
                 is_schedulable=False,
                 start_events=self.start_events or [],
                 stop_events=self.stop_events or [],

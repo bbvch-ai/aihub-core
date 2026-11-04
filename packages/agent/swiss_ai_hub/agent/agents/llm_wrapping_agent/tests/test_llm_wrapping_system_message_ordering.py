@@ -91,6 +91,7 @@ async def test_recalled_memory_reaches_the_model_inside_the_leading_system_messa
             event=composed,
             ctx=ConversationContextualizedEvent(history=composed.history, query="Which project do I lead?"),
             agent_config=_config(),
+            run_context=MagicMock(get=AsyncMock(return_value=None)),
             displayer=displayer,
             topic=MagicMock(),
             t=LocaleHandler(locale="en"),

@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = "==3.13.*"
 resolution-markers = [
     "sys_platform == 'win32'",
@@ -6149,6 +6149,7 @@ dependencies = [
     { name = "fsspec" },
     { name = "html5lib" },
     { name = "imagehash" },
+    { name = "jsonschema" },
     { name = "langchain-neo4j" },
     { name = "langfuse" },
     { name = "llama-index-core" },
@@ -6196,6 +6197,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "rank-bm25" },
     { name = "redis" },
+    { name = "referencing" },
     { name = "regex" },
     { name = "s3fs" },
     { name = "scim2-client" },
@@ -6231,6 +6233,7 @@ requires-dist = [
     { name = "fsspec", specifier = ">=2024.10.0" },
     { name = "html5lib", specifier = ">=1.1" },
     { name = "imagehash", specifier = ">=4.3.2" },
+    { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "langchain-neo4j", specifier = ">=0.4.0" },
     { name = "langfuse", specifier = ">=3.14.1" },
     { name = "llama-index-core", specifier = ">=0.14.12,<0.15" },
@@ -6278,6 +6281,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "rank-bm25", specifier = ">=0.2.2" },
     { name = "redis", specifier = ">=5.2.1" },
+    { name = "referencing", specifier = ">=0.37.0" },
     { name = "regex", specifier = ">=2026.5.9" },
     { name = "s3fs", specifier = ">=2026.9.0" },
     { name = "scim2-client", specifier = ">=0.7.5" },

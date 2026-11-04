@@ -165,3 +165,41 @@ agent.
 Files and images sent inline never travel inside the event itself, which keeps events small enough for the message bus
 and the event history. The [OpenAI-compatible API](../1_openai_compatible_api/) accepts files for agents the same way,
 as `file` content parts.
+
+## Asking for a JSON Answer
+
+A `UserMessageEvent` may carry a `response_schema`. The agent then answers with JSON matching it, and the stop event
+carries the parsed result in `structured_output`, next to the same JSON as answer text:
+
+```bash
+curl -X POST "https://<host>/api/v1/active/agents/classes/UniversalAgent/instances/assistant/UserMessageEvent" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{"role": "user", "blocks": [{"block_type": "text", "text": "Extract the invoice header."}]}],
+    "files": [{"filename": "invoice.pdf", "file_type": "application/pdf", "content": "'"$(base64 -w0 invoice.pdf)"'"}],
+    "response_schema": {
+      "name": "invoice",
+      "strict": true,
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "issuer": {"type": "string"},
+          "date": {"type": ["string", "null"]},
+          "total": {"type": ["number", "null"]}
+        },
+        "required": ["issuer", "date", "total"],
+        "additionalProperties": false
+      }
+    }
+  }'
+```
+
+- **`json_schema`** is any JSON schema, nested objects and arrays included. Leave it out to accept any JSON object.
+- **How values are filled is up to your schema and message.** The agent adds nothing to its prompt. A model must fill
+  every field, so for a value that may be missing, allow `null` and say in the field's `description` or in your message
+  when to use it. Otherwise the model may guess a value.
+- **The answer is validated against the schema.** An answer that does not match is corrected once, and a second miss
+  ends the run with an error rather than prose.
+- **Which agents support it:** agents that answer through the conversation spine (LLM Wrapping, Web Fetch, Few-Shot, MCP
+  ReAct, Universal). The agent's `supports_response_schema` says so. RAG and Expert RAG do not support it, and a request
+  with a `response_schema` to such an agent is rejected with `400`.

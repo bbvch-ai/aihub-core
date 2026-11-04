@@ -206,6 +206,23 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
   file long in characters (a form of `____` blanks passes the token budget) pushed the completion and the stop event
   past the broker's payload limit and the run never ended.
 
+**Structured answers** (`UserMessageEvent.response_schema`, ADR
+`2026_11_02_structured_answers_from_conversational_agents`): a caller may ask for the answer as JSON matching a schema.
+The answering call asks for it natively: read
+`response_schema = await RequestedResponseSchema.of(run_context, type(self))` and pass it to `display_llm_stream`, which
+sends `response_format` to a model with `supports_response_schema`; nothing is added to the prompt. LLM Wrapping and
+Few-Shot do; the tool loop only on a turn without tools, since the shape next to the tools made a model answer at once
+without reading the attached file. `Conversation.complete` then validates the answer (the supplied stop, if a
+non-refusal one was handed over) instead of generating follow-ups, corrects it once with the schema and the error,
+thinking off (`StructuredAnswer`) and ends with `LLMStopEvent.structured_output`; a second miss fails the run, and a
+refusal ends it at once, without follow-ups. The correction needs the prompt the model read, which the completion no
+longer carries (`LLMEvent.for_hand_back`), so every call asking for the shape keeps it:
+`await StructuredAnswer.keep_prompt(run_context, answer, response_schema)` right after `display_llm_stream` (the run
+context is not bound by the broker's limit). Without a kept prompt the correction falls back to the conversation, with
+tool calls whose results are gone taken out. With a schema, the meta-question gate is skipped.
+`Agent.supports_response_schema()` is derived: a blueprint that returns `Conversation.complete(...)` and declares only
+`LLMStopEvent` completion stops supports it, so RAG does not.
+
 **`Memory`** (needs `MemoryFields`): `recall(query, org_memory_namespaces)` → `MemoryRecalledEvent` with one block per
 scope; `remember(...)` builds the memory-storage delegation directly, no step behind it, so returning it ahead of the
 completion is what guarantees it is published before the run tears down (ADR `2026_09_11`).

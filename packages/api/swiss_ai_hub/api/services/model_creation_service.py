@@ -1,6 +1,6 @@
 import copy
 import types
-from typing import Any, Union, get_args, get_origin
+from typing import Annotated, Any, Union, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
@@ -97,7 +97,8 @@ class ModelCreationService:
             if nested_maps:
                 restored = ModelCreationService._reattach_map_fields(restored, nested_maps)
             if restored is not nested:
-                annotation = restored | None if type(None) in get_args(field_info.annotation) else restored
+                nullable = type(None) in ModelCreationService._union_members(field_info.annotation)
+                annotation = restored | None if nullable else restored
                 replaced[name] = (annotation, field_info)
         if not replaced:
             return model
@@ -107,9 +108,8 @@ class ModelCreationService:
 
     @staticmethod
     def _map_field(name: str, property_schema: dict[str, Any], required: list[str]) -> tuple[type, FieldInfo]:
-        value_type = ModelCreationService._resolve_map_value_type(property_schema.get("additionalProperties"))
         default = ... if name in required and "default" not in property_schema else property_schema.get("default", {})
-        return dict[str, value_type], Field(
+        return ModelCreationService._map_annotation(property_schema), Field(
             default=default, title=property_schema.get("title"), description=property_schema.get("description")
         )
 
@@ -117,10 +117,19 @@ class ModelCreationService:
     def _nested_model(annotation: Any) -> type[BaseModel] | None:
         if isinstance(annotation, type) and issubclass(annotation, BaseModel):
             return annotation
-        if get_origin(annotation) in (Union, types.UnionType):
-            models = [arg for arg in get_args(annotation) if isinstance(arg, type) and issubclass(arg, BaseModel)]
-            return models[0] if len(models) == 1 else None
-        return None
+        models = [
+            arg
+            for arg in ModelCreationService._union_members(annotation)
+            if isinstance(arg, type) and issubclass(arg, BaseModel)
+        ]
+        return models[0] if len(models) == 1 else None
+
+    @staticmethod
+    def _union_members(annotation: Any) -> list[Any]:
+        """A union's members without their `Annotated` wrappers, which jambo puts around each member of an optional."""
+        if get_origin(annotation) not in (Union, types.UnionType):
+            return []
+        return [get_args(arg)[0] if get_origin(arg) is Annotated else arg for arg in get_args(annotation)]
 
     @staticmethod
     def _resolve(property_schema: dict[str, Any], definitions: dict[str, Any]) -> dict[str, Any]:
@@ -143,11 +152,10 @@ class ModelCreationService:
                 continue
 
             is_required = name in required
-            value_type = ModelCreationService._resolve_map_value_type(property_schema.get("additionalProperties"))
             default = ... if is_required and "default" not in property_schema else property_schema.get("default", {})
 
             map_fields[name] = (
-                dict[str, value_type],
+                ModelCreationService._map_annotation(property_schema),
                 Field(
                     default=default,
                     title=property_schema.get("title"),
@@ -162,8 +170,30 @@ class ModelCreationService:
 
     @staticmethod
     def _is_free_form_map(property_schema: dict[str, Any]) -> bool:
+        return ModelCreationService._free_form_map_schema(property_schema) is not None
+
+    @staticmethod
+    def _free_form_map_schema(property_schema: dict[str, Any]) -> dict[str, Any] | None:
+        """The map's own schema, also when it is optional: `dict[str, Any] | None` is announced as an `anyOf` of the
+        map and null, which jambo rebuilds as an empty model too, dropping every key it does not know."""
+        if ModelCreationService._is_plain_free_form_map(property_schema):
+            return property_schema
+        members = property_schema.get("anyOf", [])
+        maps = [member for member in members if member.get("type") != "null"]
+        if len(members) == 2 and len(maps) == 1 and ModelCreationService._is_plain_free_form_map(maps[0]):
+            return maps[0]
+        return None
+
+    @staticmethod
+    def _is_plain_free_form_map(property_schema: dict[str, Any]) -> bool:
         additional_properties = property_schema.get("additionalProperties")
         return additional_properties not in (None, False) and not property_schema.get("properties")
+
+    @staticmethod
+    def _map_annotation(property_schema: dict[str, Any]) -> Any:
+        map_schema = ModelCreationService._free_form_map_schema(property_schema)
+        value_type = ModelCreationService._resolve_map_value_type(map_schema.get("additionalProperties"))
+        return dict[str, value_type] if map_schema is property_schema else dict[str, value_type] | None
 
     @staticmethod
     def _resolve_map_value_type(additional_properties: Any) -> type:

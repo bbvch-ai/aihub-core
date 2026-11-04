@@ -98,6 +98,7 @@ class FullAgentInstanceDTO(MinimalAgentInstanceDTO):
             agent_config=agent_config_dto,
             is_conversational=class_entity.is_conversational,
             is_schedulable=class_entity.is_schedulable,
+            supports_response_schema=class_entity.supports_response_schema,
             start_events=start_events,
             stop_events=stop_events,
             hitl_request_events=hitl_request_events,
