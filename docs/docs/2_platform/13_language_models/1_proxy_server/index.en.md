@@ -48,6 +48,41 @@ section contains provider-specific connection details. The `model_info` section 
 pricing for cost tracking through Langfuse.
 :::
 
+### Names, purpose and capabilities
+
+Model pickers in the Admin UI read three more keys from `model_info`:
+
+- **`aihub_display_name`:** the name a picker shows, such as `Gemma 4 31B`. Every model in the shipped configuration
+  sets it. A model without it is shown by its `model_name` without the prefix (`gemma-4-31B-it`).
+- **`aihub_general_purpose`:** `false` for a model built for one job, which pickers then never offer. Only the OCR model
+  `MinerU2.5-2509-1.2B` sets it to `false`: it is served over the chat API, so its `mode` stays `chat`, but it cannot
+  hold a conversation. `GET /models/mode/{mode}` leaves such models out unless the call sets
+  `include_special_purpose=true`, and a knowledge database that names one is refused when created. A model without the
+  key counts as general-purpose.
+- **`supports_reasoning`:** whether the model can produce a thinking phase at all, next to the existing
+  `supports_function_calling`, `supports_response_schema` and `supports_vision`. A picker that requires a capability
+  treats a flag that is not set as unsupported.
+
+```yaml
+  - model_name: text-generation/MinerU2.5-2509-1.2B
+    model_info:
+      aihub_display_name: MinerU 2.5 (OCR)
+      aihub_hosting_location: swiss_cloud
+      aihub_general_purpose: false
+      mode: chat
+      supports_function_calling: false
+      supports_response_schema: false
+      supports_vision: true
+      supports_reasoning: false
+```
+
+The configuration generator refuses a `mode: chat` model that does not set all four `supports_*` flags and
+`aihub_general_purpose` to `true` or `false`. A model added through the LiteLLM UI skips that check: it stays
+selectable, but is left out of every picker that requires a capability it does not declare.
+
+LiteLLM passes a request's `reasoning_effort` on to every model it does not know, whatever `supports_reasoning` says. If
+a provider rejects it, list it in the model's `additional_drop_params`, as the configuration does for Ministral.
+
 ### Embedding and reranking models
 
 The platform sizes every input to an embedding or reranking model before sending it: document chunks at ingestion,

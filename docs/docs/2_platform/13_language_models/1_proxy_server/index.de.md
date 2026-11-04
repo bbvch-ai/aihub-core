@@ -1,6 +1,6 @@
 ---
 title: Proxy-Server
-source_sha: 83e72f2ffc22be4fa93a69269a7f673551f36afd3ba7b847fb5a2ce6a2997926
+source_sha: 4ea96272823259eae11c08b808a1404af8c8fef3ea476b3987a04732eed38ff5
 ---
 
 # LLM-Proxy
@@ -49,6 +49,43 @@ Der `model_name` identifiziert das Modell in Agent-Konfigurationen unter Verwend
 Der Abschnitt `litellm_params` enthält anbieterspezifische Verbindungsdetails. Der Abschnitt `model_info` spezifiziert
 Fähigkeiten und Preise pro Token für die Kostenverfolgung über Langfuse.
 :::
+
+### Namen, Zweck und Fähigkeiten
+
+Die Modellauswahl in der Admin-UI liest drei weitere Schlüssel aus `model_info`:
+
+- **`aihub_display_name`:** der Name, den eine Modellauswahl anzeigt, etwa `Gemma 4 31B`. Jedes Modell der
+  mitgelieferten Konfiguration setzt ihn. Ein Modell ohne ihn wird mit seinem `model_name` ohne Präfix angezeigt
+  (`gemma-4-31B-it`).
+- **`aihub_general_purpose`:** `false` für ein Modell, das für eine einzige Aufgabe gebaut ist und das eine
+  Modellauswahl deshalb nie anbietet. Nur das OCR-Modell `MinerU2.5-2509-1.2B` setzt ihn auf `false`: Es wird über die
+  Chat-API bereitgestellt, sein `mode` bleibt also `chat`, aber es kann kein Gespräch führen. `GET /models/mode/{mode}`
+  lässt solche Modelle weg, ausser der Aufruf setzt `include_special_purpose=true`, und eine Wissensdatenbank, die eines
+  nennt, wird beim Anlegen abgewiesen. Ein Modell ohne den Schlüssel gilt als Allzweckmodell.
+- **`supports_reasoning`:** ob das Modell überhaupt eine Denkphase erzeugen kann, neben den bestehenden
+  `supports_function_calling`, `supports_response_schema` und `supports_vision`. Eine Modellauswahl, die eine Fähigkeit
+  verlangt, behandelt ein nicht gesetztes Flag als nicht unterstützt.
+
+```yaml
+  - model_name: text-generation/MinerU2.5-2509-1.2B
+    model_info:
+      aihub_display_name: MinerU 2.5 (OCR)
+      aihub_hosting_location: swiss_cloud
+      aihub_general_purpose: false
+      mode: chat
+      supports_function_calling: false
+      supports_response_schema: false
+      supports_vision: true
+      supports_reasoning: false
+```
+
+Der Konfigurationsgenerator weist ein Modell mit `mode: chat` ab, das nicht alle vier `supports_*`-Flags und
+`aihub_general_purpose` auf `true` oder `false` setzt. Ein über die LiteLLM-UI hinzugefügtes Modell umgeht diese
+Prüfung: Es bleibt auswählbar, fehlt aber in jeder Modellauswahl, die eine Fähigkeit verlangt, die es nicht deklariert.
+
+LiteLLM gibt das `reasoning_effort` einer Anfrage an jedes Modell weiter, das es nicht kennt, unabhängig von
+`supports_reasoning`. Lehnt ein Anbieter es ab, tragen Sie es in die `additional_drop_params` des Modells ein, wie es
+die Konfiguration für Ministral tut.
 
 ### Embedding- und Reranking-Modelle
 
