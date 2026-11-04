@@ -150,12 +150,14 @@ class Invoice(BaseModel):
     lines: list[Line]
 
 
+messages = [{"role": "user", "content": [
+    {"type": "text", "text": "Extract the invoice."},
+    {"type": "file", "file": {"filename": "invoice.pdf", "file_data": f"data:application/pdf;base64,{pdf_base64}"}},
+]}]
+
 completion = client.chat.completions.parse(
     model="UniversalAgent/assistant",
-    messages=[{"role": "user", "content": [
-        {"type": "text", "text": "Extract the invoice."},
-        {"type": "file", "file": {"filename": "invoice.pdf", "file_data": f"data:application/pdf;base64,{pdf_base64}"}},
-    ]}],
+    messages=messages,
     response_format=Invoice,
 )
 invoice = completion.choices[0].message.parsed
