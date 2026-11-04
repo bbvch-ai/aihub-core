@@ -32,6 +32,7 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.conversation.structured_answer import StructuredAnswer
 from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
 from swiss_ai_hub.agent.capabilities.requested_response_schema import RequestedResponseSchema
 from swiss_ai_hub.agent.capabilities.tool_loop.earlier_tool_turns import EarlierToolTurns
@@ -205,11 +206,16 @@ class ToolLoop(Capability):
             # model told by its instructions to use tools calls one anyway, and the gateway strips the call to nothing.
             note = "limit_reached" if exhausted else "no_tools"
             messages.append(ChatMessage(role=MessageRole.USER, content=t(f"agent.tool_loop.prompt.{note}")))
-        response_schema = None if tools else await RequestedResponseSchema.of(run_context, type(agent))
-        turn = await ToolLoop._turn(messages, tools, state.mode, conversation, displayer, user, response_schema)
+        requested = (
+            await RequestedResponseSchema.of(run_context, type(agent)) if state.mode == ToolLoopMode.ANSWER else None
+        )
+        turn = await ToolLoop._turn(
+            messages, tools, state.mode, conversation, displayer, user, None if tools else requested
+        )
 
         assistant = turn.output_messages[-1]
         if not assistant.tool_calls:
+            await ToolLoop._keep_answer_prompt(run_context, turn, tools, state.messages, requested)
             await EarlierToolTurns(thread_context, state.loop).keep(state.question, state.messages)
             return await ToolLoop._finish(state, turn, exhausted, displayer, t)
 
@@ -538,6 +544,23 @@ class ToolLoop(Capability):
     def _exhausted(state: ToolLoopState, loop: ToolLoopFields) -> bool:
         max_iterations = min(loop.tool_loop.max_iterations, state.max_iterations or loop.tool_loop.max_iterations)
         return state.iteration >= max_iterations or state.tool_calls_made >= loop.tool_loop.max_tool_calls
+
+    @staticmethod
+    async def _keep_answer_prompt(
+        run_context: RunContext,
+        turn: LLMEvent,
+        tools: list[dict] | None,
+        loop_messages: list[Message],
+        requested: ResponseSchema | None,
+    ) -> None:
+        """Keep the prompt behind the answer for its structured correction, with the tool calls as text: the shape
+        an answer offered no tools is asked in, and one a provider accepts without the tool definitions."""
+        kept = (
+            turn
+            if tools is None
+            else turn.model_copy(update={"input_messages": ToolLoop._tool_turns_as_text(loop_messages)})
+        )
+        await StructuredAnswer.keep_prompt(run_context, kept, requested)
 
     @staticmethod
     async def _turn(
