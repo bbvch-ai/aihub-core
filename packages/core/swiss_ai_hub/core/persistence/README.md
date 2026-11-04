@@ -65,8 +65,11 @@ Pitfalls found in the first port:
   runs on the session loop: `@pytest_asyncio.fixture(scope="module", loop_scope="session")`, depending on
   `beanie_test_database`, with the module marked `beanie`. Which requests reach one can depend on data earlier tests
   left behind (`/my-account` lists agent profiles only once a class exists), so such a failure shows only in a full run.
-- `cachetools.cached` on an `async` function caches the coroutine, which can be awaited only once. Cache the result by
-  hand (`ThreadService._fetch_minimal_agent_dto`).
+- `cachetools.cached` on an `async` function caches the coroutine, which can be awaited only once. Caching the result by
+  hand is not enough either: a synchronous lookup filled the cache before the next caller looked, an awaited one does
+  not, so concurrent callers (`asyncio.gather`, one task per NATS message) all miss and repeat the lookup. Cache the
+  lookup task, stored before the first `await`, await it through `asyncio.shield`, and evict it when it fails
+  (`ThreadService._fetch_minimal_agent_dto`, `WebSocketSender.get_users_in_thread`).
 
 ## Effort per port
 

@@ -44,7 +44,9 @@ from swiss_ai_hub.api.routes.user.user_service import UserService
 
 logger = logging.getLogger(__name__)
 
-_MINIMAL_AGENT_DTO_CACHE: TTLCache = TTLCache(maxsize=128, ttl=60)
+_MINIMAL_AGENT_DTO_CACHE: TTLCache[tuple[str, str, LocaleHandler], asyncio.Task[MinimalAgentInstanceDTO | None]] = (
+    TTLCache(maxsize=128, ttl=60)
+)
 
 
 class ThreadService:
@@ -302,14 +304,25 @@ class ThreadService:
         Fetches agent details and converts to MinimalAgentInstanceDTO.
         Returns None if the agent cannot be found or fetching fails.
 
-        Cached by hand: cachetools' `cached` decorator would store the coroutine, which can be awaited only once.
+        Caches the lookup task rather than its result: the threads of one page are built concurrently, and caching only
+        the result let every thread that shares an agent miss the cache while the first lookup was still waiting.
         """
         key = (agent_class, agent_id, t)
-        if key in _MINIMAL_AGENT_DTO_CACHE:
-            return _MINIMAL_AGENT_DTO_CACHE[key]
-        dto = await ThreadService._load_minimal_agent_dto(agent_class, agent_id, t)
-        _MINIMAL_AGENT_DTO_CACHE[key] = dto
-        return dto
+        lookup = _MINIMAL_AGENT_DTO_CACHE.get(key)
+        if lookup is None:
+            lookup = asyncio.create_task(ThreadService._load_minimal_agent_dto(agent_class, agent_id, t))
+            lookup.add_done_callback(lambda done: ThreadService._forget_failed_lookup(key, done))
+            _MINIMAL_AGENT_DTO_CACHE[key] = lookup
+        # Shielded: one cancelled request must not cancel the lookup that other threads of the page are waiting for.
+        return await asyncio.shield(lookup)
+
+    @staticmethod
+    def _forget_failed_lookup(
+        key: tuple[str, str, LocaleHandler], done: asyncio.Task[MinimalAgentInstanceDTO | None]
+    ) -> None:
+        """Drops a cancelled or failed lookup, so the next caller retries it instead of inheriting the failure."""
+        if (done.cancelled() or done.exception() is not None) and _MINIMAL_AGENT_DTO_CACHE.get(key) is done:
+            del _MINIMAL_AGENT_DTO_CACHE[key]
 
     @staticmethod
     async def _load_minimal_agent_dto(
