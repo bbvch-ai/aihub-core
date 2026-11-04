@@ -997,6 +997,11 @@ lib:
   modelSelect:
     contextWindow: 'Context window: {input} input · {output} output tokens'
     contextWindowInputOnly: 'Context window: {input} input tokens'
+    notSelectable: '{model} does not meet what this field requires. Choose another model before saving.'
+    specialPurpose: '{model} is built for one job only and cannot be chosen here. Choose another model before saving.'
+    unavailable: '{model} is not available to you. Choose another model before saving.'
+    loadFailed: The models could not be loaded. Reload the page to try again.
+    empty: No model you can use meets what this field requires.
   modelBound:
     providerDefault: provider default
     overrideRequired: Enter a value, or untick the override to use the default.

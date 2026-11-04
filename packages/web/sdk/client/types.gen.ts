@@ -7603,6 +7603,30 @@ export type HealthResponse = {
 };
 
 /**
+ * HostingLocation
+ *
+ * Where a model runs, as the LiteLLM config declares it in `aihub_hosting_location`.
+ *
+ * Keep in sync with `HOSTING_LOCATIONS` in `infra/deployment/generate_compose.py`, which rejects any other value.
+ */
+export const HostingLocation = {
+  LOCAL: "local",
+  SWISS_CLOUD: "swiss_cloud",
+  EU: "eu",
+  GLOBAL: "global",
+} as const;
+
+/**
+ * HostingLocation
+ *
+ * Where a model runs, as the LiteLLM config declares it in `aihub_hosting_location`.
+ *
+ * Keep in sync with `HOSTING_LOCATIONS` in `infra/deployment/generate_compose.py`, which rejects any other value.
+ */
+export type HostingLocation =
+  (typeof HostingLocation)[keyof typeof HostingLocation];
+
+/**
  * HtmlElement
  *
  * https://formkit.com/essentials/schema#html-elements-el
@@ -13009,6 +13033,26 @@ export type ModelBoundInputNumber = {
 };
 
 /**
+ * ModelCapability
+ *
+ * Something a model picker may require of a chat model, read from the LiteLLM `supports_*` flag it names.
+ */
+export const ModelCapability = {
+  VISION: "vision",
+  TOOL_CALLING: "tool_calling",
+  STRUCTURED_OUTPUT: "structured_output",
+  REASONING: "reasoning",
+} as const;
+
+/**
+ * ModelCapability
+ *
+ * Something a model picker may require of a chat model, read from the LiteLLM `supports_*` flag it names.
+ */
+export type ModelCapability =
+  (typeof ModelCapability)[keyof typeof ModelCapability];
+
+/**
  * ModelDTO
  */
 export type ModelDto = {
@@ -13266,11 +13310,9 @@ export type ModelInfoDto = {
    */
   aihub_display_name?: string | null;
   /**
-   * Aihub Hosting Location
-   *
-   * Where the model runs: 'local', 'swiss_cloud', 'eu' or 'global', curated per model
+   * Where the model runs, curated per model
    */
-  aihub_hosting_location?: string | null;
+  aihub_hosting_location?: HostingLocation | null;
   /**
    * Aihub General Purpose
    *
@@ -13518,6 +13560,31 @@ export type ModelInfoDto = {
 };
 
 /**
+ * ModelRequirements
+ *
+ * What a model must offer to be offered and saved in one model picker.
+ *
+ * Stricter than `ModelGatedCheckbox` on purpose: that gates a feature on a model already chosen, this decides what
+ * may be chosen. So a flag counts only when it is true (LiteLLM reports an unset one as null), and a model whose
+ * location is missing or unknown fails a location requirement. It reads a plain `model_info` mapping, not the
+ * API's DTO, so core does not depend on the API.
+ */
+export type ModelRequirements = {
+  /**
+   * Capabilities
+   *
+   * Capabilities the model must all support.
+   */
+  capabilities?: Array<ModelCapability>;
+  /**
+   * Hosting Locations
+   *
+   * Where the model may run; any location when unset.
+   */
+  hosting_locations?: Array<HostingLocation> | null;
+};
+
+/**
  * ModelResponse
  */
 export type ModelResponse = {
@@ -13544,7 +13611,9 @@ export type ModelResponse = {
  * available models from the API based on the specified mode.
  *
  * The frontend component handles fetching models from `/api/v1/models/mode/{mode}`
- * and populating the dropdown options.
+ * and populating the dropdown options. `requirements` narrows them to the models with
+ * every required capability and an allowed hosting location; the API enforces the same
+ * rule when a profile is saved, and never offers a model that is not general-purpose.
  *
  * ### Supported Modes
  * - `chat`: Chat/text generation models
@@ -13700,6 +13769,10 @@ export type ModelSelect = {
    * Whether to show clear button
    */
   showClear?: boolean;
+  /**
+   * Capabilities and hosting locations the chosen model must have.
+   */
+  requirements?: ModelRequirements;
   /**
    * Validation
    */
@@ -29492,7 +29565,9 @@ export type ModelGatedCheckboxWritable = {
  * available models from the API based on the specified mode.
  *
  * The frontend component handles fetching models from `/api/v1/models/mode/{mode}`
- * and populating the dropdown options.
+ * and populating the dropdown options. `requirements` narrows them to the models with
+ * every required capability and an allowed hosting location; the API enforces the same
+ * rule when a profile is saved, and never offers a model that is not general-purpose.
  *
  * ### Supported Modes
  * - `chat`: Chat/text generation models
@@ -29648,6 +29723,10 @@ export type ModelSelectWritable = {
    * Whether to show clear button
    */
   showClear?: boolean;
+  /**
+   * Capabilities and hosting locations the chosen model must have.
+   */
+  requirements?: ModelRequirements;
   [key: string]: unknown;
 };
 
@@ -35506,6 +35585,14 @@ export type GetLitellmModelsByModeData = {
     mode: string;
   };
   query?: {
+    /**
+     * Capability
+     */
+    capability?: Array<ModelCapability> | null;
+    /**
+     * Hosting Location
+     */
+    hosting_location?: Array<HostingLocation> | null;
     /**
      * Include Special Purpose
      */

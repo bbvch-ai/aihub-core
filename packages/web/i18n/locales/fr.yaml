@@ -1012,6 +1012,11 @@ lib:
   modelSelect:
     contextWindow: 'Fenêtre de contexte : {input} jetons en entrée · {output} en sortie'
     contextWindowInputOnly: 'Fenêtre de contexte : {input} jetons en entrée'
+    notSelectable: '{model} ne remplit pas les exigences de ce champ. Choisissez un autre modèle avant d’enregistrer.'
+    specialPurpose: '{model} est conçu pour une seule tâche et ne peut pas être choisi ici. Choisissez un autre modèle avant d’enregistrer.'
+    unavailable: '{model} ne vous est pas disponible. Choisissez un autre modèle avant d’enregistrer.'
+    loadFailed: Les modèles n’ont pas pu être chargés. Rechargez la page pour réessayer.
+    empty: Aucun des modèles que vous pouvez utiliser ne remplit les exigences de ce champ.
   modelBound:
     providerDefault: valeur par défaut du fournisseur
     overrideRequired: Saisissez une valeur, ou décochez le remplacement pour utiliser
