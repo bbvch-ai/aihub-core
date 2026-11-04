@@ -28,7 +28,7 @@ def _runner_with_text(agent_class: str, agent_id: str, text: str) -> SimulatedAg
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def api_client():
     auth = TestAuthHandler()
-    controller = OpenaiController(auth=auth).get_models_with_assistants().chat_completion_with_assistants()
+    controller = OpenaiController(auth=auth).get_models().chat_completion_with_assistants()
 
     runner_x = _runner_with_text(AGENT_X_CLASS, AGENT_X_ID, AGENT_X_TEXT)
     runner_x.mount(controller)

@@ -10,6 +10,7 @@ from swiss_ai_hub.core.form.elements.icon_selector import IconSelector
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 from swiss_ai_hub.core.form.form import Form
+from swiss_ai_hub.core.form.secret_field_walker import SecretFieldWalker
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
 
@@ -161,6 +162,12 @@ class AgentConfig(Form):
                 placeholder=LocaleString.from_i18n_path("lib.agents.config.placeholder.icon"),
             ),
         )
+
+    @classmethod
+    def secret_field_paths(cls) -> set[str]:
+        """Calls ``as_form()``, which a config that does not override it may fail to construct, so ask lazily: only
+        once a secret actually has to be handled, never at construction."""
+        return SecretFieldWalker.secret_paths(cls.as_form().to_formkit_form())
 
     @classmethod
     def cron_form_field(cls) -> CronInput:

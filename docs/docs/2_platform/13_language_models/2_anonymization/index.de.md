@@ -40,18 +40,18 @@ Ist der Analyzer nicht erreichbar, wird die Anfrage mit einer Fehlermeldung abge
 
 Drei Schalter entscheiden, und jeder einzelne genügt:
 
-| Schalter | Wer setzt ihn | Was er anonymisiert |
-| --- | --- | --- |
-| `PII_ANONYMISE_EXTERNAL_MODELS=true` | Der Betreiber, pro Deployment (standardmässig aus) | Jeden Aufruf an ein ausserhalb des Deployments gehostetes Modell, für jeden Aufrufer: Chats, Agenten (inklusive Titel, Follow-ups und Memory-Extraktion) und Bots |
-| **Personendaten anonymisieren** in einem Agentenprofil | Der Admin des Profils | Jeden Aufruf der Läufe dieses Profils, unabhängig vom Modell |
-| Der [Anonymisierer](../../5_agents/14_anonymiser/)-Agent | Jeder Benutzer, von Hand | Den Text, den der Benutzer ihm sendet |
+| Schalter                                                 | Wer setzt ihn                                      | Was er anonymisiert                                                                                                                                               |
+| -------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PII_ANONYMISE_EXTERNAL_MODELS=true`                     | Der Betreiber, pro Deployment (standardmässig aus) | Jeden Aufruf an ein ausserhalb des Deployments gehostetes Modell, für jeden Aufrufer: Chats, Agenten (inklusive Titel, Follow-ups und Memory-Extraktion) und Bots |
+| **Personendaten anonymisieren** in einem Agentenprofil   | Der Admin des Profils                              | Jeden Aufruf der Läufe dieses Profils, unabhängig vom Modell                                                                                                      |
+| Der [Anonymisierer](../../5_agents/14_anonymiser/)-Agent | Jeder Benutzer, von Hand                           | Den Text, den der Benutzer ihm sendet                                                                                                                             |
 
 Jedes Modell in der Gateway-Konfiguration gibt an, wo es läuft (`model_info.aihub_hosting_location`); jedes Modell, das
 nicht `local` ist (die Schweizer Cloud-Anbieter und jeder andere externe Anbieter), gilt als ausserhalb des Deployments.
-Schalten Sie den Deployment-Schalter ein, wenn externe Modelle Personendaten erhalten könnten, die die Organisation nicht
-verlassen dürfen. Ist er aus, senden Chats mit einem externen Modell ihren Text unverändert, und nur Profile mit der
-Checkbox anonymisieren. Der Schalter wird beim Start des Gateways gelesen: Umgebungsvariable ändern und `litellm` neu
-starten. Ein anderer Wert als `true` oder `false` gilt als `true`, und das Gateway protokolliert einen Fehler.
+Schalten Sie den Deployment-Schalter ein, wenn externe Modelle Personendaten erhalten könnten, die die Organisation
+nicht verlassen dürfen. Ist er aus, senden Chats mit einem externen Modell ihren Text unverändert, und nur Profile mit
+der Checkbox anonymisieren. Der Schalter wird beim Start des Gateways gelesen: Umgebungsvariable ändern und `litellm`
+neu starten. Ein anderer Wert als `true` oder `false` gilt als `true`, und das Gateway protokolliert einen Fehler.
 
 Ein Aufruf kann den Guardrail auch selbst verlangen:
 
@@ -102,9 +102,8 @@ zusammen mit einer Firma), werden nicht maskiert.
 
 Pronomen, Rollen, Anreden, Feld- und Zimmerbezeichnungen («Sie», «vous», «Benutzer», «Patientin», «Grüezi», «Adresse»,
 «IBAN», «Zimmer») werden in Deutsch, Französisch, Italienisch und Englisch nie maskiert, auch mit einer kurzen Nummer
-(«Position 2», «Art. 5», «Zimmer 12»): Das Erkennungsmodell hält
-sie für Namen oder für den Typ, den sie benennen, und ihre Maskierung würde die Anfrage verfälschen. Die Liste ist
-`pii_allow_list` in der Gateway-Konfiguration.
+(«Position 2», «Art. 5», «Zimmer 12»): Das Erkennungsmodell hält sie für Namen oder für den Typ, den sie benennen, und
+ihre Maskierung würde die Anfrage verfälschen. Die Liste ist `pii_allow_list` in der Gateway-Konfiguration.
 
 ## Prüfen in Langfuse
 
@@ -146,6 +145,43 @@ model_list:
 URL und Schlüssel des Analyzers kommen aus `PRESIDIO_ANALYZER_API_BASE` und `PRESIDIO_ANALYZER_API_KEY`. Die Recognizer
 stehen in `infra/deployment/templates/configs/presidio-analyzer.yaml`; Änderungen brauchen `make generate-compose` und
 einen Neustart des Analyzers, keinen Image-Build.
+:::
+
+## Dimensionierung des Analyzers
+
+Eine Analyse dauert auf jeder Anzahl CPUs gleich lang: etwa 0,5 Sekunden für eine Nachricht mit 400 Zeichen,
+5 Sekunden für 4'000 Zeichen und 24 Sekunden für 20'000. Mehr CPUs lassen den Analyzer mehr Aufrufe gleichzeitig
+bedienen, sodass Benutzer weniger lange in der Warteschlange stehen. Gemessen mit den standardmässigen 4 CPUs und mit
+auf 8 erhöhtem CPU-Limit:
+
+| Text | Gleichzeitige Benutzer | 4 CPUs: Aufrufe/s, Median-Wartezeit | 8 CPUs: Aufrufe/s, Median-Wartezeit |
+| ------------ | ---------------------- | ----------------------------------- | ----------------------------------- |
+| 400 Zeichen | 16 | 2,9, 5,4 s | 5,4, 2,9 s |
+| 4'000 Zeichen | 16 | 0,29, 41 s | 0,53, 29 s |
+| 20'000 Zeichen | 4 | 0,06, 69 s | 0,11, 37 s |
+
+Das Gateway analysiert nur, was es noch nicht gesehen hat: die Nachrichten eines Aufrufs parallel und jede frühere
+Nachricht einer Konversation aus einem Cache. Runde 10 eines Chats mit einem System-Prompt von 4'000 Zeichen kostet den
+Analyzer unter 2 Sekunden statt 25.
+
+Alle sechs sind optional: ohne Wert gelten die Standardwerte unten. Setzen Sie sie in der Umgebungsdatei und starten Sie
+danach den Analyzer neu (für das Timeout `litellm`):
+
+| Variable | Standard | Was sie festlegt |
+| ------------------------------------ | -------- | ------------------------------------------------------------------------- |
+| `PRESIDIO_ANALYZER_CPUS` | `4` | CPU-Limit des Containers |
+| `PRESIDIO_ANALYZER_MEMORY` | `4G` | Speicherlimit; jeder Worker belegt etwa 3 GiB |
+| `PRESIDIO_ANALYZER_WORKERS` | `1` | Prozesse, jeder mit eigener Kopie der Modelle |
+| `PRESIDIO_ANALYZER_THREADS` | `4` | Anfragen, die ein Worker gleichzeitig analysiert |
+| `PRESIDIO_ANALYZER_TORCH_THREADS` | `2` | CPU-Threads pro Analyse |
+| `PRESIDIO_ANALYZER_TIMEOUT_SECONDS` | `150` | Wie lange das Gateway auf eine Analyse wartet, bevor es den Aufruf ablehnt |
+
+Halten Sie Worker × Threads × Torch-Threads gleich dem CPU-Limit. Für 8 CPUs genügt es, `PRESIDIO_ANALYZER_CPUS` auf
+`8` zu setzen (1 × 4 × 2). Für 16 CPUs verwenden Sie 2 Worker und `PRESIDIO_ANALYZER_MEMORY=7G`.
+
+::: warning
+Lassen Sie die Torch-Threads bei 2: mit 1 dauert ein Text mit 20'000 Zeichen 85 Sekunden statt 24. Der Gewinn über
+8 CPUs ist auf Server-Hardware noch nicht gemessen.
 :::
 
 ## Grenzen

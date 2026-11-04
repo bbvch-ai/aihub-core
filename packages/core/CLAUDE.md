@@ -31,9 +31,10 @@ packages/core/swiss_ai_hub/core/
 ├── distributor/                     # External event distributors (agent + process)
 ├── exceptions/                      # HTTP-boundary exception handlers (ModelGatewayErrorHandler)
 ├── events/                          # Event type hierarchy (~100 event types)
-│   ├── base_event.py                 # Root: auto-registry, polymorphic deserialization
+│   ├── base_event.py                 # Root: auto-registry, polymorphic deserialization, API input
+│   ├── api_payload_context.py        # What an event may need to convert API input (user, agent, S3)
 │   ├── utils.py                     # Event utility functions
-│   ├── discovery/                   # Shared discovery (ClassDiscoveryRequestEvent, EventSpecs)
+│   ├── discovery/                   # Shared discovery (ClassDiscoveryRequestEvent, EventSpecs incl. api_input_schema)
 │   ├── agent/                       # Agent-scoped events
 │   │   ├── control_and_display_event.py
 │   │   ├── aitl/                    # Agent-in-the-loop delegation events
@@ -48,7 +49,7 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── memory/                  # Memory operation events (retrieve, store, history)
 │   │   ├── router/                  # LLM routing events
 │   │   ├── semantic/                # SemanticEvent + OpenInference tracing subtypes
-│   │   └── user/                    # UserMessageEvent
+│   │   └── user/                    # UserMessageEvent, UserUploadedFile, InlineFile (+ settings)
 │   ├── process/                     # Process-scoped events
 │   │   ├── process_event.py          # Process orchestration base
 │   │   ├── start/, stop/, exception/ # Process lifecycle events
@@ -233,6 +234,27 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
 └── Discovery events                                               [events/agent/discovery/, events/process/discovery/]
 ```
+
+### Events Own Their API Input
+
+What an API caller sends for an event is defined by the event, not by the API (ADR
+`2026_10_30_events_own_their_api_input`):
+
+- `BaseEvent.api_input_model()` is the event without `_api_server_fields` (ids, timestamps, `user`, `locale`, display
+  fields, `agent_config`). Agents announce its schema as `EventSpecs.api_input_schema`, and the API builds the endpoint
+  body from it.
+- A field the caller sends in another shape is overridden in `api_input_field_overrides()` and converted back in
+  `_api_input_to_event_data()`. `UserMessageEvent` and `RAGStartEvent` accept `files` as `UserUploadedFile | InlineFile`
+  and store the inline ones with `InlineFile.store_all`, which checks every file before storing any.
+- `from_api_payload()` resolves the registered class for the event name (falling back to the closest parent, so
+  agent-only subclasses inherit the conversion), validates the whole payload, converts it, and adds `_api_server_data()`
+  (`StartEvent`: the caller and locale).
+- Images inside messages go the same way: `ApiAttachments.event_data` checks and stores them with `StoredImage`
+  (content-addressed under `agent-files/{class}/{id}/images/`) and leaves an `s3://agent-files/…` reference in the
+  `ImageBlock`. `ResilientOpenAILike` signs such references just before every chat call (`StoredImageSigner`), so no
+  agent handles them, and the API serves them to the UI from `…/instances/{id}/images/{name}`.
+- Never put bytes in an event: NATS refuses messages over 1 MB (2 MB in production) and every event is persisted. Store
+  them and carry a reference.
 
 ### Event Directory Scoping
 
@@ -713,8 +735,8 @@ Read-only Jira access for agents (#1951), Jira Cloud and Jira Data Center alike.
 agent configuration: the agent embeds the group and passes it in.
 
 - **`JiraConnectionConfig`** is a `StepConfig` with `base_url`, `deployment` (`cloud` | `data_center`), `email` (Cloud
-  only) and `api_token` (a `Password`, so #1587 will encrypt it with every other secret field). A step receives it by
-  its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
+  only) and `api_token` (a `Password`, so it is stored encrypted like every other secret field, #1587). A step receives
+  it by its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
   deployment-fixed: absent from the form, but bounded in the schema because a direct API save can set them. Cross-field
   rules (Cloud needs an e-mail) are `problems()`, checked when a search starts, never a validator.
 - **`JiraTicketSearch.find_tickets(connection, project_keys, clauses)`** returns every matching `JiraTicket` (key, url,
@@ -779,6 +801,14 @@ acceptance criteria against sites seeded with `packages/pipeline/playground/jira
   `AIHubSettings()` instances resolve to the test DB (never the dev/prod `aihub` DB), and registers a session-autouse
   fixture that drops the test DB at session start. Failing to import this first means tests silently hit the dev
   database.
+- `beanie_isolation`: tests of Beanie documents (the entities ported from MongoEngine, #1634). Opt a test in with
+  `@pytest.mark.beanie`, or a whole module with `pytestmark = pytest.mark.beanie`. The test then runs on
+  pytest-asyncio's session loop, where one `AsyncMongoClient` is initialised against the test DB, and every collection
+  in `beanie_document_models` (session fixture in the package's `conftest.py`) is emptied before it. Add a ported
+  document to that list. Unmarked tests keep their own loop, and an unmarked test that touches a Beanie document fails
+  with `Cannot use AsyncMongoClient in different event loop`. Not usable from `@async_test` steps, whose `asyncio.run()`
+  always makes a new loop. A package that opts in copies the core `conftest.py` wiring: the fixture imports, the
+  `pytest_pycollect_makeitem` hook, the `beanie` marker and its own `beanie_document_models`.
 - `@async_test`: Decorator for async pytest-bdd step functions (wraps with `asyncio.run()`)
 - `fake_user()`: Creates a mock `UserIdentity` for tests (uses constants in `auth_utils/test_identity.py`)
 - `ASGIAdapter`: ASGI adapter for testing FastAPI routes without a running server
@@ -805,7 +835,7 @@ acceptance criteria against sites seeded with `packages/pipeline/playground/jira
 
 **Event system**:
 
-- `core/events/base_event.py` — event foundation (auto-registry, deserialization)
+- `core/events/base_event.py` — event foundation (auto-registry, deserialization, API input)
 - `core/events/agent/control/control_event.py` — workflow control base
 - `core/events/agent/display/display_event.py` — UI observability base
 - `core/events/agent/control_and_display_event.py` — dual-purpose base
