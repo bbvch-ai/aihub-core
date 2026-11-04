@@ -428,6 +428,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
 
             await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
+            # Before the thread is created, so a refused request leaves no empty conversation behind.
+            if getattr(start_event_input, "response_schema", None) is not None:
+                await to_thread(AgentService.refuse_unsupported_response_schema, agent_class)
+
             if thread_id is not None:
                 try:
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
@@ -488,8 +492,6 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         event_parents: list[str],
         context: ApiPayloadContext,
     ) -> StartEvent | HumanInTheLoopResponseEvent:
-        if getattr(start_event_input, "response_schema", None) is not None:
-            await to_thread(AgentService.refuse_unsupported_response_schema, context.agent_class)
         return await expected_type.from_api_payload(
             # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
             # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
@@ -540,6 +542,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             usage_status = await usage_limits.check_and_raise(
                 user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
             )
+
+            # Before the thread is created, so a refused request leaves no empty conversation behind.
+            if getattr(start_event_input, "response_schema", None) is not None:
+                await to_thread(AgentService.refuse_unsupported_response_schema, agent_class)
 
             if thread_id is not None:
                 try:
