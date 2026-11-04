@@ -10,15 +10,15 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import pytest
 from cryptography.fernet import Fernet
 from fastapi import FastAPI
-from mongoengine import connect, disconnect, signals
+from mongoengine import connect, disconnect
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.secrets import SecretEncryptionService
 
 from swiss_ai_hub.api.runners.lifetime.lifetime_manager import lifetime_manager
@@ -55,81 +55,80 @@ def mongo_connection():
 
 
 @pytest.fixture
-def clean_configs(mongo_connection):
-    with signals.post_save.muted(), signals.post_delete.muted():
-        AgentConfigEntityDocument.objects.delete()
-        AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
-        AgentClassEntity(
-            agent_class=_AGENT_CLASS,
-            form=[element.model_dump() for element in _MailboxAgentConfig.as_form().to_formkit_form()],
-            is_conversational=False,
-            start_events=[],
-            stop_events=[],
-            network_graph={},
-        ).save(validate=False)
-        yield
-        AgentConfigEntityDocument.objects.delete()
-        AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
+def announced_class(mongo_connection):
+    # The profiles are Beanie and emptied by `clean_beanie_collections`; the class stays on MongoEngine.
+    AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
+    AgentClassEntity(
+        agent_class=_AGENT_CLASS,
+        form=[element.model_dump() for element in _MailboxAgentConfig.as_form().to_formkit_form()],
+        is_conversational=False,
+        start_events=[],
+        stop_events=[],
+        network_graph={},
+    ).save(validate=False)
+    yield
+    AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
 
 
-def _agent(password: Any) -> None:
-    AgentConfigEntityDocument(
+async def _agent(password: Any) -> None:
+    await AgentConfigEntityDocument(
         agent_class=_AGENT_CLASS,
         agent_id="mailbox",
-        name=LocaleStringEntity(en="mailbox"),
-        description=LocaleStringEntity(en="mailbox profile"),
+        name=LocaleString(en="mailbox"),
+        description=LocaleString(en="mailbox profile"),
         icon="mage:robot",
         config_data={"imap": {"host": "imap.example.com", "password": password}},
-    ).save()
+    ).insert()
 
 
-@pytest.mark.usefixtures("clean_configs")
+@pytest.mark.beanie
+@pytest.mark.usefixtures("announced_class")
 class TestEnsureKeyForStoredSecrets:
-    def test_a_plaintext_secret_without_key_refuses(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_a_plaintext_secret_without_key_refuses(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.delenv(_KEY_VARIABLE, raising=False)
-        _agent("hunter2")
+        await _agent("hunter2")
 
         with pytest.raises(ValueError, match=_KEY_VARIABLE):
-            ConfigSecrets.ensure_key_for_stored_secrets()
+            await ConfigSecrets.ensure_key_for_stored_secrets()
 
-    def test_ciphertext_without_key_refuses(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_ciphertext_without_key_refuses(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.delenv(_KEY_VARIABLE, raising=False)
-        _agent(SecretEncryptionService(Fernet.generate_key().decode()).encrypt("hunter2"))
+        await _agent(SecretEncryptionService(Fernet.generate_key().decode()).encrypt("hunter2"))
 
         with pytest.raises(ValueError, match=_KEY_VARIABLE):
-            ConfigSecrets.ensure_key_for_stored_secrets()
+            await ConfigSecrets.ensure_key_for_stored_secrets()
 
-    def test_an_empty_key_refuses_naming_the_variable(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_an_empty_key_refuses_naming_the_variable(self, monkeypatch: pytest.MonkeyPatch):
         """Compose hands an unset variable on as an empty string."""
         monkeypatch.setenv(_KEY_VARIABLE, "")
-        _agent("hunter2")
+        await _agent("hunter2")
 
         with pytest.raises(ValueError, match=_KEY_VARIABLE):
-            ConfigSecrets.ensure_key_for_stored_secrets()
+            await ConfigSecrets.ensure_key_for_stored_secrets()
 
-    def test_a_malformed_key_refuses(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_a_malformed_key_refuses(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv(_KEY_VARIABLE, "not-a-fernet-key")
-        _agent("hunter2")
+        await _agent("hunter2")
 
         with pytest.raises(ValueError):
-            ConfigSecrets.ensure_key_for_stored_secrets()
+            await ConfigSecrets.ensure_key_for_stored_secrets()
 
-    def test_blank_secrets_need_no_key(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_blank_secrets_need_no_key(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.delenv(_KEY_VARIABLE, raising=False)
-        _agent("")
+        await _agent("")
 
-        ConfigSecrets.ensure_key_for_stored_secrets()
+        await ConfigSecrets.ensure_key_for_stored_secrets()
 
-    def test_no_profiles_need_no_key(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_no_profiles_need_no_key(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.delenv(_KEY_VARIABLE, raising=False)
 
-        ConfigSecrets.ensure_key_for_stored_secrets()
+        await ConfigSecrets.ensure_key_for_stored_secrets()
 
-    def test_a_usable_key_passes(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_a_usable_key_passes(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv(_KEY_VARIABLE, Fernet.generate_key().decode())
-        _agent("hunter2")
+        await _agent("hunter2")
 
-        ConfigSecrets.ensure_key_for_stored_secrets()
+        await ConfigSecrets.ensure_key_for_stored_secrets()
 
 
 @pytest.mark.asyncio

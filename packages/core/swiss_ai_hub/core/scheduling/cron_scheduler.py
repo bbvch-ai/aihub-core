@@ -162,13 +162,10 @@ class CronScheduler:
             report = _TickReport()
             started = time.monotonic()
 
-            # One hop off the event loop for every Mongo read this tick needs. These are synchronous
-            # mongoengine calls in a process also serving all HTTP and WebSocket traffic, so left inline
-            # they stall every request for the duration, and the stall grows with the profile count.
             # Bounded at half the lease so a slow database costs a skipped tick, not a pinned lease —
-            # cancellation cannot kill the worker thread, but it does let the lease go.
+            # cancellation cannot kill the worker thread the class read runs in, but it does let the lease go.
             snapshot = await asyncio.wait_for(
-                asyncio.to_thread(self._load_schedulable_snapshot, now, watermark),
+                self._load_schedulable_snapshot(now, watermark),
                 timeout=self._lease_ttl / 2,
             )
             report.profiles_scanned = len(snapshot.online) + len(snapshot.offline)
@@ -185,17 +182,21 @@ class CronScheduler:
             await self._prune_scheduled_history(snapshot, now, report, time.monotonic() - started)
             self._log_tick_summary(report, time.monotonic() - started)
 
-    def _load_schedulable_snapshot(self, now: datetime, watermark: datetime) -> _SchedulableSnapshot:
-        """Reads every schedulable class and its profiles in one pass. Synchronous — runs in a thread.
+    async def _load_schedulable_snapshot(self, now: datetime, watermark: datetime) -> _SchedulableSnapshot:
+        """Reads every schedulable class and its profiles in one pass.
+
+        The classes and the discovery rounds are still MongoEngine entities, synchronous calls in a process also
+        serving all HTTP and WebSocket traffic, so they are read in a worker thread; the profiles are Beanie and
+        awaited on the loop.
 
         The online/offline split is judged against completed discovery rounds, not `now`: a discovery round
         that stalls must not make this tick drop every scheduled run as if all agents had gone away.
         """
-        entities = AgentClassEntity.get_all_schedulable()
+        entities = await asyncio.to_thread(AgentClassEntity.get_all_schedulable)
         if not entities:
             return _SchedulableSnapshot(window_start=self._clamp_window_start(watermark, now))
 
-        online_threshold = AgentClassEntity.online_threshold()
+        online_threshold = await asyncio.to_thread(AgentClassEntity.online_threshold)
         offline_last_seen = {
             entity.agent_class: entity.last_discovered
             for entity in entities
@@ -204,7 +205,7 @@ class CronScheduler:
 
         online: list[_ScheduledProfile] = []
         offline: list[tuple[_ScheduledProfile, datetime]] = []
-        profiles = self._scheduled_profiles(
+        profiles = await self._scheduled_profiles(
             [entity.agent_class for entity in entities], self._settings.enforced_profile_ceiling
         )
         for profile in profiles:
@@ -317,7 +318,7 @@ class CronScheduler:
         return dropped
 
     @staticmethod
-    def _scheduled_profiles(
+    async def _scheduled_profiles(
         agent_classes: list[str],
         max_runs_per_profile: int | None,
     ) -> list[tuple[CronSchedule, AgentConfigEntityDocument]]:
@@ -326,7 +327,7 @@ class CronScheduler:
         Paired with the schedule so the caller does not parse it twice.
         """
         instances: list[tuple[CronSchedule, AgentConfigEntityDocument]] = []
-        for config in AgentConfigEntityDocument.find_for_classes(agent_classes):
+        for config in await AgentConfigEntityDocument.find_for_classes(agent_classes):
             raw_schedule = (config.config_data or {}).get(CRON_CONFIG_KEY)
             # The same predicate the save path uses, rather than a falsy check restating it: an untouched
             # schedule group is stored as blank strings, which are truthy but not a schedule. Reading one

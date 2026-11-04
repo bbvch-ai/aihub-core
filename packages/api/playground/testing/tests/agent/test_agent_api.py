@@ -31,7 +31,7 @@ async def agent_api_client():
     app = runner.create_app()
 
     async with LifespanManager(app) as lifespan:
-        runner.create_agent_config_in_db()
+        await runner.create_agent_config_in_db()
 
         async with AsyncClient(
             transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1/active"
@@ -112,7 +112,7 @@ async def simulated_agent():
     app = runner.create_app()
 
     async with LifespanManager(app) as lifespan:
-        runner.create_agent_config_in_db()
+        await runner.create_agent_config_in_db()
         async with AsyncClient(
             transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1/active"
         ) as client:
@@ -251,7 +251,7 @@ async def test_a_refused_response_schema_leaves_no_thread_behind(simulated_agent
 async def test_a_response_schema_reaches_an_agent_that_supports_it(simulated_agent):
     client, runner = simulated_agent
     runner.supports_response_schema = True
-    runner.create_agent_config_in_db()
+    await runner.create_agent_config_in_db()
 
     response = await client.post(
         f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/{UserMessageEvent.event_name_from_class()}",

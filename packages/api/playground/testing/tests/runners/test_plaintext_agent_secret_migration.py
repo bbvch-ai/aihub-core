@@ -6,22 +6,24 @@ is nothing to encrypt.
 """
 
 from typing import Any, Self
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from cryptography.fernet import Fernet
-from mongoengine import connect, disconnect, signals
+from mongoengine import connect, disconnect
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.secrets import SecretEncryptionService
 
 from swiss_ai_hub.api.runners.lifetime.plaintext_agent_secret_migration import PlaintextAgentSecretMigration
+
+pytestmark = pytest.mark.beanie
 
 _AGENT_CLASS = "SecretMigrationMailboxAgent"
 _KEY_VARIABLE = "AIHUB_CONFIG_ENCRYPTION_KEY"
@@ -53,14 +55,11 @@ def mongo_connection():
 
 
 @pytest.fixture(autouse=True)
-def clean_configs(mongo_connection):
-    # Muted as in test_oversized_input_limit_migration: the change hook's receiver needs an event loop.
-    with signals.post_save.muted(), signals.post_delete.muted():
-        AgentConfigEntityDocument.objects.delete()
-        AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
-        yield
-        AgentConfigEntityDocument.objects.delete()
-        AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
+def clean_classes(mongo_connection):
+    # The profiles are Beanie and emptied by `clean_beanie_collections`; the classes stay on MongoEngine.
+    AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
+    yield
+    AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
 
 
 @pytest.fixture
@@ -81,24 +80,28 @@ def _announce() -> None:
     ).save(validate=False)
 
 
-def _agent(agent_id: str, password: Any, **config: Any) -> AgentConfigEntityDocument:
-    return AgentConfigEntityDocument(
+async def _agent(agent_id: str, password: Any, **config: Any) -> AgentConfigEntityDocument:
+    return await AgentConfigEntityDocument(
         agent_class=_AGENT_CLASS,
         agent_id=agent_id,
-        name=LocaleStringEntity(en=agent_id),
-        description=LocaleStringEntity(en=f"{agent_id} profile"),
+        name=LocaleString(en=agent_id),
+        description=LocaleString(en=f"{agent_id} profile"),
         icon="mage:robot",
         config_data={"imap": {"host": "imap.example.com", "password": password, "client_secret": ""}, **config},
-    ).save()
+    ).insert()
 
 
-def test_plaintext_is_encrypted(mongo_connection, encryption: SecretEncryptionService):
+async def _stored_config(agent: AgentConfigEntityDocument) -> dict[str, Any]:
+    return (await AgentConfigEntityDocument.get(agent.id)).config_data
+
+
+async def test_plaintext_is_encrypted(encryption: SecretEncryptionService):
     _announce()
-    agent = _agent("plain", "hunter2", inbox_folder="INBOX")
+    agent = await _agent("plain", "hunter2", inbox_folder="INBOX")
 
-    assert PlaintextAgentSecretMigration.run() == [f"agent {_AGENT_CLASS}/plain"]
+    assert await PlaintextAgentSecretMigration.run() == [f"agent {_AGENT_CLASS}/plain"]
 
-    config = agent.reload().config_data
+    config = await _stored_config(agent)
     assert SecretEncryptionService.is_encrypted(config["imap"]["password"])
     assert encryption.decrypt(config["imap"]["password"]) == "hunter2"
     assert config["imap"]["client_secret"] == ""
@@ -106,53 +109,53 @@ def test_plaintext_is_encrypted(mongo_connection, encryption: SecretEncryptionSe
     assert config["inbox_folder"] == "INBOX"
 
 
-def test_ciphertext_is_untouched_and_a_second_run_is_a_no_op(mongo_connection, encryption: SecretEncryptionService):
+async def test_ciphertext_is_untouched_and_a_second_run_is_a_no_op(encryption: SecretEncryptionService):
     _announce()
     ciphertext = encryption.encrypt("hunter2")
-    agent = _agent("encrypted", ciphertext)
+    agent = await _agent("encrypted", ciphertext)
 
-    assert PlaintextAgentSecretMigration.run() == []
-    assert agent.reload().config_data["imap"]["password"] == ciphertext
-
-
-def test_a_profile_whose_class_was_never_announced_is_left_alone(mongo_connection, encryption):
-    agent = _agent("unannounced", "hunter2")
-
-    assert PlaintextAgentSecretMigration.run() == []
-    assert agent.reload().config_data["imap"]["password"] == "hunter2"
+    assert await PlaintextAgentSecretMigration.run() == []
+    assert (await _stored_config(agent))["imap"]["password"] == ciphertext
 
 
-def test_a_save_between_read_and_write_wins(mongo_connection, encryption: SecretEncryptionService):
+async def test_a_profile_whose_class_was_never_announced_is_left_alone(encryption):
+    agent = await _agent("unannounced", "hunter2")
+
+    assert await PlaintextAgentSecretMigration.run() == []
+    assert (await _stored_config(agent))["imap"]["password"] == "hunter2"
+
+
+async def test_a_save_between_read_and_write_wins(encryption: SecretEncryptionService):
     _announce()
-    stale = _agent("raced", "hunter2")
+    stale = await _agent("raced", "hunter2")
     newer = {"imap": {"host": "imap.example.com", "password": encryption.encrypt("changed"), "client_secret": ""}}
-    AgentConfigEntityDocument.objects(pk=stale.pk).update_one(set__config_data=newer)
+    await AgentConfigEntityDocument.find({"_id": stale.id}).update({"$set": {"config_data": newer}})
 
-    with patch.object(AgentConfigEntityDocument, "find_all", return_value=[stale]):
-        assert PlaintextAgentSecretMigration.run() == []
+    with patch.object(AgentConfigEntityDocument, "list_all", AsyncMock(return_value=[stale])):
+        assert await PlaintextAgentSecretMigration.run() == []
 
-    assert stale.reload().config_data == newer
+    assert await _stored_config(stale) == newer
 
 
-def test_formkit_dict_arrays_elsewhere_are_kept_as_they_are(mongo_connection, encryption: SecretEncryptionService):
+async def test_formkit_dict_arrays_elsewhere_are_kept_as_they_are(encryption: SecretEncryptionService):
     _announce()
     numbered = {"0": {"label": "a"}, "1": {"label": "b"}}
-    agent = _agent("numbered", "hunter2", categories=numbered)
+    agent = await _agent("numbered", "hunter2", categories=numbered)
 
-    assert PlaintextAgentSecretMigration.run() == [f"agent {_AGENT_CLASS}/numbered"]
+    assert await PlaintextAgentSecretMigration.run() == [f"agent {_AGENT_CLASS}/numbered"]
 
-    config = agent.reload().config_data
+    config = await _stored_config(agent)
     assert config["categories"] == numbered
     assert encryption.decrypt(config["imap"]["password"]) == "hunter2"
 
 
-def test_nothing_to_encrypt_builds_no_service(mongo_connection, monkeypatch: pytest.MonkeyPatch):
+async def test_nothing_to_encrypt_builds_no_service(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv(_KEY_VARIABLE, raising=False)
     _announce()
-    _agent("blank", "")
-    _agent("unset", None)
+    await _agent("blank", "")
+    await _agent("unset", None)
 
     with patch.object(SecretEncryptionService, "from_settings") as from_settings:
-        assert PlaintextAgentSecretMigration.run() == []
+        assert await PlaintextAgentSecretMigration.run() == []
 
     from_settings.assert_not_called()

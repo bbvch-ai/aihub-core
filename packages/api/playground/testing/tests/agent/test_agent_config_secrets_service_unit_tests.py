@@ -9,10 +9,9 @@ from fastapi import FastAPI, HTTPException
 from httpx import ASGITransport, AsyncClient
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import ConfigSpecs
-from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.core.persistence import AgentClassEntity
-from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.secrets import SecretEncryptionService
 
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
@@ -86,10 +85,12 @@ def _config_entity(config_data: dict[str, Any]) -> Mock:
     config_entity = Mock()
     config_entity.agent_class = _AGENT_CLASS
     config_entity.agent_id = "mailbox"
-    config_entity.name = LocaleStringEntity(en="Mailbox")
-    config_entity.description = LocaleStringEntity(en="Reads a mailbox")
+    config_entity.name = LocaleString(en="Mailbox")
+    config_entity.description = LocaleString(en="Reads a mailbox")
     config_entity.icon = "mage:robot"
     config_entity.config_data = config_data
+    config_entity.insert = AsyncMock(return_value=config_entity)
+    config_entity.save_changes = AsyncMock()
     return config_entity
 
 
@@ -121,7 +122,7 @@ def _patch_save_dependencies(stack: ExitStack, class_entity: Mock, stored: Mock 
     config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
     config_auth.validate_for_user_or_raise = AsyncMock()
     config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
-    config_doc.find_for_class_and_id.return_value = stored
+    config_doc.find_for_class_and_id = AsyncMock(return_value=stored)
     config_doc.side_effect = lambda **fields: _config_entity(fields["config_data"])
     return config_doc
 
@@ -209,7 +210,7 @@ class TestUpdate:
 
         assert stored.config_data["imap"]["password"] == ciphertext
         assert result["imap"]["password"] == ciphertext
-        stored.save.assert_called_once()
+        stored.save_changes.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_a_new_secret_is_encrypted(self, encryption: SecretEncryptionService):
@@ -242,7 +243,7 @@ class TestUpdate:
 
         assert raised.value.status_code == 400
         assert "imap.password" in raised.value.detail
-        stored.save.assert_not_called()
+        stored.save_changes.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_submitted_ciphertext_is_refused_without_echoing_it(self, encryption: SecretEncryptionService):
@@ -254,7 +255,7 @@ class TestUpdate:
 
         assert raised.value.status_code == 400
         assert replayed not in raised.value.detail
-        stored.save.assert_not_called()
+        stored.save_changes.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_a_validation_400_does_not_echo_the_restored_ciphertext(self, encryption: SecretEncryptionService):

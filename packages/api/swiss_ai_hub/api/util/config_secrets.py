@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from typing import Annotated, Any
 
 from fastapi import HTTPException
@@ -70,23 +69,25 @@ class ConfigSecrets:
         return SecretEncryptionService.from_settings().encrypt_paths(config, paths)
 
     @staticmethod
-    def stored_profiles_with_secret_paths() -> Iterator[tuple[AgentConfigEntityDocument, set[str]]]:
+    async def stored_profiles_with_secret_paths() -> list[tuple[AgentConfigEntityDocument, set[str]]]:
         """Every stored profile with its class's secret paths; a class not announced yet has none."""
         paths_by_class: dict[str, set[str]] = {}
-        for document in AgentConfigEntityDocument.find_all():
+        profiles: list[tuple[AgentConfigEntityDocument, set[str]]] = []
+        for document in await AgentConfigEntityDocument.list_all():
             if document.agent_class not in paths_by_class:
                 class_entity = AgentClassEntity.get_by_agent_class(document.agent_class)
                 paths_by_class[document.agent_class] = (
                     ConfigSecrets.secret_paths(class_entity.form_elements) if class_entity else set()
                 )
-            yield document, paths_by_class[document.agent_class]
+            profiles.append((document, paths_by_class[document.agent_class]))
+        return profiles
 
     @staticmethod
-    def ensure_key_for_stored_secrets() -> None:
+    async def ensure_key_for_stored_secrets() -> None:
         """Raise when a stored secret could not be masked for lack of a usable key, before discovery would drop its
         profile and the OpenWebUI sync delete its model."""
         if any(
             ConfigSecrets.has_secret_values(document.config_data, paths)
-            for document, paths in ConfigSecrets.stored_profiles_with_secret_paths()
+            for document, paths in await ConfigSecrets.stored_profiles_with_secret_paths()
         ):
             SecretEncryptionService.from_settings()
