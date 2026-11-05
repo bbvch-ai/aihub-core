@@ -74,3 +74,11 @@ def test_with_boolean_setval_flags_leaves_current_format_unchanged() -> None:
     catalog = "SELECT setval('documentdb_api_catalog.collections_collection_id_seq', 12, true);\n"
 
     assert PsqlScript.with_boolean_setval_flags(catalog) == catalog
+
+
+def test_tolerating_existing_roles_picks_a_dollar_tag_absent_from_the_role_name() -> None:
+    wrapped = PsqlScript.tolerating_existing_roles('CREATE ROLE "app$restore$";\n')
+
+    assert wrapped == (
+        'DO $restore_$ BEGIN CREATE ROLE "app$restore$"; EXCEPTION WHEN duplicate_object THEN NULL; END $restore_$;\n'
+    )

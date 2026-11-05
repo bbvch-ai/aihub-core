@@ -29,10 +29,16 @@ class PsqlScript:
         pg_dumpall emits a bare `CREATE ROLE` for every role, including the one restoring, and relies on the
         following `ALTER ROLE` to set its attributes; only the duplicate is ignored, any other error still stops.
         """
-        return _CREATE_ROLE_LINE_RE.sub(
-            r"DO $restore$ BEGIN CREATE ROLE \1; EXCEPTION WHEN duplicate_object THEN NULL; END $restore$;",
-            globals_sql,
-        )
+        return _CREATE_ROLE_LINE_RE.sub(PsqlScript._create_role_unless_exists, globals_sql)
+
+    @staticmethod
+    def _create_role_unless_exists(match: re.Match[str]) -> str:
+        """The dollar tag must not occur in the role name, or a quoted name such as "app$restore$" ends the body."""
+        role = match.group(1)
+        tag = "restore"
+        while f"${tag}$" in role:
+            tag += "_"
+        return f"DO ${tag}$ BEGIN CREATE ROLE {role}; EXCEPTION WHEN duplicate_object THEN NULL; END ${tag}$;"
 
     @staticmethod
     def with_boolean_setval_flags(catalog_sql: str) -> str:
