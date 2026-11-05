@@ -16,10 +16,13 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 class KnowledgeExtractionAgentConfig(RecordExtractionFields, ToolLoopFields, AgentConfig):
     """
     Configuration for KnowledgeExtractionAgent: the collections and path glob it works on, the extraction model and
-    limits, and the discovery loop's limits (published by the runner with the blueprint's tools as options).
+    limits, whether a model searches for the documents first, and that search loop's limits (published by the runner
+    with the blueprint's tools as options).
 
     The profile is the hard boundary of what a request may touch, so the document tools are always on, `#` references
-    only pick among the configured collections, and "every readable collection" is not offered.
+    only pick among the configured collections, and "every readable collection" is not offered. Without `discovery`,
+    the default (`knowledge_documents.discovery`), every document in that boundary is read, so the table cannot miss one
+    for its wording.
     """
 
     instructions: Annotated[
@@ -45,7 +48,10 @@ class KnowledgeExtractionAgentConfig(RecordExtractionFields, ToolLoopFields, Age
                 every_readable_collection=False, sources=[KnowledgeToolSource.as_form()]
             ),
             knowledge_documents=KnowledgeDocumentConfig(
-                enabled=True, narrow_references=True, path_glob=KnowledgeDocumentConfig.path_glob_input()
+                enabled=True,
+                narrow_references=True,
+                path_glob=KnowledgeDocumentConfig.path_glob_input(),
+                discovery=KnowledgeDocumentConfig.discovery_input(),
             ),
             **cls.conversation_form_elements(),
             **cls.record_extraction_form_elements(),

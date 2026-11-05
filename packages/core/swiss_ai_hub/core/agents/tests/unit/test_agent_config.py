@@ -3,8 +3,7 @@ from pydantic import Field, ValidationError
 
 from swiss_ai_hub.core.agents.agent_config import AgentConfig, StepConfig
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
-from swiss_ai_hub.core.persistence.agents.agent_config_entity_embedded_document import AgentConfigEntityEmbeddedDocument
-from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
+from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 
 
 @pytest.fixture
@@ -19,13 +18,13 @@ def sample_locale_string() -> LocaleString:
 
 
 @pytest.fixture
-def sample_agent_config_entity(sample_locale_string: LocaleString) -> AgentConfigEntityEmbeddedDocument:
-    """Agent config entity with nested dictionary structure."""
-    return AgentConfigEntityEmbeddedDocument(
+def sample_agent_config_entity(sample_locale_string: LocaleString, beanie_test_database) -> AgentConfigEntityDocument:
+    """Agent config entity with nested dictionary structure; Beanie must be initialised to build one."""
+    return AgentConfigEntityDocument(
         agent_class="NestedAgent",
         agent_id="nested-agent-1",
-        name=LocaleStringEntity.from_locale_string(sample_locale_string),
-        description=LocaleStringEntity.from_locale_string(sample_locale_string),
+        name=sample_locale_string,
+        description=sample_locale_string,
         icon="meteor-icons:nested",
         config_data={
             "api_endpoint": "https://api.example.com",
@@ -104,7 +103,7 @@ class TestAgentConfig:
         assert config.custom_field == "custom_value"  # type: ignore[attr-defined]
         assert config.api_endpoint == "https://api.example.com"  # type: ignore[attr-defined]
 
-    def test_from_entity_simple(self, sample_agent_config_entity: AgentConfigEntityEmbeddedDocument) -> None:
+    def test_from_entity_simple(self, sample_agent_config_entity: AgentConfigEntityDocument) -> None:
         """Test creating AgentConfig from entity with simple config_data."""
         config = AgentConfig.from_entity(sample_agent_config_entity)
 
@@ -113,9 +112,7 @@ class TestAgentConfig:
         assert config.description.en == "Test Agent"
         assert config.icon == "meteor-icons:nested"
 
-    def test_from_entity_with_nested_config(
-        self, sample_agent_config_entity: AgentConfigEntityEmbeddedDocument
-    ) -> None:
+    def test_from_entity_with_nested_config(self, sample_agent_config_entity: AgentConfigEntityDocument) -> None:
         """Test that from_entity correctly unpacks nested config_data."""
         config = AgentConfig.from_entity(sample_agent_config_entity)
 
@@ -213,17 +210,17 @@ class TestStepConfig:
 
 
 class TestAgentConfigEntityRoundTrip:
-    """Test round-trip conversion between AgentConfig and AgentConfigEntity."""
+    """Test round-trip conversion between AgentConfig and AgentConfigEntityDocument."""
 
     def test_entity_to_config_to_entity(
-        self, sample_locale_string: LocaleString, sample_agent_config_entity: AgentConfigEntityEmbeddedDocument
+        self, sample_locale_string: LocaleString, sample_agent_config_entity: AgentConfigEntityDocument
     ) -> None:
         """Test converting entity → config → entity preserves data."""
         # Entity to Config
         config = AgentConfig.from_entity(sample_agent_config_entity)
 
         # Config back to Entity
-        new_entity = AgentConfigEntityEmbeddedDocument.from_agent_config(config, "NestedAgent")
+        new_entity = AgentConfigEntityDocument.from_agent_config(config, "NestedAgent")
 
         # Verify core fields match
         assert new_entity.agent_class == sample_agent_config_entity.agent_class

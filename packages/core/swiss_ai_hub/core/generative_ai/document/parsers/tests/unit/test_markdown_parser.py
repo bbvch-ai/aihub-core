@@ -2,6 +2,7 @@ from time import time
 
 import pytest
 from llama_index.core.schema import Document, NodeRelationship
+from llama_index.core.utils import get_tokenizer
 
 from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import PAGE_BREAK
 from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
@@ -931,8 +932,8 @@ def test_unparseable_table_is_capped_at_the_embedding_ceiling():
 
     table_nodes = [n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "table"]
     assert len(table_nodes) > 1
-    # _count_tokens without an llm_config estimates 4 characters per token.
-    assert all(len(n.text) // 4 <= int(200 * 0.85) for n in table_nodes)
+    # Without an embedding model the ceiling is counted in tiktoken, at the undeclared-model safety factor.
+    assert all(len(get_tokenizer()(n.text)) <= int(200 * 0.85) for n in table_nodes)
 
 
 def test_figure_description_is_capped_at_the_embedding_ceiling():
@@ -944,7 +945,7 @@ def test_figure_description_is_capped_at_the_embedding_ceiling():
 
     figure_nodes = [n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "figure"]
     assert len(figure_nodes) > 1
-    assert all(len(n.text) // 4 <= int(200 * 0.85) for n in figure_nodes)
+    assert all(len(get_tokenizer()(n.text)) <= int(200 * 0.85) for n in figure_nodes)
 
 
 def test_ceiling_leaves_small_tables_and_figures_alone():

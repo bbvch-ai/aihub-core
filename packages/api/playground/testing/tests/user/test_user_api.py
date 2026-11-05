@@ -12,7 +12,7 @@ from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
-pytestmark = pytest.mark.usefixtures("mongo_db")
+pytestmark = [pytest.mark.usefixtures("mongo_db"), pytest.mark.beanie]
 
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/active/my-account"
@@ -31,8 +31,8 @@ def mongo_db():
     disconnect()
 
 
-@pytest_asyncio.fixture(scope="module")
-async def api_client():
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def api_client(beanie_test_database):
     """Create a test client for the API with MyAccountController mounted."""
     runner = ApiTestRunner()
     auth = TestAuthHandler()
@@ -43,7 +43,6 @@ async def api_client():
             yield client
 
 
-@pytest.mark.asyncio
 async def test_get_user_endpoint(api_client):
     """Test GET /my-account returns expected user data."""
     headers = {"Content-Type": "application/json"}
@@ -62,7 +61,6 @@ async def test_get_user_endpoint(api_client):
     assert user_data == expected_data
 
 
-@pytest.mark.asyncio
 async def test_user_dto_structure(api_client):
     """Test that user DTO has the expected structure."""
     response = await api_client.get(USER_ENDPOINT)
@@ -73,7 +71,6 @@ async def test_user_dto_structure(api_client):
     assert "@" in user_data["email"]
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "headers",
     [

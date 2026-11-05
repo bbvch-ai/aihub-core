@@ -1,6 +1,6 @@
 ---
 title: Umgebungsvariablen
-source_sha: "248e9d46ec4cf3f80bf3a32efeafabe38ebf0bbc03847e648f40881985d1b0b4"
+source_sha: c802e96d60e24d2732fe2cf4b92c6b772a69544f200e0ac55edfc49d6faac5af
 description: Referenz aller Umgebungsvariablen, die vom Swiss AI Hub Deployment verwendet werden
 ---
 
@@ -289,6 +289,7 @@ Diese Variablen haben sinnvolle Standardwerte (oder werden Containern von Docker
 | `OTEL_RESOURCE_SERVICE_NAME` | `OpenTelemetrySettings.RESOURCE_SERVICE_NAME` | `Keine` | `api`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `sysadmin-api` | Ressourcendienstname |
 | `OTEL_RESOURCE_SERVICE_NAMESPACE` | `OpenTelemetrySettings.RESOURCE_SERVICE_NAMESPACE` | `Keine` | `api`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `sysadmin-api` | Ressourcendienst-Namespace |
 | `OTEL_RESOURCE_SERVICE_VERSION` | `OpenTelemetrySettings.RESOURCE_SERVICE_VERSION` | `Keine` | `api`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `sysadmin-api` | Ressourcendienstversion |
+| `PLAYWRIGHT_PROXY_URL` | `PlaywrightSettings.PROXY_URL` | `'http://browser-proxy:3128'` | `expert_rag_agent`, `llm_wrapping_agent`, `rag_agent`, `universal_agent`, `web_fetch_agent` | Forward-Proxy, über den der Browser das Internet erreicht. Der Playwright-Server verbindet sich mit ihm, daher wird der Name in seinem Netzwerk aufgelöst, nicht in dem des Aufrufers. |
 | `PARSING_PASSTHROUGH_EXTENSIONS` | `ParsingSettings.PASSTHROUGH_EXTENSIONS` | `[]` | | Dateierweiterungen, die leeren Inhalt anstelle von 400 zurückgeben (z. B. für die Nur-Agenten-Verarbeitung). Über Umgebungsvariable als JSON-Array festlegen: PARSING_PASSTHROUGH_EXTENSIONS='["zip","wav"]' |
 | `RCLONE_URL` | `RcloneSettings.URL` | `'http://rclone:5572'` | | Rclone RC API-URL (z. B. http://rclone:5572). |
 | `REDIS_URL` | `RedisSettings.URL` | _(von Compose bereitgestellt)_ | `api`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `sysadmin-api` | Verbindungs-URL für den Redis-Server (ohne Token) |

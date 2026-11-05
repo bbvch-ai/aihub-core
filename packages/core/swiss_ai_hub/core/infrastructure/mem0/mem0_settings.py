@@ -27,8 +27,9 @@ class Mem0Settings(EnvironmentSettings):
         Field(
             description="Override for the embedding model's input window, in the model's own tokens. "
             "Set it only when LiteLLM reports no or an incorrect max_input_tokens; None resolves it at "
-            "first use. Queries are truncated to half this value: they can only be counted with tiktoken, "
-            "which undercounts the embedder's tokenizer by up to 2x.",
+            "first use. A model that declares aihub_tokenizer in LiteLLM is counted exactly, so queries are "
+            "truncated to this window minus its special tokens; for any other model they are counted with "
+            "tiktoken, which undercounts the embedder's tokenizer, and truncated to half this value.",
             gt=0,
         ),
     ] = None

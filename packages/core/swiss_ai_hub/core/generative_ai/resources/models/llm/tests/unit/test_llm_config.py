@@ -33,7 +33,11 @@ _FAKE_MODEL_INFO = {
 def _build_llm(config: LLMConfig | None = None, model_info: dict | None = None):
     config = config or LLMConfig(model_name="text-generation/gemma-4-31B-it")
 
-    fake_settings = Mock(BASE_URL="http://litellm-test/v1", API_KEY=Mock(get_secret_value=Mock(return_value="key")))
+    fake_settings = Mock(
+        BASE_URL="http://litellm-test/v1",
+        API_KEY=Mock(get_secret_value=Mock(return_value="key")),
+        CONNECT_TIMEOUT_SECONDS=5.0,
+    )
     with (
         patch.object(LLMConfig, "get_model_info", return_value=model_info or _FAKE_MODEL_INFO),
         patch(

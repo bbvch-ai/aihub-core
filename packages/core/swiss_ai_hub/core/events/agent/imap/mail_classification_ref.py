@@ -20,7 +20,9 @@ class MailClassificationRef(BaseModel):
             "folder because no category clearly fitted.",
         ),
     ]
-    target_folder: Annotated[str, Field(description="Folder the message was filed into.")]
+    target_folder: Annotated[
+        str, Field(description="Folder the message was filed into, or the inbox when it was kept there.")
+    ]
     reason: Annotated[str, Field(description="Model's stated reason for the choice — the audit trail for a misfile.")]
     folder_created: Annotated[
         bool,

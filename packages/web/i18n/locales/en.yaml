@@ -187,6 +187,7 @@ thread:
 chat:
   assistant: Assistant
   document: Document
+  image: Image
 event:
   list:
     firstInteraction: 'First Interaction:'
@@ -339,6 +340,21 @@ event:
     error: Error
     stop: Ends with
     targetAgent: Memory writer
+    links: Links
+    webReferences: Referenced web pages
+    pagesRead: Pages read
+    notRead: Not read
+    webFetchFailure:
+      malformed_url: Malformed link
+      unsupported_url: Unsupported link
+      blocked_host: Blocked address
+      not_found: Not found
+      access_denied: Access denied
+      http_error: Server error
+      timeout: Timed out
+      unsupported_content: Not a web page
+      empty_content: No readable content
+      url_limit_reached: Over the link limit
   extraction:
     fields: Columns
     instructions: Rows to keep
@@ -350,9 +366,11 @@ event:
     failedFiles: Files that failed
     rows: Rows shown / found
     truncated: Cut short
-    continuePending: Continues an unfinished extraction
-    remainingDocuments: Documents left
-    remainingRows: Rows left to show
+    confirmed: Extracts every document the user confirmed
+    awaitingConfirmation: Sample awaiting the user's go-ahead
+    previewRows: Showing {shown} of {total} rows
+    download: Download the whole table (CSV)
+    downloadFailed: The table could not be downloaded
   toolLoop:
     loop: Tool set
     mode: Mode
@@ -433,6 +451,10 @@ agent:
         environment.
   export:
     button: Export
+  storedSecrets:
+    title: Secrets must be re-entered
+    detail: 'Stored secrets are never copied into a new profile. Enter them again
+      before saving: {fields}'
   configuration:
     title: Agent Configuration
     description: Configure the runtime behavior and settings for this agent

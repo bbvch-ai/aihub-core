@@ -35,6 +35,7 @@ from swiss_ai_hub.agent.imap.extracted_attachment import AttachmentOutcome, Extr
 from swiss_ai_hub.agent.imap.mail_store import MailStore
 from swiss_ai_hub.agent.imap.mailbox_lease_lost_error import MailboxLeaseLostError
 from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
+from swiss_ai_hub.agent.imap.quoted_original import QuotedOriginal
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
 from swiss_ai_hub.agent.imap.step_functions import (
     do_draft_replies,
@@ -131,10 +132,8 @@ class ReplyDrafting:
             replies = [
                 (
                     ref,
-                    ReplyComposer.compose_from_parsed(
-                        await ReplyDrafting.reparse_archived(ref, imap_config, topic),
-                        from_address=imap_config.username,
-                        body=bodies_by_message_id[ref.message_id],
+                    await ReplyDrafting._compose_grounded(
+                        ref, bodies_by_message_id[ref.message_id], draft, imap_config, topic
                     ),
                 )
                 for ref in grounded
@@ -208,6 +207,19 @@ class ReplyDrafting:
             return
 
     @staticmethod
+    async def _compose_grounded(
+        ref: MailClassificationRef,
+        body: str,
+        draft: DraftEmailSettings,
+        imap_config: ImapClientConfig,
+        topic: AgentInstanceTopic,
+    ) -> ComposedReply:
+        parsed = await ReplyDrafting.reparse_archived(ref, imap_config, topic)
+        return ReplyComposer.compose_from_parsed(
+            parsed, from_address=imap_config.username, body=body, quoted=QuotedOriginal.for_draft(parsed, draft)
+        )
+
+    @staticmethod
     async def _compose_all(
         to_draft: list[MailClassificationRef],
         agent_config: EmailClassificationAgentConfig,
@@ -221,8 +233,8 @@ class ReplyDrafting:
         The connection is deliberately absent for the whole of this: one model call per message over a batch is
         exactly the stretch of time a mail server drops an idle socket in.
 
-        Inbound mail is untrusted and enters the prompt; the platform's Presidio guard anonymizes PII at the LLM
-        gateway, so this adds no sanitisation of its own.
+        Inbound mail is untrusted and enters the prompt as written: this adds no sanitisation, and the gateway
+        anonymises PII only when the deployment's Presidio guardrails or the profile's ``anonymise`` setting turn it on.
         """
         llm_config = agent_config.drafting_llm
         builder = DraftPromptBuilder(draft.number_of_input_tokens, llm_config.token_counter, draft.draft_prompt)
@@ -266,7 +278,9 @@ class ReplyDrafting:
             ]
             llm_event = await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=False)
             body = llm_event.chat_messages[-1].content or ""
-            return ReplyComposer.compose_from_parsed(parsed, from_address=imap_config.username, body=body)
+            return ReplyComposer.compose_from_parsed(
+                parsed, from_address=imap_config.username, body=body, quoted=QuotedOriginal.for_draft(parsed, draft)
+            )
         except Exception:
             logger.warning(
                 "[draft] could not draft a reply to uid=%s — skipping it, not the batch", ref.message_id, exc_info=True

@@ -238,19 +238,20 @@ class MyRetrieveEvent(ControlAndDisplayEvent):
 
 ### Interaction events
 
-| Event                                    | Module                        | Purpose                             |
-| ---------------------------------------- | ----------------------------- | ----------------------------------- |
-| `UserMessageEvent`                       | `user.UserMessageEvent`       | User-initiated workflow start       |
-| `HumanInTheLoopRequestEvent`             | `human_in_the_loop.request`   | Base class for HITL requests        |
-| `HumanInTheLoopInputRequestEvent`        | `human_in_the_loop.request`   | Popup with text input field         |
-| `HumanInTheLoopConfirmationRequestEvent` | `human_in_the_loop.request`   | Yes/No button selection             |
-| `HumanInTheLoopChatRequestEvent`         | `human_in_the_loop.request`   | Chat message (fallback)             |
-| `HumanInTheLoopResponseEvent`            | `human_in_the_loop.response`  | Base class for HITL responses       |
-| `AgentInTheLoopRequestEvent`             | `agent_in_the_loop.request`   | Delegate to another agent           |
-| `AgentInTheLoopResponseEvent`            | `agent_in_the_loop.response`  | Delegated agent result              |
-| `AgentInTheLoopExceptionEvent`           | `agent_in_the_loop.exception` | Delegated agent failure             |
-| `BotInTheLoopRequestEvent`               | `bot_in_the_loop.request`     | Send message to Teams/Slack channel |
-| `BotInTheLoopResponseEvent`              | `bot_in_the_loop.response`    | Response from Teams/Slack user      |
+| Event                                    | Module                        | Purpose                                                            |
+| ---------------------------------------- | ----------------------------- | ------------------------------------------------------------------ |
+| `UserMessageEvent`                       | `user.UserMessageEvent`       | User-initiated workflow start                                      |
+| `HumanInTheLoopRequestEvent`             | `human_in_the_loop.request`   | Base class for HITL requests                                       |
+| `HumanInTheLoopInputRequestEvent`        | `human_in_the_loop.request`   | Popup with text input field                                        |
+| `HumanInTheLoopConfirmationRequestEvent` | `human_in_the_loop.request`   | Yes/No button selection                                            |
+| `HumanInTheLoopChatRequestEvent`         | `human_in_the_loop.request`   | Chat message (fallback)                                            |
+| `HumanInTheLoopQuestionsRequestEvent`    | `human_in_the_loop.request`   | Up to 5 choice questions: OpenWebUI dialog, chat message elsewhere |
+| `HumanInTheLoopResponseEvent`            | `human_in_the_loop.response`  | Base class for HITL responses                                      |
+| `AgentInTheLoopRequestEvent`             | `agent_in_the_loop.request`   | Delegate to another agent                                          |
+| `AgentInTheLoopResponseEvent`            | `agent_in_the_loop.response`  | Delegated agent result                                             |
+| `AgentInTheLoopExceptionEvent`           | `agent_in_the_loop.exception` | Delegated agent failure                                            |
+| `BotInTheLoopRequestEvent`               | `bot_in_the_loop.request`     | Send message to Teams/Slack channel                                |
+| `BotInTheLoopResponseEvent`              | `bot_in_the_loop.response`    | Response from Teams/Slack user                                     |
 
 **HITL helper classes** (not events, but workflow utilities):
 

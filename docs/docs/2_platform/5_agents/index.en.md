@@ -48,12 +48,16 @@ tenant that already relies on an agent outside the set. Granting one takes effec
 ## What every chat agent can do
 
 The conversational blueprints built on the shared capabilities (Instructed, Teachable, Document Intelligence, Company
-Knowledge, MCP Tool and Universal) share the same behaviour in the conversation:
+Knowledge, MCP Tool, Universal and Web Page) share the same behaviour in the conversation:
 
 - **Attached files.** Files attached in the chat are read by the agent itself and listed as sources. A long file is cut
   down to the sections that matter for the question, and the answer says so.
 - **Knowledge references.** Typing `#` in Open WebUI points the agent at one of the company's knowledge collections,
   limited to what the user may read.
+- **Linked web pages.** Where the profile turns on **Read Linked Web Pages**, the agent reads the pages a message links
+  or attaches with `#`, cites them, and names the ones it could not read. Available on the Instructed, Document
+  Intelligence, Company Knowledge and Universal agents, and always on in the Web Page Assistant; see
+  [Linked web pages](../10_chat_ui/15_linked_web_pages/).
 - **Inline citations.** Statements link to the document they came from, as numbered chips in the answer.
 - **Memory.** What the agent remembers about the user and the organization joins the model's instructions.
 - **Chat toggles.** A chat toggle is a request to the agent, which runs it as traced, cost-attributed steps. An agent
