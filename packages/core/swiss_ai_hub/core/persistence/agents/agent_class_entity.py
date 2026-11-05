@@ -54,6 +54,7 @@ class AgentClassEntity(Document):
     # value, and reads must not yield None into the non-optional DTO field. Self-heals on next discovery.
     is_schedulable: bool = False
     supported_features: list[str] = Field(default_factory=list)
+    supports_response_schema: bool = False
     start_events: list[EventSpec]
     stop_events: list[EventSpec]
     hitl_request_events: list[EventSpec] = Field(default_factory=list)
@@ -125,6 +126,7 @@ class AgentClassEntity(Document):
             "is_conversational": discovery.is_conversational,
             "is_schedulable": discovery.is_schedulable,
             "supported_features": [str(feature) for feature in discovery.supported_features],
+            "supports_response_schema": discovery.supports_response_schema,
             "start_events": [EventSpec.from_specs(event) for event in discovery.start_events],
             "stop_events": [EventSpec.from_specs(event) for event in discovery.stop_events],
             "hitl_request_events": [EventSpec.from_specs(event) for event in discovery.hitl_request_events],

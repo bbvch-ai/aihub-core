@@ -96,6 +96,24 @@ async def test_the_entry_of_a_deleted_collection_is_removed():
 
 
 @pytest.mark.asyncio
+async def test_the_entry_of_a_deleted_collection_is_removed_even_when_creating_another_fails():
+    existing = [{"id": "k1", "name": "HR / Policies", "description": "", "access_grants": HR_READ}]
+    client = _client(existing)
+    client.create_knowledge = AsyncMock(side_effect=RuntimeError("OpenWebUI rejected the entry"))
+
+    with (
+        patch.object(OpenWebuiKnowledgeSync, "listing", return_value={("hr", "reports"): ("HR / Reports", "")}),
+        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity") as entity,
+    ):
+        entity.all_entries.return_value = [_entry("k1", *POLICIES)]
+        with pytest.raises(RuntimeError):
+            await OpenWebuiKnowledgeSync(client, "en").sync(MagicMock(), [HR_GROUP], TENANT_RULES, ROLE_RULES)
+
+    assert client.delete_knowledge.await_args.args[1] == "k1"
+    entity.forget.assert_called_once_with("k1")
+
+
+@pytest.mark.asyncio
 async def test_an_entry_we_created_but_never_recorded_is_removed():
     existing = [{"id": "orphan", "name": "HR / Policies", "description": "", "access_grants": []}]
 

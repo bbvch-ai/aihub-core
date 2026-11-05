@@ -18,9 +18,13 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </referenced_knowledge>
     {% endchat %}
-  refused: '%{collections} konnten nicht durchsucht werden, weil diese Sammlungen
-    dem Benutzer nicht zur Verfügung stehen. Sage dem Benutzer, dass du sie nicht
-    verwenden konntest.'
+  missing: '%{collections} konnten nicht durchsucht werden, weil diese Sammlungen
+    nicht mehr existieren; sie wurden gelöscht, nachdem der Benutzer sie referenziert
+    hat. Sage dem Benutzer, dass du sie nicht verwenden konntest und er eine bestehende
+    Sammlung referenzieren soll.'
+  refused: '%{collections} konnten nicht durchsucht werden, weil der Benutzer keinen
+    Zugriff auf diese Sammlungen hat. Sage dem Benutzer, dass du sie nicht verwenden
+    konntest.'
   nothing_found: Nichts in den durchsuchten Wissenssammlungen passte zur Frage. Sage
     dem Benutzer das, wenn die Frage davon abhing.
 tool:

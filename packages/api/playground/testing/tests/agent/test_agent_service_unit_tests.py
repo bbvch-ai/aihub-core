@@ -486,6 +486,7 @@ class TestCreateAgentInstanceGrantWiring:
         class_entity = Mock()
         class_entity.is_online_since.return_value = True
         class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
+        class_entity.form_elements = []
         config_entity = Mock()
         config_entity.insert = AsyncMock()
         grant = stack.enter_context(patch.object(AgentService, "_grant_instance_access"))
@@ -571,6 +572,7 @@ class TestUpdateAgentInstanceLocksAgentId:
         class_entity = Mock()
         class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
         class_entity.form = []
+        class_entity.form_elements = []
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))

@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytest
+from cryptography.fernet import Fernet
 
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import (
     AgentInstanceRef,
@@ -116,6 +117,10 @@ class TestCountThreadsByUser:
 class TestGetOrCreateScheduledThread:
     """One thread per profile rather than per occurrence: a five-minute schedule would otherwise leave
     ~105k single-run threads a year, with nothing cleaning them up."""
+
+    @pytest.fixture(autouse=True)
+    def _instance_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("AIHUB_CONFIG_ENCRYPTION_KEY", Fernet.generate_key().decode())
 
     async def test_creates_the_thread_on_first_call(self):
         agent = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")

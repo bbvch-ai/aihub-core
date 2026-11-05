@@ -34,6 +34,14 @@ class EventSpecs(BaseModel):
             "construct and validate events for initiating the agent's workflow.",
         ),
     ]
+    api_input_schema: Annotated[
+        dict[str, Any] | None,
+        Field(
+            description="The schema of what an API caller sends for this event: the event without the fields the "
+            "server fills in, and with the inputs the event converts itself, such as files sent inline. Absent "
+            "for a specification stored before agents announced it.",
+        ),
+    ] = None
     event_parents: Annotated[
         list[str],
         Field(
@@ -47,5 +55,6 @@ class EventSpecs(BaseModel):
         return cls(
             event_name=event_class.event_name_from_class(),
             event_schema=copy.deepcopy(event_class.model_json_schema()),
+            api_input_schema=copy.deepcopy(event_class.api_input_model().model_json_schema()),
             event_parents=event_class.parent_event_names_from_class(),
         )

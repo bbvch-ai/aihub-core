@@ -229,7 +229,9 @@ continues to build locally so developers test Dockerfile edits without round-tri
 
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
 libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/xlsxwriter/python-docx/python-pptx/weasyprint/
-pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and is published manually via
+pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and headless LibreOffice with
+`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX
+and `pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
 `make -C infra/deployment build-and-push-open-terminal-image` (requires `docker login ghcr.io`). Re-publish whenever:
 
 - The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
@@ -241,7 +243,7 @@ in `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` whenever the
 After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
 `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
-> **Deployment checklist:** Publish `open-terminal-office:0.11.34-1` to ghcr **before any non-dev stage pulls it**.
+> **Deployment checklist:** Publish `open-terminal-office:0.11.34-4` to ghcr **before any non-dev stage pulls it**.
 > Non-dev stages (`local`/`build` build locally, but `nightly`/`latest` pull from the registry) reference this exact
 > tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
 > stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.
@@ -267,6 +269,17 @@ Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.
 character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
 The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
 for.
+
+Capacity is per deployment: `PRESIDIO_ANALYZER_{CPUS,MEMORY,WORKERS,THREADS,TORCH_THREADS}` size the container and
+`PRESIDIO_ANALYZER_TIMEOUT_SECONDS` the guardrail's wait. All six are optional, with `${VAR:-default}` in the template
+(4 / 4G / 1 / 4 / 2 / 150) and only commented out in `.env.dev` / `.env.prod`, because `make check-env` rejects a
+defaulted variable that `.env` defines (see Env Var Conventions). One analysis takes the same time on any host (GLiNER
+is 99% of it); more CPUs only serve more calls at once, 4 to 8 CPUs measured 1.8 to 1.9 times the throughput. Keep
+workers x threads x torch threads at the CPU limit, about 3 GiB per worker, and torch threads at 2 (1 makes a long text
+3 to 4 times slower). The sizing table for operators is in `docs/docs/2_platform/13_language_models/2_anonymization/`.
+The guardrail analyses the texts of one call side by side (at most `PARALLEL_ANALYSES_PER_CALL`) and reuses spans of
+texts it has seen from an in-memory cache keyed by the text's hash, so a conversation's history is not re-analysed on
+every call.
 
 ### Publishing the browser-proxy image
 
@@ -431,11 +444,17 @@ the same level as ALTERNATIVE executions, or Keycloak ignores the alternatives a
 
 - `.env.dev` — local development template (copy to `.env` to get started)
 - `.env.prod` — production template (all secrets as `REPLACE_WITH_RANDOM_STRING` placeholders)
-- **No `${VAR:-default}` in templates** — all defaults must be in `.env.dev` / `.env.prod`
+- **No `${VAR:-default}` in templates** — all defaults must be in `.env.dev` / `.env.prod`, except the two sanctioned
+  groups below
 - Internal Docker hostnames are hardcoded in the Jinja2 template as variables (e.g.,
   `NATS_ENDPOINT = "nats://nats:4222"`) — never use env vars for Docker-to-Docker communication
 - Only external/override endpoints (for services running on the host outside Docker) use env vars
-- **`OTEL_DEPLOYMENT_ENVIRONMENT` / `OTEL_HOST_NAME` are the one sanctioned `${VAR:-default}`.** The collector's
+- **The analyzer sizing variables (`PRESIDIO_ANALYZER_CPUS`, `_MEMORY`, `_WORKERS`, `_THREADS`, `_TORCH_THREADS`,
+  `_TIMEOUT_SECONDS`) are sanctioned `${VAR:-default}` too.** An unset CPU or memory limit renders as an empty string,
+  which stops Compose from parsing the whole file, so every `docker compose` call without `--env-file` (CI's cleanup
+  step, the session-start hook, the commands in the docs and skills) would fail; an empty worker count stops gunicorn.
+  Keep them out of `.env` (commented out only), or `make check-env` fails.
+- **`OTEL_DEPLOYMENT_ENVIRONMENT` / `OTEL_HOST_NAME` are sanctioned `${VAR:-default}` as well.** The collector's
   `resource/deployment` processor stamps them onto every pipeline, and an *empty* value makes that processor fail to
   build — which exits the collector. Every service that exports OTLP now declares `depends_on: otel-collector`, so an
   unset var no longer merely drops telemetry: it holds up the app plane. Values are written per-VM into the stage's
@@ -478,8 +497,8 @@ logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symli
 - `security-headers@file` sends `X-Frame-Options: DENY`, except on the `web-auth` and `sysadmin-web-auth` routers
   (`/{locale}/auth/*`), which use `auth-route-security-headers@file` with `SAMEORIGIN`. The frontend loads
   `/{locale}/auth/renew` in a hidden same-origin iframe for its SSO session probe and silent renew; under `DENY` the
-  probe always times out, users with an expired Keycloak session keep a stale login, and the OpenWebUI iframe then
-  signs in through Entra inside the frame, where OpenWebUI loses its OAuth state (`mismatching_state`).
+  probe always times out, users with an expired Keycloak session keep a stale login, and the OpenWebUI iframe then signs
+  in through Entra inside the frame, where OpenWebUI loses its OAuth state (`mismatching_state`).
 
 ## Adding a New Service
 

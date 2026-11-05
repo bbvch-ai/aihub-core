@@ -656,60 +656,65 @@ class ProcessService:
         Extracts involved agents and humans from events.
         Returns a tuple of (involved_agents, involved_humans).
         """
-        from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
-        from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
-
-        involved_agents = {}  # Use dict to avoid duplicates by agent_id
-        involved_humans = {}  # Use dict to avoid duplicates by user_id
+        involved_agents: dict[str, Any] = {}  # Use dict to avoid duplicates by agent_id
+        involved_humans: dict[str, Any] = {}  # Use dict to avoid duplicates by user_id
 
         for event in events:
-            event_data = event.get("event_data", {})
             event_parents = event.get("event_parents", [])
-
-            if any("WorkEvent" in parent and "WorkRequestEvent" not in parent for parent in event_parents):
-                if any("AgentWork" in parent for parent in event_parents):
-                    agent_class = event_data["submitted_by"]["agent_class"]
-                    agent_id = event_data["submitted_by"]["agent_id"]
-                    agent_key = f"{agent_class}:{agent_id}"
-                    if agent_key not in involved_agents:
-                        class_entity = agent_classes.get(agent_class)
-                        config_entity = agent_configs.get((agent_class, agent_id))
-                        if class_entity and config_entity:
-                            involved_agents[agent_key] = MinimalAgentInstanceDTO.from_class_and_config(
-                                class_entity, config_entity, t
-                            )
-
-                elif any("HumanWork" in parent for parent in event_parents):
-                    submitted_by = event_data["submitted_by"]
-                    user_id = (
-                        submitted_by.get("id") if isinstance(submitted_by, dict) else getattr(submitted_by, "id", None)
-                    )
-                    if user_id and user_id not in involved_humans:
-                        profile_image = (
-                            submitted_by.get("profile_image")
-                            if isinstance(submitted_by, dict)
-                            else getattr(submitted_by, "profile_image", None)
-                        )
-
-                        if user_id not in involved_humans:
-                            involved_humans[user_id] = MinimalUserDTO.model_validate(
-                                {
-                                    "id": user_id,
-                                    "name": (
-                                        submitted_by.get("name")
-                                        if isinstance(submitted_by, dict)
-                                        else getattr(submitted_by, "name", "")
-                                    ),
-                                    "email": (
-                                        submitted_by.get("email")
-                                        if isinstance(submitted_by, dict)
-                                        else getattr(submitted_by, "email", "")
-                                    ),
-                                    "profile_image": profile_image,
-                                }
-                            )
+            if not any("WorkEvent" in parent and "WorkRequestEvent" not in parent for parent in event_parents):
+                continue
+            if any("AgentWork" in parent for parent in event_parents):
+                submitted_by = event.get("event_data", {})["submitted_by"]
+                ProcessService._add_involved_agent(involved_agents, submitted_by, t, agent_configs, agent_classes)
+            elif any("HumanWork" in parent for parent in event_parents):
+                ProcessService._add_involved_human(involved_humans, event.get("event_data", {})["submitted_by"])
 
         return list(involved_agents.values()), list(involved_humans.values())
+
+    @staticmethod
+    def _add_involved_agent(
+        involved_agents: dict[str, Any],
+        submitted_by: dict,
+        t,
+        agent_configs: dict[tuple[str, str], AgentConfigEntityDocument],
+        agent_classes: dict[str, AgentClassEntity],
+    ) -> None:
+        """Adds the agent that did the work, unless it is listed already or its class or profile is gone."""
+        from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
+
+        agent_class = submitted_by["agent_class"]
+        agent_id = submitted_by["agent_id"]
+        agent_key = f"{agent_class}:{agent_id}"
+        if agent_key in involved_agents:
+            return
+        class_entity = agent_classes.get(agent_class)
+        config_entity = agent_configs.get((agent_class, agent_id))
+        if class_entity and config_entity:
+            involved_agents[agent_key] = MinimalAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+
+    @staticmethod
+    def _add_involved_human(involved_humans: dict[str, Any], submitted_by: Any) -> None:
+        """Adds the human that did the work, unless it has no id or is listed already."""
+        from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
+
+        user_id = ProcessService._submitted_by_field(submitted_by, "id", None)
+        if not user_id or user_id in involved_humans:
+            return
+        involved_humans[user_id] = MinimalUserDTO.model_validate(
+            {
+                "id": user_id,
+                "name": ProcessService._submitted_by_field(submitted_by, "name", ""),
+                "email": ProcessService._submitted_by_field(submitted_by, "email", ""),
+                "profile_image": ProcessService._submitted_by_field(submitted_by, "profile_image", None),
+            }
+        )
+
+    @staticmethod
+    def _submitted_by_field(submitted_by: Any, field: str, object_default: Any) -> Any:
+        """A field of `submitted_by`, stored as a dict or kept as an object; a dict yields None for a missing field."""
+        if isinstance(submitted_by, dict):
+            return submitted_by.get(field)
+        return getattr(submitted_by, field, object_default)
 
     @staticmethod
     def _get_step_type_from_event_parents(event_parents: list[str]) -> str:

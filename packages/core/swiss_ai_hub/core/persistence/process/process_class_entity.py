@@ -25,8 +25,8 @@ from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
 from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
-from swiss_ai_hub.core.persistence.process.event_spec_entity import EventSpecEntity
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
+from swiss_ai_hub.core.persistence.process.event_spec_entity import EventSpecEntity
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.form.base.formkit_element import FormkitElement

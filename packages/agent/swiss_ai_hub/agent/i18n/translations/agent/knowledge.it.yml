@@ -18,8 +18,12 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </referenced_knowledge>
     {% endchat %}
-  refused: "%{collections} non hanno potuto essere consultate, perché queste raccolte\
-    \ non sono accessibili all'utente. Di' all'utente che non hai potuto usarle."
+  missing: "%{collections} non hanno potuto essere consultate, perché queste raccolte\
+    \ non esistono più; sono state eliminate dopo che l'utente le ha referenziate.\
+    \ Di' all'utente che non hai potuto usarle e che deve referenziare una raccolta\
+    \ esistente."
+  refused: "%{collections} non hanno potuto essere consultate, perché l'utente non\
+    \ ha accesso a queste raccolte. Di' all'utente che non hai potuto usarle."
   nothing_found: Nulla nelle raccolte consultate corrispondeva alla domanda. Diglielo
     se la domanda dipendeva da esse.
 tool:

@@ -1,5 +1,8 @@
 ---
 steps:
+  answer_form:
+    name: "Rispondere al modulo"
+    description: "Esegue l'estrazione che l'utente ha confermato o corretto nel modulo della richiesta"
   plan:
     name: Pianificare la tabella
     description: Determina i documenti selezionati e progetta le colonne della tabella
@@ -39,16 +42,7 @@ tools:
     label: Estrai una tabella
     approval: 'Estrarre una tabella con queste colonne dai documenti di conoscenza:
       {fields}'
-    description: Estrae una tabella da molti documenti di conoscenza, una riga per
-      ogni record trovato, ogni riga con il suo file. Usalo quando l'utente vuole
-      record raccolti da più documenti, ad esempio ogni posizione hardware sulle fatture
-      2025 di un fornitore; non per una domanda a cui risponde un solo documento o
-      la ricerca nella conoscenza. Trova prima i documenti con gli strumenti di elenco
-      e ricerca e verificali con select_knowledge_documents; poi chiamalo con le stesse
-      condizioni. L'utente vede la tabella direttamente e può scaricarla per intero;
-      tu ricevi il suo riepilogo. Quando corrispondono più documenti di quanti una
-      risposta ne estrae senza chiedere, l'utente riceve un campione e decide; estraili
-      tutti solo se è d'accordo, con confirm_sample impostato a true.
+    description: "Estrae una tabella da molti documenti di conoscenza, una riga per ogni record trovato, ogni riga con il suo file. Usalo quando l'utente vuole record raccolti da più documenti, ad esempio ogni posizione hardware sulle fatture 2025 di un fornitore; non per una domanda a cui risponde un solo documento o la ricerca nella conoscenza. Trova prima i documenti con gli strumenti di elenco e ricerca e verificali con select_knowledge_documents; poi chiamalo con le stesse condizioni. L'utente vede la tabella direttamente e può scaricarla per intero; tu ricevi il suo riepilogo. Quando corrispondono più documenti di quanti una risposta ne estrae senza chiedere, l'utente riceve un campione e decide; estraili tutti solo se è d'accordo, con confirm_sample impostato a true. Prima che una nuova estrazione venga eseguita, l'utente la conferma o la corregge in un modulo; segui poi ciò che dice il risultato."
   select:
     label: Seleziona documenti
     approval: 'Selezionare documenti di conoscenza per una tabella con queste colonne:
@@ -111,3 +105,50 @@ progress:
   reading: Leggo %{path}, un documento lungo.
   still_reading: Sto ancora leggendo %{path} (%{minutes} min).
   extracted_rows: '%{done} di %{files} · %{path}: %{rows} righe — %{first}'
+form:
+  intro: "Prima di leggere i documenti, conferma per favore ciò che ho capito:"
+  reply_hint: "Rispondi *sì* per procedere, oppure scrivi cosa cambiare:"
+  as_understood: "Come capito"
+  where:
+    header: "Posizione"
+    question: "Quali documenti devo leggere? Ho capito: %{value}."
+    hint: "Per leggerne solo una parte, indica una cartella, un file o un anno."
+    folders: "Cartelle: %{folders}"
+    anything: "Tutti i documenti"
+    anything_description: "Leggere ogni documento nell'ambito di questo agente"
+    everything: "tutti i documenti nell'ambito"
+    line: "**Posizione:** %{value}"
+  rows:
+    header: "Condizione di filtro"
+    question: "Quali record deve tenere la tabella? Ho capito: %{value}."
+    hint: "Una condizione sui record, non un calcolo, p. es. di Lieferant GmbH · datate 2018 · solo voci hardware."
+    anything: "Ogni riga"
+    anything_description: "Tenere ogni riga dei documenti"
+    everything: "ogni riga"
+    line: "**Condizione di filtro:** %{value}"
+  columns:
+    header: "Valori da estrarre"
+    question: "Quali valori deve contenere ogni riga? Ho capito: %{value}."
+    hint: "I valori decidono che cos'è una riga, p. es. numero di fattura, data, totale netto → una riga per fattura; articolo, quantità, importo netto → una riga per voce."
+    anything: "Sceglie l'agente"
+    anything_description: "Valori adatti ai record richiesti"
+    unnamed: "nessuno indicato"
+    line: "**Valori da estrarre:** %{value}"
+  exact:
+    header: "Parole chiave esatte"
+    question: "Quali parole contengono letteralmente i documenti cercati? Ho capito: %{value}."
+    hint: "Facoltativo, p. es. il nome di un fornitore come Lieferant GmbH · un numero di fattura o di contratto. Guidano la ricerca e non filtrano mai."
+    anything: "Nessuna"
+    anything_description: "Decide la ricerca"
+    none: "nessuna"
+    line: "**Parole chiave esatte:** %{value}"
+  semantic:
+    header: "Parole chiave semantiche"
+    question: "Di che cosa parlano i documenti cercati? Ho capito: %{value}."
+    hint: "Facoltativo, p. es. fattura fornitore con voci · contratto di locazione · polizza assicurativa. Ordinano i documenti per significato e non filtrano mai."
+    anything: "Nessuna"
+    anything_description: "Decide la ricerca"
+    none: "nessuna"
+    line: "**Parole chiave semantiche:** %{value}"
+  declined: "L'utente ha rifiutato questa estrazione nel modulo della richiesta. Non estrarre; chiedi che cosa desidera invece."
+  rewritten: "L'utente ha risposto al modulo di questa estrazione con: \"%{reply}\". Chiama di nuovo extract_records con gli argomenti modificati di conseguenza; viene eseguito senza chiedere di nuovo."

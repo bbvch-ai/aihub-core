@@ -137,8 +137,7 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
 
         for dto in discovered:
             entity_class = self._class_name_of(dto)
-            if entity_class not in self.registered_classes:
-                self._register_discovered_class(dto)
+            if entity_class not in self.registered_classes and self._register_discovered_class(dto):
                 self.registered_classes.add(entity_class)
                 logger.info(f"Registered class-level endpoints for {self.discovery_kind} class: {entity_class}")
         return True
@@ -188,7 +187,9 @@ class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
     def _class_name_of(self, dto: TClassDTO) -> str: ...
 
     @abc.abstractmethod
-    def _register_discovered_class(self, dto: TClassDTO) -> None: ...
+    def _register_discovered_class(self, dto: TClassDTO) -> bool:
+        """False when the class cannot be served as announced; it is not marked registered, so a later round, once
+        the class announces what is needed, registers it."""
 
     @abc.abstractmethod
     async def _online_class_names(self) -> set[str]:

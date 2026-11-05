@@ -1,13 +1,14 @@
 import logging
 
-from fastapi import Request
+from fastapi import HTTPException, Request, Response
 from microsoft_agents.authentication.msal import MsalConnectionManager
 from microsoft_agents.hosting.aiohttp import CloudAdapter
-from microsoft_agents.hosting.core import AgentAuthConfiguration
+from microsoft_agents.hosting.core import ActivityHandler, AgentAuthConfiguration
 from microsoft_agents.hosting.core.authorization import AuthTypes
 from swiss_ai_hub.core.routes import ChatService
 
 from swiss_ai_hub.bot.persistence.entities.path_entity import Credentials, PathEntity
+from swiss_ai_hub.bot.routes.bot_activity_authenticator import BotActivityAuthenticator
 
 logger = logging.getLogger(__name__)
 
@@ -35,14 +36,37 @@ class RoutesService(ChatService):
         return str(request.url).replace(str(request.base_url), "/")
 
     @staticmethod
+    async def process_activity(request: Request, agent: ActivityHandler) -> Response:
+        """
+        Authenticates the inbound activity against the bot configured on the request path, then hands it to the agent.
+
+        The adapter would otherwise run the turn with anonymous claims, so every activity route must go through here.
+        """
+        path = RoutesService.get_path(request)
+        await RoutesService.authenticate_activity(request, path)
+        return await RoutesService.get_adapter(path).process(request, agent)
+
+    @staticmethod
+    async def authenticate_activity(request: Request, path: str) -> None:
+        """Stores the verified claims where the adapter reads them, instead of letting it fall back to anonymous."""
+        auth_configuration = RoutesService.get_auth_configuration(path)
+        request.scope["claims_identity"] = await BotActivityAuthenticator.authenticate(request, auth_configuration)
+
+    @staticmethod
+    def get_auth_configuration(path: str) -> AgentAuthConfiguration:
+        credentials = RoutesService.get_credentials(path)
+        if credentials is None:
+            raise HTTPException(status_code=404, detail=f"No bot configured for path: {path}")
+        return AgentAuthConfiguration(**RoutesService._create_auth_configuration_dict(credentials))
+
+    @staticmethod
     def get_adapter(path: str) -> CloudAdapter:
         """
         ### What
         - Returns a cached CloudAdapter for the given path, or creates a new one if not cached.
 
         ### Why
-        - Each path has a unique set of credentials.
-        - The credential is needed to verify that requests are coming from the correct bot service.
+        - Each path has a unique set of credentials, used for the bot's outbound calls to the channel.
         - Caching prevents repeated MSAL authentication and improves performance.
         """
         if path in RoutesService._adapter_cache:
@@ -50,11 +74,7 @@ class RoutesService(ChatService):
             return RoutesService._adapter_cache[path]
 
         logger.debug(f"Creating new CloudAdapter for path: {path}")
-        credentials = RoutesService.get_credentials(path)
-        if credentials is None:
-            raise ValueError(f"No credentials found for path: {path}")
-        auth_config = AgentAuthConfiguration(**RoutesService._create_auth_configuration_dict(credentials))
-
+        auth_config = RoutesService.get_auth_configuration(path)
         connection_manager = MsalConnectionManager(connections_configurations={"SERVICE_CONNECTION": auth_config})
 
         adapter = CloudAdapter(connection_manager=connection_manager)
