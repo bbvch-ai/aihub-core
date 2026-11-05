@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 # What a model without a curated `default_temperature` is sampled at; the value every model used before
 # defaults became per model.
 DEFAULT_TEMPERATURE = 0.0
+MODEL_NAME_FROM_PARENT = "../model_name"
 
 
 class LLMParameter(Form):
@@ -90,7 +91,7 @@ class LLMParameter(Form):
                 label=LocaleString.from_i18n_path("lib.llm.config.temperature.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.temperature.help"),
                 override_label=LocaleString.from_i18n_path("lib.llm.config.temperature.toggle_label"),
-                model_ref="../model_name",
+                model_ref=MODEL_NAME_FROM_PARENT,
                 default_from="default_temperature",
                 fallback_default=DEFAULT_TEMPERATURE,
                 min=0.0,
@@ -103,7 +104,7 @@ class LLMParameter(Form):
                 label=LocaleString.from_i18n_path("lib.llm.config.top_p.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.top_p.help"),
                 override_label=LocaleString.from_i18n_path("lib.llm.config.top_p.toggle_label"),
-                model_ref="../model_name",
+                model_ref=MODEL_NAME_FROM_PARENT,
                 default_from="default_top_p",
                 min=0.0,
                 max=1.0,
@@ -114,7 +115,7 @@ class LLMParameter(Form):
             accept_images=ModelGatedCheckbox(
                 label=LocaleString.from_i18n_path("lib.llm.config.accept_images.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.accept_images.help"),
-                model_ref="../model_name",
+                model_ref=MODEL_NAME_FROM_PARENT,
                 requires="supports_vision",
             ),
             logprobs=Checkbox(
