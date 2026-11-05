@@ -32,7 +32,7 @@ class ScheduleAdmission:
     """
 
     @staticmethod
-    def rejection_reason(
+    async def rejection_reason(
         schedule: CronSchedule,
         agent_class: str,
         agent_id: str,
@@ -61,7 +61,7 @@ class ScheduleAdmission:
                 f"deployment allows for a single agent"
             )
 
-        return ScheduleAdmission._aggregate_rejection_reason(runs, agent_class, agent_id, settings)
+        return await ScheduleAdmission._aggregate_rejection_reason(runs, agent_class, agent_id, settings)
 
     @staticmethod
     def _counting_budget(settings: SchedulerSettings) -> int | None:
@@ -75,7 +75,7 @@ class ScheduleAdmission:
         return max(ceilings) + 1 if ceilings else None
 
     @staticmethod
-    def _aggregate_rejection_reason(
+    async def _aggregate_rejection_reason(
         runs: int,
         agent_class: str,
         agent_id: str,
@@ -85,7 +85,7 @@ class ScheduleAdmission:
         if ceiling is None:
             return None
 
-        already_scheduled = ScheduleAdmission._runs_scheduled_elsewhere(agent_class, agent_id, ceiling)
+        already_scheduled = await ScheduleAdmission._runs_scheduled_elsewhere(agent_class, agent_id, ceiling)
         total = already_scheduled + runs
         if total <= ceiling:
             return None
@@ -101,7 +101,7 @@ class ScheduleAdmission:
         )
 
     @staticmethod
-    def _runs_scheduled_elsewhere(agent_class: str, agent_id: str, budget: int) -> int:
+    async def _runs_scheduled_elsewhere(agent_class: str, agent_id: str, budget: int) -> int:
         """Runs every *other* stored schedule produces in 30 days, counted no further than `budget`.
 
         The profile being saved is excluded by identity so an edit is measured against its siblings
@@ -113,7 +113,7 @@ class ScheduleAdmission:
         make a rejection slower to reach.
         """
         counted = 0
-        for config in AgentConfigEntityDocument.find_with_config_key(CRON_CONFIG_KEY):
+        for config in await AgentConfigEntityDocument.find_with_config_key(CRON_CONFIG_KEY):
             if config.agent_class == agent_class and config.agent_id == agent_id:
                 continue
 

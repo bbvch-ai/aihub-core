@@ -8,6 +8,7 @@ from swiss_ai_hub.pipeline.resources.confluence.confluence_request_error import 
 from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_options import ConfluenceOptions
 
 _REFUSED_SIGN_IN = (401, 403)
+_ALLOW_LIST_VARIABLE = "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"
 
 
 class ConfluencePreflight:
@@ -30,7 +31,7 @@ class ConfluencePreflight:
         PublicHostGuard.require_public(
             options.base_url,
             StructuredPipelineSettings().private_host_allow_list(),
-            "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS",
+            _ALLOW_LIST_VARIABLE,
         )
         account = cls._signed_in_account(client, options.base_url)
         name = account.get("displayName") or account.get("publicName") or "this account"

@@ -1,3 +1,4 @@
+import asyncio
 import ipaddress
 import socket
 from ipaddress import IPv4Address, IPv6Address
@@ -33,6 +34,16 @@ class PublicHostGuard:
                 f"The URL {url} points at {host or 'no host'}, {internal}; only public hosts are allowed. An operator "
                 f"can allow it with {allow_list_setting}."
             )
+
+    @classmethod
+    async def require_public_async(
+        cls,
+        url: Annotated[str, "The URL as configured, with a scheme"],
+        allowed_hosts: Annotated[frozenset[str], "Lower-case host names the deployment allows although internal"],
+        allow_list_setting: Annotated[str, "Environment variable an operator extends the allowed hosts with"],
+    ) -> None:
+        """The name lookup blocks, so an agent's event loop hands it to a thread."""
+        await asyncio.to_thread(cls.require_public, url, allowed_hosts, allow_list_setting)
 
     @classmethod
     def _why_internal(cls, host: str, port: int) -> str | None:

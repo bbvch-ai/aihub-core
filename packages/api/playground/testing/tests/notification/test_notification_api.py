@@ -14,7 +14,7 @@ from swiss_ai_hub.api.routes.notification.dto.paginated_notifications_response i
 from swiss_ai_hub.api.routes.notification.notification_controller import NotificationController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
-pytestmark = pytest.mark.usefixtures("mongo_db")
+pytestmark = [pytest.mark.usefixtures("mongo_db"), pytest.mark.beanie]
 
 BASE_URL = "http://test"
 NOTIFICATIONS_ENDPOINT = "/api/v1/active/notifications"
@@ -32,8 +32,8 @@ def mongo_db():
     disconnect()
 
 
-@pytest_asyncio.fixture(scope="module")
-async def api_client():
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def api_client(beanie_test_database):
     """Create a test client for the API with NotificationController mounted."""
     runner = ApiTestRunner()
     auth = TestAuthHandler()
@@ -79,7 +79,6 @@ def mock_paginated_response(mock_notification_dto):
 class TestGetNotifications:
     """Test suite for GET /notifications endpoint."""
 
-    @pytest.mark.asyncio
     async def test_get_notifications_success(self, api_client, mock_paginated_response):
         """Test successful retrieval of notifications."""
         with patch(
@@ -98,7 +97,6 @@ class TestGetNotifications:
             assert "total_pages" in data
             assert isinstance(data["notifications"], list)
 
-    @pytest.mark.asyncio
     async def test_get_notifications_with_pagination(self, api_client, mock_paginated_response):
         """Test notifications endpoint with pagination parameters."""
         with patch(
@@ -114,7 +112,6 @@ class TestGetNotifications:
             assert call_args[0][1] == 2  # page
             assert call_args[0][2] == 10  # page_size
 
-    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "filters,expected_filters",
         [
@@ -140,7 +137,6 @@ class TestGetNotifications:
             for key, value in expected_filters.items():
                 assert call_kwargs[key] == value
 
-    @pytest.mark.asyncio
     async def test_get_notifications_invalid_pagination(self, api_client):
         """Test notifications endpoint with invalid pagination parameters."""
         # Test page < 1
@@ -159,7 +155,6 @@ class TestGetNotifications:
 class TestUpdateNotification:
     """Test suite for PATCH /notifications/{notification_id} endpoint."""
 
-    @pytest.mark.asyncio
     async def test_update_notification_success(self, api_client, mock_notification_dto):
         """Test successful update of a single notification."""
         with patch(
@@ -175,24 +170,22 @@ class TestUpdateNotification:
             assert data["id"] == "507f1f77bcf86cd799439011"
             mock_service.assert_called_once()
 
-    @pytest.mark.asyncio
     async def test_update_notification_not_found(self, api_client):
         """Test update notification when notification doesn't exist."""
-        from mongoengine import DoesNotExist
+        update_data = {"read": True}
+        response = await api_client.patch(f"{NOTIFICATIONS_ENDPOINT}/507f1f77bcf86cd799439999", json=update_data)
 
-        with patch(
-            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_one"
-        ) as mock_service:
-            mock_service.side_effect = DoesNotExist()
+        assert response.status_code == 404
+        data = response.json()
+        assert data["detail"] == "Notification not found."
 
-            update_data = {"read": True}
-            response = await api_client.patch(f"{NOTIFICATIONS_ENDPOINT}/507f1f77bcf86cd799439999", json=update_data)
+    async def test_update_notification_with_an_id_that_is_not_an_object_id(self, api_client):
+        """An id the database could never hold is an unknown notification, not a server error."""
+        response = await api_client.patch(f"{NOTIFICATIONS_ENDPOINT}/not-an-object-id", json={"read": True})
 
-            assert response.status_code == 404
-            data = response.json()
-            assert data["detail"] == "Notification not found."
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Notification not found."
 
-    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "update_data",
         [
@@ -214,42 +207,25 @@ class TestUpdateNotification:
             assert response.status_code == 200
             mock_service.assert_called_once()
 
-    @pytest.mark.asyncio
     async def test_update_notification_invalid_data(self, api_client):
         """Test update notification with invalid data (fields are ignored by Pydantic)."""
-        with patch(
-            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_one"
-        ) as mock_service:
-            from mongoengine import DoesNotExist
+        invalid_data = {"invalid_field": "value"}
+        response = await api_client.patch(f"{NOTIFICATIONS_ENDPOINT}/507f1f77bcf86cd799439011", json=invalid_data)
 
-            mock_service.side_effect = DoesNotExist()
+        # Invalid fields are ignored, but notification doesn't exist
+        assert response.status_code == 404
 
-            invalid_data = {"invalid_field": "value"}
-            response = await api_client.patch(f"{NOTIFICATIONS_ENDPOINT}/507f1f77bcf86cd799439011", json=invalid_data)
-
-            # Invalid fields are ignored, but notification doesn't exist
-            assert response.status_code == 404
-
-    @pytest.mark.asyncio
     async def test_update_notification_empty_body(self, api_client):
         """Test update notification with empty request body."""
-        with patch(
-            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_one"
-        ) as mock_service:
-            from mongoengine import DoesNotExist
+        response = await api_client.patch(f"{NOTIFICATIONS_ENDPOINT}/507f1f77bcf86cd799439011", json={})
 
-            mock_service.side_effect = DoesNotExist()
-
-            response = await api_client.patch(f"{NOTIFICATIONS_ENDPOINT}/507f1f77bcf86cd799439011", json={})
-
-            # Empty body is valid but notification doesn't exist
-            assert response.status_code == 404
+        # Empty body is valid but notification doesn't exist
+        assert response.status_code == 404
 
 
 class TestBulkUpdateNotifications:
     """Test suite for PATCH /notifications/ endpoint (bulk update)."""
 
-    @pytest.mark.asyncio
     async def test_bulk_update_notifications_success(self, api_client, mock_notification_dto):
         """Test successful bulk update of notifications."""
         with patch(
@@ -269,7 +245,6 @@ class TestBulkUpdateNotifications:
             assert len(data) == 1
             mock_service.assert_called_once()
 
-    @pytest.mark.asyncio
     async def test_bulk_update_notifications_empty_ids(self, api_client):
         """Test bulk update with empty notification IDs list."""
         with patch(
@@ -285,7 +260,6 @@ class TestBulkUpdateNotifications:
             data = response.json()
             assert data == []
 
-    @pytest.mark.asyncio
     async def test_bulk_update_notifications_invalid_updates(self, api_client, mock_notification_dto):
         """Test bulk update with invalid update fields (ignored by Pydantic)."""
         with patch(
@@ -302,7 +276,6 @@ class TestBulkUpdateNotifications:
             assert isinstance(data, list)
             assert len(data) == 1
 
-    @pytest.mark.asyncio
     async def test_bulk_update_notifications_missing_fields(self, api_client):
         """Test bulk update with missing required fields."""
         # Missing notification_ids
@@ -319,7 +292,6 @@ class TestBulkUpdateNotifications:
 class TestNotificationControllerIntegration:
     """Integration tests for the notification controller."""
 
-    @pytest.mark.asyncio
     async def test_notification_dto_structure(self, api_client, mock_notification_dto):
         """Test that notification DTO has the expected structure."""
         with patch(
@@ -349,14 +321,12 @@ class TestNotificationControllerIntegration:
             assert data["type"] in ["success", "info", "warn", "error"]
             assert data["severity"] in ["low", "medium", "high", "critical"]
 
-    @pytest.mark.asyncio
     async def test_content_type_handling(self, api_client):
         """Test that endpoints handle different content types correctly."""
         headers = {"Content-Type": "application/json"}
         response = await api_client.get(NOTIFICATIONS_ENDPOINT, headers=headers)
         assert response.status_code == 200
 
-    @pytest.mark.asyncio
     async def test_localization_handling(self, api_client, mock_paginated_response):
         """Test that endpoints handle localization correctly."""
         with patch(

@@ -94,6 +94,7 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 | Backup UI      | :3004  | Backup Dagster webserver           |
 | Open Terminal  | :8200  | Code execution sandbox (OpenWebUI) |
 | Playwright     | :3036  | Browser automation                 |
+| browser-proxy  | —      | Squid, Playwright's only way out   |
 | Attu           | :3003  | Milvus admin UI                    |
 | OTEL Collector | :4317  | gRPC receiver, :4318 (HTTP)        |
 
@@ -145,16 +146,17 @@ Each stage has a `.gpu` variant adding NVIDIA GPU support.
 
 ## Network Zones
 
-6 isolated Docker networks (see `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`, amended for the sandbox):
+7 isolated Docker networks (see `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`, amended for the sandbox):
 
-| Network        | Purpose                                                        | Key Services                              |
-| -------------- | -------------------------------------------------------------- | ----------------------------------------- |
-| `proxy`        | External ingress via Traefik                                   | traefik, api, web, open-webui, langfuse   |
-| `backend`      | Application services                                           | litellm, langfuse, mineru-api, vLLM (GPU) |
-| `data`         | Databases, caches, broker                                      | postgres, ferretdb, milvus, nats, valkey  |
-| `storage`      | SeaweedFS cluster                                              | seaweedfs-\*, etcd                        |
-| `egress`       | Outbound internet (no ICC)                                     | playwright                                |
-| `code-sandbox` | Single-tenant zone for `open-terminal` and exactly its callers | open-terminal, agents/API that run code   |
+| Network        | Purpose                                                        | Key Services                                            |
+| -------------- | -------------------------------------------------------------- | ------------------------------------------------------- |
+| `proxy`        | External ingress via Traefik                                   | traefik, api, web, open-webui, langfuse                 |
+| `backend`      | Application services                                           | litellm, langfuse, mineru-api, vLLM (GPU)               |
+| `data`         | Databases, caches, broker                                      | postgres, ferretdb, milvus, nats, valkey                |
+| `storage`      | SeaweedFS cluster                                              | seaweedfs-\*, etcd                                      |
+| `egress`       | Outbound internet (no ICC)                                     | browser-proxy, searxng, rclone                          |
+| `code-sandbox` | Single-tenant zone for `open-terminal` and exactly its callers | open-terminal, agents/API that run code                 |
+| `browser`      | The Playwright browser, its proxy and exactly its callers      | playwright, browser-proxy, open-webui, web-fetch agents |
 
 Dev stage has all networks non-internal for localhost access.
 

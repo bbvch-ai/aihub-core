@@ -1,0 +1,104 @@
+---
+metadata:
+  name: Release Notes Assistant
+  description: Writes release notes from the Jira tickets of a fix version, grouped
+    by type and in each configured language.
+changelog:
+  title: Release notes %{version}
+  sections:
+    features: New features
+    fixes: Fixes
+    improvements: Improvements
+    other: Other changes
+messages:
+  version_missing: 'Which release should I write notes for? Name a fix version, for
+    example: %{recent}.'
+  version_missing_no_versions: Jira lists no fix versions in %{projects}, so there
+    is no release I can write notes for yet.
+  version_several: 'Your message names several releases: %{names}. Which one should
+    I write notes for?'
+  version_unknown: 'I found no fix version %{requested} in %{projects}. Did you mean:
+    %{suggestions}?'
+  version_unknown_recent: 'I found no fix version %{requested} in %{projects}. Recent
+    versions are: %{recent}.'
+  version_unknown_no_versions: I found no fix version %{requested} in %{projects};
+    Jira lists no fix versions there yet.
+  no_tickets: I found no tickets for fix version %{version} in %{projects}, so there
+    is nothing to write release notes about.
+  release_too_large: This release has more than %{limit} tickets, more than I can
+    write release notes for at once. An administrator can narrow it with this assistant's
+    JQL filter.
+  jira_authentication: Jira rejected this assistant's credentials, so I cannot read
+    the tickets. Please ask an administrator to check the Jira token.
+  jira_project_not_found: Jira project %{project} does not exist, or this assistant's
+    Jira account cannot see it. Please ask an administrator to check the configured
+    projects.
+  jira_project_renamed: Jira project %{project} has been renamed to %{renamed}. Please
+    ask an administrator to update the configured projects.
+  jira_invalid_query: Jira rejected this assistant's JQL filter, so I cannot read
+    the tickets. Please ask an administrator to correct it.
+  jira_configuration: This assistant's Jira connection is not set up correctly. Please
+    ask an administrator to check it.
+  jira_unavailable: I could not read the tickets from Jira just now. Please try again
+    later; if it keeps failing, ask an administrator.
+config:
+  project_keys:
+    label: Jira projects
+    help: Keys of the projects whose fix versions the release notes cover, e.g. ENG.
+      A version name found in several of them is one release across all of them.
+  extra_jql:
+    label: JQL filter
+    help: Optional JQL every ticket must also match, e.g. issuetype not in subTaskIssueTypes()
+      to leave out sub-tasks, or labels != internal.
+  language:
+    label: Language
+    help: The language the release notes are written in. A user can still ask for
+      another one in the message.
+  translate_into:
+    label: Languages
+    help: Each language gets its own block after the first, translated from it.
+    toggle_label: Translate into other languages
+    toggle_help: Off, the release notes come in the language above only. A user can
+      still ask for another language in the message, e.g. "release notes for 2.0 in
+      French".
+  audience:
+    label: Audience
+    help: In a few words, who reads these release notes. Each note is worded for them,
+      e.g. "customers using the web app" or "the internal support team".
+    placeholder: customers using the web app
+  link_tickets:
+    label: Link to Jira tickets
+    help: "Show each bullet's tickets as links to Jira: [ENG-12] in front when every\
+      \ ticket has its own bullet, (ENG-12, ENG-15) at the end when related tickets\
+      \ are merged. Turn it off for readers who cannot open Jira."
+  merge_related_tickets:
+    label: Merge related tickets
+    help: Merge notes on related tickets of one section into one bullet that names
+      them all, as a hand-written changelog does. Every ticket still appears in exactly
+      one bullet.
+steps:
+  contextualize:
+    name: Read the request
+    description: Limits the chat history and hands the message to the conversation,
+      which answers questions about the assistant itself.
+  resolve_version:
+    name: Find the release
+    description: Finds the fix version the message names among the versions of the
+      configured Jira projects.
+  write_release_notes:
+    name: Write the release notes
+    description: Reads every ticket of the release from Jira and writes a note per
+      ticket, grouped by type.
+  translate_release_notes:
+    name: Translate the release notes
+    description: Translates the notes into each further configured language.
+thoughts:
+  version_found: Fix version %{version} found in %{projects}.
+  tickets_found: Read %{count} tickets of fix version %{version} from Jira.
+  notes_summarized: '%{count} of %{total} notes could not be written and show the
+    ticket summary instead.'
+  notes_untranslated: '%{language}: %{count} notes could not be translated and stay
+    in the writing language.'
+  notes_merged: '%{notes} notes were merged into %{entries} bullets.'
+  languages_asked: Writing in %{languages}, as the message asks.
+  notes_merged_into_one: '%{notes} notes were merged into one bullet.'

@@ -3,3 +3,7 @@ response_timeout: Sorry, I am taking too long to respond. Please try again.
 generic_error: Sorry, something went wrong. Please try again.
 user_not_provisioned: It looks like you don't have a Swiss AI Hub account yet. Please
   sign in once at %{url}, then come back and message me here.
+unverified_user: I can't verify who you are in this chat, so I can't answer here.
+  Please use Microsoft Teams or Slack.
+access_denied: You don't have access to this assistant. Please ask your administrator
+  for access.

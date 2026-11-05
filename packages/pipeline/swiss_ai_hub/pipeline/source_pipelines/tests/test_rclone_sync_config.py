@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group/Repeater
 from swiss_ai_hub.core.form.elements.group import Group
@@ -261,3 +262,15 @@ class TestOutboundUrls:
         )
 
         assert config.outbound_urls() == [], "a hidden group's values are never connected to"
+
+
+class TestValidationErrors:
+    def test_a_rejected_secret_is_not_quoted_in_the_error(self):
+        """The pipeline validates after decrypting, and the error lands in the run log and the failure notification."""
+        with pytest.raises(ValidationError) as rejected:
+            RcloneSyncConfig.model_validate(
+                {"backend_type": "s3", "s3": {"access_key_id": "id", "secret_access_key": ["AKIA-SECRET-VALUE"]}}
+            )
+
+        assert "s3.secret_access_key" in str(rejected.value)
+        assert "AKIA-SECRET-VALUE" not in str(rejected.value)

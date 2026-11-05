@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import given, parsers, scenario, scenarios, then, when
+from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     CompleteConversationEvent,
     ContextComposedEvent,
@@ -64,6 +65,21 @@ def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest.fixture(autouse=True)
+def streamed_prompts(monkeypatch: pytest.MonkeyPatch) -> list[list[ChatMessage]]:
+    """The prompts the agent streamed answers to. The answer handed back to the conversation keeps only its turns,
+    so what the model was sent is recorded where it is sent."""
+    prompts: list[list[ChatMessage]] = []
+    stream = EventDisplayer.display_llm_stream
+
+    async def recording(self: EventDisplayer, llm_config, llm, messages, *args, **kwargs):
+        prompts.append(list(messages))
+        return await stream(self, llm_config, llm, messages, *args, **kwargs)
+
+    monkeypatch.setattr(EventDisplayer, "display_llm_stream", recording)
+    return prompts
 
 
 # Load all scenarios
@@ -348,15 +364,18 @@ def _(agent_runner: AgentTestRunner):
 
 
 @then("the composed prompt holds the retrieved documents and is what the model answered from")
-def _(agent_runner: AgentTestRunner):
+def _(agent_runner: AgentTestRunner, streamed_prompts: list[list[ChatMessage]]):
     composed = agent_runner.get_event_of_class(ContextComposedEvent).history
     documents = agent_runner.get_event_of_class(InOrderNodeCombinerEvent).context_message.content
     assert composed[0].role == "system", "the prompt does not open with a system message"
     assert documents in composed[0].content, "the documents are not in the prompt"
-    answer = agent_runner.get_event_of_class(CompleteConversationEvent).answer
-    sent = [(message.role, " ".join((message.content or "").split())) for message in answer.input_messages or []]
+    sent = [(message.role, " ".join((message.content or "").split())) for message in streamed_prompts[-1]]
     shown = [(message.role, " ".join((message.content or "").split())) for message in composed]
     assert sent == shown, "the model saw a different prompt"
+    handed_back = agent_runner.get_event_of_class(CompleteConversationEvent).answer.input_messages
+    assert [(message.role, " ".join(message.content.split())) for message in handed_back] == [
+        (role, content) for role, content in shown if role in (MessageRole.USER, MessageRole.ASSISTANT)
+    ], "the answer was not handed back with the conversation it continues"
 
 
 @then("the answer is handed to the completion")

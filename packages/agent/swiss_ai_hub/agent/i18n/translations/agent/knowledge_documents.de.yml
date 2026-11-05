@@ -9,7 +9,13 @@ config:
     help: Nur Dokumente, deren Pfad in ihrer Sammlung diesem Muster entspricht, z.
       B. invoices/2025/** oder **/*.pdf. Gilt nur für die Dokumentwerkzeuge, nicht
       für die Wissenssuche. Leer lassen für alle Dokumente.
+  discovery:
+    label: "Discovery-Modus"
+    help: "Aus: Jedes Dokument der Sammlungen und des Pfadfilters wird gelesen, so wird keines übersehen; der Benutzer grenzt ein, indem er Ordner, Dateien oder Jahre nennt. Ein: Das Modell findet zuerst die Dokumente, sucht nach Stichwörtern für das, was die Anfrage genau nennt (einen Lieferanten, eine Nummer, einen Ordner), und ordnet nach Bedeutung für das, was sie nur beschreibt; nur die ausgewählten Dokumente werden gelesen. Das ist bei grossen Sammlungen schneller, kann aber Dokumente übersehen. Das Anfrageformular fragt dann auch nach exakten und semantischen Stichwörtern. Wie lange das Modell suchen darf, legen Maximale Entscheidungen und Maximale Werkzeugaufrufe unter Tools fest."
 tools:
+  rank_knowledge_documents:
+    label: Wissensdokumente ordnen
+    approval: Die Wissensdokumente danach ordnen, wie gut sie zu «{query}» passen
   list_knowledge_documents:
     label: Wissensdokumente auflisten
     approval: Die Wissensdokumente auflisten, die {path_glob} entsprechen

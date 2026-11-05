@@ -6,6 +6,7 @@
           <InputText
             id="in_label_name"
             v-model="role.name"
+            :maxlength="nameMaxLength"
             rows="5"
             cols="30"
             class="w-full"
@@ -26,6 +27,7 @@
         <Textarea
           id="in_label_description"
           v-model="role.description"
+          :maxlength="descriptionMaxLength"
           rows="3"
           cols="30"
           class="w-full"
@@ -46,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import { CreateRoleRequestSchema } from '@core/sdk/client/schemas.gen'
 import { useI18n } from 'vue-i18n'
 
 import AccessRulesEditor from './AccessRulesEditor.vue'
@@ -54,6 +57,9 @@ import UsageLimitsEditor from './UsageLimitsEditor.vue'
 import type { CreateRoleRequest, RoleResponse } from '@core/sdk/client'
 
 const { t } = useI18n()
+
+const nameMaxLength = schemaMaxLength(CreateRoleRequestSchema, 'name')
+const descriptionMaxLength = schemaMaxLength(CreateRoleRequestSchema, 'description')
 
 const props = defineProps<{
   modelValue: RoleResponse | CreateRoleRequest

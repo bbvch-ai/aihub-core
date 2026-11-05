@@ -8,6 +8,7 @@ from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig, ParsedM
 
 from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
+from swiss_ai_hub.agent.imap.quoted_original import QuotedOriginal
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
 
 logger = logging.getLogger(__name__)
@@ -39,8 +40,9 @@ class ReplyDrafter:
     ) -> ComposedReply:
         """Draft the reply body with the LLM (no IMAP connection held) and wrap it in a threaded envelope.
 
-        Inbound mail is untrusted and enters the LLM prompt; the platform's Presidio guard anonymizes PII at the LLM
-        gateway, so this step adds no sanitisation of its own.
+        Inbound mail is untrusted and enters the LLM prompt as written: this step adds no sanitisation, and the
+        gateway anonymises PII only when the deployment's Presidio guardrails or the profile's ``anonymise`` setting
+        turn it on.
         """
         await displayer.display_thought(f"Drafting a reply to: {parsed.subject}")
         messages = [
@@ -54,7 +56,9 @@ class ReplyDrafter:
         async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
             llm_event = await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=False)
         body = llm_event.chat_messages[-1].content or ""
-        return ReplyComposer.compose_from_parsed(parsed, from_address=imap_config.username, body=body)
+        return ReplyComposer.compose_from_parsed(
+            parsed, from_address=imap_config.username, body=body, quoted=QuotedOriginal.for_draft(parsed, draft)
+        )
 
     @staticmethod
     async def persist(

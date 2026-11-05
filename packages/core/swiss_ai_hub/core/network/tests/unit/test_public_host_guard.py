@@ -24,8 +24,11 @@ def dns(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[str]]:
     return answers
 
 
+_ALLOW_LIST_VARIABLE = "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"
+
+
 def _require(url: str, allowed: frozenset[str] = frozenset()) -> None:
-    PublicHostGuard.require_public(url, allowed, "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS")
+    PublicHostGuard.require_public(url, allowed, _ALLOW_LIST_VARIABLE)
 
 
 class TestRefused:
@@ -71,8 +74,18 @@ class TestRefused:
             _require("https://jira.acme.invalid")
 
     def test_the_message_names_the_setting_that_allows_it(self, dns: dict[str, list[str]]):
-        with pytest.raises(ValueError, match="STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"):
-            _require("http://localhost:8094")
+        """Each caller has its own setting, so the operator is told the one that applies."""
+        with pytest.raises(ValueError, match="An operator can allow it with JIRA_ALLOWED_PRIVATE_HOSTS"):
+            PublicHostGuard.require_public("http://localhost:8094", frozenset(), "JIRA_ALLOWED_PRIVATE_HOSTS")
+
+    @pytest.mark.asyncio
+    async def test_the_async_check_refuses_the_same_hosts(self, dns: dict[str, list[str]]):
+        dns["jira.attacker.example"] = ["10.0.0.5"]
+
+        with pytest.raises(ValueError, match="which resolves to the internal address 10.0.0.5"):
+            await PublicHostGuard.require_public_async(
+                "https://jira.attacker.example", frozenset(), _ALLOW_LIST_VARIABLE
+            )
 
 
 class TestAllowed:
@@ -90,18 +103,24 @@ class TestAllowed:
 
         _require(url, frozenset({"localhost", "jira.intra.acme.ch", "10.0.0.5"}))
 
+    @pytest.mark.asyncio
+    async def test_the_async_check_passes_a_public_host(self, dns: dict[str, list[str]]):
+        dns["acme.atlassian.net"] = [_PUBLIC]
+
+        await PublicHostGuard.require_public_async("https://acme.atlassian.net", frozenset(), _ALLOW_LIST_VARIABLE)
+
 
 class TestUrlShapes:
     @pytest.mark.parametrize("url", ["server.py", "file:///etc/passwd", ""])
     def test_a_url_without_a_host_is_refused(self, url: str, dns: dict[str, list[str]]):
         with pytest.raises(ValueError, match="points at no host"):
-            _require(url)
+            PublicHostGuard.require_public(url, frozenset(), _ALLOW_LIST_VARIABLE)
 
     def test_an_sftp_host_is_resolved_on_its_port(self, dns: dict[str, list[str]]):
         dns["files.acme.ch"] = ["192.168.4.4"]
 
         with pytest.raises(ValueError, match="192.168.4.4"):
-            _require("sftp://files.acme.ch:2222")
+            PublicHostGuard.require_public("sftp://files.acme.ch:2222", frozenset(), _ALLOW_LIST_VARIABLE)
 
     def test_the_message_names_the_setting_the_caller_passed(self, dns: dict[str, list[str]]):
         with pytest.raises(ValueError, match="MCP_ALLOWED_PRIVATE_HOSTS"):

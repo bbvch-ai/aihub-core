@@ -8,6 +8,7 @@ from swiss_ai_hub.pipeline.resources.jira.jira_request_error import JiraRequestE
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_options import JiraOptions
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_scope import JiraScope
 
+_ALLOW_LIST_VARIABLE = "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"
 _REFUSED_SIGN_IN = (401, 403)
 _NOT_VISIBLE = (403, 404)
 
@@ -31,7 +32,7 @@ class JiraPreflight:
         PublicHostGuard.require_public(
             options.base_url,
             StructuredPipelineSettings().private_host_allow_list(),
-            "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS",
+            _ALLOW_LIST_VARIABLE,
         )
         account = cls._signed_in_account(client, options.base_url)
         name = account.get("displayName") or "this account"

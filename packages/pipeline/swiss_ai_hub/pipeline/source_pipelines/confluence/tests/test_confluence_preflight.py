@@ -22,7 +22,7 @@ def guarded(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     """The addresses the guard was asked about; the fake site's name never reaches a real resolver."""
     checked: list[str] = []
     monkeypatch.setattr(
-        PublicHostGuard, "require_public", lambda url, allowed_hosts, allow_list_setting: checked.append(url)
+        PublicHostGuard, "require_public", lambda url, allowed_hosts, allow_list_variable: checked.append(url)
     )
     return checked
 
