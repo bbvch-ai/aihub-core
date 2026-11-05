@@ -184,7 +184,7 @@ PostgreSQL attaches only to data. Playwright attaches to browser only; browser-p
 Traefik is deployed in all stages except dev. It listens on ports 80 and 443 and routes requests to backend services
 based on Docker container labels. For security, Traefik never accesses the Docker socket directly. A docker-socket-proxy
 (Tecnativa) container exposes a filtered API that only allows container and network queries, blocking all write
-operations.
+operations. It shares the `docker-api` network with Traefik alone, so no other container can query the Docker API.
 
 In the local and build stages, TLS certificates are generated with mkcert for `localhost`, `*.localhost`,
 `127.0.0.1.nip.io`, and `*.127.0.0.1.nip.io`. The certificates are bind-mounted into Traefik's dynamic configuration

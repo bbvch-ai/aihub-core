@@ -66,6 +66,10 @@ packages/backup/swiss_ai_hub/backup/
   `seaweedfs-`, `etcd`, `traefik`, `oauth2proxy` (Traefik + all oauth2proxy sidecars stay up so the backup Dagster UI
   remains reachable through OAuth during a backup run; note Keycloak still goes down with `postgres`, so existing
   sessions work but token refresh will fail mid-run)
+- **Docker access**: `DOCKER_HOST` points at `backup-docker-proxy`, which allows the `/containers/...` API (incl.
+  create, archive, wait, logs, delete) and nothing else. `DockerManager` must stay within that: no exec, no images API
+  (`get_container_image` reads the image ID from the container's inspect data). The proxy's `backup-` prefix keeps it
+  out of the stop/start set
 - **Parallel ops**: `ThreadPoolExecutor` for container stop/start
 - **Failure safety**: `restart_on_failure` hook restarts all containers if backup crashes mid-run
 - **Sync by design**: All handlers are synchronous. Dagster ops execute in a sync context, and all I/O is process-local
