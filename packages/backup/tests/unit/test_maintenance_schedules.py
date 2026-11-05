@@ -13,7 +13,11 @@ import datetime as dt
 import pytest
 from dagster import RunRequest, ScheduleDefinition, SkipReason, build_schedule_context, job, op
 
-from swiss_ai_hub.backup.dagster.schedules.factory import monthly_repack_schedule, weekly_cleanup_schedule
+from swiss_ai_hub.backup.dagster.schedules.factory import (
+    daily_text_index_schedule,
+    monthly_repack_schedule,
+    weekly_cleanup_schedule,
+)
 
 
 @op
@@ -77,3 +81,12 @@ def test_weekly_cleanup_schedule_fires_unconditionally() -> None:
 def test_weekly_cleanup_schedule_uses_sunday_3am_cron() -> None:
     schedule = weekly_cleanup_schedule(_stub_job)
     assert schedule.cron_schedule == "0 3 * * 0"
+
+
+@pytest.mark.unit
+def test_daily_text_index_schedule_runs_every_morning_after_the_backup() -> None:
+    schedule = daily_text_index_schedule(_stub_job)
+
+    assert schedule.cron_schedule == "0 5 * * *"
+    assert schedule.execution_timezone == "Europe/Zurich"
+    assert isinstance(_evaluate(schedule, day_of_month=15), RunRequest)

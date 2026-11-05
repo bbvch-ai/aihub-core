@@ -9,13 +9,14 @@
     <Column
       field="agent_config.name"
       :header="t('agent.list.name')"
+      body-class="[overflow-wrap:anywhere]"
     />
     <Column
       field="agent_config.description"
       :header="t('agent.list.description')"
     >
       <template #body="{ data }">
-        <span class="text-xs">
+        <span class="line-clamp-3 text-xs [overflow-wrap:anywhere]">
           {{ data.agent_config.description }}
         </span>
       </template>

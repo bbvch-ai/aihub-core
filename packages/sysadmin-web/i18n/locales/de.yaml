@@ -15,10 +15,18 @@ tenant_admin:
     users: Benutzer
   keycloak_unreachable: Keycloak ist nicht erreichbar — die Tenant-Liste ist möglicherweise
     unvollständig. Bitte erneut versuchen.
+  load_error: Die Daten dieses Tenants konnten nicht geladen werden. Bitte erneut versuchen.
   state:
     orphaned_label: Verwaist
     orphaned_tooltip: Dieser Tenant hat Metadaten, aber keine passende Keycloak-Gruppe.
       Benutzer können nicht darauf zugreifen.
+    not_member_label: Kein Mitglied
+    not_member_tooltip: Ihr Konto ist nicht in der Keycloak-Gruppe dieses Tenants,
+      daher können seine Rollen und Benutzer nicht geladen werden.
+    not_member_message: Ihr Konto ist kein Mitglied der Keycloak-Gruppe /tenants/{tenantId},
+      daher können die Rollen und Benutzer dieses Tenants nicht geladen werden. Bitten
+      Sie eine Keycloak-Administratorin oder einen Keycloak-Administrator, das Konto,
+      mit dem Sie angemeldet sind, dieser Gruppe hinzuzufügen.
   card:
     more_rules: +{count} weitere
   configure:
@@ -36,7 +44,6 @@ tenant_admin:
     chat_disclaimer: Hinweis im Chat
     chat_disclaimer_help: Wird unter dem Chat-Eingabefeld angezeigt. Maximal 100 Zeichen
       pro Sprache.
-    chat_disclaimer_too_long: Verwenden Sie höchstens 100 Zeichen pro Sprache.
     name: Tenant-Name
     description: Beschreibung
   table:

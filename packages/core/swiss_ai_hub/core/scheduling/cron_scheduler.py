@@ -162,13 +162,10 @@ class CronScheduler:
             report = _TickReport()
             started = time.monotonic()
 
-            # One hop off the event loop for every Mongo read this tick needs. These are synchronous
-            # mongoengine calls in a process also serving all HTTP and WebSocket traffic, so left inline
-            # they stall every request for the duration, and the stall grows with the profile count.
             # Bounded at half the lease so a slow database costs a skipped tick, not a pinned lease —
-            # cancellation cannot kill the worker thread, but it does let the lease go.
+            # cancellation cannot kill the worker thread the class read runs in, but it does let the lease go.
             snapshot = await asyncio.wait_for(
-                asyncio.to_thread(self._load_schedulable_snapshot, now, watermark),
+                self._load_schedulable_snapshot(now, watermark),
                 timeout=self._lease_ttl / 2,
             )
             report.profiles_scanned = len(snapshot.online) + len(snapshot.offline)
@@ -185,27 +182,26 @@ class CronScheduler:
             await self._prune_scheduled_history(snapshot, now, report, time.monotonic() - started)
             self._log_tick_summary(report, time.monotonic() - started)
 
-    def _load_schedulable_snapshot(self, now: datetime, watermark: datetime) -> _SchedulableSnapshot:
-        """Reads every schedulable class and its profiles in one pass. Synchronous — runs in a thread.
+    async def _load_schedulable_snapshot(self, now: datetime, watermark: datetime) -> _SchedulableSnapshot:
+        """Reads every schedulable class and its profiles in one pass.
 
-        `now` is passed in rather than read here so the online/offline split uses the same instant as the
-        window this tick is computing. It stays aware — `AgentClassEntity.is_online_at` owns the
-        conversion to the local wall clock `last_discovered` is stored in, which is not the same as
-        stripping the tzinfo off a UTC value.
+        The online/offline split is judged against completed discovery rounds, not `now`: a discovery round
+        that stalls must not make this tick drop every scheduled run as if all agents had gone away.
         """
-        entities = AgentClassEntity.get_all_schedulable()
+        entities = await AgentClassEntity.get_all_schedulable()
         if not entities:
             return _SchedulableSnapshot(window_start=self._clamp_window_start(watermark, now))
 
+        online_threshold = await AgentClassEntity.online_threshold()
         offline_last_seen = {
             entity.agent_class: entity.last_discovered
             for entity in entities
-            if not AgentClassEntity.is_online_at(entity, now)
+            if not AgentClassEntity.is_online_since(entity, online_threshold)
         }
 
         online: list[_ScheduledProfile] = []
         offline: list[tuple[_ScheduledProfile, datetime]] = []
-        profiles = self._scheduled_profiles(
+        profiles = await self._scheduled_profiles(
             [entity.agent_class for entity in entities], self._settings.enforced_profile_ceiling
         )
         for profile in profiles:
@@ -318,7 +314,7 @@ class CronScheduler:
         return dropped
 
     @staticmethod
-    def _scheduled_profiles(
+    async def _scheduled_profiles(
         agent_classes: list[str],
         max_runs_per_profile: int | None,
     ) -> list[tuple[CronSchedule, AgentConfigEntityDocument]]:
@@ -327,7 +323,7 @@ class CronScheduler:
         Paired with the schedule so the caller does not parse it twice.
         """
         instances: list[tuple[CronSchedule, AgentConfigEntityDocument]] = []
-        for config in AgentConfigEntityDocument.find_for_classes(agent_classes):
+        for config in await AgentConfigEntityDocument.find_for_classes(agent_classes):
             raw_schedule = (config.config_data or {}).get(CRON_CONFIG_KEY)
             # The same predicate the save path uses, rather than a falsy check restating it: an untouched
             # schedule group is stored as blank strings, which are truthy but not a schedule. Reading one
@@ -471,7 +467,7 @@ class CronScheduler:
         """Publishes a scheduled start event on the normal agent control path."""
         agent = AgentInstanceRef(agent_class=config.agent_class, agent_id=config.agent_id)
         # Query plus conditional insert, and it runs once per fired occurrence rather than once per tick.
-        thread = await asyncio.to_thread(ThreadEntity.get_or_create_scheduled_thread, _SCHEDULED_THREAD_NAME, agent)
+        thread = await ThreadEntity.get_or_create_scheduled_thread(_SCHEDULED_THREAD_NAME, agent)
 
         external_event = ExternalAgentEvent(
             thread_id=str(thread.id),

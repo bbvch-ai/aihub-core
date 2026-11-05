@@ -50,6 +50,11 @@ def _no_window():
     return patch.object(LLMConfig, "get_model_info", return_value={"model_info": {}})
 
 
+def _without_schema() -> MagicMock:
+    """A run context whose start event asked for no JSON shape."""
+    return MagicMock(get=AsyncMock(return_value=None))
+
+
 @pytest.mark.asyncio
 async def test_a_programmatic_start_is_cleared_without_inspection():
     with patch(f"{CONVERSATION_MODULE}.do_detect_meta_question", new=AsyncMock()) as detect:
@@ -57,6 +62,7 @@ async def test_a_programmatic_start_is_cleared_without_inspection():
             LLMWrappingAgent(),
             request=ContextualizeConversationEvent(history=[], user_query=None),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -81,6 +87,7 @@ async def test_the_inspection_is_told_which_files_are_attached():
             LLMWrappingAgent(),
             request=Conversation.contextualize(history=[question], message=message),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -271,6 +278,7 @@ async def test_complete_generates_follow_ups_and_ends_with_the_given_stop_or_the
             LLMWrappingAgent(),
             request=CompleteConversationEvent(answer=answer),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -278,6 +286,7 @@ async def test_complete_generates_follow_ups_and_ends_with_the_given_stop_or_the
             LLMWrappingAgent(),
             request=Conversation.complete(answer=answer, stop=RAGSuccessStopEvent(answer="25 days")),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -287,3 +296,34 @@ async def test_complete_generates_follow_ups_and_ends_with_the_given_stop_or_the
     assert default.output_messages == answer.output_messages
     assert default.event_id != answer.event_id
     assert isinstance(given, RAGSuccessStopEvent)
+
+
+@pytest.mark.asyncio
+async def test_completing_hands_back_the_conversation_not_an_attached_form():
+    """A form of `____` blanks is cheap in tokens and long in characters. Carried on the completion and the stop event,
+    the prompt made both larger than the broker accepts (1 MB in development), and the run never ended."""
+    form = ("<tr><td>Name:</td><td>" + "_" * 180 + "</td></tr>\n") * 4300
+    question = Message.from_string(role="user", content="Which fields does the form ask for?")
+    reply = Message.from_string(role="assistant", content="Name and address.")
+    answer = LLMEvent(
+        input_messages=[Message.from_string(role="system", content="You are helpful.\n" + form), question],
+        output_messages=[reply],
+    )
+    explicit_stop = LLMStopEvent.model_validate(answer.model_dump(exclude={"event_id", "created_at"}))
+
+    request = Conversation.complete(answer=answer)
+    with patch(f"{CONVERSATION_MODULE}.generate_follow_up_questions", new=AsyncMock()) as follow_ups:
+        stop = await Conversation.complete_conversation_step(
+            LLMWrappingAgent(),
+            request=request,
+            conversation=_config(),
+            run_context=_without_schema(),
+            displayer=MagicMock(),
+            t=MagicMock(),
+        )
+
+    for event in (request, stop, Conversation.complete(answer=answer, stop=explicit_stop)):
+        assert len(event.model_dump_json(serialize_as_any=True).encode()) < 400_000
+    assert stop.input_messages == [question]
+    assert stop.output_messages == [reply]
+    assert [message.content for message in follow_ups.await_args.args[0]] == [question.content, reply.content]

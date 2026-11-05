@@ -1,3 +1,5 @@
+import hashlib
+
 import pytest
 from cryptography.fernet import Fernet, InvalidToken
 from pydantic import SecretStr
@@ -63,6 +65,13 @@ class TestFromSettings:
         with pytest.raises(ValueError, match="AIHUB_CONFIG_ENCRYPTION_KEY"):
             SecretEncryptionService.from_settings(settings)
 
+    @pytest.mark.parametrize("blank", ["", "  "])
+    def test_a_blank_key_fails_closed_with_the_variable_name(self, blank: str):
+        settings = ConfigEncryptionSettings(ENCRYPTION_KEY=SecretStr(blank))
+
+        with pytest.raises(ValueError, match="AIHUB_CONFIG_ENCRYPTION_KEY"):
+            SecretEncryptionService.from_settings(settings)
+
     def test_a_malformed_key_is_rejected(self):
         settings = ConfigEncryptionSettings(ENCRYPTION_KEY=SecretStr("not-a-key"))
 
@@ -75,6 +84,24 @@ class TestFromSettings:
         service = SecretEncryptionService.from_settings(settings)
 
         assert service.decrypt(service.encrypt("s3cret")) == "s3cret"
+
+
+class TestDerivedKey:
+    def test_each_purpose_gets_its_own_key(self, service: SecretEncryptionService):
+        assert service.derived_key(b"purpose-a:") != service.derived_key(b"purpose-b:")
+
+    def test_depends_on_the_instance_key(self, service: SecretEncryptionService):
+        other = SecretEncryptionService(Fernet.generate_key().decode())
+
+        assert service.derived_key(b"purpose-a:") != other.derived_key(b"purpose-a:")
+
+    def test_masks_keep_their_handles(self):
+        """The mask handle key is derived the same way as before, so a mask a client still holds keeps naming
+        its secret."""
+        key = Fernet.generate_key().decode()
+        service = SecretEncryptionService(key)
+
+        assert service._handle_key == hashlib.sha256(b"swiss-ai-hub:secret-mask-handle:" + key.encode()).digest()
 
 
 class TestPaths:
@@ -288,3 +315,26 @@ class TestRestoreMaskedPaths:
         restored = service.restore_masked_paths({"servers": [{"api_key": {"a": 1}}]}, stored, self.PATHS)
 
         assert restored["servers"][0]["api_key"] == {"a": 1}
+
+
+class TestRejectSubmittedCiphertext:
+    def test_ciphertext_at_a_secret_path_is_refused_with_the_path(self, service: SecretEncryptionService):
+        submitted = {"s3": {"secret_access_key": service.encrypt("s3cret")}}
+
+        with pytest.raises(ValueError, match="'s3.secret_access_key' was submitted as ciphertext"):
+            service.reject_submitted_ciphertext(submitted, {"s3.secret_access_key"})
+
+    def test_ciphertext_in_one_repeater_item_is_enough(self, service: SecretEncryptionService):
+        submitted = {"servers": [{"api_key": "plain"}, {"api_key": service.encrypt("s3cret")}]}
+
+        with pytest.raises(ValueError, match="servers.api_key"):
+            service.reject_submitted_ciphertext(submitted, {"servers.api_key"})
+
+    def test_plaintext_masks_and_empty_values_pass(self, service: SecretEncryptionService):
+        stored = {"a": service.encrypt("s3cret")}
+        submitted = {"a": service.mask_paths(stored, {"a"})["a"], "b": "plain", "c": "", "d": None}
+
+        service.reject_submitted_ciphertext(submitted, {"a", "b", "c", "d"})
+
+    def test_ciphertext_outside_a_secret_path_is_not_its_concern(self, service: SecretEncryptionService):
+        service.reject_submitted_ciphertext({"note": service.encrypt("x")}, {"a"})

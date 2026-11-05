@@ -167,11 +167,16 @@ import type {
   GetEmbeddingsData,
   GetEmbeddingsError,
   GetEmbeddingsResponse,
+  GetExtractedTableDownloadUrlData,
+  GetExtractedTableDownloadUrlError,
+  GetExtractedTableDownloadUrlResponse,
   GetFileUrlData,
   GetFileUrlError,
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetImageData,
+  GetImageError,
   GetIncidentAvailabilityData,
   GetIncidentAvailabilityResponse,
   GetIncidentFormData,
@@ -195,6 +200,7 @@ import type {
   GetLocaleData,
   GetLocaleResponse,
   GetModelsData,
+  GetModelsError,
   GetModelsResponse,
   GetModelWithAssistantsData,
   GetModelWithAssistantsError,
@@ -1426,6 +1432,39 @@ export const getOpenChatHitl = <
   });
 
 /**
+ * Get Extracted Table Download Url
+ *
+ * Returns a link that downloads the whole table of an extraction in the thread as CSV, valid for 24 hours.
+ *
+ * Events carry only a preview of the table; the link is signed for thread members only.
+ */
+export const getExtractedTableDownloadUrl = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetExtractedTableDownloadUrlResponse =
+    GetExtractedTableDownloadUrlResponse,
+>(
+  options: Options<
+    TComposable,
+    GetExtractedTableDownloadUrlData,
+    GetExtractedTableDownloadUrlResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetExtractedTableDownloadUrlResponse | DefaultT,
+    GetExtractedTableDownloadUrlError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/threads/{thread_id}/extracted-tables/{extraction_id}/download-url",
+    ...options,
+  });
+
+/**
  * Get Agent Classes
  *
  * Retrieve the agent classes this caller may reach.
@@ -1648,7 +1687,7 @@ export const updateAgentInstance = <
 /**
  * Get Agent Instance Threads
  *
- * Retrieve all threads that a specific agent instance is part of.
+ * Retrieve the caller's threads with a specific agent instance; agent admins see only their own too.
  */
 export const getAgentInstanceThreads = <
   TComposable extends Composable = "$fetch",
@@ -1777,6 +1816,33 @@ export const validateFileUpload = <
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Get Image
+ *
+ * An image sent in a message to the agent, which the message references instead of carrying it.
+ *
+ * Its name is the digest of its content, so it never changes and may be cached for as long as it is kept.
+ */
+export const getImage = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, GetImageData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    unknown | DefaultT,
+    GetImageError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/images/{name}",
+    ...options,
   });
 
 /**
@@ -2098,7 +2164,7 @@ export const getProcessStartForms = <
 /**
  * Get Process Open Forms
  *
- * Returns a list of formkit forms that the user can submit to continue the given process walkthrough
+ * Returns the forms the user can submit to continue the walkthrough: only tasks assigned to them.
  */
 export const getProcessOpenForms = <
   TComposable extends Composable = "$fetch",
@@ -2552,7 +2618,7 @@ export const getChatDisclaimer = <
 /**
  * List Models
  *
- * Lists the currently available models, and provides basic information about each one such as the owner and availability.
+ * Lists the currently available models, and provides basic information about each one such as the owner and availability. With `include_agents`, the agents the user may call are listed too, as models named `AgentClass/agent_id`.
  */
 export const getModels = <
   TComposable extends Composable = "$fetch",
@@ -2563,7 +2629,7 @@ export const getModels = <
   (options.client ?? client).get<
     TComposable,
     GetModelsResponse | DefaultT,
-    unknown,
+    GetModelsError,
     DefaultT
   >({
     security: [

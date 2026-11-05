@@ -31,6 +31,8 @@
     "expert_asking_agent",
     "namespace_selection_agent",
     "memory_writer_agent",
+    "release_notes_agent",
+    "anonymiser_agent",
     "mineru-api",
     "mineru-vlm",
     "backup"
@@ -267,6 +269,12 @@
       "license": "Apache-2.0",
       "status": "✅",
       "notes": "Permissive license"
+    },
+    {
+      "service": "browser-proxy",
+      "license": "GPL-2.0-or-later",
+      "status": "⚠️",
+      "notes": "Squid, run unmodified as a separate container; only its config and emptied error pages are ours. GPL has no network copyleft, so proxying traffic does not propagate to our code."
     },
     {
       "service": "presidio-analyzer",

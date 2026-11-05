@@ -1,6 +1,6 @@
 import copy
 import types
-from typing import Any, Union, get_args, get_origin
+from typing import Annotated, Any, Union, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
@@ -12,15 +12,6 @@ from swiss_ai_hub.jambo import SchemaConverter
 class ModelCreationService:
     _input_suffix = "Input"
     _output_suffix = "Output"
-    _input_excluded_fields = {
-        "event_id",
-        "created_at",
-        "user",
-        "locale",
-        "display_name",
-        "display_description",
-        "agent_config",
-    }
     _output_excluded_fields = {"event_id", "created_at", "_event_name", "_parent_event_names"}
     _model_config_dict = ConfigDict(
         arbitrary_types_allowed=False,
@@ -35,12 +26,6 @@ class ModelCreationService:
     }
 
     @staticmethod
-    def create_input_model_from_event_class(event_class: type[BaseModel]) -> type[BaseModel]:
-        return ModelCreationService._create_model_from_class(
-            event_class, ModelCreationService._input_excluded_fields, ModelCreationService._input_suffix
-        )
-
-    @staticmethod
     def create_output_model_from_event_class(event_class: type[BaseModel]) -> type[BaseModel]:
         return ModelCreationService._create_model_from_class(
             event_class, ModelCreationService._output_excluded_fields, ModelCreationService._output_suffix
@@ -48,14 +33,18 @@ class ModelCreationService:
 
     @staticmethod
     def create_input_model_from_event_specs(event_specs: EventSpecs) -> type[BaseModel]:
-        event_class = ModelCreationService._create_model_from_event_specs(event_specs)
-        return ModelCreationService._create_model_from_class(
-            event_class, ModelCreationService._input_excluded_fields, ModelCreationService._input_suffix
+        """Built from the input the event announces, which already leaves out what the server fills in and carries
+        the shapes the event converts itself, such as files sent inline."""
+        if event_specs.api_input_schema is None:
+            raise ValueError(f"{event_specs.event_name} announces no API input schema.")
+        input_class = ModelCreationService._create_model_from_schema(
+            event_specs.api_input_schema, event_specs.event_name
         )
+        return ModelCreationService._create_model_from_class(input_class, set(), ModelCreationService._input_suffix)
 
     @staticmethod
     def create_output_model_from_event_specs(event_specs: EventSpecs) -> type[BaseModel]:
-        event_class = ModelCreationService._create_model_from_event_specs(event_specs)
+        event_class = ModelCreationService._create_model_from_schema(event_specs.event_schema, event_specs.event_name)
         return ModelCreationService._create_model_from_class(
             event_class, ModelCreationService._output_excluded_fields, ModelCreationService._output_suffix
         )
@@ -66,7 +55,7 @@ class ModelCreationService:
         return SchemaConverter.build(schema)
 
     @staticmethod
-    def _create_model_from_event_specs(event_specs: EventSpecs) -> type[BaseModel]:
+    def _create_model_from_schema(event_schema: dict[str, Any], event_name: str) -> type[BaseModel]:
         """Reconstructs the event's Pydantic model from its JSON Schema.
 
         jambo's ``SchemaConverter`` only ever reads a node's ``properties`` — it has no concept of
@@ -76,8 +65,8 @@ class ModelCreationService:
         Map fields are pulled out of the schema before jambo ever sees them and reattached afterwards
         with their real type, so they survive the round-trip like every fixed-shape field already does.
         """
-        schema = copy.deepcopy(event_specs.event_schema)
-        schema["title"] = event_specs.event_name
+        schema = copy.deepcopy(event_schema)
+        schema["title"] = event_name
         original = copy.deepcopy(schema)
 
         map_fields = ModelCreationService._extract_free_form_map_fields(schema)
@@ -108,7 +97,8 @@ class ModelCreationService:
             if nested_maps:
                 restored = ModelCreationService._reattach_map_fields(restored, nested_maps)
             if restored is not nested:
-                annotation = restored | None if type(None) in get_args(field_info.annotation) else restored
+                nullable = type(None) in ModelCreationService._union_members(field_info.annotation)
+                annotation = restored | None if nullable else restored
                 replaced[name] = (annotation, field_info)
         if not replaced:
             return model
@@ -118,9 +108,8 @@ class ModelCreationService:
 
     @staticmethod
     def _map_field(name: str, property_schema: dict[str, Any], required: list[str]) -> tuple[type, FieldInfo]:
-        value_type = ModelCreationService._resolve_map_value_type(property_schema.get("additionalProperties"))
         default = ... if name in required and "default" not in property_schema else property_schema.get("default", {})
-        return dict[str, value_type], Field(
+        return ModelCreationService._map_annotation(property_schema), Field(
             default=default, title=property_schema.get("title"), description=property_schema.get("description")
         )
 
@@ -128,10 +117,19 @@ class ModelCreationService:
     def _nested_model(annotation: Any) -> type[BaseModel] | None:
         if isinstance(annotation, type) and issubclass(annotation, BaseModel):
             return annotation
-        if get_origin(annotation) in (Union, types.UnionType):
-            models = [arg for arg in get_args(annotation) if isinstance(arg, type) and issubclass(arg, BaseModel)]
-            return models[0] if len(models) == 1 else None
-        return None
+        models = [
+            arg
+            for arg in ModelCreationService._union_members(annotation)
+            if isinstance(arg, type) and issubclass(arg, BaseModel)
+        ]
+        return models[0] if len(models) == 1 else None
+
+    @staticmethod
+    def _union_members(annotation: Any) -> list[Any]:
+        """A union's members without their `Annotated` wrappers, which jambo puts around each member of an optional."""
+        if get_origin(annotation) not in (Union, types.UnionType):
+            return []
+        return [get_args(arg)[0] if get_origin(arg) is Annotated else arg for arg in get_args(annotation)]
 
     @staticmethod
     def _resolve(property_schema: dict[str, Any], definitions: dict[str, Any]) -> dict[str, Any]:
@@ -154,11 +152,10 @@ class ModelCreationService:
                 continue
 
             is_required = name in required
-            value_type = ModelCreationService._resolve_map_value_type(property_schema.get("additionalProperties"))
             default = ... if is_required and "default" not in property_schema else property_schema.get("default", {})
 
             map_fields[name] = (
-                dict[str, value_type],
+                ModelCreationService._map_annotation(property_schema),
                 Field(
                     default=default,
                     title=property_schema.get("title"),
@@ -173,8 +170,30 @@ class ModelCreationService:
 
     @staticmethod
     def _is_free_form_map(property_schema: dict[str, Any]) -> bool:
+        return ModelCreationService._free_form_map_schema(property_schema) is not None
+
+    @staticmethod
+    def _free_form_map_schema(property_schema: dict[str, Any]) -> dict[str, Any] | None:
+        """The map's own schema, also when it is optional: `dict[str, Any] | None` is announced as an `anyOf` of the
+        map and null, which jambo rebuilds as an empty model too, dropping every key it does not know."""
+        if ModelCreationService._is_plain_free_form_map(property_schema):
+            return property_schema
+        members = property_schema.get("anyOf", [])
+        maps = [member for member in members if member.get("type") != "null"]
+        if len(members) == 2 and len(maps) == 1 and ModelCreationService._is_plain_free_form_map(maps[0]):
+            return maps[0]
+        return None
+
+    @staticmethod
+    def _is_plain_free_form_map(property_schema: dict[str, Any]) -> bool:
         additional_properties = property_schema.get("additionalProperties")
         return additional_properties not in (None, False) and not property_schema.get("properties")
+
+    @staticmethod
+    def _map_annotation(property_schema: dict[str, Any]) -> Any:
+        map_schema = ModelCreationService._free_form_map_schema(property_schema)
+        value_type = ModelCreationService._resolve_map_value_type(map_schema.get("additionalProperties"))
+        return dict[str, value_type] if map_schema is property_schema else dict[str, value_type] | None
 
     @staticmethod
     def _resolve_map_value_type(additional_properties: Any) -> type:

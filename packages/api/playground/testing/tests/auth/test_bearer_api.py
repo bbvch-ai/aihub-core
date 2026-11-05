@@ -22,6 +22,8 @@ BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/active/my-account"
 EXPECTED_USER_FIELDS = ["id", "name", "email", "roles", "profile_image"]
 
+pytestmark = pytest.mark.beanie
+
 
 @pytest.fixture
 def mongo_db():
@@ -93,8 +95,8 @@ def expected_user_data():
     }
 
 
-@pytest_asyncio.fixture(scope="module")
-async def token_api_client():
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def token_api_client(beanie_test_database):
     """Create a TestClient with MyAccountController mounted using TokenAuthHandler."""
     runner = ApiTestRunner()
     auth = TokenAuthHandler()
@@ -105,7 +107,6 @@ async def token_api_client():
             yield client
 
 
-@pytest.mark.asyncio
 async def test_get_user_with_valid_token(token_api_client, valid_token, expected_user_data):
     """Test GET /my-account with a valid token returns expected user data."""
     headers = {
@@ -125,7 +126,6 @@ async def test_get_user_with_valid_token(token_api_client, valid_token, expected
     assert user_data == expected_user_data
 
 
-@pytest.mark.asyncio
 async def test_get_user_with_invalid_token(token_api_client):
     """Test GET /my-account with an invalid token returns 401 or 403."""
     headers = {

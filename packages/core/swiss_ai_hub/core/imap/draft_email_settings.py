@@ -1,21 +1,25 @@
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
+from zoneinfo import available_timezones
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from swiss_ai_hub.core.agents.agent_config import StepConfig
 from swiss_ai_hub.core.form.constraints import Gt, MinLen
 from swiss_ai_hub.core.form.elements.input_number import InputNumber
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
+from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.elements.textarea import Textarea
 from swiss_ai_hub.core.form.elements.toggle_switch import ToggleSwitch
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 _DEFAULT_DRAFT_PROMPT = (
     "You draft concise, polite email replies for a human to review before sending. "
     "Reply in the same language as the original message, keep a professional tone, "
-    "and never invent facts. Output only the reply body, without a subject line or signature."
+    "and never invent facts. Output only the reply body, without a subject line or signature. "
+    "You may format it with Markdown (bold, lists); wrap text in ==double equals== only when asked to highlight it."
 )
 
 # Grounded drafting never leaves a message without a draft. That is not politeness: filing is this blueprint's only
@@ -35,6 +39,16 @@ _DEFAULT_GROUNDING_FAILED_DRAFT = (
 
 _DRAFT_ENABLED_REF = "draft_reply_enabled"
 _VISIBLE_WHEN_ENABLED = f"$get({_DRAFT_ENABLED_REF}).value"
+_QUOTE_ENABLED_REF = "draft_quote_original"
+_VISIBLE_WHEN_QUOTING = f"{_VISIBLE_WHEN_ENABLED} && $get({_QUOTE_ENABLED_REF}).value"
+_QUOTE_LOCALE_OPTIONS = [
+    {"label": "Deutsch", "value": "de"},
+    {"label": "English", "value": "en"},
+    {"label": "Français", "value": "fr"},
+    {"label": "Italiano", "value": "it"},
+]
+_DEFAULT_QUOTE_TIMEZONE = "Europe/Zurich"
+_QUOTE_TIMEZONE_OPTIONS = sorted(available_timezones())
 
 # Attachment parsing has its own switch nested under the section's: the caps below are meaningless unless
 # attachments are being read at all, and showing five fields to an admin who left the toggle off is noise.
@@ -92,7 +106,35 @@ class DraftEmailSettings(StepConfig):
     ]
     draft_prompt: Annotated[
         str | Textarea,
-        Field(default=_DEFAULT_DRAFT_PROMPT, description="Instructions steering how the LLM drafts the reply body."),
+        Field(
+            default=_DEFAULT_DRAFT_PROMPT,
+            description="Instructions steering how the LLM drafts the reply body. The body is read as Markdown, with "
+            "==text== highlighted in yellow, and rendered to sanitised HTML in the draft.",
+        ),
+    ]
+    quote_original: Annotated[
+        bool | ToggleSwitch,
+        Field(
+            default=False,
+            description="Quote the original message below the reply, with an Outlook-style header block. Added after "
+            "the reply is generated, so the model never sees it twice and the reply does not change.",
+        ),
+    ]
+    quote_locale: Annotated[
+        Literal["de", "en", "fr", "it"] | Select,
+        Field(
+            default=LocaleHandler.DEFAULT_LOCALE,
+            description="Language of the quoted header block's labels and date. Outlook writes them in the replier's "
+            "language, which is the mailbox's, not the language a scheduled run happens to carry.",
+        ),
+    ]
+    quote_timezone: Annotated[
+        str | Select,
+        Field(
+            default=_DEFAULT_QUOTE_TIMEZONE,
+            description="IANA timezone the quoted Sent date is shown in. Outlook shows it in the replier's zone, so a "
+            "message sent at 15:05 +0700 reads 10:05 to a mailbox in Zurich, not the sender's wall-clock time.",
+        ),
     ]
     number_of_input_tokens: Annotated[
         int | InputNumber,
@@ -173,6 +215,13 @@ class DraftEmailSettings(StepConfig):
         """The drafting LLM built from the selected model at a fixed temperature (not form-configurable)."""
         return LLMConfig.deterministic(self.model_name)
 
+    @model_validator(mode="after")
+    def _validate_quote_timezone(self) -> Self:
+        """Reject an unknown zone when the profile is saved, not when a draft is first quoted with it."""
+        if isinstance(self.quote_timezone, str) and self.quote_timezone not in available_timezones():
+            raise ValueError(f"Unknown quote timezone: {self.quote_timezone!r}")
+        return self
+
     @classmethod
     def as_form(cls) -> Self:
         return cls(
@@ -210,6 +259,27 @@ class DraftEmailSettings(StepConfig):
                 rows=6,
                 auto_resize=True,
                 condition_if=_VISIBLE_WHEN_ENABLED,
+            ),
+            quote_original=ToggleSwitch(
+                label=LocaleString.from_i18n_path("lib.imap.config.quote_original.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.quote_original.help"),
+                ref=_QUOTE_ENABLED_REF,
+                condition_if=_VISIBLE_WHEN_ENABLED,
+            ),
+            quote_locale=Select(
+                label=LocaleString.from_i18n_path("lib.imap.config.quote_locale.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.quote_locale.help"),
+                options=_QUOTE_LOCALE_OPTIONS,
+                option_label="label",
+                option_value="value",
+                condition_if=_VISIBLE_WHEN_QUOTING,
+            ),
+            quote_timezone=Select(
+                label=LocaleString.from_i18n_path("lib.imap.config.quote_timezone.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.quote_timezone.help"),
+                options=_QUOTE_TIMEZONE_OPTIONS,
+                filter=True,
+                condition_if=_VISIBLE_WHEN_QUOTING,
             ),
             number_of_input_tokens=InputNumber(
                 label=LocaleString.from_i18n_path("lib.imap.config.draft_input_tokens.label"),

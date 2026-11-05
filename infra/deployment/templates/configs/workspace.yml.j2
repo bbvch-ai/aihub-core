@@ -11,20 +11,20 @@ load_from:
   # Frozen legacy pipeline. Guarded on the same image tag as its compose service so the two cannot
   # drift: a code location for a container that is not deployed errors permanently in the Dagster UI.
   - grpc_server:
-      host: {{ pipeline }}
+      host: {{ pipeline | replace("_", "-") }}-grpc
       port: 4000
       location_name: {{ pipeline }}
 {%- endif %}
 {%- endfor %}
   - grpc_server:
-      host: document_ingestion_pipeline
+      host: document-ingestion-pipeline-grpc
       port: 4000
       location_name: document_ingestion_pipeline
   - grpc_server:
-      host: rclone_pipeline
+      host: rclone-pipeline-grpc
       port: 4000
       location_name: rclone_pipeline
   - grpc_server:
-      host: structured_pipeline
+      host: structured-pipeline-grpc
       port: 4000
       location_name: structured_pipeline
