@@ -62,7 +62,10 @@ request to LLM response.
 internet with inter-container communication disabled), `code-sandbox` (single-tenant zone for the `open-terminal`
 code-execution sandbox plus exactly its callers), `pii-detection` (the Presidio analyzer plus exactly its callers), and
 `browser` (the Playwright browser plus exactly its callers, and `browser-proxy`, the browser's only way to the internet,
-which refuses addresses that are not public). Services are assigned only the networks they require.
+which refuses addresses that are not public). The operator control planes get networks of their own: `docker-api`
+(Traefik and its Docker socket proxy), `dagster-ui` / `backup-ui` (each Dagster webserver and its oauth2-proxy), and
+`dagster` / `backup` / `backup-docker` (webservers, daemons, gRPC code servers, and the backup code server's own socket
+proxy). Services are assigned only the networks they require.
 
 ## Dev Stack Services
 

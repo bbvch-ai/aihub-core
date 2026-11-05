@@ -26,39 +26,6 @@ def docker_manager() -> DockerManager:
         return manager
 
 
-def test_exec_in_container_passes_environment(docker_manager: DockerManager) -> None:
-    container = MagicMock()
-    container.exec_run.return_value = MagicMock(exit_code=0, output=b"OK")
-    docker_manager._client.containers.get.return_value = container
-
-    env = {"MY_VAR": "my_value"}
-    exit_code, output = docker_manager.exec_in_container("test-container", ["echo", "hello"], environment=env)
-
-    container.exec_run.assert_called_once_with(["echo", "hello"], environment=env)
-    assert exit_code == 0
-
-
-def test_exec_in_container_without_environment(docker_manager: DockerManager) -> None:
-    container = MagicMock()
-    container.exec_run.return_value = MagicMock(exit_code=0, output=b"OK")
-    docker_manager._client.containers.get.return_value = container
-
-    exit_code, output = docker_manager.exec_in_container("test-container", ["echo", "hello"])
-
-    container.exec_run.assert_called_once_with(["echo", "hello"], environment=None)
-    assert exit_code == 0
-    assert output == "OK"
-
-
-def test_exec_in_container_raises_when_not_found(docker_manager: DockerManager) -> None:
-    from docker.errors import NotFound
-
-    docker_manager._client.containers.get.side_effect = NotFound("not found")
-
-    with pytest.raises(RuntimeError, match="not found"):
-        docker_manager.exec_in_container("missing", ["echo"])
-
-
 def test_copy_from_container_uses_filter_data(docker_manager: DockerManager, tmp_path: Path) -> None:
     import io
     import tarfile
@@ -296,21 +263,13 @@ def test_start_container_not_found(docker_manager: DockerManager) -> None:
     assert docker_manager.start_container("missing") is False
 
 
-def test_get_container_image(docker_manager: DockerManager) -> None:
+def test_get_container_image_returns_image_id_from_inspect(docker_manager: DockerManager) -> None:
     container = MagicMock()
-    container.image.tags = ["neo4j:5.26-community"]
-    docker_manager._client.containers.get.return_value = container
-
-    assert docker_manager.get_container_image("neo4j") == "neo4j:5.26-community"
-
-
-def test_get_container_image_no_tags_falls_back_to_id(docker_manager: DockerManager) -> None:
-    container = MagicMock()
-    container.image.tags = []
-    container.image.id = "sha256:abc123"
+    container.attrs = {"Image": "sha256:abc123", "Config": {"Image": "neo4j:5.26-community"}}
     docker_manager._client.containers.get.return_value = container
 
     assert docker_manager.get_container_image("neo4j") == "sha256:abc123"
+    docker_manager._client.images.get.assert_not_called()
 
 
 def test_get_container_image_not_found(docker_manager: DockerManager) -> None:

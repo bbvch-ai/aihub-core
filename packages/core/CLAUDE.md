@@ -647,11 +647,13 @@ database, collection and path. `matching_glob()` and `matching_regex()` chain:
 `load_document()` and `load_document_by_path()` take the caller's allowed collections, so an id or path from any other
 collection is reported as not found. Pending documents raise `KnowledgeDocumentPendingError`. A collection that does not
 exist or is being deleted fails the whole call with `KnowledgeCollectionNotFoundError`. `start`/`end` read a character
-range, and `text_length` reports the full length. Nothing here reads agent configuration or checks access: the caller
-passes the agent's configured collections narrowed to those the asking user may read, since a profile is checked only
-against whoever saved it. In the agent package, `KnowledgeToolScope.collections()` computes exactly that list, as
-`KnowledgeReference`s naming each database by its vector collection name; `KnowledgeCollectionResolver.pair_of()` turns
-one into the `BucketNamespacePair` the readers take, since that name can differ from the bucket name.
+range, cut in the database (`RefDoc.first_with_text_range`, `$substrCP` in code points, Python slice semantics), so a
+range of a large document never brings the rest of it into the process, and `text_length` reports the full length.
+Nothing here reads agent configuration or checks access: the caller passes the agent's configured collections narrowed
+to those the asking user may read, since a profile is checked only against whoever saved it. In the agent package,
+`KnowledgeToolScope.collections()` computes exactly that list, as `KnowledgeReference`s naming each database by its
+vector collection name; `KnowledgeCollectionResolver.pair_of()` turns one into the `BucketNamespacePair` the readers
+take, since that name can differ from the bucket name.
 
 `KnowledgeContentSearch.search(collections, query, is_regex=, case_sensitive=, path_globs=, offset=, limits=)` finds
 every fully ingested document whose parsed text contains an exact term or matches a regex. A document must match every
@@ -661,15 +663,23 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
 `max_lines_per_document` (5) matching lines, located by `start`/`end` offsets that `load_document` takes, and the total
 `matching_line_count`. It has the same trust rule and collection errors as the reader. How it works:
 
-- **No index.** It scans `__data__.text` in the doc store with `$regex`, bounded by one `timeout_seconds` budget (5 s)
-  passed as `maxTimeMS`, so ingested, changed and deleted documents are reflected at once.
+- **Index for literals, scan otherwise.** A literal with three word characters in a row first asks the trigram index
+  (`KnowledgeTextIndex`, a read-only SQL role on FerretDB's PostgreSQL, `KNOWLEDGE_TEXT_INDEX_*`) for candidate ids,
+  then FerretDB runs the scan's own filter on just those (`RefDoc.search_ingested_ids_among`), so both paths return the
+  same result. Regexes, short or common terms (over 500 candidates or 0.5 s), and databases whose index is missing,
+  invalid or stamped with another DocumentDB version scan `__data__.text` with `$regex`, bounded by one
+  `timeout_seconds` budget (5 s) passed as `maxTimeMS`. `KnowledgeTextIndexQuery` builds the `LIKE` patterns: escaped,
+  composed and decomposed, and with `_` for letters PCRE2 folds but `lower()` does not (`µ`/`μ`, `σ`/`ς`, …, never
+  `s`/`i`). The backup's `ferretdb_text_index_job` builds and stamps the indexes; see ADR
+  `2026_10_08_trigram_index_for_knowledge_content_search`.
 - **Two engines.** The database (PCRE2, prefixed `(*UCP)` so `\w`/`\b` handle umlauts) only finds candidates; Python's
   `regex` decides the lines, and a candidate without one is dropped. A pattern PCRE2 rejects raises
   `InvalidSearchPatternError`; so do empty, empty-matching, over-500-character and fuzzy (`{e<=1}`) queries.
 - **Cost.** The backend decompresses the whole row, both text copies included, for every filter operator, projection and
   sort. The regex is listed first and candidates are ids only (sorted by `_id`; the source only for a glob); metadata
-  and text are read for one page. Measured at 5,000 × 100k characters: about 1 s per search on lz4-compressed rows, 2.5
-  s on PostgreSQL's default pglz (#1024).
+  and text are read one candidate at a time, so a page holds one document's text at once. Measured at 5,000 × 100k
+  characters: about 1 s per scan on lz4-compressed rows, 2.5 s on PostgreSQL's default pglz (#1024); a selective literal
+  through the index takes tens of milliseconds.
 - **Ranking by meaning.**
   `KnowledgeSemanticSearch.rank(collections, query, *, path_globs=, passages_per_document=2, user=, budget=)` returns a
   `KnowledgeSemanticRanking`: the documents in scope ordered by their closest chunks (Milvus `group_by_field` on
@@ -686,10 +696,11 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
   `KnowledgeDocumentSelection` (`any_of` `KnowledgeDocumentCriteria`: path glob, path regex, content query, ids; AND
   within one, OR across) into the documents it describes, sorted and cut at `limit` with `truncated`. One
   `KnowledgeSearchBudget` covers the listing (`list_documents(..., budget)`) and every content query, and a content
-  query is one id-only scan per collection (`KnowledgeContentSearch.matching_ids`, no text loaded, no per-line check, so
-  it may count a document the line check would drop), with the restricting glob next to the criterion's own, so a
-  model's selection can only narrow the caller's. The record-extraction capability resolves the selection a model wrote
-  this way rather than trusting a list of ids, with its ceiling as `limit`.
+  query is one id-only search per collection (`KnowledgeContentSearch.matching_ids`, through the trigram index for a
+  literal as `search` does, no text loaded, no per-line check, so it may count a document the line check would drop),
+  with the restricting glob next to the criterion's own, so a model's selection can only narrow the caller's. The
+  record-extraction capability resolves the selection a model wrote this way rather than trusting a list of ids, with
+  its ceiling as `limit`.
 - **Limits.** Case folding is simple, so `ß` never matches `SS`. Decomposed (NFD) text is matched for literal text but
   not by a class such as `[üu]`. `$` does not match before `\r\n`. DocumentDB rejects numbered backreferences (`\1`);
   named ones, `(?P<x>…)(?P=x)`, work. PCRE2 reports hitting its backtracking limit as no match, so ambiguous nested

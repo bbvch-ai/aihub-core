@@ -9,6 +9,7 @@ from swiss_ai_hub.core.events.process import HumanInSpecs, ProcessStartEvent, Wo
 from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_process_event_entity import PersistedProcessEventEntity
@@ -290,7 +291,7 @@ class ProcessService:
     async def get_process_classes(t: LocaleHandler, online: bool | None = None) -> list[ProcessClassDTO]:
         """Returns all process classes from the database."""
         process_classes = []
-        online_threshold = ProcessClassEntity.online_threshold()
+        online_threshold = await ProcessClassEntity.online_threshold()
         for class_entity in ProcessClassEntity.get_all():
             is_online = class_entity.is_online_since(online_threshold)
             if online is not None and is_online != online:
@@ -305,7 +306,7 @@ class ProcessService:
         class_entity = ProcessClassEntity.get_by_process_class(process_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
-        is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
+        is_online = class_entity.is_online_since(await ProcessClassEntity.online_threshold())
         return ProcessClassDTO.from_entity(class_entity, t, is_online=is_online)
 
     @staticmethod
@@ -316,7 +317,7 @@ class ProcessService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
 
-        is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
+        is_online = class_entity.is_online_since(await ProcessClassEntity.online_threshold())
         instances = []
         configs = ProcessConfigEntityDocument.find_for_class(process_class)
         for config_entity in configs:
@@ -343,7 +344,7 @@ class ProcessService:
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Process instance {process_class}/{process_id} not found.")
 
-        is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
+        is_online = class_entity.is_online_since(await ProcessClassEntity.online_threshold())
         return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
     @staticmethod
@@ -360,7 +361,7 @@ class ProcessService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Process class '{process_class}' not found.")
 
-        if not class_entity.is_online_since(ProcessClassEntity.online_threshold()):
+        if not class_entity.is_online_since(await ProcessClassEntity.online_threshold()):
             raise HTTPException(
                 status_code=503,
                 detail=f"Process class '{process_class}' is not online. Make sure the process is running.",
@@ -463,7 +464,7 @@ class ProcessService:
     async def get_all_process_instances(t: LocaleHandler, online: bool | None = None) -> list[FullProcessInstanceDTO]:
         """Returns all registered process instances from the database."""
         instances = []
-        online_threshold = ProcessClassEntity.online_threshold()
+        online_threshold = await ProcessClassEntity.online_threshold()
         for class_entity in ProcessClassEntity.get_all():
             is_online = class_entity.is_online_since(online_threshold)
             if online is not None and is_online != online:
@@ -498,13 +499,13 @@ class ProcessService:
             process_class, process_id, page, page_size
         )
 
-        agent_configs = await AgentConfigEntityDocument.find_for_instances(
-            {
-                instance
-                for walkthrough_data in walkthroughs_data
-                for instance in ProcessService._agent_instances_in(walkthrough_data["events"])
-            }
-        )
+        agent_instances = {
+            instance
+            for walkthrough_data in walkthroughs_data
+            for instance in ProcessService._agent_instances_in(walkthrough_data["events"])
+        }
+        agent_configs = await AgentConfigEntityDocument.find_for_instances(agent_instances)
+        agent_classes = await ProcessService._agent_classes_named({agent_class for agent_class, _ in agent_instances})
 
         walkthroughs = []
         for walkthrough_data in walkthroughs_data:
@@ -514,6 +515,7 @@ class ProcessService:
                 walkthrough_data["process_class"],
                 walkthrough_data["process_id"],
                 agent_configs,
+                agent_classes,
             )
 
             completed_steps = sum(1 for step in process_steps if step.is_completed)
@@ -526,7 +528,7 @@ class ProcessService:
                     break
 
             involved_agents, involved_humans = ProcessService._extract_involved_entities(
-                walkthrough_data["events"], t, agent_configs
+                walkthrough_data["events"], t, agent_configs, agent_classes
             )
 
             walkthrough = ProcessWalkthroughDTO(
@@ -547,10 +549,21 @@ class ProcessService:
         return total_count, walkthroughs
 
     @staticmethod
+    async def _agent_classes_named(agent_classes: set[str]) -> dict[str, AgentClassEntity]:
+        """The stored classes among `agent_classes`, keyed by name; loaded up front for the synchronous step DTOs."""
+        if not agent_classes:
+            return {}
+        return {
+            entity.agent_class: entity
+            for entity in await AgentClassEntity.get_all()
+            if entity.agent_class in agent_classes
+        }
+
+    @staticmethod
     def _agent_instances_in(events: list[dict]) -> set[tuple[str, str]]:
         """Every (agent_class, agent_id) an agent work request or response in `events` names.
 
-        The step DTOs are built synchronously, so the profiles they show are loaded up front in one query.
+        The step DTOs are built synchronously, so the profiles and classes they show are loaded up front.
         """
         instances: set[tuple[str, str]] = set()
         for event in events:
@@ -567,6 +580,7 @@ class ProcessService:
         process_class: str,
         process_id: str,
         agent_configs: dict[tuple[str, str], AgentConfigEntityDocument],
+        agent_classes: dict[str, AgentClassEntity],
     ) -> list:
         """
         Builds a list of ProcessStepDTO objects from raw event data by pairing
@@ -618,7 +632,9 @@ class ProcessService:
             if request_type == "human":
                 step = HumanProcessStepDTO.from_events(request_event, response_event, step_index, t)
             elif request_type == "agent":
-                step = AgentProcessStepDTO.from_events(request_event, response_event, step_index, t, agent_configs)
+                step = AgentProcessStepDTO.from_events(
+                    request_event, response_event, step_index, t, agent_configs, agent_classes
+                )
             else:  # program
                 step = ProgramProcessStepDTO.from_events(request_event, response_event, step_index, t)
 
@@ -634,7 +650,9 @@ class ProcessService:
             if response_type == "human":
                 standalone_step = HumanProcessStepDTO.from_events(None, response_event, step_index, t)
             elif response_type == "agent":
-                standalone_step = AgentProcessStepDTO.from_events(None, response_event, step_index, t, agent_configs)
+                standalone_step = AgentProcessStepDTO.from_events(
+                    None, response_event, step_index, t, agent_configs, agent_classes
+                )
             else:  # program
                 standalone_step = ProgramProcessStepDTO.from_events(None, response_event, step_index, t)
 
@@ -652,7 +670,10 @@ class ProcessService:
 
     @staticmethod
     def _extract_involved_entities(
-        events: list[dict], t, agent_configs: dict[tuple[str, str], AgentConfigEntityDocument]
+        events: list[dict],
+        t,
+        agent_configs: dict[tuple[str, str], AgentConfigEntityDocument],
+        agent_classes: dict[str, AgentClassEntity],
     ) -> tuple[list, list]:
         """
         Extracts involved agents and humans from events.
@@ -667,7 +688,7 @@ class ProcessService:
                 continue
             if any("AgentWork" in parent for parent in event_parents):
                 submitted_by = event.get("event_data", {})["submitted_by"]
-                ProcessService._add_involved_agent(involved_agents, submitted_by, t, agent_configs)
+                ProcessService._add_involved_agent(involved_agents, submitted_by, t, agent_configs, agent_classes)
             elif any("HumanWork" in parent for parent in event_parents):
                 ProcessService._add_involved_human(involved_humans, event.get("event_data", {})["submitted_by"])
 
@@ -679,10 +700,9 @@ class ProcessService:
         submitted_by: dict,
         t,
         agent_configs: dict[tuple[str, str], AgentConfigEntityDocument],
+        agent_classes: dict[str, AgentClassEntity],
     ) -> None:
         """Adds the agent that did the work, unless it is listed already or its class or profile is gone."""
-        from swiss_ai_hub.core.persistence.agents import AgentClassEntity
-
         from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
 
         agent_class = submitted_by["agent_class"]
@@ -690,7 +710,7 @@ class ProcessService:
         agent_key = f"{agent_class}:{agent_id}"
         if agent_key in involved_agents:
             return
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = agent_classes.get(agent_class)
         config_entity = agent_configs.get((agent_class, agent_id))
         if class_entity and config_entity:
             involved_agents[agent_key] = MinimalAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
