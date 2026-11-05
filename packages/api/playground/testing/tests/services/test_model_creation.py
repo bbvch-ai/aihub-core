@@ -148,7 +148,7 @@ class TestFieldExclusion:
     """Tests for proper field exclusion in input and output models"""
 
     INPUT_EXCLUDED = {"event_id", "created_at", "user", "locale", "display_name", "display_description"}
-    OUTPUT_EXCLUDED = {"event_id", "created_at", "_event_name", "_parent_event_names"}
+    OUTPUT_EXCLUDED = {"created_at", "_event_name", "_parent_event_names"}
 
     def test_input_model_excluded_fields(self, input_model):
         for field in self.INPUT_EXCLUDED:
@@ -157,6 +157,10 @@ class TestFieldExclusion:
     def test_output_model_excluded_fields(self, output_model):
         for field in self.OUTPUT_EXCLUDED:
             assert field not in output_model.model_fields, f"Field {field} should be excluded from output model"
+
+    def test_output_model_keeps_the_event_id_a_hitl_answer_names(self, output_model):
+        """A client answers a HITL request by echoing it, and the agent finds its stored request by this id."""
+        assert "event_id" in output_model.model_fields
 
     def test_input_model_included_fields(self, input_model):
         expected_fields = {
