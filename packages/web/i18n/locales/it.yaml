@@ -187,6 +187,7 @@ thread:
 chat:
   assistant: Assistente
   document: Documento
+  image: Immagine
 event:
   list:
     firstInteraction: 'Prima interazione:'
@@ -455,6 +456,10 @@ agent:
         questo ambiente.
   export:
     button: Esporta
+  storedSecrets:
+    title: Reinserire i segreti
+    detail: 'I segreti salvati non vengono mai copiati in un nuovo profilo. Reinseriscili
+      prima di salvare: {fields}'
   configuration:
     title: Configurazione dell'agente
     description: Configura il comportamento runtime e le impostazioni per questo agente

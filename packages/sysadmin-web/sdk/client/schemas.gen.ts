@@ -727,6 +727,30 @@ export const LoginOptionsResponseSchema = {
     "What the generic login page may offer. A welcome-page instance never lists a federated provider here.",
 } as const;
 
+export const MyTenantsResponseSchema = {
+  properties: {
+    tenants: {
+      items: {
+        $ref: "#/components/schemas/TenantMembershipDTO",
+      },
+      type: "array",
+      title: "Tenants",
+      description: "Tenants the user making the call belongs to",
+    },
+    is_sys_admin: {
+      type: "boolean",
+      title: "Is Sys Admin",
+      description: "Whether the user has system administrator privileges",
+      default: false,
+    },
+  },
+  type: "object",
+  required: ["tenants"],
+  title: "MyTenantsResponse",
+  description:
+    "Response for the GET /my-tenants endpoint, including sysadmin status.",
+} as const;
+
 export const PaginatedUsersResponseSchema = {
   properties: {
     total: {
@@ -832,6 +856,30 @@ export const RoleResponseSchema = {
   required: ["id", "name", "description", "access_rules", "tenant_id"],
   title: "RoleResponse",
   description: "Response model representing a role.",
+} as const;
+
+export const TenantMembershipDTOSchema = {
+  properties: {
+    id: {
+      type: "string",
+      title: "Id",
+      description: "Tenant identifier",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "Tenant display name",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "Tenant description",
+    },
+  },
+  type: "object",
+  required: ["id", "name", "description"],
+  title: "TenantMembershipDTO",
+  description: "A tenant the current user belongs to.",
 } as const;
 
 export const TenantResponseSchema = {

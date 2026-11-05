@@ -11,9 +11,10 @@ TTL, and the volume server dropped whole volumes once they expired.
 SeaweedFS 4.32 changed what a lifecycle configuration means. Rules are now enforced by a lifecycle job that an admin
 server schedules on a worker, two services the platform does not run. Writing the TTL at write time became an opt-in per
 bucket (the "fast path"). And from 4.24, applying or deleting a lifecycle configuration deletes the `filer.conf` TTL
-rules 4.01 created for that bucket, a one-way migration. Because `seaweedfs-init` re-applies its lifecycle configurations on every
-`docker compose up`, the upgrade deploy itself would have stopped expiry for every object written afterwards, with no
-error anywhere. On a fresh install nothing would ever have expired, including user uploads promised to last 7 days.
+rules 4.01 created for that bucket, a one-way migration. Because `seaweedfs-init` re-applies its lifecycle
+configurations on every `docker compose up`, the upgrade deploy itself would have stopped expiry for every object
+written afterwards, with no error anywhere. On a fresh install nothing would ever have expired, including user uploads
+promised to last 7 days.
 
 ## Decision Drivers
 

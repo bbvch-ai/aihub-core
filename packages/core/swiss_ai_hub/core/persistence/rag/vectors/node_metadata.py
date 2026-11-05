@@ -67,7 +67,7 @@ class NodeMetadata(TypedDict, total=False):
     document_title: str
     type: NodeTypeValue
     content_type: NodeContentType
-    language: LanguageValue
+    language: LanguageValue | None
     version: int
     created_at: int | None
     updated_at: int | None
@@ -93,7 +93,8 @@ DEFAULT_METADATA: dict[str, Any] = {
     DOCUMENT_TITLE: "",
     TYPE: NODE_TYPE_CONTENT,
     NODE_CONTENT_TYPE: NODE_CONTENT_TYPE_TEXT,
-    LANGUAGE: NODE_LANGUAGE_ENGLISH,
+    # Ingestion detects no language, so a document carries none rather than a guess every reader would take for fact.
+    LANGUAGE: None,
     VERSION: 1,
     CREATED_AT: None,
     UPDATED_AT: None,

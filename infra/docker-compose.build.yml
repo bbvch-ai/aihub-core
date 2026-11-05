@@ -1175,7 +1175,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   rclone:
     container_name: rclone
-    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2-1
     restart: unless-stopped
     command:
       - rcd
@@ -1210,7 +1210,7 @@ services:
   # License: MIT — rclone (see LICENSES.md)
   sandbox-mirror:
     container_name: sandbox-mirror
-    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2-1
     restart: unless-stopped
     depends_on:
       seaweedfs-s3:
@@ -1481,17 +1481,20 @@ services:
   # its callers, and needs no outbound internet (models baked in, hub offline).
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-3
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-4
     restart: always
     ports: [5002:3000]
     environment:
       ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
-      # Each request thread runs its own torch threads, so 4 x 2 oversubscribes the 4 CPUs at most twice when all are
-      # busy; torch's default oversubscribes far more and a short request takes seconds. 4 request threads let a short
-      # request and the health probe through beside long analyses.
-      GUNICORN_THREADS: '4'
-      OMP_NUM_THREADS: '2'
-      MKL_NUM_THREADS: '2'
+      # Sized per deployment (.env): workers x request threads x torch threads should match the CPU limit, and every
+      # worker needs about 3 GiB of the memory limit. Torch threads stay at 2: one makes a long text 3 to 4 times slower.
+      # The `:-` defaults here and on the limits are a deliberate exception to "defaults live in .env": an unset CPU or
+      # memory limit is an empty string that stops Compose from parsing the whole file (every `docker compose` call
+      # without --env-file, CI's cleanup included), and an empty worker count stops gunicorn from starting.
+      GUNICORN_WORKERS: ${PRESIDIO_ANALYZER_WORKERS:-1}
+      GUNICORN_THREADS: ${PRESIDIO_ANALYZER_THREADS:-4}
+      OMP_NUM_THREADS: ${PRESIDIO_ANALYZER_TORCH_THREADS:-2}
+      MKL_NUM_THREADS: ${PRESIDIO_ANALYZER_TORCH_THREADS:-2}
     volumes: [./configs/presidio/analyzer.yaml:/app/analyzer.yaml:ro]
     healthcheck:
       test:
@@ -1507,8 +1510,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4'
-          memory: 4G  # Measured: 2.6-2.9 GiB after a run over 50K-character inputs
+          cpus: ${PRESIDIO_ANALYZER_CPUS:-4}
+          memory: ${PRESIDIO_ANALYZER_MEMORY:-4G}  # Measured: about 3.1 GiB per worker under load
     logging:
       driver: json-file
       options:
@@ -1520,7 +1523,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.106.2
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.106.4
     restart: always
     ports: [4000:4000]
     environment:
@@ -1550,6 +1553,7 @@ services:
       # Read by the pii-anonymisation guardrail (litellm_functions/pii_anonymisation_guardrail.py)
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
       PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
+      PRESIDIO_ANALYZER_TIMEOUT_SECONDS: ${PRESIDIO_ANALYZER_TIMEOUT_SECONDS:-150}  # optional, like the analyzer sizing
       PII_ANONYMISE_EXTERNAL_MODELS: ${PII_ANONYMISE_EXTERNAL_MODELS}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
@@ -1617,7 +1621,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
     container_name: open-terminal
-    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-4
     restart: always
     ports: [8200:8000]
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
@@ -1631,7 +1635,15 @@ services:
       OPEN_TERMINAL_SYSTEM_PROMPT: >-
         You have access to a sandboxed Linux computer with Python and common
         document libraries (pandas, openpyxl, python-docx, reportlab, fpdf2,
-        weasyprint, matplotlib). Use your tools to run commands, read and write
+        weasyprint, matplotlib), headless LibreOffice (soffice) with UNO for
+        Excel pivot tables, LaTeX, pandoc and pdftoppm. Run Python with python3
+        as usual. Only a script that imports uno needs /usr/bin/python3, which
+        has uno but none of the libraries above: prepare data with python3 and
+        keep the UNO step in its own script. A pivot table is a DataPilot
+        (sheet.getDataPilotTables(), createDataPilotDescriptor(),
+        insertNewByName()); save it as xlsx with the filter "Calc Office Open
+        XML". When the user uploads a file as a template, edit a copy of it
+        instead of rebuilding it. Use your tools to run commands, read and write
         files, and search the filesystem. Verify the current state before making
         changes and check command output to confirm success. Files you create in
         your working directory automatically appear in the user's Files panel,
@@ -1656,7 +1668,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy-1
     restart: always
     ports: [3036:3000]
     environment:
@@ -1673,13 +1685,32 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - browser  # Reached only by its callers, never by the rest of backend
-      - egress  # Outbound internet access for web browsing
+      - browser  # Its only network: the internet only through browser-proxy
+
+  # License: GPL-2.0-or-later — third-party (see LICENSE_REPORT.md)
+  browser-proxy:
+    container_name: browser-proxy
+    image: ghcr.io/bbvch-ai/aihub-core/browser-proxy:7.6-1
+    restart: always
+    healthcheck:
+      test: [CMD, nc, -z, 127.0.0.1, '3128']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - browser  # Reached by the Playwright browser, whose only way out it is
+      - egress  # Outbound internet; refuses every destination whose address is not public
 
   # License: AGPL-3.0 — third-party (see LICENSE_REPORT.md)
   searxng:
     container_name: searxng
-    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.9.5-c7f3080aa
+    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.10.27-cb74e7f81
     restart: always
     ports: [8881:8080]
     volumes: [./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro]
@@ -1764,7 +1795,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   otel-collector:
     container_name: otel-collector
-    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.154.0
+    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.164.0
     restart: always
     command: [--config=/etc/otel-config.yml]
     environment:
@@ -1829,7 +1860,7 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
@@ -1858,7 +1889,7 @@ services:
     environment:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
-      DEFAULT_LOCALE: de
+      DEFAULT_LOCALE: en-US
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: false
       ENABLE_COMMUNITY_SHARING: false
@@ -2540,6 +2571,13 @@ services:
       SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH: ${SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH}
       SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH: ${SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH}
 
+      # Agent/process discovery rounds
+      DISCOVERY_INTERVAL_SECONDS: ${DISCOVERY_INTERVAL_SECONDS}
+      DISCOVERY_RESPONSE_WAIT_SECONDS: ${DISCOVERY_RESPONSE_WAIT_SECONDS}
+      DISCOVERY_ROUND_TIMEOUT_SECONDS: ${DISCOVERY_ROUND_TIMEOUT_SECONDS}
+      DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE: ${DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE}
+      DISCOVERY_MAX_SILENCE_SECONDS: ${DISCOVERY_MAX_SILENCE_SECONDS}
+
       # Neo4j
       NEO4J_URL: bolt://neo4j:7687
       NEO4J_USERNAME: ${NEO4J_USERNAME}
@@ -2580,6 +2618,10 @@ services:
       INCIDENT_GITHUB_APP_ID: ${INCIDENT_GITHUB_APP_ID}
       INCIDENT_GITHUB_INSTALLATION_ID: ${INCIDENT_GITHUB_INSTALLATION_ID}
       INCIDENT_GITHUB_PRIVATE_KEY: ${INCIDENT_GITHUB_PRIVATE_KEY}
+      API_REQUEST_MAX_BODY_BYTES: ${API_REQUEST_MAX_BODY_BYTES}
+      AGENT_INLINE_FILE_MAX_FILE_BYTES: ${AGENT_INLINE_FILE_MAX_FILE_BYTES}
+      AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST: ${AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST}
+      AGENT_INLINE_IMAGE_MAX_BYTES: ${AGENT_INLINE_IMAGE_MAX_BYTES}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8000/api/v1/health]
       interval: 30s
@@ -2650,7 +2692,7 @@ services:
         || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`) || PathPrefix(`/it/auth`))
       - traefik.http.routers.web-auth.priority=750
       - traefik.http.routers.web-auth.entrypoints=websecure
-      - traefik.http.routers.web-auth.middlewares=web-standard-middleware
+      - traefik.http.routers.web-auth.middlewares=auth-route-security-headers@file
       - traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`)
         || Path(`/config.js`))
       - traefik.http.routers.web-index.priority=400
@@ -2832,7 +2874,7 @@ services:
         || PathPrefix(`/it/auth`))
       - traefik.http.routers.sysadmin-web-auth.priority=750
       - traefik.http.routers.sysadmin-web-auth.entrypoints=websecure
-      - traefik.http.routers.sysadmin-web-auth.middlewares=sysadmin-web-standard-middleware
+      - traefik.http.routers.sysadmin-web-auth.middlewares=auth-route-security-headers@file
       - traefik.http.routers.sysadmin-web-index.rule=Host(`sysadmin.${DOMAIN}`) &&
         (Path(`/`) || Path(`/index.html`) || Path(`/config.js`))
       - traefik.http.routers.sysadmin-web-index.priority=400
@@ -2883,6 +2925,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: ws://playwright:3000
+      PLAYWRIGHT_PROXY_URL: http://browser-proxy:3128
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: http://mineru-api:8000
@@ -2925,6 +2968,9 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -2975,6 +3021,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: ws://playwright:3000
+      PLAYWRIGHT_PROXY_URL: http://browser-proxy:3128
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: http://mineru-api:8000
@@ -3017,6 +3064,9 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3092,6 +3142,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: ws://playwright:3000
+      PLAYWRIGHT_PROXY_URL: http://browser-proxy:3128
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: http://mineru-api:8000
@@ -3113,6 +3164,9 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3183,6 +3237,9 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3248,6 +3305,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: ws://playwright:3000
+      PLAYWRIGHT_PROXY_URL: http://browser-proxy:3128
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: http://mineru-api:8000
@@ -3340,6 +3398,7 @@ services:
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: ws://playwright:3000
+      PLAYWRIGHT_PROXY_URL: http://browser-proxy:3128
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: http://mineru-api:8000
@@ -3444,6 +3503,16 @@ services:
       TEAMS_BOT_ID: ${TEAMS_BOT_ID}
       SLACK_CHANNEL_ID: ${SLACK_CHANNEL_ID}
       SLACK_SERVICE_URL: ${SLACK_SERVICE_URL}
+
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3596,6 +3665,9 @@ services:
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3652,6 +3724,16 @@ services:
 
       # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3812,6 +3894,9 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      # Decrypts the profile's secret fields (Password inputs) when a run validates its config. Every agent whose
+      # blueprint declares a Password field needs it, including mcp_react_agent once it gets a service here.
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
 
       # LiteLLM Access (draft-reply generation)
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -3877,6 +3962,8 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      # Decrypts the profile's secret fields (Password inputs) when a run validates its config.
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
 
       # LiteLLM Access (mail classification)
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -3954,6 +4041,8 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      # Decrypts the profile's secret fields (Password inputs) when a run validates its config.
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
 
       # LiteLLM Access (release notes, translations, titles and follow-ups)
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -3980,6 +4069,16 @@ services:
 
       # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -4342,7 +4441,7 @@ services:
 # - egress:  Outbound internet only, ICC disabled (containers isolated)
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
-# - browser:       The Playwright browser plus only its callers (open-webui, the web-fetching agents)
+# - browser:       The Playwright browser, browser-proxy (its only way out) and its callers (open-webui, the web-fetching agents)
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -4374,9 +4473,9 @@ networks:
     name: code-sandbox
     driver: bridge
     internal: true
-  # Single-purpose zone: the Playwright browser plus only its callers (open-webui, the web-fetching agents).
-  # Keeps a page the browser loads from reaching the rest of backend, which a URL check alone cannot
-  # guarantee (DNS rebinding). Outbound internet comes from egress.
+  # Single-purpose zone: the Playwright browser, browser-proxy and the browser's callers (open-webui, the
+  # web-fetching agents). Playwright has no other network: it reaches the internet only through browser-proxy,
+  # which refuses every address that is not public, so a page reaches neither the platform, the host nor the LAN.
   browser:
     name: browser
     driver: bridge

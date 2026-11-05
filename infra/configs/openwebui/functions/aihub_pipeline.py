@@ -66,8 +66,12 @@ KNOWLEDGE_COLLECTION_TYPE = "collection"
 # a file forwarded again on a later turn is not copied into the agent bucket a second time.
 AGENT_UPLOADS_FILE_META_KEY = "aihub_agent_uploads"
 
-# A temporary chat's text item and a note have no file in Open WebUI, so the pipe remembers the agent's upload of each,
-# by the item's id (a note's with its version), in Open WebUI's Redis; for as long as the agent-files bucket keeps it.
+# Must stay in sync with the filename limit of the API's ``AgentFileUploadRequest``.
+AGENT_UPLOAD_FILENAME_MAX_LENGTH = 255
+
+# A temporary chat's text item, a note and an attached chat have no file in Open WebUI, so the pipe remembers the agent's
+# upload of each, by the item's id (a note's or chat's with its version), in Open WebUI's Redis; for as long as the
+# agent-files bucket keeps it.
 # A temporary chat's id comes from the browser, so the key also names the user the upload belongs to.
 AIHUB_TEMPORARY_UPLOAD_REDIS_KEY = "aihub:temp-upload:{user_id}:{thread_id}:{item_id}"
 AIHUB_TEMPORARY_UPLOAD_REDIS_TTL_SECONDS = 7 * 24 * 60 * 60
@@ -1043,6 +1047,17 @@ class HumanInTheLoopHandler(EventHandler):
 
         logger.info(f"Received HITL request (type={hitl_type}): {question}")
 
+        # Chat type with choice questions: show Open WebUI's question dialog; the text question stays the fallback
+        if hitl_type == "chat" and event.get("questions"):
+            answers = await self._ask_questions(event["questions"], context)
+            if answers is not None:
+                context.state_manager.start_text_block(f"\n\n{self._chosen_answers(event['questions'], answers)}\n\n")
+                await context.emitter(
+                    {"type": "replace", "data": {"content": context.state_manager.serialize_to_html()}}
+                )
+                await self._send_response(json.dumps(answers, ensure_ascii=False), event, context)
+                return True
+
         # Chat type: Display question as regular chat message, no popup
         # User will respond by typing a normal chat message
         if hitl_type == "chat":
@@ -1081,18 +1096,65 @@ class HumanInTheLoopHandler(EventHandler):
             result = result.get("value", "") if isinstance(result, dict) else str(result)
 
         if result is not None and result != "":
-            response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")
-            hitl_display_id = topic.get("display_id", "")
-            agent_class = topic.get("agent_class", "")
-            agent_id = topic.get("agent_id", "")
-
-            response_payload = {"response": result, "request_event": event}
-
-            await context.stream_service.send_hitl_response(
-                response_event_name, response_payload, hitl_display_id, context, agent_class, agent_id
-            )
+            await self._send_response(result, event, context)
 
         return True
+
+    @staticmethod
+    async def _send_response(
+        result: Annotated[Any, "The human's answer"],
+        event: Annotated[dict[str, Any], "HITL request event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> None:
+        topic = event.get("topic", {})
+        await context.stream_service.send_hitl_response(
+            topic.get("event_name", "HumanInTheLoopResponseEvent"),
+            {"response": result, "request_event": event},
+            topic.get("display_id", ""),
+            context,
+            topic.get("agent_class", ""),
+            topic.get("agent_id", ""),
+        )
+
+    @staticmethod
+    async def _ask_questions(
+        questions: Annotated[list[dict[str, Any]], "Choice questions of the request"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[Optional[dict[str, Any]], "The answers by question id, or None to fall back to the text question"]:
+        """Open WebUI's question dialog; a cancelled, failed or unsupported dialog leaves the question to the chat."""
+        try:
+            result = await context.caller(
+                {
+                    "type": "request:user_input",
+                    "data": {"questions": questions, "allow_other": True, "timeout_ms": None},
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Question dialog failed, asking in the chat instead: {e}")
+            return None
+        if not isinstance(result, dict) or result.get("status") != "answered" or not result.get("answers"):
+            logger.info(f"Question dialog not answered ({result!r}), asking in the chat instead")
+            return None
+        return result["answers"]
+
+    @staticmethod
+    def _chosen_answers(
+        questions: Annotated[list[dict[str, Any]], "Choice questions of the request"],
+        answers: Annotated[dict[str, Any], "The answers by question id"],
+    ) -> Annotated[str, "The answers as a short list"]:
+        lines = []
+        for question in questions:
+            answer = answers.get(question.get("id"), {})
+            if answer.get("type") == "other":
+                chosen = answer.get("text", "")
+            else:
+                option = answer.get("option_index", 0)
+                options = question.get("options", [])
+                label = answer.get("label") or (options[option].get("label") if option < len(options) else "")
+                description = options[option].get("description", "") if option < len(options) else ""
+                chosen = f"{label} ({description})" if description else label
+            lines.append(f"- **{question.get('header', question.get('id'))}:** {chosen}")
+        return "\n".join(lines)
 
 
 class ExceptionEventHandler(EventHandler):
@@ -2364,7 +2426,7 @@ class FileProcessingService:
         scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
     ) -> Annotated[AgentAttachment | None, "The file with its known upload, or None when Open WebUI lacks it"]:
         """A temporary chat's text, which only carries content, is uploaded as a plain-text file for the agent to read
-        like any other attachment, and a note as a markdown file."""
+        like any other attachment, and a note or an attached chat as a markdown file."""
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
         if file.get("type") == "text" and file.get("content") is not None:
             name = file.get("name") or "attachment"
@@ -2378,6 +2440,8 @@ class FileProcessingService:
             )
         if file.get("type") == "note":
             return await self._resolve_note(file, scope)
+        if file.get("type") == "chat":
+            return await self._resolve_chat(file, scope)
 
         file_obj = await Files.get_file_by_id(file.get("id", ""))
         if not file_obj:
@@ -2415,11 +2479,76 @@ class FileProcessingService:
         upload_key = f"note:{note.id}:{note.updated_at}"
         return AgentAttachment(
             source=file,
-            filename=f"{note.title or 'note'}.md",
+            filename=FileProcessingService._markdown_filename(note.title or "note"),
             content_type="text/markdown",
             file_id=await scope.recall(upload_key),
             text=((note.data or {}).get("content") or {}).get("md") or "",
             upload_key=upload_key,
+        )
+
+    @staticmethod
+    async def _resolve_chat(
+        file: Annotated[dict[str, Any], "A chat the user attached"],
+        scope: Annotated[TemporaryUploadScope, "Where the chat's upload is remembered, for the user it belongs to"],
+    ) -> Annotated[
+        AgentAttachment | None, "The chat's transcript, or None when it is gone or the user may not read it"
+    ]:
+        """Agent models run without Open WebUI's file context, so the pipe turns an attached chat into its transcript
+        itself, in Open WebUI's own format. It repeats Open WebUI's read check, since a chat id comes from the browser,
+        and remembers the upload per version of the chat, so a chat that grew reaches the agent again."""
+        chat = await Chats.get_chat_by_id(file.get("id", ""))
+        if not chat:
+            logger.warning(f"Could not retrieve chat with ID: {file.get('id', '')}")
+            return None
+        if not await FileProcessingService._may_read_chat(chat, scope.user_id):
+            logger.warning(f"User {scope.user_id} may not read chat {chat.id}")
+            return None
+        transcript = FileProcessingService._chat_transcript(chat)
+        if not transcript:
+            return None
+        upload_key = f"chat:{chat.id}:{chat.updated_at}"
+        return AgentAttachment(
+            source=file,
+            filename=FileProcessingService._markdown_filename(chat.title or "chat"),
+            content_type="text/markdown",
+            file_id=await scope.recall(upload_key),
+            text=transcript,
+            upload_key=upload_key,
+        )
+
+    @staticmethod
+    def _markdown_filename(title: Annotated[str, "A note's or chat's title"]) -> Annotated[str, "Its upload's name"]:
+        """A title may hold a path separator, which the agent upload API refuses in a filename."""
+        stem = title.replace("/", "-").replace("\\", "-")
+        return f"{stem[: AGENT_UPLOAD_FILENAME_MAX_LENGTH - len('.md')]}.md"
+
+    @staticmethod
+    async def _may_read_chat(
+        chat: Annotated[Any, "The attached chat"], user_id: Annotated[str, "The user attaching it"]
+    ) -> Annotated[bool, "Whether Open WebUI lets the user read the chat"]:
+        """The owner, a user it was shared with, or a user who may read the folder it lies in."""
+        from open_webui.models.access_grants import AccessGrants
+        from open_webui.models.folders import Folders
+        from open_webui.utils.access_control.folders import has_folder_access
+
+        if chat.user_id == user_id or await AccessGrants.has_access(
+            user_id=user_id, resource_type="shared_chat", resource_id=chat.id, permission="read"
+        ):
+            return True
+        folder = await Folders.get_folder_by_id(chat.folder_id) if chat.folder_id else None
+        return bool(folder) and await has_folder_access(user_id, folder, "read", db=None)
+
+    @staticmethod
+    def _chat_transcript(chat: Annotated[Any, "The attached chat"]) -> Annotated[str, "Its current branch as markdown"]:
+        from open_webui.utils.misc import get_content_from_message, get_message_list
+
+        history = (chat.chat or {}).get("history") or {}
+        messages_map, current_id = history.get("messages") or {}, history.get("currentId")
+        if not messages_map or not current_id:
+            return ""
+        return "\n".join(
+            f"#### {message.get('role', 'user').capitalize()}\n{get_content_from_message(message) or ''}\n"
+            for message in get_message_list(messages_map, current_id)
         )
 
     async def _upload_all(

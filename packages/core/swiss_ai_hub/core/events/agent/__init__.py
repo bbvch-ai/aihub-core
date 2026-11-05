@@ -80,11 +80,18 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_chat_request_event import (
         HumanInTheLoopChatRequestEvent,
     )
+    from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_choice_option import HumanInTheLoopChoiceOption
+    from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_choice_question import (
+        HumanInTheLoopChoiceQuestion,
+    )
     from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_confirmation_request_event import (
         HumanInTheLoopConfirmationRequestEvent,
     )
     from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_input_request_event import (
         HumanInTheLoopInputRequestEvent,
+    )
+    from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_questions_request_event import (
+        HumanInTheLoopQuestionsRequestEvent,
     )
     from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event import HumanInTheLoopRequestEvent
     from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_chat_response_event import (
@@ -169,7 +176,13 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_status_event import ToolLoopStatusEvent
     from swiss_ai_hub.core.events.agent.tool_loop.tool_result_event import ToolResultEvent
     from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
+    from swiss_ai_hub.core.events.agent.user.inline_file import InlineFile
+    from swiss_ai_hub.core.events.agent.user.inline_file_settings import InlineFileSettings
+    from swiss_ai_hub.core.events.agent.user.inline_image_settings import InlineImageSettings
     from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
+    from swiss_ai_hub.core.events.agent.user.response_schema import ResponseSchema
+    from swiss_ai_hub.core.events.agent.user.response_schema_violation import ResponseSchemaViolation
+    from swiss_ai_hub.core.events.agent.user.stored_image import StoredImage
     from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
     from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
     from swiss_ai_hub.core.events.agent.web_fetch.fetch_web_pages_event import FetchWebPagesEvent
@@ -231,6 +244,9 @@ __all__ = [
     "HumanInTheLoopChat",
     "HumanInTheLoopChatRequestEvent",
     "HumanInTheLoopChatResponseEvent",
+    "HumanInTheLoopChoiceOption",
+    "HumanInTheLoopChoiceQuestion",
+    "HumanInTheLoopQuestionsRequestEvent",
     "HumanInTheLoopConfirmation",
     "HumanInTheLoopConfirmationRequestEvent",
     "HumanInTheLoopConfirmationResponseEvent",
@@ -288,6 +304,10 @@ __all__ = [
     "UnreadMailSummary",
     "ChatFeature",
     "UserMessageEvent",
+    "InlineFile",
+    "InlineFileSettings",
+    "InlineImageSettings",
+    "StoredImage",
     "UserUploadedFile",
     "RunToolLoopEvent",
     "ToolApprovalRequestEvent",
@@ -304,6 +324,8 @@ __all__ = [
     "ToolLoopStatusEvent",
     "ToolResultEvent",
     "KnowledgeReference",
+    "ResponseSchema",
+    "ResponseSchemaViolation",
     "KnowledgeSearchedEvent",
     "SearchKnowledgeEvent",
     "FetchWebPagesEvent",
@@ -368,6 +390,9 @@ _LAZY_IMPORTS: dict[str, str] = {
     "HumanInTheLoopChat": "swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_chat",
     "HumanInTheLoopChatRequestEvent": "swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_chat_request_event",
     "HumanInTheLoopChatResponseEvent": "swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_chat_response_event",
+    "HumanInTheLoopChoiceOption": "swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_choice_option",
+    "HumanInTheLoopChoiceQuestion": "swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_choice_question",
+    "HumanInTheLoopQuestionsRequestEvent": "swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_questions_request_event",
     "HumanInTheLoopConfirmation": "swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_confirmation",
     "HumanInTheLoopConfirmationRequestEvent": "swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_confirmation_request_event",
     "HumanInTheLoopConfirmationResponseEvent": "swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_confirmation_response_event",
@@ -427,6 +452,10 @@ _LAZY_IMPORTS: dict[str, str] = {
     "UnreadMailSummary": "swiss_ai_hub.core.events.agent.imap.unread_mail_summary",
     "ChatFeature": "swiss_ai_hub.core.events.agent.user.chat_feature",
     "UserMessageEvent": "swiss_ai_hub.core.events.agent.user.user_message_event",
+    "InlineFile": "swiss_ai_hub.core.events.agent.user.inline_file",
+    "InlineFileSettings": "swiss_ai_hub.core.events.agent.user.inline_file_settings",
+    "InlineImageSettings": "swiss_ai_hub.core.events.agent.user.inline_image_settings",
+    "StoredImage": "swiss_ai_hub.core.events.agent.user.stored_image",
     "UserUploadedFile": "swiss_ai_hub.core.events.agent.user.user_uploaded_file",
     "RunToolLoopEvent": "swiss_ai_hub.core.events.agent.tool_loop.run_tool_loop_event",
     "ToolApprovalRequestEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_approval_request_event",
@@ -443,6 +472,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ToolLoopState": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_state",
     "ToolResultEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_result_event",
     "KnowledgeReference": "swiss_ai_hub.core.events.agent.user.knowledge_reference",
+    "ResponseSchema": "swiss_ai_hub.core.events.agent.user.response_schema",
+    "ResponseSchemaViolation": "swiss_ai_hub.core.events.agent.user.response_schema_violation",
     "KnowledgeSearchedEvent": "swiss_ai_hub.core.events.agent.knowledge.knowledge_searched_event",
     "SearchKnowledgeEvent": "swiss_ai_hub.core.events.agent.knowledge.search_knowledge_event",
     "FetchWebPagesEvent": "swiss_ai_hub.core.events.agent.web_fetch.fetch_web_pages_event",

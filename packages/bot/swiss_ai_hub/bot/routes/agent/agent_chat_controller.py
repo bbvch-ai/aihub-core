@@ -3,7 +3,6 @@ from typing import Annotated, Self
 
 from fastapi import Body, Depends, Path, Request, Response
 from microsoft_agents.activity import Activity
-from microsoft_agents.hosting.aiohttp import CloudAdapter
 from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.dependencies import use_nats
@@ -49,9 +48,7 @@ class AgentChatController(Controller):
             path,
             typing_timeout_seconds=typing_timeout_seconds,
         )
-        adapter: CloudAdapter = RoutesService.get_adapter(path)
-
-        result = await adapter.process(request, chat_bot)
+        result = await RoutesService.process_activity(request, chat_bot)
         logger.info("Agent chat completion successful")
         return result
 

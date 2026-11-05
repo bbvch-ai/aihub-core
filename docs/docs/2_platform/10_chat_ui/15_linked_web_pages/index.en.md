@@ -84,7 +84,8 @@ long pages make a large prompt, and some models answer large prompts noticeably 
 ## Security
 
 - **Internal addresses are refused.** Every request a page makes, redirects and the files it loads included, is checked
-  first, and addresses in private networks or with internal names are refused.
+  first, and addresses in private networks or with internal names are refused. The browser reaches the internet only
+  through a filtering proxy that resolves each host itself and refuses anything that is not a public address.
 - **The browser is isolated.** Pages are loaded by the platform's own browser service, which sits in a network zone of
   its own and cannot reach the platform's internal services. See
   [Network isolation](../../2_architecture/4_network_isolation/).

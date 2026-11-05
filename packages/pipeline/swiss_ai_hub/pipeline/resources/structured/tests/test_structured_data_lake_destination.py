@@ -6,15 +6,17 @@ import pytest
 from dagster import build_op_context
 
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3DataLakeClient
-from swiss_ai_hub.pipeline.resources.structured.markdown_data_lake_destination import MarkdownDataLakeDestination
+from swiss_ai_hub.pipeline.resources.structured.structured_data_lake_destination import StructuredDataLakeDestination
 from swiss_ai_hub.pipeline.resources.structured.tests.fake_s3_client import FakeS3Client
 from swiss_ai_hub.pipeline.source_pipelines.tests.fake_structured_source_adapter import (
+    FAKE_ATTACHMENTS,
+    FAKE_DOWNLOADS,
     FAKE_TRACKERS,
     FakeStructuredSyncConfig,
     fake_issue,
 )
 
-_MODULE = "swiss_ai_hub.pipeline.resources.structured.markdown_data_lake_destination"
+_MODULE = "swiss_ai_hub.pipeline.resources.structured.structured_data_lake_destination"
 _BUCKET = "db-a"
 _TRACKER = "https://tracker.test/a"
 
@@ -45,13 +47,24 @@ def tracker() -> list[dict]:
     return FAKE_TRACKERS[_TRACKER]
 
 
-def _sync(pipelines_dir: Path) -> MarkdownDataLakeDestination:
+@pytest.fixture(autouse=True)
+def attachments() -> dict[str, bytes | None]:
+    FAKE_ATTACHMENTS[_TRACKER] = {}
+    FAKE_DOWNLOADS.clear()
+    yield FAKE_ATTACHMENTS[_TRACKER]
+    FAKE_ATTACHMENTS.pop(_TRACKER)
+
+
+def _sync(pipelines_dir: Path) -> StructuredDataLakeDestination:
     """One sync of the fake tracker into the bucket, the way the pipeline will run it per database."""
     config = FakeStructuredSyncConfig.model_validate(
         {"source_kind": "fake_tracker", "fake_tracker": {"base_url": _TRACKER}}
     )
     with build_op_context() as context:
-        destination = MarkdownDataLakeDestination(_BUCKET, context)
+        adapter, options = config.adapter(), config.options()
+        destination = StructuredDataLakeDestination(
+            _BUCKET, context, read_file=lambda reference: adapter.read_file(options, reference)
+        )
         pipeline = dlt.pipeline(
             pipeline_name=f"structured_{_BUCKET}",
             pipelines_dir=str(pipelines_dir),
@@ -59,7 +72,7 @@ def _sync(pipelines_dir: Path) -> MarkdownDataLakeDestination:
             dataset_name=_BUCKET,
         )
         pipeline.config.restore_from_destination = False
-        pipeline.run(config.adapter().file_source(config.options())).raise_on_failed_jobs()
+        pipeline.run(adapter.file_source(options)).raise_on_failed_jobs()
     return destination
 
 
@@ -144,3 +157,66 @@ class TestFailures:
         _sync(tmp_path)
 
         assert s3.keys(_BUCKET) == ["ABC/ABC-1.md", "XYZ/XYZ-1.md"]
+
+
+class TestFiles:
+    def test_a_file_lands_under_its_own_extension_with_the_title_and_link_ingestion_reads(
+        self, tmp_path, s3, notify, attachments
+    ):
+        attachments["Handbook 2026.pdf"] = b"%PDF-1.7 handbook"
+
+        destination = _sync(tmp_path)
+
+        stored = s3.objects[(_BUCKET, "Attachments/Handbook 2026.pdf")]
+        assert stored["Body"] == b"%PDF-1.7 handbook"
+        assert stored["ContentType"] == "application/pdf"
+        assert stored["Metadata"] == {
+            "document_title": "Handbook%202026.pdf",
+            "source_origin": "https://tracker.test/a/attachments/Handbook%202026.pdf",
+        }
+        assert "Attachments/Handbook 2026.pdf" in destination.written_keys
+        assert "Attachments/Handbook 2026.pdf" in _announced(notify)
+
+    def test_a_file_delivered_again_after_a_lost_state_is_read_but_not_rewritten(
+        self, tmp_path, s3, notify, attachments
+    ):
+        """Its ETag is the MD5 of the content, as for markdown, because a file is written in one part."""
+        attachments["handbook.pdf"] = b"%PDF-1.7 handbook"
+        _sync(tmp_path / "first")
+        puts_after_first_run = s3.put_attempts
+        notify.reset_mock()
+
+        destination = _sync(tmp_path / "state_lost")
+
+        assert destination.unchanged_count == 3
+        assert s3.put_attempts == puts_after_first_run
+        assert _announced(notify) == []
+
+    def test_a_file_the_source_refuses_is_skipped_and_named_while_the_rest_is_written(
+        self, tmp_path, s3, notify, attachments
+    ):
+        attachments["secret.pdf"] = None
+        attachments["handbook.pdf"] = b"%PDF-1.7 handbook"
+
+        destination = _sync(tmp_path)
+
+        assert destination.failed_keys == ["Attachments/secret.pdf"]
+        assert s3.keys(_BUCKET) == ["ABC/ABC-1.md", "Attachments/handbook.pdf", "XYZ/XYZ-1.md"]
+
+    def test_a_file_without_anything_to_read_it_fails_at_once(self, tmp_path, s3, notify, attachments):
+        attachments["handbook.pdf"] = b"%PDF-1.7 handbook"
+        config = FakeStructuredSyncConfig.model_validate(
+            {"source_kind": "fake_tracker", "fake_tracker": {"base_url": _TRACKER}}
+        )
+        with build_op_context() as context:
+            pipeline = dlt.pipeline(
+                pipeline_name=f"structured_{_BUCKET}",
+                pipelines_dir=str(tmp_path),
+                destination=StructuredDataLakeDestination(_BUCKET, context).as_dlt_destination(),
+                dataset_name=_BUCKET,
+            )
+            pipeline.config.restore_from_destination = False
+
+            source = config.adapter().file_source(config.options())
+            with pytest.raises(Exception, match="nothing reads this source's files"):
+                pipeline.run(source)

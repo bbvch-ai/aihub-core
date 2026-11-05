@@ -1,7 +1,7 @@
 ---
 title: Verlinkte Webseiten
 description: Agenten lesen die Webseiten, die Sie in einer Nachricht verlinken, antworten daraus, zitieren sie und nennen Ihnen die Seiten, die sie nicht lesen konnten.
-source_sha: 8f127256f557491da077da767f66269425dc3b2c36bb144b3624acb771805e86
+source_sha: d0d7a5cec0d895777f36c947d41d6f338e7f5e0d4e5a3c86d2c6e59142866277
 ---
 
 # Verlinkte Webseiten
@@ -89,7 +89,9 @@ grosse Prompts deutlich langsamer.
 ## Sicherheit
 
 - **Interne Adressen werden abgelehnt.** Jede Anfrage einer Seite, einschliesslich Weiterleitungen und der Dateien, die
-  sie lädt, wird zuerst geprüft, und Adressen in privaten Netzwerken oder mit internen Namen werden abgelehnt.
+  sie lädt, wird zuerst geprüft, und Adressen in privaten Netzwerken oder mit internen Namen werden abgelehnt. Der
+  Browser erreicht das Internet nur über einen filternden Proxy, der jeden Host selbst auflöst und alles ablehnt, was
+  keine öffentliche Adresse ist.
 - **Der Browser ist isoliert.** Seiten werden vom plattformeigenen Browser-Dienst geladen, der in einer eigenen
   Netzwerkzone liegt und die internen Dienste der Plattform nicht erreichen kann. Siehe
   [Netzwerkisolation](../../2_architecture/4_network_isolation/).

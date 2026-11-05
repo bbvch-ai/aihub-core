@@ -41,6 +41,7 @@ from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_eve
 from swiss_ai_hub.core.events.agent.record_extraction.records_extracted_event import RecordsExtractedEvent
 from swiss_ai_hub.core.events.agent.semantic.llm.message import Message
 from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
+from swiss_ai_hub.core.events.agent.user.response_schema import ResponseSchema
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_costs import LLMCosts
@@ -75,6 +76,7 @@ class StreamingResources:
         None  # Added field to store the final StopEvent
     )
     table_downloads: list[str] = field(default_factory=list)
+    costs: LLMCosts = field(default_factory=LLMCosts.from_zero)
 
 
 @dataclass
@@ -100,6 +102,20 @@ class ChatService:
     """
     Orchestrates chat interactions for both streaming and JSON-based endpoints.
     """
+
+    @staticmethod
+    def existing_thread_of(user: UserIdentity, thread_id: ObjectId | None) -> ThreadEntity | None:
+        """The thread a message continues, or None when it does not exist yet. A thread the user is no member of is
+        refused, before anything the message carries is stored."""
+        if not thread_id:
+            return None
+        try:
+            thread = ThreadEntity.get_thread_by_id(str(thread_id))
+        except mongoengine.errors.DoesNotExist:
+            return None
+        if thread and user.id not in [u.user_id for u in thread.users]:
+            raise HTTPException(status_code=403, detail="User not part of the thread")
+        return thread or None
 
     @staticmethod
     async def iter_streamed_display_events(
@@ -151,6 +167,7 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         requested_features: list[ChatFeature] | None = None,
+        response_schema: ResponseSchema | None = None,
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
@@ -160,17 +177,7 @@ class ChatService:
         Common initialization steps for both streaming and JSON interactions.
         """
         messages = ChatService._without_earlier_tables(messages)
-        thread = None
-        if thread_id:
-            try:
-                thread = ThreadEntity.get_thread_by_id(str(thread_id))
-                if not thread:
-                    raise mongoengine.errors.DoesNotExist()
-                if user.id not in [u.user_id for u in thread.users]:
-                    raise HTTPException(status_code=403, detail="User not part of the thread")
-            except mongoengine.errors.DoesNotExist:
-                pass
-
+        thread = ChatService.existing_thread_of(user, thread_id)
         if not thread:
             thread = ThreadEntity.create_thread(
                 "chat",
@@ -180,17 +187,14 @@ class ChatService:
             )
         logger.debug(f"Created thread: {thread.id}")
 
-        hitl_requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(str(thread.id))
-        logger.debug(f"hitl_requests: {hitl_requests}")
-
-        hitl_responses = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(str(thread.id))
-        logger.debug(f"hitl_responses: {hitl_responses}")
+        open_hitl_requests = PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(str(thread.id))
+        logger.debug(f"open_hitl_requests: {open_hitl_requests}")
 
         thread_id = str(thread.id)
         display_id = display_id or str(ObjectId())
 
-        if len(hitl_requests) != len(hitl_responses):
-            open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
+        if open_hitl_requests:
+            open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(open_hitl_requests[-1].event_data)
             topic = open_hitl_request.topic
 
             if isinstance(open_hitl_request, HumanInTheLoopInputRequestEvent):
@@ -222,6 +226,7 @@ class ChatService:
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 files=files,
                 requested_features=requested_features or [],
+                response_schema=response_schema,
             )
 
         event = ExternalAgentEvent(
@@ -253,6 +258,7 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         requested_features: list[ChatFeature] | None = None,
+        response_schema: ResponseSchema | None = None,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
     ) -> StreamingResources:
@@ -268,6 +274,7 @@ class ChatService:
             display_id=display_id,
             files=files,
             requested_features=requested_features,
+            response_schema=response_schema,
             subscribe_to_thread=True,
             locale=locale,
         )
@@ -302,6 +309,8 @@ class ChatService:
             elif event.is_stop_event and is_primary_agent:
                 logger.debug("Received stop event. Stop streaming")
                 await stop_streaming(event, topic)
+            elif event.is_llm_cost_event:
+                resources.costs += event
             elif event.is_exception_event:
                 logger.warning(f"Received exception event: {event.event_name}")
                 await stop_streaming(event, topic)
@@ -341,6 +350,7 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         requested_features: list[ChatFeature] | None = None,
+        response_schema: ResponseSchema | None = None,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
     ) -> JsonResources:
@@ -356,6 +366,7 @@ class ChatService:
             display_id=display_id,
             files=files,
             requested_features=requested_features,
+            response_schema=response_schema,
             subscribe_to_thread=True,
             locale=locale,
         )

@@ -27,7 +27,11 @@ rag:
     Ti vengono fornite informazioni di contesto aggiuntive sotto forma di documenti strutturati. Ogni documento segue 
     un formato coerente, iniziando con `<REFERENCE_DOCUMENT [metadata]>` e terminando con `</REFERENCE_DOCUMENT>`. Questi documenti 
     contengono dettagli essenziali che devono essere utilizzati per comprendere e rispondere con precisione alla domanda dell'utente.
-    Ogni documento include metadati come fonte, namespace, tipo, lingua, versione e timestamp. Il contenuto di questi 
+    I metadati di ogni documento indicano fonte, titolo, versione e timestamp: created_at è il momento in cui il record o
+    il file è stato creato, updated_at e inserted_at quello in cui la piattaforma lo ha elaborato per l'ultima volta. Un
+    documento sincronizzato da un'applicazione aziendale, come un ticket Jira o una pagina Confluence, riporta anche i
+    campi propri di quel record, ad esempio status, priority, issue_type, project, labels o space, e il suo momento
+    updated. Il contenuto di questi 
     documenti fornisce approfondimenti cruciali pertinenti al contesto fornito.
     Di seguito sono riportati i documenti rilevanti:
     <context_documents>

@@ -4,16 +4,16 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from bson import ObjectId
-from cachetools import TTLCache, cached
+from cachetools import TTLCache
 from fastapi import HTTPException
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent,
     RecordsExtractedEvent,
 )
 from swiss_ai_hub.core.generative_ai import ExtractedTableFile, ExtractionFileStore
@@ -39,10 +39,13 @@ from swiss_ai_hub.api.routes.thread.dto.statistics.processed_run_results import 
 from swiss_ai_hub.api.routes.thread.dto.statistics.run_statistics import RunStatistics
 from swiss_ai_hub.api.routes.thread.dto.thread_agent_dto import ThreadAgentDTO
 from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
+from swiss_ai_hub.api.routes.thread.thread_access import ThreadAccess
 from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
 from swiss_ai_hub.api.routes.user.user_service import UserService
 
 logger = logging.getLogger(__name__)
+
+_MINIMAL_AGENT_DTO_CACHE: TTLCache = TTLCache(maxsize=128, ttl=60)
 
 
 class ThreadService:
@@ -104,6 +107,30 @@ class ThreadService:
 
     @staticmethod
     @trace_fn
+    async def get_or_create_thread_to_post_in(
+        thread_id: str,
+        user: UserIdentity,
+        agent: AgentInstanceRef,
+        t: LocaleHandler,
+    ) -> ThreadDTO:
+        """The thread an event is posted into, started for the caller when the id is new.
+
+        Clients name a new conversation's thread themselves (the OpenWebUI pipe derives it from the chat id),
+        so an unknown id is created rather than refused. A profile's scheduled-run thread id cannot be claimed
+        this way because it is keyed with a secret only the instance holds.
+        """
+        try:
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+        except DoesNotExist:
+            ThreadEntity.create_thread(
+                "chat", users=[User(user_id=user.id)], agents=[agent], thread_id=ObjectId(thread_id)
+            )
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+        ThreadAccess.ensure_can_post(thread, user)
+        return thread
+
+    @staticmethod
+    @trace_fn
     async def get_paginated_threads_for_user(
         user_id: str,
         t: LocaleHandler,
@@ -150,18 +177,16 @@ class ThreadService:
     async def get_paginated_threads_for_agent(
         agent_class: str,
         agent_id: str,
+        user_id: str,
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
-        user_id: str | None = None,
     ) -> tuple[int, list[ThreadDTO]]:
-        """
-        Returns a paginated list of threads that a specific agent is part of.
-        """
+        """Returns a page of the user's threads that a specific agent is part of."""
         skip = (page - 1) * page_size
-        total = ThreadEntity.count_threads_by_agent(agent_class, agent_id)
+        total = ThreadEntity.count_threads_by_agent(agent_class, agent_id, user_id)
         threads = ThreadEntity.get_paginated_threads_by_agent(
-            agent_class, agent_id, skip=skip, limit=page_size, user_id=user_id
+            agent_class, agent_id, user_id, skip=skip, limit=page_size
         )
         thread_dtos = await asyncio.gather(
             *(ThreadService.thread_response_from_entity(thread, t) for thread in threads)
@@ -206,16 +231,9 @@ class ThreadService:
         A chat HITL is open when it has not been responded to. Only HITL requests
         with hitl_type == "chat" are considered.
         """
-        hitl_request_entities = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(thread_id)
-        hitl_response_entities = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(thread_id)
-
-        hitl_requests = [HumanInTheLoopRequestEvent.deserialize_event(e.event_data) for e in hitl_request_entities]
-        hitl_responses = [HumanInTheLoopResponseEvent.deserialize_event(e.event_data) for e in hitl_response_entities]
-
-        responded_request_ids: set[str] = {response.request_event.event_id for response in hitl_responses}
-
-        for request in hitl_requests:
-            if request.hitl_type == "chat" and request.event_id not in responded_request_ids:
+        open_entities = PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(thread_id)
+        for request in (HumanInTheLoopRequestEvent.deserialize_event(entity.event_data) for entity in open_entities):
+            if request.hitl_type == "chat":
                 return OpenChatHitlResponse(has_open_chat_hitl=True, hitl_request=request)
 
         return OpenChatHitlResponse(has_open_chat_hitl=False, hitl_request=None)
@@ -292,17 +310,31 @@ class ThreadService:
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
-    @cached(TTLCache(maxsize=128, ttl=60))
     @trace_fn
-    def _fetch_minimal_agent_dto(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentInstanceDTO | None:
+    async def _fetch_minimal_agent_dto(
+        agent_class: str, agent_id: str, t: LocaleHandler
+    ) -> MinimalAgentInstanceDTO | None:
         """
         Fetches agent details and converts to MinimalAgentInstanceDTO.
         Returns None if the agent cannot be found or fetching fails.
+
+        Cached by hand: cachetools' `cached` decorator would store the coroutine, which can be awaited only once.
         """
+        key = (agent_class, agent_id, t)
+        if key in _MINIMAL_AGENT_DTO_CACHE:
+            return _MINIMAL_AGENT_DTO_CACHE[key]
+        dto = await ThreadService._load_minimal_agent_dto(agent_class, agent_id, t)
+        _MINIMAL_AGENT_DTO_CACHE[key] = dto
+        return dto
+
+    @staticmethod
+    async def _load_minimal_agent_dto(
+        agent_class: str, agent_id: str, t: LocaleHandler
+    ) -> MinimalAgentInstanceDTO | None:
         try:
             from swiss_ai_hub.api.routes.agent.agent_service import AgentService
 
-            return AgentService.get_minimal_agent_instance(agent_class, agent_id, t)
+            return await AgentService.get_minimal_agent_instance(agent_class, agent_id, t)
         except DoesNotExist:
             logger.warning(f"Agent not found: {agent_class}/{agent_id}")
             return None
@@ -312,7 +344,7 @@ class ThreadService:
 
     @staticmethod
     @trace_fn
-    def _process_aggregated_runs(aggregated_runs: list[dict], t: "LocaleHandler") -> ProcessedRunResults:
+    async def _process_aggregated_runs(aggregated_runs: list[dict], t: "LocaleHandler") -> ProcessedRunResults:
         """
         Processes raw aggregation results into intermediate display statistics
         and collects unique participating agent identifiers.
@@ -330,32 +362,40 @@ class ThreadService:
             display_agg = results.display_aggregates[display_id]
 
             display_agg.update_from_run_data(run_data)
-
-            # Attempt to fetch the agent that started the run using the cached method
-            start_agent_class = run_data.get("start_agent_class")
-            start_agent_id = run_data.get("start_agent_id")
-            run_agent_dto = ThreadService._fetch_minimal_agent_dto(start_agent_class, start_agent_id, t)
-
-            if run_agent_dto:
-                try:
-                    run_stat_dto = RunStatistics.from_run_data(run_data, run_agent_dto)
-                    display_agg.add_run_dto(run_stat_dto)
-                except Exception as e:
-                    # Log validation or other errors during DTO creation
-                    logger.exception(f"Error creating RunStatistics DTO for run {run_data.get('run_id')}: {e}")
-            else:
-                logger.warning(
-                    f"RunStatistics DTO skipped for run {run_data.get('run_id')} because starting agent "
-                    f"{start_agent_class}/{start_agent_id} could not be fetched."
-                )
-
-            for agent_info in run_data.get("participating_agents_in_run", []):
-                pa_class = agent_info.get("agent_class")
-                pa_id = agent_info.get("agent_id")
-                if pa_class and pa_id:
-                    results.participating_agent_ids.add(AgentIdentifier(agent_class=pa_class, agent_id=pa_id))
+            await ThreadService._add_run_statistics(display_agg, run_data, t)
+            results.participating_agent_ids.update(ThreadService._participating_agents(run_data))
 
         return results
+
+    @staticmethod
+    async def _add_run_statistics(display_agg: IntermediateDisplayStats, run_data: dict, t: "LocaleHandler") -> None:
+        """Adds the run's statistics under the agent that started it; a run whose agent is gone is left out."""
+        start_agent_class = run_data.get("start_agent_class")
+        start_agent_id = run_data.get("start_agent_id")
+        run_agent_dto = await ThreadService._fetch_minimal_agent_dto(start_agent_class, start_agent_id, t)
+        if not run_agent_dto:
+            logger.warning(
+                f"RunStatistics DTO skipped for run {run_data.get('run_id')} because starting agent "
+                f"{start_agent_class}/{start_agent_id} could not be fetched."
+            )
+            return
+        try:
+            display_agg.add_run_dto(RunStatistics.from_run_data(run_data, run_agent_dto))
+        except Exception as e:
+            # Log validation or other errors during DTO creation
+            logger.exception(f"Error creating RunStatistics DTO for run {run_data.get('run_id')}: {e}")
+
+    @staticmethod
+    def _participating_agents(run_data: dict) -> set[AgentIdentifier]:
+        """The agent instances that took part in the run.
+
+        A user's own messages are published as the "UserAgent", which is no agent instance to look up.
+        """
+        return {
+            AgentIdentifier(agent_class=agent_info["agent_class"], agent_id=agent_info["agent_id"])
+            for agent_info in run_data.get("participating_agents_in_run", [])
+            if agent_info.get("agent_class") and agent_info.get("agent_id") and agent_info["agent_class"] != "UserAgent"
+        }
 
     @staticmethod
     @trace_fn
@@ -412,7 +452,7 @@ class ThreadService:
         #    Leverages the cached agent fetcher.
         initial_agent_dtos: list[MinimalAgentInstanceDTO] = []
         for agent_ref in entity.agents:
-            dto = ThreadService._fetch_minimal_agent_dto(agent_ref.agent_class, agent_ref.agent_id, t)
+            dto = await ThreadService._fetch_minimal_agent_dto(agent_ref.agent_class, agent_ref.agent_id, t)
             if dto:
                 initial_agent_dtos.append(dto)
 
@@ -435,6 +475,9 @@ class ThreadService:
             name=entity.name,
             users=user_dtos,
             agents=sorted(initial_agent_dtos, key=lambda a: (a.agent_class, a.agent_id)),
+            process_class=entity.process_class,
+            process_id=entity.process_id,
+            process_walkthrough_id=entity.process_walkthrough_id,
         )
 
         # 2. Get aggregated run statistics from the database
@@ -448,7 +491,7 @@ class ThreadService:
             return response
 
         # 3. Process raw run data into intermediate structures
-        processed_results = ThreadService._process_aggregated_runs(aggregated_runs, t)
+        processed_results = await ThreadService._process_aggregated_runs(aggregated_runs, t)
 
         # 4. Create final Display DTOs from intermediate aggregates
         final_display_dtos: list[DisplayStatistics] = []
@@ -477,7 +520,7 @@ class ThreadService:
         # 5. Fetch DTOs for all unique participating agents
         final_participating_agents: list[MinimalAgentInstanceDTO] = []
         for agent_id in processed_results.participating_agent_ids:
-            dto = ThreadService._fetch_minimal_agent_dto(agent_id.agent_class, agent_id.agent_id, t)
+            dto = await ThreadService._fetch_minimal_agent_dto(agent_id.agent_class, agent_id.agent_id, t)
             if dto:
                 final_participating_agents.append(dto)
 
