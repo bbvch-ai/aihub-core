@@ -10,13 +10,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from cryptography.fernet import Fernet
-from mongoengine import connect, disconnect
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.imap import ImapClientConfig
-from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.secrets import SecretEncryptionService
@@ -45,39 +42,22 @@ class _MailboxAgentConfig(AgentConfig):
 
 
 @pytest.fixture
-def mongo_connection():
-    client = connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-    )
-    yield client
-    disconnect()
-
-
-@pytest.fixture(autouse=True)
-def clean_classes(mongo_connection):
-    # The profiles are Beanie and emptied by `clean_beanie_collections`; the classes stay on MongoEngine.
-    AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
-    yield
-    AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
-
-
-@pytest.fixture
 def encryption(monkeypatch: pytest.MonkeyPatch) -> SecretEncryptionService:
     key = Fernet.generate_key().decode()
     monkeypatch.setenv(_KEY_VARIABLE, key)
     return SecretEncryptionService(key)
 
 
-def _announce() -> None:
-    AgentClassEntity(
+async def _announce() -> None:
+    # Class and profiles are Beanie documents, emptied before every test by `clean_beanie_collections`.
+    await AgentClassEntity(
         agent_class=_AGENT_CLASS,
         form=[element.model_dump() for element in _MailboxAgentConfig.as_form().to_formkit_form()],
         is_conversational=False,
         start_events=[],
         stop_events=[],
         network_graph={},
-    ).save(validate=False)
+    ).insert()
 
 
 async def _agent(agent_id: str, password: Any, **config: Any) -> AgentConfigEntityDocument:
@@ -96,7 +76,7 @@ async def _stored_config(agent: AgentConfigEntityDocument) -> dict[str, Any]:
 
 
 async def test_plaintext_is_encrypted(encryption: SecretEncryptionService):
-    _announce()
+    await _announce()
     agent = await _agent("plain", "hunter2", inbox_folder="INBOX")
 
     assert await PlaintextAgentSecretMigration.run() == [f"agent {_AGENT_CLASS}/plain"]
@@ -110,7 +90,7 @@ async def test_plaintext_is_encrypted(encryption: SecretEncryptionService):
 
 
 async def test_ciphertext_is_untouched_and_a_second_run_is_a_no_op(encryption: SecretEncryptionService):
-    _announce()
+    await _announce()
     ciphertext = encryption.encrypt("hunter2")
     agent = await _agent("encrypted", ciphertext)
 
@@ -126,7 +106,7 @@ async def test_a_profile_whose_class_was_never_announced_is_left_alone(encryptio
 
 
 async def test_a_save_between_read_and_write_wins(encryption: SecretEncryptionService):
-    _announce()
+    await _announce()
     stale = await _agent("raced", "hunter2")
     newer = {"imap": {"host": "imap.example.com", "password": encryption.encrypt("changed"), "client_secret": ""}}
     await AgentConfigEntityDocument.find({"_id": stale.id}).update({"$set": {"config_data": newer}})
@@ -138,7 +118,7 @@ async def test_a_save_between_read_and_write_wins(encryption: SecretEncryptionSe
 
 
 async def test_formkit_dict_arrays_elsewhere_are_kept_as_they_are(encryption: SecretEncryptionService):
-    _announce()
+    await _announce()
     numbered = {"0": {"label": "a"}, "1": {"label": "b"}}
     agent = await _agent("numbered", "hunter2", categories=numbered)
 
@@ -151,7 +131,7 @@ async def test_formkit_dict_arrays_elsewhere_are_kept_as_they_are(encryption: Se
 
 async def test_nothing_to_encrypt_builds_no_service(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv(_KEY_VARIABLE, raising=False)
-    _announce()
+    await _announce()
     await _agent("blank", "")
     await _agent("unset", None)
 

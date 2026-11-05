@@ -75,7 +75,7 @@ class ConfigSecrets:
         profiles: list[tuple[AgentConfigEntityDocument, set[str]]] = []
         for document in await AgentConfigEntityDocument.list_all():
             if document.agent_class not in paths_by_class:
-                class_entity = AgentClassEntity.get_by_agent_class(document.agent_class)
+                class_entity = await AgentClassEntity.get_by_agent_class(document.agent_class)
                 paths_by_class[document.agent_class] = (
                     ConfigSecrets.secret_paths(class_entity.form_elements) if class_entity else set()
                 )
