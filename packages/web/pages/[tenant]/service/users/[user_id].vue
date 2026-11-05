@@ -9,25 +9,27 @@
         class="panel pt-5"
       >
         <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <div class="flex flex-col items-start gap-2">
+          <div class="flex min-w-0 flex-col items-start gap-2">
             <span class="font-semibold">
               {{ t('user.list.name') }}
             </span>
             <Tag
               :value="user.name"
               severity="secondary"
+              class="max-w-full [overflow-wrap:anywhere]"
             />
           </div>
-          <div class="flex flex-col items-start gap-2">
+          <div class="flex min-w-0 flex-col items-start gap-2">
             <span class="font-semibold">
               {{ t('user.list.email') }}
             </span>
             <Tag
               :value="user.email"
               severity="secondary"
+              class="max-w-full [overflow-wrap:anywhere]"
             />
           </div>
-          <div class="flex flex-col items-start gap-2">
+          <div class="flex min-w-0 flex-col items-start gap-2">
             <span class="font-semibold">
               {{ t('user.list.sys_admin') }}
             </span>
@@ -43,15 +45,17 @@
               severity="secondary"
             />
           </div>
-          <div class="flex flex-col items-start gap-2">
+          <div class="flex min-w-0 flex-col items-start gap-2">
             <span class="font-semibold">
               {{ t('user.list.roles') }}
             </span>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex max-w-full flex-wrap gap-2">
               <Badge
                 v-for="role in user.roles"
                 :key="role"
+                v-tooltip.top="role"
                 :value="role"
+                class="max-w-full truncate"
               />
             </div>
           </div>

@@ -818,7 +818,7 @@
     },
     {
       "alias": "browser-aihub",
-      "description": "Browser flow with a deny gate for clients carrying the langfuse-sysadmin-gate scope. Replicates the built-in browser flow (cookie, IdP redirector, forms, conditional OTP); review on Keycloak major upgrades.",
+      "description": "Browser flow with deny gates for users without the AIHubAccess role and for clients carrying the langfuse-sysadmin-gate scope. Replicates the built-in browser flow (cookie, IdP redirector, forms, conditional OTP); review on Keycloak major upgrades.",
       "providerId": "basic-flow",
       "topLevel": true,
       "builtIn": false,
@@ -827,6 +827,13 @@
           "flowAlias": "browser-aihub-authenticate",
           "requirement": "REQUIRED",
           "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        },
+        {
+          "flowAlias": "aihub-access-gate-browser",
+          "requirement": "CONDITIONAL",
+          "priority": 15,
           "userSetupAllowed": false,
           "autheticatorFlow": true
         },
@@ -916,6 +923,31 @@
       ]
     },
     {
+      "alias": "aihub-access-gate-browser",
+      "description": "Conditional sub-flow: deny users who do not have the AIHubAccess realm role",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "aihub-access-gate-browser-role-condition",
+          "requirement": "REQUIRED",
+          "priority": 0,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "deny-access-authenticator",
+          "authenticatorConfig": "aihub-access-gate-browser-deny-message",
+          "requirement": "REQUIRED",
+          "priority": 1,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
+    },
+    {
       "alias": "langfuse-gate-browser",
       "description": "Conditional sub-flow: deny clients carrying the langfuse-sysadmin-gate scope unless the user has the AIHubSysAdmin role",
       "providerId": "basic-flow",
@@ -993,7 +1025,20 @@
     {
       "alias": "aihub-access-deny-message",
       "config": {
-        "error_message": "Access denied. You need the AIHubAccess role to use AI-Hub. Please contact your administrator."
+        "denyErrorMessage": "Access denied. You need the AIHubAccess role to use AI-Hub. Please contact your administrator."
+      }
+    },
+    {
+      "alias": "aihub-access-gate-browser-role-condition",
+      "config": {
+        "condUserRole": "AIHubAccess",
+        "negate": "true"
+      }
+    },
+    {
+      "alias": "aihub-access-gate-browser-deny-message",
+      "config": {
+        "denyErrorMessage": "Access denied. You need the AIHubAccess role to use AI-Hub. Please contact your administrator."
       }
     },
     {
@@ -1013,7 +1058,7 @@
     {
       "alias": "langfuse-gate-browser-deny-message",
       "config": {
-        "error_message": "Access denied. Langfuse is restricted to system administrators (AIHubSysAdmin). Please contact your administrator."
+        "denyErrorMessage": "Access denied. Langfuse is restricted to system administrators (AIHubSysAdmin). Please contact your administrator."
       }
     },
     {
@@ -1033,7 +1078,7 @@
     {
       "alias": "langfuse-gate-post-broker-deny-message",
       "config": {
-        "error_message": "Access denied. Langfuse is restricted to system administrators (AIHubSysAdmin). Please contact your administrator."
+        "denyErrorMessage": "Access denied. Langfuse is restricted to system administrators (AIHubSysAdmin). Please contact your administrator."
       }
     }
   ]

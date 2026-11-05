@@ -8,8 +8,8 @@ source_sha: 661c201d93603d36256edfddbd5a39071a91ca22e5efb08b7f795bf3ada40a23
 
 Der **E-Mail-Verarbeitungsagent** macht aus einem gemeinsamen Postfach eine Warteschlange, die sich selbst sortiert. Bei
 jedem Lauf liest er jede ungelesene Nachricht im Posteingang, entscheidet, zu welcher Ihrer Kategorien sie gehört, und
-verschiebt sie in den Ordner dieser Kategorie. Alles, wozu keine Kategorie passt, landet in einem Ausweichordner, statt
-in eine Kategorie geraten zu werden.
+verschiebt sie in den Ordner dieser Kategorie. Alles, wozu keine Kategorie passt, landet in einem Ausweichordner oder
+bleibt auf Wunsch im Posteingang, statt in eine Kategorie geraten zu werden.
 
 Wie der [E-Mail-Agent](../11_email_agent/) hat er **keine Chat-Oberfläche**. Sie konfigurieren ihn einmal im Admin UI
 und lösen ihn programmatisch aus — durch einen anderen Workflow oder über die API.
@@ -119,11 +119,30 @@ erhalten Sie aber nur mit dem passenden Trennzeichen. Im Zweifel verwenden Sie f
 
 ### Klassifizierer
 
-| Feld                        | Standard                | Beschreibung                                                                                                        |
-| --------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Ausweichordner**          | `Uncategorised`         | Wohin E-Mails gehen, bei denen das Modell unsicher ist. Nie in eine Kategorie geraten, nie im Posteingang belassen. |
-| **Klassifizierungsmodell**  | *(leer)*                | Das klassifizierende Modell. Leer lassen, um das Hauptmodell des Agents zu verwenden.                               |
-| **Klassifizierungs-Prompt** | *(sinnvoller Standard)* | Anweisungen, wie das Modell auswählt.                                                                               |
+| Feld                                                   | Standard                | Beschreibung                                                                                                                                                      |
+| ------------------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Nicht kategorisierte E-Mails im Posteingang lassen** | Aus                     | E-Mails, die zu keiner Kategorie passen, ungelesen im Posteingang lassen statt in den Ausweichordner zu verschieben.                                              |
+| **Ausweichordner**                                     | `Uncategorised`         | Wohin E-Mails gehen, bei denen das Modell unsicher ist. Nie in eine Kategorie geraten. Ausgeblendet, solange nicht kategorisierte E-Mails im Posteingang bleiben. |
+| **Klassifizierungsmodell**                             | *(leer)*                | Das klassifizierende Modell. Leer lassen, um das Hauptmodell des Agents zu verwenden.                                                                             |
+| **Klassifizierungs-Prompt**                            | *(sinnvoller Standard)* | Anweisungen, wie das Modell auswählt.                                                                                                                             |
+
+::: details Nicht kategorisierte E-Mails im Posteingang lassen
+Nützlich, wenn Sie mit einer einzigen Kategorie beginnen: Deren E-Mails wandern in ihren Ordner, alles andere bleibt
+ungelesen im Posteingang, genau dort, wo es angekommen ist. E-Mails, bei denen die Klassifizierung fehlschlug, kommen
+weiterhin in den Fehlerordner.
+
+Normalerweise verhindert das Verschieben aus dem Posteingang, dass der nächste Lauf eine Nachricht erneut klassifiziert.
+Eine im Posteingang belassene Nachricht braucht einen anderen Vermerk, und Microsoft 365 nimmt das eigene IMAP-Stichwort
+nicht an, das ihn an der Nachricht selbst tragen würde. Der Agent merkt sich deshalb, wie weit er den Posteingang
+gelesen hat: Jeder Lauf klassifiziert nur ungelesene E-Mails, die nach der zuletzt klassifizierten angekommen sind, die
+zuerst angekommene zuerst.
+
+- E-Mails, die Sie in den Posteingang zurückziehen, gelten als neu angekommen und werden erneut klassifiziert — so
+  wiederholen Sie eine Nachricht.
+- Eine alte Nachricht wieder als ungelesen zu markieren, holt sie nicht zurück; sie kam vor der Marke des Agents an.
+- Wird der Zustandsspeicher der Plattform zurückgesetzt, klassifiziert der nächste Lauf die ungelesenen E-Mails im
+  Posteingang noch einmal.
+:::
 
 ::: details Wie eine Nachricht im Ausweichordner landet
 Das Modell hat genau einen Ausweg: Es kann ausdrücklich sagen, dass **keine der Kategorien passt**. Dann geht die
@@ -206,17 +225,29 @@ Eine *Beschwerde* verdient meist eine Antwort, ein *Dankeschön* selten, und ein
 beantwortet werden. Post, auf die keine Kategorie passte und die in den Ausweichordner ging, wird nie entworfen — wenn
 das Modell nicht sagen konnte, worum es in einer Nachricht geht, kann es sie auch nicht beantworten.
 
-| Feld                      | Beschreibung                                                                                                                                  |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Antwort entwerfen**     | Hauptschalter dieses Abschnitts. Standardmässig aus.                                                                                          |
-| **Entwürfe-Ordner**       | Wohin Entwürfe angehängt werden. Wird der Name nicht gefunden, wird der Entwürfe-Ordner des Servers verwendet, andernfalls der Name angelegt. |
-| **LLM-Modell**            | Das Modell, das die Antwort schreibt. Leer lassen, um das Hauptmodell des Agents zu verwenden.                                                |
-| **Entwurfs-Prompt**       | Anweisungen zu Ton und Stil. Der mitgelieferte Standard ist knapp, höflich und verbietet erfundene Fakten.                                    |
-| **Eingabe-Token Entwurf** | Wie viel der Nachricht dem Modell gezeigt werden darf. Siehe *Lange E-Mails* unten.                                                           |
+| Feld                           | Beschreibung                                                                                                                                                   |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Antwort entwerfen**          | Hauptschalter dieses Abschnitts. Standardmässig aus.                                                                                                           |
+| **Entwürfe-Ordner**            | Wohin Entwürfe angehängt werden. Wird der Name nicht gefunden, wird der Entwürfe-Ordner des Servers verwendet, andernfalls der Name angelegt.                  |
+| **LLM-Modell**                 | Das Modell, das die Antwort schreibt. Leer lassen, um das Hauptmodell des Agents zu verwenden.                                                                 |
+| **Entwurfs-Prompt**            | Anweisungen zu Ton und Stil. Der mitgelieferte Standard ist knapp, höflich und verbietet erfundene Fakten.                                                     |
+| **Originalnachricht zitieren** | Wenn aktiv, wird die ursprüngliche E-Mail unter der Antwort zitiert, wie in Outlook. Standardmässig aus.                                                       |
+| **Sprache des Zitats**         | Sprache der Bezeichnungen Von / Gesendet / An / Betreff und des Datums im Zitat. Wählen Sie die Sprache des Postfachs. Standardmässig Deutsch.                 |
+| **Zeitzone des Zitats**        | Zeitzone, in der das Gesendet-Datum im Zitat erscheint, unabhängig von der Zeitzone des Absenders. Wählen Sie die des Postfachs. Standardmässig Europe/Zurich. |
+| **Eingabe-Token Entwurf**      | Wie viel der Nachricht dem Modell gezeigt werden darf. Siehe *Lange E-Mails* unten.                                                                            |
 
 Jeder Entwurf wird mit der Nachricht verkettet, die er beantwortet — `Re:`-Betreff, korrekte `In-Reply-To`- und
 `References`-Kopfzeilen —, sodass er in Ihrem Mail-Client innerhalb der ursprünglichen Konversation erscheint statt als
 verirrte neue Nachricht.
+
+**Formatierung und Zitat.** Entwürfe sind HTML mit einer Nur-Text-Alternative. Das Modell schreibt Markdown, sodass
+Fettdruck, Listen und Links erhalten bleiben (eine nackte `https://…`- oder `www.…`-Adresse wird anklickbar), und Text
+in `==doppelten Gleichheitszeichen==` wird gelb hervorgehoben — verlangen Sie das im **Entwurfs-Prompt** (z. B.
+*«markiere das Lieferdatum mit ==…==»*). HTML, das das Modell schreibt, erscheint als Text und wird nie dargestellt: Ein
+Platzhalter wie `<Ihr Name>` bleibt im Entwurf, und Skripte, Bilder und unsichere Links erreichen das Postfach nie. Ist
+**Originalnachricht zitieren** aktiv, folgt die ursprüngliche E-Mail unter der Antwort mit einem Kopfblock wie in
+Outlook (Von / Gesendet / An / Cc / Betreff), ihr HTML bereinigt und ohne Bilder. Das Zitat wird erst nach dem Verfassen
+angefügt; das Modell sieht es nie, und die Antwort ändert sich dadurch nicht.
 
 ::: warning Ein Entwurf ist ein erster Wurf, keine Antwort
 Lesen Sie jeden Entwurf, bevor Sie ihn senden. Selbst ein in Ihren eigenen Dokumenten verankerter Entwurf (unten) ist

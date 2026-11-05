@@ -1,0 +1,21 @@
+---
+config:
+  base_url:
+    label: URL de Jira
+    help: L'adresse à laquelle vous ouvrez Jira, p. ex. https://acme.atlassian.net
+      pour Jira Cloud ou https://jira.acme.ch/jira pour Jira Data Center.
+  deployment:
+    label: Édition de Jira
+    help: Jira Cloud se connecte avec l'e-mail d'un compte et un jeton d'API, Jira
+      Data Center avec un jeton d'accès personnel.
+    cloud: Jira Cloud
+    data_center: Jira Data Center (11.3)
+  email:
+    label: E-mail du compte
+    help: E-mail du compte Jira Cloud auquel appartient le jeton d'API.
+  api_token:
+    label: Jeton
+    help: Un jeton d'API Jira Cloud sans portées, ou un jeton d'accès personnel Jira
+      Data Center. Toute personne qui utilise cet agent lit ce que ce compte peut
+      lire ; utilisez donc un compte dédié en lecture seule, limité aux projets dont
+      l'agent a besoin.

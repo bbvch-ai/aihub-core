@@ -1,5 +1,6 @@
 import logging
 from typing import Self
+from unittest.mock import MagicMock
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -22,6 +23,7 @@ from swiss_ai_hub.core.infrastructure import NatsSettings
 from swiss_ai_hub.core.processes import ProcessConfig
 from swiss_ai_hub.core.publishers import JSPublisher, NCPublisher
 from swiss_ai_hub.core.subscribers import JSSubscriber, NCSubscriber, ProcessJSSubscriber, ProcessNCSubscriber
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID
 from swiss_ai_hub.core.topic_managers import (
     ProcessInstanceTopicManager,
     ProcessTopicManager,
@@ -242,7 +244,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 api_app=self._api_app,
                 controller=self._api_app.state.process_controller,
                 locale_handler=ApiLocaleHandler(),
-                discovery_interval=60,
+                redis=MagicMock(),
             )
             process_class_dto = ProcessClassDTO(
                 process_class=self.process_class,
@@ -270,7 +272,8 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             (
                 HumanStartEvent,
                 HumanBWorkRequest(
-                    forms=[HumanBWork(payload=InputText(label=LocaleString(en="This is some label for HumanBWork")))]
+                    forms=[HumanBWork(payload=InputText(label=LocaleString(en="This is some label for HumanBWork")))],
+                    user_ids=[TEST_USER_OID],
                 ),
             ),
             (HumanBWork, CustomProcessStopEvent(payload="Done")),

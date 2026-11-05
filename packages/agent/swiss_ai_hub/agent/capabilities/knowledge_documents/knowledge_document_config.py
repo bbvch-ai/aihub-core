@@ -26,15 +26,31 @@ class KnowledgeDocumentConfig(Form):
         bool,
         Field(description="Whether `#` references only pick among the configured collections instead of adding some."),
     ] = False
+    discovery: Annotated[
+        bool | Checkbox,
+        Field(
+            description="Let the model search for the documents first and read only those it selects, instead of "
+            "every document in the collections and path filter."
+        ),
+    ] = False
 
     @classmethod
     def as_form(cls) -> Self:
+        """Without `discovery`: only a blueprint that reads every document unless told to search offers it, by adding
+        `discovery_input()` to its own form."""
         return cls(
             enabled=Checkbox(
                 label=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.enabled.label"),
                 help=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.enabled.help"),
             ),
             path_glob=cls.path_glob_input(),
+        )
+
+    @staticmethod
+    def discovery_input() -> Checkbox:
+        return Checkbox(
+            label=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.discovery.label"),
+            help=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.discovery.help"),
         )
 
     @staticmethod

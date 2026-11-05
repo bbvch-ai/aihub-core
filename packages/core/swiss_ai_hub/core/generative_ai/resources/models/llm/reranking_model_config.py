@@ -1,5 +1,6 @@
 from typing import Annotated, Self
 
+from cohere import ClientV2
 from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.postprocessor.cohere_rerank import CohereRerank
 from pydantic import Field
@@ -11,6 +12,11 @@ from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLM
 from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base import LiteLLMBase
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
+
+# A rerank is one short request–response that normally takes a few seconds, so a call still open after this long
+# is stuck rather than slow, and the callers fall back to retrieval order. Cohere's client applies a single float
+# to every phase (and overrides a passed-in http client's timeout with it), so the connect cannot be bounded apart.
+RERANK_TIMEOUT_SECONDS = 30.0
 
 
 class RerankingModelConfig(LiteLLMBase[CohereRerank]):
@@ -62,11 +68,16 @@ class RerankingModelConfig(LiteLLMBase[CohereRerank]):
             completion_tokens_costs_per_thousand=0,
         )
 
+        resolved_api_key = api_key or config.API_KEY.get_secret_value()
         reranking_service = CohereRerank(
             model=self.model_name,
-            api_key=api_key or config.API_KEY.get_secret_value(),
+            api_key=resolved_api_key,
             base_url=config.BASE_URL,
             top_n=self.top_n,
+        )
+        # CohereRerank builds its client without a timeout, which leaves cohere's 300 s default.
+        reranking_service._client = ClientV2(
+            api_key=resolved_api_key, base_url=config.BASE_URL, timeout=RERANK_TIMEOUT_SECONDS
         )
 
         return reranking_service, cost_tracker

@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -16,7 +17,6 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
 
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
@@ -28,6 +28,13 @@ from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 enable_logging()
+
+
+@pytest.fixture(autouse=True)
+def online_threshold():
+    """The threshold is read from completed discovery rounds in Mongo; these tests run without one."""
+    with patch.object(AgentClassEntity, "online_threshold", return_value=datetime(2026, 1, 1)) as threshold:
+        yield threshold
 
 
 @pytest.fixture
@@ -56,7 +63,7 @@ def sample_agent_class_entity():
     mock_entity.hitl_response_events = []
     mock_entity.network_graph = {}
     mock_entity.form = []
-    mock_entity.is_online = True
+    mock_entity.is_online_since.return_value = True
     return mock_entity
 
 
@@ -96,7 +103,8 @@ def mock_user_identity():
 class TestAgentServiceUnit:
     """Unit tests for AgentService methods."""
 
-    def test_get_minimal_agent_instance_success(
+    @pytest.mark.asyncio
+    async def test_get_minimal_agent_instance_success(
         self, sample_agent_class_entity, sample_config_entity, mock_locale_handler
     ):
         """Test get_minimal_agent_instance returns correct MinimalAgentInstanceDTO."""
@@ -110,7 +118,9 @@ class TestAgentServiceUnit:
                     expected_dto = Mock(spec=MinimalAgentInstanceDTO)
                     mock_from.return_value = expected_dto
 
-                    result = AgentService.get_minimal_agent_instance("TestAgent", "test_agent_1", mock_locale_handler)
+                    result = await AgentService.get_minimal_agent_instance(
+                        "TestAgent", "test_agent_1", mock_locale_handler
+                    )
 
                     mock_get_class.assert_called_once()
                     mock_get_config.assert_called_once()
@@ -119,18 +129,20 @@ class TestAgentServiceUnit:
                     )
                     assert result == expected_dto
 
-    def test_get_minimal_agent_instance_class_not_found(self, mock_locale_handler):
+    @pytest.mark.asyncio
+    async def test_get_minimal_agent_instance_class_not_found(self, mock_locale_handler):
         """Test get_minimal_agent_instance when agent class not found."""
         with patch.object(AgentClassEntity, "get_by_agent_class") as mock_get_class:
             mock_get_class.return_value = None
 
             with pytest.raises(HTTPException) as exc_info:
-                AgentService.get_minimal_agent_instance("TestAgent", "nonexistent", mock_locale_handler)
+                await AgentService.get_minimal_agent_instance("TestAgent", "nonexistent", mock_locale_handler)
 
             assert exc_info.value.status_code == 404
             assert "Agent class TestAgent not found" in str(exc_info.value.detail)
 
-    def test_get_minimal_agent_instance_config_not_found(self, sample_agent_class_entity, mock_locale_handler):
+    @pytest.mark.asyncio
+    async def test_get_minimal_agent_instance_config_not_found(self, sample_agent_class_entity, mock_locale_handler):
         """Test get_minimal_agent_instance when agent config not found."""
         with patch.object(AgentClassEntity, "get_by_agent_class") as mock_get_class:
             mock_get_class.return_value = sample_agent_class_entity
@@ -139,7 +151,7 @@ class TestAgentServiceUnit:
                 mock_get_config.return_value = None
 
                 with pytest.raises(HTTPException) as exc_info:
-                    AgentService.get_minimal_agent_instance("TestAgent", "nonexistent", mock_locale_handler)
+                    await AgentService.get_minimal_agent_instance("TestAgent", "nonexistent", mock_locale_handler)
 
                 assert exc_info.value.status_code == 404
                 assert "Agent config TestAgent/nonexistent not found" in str(exc_info.value.detail)
@@ -164,7 +176,7 @@ class TestAgentServiceUnit:
                     mock_get_class.assert_called_once_with("TestAgent")
                     mock_get_config.assert_called_once_with("TestAgent", "test_agent_1")
                     mock_from.assert_called_once_with(
-                        sample_agent_class_entity, sample_config_entity, mock_locale_handler
+                        sample_agent_class_entity, sample_config_entity, mock_locale_handler, is_online=True
                     )
                     assert result == expected_dto
 
@@ -411,38 +423,41 @@ def creator_user():
 class TestGrantInstanceAccess:
     """Unit tests for the per-instance access grant on creation."""
 
-    def test_grants_tenant_rule_and_creator_role_when_not_covered(self, creator_user):
-        config_entity = Mock()
+    @pytest.mark.asyncio
+    async def test_grants_tenant_rule_and_creator_role_when_not_covered(self, creator_user):
+        config_entity = Mock(delete=AsyncMock())
         with (
             patch.object(AccessChecker, "rules_grant_admin_to_agent_instance", return_value=False) as mock_covered,
             patch.object(TenantMetadataEntity, "grant_access_rule") as mock_grant,
             patch.object(AgentService, "_ensure_instance_admin_role") as mock_ensure,
             patch.object(UserTenantRoleEntity, "add_roles") as mock_add_roles,
         ):
-            AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
+            await AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
 
         mock_covered.assert_called_once_with(["aihub.admin.agent.TestAgent"], "TestAgent", "test_agent_1")
         mock_grant.assert_called_once_with("tenant_1", _ADMIN_RULE)
         mock_ensure.assert_called_once_with(_ROLE_NAME, _ADMIN_RULE, "tenant_1", "TestAgent", "test_agent_1")
         mock_add_roles.assert_called_once_with("user_123", "tenant_1", [_ROLE_NAME])
-        config_entity.delete.assert_not_called()
+        config_entity.delete.assert_not_awaited()
 
-    def test_skips_tenant_grant_when_already_covered(self, creator_user):
-        config_entity = Mock()
+    @pytest.mark.asyncio
+    async def test_skips_tenant_grant_when_already_covered(self, creator_user):
+        config_entity = Mock(delete=AsyncMock())
         with (
             patch.object(AccessChecker, "rules_grant_admin_to_agent_instance", return_value=True),
             patch.object(TenantMetadataEntity, "grant_access_rule") as mock_grant,
             patch.object(AgentService, "_ensure_instance_admin_role") as mock_ensure,
             patch.object(UserTenantRoleEntity, "add_roles") as mock_add_roles,
         ):
-            AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
+            await AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
 
         mock_grant.assert_not_called()
         mock_ensure.assert_called_once()
         mock_add_roles.assert_called_once()
 
-    def test_rolls_back_and_raises_on_grant_failure(self, creator_user):
-        config_entity = Mock()
+    @pytest.mark.asyncio
+    async def test_rolls_back_and_raises_on_grant_failure(self, creator_user):
+        config_entity = Mock(delete=AsyncMock())
         with (
             patch.object(AccessChecker, "rules_grant_admin_to_agent_instance", return_value=False),
             patch.object(TenantMetadataEntity, "grant_access_rule"),
@@ -452,12 +467,12 @@ class TestGrantInstanceAccess:
             patch.object(RoleEntity, "delete_role_from_all_tenants") as mock_delete_role,
         ):
             with pytest.raises(HTTPException) as exc_info:
-                AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
+                await AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
 
         assert exc_info.value.status_code == 500
         mock_revoke.assert_called_once_with([_ADMIN_RULE])
         mock_delete_role.assert_called_once_with(_ROLE_NAME)
-        config_entity.delete.assert_called_once()
+        config_entity.delete.assert_awaited_once()
 
     @pytest.mark.parametrize(
         ("agent_class", "agent_id"), [("TestAgent", "x.>"), ("TestAgent", "*"), ("Test.Agent", "a")]
@@ -488,14 +503,17 @@ class TestCreateAgentInstanceGrantWiring:
     @staticmethod
     def _mock_create_dependencies(stack: ExitStack):
         class_entity = Mock()
-        class_entity.is_online = True
+        class_entity.is_online_since.return_value = True
         class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
+        class_entity.form_elements = []
         config_entity = Mock()
+        config_entity.insert = AsyncMock()
         grant = stack.enter_context(patch.object(AgentService, "_grant_instance_access"))
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
-        stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        helper = stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        helper.validate_config_for_create = AsyncMock()
         stack.enter_context(
             patch(f"{_MODULE}.ModelLimitValidator.reject_values_beyond_model_limits", AsyncMock(return_value=None))
         )
@@ -503,7 +521,7 @@ class TestCreateAgentInstanceGrantWiring:
         config_auth.validate_for_user_or_raise = AsyncMock()
         stack.enter_context(patch(f"{_MODULE}.FullAgentInstanceDTO"))
         config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
-        config_doc.find_for_class_and_id.return_value = None
+        config_doc.find_for_class_and_id = AsyncMock(return_value=None)
         config_doc.return_value = config_entity
         return grant, config_entity
 
@@ -537,15 +555,16 @@ class TestDeleteAgentInstanceCleanup:
 
     @pytest.mark.asyncio
     async def test_revokes_rules_and_deletes_role(self):
+        config = Mock()
+        config.delete = AsyncMock()
         with (
-            patch.object(AgentConfigEntityDocument, "find_for_class_and_id", return_value=Mock()),
-            patch.object(AgentConfigEntityDocument, "delete_if_exists_for_class_and_id") as mock_delete_config,
+            patch.object(AgentConfigEntityDocument, "find_for_class_and_id", return_value=config),
             patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as mock_revoke,
             patch.object(RoleEntity, "delete_role_from_all_tenants") as mock_delete_role,
         ):
             await AgentService.delete_agent_instance("TestAgent", "test_agent_1")
 
-        mock_delete_config.assert_called_once_with("TestAgent", "test_agent_1")
+        config.delete.assert_awaited_once()
         mock_revoke.assert_called_once_with(["aihub.user.agent.TestAgent.test_agent_1", _ADMIN_RULE])
         mock_delete_role.assert_called_once_with(_ROLE_NAME)
 
@@ -572,24 +591,27 @@ class TestUpdateAgentInstanceLocksAgentId:
         class_entity = Mock()
         class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
         class_entity.form = []
+        class_entity.form_elements = []
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
         config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
         config_auth.validate_for_user_or_raise = AsyncMock()
         helper = stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        helper.validate_config_for_update = AsyncMock()
         stack.enter_context(
             patch(f"{_MODULE}.ModelLimitValidator.reject_values_beyond_model_limits", AsyncMock(return_value=None))
         )
         helper.normalize_form_configuration.side_effect = lambda configuration: configuration
-        helper.apply_metadata_to_entity.side_effect = lambda _config_instance, entity: entity
+        helper.apply_metadata_to_document.side_effect = lambda _config_instance, document: document
         config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
-        config_doc.find_for_class_and_id.return_value = config_entity
+        config_doc.find_for_class_and_id = AsyncMock(return_value=config_entity)
 
     @pytest.mark.asyncio
     async def test_form_cannot_change_agent_id(self):
         """A diverging agent_id in the submitted form must be overwritten with the URL key before saving."""
         config_entity = Mock()
+        config_entity.save_changes = AsyncMock()
 
         with ExitStack() as stack:
             self._mock_update_dependencies(stack, config_entity)
@@ -603,14 +625,14 @@ class TestUpdateAgentInstanceLocksAgentId:
 
         assert config_entity.config_data["agent_id"] == "intructed_agent_02"
         assert result["agent_id"] == "intructed_agent_02"
-        config_entity.save.assert_called_once()
+        config_entity.save_changes.assert_awaited_once()
 
 
 class TestAgentConfigDTOEmptyLocale:
     """Regression: an instance whose localized name/description is empty must build, not raise.
 
     This is the read-side resilience the fix guarantees — empty localized fields are legitimate
-    data (LocaleStringEntity columns are all optional), so a required-str DTO field coerces to "".
+    data (every LocaleString locale is optional), so a required-str DTO field coerces to "".
     """
 
     def test_empty_locale_name_and_description_coerce_to_empty_string(self):
@@ -619,8 +641,8 @@ class TestAgentConfigDTOEmptyLocale:
 
         config_entity = Mock()
         config_entity.agent_id = "empty_locale_agent"
-        config_entity.name = LocaleStringEntity()
-        config_entity.description = LocaleStringEntity()
+        config_entity.name = LocaleString()
+        config_entity.description = LocaleString()
         config_entity.icon = "mage:robot"
 
         dto = AgentConfigDTO.from_class_and_config(class_entity, config_entity, LocaleHandler())
@@ -640,7 +662,7 @@ class TestAgentSaveRejectsEmptyNamespaceScope:
     @staticmethod
     def _mock_save_dependencies(stack: ExitStack) -> tuple[Mock, AsyncMock]:
         class_entity = Mock()
-        class_entity.is_online = True
+        class_entity.is_online_since.return_value = True
         class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="RAGAgent")
         class_entity.form_elements = [
             Repeater(name="retrievers", children=[VectorStoreInput(label="Vector store", name="vector_store")])
@@ -652,7 +674,7 @@ class TestAgentSaveRejectsEmptyNamespaceScope:
         config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
         config_auth.validate_for_user_or_raise = AsyncMock()
         config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
-        config_doc.find_for_class_and_id.return_value = None
+        config_doc.find_for_class_and_id = AsyncMock(return_value=None)
         return config_doc, config_auth.validate_for_user_or_raise
 
     @staticmethod
@@ -674,7 +696,7 @@ class TestAgentSaveRejectsEmptyNamespaceScope:
 
         self._assert_rejected(raised)
         authorize.assert_not_awaited()
-        config_doc.return_value.save.assert_not_called()
+        config_doc.return_value.insert.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_update_is_rejected(self):
@@ -689,4 +711,4 @@ class TestAgentSaveRejectsEmptyNamespaceScope:
 
         self._assert_rejected(raised)
         authorize.assert_not_awaited()
-        stored.save.assert_not_called()
+        stored.save_changes.assert_not_called()

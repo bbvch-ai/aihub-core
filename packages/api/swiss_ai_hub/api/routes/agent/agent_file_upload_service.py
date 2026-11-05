@@ -4,8 +4,9 @@ import uuid
 from collections.abc import Sequence
 
 from botocore.exceptions import ClientError
+from fastapi import HTTPException
 from mypy_boto3_s3 import S3Client
-from swiss_ai_hub.core.events.agent import UserUploadedFile
+from swiss_ai_hub.core.events.agent import StoredImage, UserUploadedFile
 from swiss_ai_hub.core.infrastructure import trace_fn
 
 from swiss_ai_hub.api.routes.agent.dto.agent_file_validation_item import AgentFileValidationItem
@@ -27,7 +28,6 @@ class AgentFileUploadService:
 
     BUCKET_NAME = UserUploadedFile.AGENT_FILES_BUCKET
     UPLOAD_URL_LIFETIME_SECONDS = 3600  # 1 hour
-    FILE_EXPIRATION_DAYS = 7
 
     def __init__(
         self,
@@ -38,7 +38,11 @@ class AgentFileUploadService:
         self._s3_public_client = s3_public_client
 
     def ensure_bucket_exists(self) -> None:
-        """Idempotent creation of the shared agent-files bucket. Call once at API startup."""
+        """Idempotent creation of the shared agent-files bucket. Call once at API startup.
+
+        Files expire through the filer TTL rule ``seaweedfs-ttl-init`` applies, never an S3 lifecycle configuration:
+        since SeaweedFS 4.24 a lifecycle PUT deletes that rule, and since 4.32 nothing runs the lifecycle itself.
+        """
         try:
             self._s3_client.head_bucket(Bucket=self.BUCKET_NAME)
             return
@@ -49,22 +53,10 @@ class AgentFileUploadService:
 
         logger.info(f"Creating agent upload bucket: {self.BUCKET_NAME}")
         self._s3_client.create_bucket(Bucket=self.BUCKET_NAME)
-        self._s3_client.put_bucket_lifecycle_configuration(
-            Bucket=self.BUCKET_NAME,
-            LifecycleConfiguration={
-                "Rules": [
-                    {
-                        "ID": "auto-expire-agent-files",
-                        "Status": "Enabled",
-                        "Expiration": {"Days": self.FILE_EXPIRATION_DAYS},
-                    }
-                ]
-            },
-        )
 
     @staticmethod
     def s3_key(agent_class: str, agent_id: str, file_id: str, filename: str) -> str:
-        sanitize = UserUploadedFile._sanitize_path_segment
+        sanitize = UserUploadedFile.sanitize_path_segment
         safe_class = sanitize(agent_class)
         safe_id = sanitize(agent_id)
         safe_file_id = sanitize(file_id)
@@ -90,6 +82,18 @@ class AgentFileUploadService:
     def read_file(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> bytes:
         key = self.s3_key(agent_class, agent_id, file_id, filename)
         return self._s3_client.get_object(Bucket=self.BUCKET_NAME, Key=key)["Body"].read()
+
+    @trace_fn
+    def read_image(self, agent_class: str, agent_id: str, name: str) -> tuple[bytes, str]:
+        """A stored image of a message, with its content type; a missing one is a 404, as an expired file is."""
+        key = f"{StoredImage.key_prefix(agent_class, agent_id)}/{name}"
+        try:
+            image = self._s3_client.get_object(Bucket=self.BUCKET_NAME, Key=key)
+        except ClientError as missing:
+            if missing.response.get("Error", {}).get("Code", "") in ["404", "NoSuchKey"]:
+                raise HTTPException(status_code=404, detail="Image not found.") from missing
+            raise
+        return image["Body"].read(), image["ContentType"]
 
     @trace_fn
     def verify_file_exists(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> bool:

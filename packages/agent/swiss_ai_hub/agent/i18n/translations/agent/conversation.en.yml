@@ -56,3 +56,8 @@ messages:
   input_too_large: This file is too large for me to read in one go. Please upload
     a smaller file, split it into parts, or switch to an assistant that uses a model
     with a larger context window.
+prompt:
+  correct_structured_answer: "Your previous answer does not match the required JSON\
+    \ format. %{violation}\nAnswer again with only a JSON object, no other text, keeping\
+    \ the content of your previous answer."
+  structured_answer_schema: "The JSON object must match this JSON schema:\n%{schema}"

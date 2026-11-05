@@ -28,6 +28,10 @@ class KnowledgeSearchedEvent(ControlAndDisplayEvent):
     grounding_nodes: Annotated[
         list[IngestedNode], Field(description="The document sections the block holds, for listing as sources.")
     ] = []
+    missing: Annotated[
+        list[KnowledgeReference],
+        Field(description="Referenced collections that were not searched, because they no longer exist."),
+    ] = []
     refused: Annotated[
         list[KnowledgeReference],
         Field(description="Referenced collections that were not searched, because the user may not read them."),

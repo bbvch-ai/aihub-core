@@ -139,16 +139,16 @@ Owner einen Vorschlag übernimmt.
 
 ### Was die Vorlage einstellt
 
-| Einstellung                                                     | Wert                                          | Warum                                                                                                                                 |
-| --------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Wissensquellen**                                              | Ein Platzhalter auf der geteilten Sammlung    | Eine Vorlage kann Ihre Datenbanken nicht kennen. Ersetzen Sie ihn, siehe unten.                                                       |
-| **Abfragemodus**                                                | `hybrid`                                      | Die Stichwortsuche findet überschneidende Stories und Arbeitsvereinbarungen, die eine Entwurfsanfrage über die Ähnlichkeit verfehlt. |
-| **Frage kondensieren**                                          | An                                            | Eine Folgefrage wie „mach Kriterium 2 strenger“ sucht weiter zum Thema der Story.                                                     |
-| **Kontext-Suffizienz prüfen**                                   | Aus                                           | Für eine neue Story gibt es kein Dokument, das sie schon beantwortet, der Guard würde den Entwurf verweigern.                         |
-| **Auf die Rechte der Benutzerin oder des Benutzers beschränken** | An                                            | Product Owner erhalten nur Inhalte aus Datenbanken, die sie lesen dürfen.                                                             |
-| **Benutzer- und Organisationsspeicher**                         | Aus                                           | Fakten aus einem Entwurf würden sonst in fremde Stories einfliessen.                                                                  |
-| **System-Prompt**                                               | Story-Vorlagen und Antwortregeln              | Auf Englisch verfasst. Der Agent antwortet in der Sprache der Nachricht.                                                              |
-| **Kontext-Prompt**                                              | Ein eigener der Vorlage                       | Der Standard endet mit einer Anweisung in der Oberflächensprache, die Antworten in diese Sprache zieht.                               |
+| Einstellung                                                      | Wert                                       | Warum                                                                                                                                |
+| ---------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Wissensquellen**                                               | Ein Platzhalter auf der geteilten Sammlung | Eine Vorlage kann Ihre Datenbanken nicht kennen. Ersetzen Sie ihn, siehe unten.                                                      |
+| **Abfragemodus**                                                 | `hybrid`                                   | Die Stichwortsuche findet überschneidende Stories und Arbeitsvereinbarungen, die eine Entwurfsanfrage über die Ähnlichkeit verfehlt. |
+| **Frage kondensieren**                                           | An                                         | Eine Folgefrage wie „mach Kriterium 2 strenger“ sucht weiter zum Thema der Story.                                                    |
+| **Kontext-Suffizienz prüfen**                                    | Aus                                        | Für eine neue Story gibt es kein Dokument, das sie schon beantwortet, der Guard würde den Entwurf verweigern.                        |
+| **Auf die Rechte der Benutzerin oder des Benutzers beschränken** | An                                         | Product Owner erhalten nur Inhalte aus Datenbanken, die sie lesen dürfen.                                                            |
+| **Benutzer- und Organisationsspeicher**                          | Aus                                        | Fakten aus einem Entwurf würden sonst in fremde Stories einfliessen.                                                                 |
+| **System-Prompt**                                                | Story-Vorlagen und Antwortregeln           | Auf Englisch verfasst. Der Agent antwortet in der Sprache der Nachricht.                                                             |
+| **Kontext-Prompt**                                               | Ein eigener der Vorlage                    | Der Standard endet mit einer Anweisung in der Oberflächensprache, die Antworten in diese Sprache zieht.                              |
 
 ### Einrichtung
 
@@ -237,7 +237,7 @@ und **mindestens eine Wissensquelle** sind erforderlich; alles andere hat sinnvo
 | **Temperatur**                           | Zahl            | `0.0`    | Zufälligkeit. Für fundierte, faktenbasierte Antworten niedrig halten (`0.0`–`0.3`). Bereich 0.0–2.0.                  |
 | **Log-Wahrscheinlichkeiten zurückgeben** | Umschalter      | Aus      | Erweiterte Diagnoseoption für Token-Level-Konfidenz. Deaktiviert lassen, sofern nicht benötigt.                       |
 | **Top Log-Wahrscheinlichkeiten**         | Zahl            | `0`      | Alternative Token pro Position zur Berichterstattung; nur wenn Log-Wahrscheinlichkeiten aktiviert sind. Bereich 0–20. |
-| **Timeout**                              | Zahl (Sekunden) | `600`    | Wie lange auf das Modell gewartet werden soll, bevor aufgegeben wird.                                                 |
+| **Timeout**                              | Zahl (Sekunden) | `300`    | Wie lange auf das Modell gewartet werden soll, bevor aufgegeben wird.                                                 |
 
 ### Wissensquellen (Retriever)
 

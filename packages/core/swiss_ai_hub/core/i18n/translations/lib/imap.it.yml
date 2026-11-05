@@ -73,6 +73,8 @@ config:
   draft_prompt:
     label: Prompt di redazione
     help: Istruzioni che guidano il modo in cui l'LLM redige il corpo della risposta.
+      La risposta può usare il Markdown (grassetto, elenchi); un testo racchiuso tra
+      ==doppi segni di uguale== viene evidenziato in giallo nella bozza.
   category_name:
     label: Categoria
     help: Nome della categoria, ad es. support_request. Deve essere univoco.
@@ -85,10 +87,16 @@ config:
     help: Descrivi il tipo di posta che appartiene a questa categoria. È su questo
       che il modello classifica, quindi sii concreto sull'intento invece di elencare
       parole chiave.
+  keep_uncategorised_in_inbox:
+    label: Lascia la posta non classificata nella posta in arrivo
+    help: Se attivo, la posta che non rientra in nessuna categoria resta non letta
+      nella posta in arrivo invece di essere spostata nella cartella di riserva, e
+      le esecuzioni successive non la classificano di nuovo. La posta che il classificatore
+      non è riuscito a elaborare va comunque nella cartella degli errori.
   fallback_folder:
     label: Cartella di riserva
     help: Cartella per la posta su cui il modello non è sicuro. Tale posta non viene
-      mai indovinata in una categoria né lasciata nella posta in arrivo.
+      mai indovinata in una categoria.
   failure_folder:
     label: Cartella degli errori
     help: Cartella per la posta che il classificatore non è riuscito a elaborare.
@@ -150,3 +158,24 @@ config:
     help: Quanto può durare una ricerca di conoscenze prima che il messaggio venga
       redatto con il testo di errore. Senza un limite, un agente di conoscenza offline
       lascia l'esecuzione in attesa all'infinito.
+  quote_original:
+    label: Cita il messaggio originale
+    help: Se attivo, il messaggio originale viene citato sotto la risposta, con mittente,
+      data, destinatari e oggetto, come una risposta in Outlook. Viene aggiunto dopo
+      la redazione e non viene mai mostrato al modello.
+  quote_locale:
+    label: Lingua della citazione
+    help: Lingua delle etichette Da/Inviato/A/Oggetto e della data sopra il messaggio
+      citato. Outlook usa la lingua di chi risponde. Scegliete quella del titolare
+      della casella.
+  quote_timezone:
+    label: Fuso orario della citazione
+    help: Fuso orario della data di invio sopra il messaggio citato. Outlook la mostra
+      nel fuso di chi risponde. Scegliete quello del titolare della casella.
+quote:
+  from: Da
+  sent: Inviato
+  to: A
+  cc: Cc
+  subject: Oggetto
+  date_format: '%d/%m/%Y %H:%M'
