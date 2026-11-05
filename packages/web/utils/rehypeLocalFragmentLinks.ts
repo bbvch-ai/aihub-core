@@ -18,7 +18,7 @@ export default function rehypeLocalFragmentLinks() {
     for (const element of elements) {
       const href = element.properties?.href
       if (element.tagName !== 'a' || typeof href !== 'string' || !href.startsWith('#')) continue
-      const target = `${PREFIX}${decodeURIComponent(href.slice(1))}`
+      const target = `${PREFIX}${href.slice(1)}`
       if (ids.has(target)) element.properties.href = `#${target}`
     }
   }
