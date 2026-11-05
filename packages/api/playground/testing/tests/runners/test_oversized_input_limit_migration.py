@@ -10,13 +10,10 @@ from typing import Annotated, Any
 from unittest.mock import patch
 
 import pytest
-from mongoengine import connect, disconnect
 from pydantic import Field
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS, Form, ModelBoundInputNumber  # noqa: F401 — rebuilds Group
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 
@@ -35,24 +32,9 @@ class _ChatForm(Form):
     number_of_input_tokens: Annotated[int | None | ModelBoundInputNumber, Field(description="Limit")] = None
 
 
-@pytest.fixture
-def mongo_connection():
-    client = connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-    )
-    yield client
-    disconnect()
-
-
-@pytest.fixture(autouse=True)
-def clean_agent_classes(mongo_connection):
-    AgentClassEntity.objects(agent_class="LLMWrappingAgent").delete()
-    yield
-    AgentClassEntity.objects(agent_class="LLMWrappingAgent").delete()
-
-
-def _announce(fill_factor: float | None = 0.85, override_label: LocaleString | None = LocaleString(en="Own")) -> None:
+async def _announce(
+    fill_factor: float | None = 0.85, override_label: LocaleString | None = LocaleString(en="Own")
+) -> None:
     form = _ChatForm(
         llm=LLMConfig.as_form(include_default_parameter=False),
         number_of_input_tokens=ModelBoundInputNumber(
@@ -63,14 +45,14 @@ def _announce(fill_factor: float | None = 0.85, override_label: LocaleString | N
             override_label=override_label,
         ),
     )
-    AgentClassEntity(
+    await AgentClassEntity(
         agent_class="LLMWrappingAgent",
         form=[element.model_dump() for element in form.to_formkit_form()],
         is_conversational=True,
         start_events=[],
         stop_events=[],
         network_graph={},
-    ).save(validate=False)  # the event specs a real discovery stores play no part here
+    ).insert()  # the event specs a real discovery stores play no part here
 
 
 @pytest.fixture(autouse=True)
@@ -100,7 +82,7 @@ async def _stored_config_data(agent: AgentConfigEntityDocument) -> dict[str, Any
 
 
 async def test_a_limit_above_the_window_is_unset():
-    _announce()
+    await _announce()
     agent = await _agent("oversized", SMALL_MODEL, number_of_input_tokens=128000, condense_question=True)
 
     assert await OversizedInputLimitMigration.run() == ["agent LLMWrappingAgent/oversized"]
@@ -112,7 +94,7 @@ async def test_a_limit_above_the_window_is_unset():
 
 async def test_a_limit_between_the_bound_and_the_window_is_unset():
     """It ran at the bound already, and the form would now refuse to save it."""
-    _announce()
+    await _announce()
     agent = await _agent("filled", SMALL_MODEL, number_of_input_tokens=65536)
 
     assert await OversizedInputLimitMigration.run() == ["agent LLMWrappingAgent/filled"]
@@ -121,7 +103,7 @@ async def test_a_limit_between_the_bound_and_the_window_is_unset():
 
 async def test_a_limit_within_the_bound_is_kept():
     """A limit the run can fill may be an admin's cost ceiling."""
-    _announce()
+    await _announce()
     agent = await _agent("within", SMALL_MODEL, number_of_input_tokens=BOUND)
 
     assert await OversizedInputLimitMigration.run() == []
@@ -137,7 +119,7 @@ async def test_a_profile_whose_class_was_never_announced_is_left_alone():
 
 async def test_a_field_without_its_own_unset_state_is_never_unset():
     """Without an override, None is not 'what the model allows' and could break the profile."""
-    _announce(override_label=None)
+    await _announce(override_label=None)
     agent = await _agent("required", SMALL_MODEL, number_of_input_tokens=128000)
 
     assert await OversizedInputLimitMigration.run() == []
@@ -145,7 +127,7 @@ async def test_a_field_without_its_own_unset_state_is_never_unset():
 
 
 async def test_a_model_without_a_known_window_leaves_the_profile_alone():
-    _announce()
+    await _announce()
     agent = await _agent("unknown", UNKNOWN_MODEL, number_of_input_tokens=128000)
 
     assert await OversizedInputLimitMigration.run() == []
@@ -153,7 +135,7 @@ async def test_a_model_without_a_known_window_leaves_the_profile_alone():
 
 
 async def test_a_profile_without_a_limit_is_untouched():
-    _announce()
+    await _announce()
     await _agent("unset", SMALL_MODEL, number_of_input_tokens=None)
     await _agent("no_key", SMALL_MODEL)
 
@@ -161,7 +143,7 @@ async def test_a_profile_without_a_limit_is_untouched():
 
 
 async def test_a_second_run_is_a_no_op():
-    _announce()
+    await _announce()
     await _agent("oversized", SMALL_MODEL, number_of_input_tokens=128000)
 
     await OversizedInputLimitMigration.run()

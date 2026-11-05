@@ -97,6 +97,7 @@ dependencies = [
     "jsonschema>=4.26.0",
     "referencing>=0.37.0",
     "beanie>=2.2.0",
+    "psycopg[binary]>=3.3.3",
 ]
 
 [dependency-groups]
