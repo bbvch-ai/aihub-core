@@ -23,6 +23,9 @@ class ToolContext(BaseModel):
     knowledge_references: Annotated[
         list[KnowledgeReference], Field(description="The collections the user referenced on the message.")
     ] = []
+    web_references: Annotated[
+        list[str], Field(description="The web pages the message links, pasted or referenced with #.")
+    ] = []
     topic: Annotated[
         AgentInstanceTopic | None,
         Field(description="The run's agent and thread, for tools that keep per-thread state."),

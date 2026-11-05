@@ -39,9 +39,12 @@ from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import
     CategoryVerdict,
     ClassificationOutcome,
 )
+from swiss_ai_hub.agent.imap.inbox_position import InboxPosition
+from swiss_ai_hub.agent.imap.inbox_watermark import InboxWatermark
 from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
 from swiss_ai_hub.agent.imap.tests.mail_doubles import (
     LOADER_FOR_FILE,
+    UID_VALIDITY,
     archived_eml,
     infrastructure_patches,
     make_client,
@@ -85,6 +88,7 @@ def _config(
     categories: list[MailCategory] | None = None,
     draft: DraftEmailSettings | None = None,
     knowledge_delegation: KnowledgeDelegationConfig | None = None,
+    keep_uncategorised: bool = False,
 ) -> EmailClassificationAgentConfig:
     return EmailClassificationAgentConfig(
         agent_id="email_classification_agent",
@@ -97,6 +101,7 @@ def _config(
         classification=EmailClassificationSettings(
             categories=[_SUPPORT, _INVOICE] if categories is None else categories,
             fallback_folder=_FALLBACK_FOLDER,
+            keep_uncategorised_in_inbox=keep_uncategorised,
         ),
         draft=draft or DraftEmailSettings(drafts_folder=_DRAFTS_FOLDER),
         knowledge_delegation=knowledge_delegation,
@@ -159,6 +164,7 @@ def clear_mailbox_lease():
     async def clear() -> None:
         redis = RedisSettings.create_client()
         await redis.delete(f"mailbox:run_lease:{_AGENT_CLASS}:{_AGENT_ID}")
+        await redis.delete(f"mailbox:inbox_watermark:{_AGENT_CLASS}:{_AGENT_ID}")
         await redis.aclose()
 
     asyncio.run(clear())
@@ -182,6 +188,31 @@ def _classified_batch() -> dict:
 def _no_category_fits() -> dict:
     """Drives the real MailClassifier: stubbing the verdict here would skip the decline route under test."""
     return {"unread": [summary("1")], "selections": [_selection(selected_index=None)]}
+
+
+@given(
+    "an EmailClassificationAgent runner keeping uncategorised mail, with one support message and one no category fits",
+    target_fixture="scenario",
+)
+def _keeping_uncategorised() -> dict:
+    return {
+        "unread": [summary("4"), summary("9")],
+        "verdicts": [_verdict(_SUPPORT), _verdict(None)],
+        "keep_uncategorised": True,
+    }
+
+
+@given(
+    "an EmailClassificationAgent runner keeping uncategorised mail whose inbox watermark stands at uid 5",
+    target_fixture="scenario",
+)
+def _keeping_with_watermark() -> dict:
+    return {
+        "unread": [summary("6")],
+        "verdicts": [_verdict(None)],
+        "keep_uncategorised": True,
+        "watermark": InboxPosition(uid_validity=UID_VALIDITY, uid=5),
+    }
 
 
 @given("an EmailClassificationAgent runner with an empty inbox", target_fixture="scenario")
@@ -499,8 +530,13 @@ async def _drive(scenario: dict, start_event: BaseEvent, answers=None) -> AgentT
             scenario.get("categories"),
             scenario.get("draft"),
             knowledge_delegation=scenario.get("knowledge_delegation"),
+            keep_uncategorised=scenario.get("keep_uncategorised", False),
         ),
     )
+    if "watermark" in scenario:
+        redis = RedisSettings.create_client()
+        await InboxWatermark(redis).advance(_AGENT_CLASS, _AGENT_ID, _config().imap, scenario["watermark"])
+        await redis.aclose()
     client = make_client(unread=scenario["unread"], folder_created=scenario.get("folder_created", False))
     client.fetch_message = AsyncMock(side_effect=lambda message_id, **_: parsed_message(message_id=message_id))
     agent_runner.imap_client = client
@@ -881,3 +917,37 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     """Not merely that the run survived: a paused deployment must not pay a catalogue round trip per run either."""
     agent_runner.namespace_lookup.assert_not_called()
+
+
+async def _stored_watermark() -> InboxPosition | None:
+    redis = RedisSettings.create_client()
+    try:
+        return await InboxWatermark(redis).read(_AGENT_CLASS, _AGENT_ID, _config().imap)
+    finally:
+        await redis.aclose()
+
+
+@then("the support message was filed and the other one was left in the inbox")
+def _(agent_runner: AgentTestRunner):
+    event = _summary_event(agent_runner)
+    assert {ref.message_id: ref.target_folder for ref in event.classified} == {"4": "Triage/Support", "9": "INBOX"}
+    assert agent_runner.imap_client.relocate_message.await_count == 1
+    assert agent_runner.imap_client.relocate_message.await_args.args == ("4", "Triage/Support")
+
+
+@then(parsers.parse("the inbox watermark stands at uid {uid:d}"))
+def _(uid: int):
+    assert asyncio.run(_stored_watermark()) == InboxPosition(uid_validity=UID_VALIDITY, uid=uid)
+
+
+@then(parsers.parse("the listing started above uid {uid:d}"))
+def _(agent_runner: AgentTestRunner, uid: int):
+    client = agent_runner.imap_client
+    assert client.list_unread_above.await_args.args == (InboxPosition(uid_validity=UID_VALIDITY, uid=uid),)
+    client.list_unread.assert_not_awaited()
+
+
+@then("the inbox watermark was not touched")
+def _(agent_runner: AgentTestRunner):
+    assert asyncio.run(_stored_watermark()) is None
+    agent_runner.imap_client.list_unread_above.assert_not_awaited()

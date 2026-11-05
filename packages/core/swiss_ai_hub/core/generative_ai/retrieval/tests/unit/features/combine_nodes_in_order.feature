@@ -15,11 +15,14 @@ Feature: Combine nodes in order
       You are provided with additional context information in the form of structured documents. Each document follows a
       consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
-      Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
+      Each document's metadata gives its source, title, version and timestamps: created_at is when the record or file
+      was created, updated_at and inserted_at are when the platform last processed it. A document synced from a business
+      application, such as a Jira issue or a Confluence page, also carries that record's own fields, e.g. its status,
+      priority, issue_type, project, labels or space, and its own updated time. The content
       within these documents provides crucial insights relevant to the given context.
       Below are the relevant documents:
       <context_documents>
-      <REFERENCE_DOCUMENT id='sc63ebd' source='doc1' document_title='Doc 1 Title' language='en' version='1' created_at='2024-01-10T10:00:00Z' updated_at='2024-01-11T10:00:00Z' inserted_at='2024-01-12T10:00:00Z'>
+      <REFERENCE_DOCUMENT id='sc63ebd' source='doc1' document_title='Doc 1 Title' version='1' created_at='2024-01-10T10:00:00Z' updated_at='2024-01-11T10:00:00Z' inserted_at='2024-01-12T10:00:00Z'>
 
       <h1>Main Title 1</h1>
 
@@ -31,7 +34,7 @@ Feature: Combine nodes in order
 
       ---
 
-      <REFERENCE_DOCUMENT id='s7897a2' source='doc2' document_title='Doc 2 Title' language='fr' version='2' created_at='2024-02-15T09:00:00Z' updated_at='2024-02-16T09:00:00Z' inserted_at='2024-02-17T09:00:00Z'>
+      <REFERENCE_DOCUMENT id='s7897a2' source='doc2' document_title='Doc 2 Title' version='2' created_at='2024-02-15T09:00:00Z' updated_at='2024-02-16T09:00:00Z' inserted_at='2024-02-17T09:00:00Z'>
 
       <h1>Legal Doc Main</h1>
 
@@ -63,11 +66,14 @@ Feature: Combine nodes in order
       You are provided with additional context information in the form of structured documents. Each document follows a
       consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
-      Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
+      Each document's metadata gives its source, title, version and timestamps: created_at is when the record or file
+      was created, updated_at and inserted_at are when the platform last processed it. A document synced from a business
+      application, such as a Jira issue or a Confluence page, also carries that record's own fields, e.g. its status,
+      priority, issue_type, project, labels or space, and its own updated time. The content
       within these documents provides crucial insights relevant to the given context.
       Below are the relevant documents:
       <context_documents>
-      <REFERENCE_DOCUMENT id='sc63ebd' source='doc1' document_title='Hierarchical' language='de' version='1' created_at='2024-03-01T09:00:00Z' updated_at='2024-03-01T10:00:00Z' inserted_at='2024-03-01T11:00:00Z'>
+      <REFERENCE_DOCUMENT id='sc63ebd' source='doc1' document_title='Hierarchical' version='1' created_at='2024-03-01T09:00:00Z' updated_at='2024-03-01T10:00:00Z' inserted_at='2024-03-01T11:00:00Z'>
 
       <summary>This is the overall summary of the document.</summary>
 
@@ -103,7 +109,10 @@ Feature: Combine nodes in order
       You are provided with additional context information in the form of structured documents. Each document follows a
       consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
-      Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
+      Each document's metadata gives its source, title, version and timestamps: created_at is when the record or file
+      was created, updated_at and inserted_at are when the platform last processed it. A document synced from a business
+      application, such as a Jira issue or a Confluence page, also carries that record's own fields, e.g. its status,
+      priority, issue_type, project, labels or space, and its own updated time. The content
       within these documents provides crucial insights relevant to the given context.
       Below are the relevant documents:
       <context_documents>
@@ -124,7 +133,7 @@ Feature: Combine nodes in order
     When the combine_nodes_in_order function is called
     Then it should return:
       """
-      Custom prompt: <REFERENCE_DOCUMENT id='s6b86b2' source='doc1' document_title='research_paper.docx' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
+      Custom prompt: <REFERENCE_DOCUMENT id='s6b86b2' source='doc1' document_title='research_paper.docx' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
 
       <content>Doc1 line10 content</content>
 
@@ -134,7 +143,7 @@ Feature: Combine nodes in order
 
       ---
 
-      <REFERENCE_DOCUMENT id='sd4735e' source='doc2' document_title='legal_document.docx' language='fr' version='2' created_at='2023-07-22T04:26:40Z' updated_at='2023-07-22T05:50:00Z' inserted_at='2023-07-22T07:13:20Z'>
+      <REFERENCE_DOCUMENT id='sd4735e' source='doc2' document_title='legal_document.docx' version='2' created_at='2023-07-22T04:26:40Z' updated_at='2023-07-22T05:50:00Z' inserted_at='2023-07-22T07:13:20Z'>
 
       <content>Doc2 line15 content</content>
 
@@ -155,7 +164,7 @@ Feature: Combine nodes in order
     When the combine_nodes_in_order function is called
     Then it should return:
       """
-      Custom prompt: <REFERENCE_DOCUMENT id='sd1f11d' source='docA' document_title='research_paper' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
+      Custom prompt: <REFERENCE_DOCUMENT id='sd1f11d' source='docA' document_title='research_paper' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
 
       <content>Node docA line=5</content>
 
@@ -181,11 +190,14 @@ Feature: Combine nodes in order
       You are provided with additional context information in the form of structured documents. Each document follows a
       consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
-      Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
+      Each document's metadata gives its source, title, version and timestamps: created_at is when the record or file
+      was created, updated_at and inserted_at are when the platform last processed it. A document synced from a business
+      application, such as a Jira issue or a Confluence page, also carries that record's own fields, e.g. its status,
+      priority, issue_type, project, labels or space, and its own updated time. The content
       within these documents provides crucial insights relevant to the given context.
       Below are the relevant documents:
       <context_documents>
-      <REFERENCE_DOCUMENT id='scc5ba4' source='doc3' document_title='Special Chars' language='de' version='1' created_at='2024-03-01T11:20:00Z' updated_at='2024-03-01T11:20:00Z' inserted_at='2024-03-01T11:20:00Z'>
+      <REFERENCE_DOCUMENT id='scc5ba4' source='doc3' document_title='Special Chars' version='1' created_at='2024-03-01T11:20:00Z' updated_at='2024-03-01T11:20:00Z' inserted_at='2024-03-01T11:20:00Z'>
 
       <h1>&lt;HTML&gt; &amp; 'Tags'</h1>
 
@@ -222,11 +234,14 @@ Feature: Combine nodes in order
       You are provided with additional context information in the form of structured documents. Each document follows a
       consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
-      Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
+      Each document's metadata gives its source, title, version and timestamps: created_at is when the record or file
+      was created, updated_at and inserted_at are when the platform last processed it. A document synced from a business
+      application, such as a Jira issue or a Confluence page, also carries that record's own fields, e.g. its status,
+      priority, issue_type, project, labels or space, and its own updated time. The content
       within these documents provides crucial insights relevant to the given context.
       Below are the relevant documents:
       <context_documents>
-      <REFERENCE_DOCUMENT id='s48eea1' source='doc4' document_title='Skipped Levels' language='de' version='1' created_at='2024-03-01T11:21:40Z' updated_at='2024-03-01T11:21:40Z' inserted_at='2024-03-01T11:21:40Z'>
+      <REFERENCE_DOCUMENT id='s48eea1' source='doc4' document_title='Skipped Levels' version='1' created_at='2024-03-01T11:21:40Z' updated_at='2024-03-01T11:21:40Z' inserted_at='2024-03-01T11:21:40Z'>
 
       <summary>Summary with no position.</summary>
 
@@ -247,4 +262,26 @@ Feature: Combine nodes in order
       </context_documents>
       Instruction: Using the information from the provided documents, generate a detailed and well-structured response
       to the user’s question.
+      """
+  @slow
+  Scenario: A document synced from a record shows the record's fields in its header
+    Given a locale handler
+    And a custom context prompt
+    And the following context nodes:
+      | document_id | source       | document_title | namespace | type    | version | created_at | updated_at | inserted_at | section_start_line | text                |
+      | jira1       | ENG/ENG-2.md | ENG-2: Tables  | ENG       | content | 1       | 1700000000 | 1700005000 | 1700010000  | 1                  | Steps to reproduce. |
+    And the record of jira1 carries the fields:
+      """
+      {"issue_type": "Bug", "status": "To Do", "labels": ["backend", "urgent"], "page_version": 3, "summary": "Fix 'login' <now>", "source": "not the document's source"}
+      """
+    When the combine_nodes_in_order function is called
+    Then it should return:
+      """
+      Custom prompt: <REFERENCE_DOCUMENT id='sc7ec53' source='ENG/ENG-2.md' document_title='ENG-2: Tables' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z' issue_type='Bug' status='To Do' labels='backend, urgent' page_version='3' summary='Fix login &lt;now&gt;'>
+
+      <content>Steps to reproduce.</content>
+
+      </REFERENCE_DOCUMENT>
+
+      ---
       """

@@ -420,6 +420,90 @@ class TestUpdateSource:
         assert "sftp.password" in exc_info.value.detail
 
 
+class TestSubmittedCiphertext:
+    """A client is only ever shown masks; ciphertext it submits was copied from another field or database."""
+
+    @pytest.mark.asyncio
+    async def test_ciphertext_copied_from_another_database_is_refused_on_create(self, locale_handler, encryption):
+        ciphertext = encryption.encrypt("someone-elses-pw")
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            with pytest.raises(HTTPException) as exc_info:
+                await _create_with_source(_sftp_configuration(ciphertext), locale_handler)
+
+        assert exc_info.value.status_code == 400
+        assert "'sftp.password' was submitted as ciphertext" in exc_info.value.detail
+        assert ciphertext not in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_the_stored_ciphertext_itself_is_refused_on_update(self, locale_handler, encryption):
+        """Even this database's own ciphertext: the mask is the one way to keep a stored secret."""
+        ciphertext = encryption.encrypt("old-pw")
+        stored = _sftp_configuration(ciphertext)
+        request = UpdateDatabaseSourceRequest(source=RCLONE.id, source_configuration=stored)
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone", source_configuration=stored)
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.update_database_source(DATABASE, request, locale_handler, _user())
+
+        assert exc_info.value.status_code == 400
+        assert "'sftp.password' was submitted as ciphertext" in exc_info.value.detail
+        assert ciphertext not in exc_info.value.detail
+        bucket_cls.update_source.assert_not_called()
+
+
+class TestMaskWithNothingStored:
+    """A mask only means "keep the stored secret"; with nothing stored it was carried over from another form."""
+
+    @pytest.mark.asyncio
+    async def test_a_mask_on_create_is_a_client_error(self, locale_handler, encryption):
+        mask = _mask_of_another_databases_password(encryption)
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            with pytest.raises(HTTPException) as exc_info:
+                await _create_with_source(_sftp_configuration(mask), locale_handler)
+
+        assert exc_info.value.status_code == 400
+        assert "'sftp.password' was submitted masked" in exc_info.value.detail
+        assert mask not in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_mask_when_switching_to_another_source_is_a_client_error(self, locale_handler, encryption):
+        """The stored row belongs to the old source, so the mask is restored against nothing."""
+        mask = _mask_of_another_databases_password(encryption)
+        request = UpdateDatabaseSourceRequest(
+            source=RCLONE.id, source_configuration=_sftp_configuration(mask), replace_existing_documents=True
+        )
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket(source=None, source_configuration={})
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.update_database_source(DATABASE, request, locale_handler, _user())
+
+        assert exc_info.value.status_code == 400
+        assert "'sftp.password' was submitted masked" in exc_info.value.detail
+        assert mask not in exc_info.value.detail
+        bucket_cls.update_source.assert_not_called()
+
+
+async def _create_with_source(source_configuration: dict, locale_handler: MagicMock) -> None:
+    request = CreateDatabaseRequest(
+        ingestor=INGESTOR.id,
+        configuration={"name": {"en": "HR Docs"}, "description": {"en": "Policies"}},
+        source=RCLONE.id,
+        source_configuration=source_configuration,
+    )
+    s3_service = MagicMock()
+    s3_service.container_exists.return_value = False
+    await KnowledgeService.create_database(DATABASE, request, locale_handler, s3_service, _user())
+
+
+def _mask_of_another_databases_password(encryption: SecretEncryptionService) -> str:
+    other_database = _sftp_configuration(encryption.encrypt("someone-elses-pw"))
+    return encryption.mask_paths(other_database, {"sftp.password"})["sftp"]["password"]
+
+
 class TestSourcedDatabasesRefuseManualContentChanges:
     @pytest.mark.asyncio
     async def test_manual_namespace_creation_is_refused(self, locale_handler):

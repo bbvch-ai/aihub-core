@@ -431,6 +431,12 @@ export type AgentClassDto = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Is Online
    *
    * Indicates whether the agent class is online and reachable.
@@ -3118,7 +3124,7 @@ export type ChatCompletionRequest = {
   /**
    * Service Tier
    */
-  service_tier?: "auto" | "default" | null;
+  service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
   /**
    * Stop
    */
@@ -4385,6 +4391,7 @@ export type ContextualizedAgentEvent = {
     | HumanInTheLoopInputRequestEvent
     | ToolApprovalRequestEvent
     | HumanInTheLoopConfirmationRequestEvent
+    | HumanInTheLoopQuestionsRequestEvent
     | HumanInTheLoopChatRequestEvent
     | HumanInTheLoopRequestEvent
     | AgentInTheLoopRequestEvent
@@ -4406,6 +4413,7 @@ export type ContextualizedAgentEvent = {
     | MemoryRecalledEvent
     | MemoryStorageRequestedEvent
     | SearchKnowledgeEvent
+    | FetchWebPagesEvent
     | ExtractRecordsEvent
     | ReadAttachedFilesEvent
     | AttachedFilesReadEvent
@@ -4422,6 +4430,7 @@ export type ContextualizedAgentEvent = {
     | ThoughtEvent
     | AttachedFileEvent
     | KnowledgeSearchedEvent
+    | WebPagesFetchedEvent
     | RecordsExtractedEvent
     | ToolResultEvent
     | ToolLoopStatusEvent
@@ -6206,9 +6215,9 @@ export type Embeddings = {
   /**
    * Embedding
    *
-   * The list of embeddings.
+   * The embedding vector, or the vector's float32 bytes as base64 when requested so.
    */
-  embedding: Array<number>;
+  embedding: Array<number> | string;
   /**
    * Index
    *
@@ -6275,6 +6284,10 @@ export type EmbeddingsResponse = {
    * The list of embeddings.
    */
   data: Array<Embeddings>;
+  /**
+   * Tokens the request used.
+   */
+  usage?: OpenaiTypesCreateEmbeddingResponseUsage | null;
 };
 
 /**
@@ -6331,6 +6344,14 @@ export type EventSpecs = {
   event_schema: {
     [key: string]: unknown;
   };
+  /**
+   * Api Input Schema
+   *
+   * The schema of what an API caller sends for this event: the event without the fields the server fills in, and with the inputs the event converts itself, such as files sent inline. Absent for a specification stored before agents announced it.
+   */
+  api_input_schema?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * Event Parents
    *
@@ -6489,15 +6510,15 @@ export type ExtractRecordsEvent = {
    */
   display_description?: LocaleString | null;
   /**
-   * The documents to extract from; none when the request continues a pending extraction.
+   * The documents to extract from; none when the request confirms a sample.
    */
   selection?: KnowledgeDocumentSelection | null;
   /**
-   * Continue Pending
+   * Confirmed
    *
-   * Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.
+   * Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.
    */
-  continue_pending?: boolean;
+  confirmed?: boolean;
   /**
    * Fields
    *
@@ -6516,6 +6537,12 @@ export type ExtractRecordsEvent = {
    * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
    */
   row_terms?: string | null;
+  /**
+   * Document Terms
+   *
+   * Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.
+   */
+  document_terms?: string | null;
   /**
    * Collections
    *
@@ -6538,6 +6565,120 @@ export type ExtractRecordsEvent = {
    * Tool Call Id
    *
    * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ExtractedTableFile
+ *
+ * Where the whole table of an extraction is stored, as CSV.
+ *
+ * Events carry this reference and a preview, never every row: a table of any size then stays out of the message
+ * broker, the event store and the traces, and clients download it from object storage instead.
+ */
+export type ExtractedTableFile = {
+  /**
+   * Bucket
+   *
+   * The object storage bucket holding the file.
+   */
+  bucket: string;
+  /**
+   * Key
+   *
+   * The object key of the file within the bucket.
+   */
+  key: string;
+  /**
+   * Filename
+   *
+   * The name the file is downloaded under.
+   */
+  filename: string;
+  /**
+   * Size
+   *
+   * The file's size in bytes.
+   */
+  size: number;
+  /**
+   * Row Count
+   *
+   * Rows the file holds, without the header.
+   */
+  row_count: number;
+  /**
+   * Content Type
+   *
+   * The file's media type.
+   */
+  content_type?: string;
+};
+
+/**
+ * FetchWebPagesEvent
+ *
+ * Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.
+ *
+ * Built with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the
+ * profile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.
+ */
+export type FetchWebPagesEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Urls
+   *
+   * The links to read, in the order the user gave them.
+   */
+  urls?: Array<string>;
+  /**
+   * Reading
+   *
+   * Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.
+   */
+  reading?: boolean;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the pages by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
    */
   tool_call_id?: string | null;
   /**
@@ -6903,6 +7044,12 @@ export type FullAgentInstanceDto = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Start Events
    *
    * A list of `EventSpecs` representing events that can start this agent's workflow.
@@ -6939,7 +7086,7 @@ export type FullAgentInstanceDto = {
   /**
    * Configuration
    *
-   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.
+   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.
    */
   configuration?: {
     [key: string]: unknown;
@@ -7816,6 +7963,64 @@ export type HumanInTheLoopChatResponseEvent = {
 };
 
 /**
+ * HumanInTheLoopChoiceOption
+ *
+ * One answer a choice question offers; lengths are capped as OpenWebUI's dialog caps them.
+ */
+export type HumanInTheLoopChoiceOption = {
+  /**
+   * Label
+   *
+   * The answer's short label.
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * What choosing the answer means.
+   */
+  description: string;
+};
+
+/**
+ * HumanInTheLoopChoiceQuestion
+ *
+ * A question a client with a dialog shows with its options; the first option is the one the agent recommends.
+ */
+export type HumanInTheLoopChoiceQuestion = {
+  /**
+   * Id
+   *
+   * Key the answer is returned under.
+   */
+  id: string;
+  /**
+   * Header
+   *
+   * A short title for the question.
+   */
+  header: string;
+  /**
+   * Question
+   *
+   * The question itself.
+   */
+  question: string;
+  /**
+   * Options
+   *
+   * The answers offered, the recommended one first.
+   */
+  options: Array<HumanInTheLoopChoiceOption>;
+  /**
+   * Allow Other
+   *
+   * Whether the user may write an answer of their own.
+   */
+  allow_other?: boolean;
+};
+
+/**
  * HumanInTheLoopConfirmationRequestEvent
  *
  * Request yes/no confirmation from a human operator.
@@ -8011,6 +8216,72 @@ export type HumanInTheLoopInputResponseEvent = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopInputRequestEvent;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * HumanInTheLoopQuestionsRequestEvent
+ *
+ * A chat question that also carries its parts as choice questions.
+ *
+ * Clients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows
+ * `question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to
+ * five questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
+ */
+export type HumanInTheLoopQuestionsRequestEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Question
+   *
+   * The query or prompt presented to the human operator.
+   */
+  question: string;
+  /**
+   * Topic
+   *
+   * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+   */
+  topic: PartialAgentTopic | AgentInstanceTopic;
+  /**
+   * Hitl Type
+   */
+  hitl_type?: "chat";
+  /**
+   * Questions
+   *
+   * The question's parts, for clients that show a dialog.
+   */
+  questions: Array<HumanInTheLoopChoiceQuestion>;
   /**
    * Event Name
    *
@@ -8580,7 +8851,7 @@ export type ImageGenerationRequest = {
   /**
    * Quality
    */
-  quality?: "standard" | "hd" | null;
+  quality?: "standard" | "hd" | "low" | "medium" | "high" | "auto" | null;
   /**
    * Response Format
    */
@@ -8588,7 +8859,16 @@ export type ImageGenerationRequest = {
   /**
    * Size
    */
-  size?: "256x256" | "512x512" | "1024x1024" | "1792x1024" | "1024x1792" | null;
+  size?:
+    | "auto"
+    | "256x256"
+    | "512x512"
+    | "1024x1024"
+    | "1536x1024"
+    | "1024x1536"
+    | "1792x1024"
+    | "1024x1792"
+    | null;
   /**
    * Style
    */
@@ -8975,6 +9255,14 @@ export type IngestedNode = {
    * Heading level of the node in document
    */
   heading_level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | null;
+  /**
+   * Record Fields
+   *
+   * Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.
+   */
+  record_fields?: {
+    [key: string]: string | number | number | Array<string>;
+  };
   /**
    * Score
    *
@@ -9717,6 +10005,12 @@ export type InputText = {
    */
   iconSuffix?: string | null;
   /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
+  /**
    * Validation
    */
   readonly validation: string;
@@ -10349,6 +10643,12 @@ export type KnowledgeSearchedEvent = {
    */
   grounding_nodes?: Array<IngestedNode>;
   /**
+   * Missing
+   *
+   * Referenced collections that were not searched, because they no longer exist.
+   */
+  missing?: Array<KnowledgeReference>;
+  /**
    * Refused
    *
    * Referenced collections that were not searched, because the user may not read them.
@@ -10759,6 +11059,14 @@ export type LlmStopEvent = {
     [key: string]: unknown;
   }> | null;
   /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -11126,6 +11434,12 @@ export type LocaleInput = {
    */
   placeholder?: LocaleString | string | null;
   /**
+   * Maxlength
+   *
+   * Maximum number of characters per language
+   */
+  maxLength?: number | null;
+  /**
    * Validation
    *
    * Emits `localeRequired` where other elements emit FormKit's `required`.
@@ -11491,7 +11805,7 @@ export type MailClassificationRef = {
   /**
    * Target Folder
    *
-   * Folder the message was filed into.
+   * Folder the message was filed into, or the inbox when it was kept there.
    */
   target_folder: string;
   /**
@@ -12359,6 +12673,12 @@ export type MinimalAgentInstanceDto = {
    * Whether the agent can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
 };
 
 /**
@@ -15666,11 +15986,14 @@ export type RecallMemoryEvent = {
 /**
  * RecordsExtractedEvent
  *
- * The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.
+ * The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a
+ * file, and its summary.
  *
- * A blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop
- * (`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as
- * a block of the answer, the OpenAI-compatible API as answer text.
+ * The event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size
+ * stays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.
+ * When a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients
+ * show the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients
+ * offer the file for download.
  */
 export type RecordsExtractedEvent = {
   /**
@@ -15706,9 +16029,13 @@ export type RecordsExtractedEvent = {
   /**
    * Table
    *
-   * The rows as a markdown table, empty when there are none.
+   * The first rows as a markdown table, a preview when `file` holds more; empty without rows.
    */
   table?: string;
+  /**
+   * The whole table as a CSV file; none when there are no rows.
+   */
+  file?: ExtractedTableFile | null;
   /**
    * Summary
    *
@@ -15730,33 +16057,27 @@ export type RecordsExtractedEvent = {
   /**
    * Row Count
    *
-   * Rows in the table.
+   * Rows in the preview.
    */
   row_count?: number;
   /**
    * Total Row Count
    *
-   * Rows found, more than the table holds when cut.
+   * Rows found; every one of them is in `file`.
    */
   total_row_count?: number;
   /**
    * Truncated
    *
-   * Whether the result was cut short at a limit.
+   * Whether the search for documents stopped at a limit, so documents may be missing.
    */
   truncated?: boolean;
   /**
-   * Remaining Documents
+   * Awaiting Confirmation
    *
-   * Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.
+   * Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.
    */
-  remaining_documents?: number;
-  /**
-   * Remaining Rows
-   *
-   * Rows found but not shown yet, shown first when the user continues.
-   */
-  remaining_rows?: number;
+  awaiting_confirmation?: boolean;
   /**
    * Tool Call Id
    *
@@ -15911,6 +16232,14 @@ export type RefusalStopEvent = {
   tools?: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * What about the input made the turn unanswerable.
    */
@@ -16254,6 +16583,43 @@ export type ResponseFormatText = {
    */
   type: "text";
   [key: string]: unknown;
+};
+
+/**
+ * ResponseSchema
+ *
+ * The JSON shape a caller wants the agent's answer in.
+ *
+ * One request whatever the caller's API calls it: the OpenAI endpoint maps both `response_format` and a forced
+ * function call onto it, and decides on its own how to hand the result back.
+ */
+export type ResponseSchema = {
+  /**
+   * Name
+   *
+   * A name for the shape, as OpenAI's `json_schema.name` or a function name.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * What the shape is for; the model reads it.
+   */
+  description?: string | null;
+  /**
+   * Json Schema
+   *
+   * The JSON schema the answer must match. Without one, any JSON object is accepted.
+   */
+  json_schema?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Strict
+   *
+   * Ask the model to follow the schema exactly, as OpenAI's structured outputs `strict`.
+   */
+  strict?: boolean;
 };
 
 /**
@@ -16751,6 +17117,12 @@ export type RunToolLoopEvent = {
    * The collections the user referenced on the message, for tools that search knowledge.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * The web pages the message links or references, for tools that read them.
+   */
+  web_references?: Array<string>;
   /**
    * Event Name
    *
@@ -18266,6 +18638,12 @@ export type StoreUserMemoryRequestedEvent = {
    */
   origin_memory_llm?: string | null;
   /**
+   * Origin Anonymise
+   *
+   * Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.
+   */
+  origin_anonymise?: boolean;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -18610,13 +18988,17 @@ export type TextToSpeechRequest = {
   voice:
     | "alloy"
     | "ash"
+    | "ballad"
     | "coral"
     | "echo"
     | "fable"
     | "onyx"
     | "nova"
     | "sage"
-    | "shimmer";
+    | "shimmer"
+    | "verse"
+    | "marin"
+    | "cedar";
   /**
    * Response Format
    *
@@ -18761,6 +19143,12 @@ export type Textarea = {
    * Whether to automatically resize based on content
    */
   autoResize?: boolean;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   /**
    * Validation
    */
@@ -20412,6 +20800,12 @@ export type UnreadMailListedEvent = {
    */
   messages?: Array<UnreadMailSummary>;
   /**
+   * Uid Validity
+   *
+   * The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.
+   */
+  uid_validity?: number | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -20955,6 +21349,16 @@ export type UserMessageEvent = {
    */
   knowledge_references?: Array<KnowledgeReference>;
   /**
+   * Web References
+   *
+   * Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.
+   */
+  web_references?: Array<string>;
+  /**
+   * The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.
+   */
+  response_schema?: ResponseSchema | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -21316,6 +21720,118 @@ export type VoiceId = {
 };
 
 /**
+ * WebFetchFailure
+ *
+ * A linked page the agent could not read, with the reason the answer reports to the user.
+ */
+export type WebFetchFailure = {
+  /**
+   * Url
+   *
+   * The URL as the user sent it.
+   */
+  url: string;
+  /**
+   * Why the page could not be read.
+   */
+  reason: WebFetchFailureReason;
+};
+
+/**
+ * WebFetchFailureReason
+ *
+ * Why a linked page could not be read, so the answer can tell the user instead of inventing the page.
+ */
+export const WebFetchFailureReason = {
+  MALFORMED_URL: "malformed_url",
+  UNSUPPORTED_URL: "unsupported_url",
+  BLOCKED_HOST: "blocked_host",
+  NOT_FOUND: "not_found",
+  ACCESS_DENIED: "access_denied",
+  HTTP_ERROR: "http_error",
+  TIMEOUT: "timeout",
+  UNSUPPORTED_CONTENT: "unsupported_content",
+  EMPTY_CONTENT: "empty_content",
+  URL_LIMIT_REACHED: "url_limit_reached",
+} as const;
+
+/**
+ * WebFetchFailureReason
+ *
+ * Why a linked page could not be read, so the answer can tell the user instead of inventing the page.
+ */
+export type WebFetchFailureReason =
+  (typeof WebFetchFailureReason)[keyof typeof WebFetchFailureReason];
+
+/**
+ * WebPagesFetchedEvent
+ *
+ * The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.
+ *
+ * Displayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources
+ * the answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of
+ * those pages, with the failures beside them.
+ */
+export type WebPagesFetchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the pages read and the links that failed.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The pages the block holds, one per page, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNode>;
+  /**
+   * Failures
+   *
+   * The links that could not be read, with the reason for each.
+   */
+  failures?: Array<WebFetchFailure>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * WebhookResponse
  */
 export type WebhookResponse = {
@@ -21439,6 +21955,23 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
   parameters?: {
     [key: string]: unknown;
   };
+  [key: string]: unknown;
+};
+
+/**
+ * Usage
+ *
+ * The usage information for the request.
+ */
+export type OpenaiTypesCreateEmbeddingResponseUsage = {
+  /**
+   * Prompt Tokens
+   */
+  prompt_tokens: number;
+  /**
+   * Total Tokens
+   */
+  total_tokens: number;
   [key: string]: unknown;
 };
 
@@ -21700,6 +22233,12 @@ export type AgentClassDtoWritable = {
    * Whether the agent class can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
   /**
    * Is Online
    *
@@ -23624,6 +24163,7 @@ export type ContextualizedAgentEventWritable = {
     | HumanInTheLoopInputRequestEventWritable
     | ToolApprovalRequestEventWritable
     | HumanInTheLoopConfirmationRequestEventWritable
+    | HumanInTheLoopQuestionsRequestEventWritable
     | HumanInTheLoopChatRequestEventWritable
     | HumanInTheLoopRequestEventWritable
     | AgentInTheLoopRequestEventWritable
@@ -23645,6 +24185,7 @@ export type ContextualizedAgentEventWritable = {
     | MemoryRecalledEventWritable
     | MemoryStorageRequestedEventWritable
     | SearchKnowledgeEventWritable
+    | FetchWebPagesEventWritable
     | ExtractRecordsEventWritable
     | ReadAttachedFilesEventWritable
     | AttachedFilesReadEventWritable
@@ -23661,6 +24202,7 @@ export type ContextualizedAgentEventWritable = {
     | ThoughtEventWritable
     | AttachedFileEventWritable
     | KnowledgeSearchedEventWritable
+    | WebPagesFetchedEventWritable
     | RecordsExtractedEventWritable
     | ToolResultEventWritable
     | ToolLoopStatusEventWritable
@@ -24425,15 +24967,15 @@ export type ExtractRecordsEventWritable = {
    */
   display_description?: LocaleString | null;
   /**
-   * The documents to extract from; none when the request continues a pending extraction.
+   * The documents to extract from; none when the request confirms a sample.
    */
   selection?: KnowledgeDocumentSelection | null;
   /**
-   * Continue Pending
+   * Confirmed
    *
-   * Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.
+   * Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.
    */
-  continue_pending?: boolean;
+  confirmed?: boolean;
   /**
    * Fields
    *
@@ -24452,6 +24994,12 @@ export type ExtractRecordsEventWritable = {
    * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
    */
   row_terms?: string | null;
+  /**
+   * Document Terms
+   *
+   * Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.
+   */
+  document_terms?: string | null;
   /**
    * Collections
    *
@@ -24474,6 +25022,60 @@ export type ExtractRecordsEventWritable = {
    * Tool Call Id
    *
    * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * FetchWebPagesEvent
+ *
+ * Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.
+ *
+ * Built with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the
+ * profile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.
+ */
+export type FetchWebPagesEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Urls
+   *
+   * The links to read, in the order the user gave them.
+   */
+  urls?: Array<string>;
+  /**
+   * Reading
+   *
+   * Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.
+   */
+  reading?: boolean;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the pages by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
    */
   tool_call_id?: string | null;
   [key: string]: unknown;
@@ -24634,6 +25236,12 @@ export type FullAgentInstanceDtoWritable = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Start Events
    *
    * A list of `EventSpecs` representing events that can start this agent's workflow.
@@ -24670,7 +25278,7 @@ export type FullAgentInstanceDtoWritable = {
   /**
    * Configuration
    *
-   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.
+   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.
    */
   configuration?: {
     [key: string]: unknown;
@@ -25456,6 +26064,59 @@ export type HumanInTheLoopInputResponseEventWritable = {
 };
 
 /**
+ * HumanInTheLoopQuestionsRequestEvent
+ *
+ * A chat question that also carries its parts as choice questions.
+ *
+ * Clients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows
+ * `question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to
+ * five questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
+ */
+export type HumanInTheLoopQuestionsRequestEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Question
+   *
+   * The query or prompt presented to the human operator.
+   */
+  question: string;
+  /**
+   * Topic
+   *
+   * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+   */
+  topic: PartialAgentTopic | AgentInstanceTopic;
+  /**
+   * Hitl Type
+   */
+  hitl_type?: "chat";
+  /**
+   * Questions
+   *
+   * The question's parts, for clients that show a dialog.
+   */
+  questions: Array<HumanInTheLoopChoiceQuestion>;
+  [key: string]: unknown;
+};
+
+/**
  * HumanInTheLoopRequestEvent
  *
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
@@ -25942,6 +26603,14 @@ export type IngestedNodeWritable = {
    * Heading level of the node in document
    */
   heading_level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | null;
+  /**
+   * Record Fields
+   *
+   * Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.
+   */
+  record_fields?: {
+    [key: string]: string | number | number | Array<string>;
+  };
   /**
    * Score
    *
@@ -26650,6 +27319,12 @@ export type InputTextWritable = {
    * Icon suffix
    */
   iconSuffix?: string | null;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   [key: string]: unknown;
 };
 
@@ -27162,6 +27837,12 @@ export type KnowledgeSearchedEventWritable = {
    */
   grounding_nodes?: Array<IngestedNodeWritable>;
   /**
+   * Missing
+   *
+   * Referenced collections that were not searched, because they no longer exist.
+   */
+  missing?: Array<KnowledgeReference>;
+  /**
    * Refused
    *
    * Referenced collections that were not searched, because the user may not read them.
@@ -27479,6 +28160,14 @@ export type LlmStopEventWritable = {
   tools?: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
   [key: string]: unknown;
 };
 
@@ -27816,6 +28505,12 @@ export type LocaleInputWritable = {
    * Placeholder text for each language
    */
   placeholder?: LocaleString | string | null;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters per language
+   */
+  maxLength?: number | null;
   [key: string]: unknown;
 };
 
@@ -28320,6 +29015,12 @@ export type MinimalAgentInstanceDtoWritable = {
    * Whether the agent can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
 };
 
 /**
@@ -30151,11 +30852,14 @@ export type RecallMemoryEventWritable = {
 /**
  * RecordsExtractedEvent
  *
- * The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.
+ * The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a
+ * file, and its summary.
  *
- * A blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop
- * (`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as
- * a block of the answer, the OpenAI-compatible API as answer text.
+ * The event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size
+ * stays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.
+ * When a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients
+ * show the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients
+ * offer the file for download.
  */
 export type RecordsExtractedEventWritable = {
   /**
@@ -30191,9 +30895,13 @@ export type RecordsExtractedEventWritable = {
   /**
    * Table
    *
-   * The rows as a markdown table, empty when there are none.
+   * The first rows as a markdown table, a preview when `file` holds more; empty without rows.
    */
   table?: string;
+  /**
+   * The whole table as a CSV file; none when there are no rows.
+   */
+  file?: ExtractedTableFile | null;
   /**
    * Summary
    *
@@ -30215,33 +30923,27 @@ export type RecordsExtractedEventWritable = {
   /**
    * Row Count
    *
-   * Rows in the table.
+   * Rows in the preview.
    */
   row_count?: number;
   /**
    * Total Row Count
    *
-   * Rows found, more than the table holds when cut.
+   * Rows found; every one of them is in `file`.
    */
   total_row_count?: number;
   /**
    * Truncated
    *
-   * Whether the result was cut short at a limit.
+   * Whether the search for documents stopped at a limit, so documents may be missing.
    */
   truncated?: boolean;
   /**
-   * Remaining Documents
+   * Awaiting Confirmation
    *
-   * Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.
+   * Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.
    */
-  remaining_documents?: number;
-  /**
-   * Remaining Rows
-   *
-   * Rows found but not shown yet, shown first when the user continues.
-   */
-  remaining_rows?: number;
+  awaiting_confirmation?: boolean;
   /**
    * Tool Call Id
    *
@@ -30363,6 +31065,14 @@ export type RefusalStopEventWritable = {
   tools?: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * What about the input made the turn unanswerable.
    */
@@ -30981,6 +31691,12 @@ export type RunToolLoopEventWritable = {
    * The collections the user referenced on the message, for tools that search knowledge.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * The web pages the message links or references, for tools that read them.
+   */
+  web_references?: Array<string>;
   [key: string]: unknown;
 };
 
@@ -32238,6 +32954,12 @@ export type StoreUserMemoryRequestedEventWritable = {
    * Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.
    */
   origin_memory_llm?: string | null;
+  /**
+   * Origin Anonymise
+   *
+   * Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.
+   */
+  origin_anonymise?: boolean;
   [key: string]: unknown;
 };
 
@@ -32509,6 +33231,12 @@ export type TextareaWritable = {
    * Whether to automatically resize based on content
    */
   autoResize?: boolean;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   [key: string]: unknown;
 };
 
@@ -33618,6 +34346,12 @@ export type UnreadMailListedEventWritable = {
    * Header summaries of the unread messages in the inbox.
    */
   messages?: Array<UnreadMailSummary>;
+  /**
+   * Uid Validity
+   *
+   * The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.
+   */
+  uid_validity?: number | null;
   [key: string]: unknown;
 };
 
@@ -33700,6 +34434,16 @@ export type UserMessageEventWritable = {
    * Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.
+   */
+  web_references?: Array<string>;
+  /**
+   * The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.
+   */
+  response_schema?: ResponseSchema | null;
   [key: string]: unknown;
 };
 
@@ -33873,6 +34617,61 @@ export type VectorStoreInputWritable = {
    * Whether to enable filtering/search
    */
   filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * WebPagesFetchedEvent
+ *
+ * The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.
+ *
+ * Displayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources
+ * the answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of
+ * those pages, with the failures beside them.
+ */
+export type WebPagesFetchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the pages read and the links that failed.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The pages the block holds, one per page, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNodeWritable>;
+  /**
+   * Failures
+   *
+   * The links that could not be read, with the reason for each.
+   */
+  failures?: Array<WebFetchFailure>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -35107,6 +35906,56 @@ export type GetOpenChatHitlResponses = {
 export type GetOpenChatHitlResponse =
   GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
 
+export type GetExtractedTableDownloadUrlData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Thread ID
+     */
+    thread_id: string;
+    /**
+     * Extraction ID
+     */
+    extraction_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/threads/{thread_id}/extracted-tables/{extraction_id}/download-url";
+};
+
+export type GetExtractedTableDownloadUrlErrors = {
+  /**
+   * The thread holds no extracted table with this id
+   */
+  404: unknown;
+  /**
+   * The table was stored, but its retention has passed and it is deleted
+   */
+  410: unknown;
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetExtractedTableDownloadUrlError =
+  GetExtractedTableDownloadUrlErrors[keyof GetExtractedTableDownloadUrlErrors];
+
+export type GetExtractedTableDownloadUrlResponses = {
+  /**
+   * Successful Response
+   */
+  200: SignedUrlDto;
+};
+
+export type GetExtractedTableDownloadUrlResponse =
+  GetExtractedTableDownloadUrlResponses[keyof GetExtractedTableDownloadUrlResponses];
+
 export type GetAgentClassesData = {
   body?: never;
   path: {
@@ -35584,6 +36433,48 @@ export type ValidateFileUploadResponses = {
 
 export type ValidateFileUploadResponse =
   ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
+
+export type GetImageData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Agent Class
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     */
+    agent_id: string;
+    /**
+     * Name
+     */
+    name: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/images/{name}";
+};
+
+export type GetImageErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetImageError = GetImageErrors[keyof GetImageErrors];
+
+export type GetImageResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
 
 export type GetProcessClassesData = {
   body?: never;
@@ -36562,9 +37453,25 @@ export type GetModelsData = {
      */
     tenant_id: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Include Agents
+     *
+     * Also list the agents the user may call. Off by default: OpenWebUI lists this endpoint and shows agents through its own pipe, so listing them here would show each twice.
+     */
+    include_agents?: boolean;
+  };
   url: "/{tenant_id}/openai/models";
 };
+
+export type GetModelsErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetModelsError = GetModelsErrors[keyof GetModelsErrors];
 
 export type GetModelsResponses = {
   /**

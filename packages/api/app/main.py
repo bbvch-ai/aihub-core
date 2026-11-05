@@ -74,7 +74,8 @@ runner.mount(
     .remove_agent_from_thread()
     .add_user_to_thread()
     .remove_user_from_thread()
-    .get_open_chat_hitl(),
+    .get_open_chat_hitl()
+    .get_extracted_table_download_url(),
     AgentController(auth=auth)
     .get_agent_classes()
     .get_agent_class()
@@ -86,7 +87,8 @@ runner.mount(
     .get_agent_instance_threads()
     .get_all_agent_instances()
     .initiate_file_upload()
-    .validate_file_upload(),
+    .validate_file_upload()
+    .get_image(),
     ProcessController(auth=auth)
     .get_process_classes()
     .get_process_class()
