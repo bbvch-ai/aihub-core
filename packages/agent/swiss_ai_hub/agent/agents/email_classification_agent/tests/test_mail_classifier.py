@@ -17,6 +17,7 @@ from swiss_ai_hub.agent.agents.email_classification_agent.configs.knowledge_dele
     KnowledgeDelegationConfig,
 )
 from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import (
+    CategoryVerdict,
     ClassificationOutcome,
     MailClassifier,
 )
@@ -429,3 +430,48 @@ def test_grounding_is_not_checked_when_drafting_is_off():
     otherwise die on a feature that `ReplyDrafting.drafting_batch` disables anyway.
     """
     MailTriageValidator.validate(_grounded_settings(), _no_drafting(), "INBOX", _counter, None)
+
+
+# --- keeping uncategorised mail in the inbox ---
+
+
+def _keeping(categories: list[MailCategory] | None = None) -> EmailClassificationSettings:
+    return _settings(categories).model_copy(update={"keep_uncategorised_in_inbox": True})
+
+
+def test_a_decline_stays_in_the_inbox_when_uncategorised_mail_is_kept():
+    verdict = CategoryVerdict(category=None, outcome=ClassificationOutcome.DECLINED, reason="fits nothing")
+
+    assert verdict.target_folder(_keeping()) is None
+    assert verdict.target_folder(_settings()) == "Triage/Uncategorised"
+
+
+def test_a_failure_still_leaves_the_inbox_when_uncategorised_mail_is_kept():
+    """A failure kept in the inbox would be listed and failed again on every run."""
+    verdict = CategoryVerdict(category=None, outcome=ClassificationOutcome.FAILED, reason="gateway down")
+
+    assert verdict.target_folder(_keeping()) == _keeping().failure_folder
+
+
+def test_a_categorised_message_still_moves_when_uncategorised_mail_is_kept():
+    verdict = CategoryVerdict(category=_SUPPORT, outcome=ClassificationOutcome.CATEGORISED, reason="support")
+
+    assert verdict.target_folder(_keeping()) == "Triage/Support"
+
+
+def test_the_unused_fallback_folder_constrains_nothing_when_uncategorised_mail_is_kept():
+    settings = _keeping(categories=[_SUPPORT])
+    settings.fallback_folder = _SUPPORT.imap_folder
+
+    MailTriageValidator.validate(settings, _no_drafting(), "INBOX", _counter)
+
+    settings.fallback_folder = ""
+    MailTriageValidator.validate(settings, _no_drafting(), "INBOX", _counter)
+
+
+def test_a_failure_folder_equal_to_the_inbox_is_still_rejected_when_uncategorised_mail_is_kept():
+    settings = _keeping()
+    settings.failure_folder = "INBOX"
+
+    with pytest.raises(ValueError, match="equals the inbox folder"):
+        MailTriageValidator.validate(settings, _no_drafting(), "INBOX", _counter)

@@ -16,6 +16,7 @@ from swiss_ai_hub.core.events.agent import (
     LLMEvent,
     MemoryRecalledEvent,
     NotAMetaQuestionEvent,
+    WebPagesFetchedEvent,
 )
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.testing.auth_utils import fake_user
@@ -55,6 +56,11 @@ def _reporting() -> MagicMock:
     return reporting
 
 
+def _without_schema() -> MagicMock:
+    """A run context whose start event asked for no JSON shape."""
+    return MagicMock(get=AsyncMock(return_value=None))
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(("config_fixture", "expected_model"), TASK_LLM_CASES)
 async def test_inspection_uses_task_llm(request, config_fixture: str, expected_model: str) -> None:
@@ -65,6 +71,7 @@ async def test_inspection_uses_task_llm(request, config_fixture: str, expected_m
             RAGAgent(),
             request=Conversation.contextualize(history=TURN.history, message=_event(user_query="hi")),
             conversation=config,
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
             user=fake_user(),
@@ -149,6 +156,7 @@ async def test_context_sufficient_guard_uses_task_llm(request, config_fixture: s
             memories=MemoryRecalledEvent(),
             files=AttachedFilesReadEvent(),
             knowledge=KnowledgeSearchedEvent(),
+            pages=WebPagesFetchedEvent(),
             run_context=MagicMock(),
         )
 

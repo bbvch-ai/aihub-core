@@ -48,17 +48,25 @@ class StructuredRecordFile(BaseModel):
 
     @property
     def object_key(self) -> str:
+        return self.key_with_extension("md")
+
+    def key_with_extension(self, extension: Annotated[str, "File extension without its dot"]) -> str:
         *folders, name = self.path_segments
-        return "/".join([self.namespace, *folders, f"{name}.md"])
+        return "/".join([self.namespace, *folders, f"{name}.{extension}"])
 
     @classmethod
-    def object_key_for(cls, namespace: str, path_segments: list[str]) -> str:
+    def object_key_for(
+        cls,
+        namespace: str,
+        path_segments: list[str],
+        extension: Annotated[str, "File extension without its dot; a binary file keeps its own"] = "md",
+    ) -> str:
         """The key a record is written under, for listings that know where a record lives but not its content.
 
         Built through the same validators as the written file: a listed key that differs from the written one would
         make the removal delete a record the cursor never fetches again.
         """
-        return cls(namespace=namespace, path_segments=path_segments, body="").object_key
+        return cls(namespace=namespace, path_segments=path_segments, body="").key_with_extension(extension)
 
     def render(self) -> bytes:
         fields = {key: value for key, value in self.frontmatter.items() if value is not None}

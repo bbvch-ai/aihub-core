@@ -34,8 +34,9 @@ independent [Dagster](https://dagster.io/) instance (separate from the data pipe
 
 Each stateful service has a `BackupHandler` (`postgres`, `milvus`, `neo4j`, `clickhouse`, `valkey`, `nats`); the whole
 thing is wired into a Dagster asset graph by `backup_definitions()`. Because it operates on the storage layer and needs
-to stop containers, it requires **read access to the Docker socket** (`/var/run/docker.sock`), which it uses to discover
-platform containers via their `com.docker.compose.project` label.
+to stop containers, it needs the Docker **containers API** (`DOCKER_HOST`; in the platform compose a socket proxy that
+allows `/containers/...` only), which it uses to discover platform containers via their `com.docker.compose.project`
+label.
 
 > Unlike the other Swiss AI Hub packages, this is an **operational service**, not a library you build agents/APIs on. It
 > is licensed **AGPL-3.0-or-later** (the rest of the SDK is Apache-2.0).
@@ -87,10 +88,11 @@ set -a && source .env && set +a          # S3 + DB credentials, BACKUP_* setting
 dagster dev -m my_backup                 # http://localhost:3000
 ```
 
-From the UI you can materialize the **online-safe maintenance jobs** (cleanup, `pg_repack`, the lz4 rewrite) against a running stack
-without disruption. The **full backup/restore jobs stop and restart containers**, so run those deliberately — and note
-they need access to the Docker socket and to all the stateful services. `dagster definitions validate -m my_backup`
-loads the whole code location without running anything (a fast CI/sanity check).
+From the UI you can materialize the **online-safe maintenance jobs** (cleanup, `pg_repack`, the lz4 rewrite) against a
+running stack without disruption. The **full backup/restore jobs stop and restart containers**, so run those
+deliberately — and note they need access to the Docker socket and to all the stateful services.
+`dagster definitions validate -m my_backup` loads the whole code location without running anything (a fast CI/sanity
+check).
 
 > **Settings are not auto-loaded from the environment.** Connection and `BACKUP_*` settings are read only when
 > constructed, so export them in the process that runs Dagster (`set -a && source .env && set +a`).
@@ -101,17 +103,18 @@ ______________________________________________________________________
 
 In production the backup plane runs as **three containers from one image**, forming a self-contained Dagster instance:
 
-| Container          | Role                                                      | Notes                                                                            |
-| ------------------ | --------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `backup-code`      | Dagster gRPC **code server** (`dagster api grpc … :4266`) | mounts `/var/run/docker.sock:ro` to stop/start containers; on `data` + `storage` |
-| `backup-daemon`    | Dagster **daemon**                                        | runs the schedules and sensors; on `data`                                        |
-| `backup-webserver` | Dagster **UI** (`:3004`)                                  | inspect runs, trigger restores; on `proxy` + `data`                              |
+| Container          | Role                                                      | Notes                                                                                |
+| ------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `backup-code`      | Dagster gRPC **code server** (`dagster api grpc … :4266`) | Docker via `backup-docker-proxy`; gRPC bound to `backup` only; on `data` + `storage` |
+| `backup-daemon`    | Dagster **daemon**                                        | runs the schedules and sensors; on `backup`                                          |
+| `backup-webserver` | Dagster **UI** (`:3004`)                                  | inspect runs, trigger restores; on `backup` + `backup-ui` (with its oauth2-proxy)    |
 
-Because it needs the Docker socket and the platform's stateful services, the canonical deployment is the platform's own
-backup compose. See [`infra/deployment`](https://github.com/bbvch-ai/aihub-core/tree/main/infra/deployment) and the
+Because it needs the Docker containers API and the platform's stateful services, the canonical deployment is the
+platform's own backup compose. See
+[`infra/deployment`](https://github.com/bbvch-ai/aihub-core/tree/main/infra/deployment) and the
 [documentation](https://bbvch-ai.github.io/aihub-core/) for the full container setup, retention config, and the
-`BACKUP_*` environment variables. If you run your own variant, mirror that three-container shape and grant the code
-server read access to the Docker socket.
+`BACKUP_*` environment variables. If you run your own variant, mirror that three-container shape and give the code
+server a `DOCKER_HOST` that allows the `/containers/...` API (including POST).
 
 ## Extending — add a service to back up
 

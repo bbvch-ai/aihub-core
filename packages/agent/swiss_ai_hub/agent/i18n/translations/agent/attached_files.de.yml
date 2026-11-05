@@ -15,7 +15,8 @@ prompt:
     wurde deshalb nicht als Text gelesen: Als Markdown verlöre sie ihre Struktur,
     und von einer grossen Datei passte nur ein Ausschnitt. Sie liegt unverändert im
     Gesprächsordner der Code-Sandbox (list_files zeigt ihren genauen Namen). Bearbeite
-    sie mit run_command, zum Beispiel mit pandas; was du dort berechnest, umfasst
+    sie mit run_command, zum Beispiel mit pandas, oder mit openpyxl oder python-pptx,
+    wenn das Ergebnis ihre Struktur behalten muss; was du dort berechnest, umfasst
     die ganze Datei.'
   context: |
     {% chat role="system" %}

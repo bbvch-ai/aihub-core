@@ -9,7 +9,8 @@ running header. The ground truth lists, per file, the records an extraction must
 
 - `ground_truth.json`: hardware lines per invoice (with `borderline` for items a reader may or may not count);
 - `ground_truth_contracts.json`: notice period, liability cap and governing law per supplier contract;
-- `ground_truth_slas.json`: response and resolution time per priority, and the availability penalty, per SLA.
+- `ground_truth_slas.json`: response and resolution time per priority, and the availability penalty, per SLA;
+- `ground_truth_catalogue.json`: every clause of the clause catalogue, one row each.
 """
 
 import json
@@ -28,6 +29,7 @@ from common import (  # noqa: E402
     BULK_FILES,
     CORPUS,
     GROUND_TRUTH,
+    GROUND_TRUTH_CATALOGUE,
     GROUND_TRUTH_CONTRACTS,
     GROUND_TRUTH_SLAS,
 )
@@ -40,6 +42,7 @@ LONG_DOCUMENT_CHARACTERS = 600_000
 TRUTH: dict[str, list[dict[str, object]]] = {}
 CONTRACTS: dict[str, dict[str, str]] = {}
 SLAS: dict[str, dict[str, object]] = {}
+CATALOGUE: dict[str, list[dict[str, object]]] = {}
 
 HW, SW, SV = "Hardware", "Software", "Service"
 
@@ -309,6 +312,70 @@ def slas() -> None:
         }
 
 
+CLAUSE_TOPICS = {
+    "Liability": [
+        "Neither party shall be liable for indirect or consequential damages, including lost profits, lost revenue or loss of data, except where the damage was caused by gross negligence or wilful misconduct.",
+        "The aggregate liability of the supplier under this clause is limited to the fees paid in the twelve months preceding the event giving rise to the claim.",
+        "The limitation does not apply to personal injury, to breaches of confidentiality, or to claims for which the law does not permit a limitation of liability.",
+    ],
+    "Termination": [
+        "Either party may terminate the affected service for convenience by written notice to the end of a calendar quarter, observing the notice period stated in the order form.",
+        "Termination for cause is permitted when the other party commits a material breach and fails to remedy it within thirty days of a written request to do so.",
+        "On termination the supplier shall support the orderly transfer of the service to the customer or a third party at the rates agreed for additional work.",
+    ],
+    "Data protection": [
+        "The supplier processes personal data only on documented instructions of the customer and within the scope described in the data processing annex.",
+        "Personal data shall be stored and processed exclusively in data centres located in Switzerland or in a member state of the European Economic Area.",
+        "The supplier notifies the customer without undue delay, and at the latest within forty-eight hours, of any breach of the security of personal data.",
+    ],
+    "Payment": [
+        "Invoices are issued monthly in arrears and are payable within thirty days of receipt, without deduction, to the account stated on the invoice.",
+        "Disputed amounts shall be notified in writing within fourteen days, and the undisputed part of the invoice remains payable on the due date.",
+        "Late payments bear default interest of five percent per year from the due date, without the need for a reminder.",
+    ],
+    "Confidentiality": [
+        "Each party keeps confidential all information marked as confidential or which by its nature is to be considered confidential, and uses it only for the purpose of this agreement.",
+        "The obligation of confidentiality survives the end of this agreement for a period of five years, and for trade secrets without limitation in time.",
+        "Disclosure to employees, auditors and advisers is permitted where they need the information and are bound by equivalent obligations of confidentiality.",
+    ],
+    "Audit": [
+        "The customer may audit the supplier's compliance with this clause once per calendar year, with thirty days' notice, during normal business hours.",
+        "Audits may be performed by an independent auditor bound by professional secrecy, and the supplier provides reasonable access to premises, systems and records.",
+        "Each party bears its own costs of an audit unless the audit reveals a material breach, in which case the supplier bears the reasonable costs of the audit.",
+    ],
+}
+CLAUSE_GENERAL = [
+    "Where this clause conflicts with the general terms and conditions, this clause prevails, unless the order form expressly states otherwise for the service concerned.",
+    "Amendments to this clause are valid only in writing and when signed by authorised representatives of both parties; this also applies to waiving the written form.",
+    "Should any provision of this clause be or become invalid, the remaining provisions remain in force, and the parties replace the invalid provision with a valid one closest to its purpose.",
+    "Notices under this clause are addressed to the contact persons named in the order form and are deemed received on the second business day after dispatch.",
+    "The parties shall first attempt to settle any dispute arising from this clause amicably through their steering committee before taking legal action.",
+    "This clause applies to all services ordered under the framework agreement, including services ordered before the clause entered into force where the parties so agree.",
+]
+CLAUSE_COUNT = 200
+
+
+def clause_catalogue() -> None:
+    """A catalogue of 200 clauses of about 1,300 characters each: one document whose rows are both many and long, beyond
+    what one event could carry before tables moved out of NATS."""
+    path = "catalogues/standard-clauses-2025.md"
+    pick = random.Random(2025)
+    topics = list(CLAUSE_TOPICS)
+    lines = ["# Catalogue of standard clauses for supplier agreements", "", "Edition 2025, approved by the legal department.", ""]
+    clauses = []
+    for n in range(1, CLAUSE_COUNT + 1):
+        topic = topics[(n - 1) % len(topics)]
+        number = f"CL-{n:03d}"
+        sentences = pick.sample(CLAUSE_TOPICS[topic], 3) + pick.sample(CLAUSE_GENERAL, 3)
+        text = f"Clause {number} applies to agreements of variant {n}. " + " ".join(sentences)
+        text += f" This clause was last reviewed in review cycle {pick.randint(1, 12)} and replaces earlier wording of variant {n}."
+        lines += [f"## {number} {topic}", "", text, ""]
+        clauses.append({"clause": number, "topic": topic, "characters": len(text)})
+    write_text("legal", path, "\n".join(lines))
+    CATALOGUE[f"legal/{path}"] = clauses
+
+
+
 def main() -> None:
     shutil.rmtree(CORPUS, ignore_errors=True)
     acme_and_neighbours()
@@ -317,9 +384,11 @@ def main() -> None:
     initrode()
     contracts()
     slas()
+    clause_catalogue()
     GROUND_TRUTH.write_text(json.dumps(TRUTH, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     GROUND_TRUTH_CONTRACTS.write_text(json.dumps(CONTRACTS, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     GROUND_TRUTH_SLAS.write_text(json.dumps(SLAS, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    GROUND_TRUTH_CATALOGUE.write_text(json.dumps(CATALOGUE, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     files = sum(1 for path in CORPUS.rglob("*") if path.is_file())
     print(f"{files} files; ground truth for {len(TRUTH)} invoices, {len(CONTRACTS)} contracts, {len(SLAS)} SLAs")
 

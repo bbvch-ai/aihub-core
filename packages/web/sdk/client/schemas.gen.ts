@@ -139,10 +139,12 @@ export const AddAgentRequestSchema = {
   properties: {
     agent_id: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Id",
     },
     agent_class: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Class",
     },
   },
@@ -563,6 +565,13 @@ export const AgentClassDTOSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent class can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
     is_online: {
@@ -4468,7 +4477,7 @@ export const ChatCompletionRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["auto", "default"],
+          enum: ["auto", "default", "flex", "scale", "priority"],
         },
         {
           type: "null",
@@ -6442,6 +6451,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/HumanInTheLoopConfirmationRequestEvent",
         },
         {
+          $ref: "#/components/schemas/HumanInTheLoopQuestionsRequestEvent",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopChatRequestEvent",
         },
         {
@@ -6505,6 +6517,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/SearchKnowledgeEvent",
         },
         {
+          $ref: "#/components/schemas/FetchWebPagesEvent",
+        },
+        {
           $ref: "#/components/schemas/ExtractRecordsEvent",
         },
         {
@@ -6551,6 +6566,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/KnowledgeSearchedEvent",
+        },
+        {
+          $ref: "#/components/schemas/WebPagesFetchedEvent",
         },
         {
           $ref: "#/components/schemas/RecordsExtractedEvent",
@@ -6991,6 +7009,7 @@ export const CreateNamespaceRequestSchema = {
   properties: {
     folder_name: {
       type: "string",
+      maxLength: 100,
       title: "Folder Name",
       description: "The name of the folder to which the namespace belongs.",
     },
@@ -6998,6 +7017,7 @@ export const CreateNamespaceRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 120,
         },
         {
           type: "null",
@@ -7010,6 +7030,7 @@ export const CreateNamespaceRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 500,
         },
         {
           type: "null",
@@ -7054,11 +7075,13 @@ export const CreateRoleRequestSchema = {
   properties: {
     name: {
       type: "string",
+      maxLength: 120,
       title: "Name",
       description: "The unique name of the role.",
     },
     description: {
       type: "string",
+      maxLength: 500,
       title: "Description",
       description: "A short description of the role's purpose.",
     },
@@ -7892,6 +7915,7 @@ export const DatasetCreateSchema = {
   properties: {
     dataset_name: {
       type: "string",
+      maxLength: 120,
       minLength: 1,
       title: "Dataset Name",
       description: "The name for the new dataset.",
@@ -7908,6 +7932,7 @@ export const DatasetCreateSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 500,
         },
         {
           type: "null",
@@ -9051,15 +9076,23 @@ export const EmbeddingsSchema = {
       type: "string",
       title: "Object",
       description: "The type of object.",
-      default: "embeddings",
+      default: "embedding",
     },
     embedding: {
-      items: {
-        type: "number",
-      },
-      type: "array",
+      anyOf: [
+        {
+          items: {
+            type: "number",
+          },
+          type: "array",
+        },
+        {
+          type: "string",
+        },
+      ],
       title: "Embedding",
-      description: "The list of embeddings.",
+      description:
+        "The embedding vector, or the vector's float32 bytes as base64 when requested so.",
     },
     index: {
       type: "integer",
@@ -9177,6 +9210,17 @@ export const EmbeddingsResponseSchema = {
       title: "Data",
       description: "The list of embeddings.",
     },
+    usage: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/openai__types__create_embedding_response__Usage",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Tokens the request used.",
+    },
   },
   type: "object",
   required: ["model", "data"],
@@ -9224,6 +9268,20 @@ export const EventSpecsSchema = {
       title: "Event Schema",
       description:
         "A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow.",
+    },
+    api_input_schema: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Api Input Schema",
+      description:
+        "The schema of what an API caller sends for this event: the event without the fields the server fills in, and with the inputs the event converts itself, such as files sent inline. Absent for a specification stored before agents announced it.",
     },
     event_parents: {
       items: {
@@ -9454,13 +9512,13 @@ export const ExtractRecordsEventSchema = {
         },
       ],
       description:
-        "The documents to extract from; none when the request continues a pending extraction.",
+        "The documents to extract from; none when the request confirms a sample.",
     },
-    continue_pending: {
+    confirmed: {
       type: "boolean",
-      title: "Continue Pending",
+      title: "Confirmed",
       description:
-        "Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.",
+        "Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.",
       default: false,
     },
     fields: {
@@ -9494,6 +9552,19 @@ export const ExtractRecordsEventSchema = {
       title: "Row Terms",
       description:
         "Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.",
+    },
+    document_terms: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Terms",
+      description:
+        "Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.",
     },
     collections: {
       items: {
@@ -9557,6 +9628,146 @@ export const ExtractRecordsEventSchema = {
   title: "ExtractRecordsEvent",
   description:
     "Asks the record-extraction capability for one table across the selected knowledge documents.\n\nBuilt with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose\n`extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to\nwhat the asking user may read, never the model's.",
+} as const;
+
+export const ExtractedTableFileSchema = {
+  properties: {
+    bucket: {
+      type: "string",
+      title: "Bucket",
+      description: "The object storage bucket holding the file.",
+    },
+    key: {
+      type: "string",
+      title: "Key",
+      description: "The object key of the file within the bucket.",
+    },
+    filename: {
+      type: "string",
+      pattern: "^[^/\\\\]+$",
+      title: "Filename",
+      description: "The name the file is downloaded under.",
+    },
+    size: {
+      type: "integer",
+      minimum: 0,
+      title: "Size",
+      description: "The file's size in bytes.",
+    },
+    row_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Row Count",
+      description: "Rows the file holds, without the header.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "The file's media type.",
+      default: "text/csv; charset=utf-8",
+    },
+  },
+  type: "object",
+  required: ["bucket", "key", "filename", "size", "row_count"],
+  title: "ExtractedTableFile",
+  description:
+    "Where the whole table of an extraction is stored, as CSV.\n\nEvents carry this reference and a preview, never every row: a table of any size then stays out of the message\nbroker, the event store and the traces, and clients download it from object storage instead.",
+} as const;
+
+export const FetchWebPagesEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    urls: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Urls",
+      description: "The links to read, in the order the user gave them.",
+      default: [],
+    },
+    reading: {
+      type: "boolean",
+      title: "Reading",
+      description:
+        "Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.",
+      default: true,
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the pages by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "FetchWebPagesEvent",
+  description:
+    "Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.\n\nBuilt with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the\nprofile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.",
 } as const;
 
 export const FewShotAcceptEventSchema = {
@@ -9973,6 +10184,13 @@ export const FullAgentInstanceDTOSchema = {
         "Whether the agent can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -10031,7 +10249,7 @@ export const FullAgentInstanceDTOSchema = {
       type: "object",
       title: "Configuration",
       description:
-        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.",
+        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.",
       default: {},
     },
   },
@@ -11465,6 +11683,76 @@ export const HumanInTheLoopChatResponseEventSchema = {
   description: "Response containing chat-style input from a human operator.",
 } as const;
 
+export const HumanInTheLoopChoiceOptionSchema = {
+  properties: {
+    label: {
+      type: "string",
+      maxLength: 80,
+      minLength: 1,
+      title: "Label",
+      description: "The answer's short label.",
+    },
+    description: {
+      type: "string",
+      maxLength: 240,
+      minLength: 1,
+      title: "Description",
+      description: "What choosing the answer means.",
+    },
+  },
+  type: "object",
+  required: ["label", "description"],
+  title: "HumanInTheLoopChoiceOption",
+  description:
+    "One answer a choice question offers; lengths are capped as OpenWebUI's dialog caps them.",
+} as const;
+
+export const HumanInTheLoopChoiceQuestionSchema = {
+  properties: {
+    id: {
+      type: "string",
+      maxLength: 64,
+      minLength: 1,
+      title: "Id",
+      description: "Key the answer is returned under.",
+    },
+    header: {
+      type: "string",
+      maxLength: 48,
+      title: "Header",
+      description: "A short title for the question.",
+    },
+    question: {
+      type: "string",
+      maxLength: 500,
+      minLength: 1,
+      title: "Question",
+      description: "The question itself.",
+    },
+    options: {
+      items: {
+        $ref: "#/components/schemas/HumanInTheLoopChoiceOption",
+      },
+      type: "array",
+      maxItems: 3,
+      minItems: 1,
+      title: "Options",
+      description: "The answers offered, the recommended one first.",
+    },
+    allow_other: {
+      type: "boolean",
+      title: "Allow Other",
+      description: "Whether the user may write an answer of their own.",
+      default: true,
+    },
+  },
+  type: "object",
+  required: ["id", "header", "question", "options"],
+  title: "HumanInTheLoopChoiceQuestion",
+  description:
+    "A question a client with a dialog shows with its options; the first option is the one the agent recommends.",
+} as const;
+
 export const HumanInTheLoopConfirmationRequestEventSchema = {
   properties: {
     event_id: {
@@ -11769,6 +12057,106 @@ export const HumanInTheLoopInputResponseEventSchema = {
   title: "HumanInTheLoopInputResponseEvent",
   description:
     "Response containing free-form text input from a human operator.",
+} as const;
+
+export const HumanInTheLoopQuestionsRequestEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    question: {
+      type: "string",
+      title: "Question",
+      description: "The query or prompt presented to the human operator.",
+    },
+    topic: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/PartialAgentTopic",
+        },
+        {
+          $ref: "#/components/schemas/AgentInstanceTopic",
+        },
+      ],
+      title: "Topic",
+      description:
+        "A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+    },
+    hitl_type: {
+      type: "string",
+      const: "chat",
+      title: "Hitl Type",
+      default: "chat",
+    },
+    questions: {
+      items: {
+        $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
+      },
+      type: "array",
+      maxItems: 5,
+      minItems: 1,
+      title: "Questions",
+      description: "The question's parts, for clients that show a dialog.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "question",
+    "topic",
+    "questions",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "HumanInTheLoopQuestionsRequestEvent",
+  description:
+    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nfive questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -12669,7 +13057,7 @@ export const ImageGenerationRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["standard", "hd"],
+          enum: ["standard", "hd", "low", "medium", "high", "auto"],
         },
         {
           type: "null",
@@ -12693,7 +13081,16 @@ export const ImageGenerationRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"],
+          enum: [
+            "auto",
+            "256x256",
+            "512x512",
+            "1024x1024",
+            "1536x1024",
+            "1024x1536",
+            "1792x1024",
+            "1024x1792",
+          ],
         },
         {
           type: "null",
@@ -13330,6 +13727,32 @@ export const IngestedNodeSchema = {
       ],
       title: "Heading Level",
       description: "Heading level of the node in document",
+    },
+    record_fields: {
+      additionalProperties: {
+        anyOf: [
+          {
+            type: "string",
+          },
+          {
+            type: "integer",
+          },
+          {
+            type: "number",
+          },
+          {
+            items: {
+              type: "string",
+            },
+            type: "array",
+          },
+        ],
+      },
+      type: "object",
+      title: "Record Fields",
+      description:
+        "Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.",
+      default: {},
     },
     score: {
       anyOf: [
@@ -14695,6 +15118,19 @@ export const InputTextSchema = {
       title: "Iconsuffix",
       description: "Icon suffix",
     },
+    maxlength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters",
+    },
     validation: {
       type: "string",
       title: "Validation",
@@ -15672,6 +16108,16 @@ export const KnowledgeSearchedEventSchema = {
         "The document sections the block holds, for listing as sources.",
       default: [],
     },
+    missing: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Missing",
+      description:
+        "Referenced collections that were not searched, because they no longer exist.",
+      default: [],
+    },
     refused: {
       items: {
         $ref: "#/components/schemas/KnowledgeReference",
@@ -16352,6 +16798,20 @@ export const LLMStopEventSchema = {
       description:
         "List of tools that are advertised to the LLM to be able to call.",
     },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -16923,6 +17383,19 @@ export const LocaleInputSchema = {
       title: "Placeholder",
       description: "Placeholder text for each language",
     },
+    maxLength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters per language",
+    },
     validation: {
       type: "string",
       title: "Validation",
@@ -17352,7 +17825,8 @@ export const MailClassificationRefSchema = {
     target_folder: {
       type: "string",
       title: "Target Folder",
-      description: "Folder the message was filed into.",
+      description:
+        "Folder the message was filed into, or the inbox when it was kept there.",
     },
     reason: {
       type: "string",
@@ -18540,6 +19014,13 @@ export const MinimalAgentInstanceDTOSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
   },
@@ -23654,8 +24135,21 @@ export const RecordsExtractedEventSchema = {
     table: {
       type: "string",
       title: "Table",
-      description: "The rows as a markdown table, empty when there are none.",
+      description:
+        "The first rows as a markdown table, a preview when `file` holds more; empty without rows.",
       default: "",
+    },
+    file: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ExtractedTableFile",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The whole table as a CSV file; none when there are no rows.",
     },
     summary: {
       type: "string",
@@ -23681,37 +24175,29 @@ export const RecordsExtractedEventSchema = {
       type: "integer",
       minimum: 0,
       title: "Row Count",
-      description: "Rows in the table.",
+      description: "Rows in the preview.",
       default: 0,
     },
     total_row_count: {
       type: "integer",
       minimum: 0,
       title: "Total Row Count",
-      description: "Rows found, more than the table holds when cut.",
+      description: "Rows found; every one of them is in `file`.",
       default: 0,
     },
     truncated: {
       type: "boolean",
       title: "Truncated",
-      description: "Whether the result was cut short at a limit.",
+      description:
+        "Whether the search for documents stopped at a limit, so documents may be missing.",
       default: false,
     },
-    remaining_documents: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Documents",
+    awaiting_confirmation: {
+      type: "boolean",
+      title: "Awaiting Confirmation",
       description:
-        "Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.",
-      default: 0,
-    },
-    remaining_rows: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Rows",
-      description:
-        "Rows found but not shown yet, shown first when the user continues.",
-      default: 0,
+        "Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.",
+      default: false,
     },
     tool_call_id: {
       anyOf: [
@@ -23749,7 +24235,7 @@ export const RecordsExtractedEventSchema = {
   required: ["extraction_id", "summary", "_event_name", "_parent_event_names"],
   title: "RecordsExtractedEvent",
   description:
-    "The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.\n\nA blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop\n(`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as\na block of the answer, the OpenAI-compatible API as answer text.",
+    "The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a\nfile, and its summary.\n\nThe event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size\nstays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.\nWhen a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients\nshow the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients\noffer the file for download.",
 } as const;
 
 export const RefusalReasonSchema = {
@@ -23971,6 +24457,20 @@ export const RefusalStopEventSchema = {
       title: "Tools",
       description:
         "List of tools that are advertised to the LLM to be able to call.",
+    },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
     },
     reason: {
       $ref: "#/components/schemas/RefusalReason",
@@ -24540,6 +25040,56 @@ export const ResponseFormatTextSchema = {
   required: ["type"],
   title: "ResponseFormatText",
   description: "Default response format. Used to generate text responses.",
+} as const;
+
+export const ResponseSchemaSchema = {
+  properties: {
+    name: {
+      type: "string",
+      pattern: "^[a-zA-Z0-9_-]{1,64}$",
+      title: "Name",
+      description:
+        "A name for the shape, as OpenAI's `json_schema.name` or a function name.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "What the shape is for; the model reads it.",
+    },
+    json_schema: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Json Schema",
+      description:
+        "The JSON schema the answer must match. Without one, any JSON object is accepted.",
+    },
+    strict: {
+      type: "boolean",
+      title: "Strict",
+      description:
+        "Ask the model to follow the schema exactly, as OpenAI's structured outputs `strict`.",
+      default: false,
+    },
+  },
+  type: "object",
+  required: ["name"],
+  title: "ResponseSchema",
+  description:
+    "The JSON shape a caller wants the agent's answer in.\n\nOne request whatever the caller's API calls it: the OpenAI endpoint maps both `response_format` and a forced\nfunction call onto it, and decides on its own how to hand the result back.",
 } as const;
 
 export const RetrieveOrganizationMemoryEventSchema = {
@@ -25222,6 +25772,16 @@ export const RunToolLoopEventSchema = {
       title: "Knowledge References",
       description:
         "The collections the user referenced on the message, for tools that search knowledge.",
+      default: [],
+    },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "The web pages the message links or references, for tools that read them.",
       default: [],
     },
     _event_name: {
@@ -27551,6 +28111,13 @@ export const StoreUserMemoryRequestedEventSchema = {
       description:
         "Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.",
     },
+    origin_anonymise: {
+      type: "boolean",
+      title: "Origin Anonymise",
+      description:
+        "Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.",
+      default: false,
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -28012,6 +28579,7 @@ export const TextToSpeechRequestSchema = {
       enum: [
         "alloy",
         "ash",
+        "ballad",
         "coral",
         "echo",
         "fable",
@@ -28019,6 +28587,9 @@ export const TextToSpeechRequestSchema = {
         "nova",
         "sage",
         "shimmer",
+        "verse",
+        "marin",
+        "cedar",
       ],
       title: "Voice",
       description: "The voice to use when generating audio.",
@@ -28288,6 +28859,19 @@ export const TextareaSchema = {
       description: "Whether to automatically resize based on content",
       default: false,
     },
+    maxlength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters",
+    },
     validation: {
       type: "string",
       title: "Validation",
@@ -28424,10 +29008,12 @@ export const ThreadAgentDTOSchema = {
   properties: {
     agent_id: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Id",
     },
     agent_class: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Class",
     },
   },
@@ -30695,6 +31281,19 @@ export const UnreadMailListedEventSchema = {
       title: "Messages",
       description: "Header summaries of the unread messages in the inbox.",
     },
+    uid_validity: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Uid Validity",
+      description:
+        "The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -30859,6 +31458,7 @@ export const UpdateNamespaceRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 120,
         },
         {
           type: "null",
@@ -30871,6 +31471,7 @@ export const UpdateNamespaceRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 500,
         },
         {
           type: "null",
@@ -30938,6 +31539,7 @@ export const UpdateRoleRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 120,
         },
         {
           type: "null",
@@ -30950,6 +31552,7 @@ export const UpdateRoleRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 500,
         },
         {
           type: "null",
@@ -31383,6 +31986,28 @@ export const UserMessageEventSchema = {
       description:
         "Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.",
       default: [],
+    },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
+      default: [],
+    },
+    response_schema: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ResponseSchema",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.",
     },
     _event_name: {
       type: "string",
@@ -31917,6 +32542,147 @@ export const VoiceIDSchema = {
   description: "Custom voice reference.",
 } as const;
 
+export const WebFetchFailureSchema = {
+  properties: {
+    url: {
+      type: "string",
+      title: "Url",
+      description: "The URL as the user sent it.",
+    },
+    reason: {
+      $ref: "#/components/schemas/WebFetchFailureReason",
+      description: "Why the page could not be read.",
+    },
+  },
+  type: "object",
+  required: ["url", "reason"],
+  title: "WebFetchFailure",
+  description:
+    "A linked page the agent could not read, with the reason the answer reports to the user.",
+} as const;
+
+export const WebFetchFailureReasonSchema = {
+  type: "string",
+  enum: [
+    "malformed_url",
+    "unsupported_url",
+    "blocked_host",
+    "not_found",
+    "access_denied",
+    "http_error",
+    "timeout",
+    "unsupported_content",
+    "empty_content",
+    "url_limit_reached",
+  ],
+  title: "WebFetchFailureReason",
+  description:
+    "Why a linked page could not be read, so the answer can tell the user instead of inventing the page.",
+} as const;
+
+export const WebPagesFetchedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "System messages carrying the pages read and the links that failed.",
+      default: [],
+    },
+    grounding_nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNode",
+      },
+      type: "array",
+      title: "Grounding Nodes",
+      description:
+        "The pages the block holds, one per page, for listing as sources.",
+      default: [],
+    },
+    failures: {
+      items: {
+        $ref: "#/components/schemas/WebFetchFailure",
+      },
+      type: "array",
+      title: "Failures",
+      description:
+        "The links that could not be read, with the reason for each.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "WebPagesFetchedEvent",
+  description:
+    "The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.\n\nDisplayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources\nthe answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of\nthose pages, with the failures beside them.",
+} as const;
+
 export const WebhookResponseSchema = {
   properties: {
     status: {
@@ -32060,6 +32826,24 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
   type: "object",
   required: ["name"],
   title: "Function",
+} as const;
+
+export const openai__types__create_embedding_response__UsageSchema = {
+  properties: {
+    prompt_tokens: {
+      type: "integer",
+      title: "Prompt Tokens",
+    },
+    total_tokens: {
+      type: "integer",
+      title: "Total Tokens",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["prompt_tokens", "total_tokens"],
+  title: "Usage",
+  description: "The usage information for the request.",
 } as const;
 
 export const openai__types__images_response__UsageSchema = {
@@ -32452,6 +33236,13 @@ export const AgentClassDTOWritableSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent class can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
     is_online: {
@@ -35373,6 +36164,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/HumanInTheLoopConfirmationRequestEventWritable",
         },
         {
+          $ref: "#/components/schemas/HumanInTheLoopQuestionsRequestEventWritable",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopChatRequestEventWritable",
         },
         {
@@ -35436,6 +36230,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/SearchKnowledgeEventWritable",
         },
         {
+          $ref: "#/components/schemas/FetchWebPagesEventWritable",
+        },
+        {
           $ref: "#/components/schemas/ExtractRecordsEventWritable",
         },
         {
@@ -35482,6 +36279,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/KnowledgeSearchedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/WebPagesFetchedEventWritable",
         },
         {
           $ref: "#/components/schemas/RecordsExtractedEventWritable",
@@ -36667,13 +37467,13 @@ export const ExtractRecordsEventWritableSchema = {
         },
       ],
       description:
-        "The documents to extract from; none when the request continues a pending extraction.",
+        "The documents to extract from; none when the request confirms a sample.",
     },
-    continue_pending: {
+    confirmed: {
       type: "boolean",
-      title: "Continue Pending",
+      title: "Confirmed",
       description:
-        "Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.",
+        "Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.",
       default: false,
     },
     fields: {
@@ -36707,6 +37507,19 @@ export const ExtractRecordsEventWritableSchema = {
       title: "Row Terms",
       description:
         "Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.",
+    },
+    document_terms: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Terms",
+      description:
+        "Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.",
     },
     collections: {
       items: {
@@ -36753,6 +37566,84 @@ export const ExtractRecordsEventWritableSchema = {
   title: "ExtractRecordsEvent",
   description:
     "Asks the record-extraction capability for one table across the selected knowledge documents.\n\nBuilt with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose\n`extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to\nwhat the asking user may read, never the model's.",
+} as const;
+
+export const FetchWebPagesEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    urls: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Urls",
+      description: "The links to read, in the order the user gave them.",
+      default: [],
+    },
+    reading: {
+      type: "boolean",
+      title: "Reading",
+      description:
+        "Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.",
+      default: true,
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the pages by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "FetchWebPagesEvent",
+  description:
+    "Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.\n\nBuilt with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the\nprofile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.",
 } as const;
 
 export const FewShotAcceptEventWritableSchema = {
@@ -36933,6 +37824,13 @@ export const FullAgentInstanceDTOWritableSchema = {
         "Whether the agent can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -36991,7 +37889,7 @@ export const FullAgentInstanceDTOWritableSchema = {
       type: "object",
       title: "Configuration",
       description:
-        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.",
+        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.",
       default: {},
     },
   },
@@ -38310,6 +39208,83 @@ export const HumanInTheLoopInputResponseEventWritableSchema = {
     "Response containing free-form text input from a human operator.",
 } as const;
 
+export const HumanInTheLoopQuestionsRequestEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    question: {
+      type: "string",
+      title: "Question",
+      description: "The query or prompt presented to the human operator.",
+    },
+    topic: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/PartialAgentTopic",
+        },
+        {
+          $ref: "#/components/schemas/AgentInstanceTopic",
+        },
+      ],
+      title: "Topic",
+      description:
+        "A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+    },
+    hitl_type: {
+      type: "string",
+      const: "chat",
+      title: "Hitl Type",
+      default: "chat",
+    },
+    questions: {
+      items: {
+        $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
+      },
+      type: "array",
+      maxItems: 5,
+      minItems: 1,
+      title: "Questions",
+      description: "The question's parts, for clients that show a dialog.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["question", "topic", "questions"],
+  title: "HumanInTheLoopQuestionsRequestEvent",
+  description:
+    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nfive questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
+} as const;
+
 export const HumanInTheLoopRequestEventWritableSchema = {
   properties: {
     event_id: {
@@ -39132,6 +40107,32 @@ export const IngestedNodeWritableSchema = {
       ],
       title: "Heading Level",
       description: "Heading level of the node in document",
+    },
+    record_fields: {
+      additionalProperties: {
+        anyOf: [
+          {
+            type: "string",
+          },
+          {
+            type: "integer",
+          },
+          {
+            type: "number",
+          },
+          {
+            items: {
+              type: "string",
+            },
+            type: "array",
+          },
+        ],
+      },
+      type: "object",
+      title: "Record Fields",
+      description:
+        "Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.",
+      default: {},
     },
     score: {
       anyOf: [
@@ -40456,6 +41457,19 @@ export const InputTextWritableSchema = {
       title: "Iconsuffix",
       description: "Icon suffix",
     },
+    maxlength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -41273,6 +42287,16 @@ export const KnowledgeSearchedEventWritableSchema = {
         "The document sections the block holds, for listing as sources.",
       default: [],
     },
+    missing: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Missing",
+      description:
+        "Referenced collections that were not searched, because they no longer exist.",
+      default: [],
+    },
     refused: {
       items: {
         $ref: "#/components/schemas/KnowledgeReference",
@@ -41835,6 +42859,20 @@ export const LLMStopEventWritableSchema = {
       description:
         "List of tools that are advertised to the LLM to be able to call.",
     },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -42365,6 +43403,19 @@ export const LocaleInputWritableSchema = {
       ],
       title: "Placeholder",
       description: "Placeholder text for each language",
+    },
+    maxLength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters per language",
     },
   },
   additionalProperties: true,
@@ -43067,6 +44118,13 @@ export const MinimalAgentInstanceDTOWritableSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
   },
@@ -46126,8 +47184,21 @@ export const RecordsExtractedEventWritableSchema = {
     table: {
       type: "string",
       title: "Table",
-      description: "The rows as a markdown table, empty when there are none.",
+      description:
+        "The first rows as a markdown table, a preview when `file` holds more; empty without rows.",
       default: "",
+    },
+    file: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ExtractedTableFile",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The whole table as a CSV file; none when there are no rows.",
     },
     summary: {
       type: "string",
@@ -46153,37 +47224,29 @@ export const RecordsExtractedEventWritableSchema = {
       type: "integer",
       minimum: 0,
       title: "Row Count",
-      description: "Rows in the table.",
+      description: "Rows in the preview.",
       default: 0,
     },
     total_row_count: {
       type: "integer",
       minimum: 0,
       title: "Total Row Count",
-      description: "Rows found, more than the table holds when cut.",
+      description: "Rows found; every one of them is in `file`.",
       default: 0,
     },
     truncated: {
       type: "boolean",
       title: "Truncated",
-      description: "Whether the result was cut short at a limit.",
+      description:
+        "Whether the search for documents stopped at a limit, so documents may be missing.",
       default: false,
     },
-    remaining_documents: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Documents",
+    awaiting_confirmation: {
+      type: "boolean",
+      title: "Awaiting Confirmation",
       description:
-        "Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.",
-      default: 0,
-    },
-    remaining_rows: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Rows",
-      description:
-        "Rows found but not shown yet, shown first when the user continues.",
-      default: 0,
+        "Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.",
+      default: false,
     },
     tool_call_id: {
       anyOf: [
@@ -46204,7 +47267,7 @@ export const RecordsExtractedEventWritableSchema = {
   required: ["extraction_id", "summary"],
   title: "RecordsExtractedEvent",
   description:
-    "The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.\n\nA blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop\n(`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as\na block of the answer, the OpenAI-compatible API as answer text.",
+    "The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a\nfile, and its summary.\n\nThe event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size\nstays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.\nWhen a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients\nshow the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients\noffer the file for download.",
 } as const;
 
 export const RefusalStopEventWritableSchema = {
@@ -46412,6 +47475,20 @@ export const RefusalStopEventWritableSchema = {
       title: "Tools",
       description:
         "List of tools that are advertised to the LLM to be able to call.",
+    },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
     },
     reason: {
       $ref: "#/components/schemas/RefusalReason",
@@ -47395,6 +48472,16 @@ export const RunToolLoopEventWritableSchema = {
       title: "Knowledge References",
       description:
         "The collections the user referenced on the message, for tools that search knowledge.",
+      default: [],
+    },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "The web pages the message links or references, for tools that read them.",
       default: [],
     },
   },
@@ -49386,6 +50473,13 @@ export const StoreUserMemoryRequestedEventWritableSchema = {
       description:
         "Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.",
     },
+    origin_anonymise: {
+      type: "boolean",
+      title: "Origin Anonymise",
+      description:
+        "Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.",
+      default: false,
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -49845,6 +50939,19 @@ export const TextareaWritableSchema = {
       title: "Autoresize",
       description: "Whether to automatically resize based on content",
       default: false,
+    },
+    maxlength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters",
     },
   },
   additionalProperties: true,
@@ -51522,6 +52629,19 @@ export const UnreadMailListedEventWritableSchema = {
       title: "Messages",
       description: "Header summaries of the unread messages in the inbox.",
     },
+    uid_validity: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Uid Validity",
+      description:
+        "The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -51620,6 +52740,28 @@ export const UserMessageEventWritableSchema = {
       description:
         "Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.",
       default: [],
+    },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
+      default: [],
+    },
+    response_schema: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ResponseSchema",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.",
     },
   },
   additionalProperties: true,
@@ -51872,4 +53014,89 @@ export const VectorStoreInputWritableSchema = {
   title: "VectorStoreInput",
   description:
     'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. "All namespaces" switch, or a namespace multi-select populated from the selected database\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "all_namespaces": bool,\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
+} as const;
+
+export const WebPagesFetchedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "System messages carrying the pages read and the links that failed.",
+      default: [],
+    },
+    grounding_nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNodeWritable",
+      },
+      type: "array",
+      title: "Grounding Nodes",
+      description:
+        "The pages the block holds, one per page, for listing as sources.",
+      default: [],
+    },
+    failures: {
+      items: {
+        $ref: "#/components/schemas/WebFetchFailure",
+      },
+      type: "array",
+      title: "Failures",
+      description:
+        "The links that could not be read, with the reason for each.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "WebPagesFetchedEvent",
+  description:
+    "The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.\n\nDisplayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources\nthe answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of\nthose pages, with the failures beside them.",
 } as const;

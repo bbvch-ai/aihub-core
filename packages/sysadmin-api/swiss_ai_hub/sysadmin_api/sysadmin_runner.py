@@ -32,7 +32,7 @@ class SysadminApiRunner:
     enough to mount any ``packages/api`` controller that doesn't depend on
     Milvus / S3 / WebSocket / discovery (currently: ``UserController``,
     ``RoleController``, ``MyAccountController.get_my_identity``,
-    ``AuthProviderController``). NATS isn't actively used by the mounted
+    ``MyTenantController.get_my_tenants``, ``AuthProviderController``). NATS isn't actively used by the mounted
     controllers' code paths today — it's wired because ``use_nats`` is a
     declared dependency on a handful of endpoints (e.g. ``UserController.get_user``)
     and FastAPI resolves dependencies eagerly. ``I18nMiddleware`` is wired so

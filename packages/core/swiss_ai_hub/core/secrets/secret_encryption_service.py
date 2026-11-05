@@ -35,12 +35,18 @@ class SecretEncryptionService:
 
     def __init__(self, key: Annotated[str, "Fernet key, url-safe base64 of 32 bytes"]) -> None:
         self._fernet = Fernet(key.encode("utf-8"))
-        self._handle_key = hashlib.sha256(_HANDLE_DOMAIN + key.encode("utf-8")).digest()
+        self._key = key.encode("utf-8")
+        self._handle_key = self.derived_key(_HANDLE_DOMAIN)
+
+    def derived_key(self, domain: Annotated[bytes, "Names the one purpose the derived key serves"]) -> bytes:
+        """A key for a purpose other than encryption, so the instance needs no second secret for it."""
+        return hashlib.sha256(domain + self._key).digest()
 
     @classmethod
     def from_settings(cls, settings: ConfigEncryptionSettings | None = None) -> Self:
         settings = settings or ConfigEncryptionSettings()
-        if settings.ENCRYPTION_KEY is None:
+        # Compose passes an unset variable on as an empty string, which is the same mistake as leaving it out.
+        if settings.ENCRYPTION_KEY is None or not settings.ENCRYPTION_KEY.get_secret_value().strip():
             raise ValueError(_MISSING_KEY_MESSAGE)
         return cls(settings.ENCRYPTION_KEY.get_secret_value())
 
@@ -91,6 +97,20 @@ class SecretEncryptionService:
 
             result = SecretPathTransformer.transform(result, {path}, mask)
         return result
+
+    def reject_submitted_ciphertext(
+        self,
+        submitted: Annotated[dict[str, Any], "Configuration as submitted by the client, before any mask is restored"],
+        paths: Annotated[set[str], "Dotted paths of the secret fields"],
+    ) -> None:
+        """A client only ever receives masks, so ciphertext in a submission was taken from elsewhere: ``encrypt``
+        would store it as it is, and the pipeline would decrypt a secret issued for another field or database. A
+        stored secret is kept by resubmitting its mask, which is bound to its field."""
+        for path in paths:
+            if any(self.is_encrypted(value) for value in SecretPathTransformer.values_at(submitted, path)):
+                raise ValueError(
+                    f"'{path}' was submitted as ciphertext; submit the secret itself, or the mask it was shown as."
+                )
 
     def restore_masked_paths(
         self,
