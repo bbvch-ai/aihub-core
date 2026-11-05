@@ -18,8 +18,11 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </referenced_knowledge>
     {% endchat %}
-  refused: '%{collections} could not be searched, because these collections are not
-    available to the user. Tell the user that you could not use them.'
+  missing: '%{collections} could not be searched, because these collections no longer
+    exist; they were deleted after the user referenced them. Tell the user that you
+    could not use them and that they should reference an existing collection.'
+  refused: '%{collections} could not be searched, because the user has no access to
+    these collections. Tell the user that you could not use them.'
   nothing_found: Nothing in the searched knowledge collections matched the question.
     Tell the user so if the question depended on them.
 tool:

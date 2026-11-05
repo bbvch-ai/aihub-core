@@ -16,3 +16,14 @@ http:
         contentTypeNosniff: true
         browserXssFilter: true
         referrerPolicy: strict-origin-when-cross-origin
+    # The frontends' OIDC client loads /<locale>/auth/renew in a hidden same-origin
+    # iframe for the SSO session probe and silent renew; DENY blocks Keycloak's answer.
+    auth-route-security-headers:
+      headers:
+        sslRedirect: false
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        customFrameOptionsValue: SAMEORIGIN
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: strict-origin-when-cross-origin

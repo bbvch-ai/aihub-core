@@ -15,7 +15,8 @@ prompt:
     was not read as text: as Markdown it would lose its structure, and of a large
     file only a slice would fit. It lies unchanged in the conversation folder of the
     code sandbox (list_files shows its exact name). Work on it with run_command, for
-    example with pandas; what you compute there covers the whole file.'
+    example with pandas, or with openpyxl or python-pptx when the result must keep
+    its structure; what you compute there covers the whole file.'
   context: |
     {% chat role="system" %}
     The user attached the following files to this conversation. When the question refers to them, answer from their content and name the file you used. Each file is a `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>` block, its sections under their headings.

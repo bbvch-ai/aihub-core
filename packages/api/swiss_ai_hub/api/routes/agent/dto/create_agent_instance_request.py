@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
+from swiss_ai_hub.core.agents import AgentConfig
 
 
 class CreateAgentInstanceRequest(BaseModel):
@@ -15,7 +16,7 @@ class CreateAgentInstanceRequest(BaseModel):
             description="Unique identifier for the agent instance. Must be URL-safe.",
             pattern=r"^[a-z0-9_-]+$",
             min_length=1,
-            max_length=100,
+            max_length=AgentConfig.ID_MAX_LENGTH,
         ),
     ]
     configuration: Annotated[

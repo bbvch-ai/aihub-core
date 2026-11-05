@@ -114,6 +114,22 @@ class TestMergeResults:
         assert merged.version == "2.7.5"
 
 
+class TestExtractFileResult:
+    def test_page_headers_and_footers_mineru_left_out_are_in_the_markdown(self):
+        response = make_response("Rechnung # 501", 1)
+        response.results[STEM]["content_list"] = json.dumps(
+            [
+                {"type": "text", "text": "Rechnung # 501", "page_idx": 0},
+                {"type": "header", "text": "Bei Spiel GmbH", "page_idx": 0},
+                {"type": "footer", "text": "UST-ID: DE136695976", "page_idx": 0},
+            ]
+        )
+
+        result = MineruLoader._extract_file_result(response, FILENAME)
+
+        assert result.md_content == "Bei Spiel GmbH\n\nRechnung # 501\n\nUST-ID: DE136695976"
+
+
 class TestBatching:
     @pytest.mark.asyncio
     async def test_small_pdf_single_unbatched_request(self, loader: MineruLoader):

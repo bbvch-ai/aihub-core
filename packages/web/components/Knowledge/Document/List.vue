@@ -41,7 +41,7 @@
     >
       <template #body="{ data }">
         <div class="flex items-center gap-2">
-          <p class="font-bold">
+          <p class="font-bold [overflow-wrap:anywhere]">
             {{ data.document_title }}
           </p>
           <div

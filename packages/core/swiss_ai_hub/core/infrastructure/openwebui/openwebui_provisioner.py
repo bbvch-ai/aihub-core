@@ -14,6 +14,7 @@ from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdmin
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.available_model import AvailableModel
@@ -32,7 +33,6 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.openwebui.openwebui_account_entity import OpenWebuiAccountEntity
 
 logger = logging.getLogger(__name__)
@@ -143,7 +143,7 @@ class OpenWebuiProvisioner:
             async with httpx.AsyncClient(timeout=30.0) as http:
                 await self._openwebui.update_retrieval_config(http, RETRIEVAL_SETTINGS)
                 await self._sync_groups()
-                await self._sync_workspace_models(http, self._get_known_online_agents())
+                await self._sync_workspace_models(http, await self._get_known_online_agents())
                 await self._sync_llm_workspace_models(http, await self._get_available_llm_models())
                 await self._sync_access_grants(http)
                 await self._sync_knowledge_entries(http)
@@ -166,7 +166,7 @@ class OpenWebuiProvisioner:
         Lets agent-config mutations (create/rename/delete) reflect in the OpenWebUI model picker
         immediately instead of waiting for the next periodic discovery cycle.
         """
-        await self.sync_agents(self._get_known_online_agents())
+        await self.sync_agents(await self._get_known_online_agents())
 
     async def sync_access(self) -> None:
         """Waits for a running access sync instead of dropping this one.
@@ -199,19 +199,22 @@ class OpenWebuiProvisioner:
         """Locale used to render the single name OpenWebUI stores per workspace model."""
         return self._settings.MODEL_NAME_LOCALE
 
-    def _resolve_display_name(self, name: LocaleStringEntity, agent_id: str) -> str:
+    def _resolve_display_name(self, name: LocaleString, agent_id: str) -> str:
         if not (name.de or name.en or name.fr or name.it):
             return agent_id
         return LocaleHandler(self.model_name_locale).extract(name)
 
-    def _get_known_online_agents(self) -> list[OnlineAgent]:
-        """Queries the DB for agent instances whose class was recently discovered."""
-        class_entities = AgentClassEntity.get_online_conversational()
+    async def _get_known_online_agents(self) -> list[OnlineAgent]:
+        """Queries the DB for agent instances whose class was recently discovered.
+
+        The classes are still MongoEngine entities and are read in a worker thread; the profiles are Beanie.
+        """
+        class_entities = await asyncio.to_thread(AgentClassEntity.get_online_conversational)
         if not class_entities:
             return []
 
         features_by_class = {ce.agent_class: ce.supported_features for ce in class_entities}
-        all_configs = AgentConfigEntityDocument.find_for_classes(list(features_by_class))
+        all_configs = await AgentConfigEntityDocument.find_for_classes(list(features_by_class))
 
         return [
             OnlineAgent(

@@ -3,8 +3,10 @@
     <Chip
       v-for="role in roles"
       :key="role"
+      v-tooltip.top="role"
       :label="role"
       :removable="!readonly"
+      class="max-w-full [&_.p-chip-label]:truncate"
       @remove="confirmRevoke(role)"
     />
     <span

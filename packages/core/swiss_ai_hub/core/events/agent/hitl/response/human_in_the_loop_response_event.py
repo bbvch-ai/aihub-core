@@ -1,7 +1,5 @@
-import time
-from typing import Annotated, Any, ClassVar, Self
+from typing import Annotated, ClassVar
 
-from bson import ObjectId
 from pydantic import Field
 
 from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
@@ -34,20 +32,3 @@ class HumanInTheLoopResponseEvent[THitlRequestEvent: HumanInTheLoopRequestEvent]
             "for where and why the workflow paused.",
         ),
     ]
-
-    @classmethod
-    def from_raw_data(
-        cls,
-        raw_event_data: dict[str, Any],
-        start_event_name: str,
-        start_event_parents: list[str],
-        **args,
-    ) -> Self:
-        json_data: dict[str, Any] = {
-            "event_id": str(ObjectId()),
-            "created_at": time.time_ns(),
-            **raw_event_data,
-            "_parent_event_names": start_event_parents,
-            "_event_name": start_event_name,
-        }
-        return cls.deserialize_event(json_data)

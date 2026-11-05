@@ -137,14 +137,12 @@ events are not lost during the gap (they are redelivered), and display events ar
 mitigation**: Extract the event persister into a standalone microservice with its own NATS durable consumer, decoupling
 event persistence from the API's lifecycle.
 
-### Presidio limited to single-language NER
+### Presidio patterns written against synthetic data
 
-Presidio's named entity recognition models are configured for German by default. PII detection for French, Italian, and
-English content is less accurate or non-functional depending on the entity type. For a platform that supports four
-languages in its UI and serves organizations across Switzerland's language regions, this creates a gap between the i18n
-coverage of the user interface and the PII protection of the LLM gateway. Multi-language Presidio support is tracked as
-a P3 enhancement. **Planned mitigation**: Configure per-language Presidio recognizer sets and select the appropriate set
-based on the detected language of each prompt (using the existing locale context or a lightweight language detector).
+The analyzer covers German, French, Italian and English under one language code with GLiNER's multilingual model, but
+its patterns for patient and case numbers, insurance cards, ID documents and birth dates were written against synthetic
+test sets. Real document formats may differ, and some look-alike values (lone city names, QR references) are masked.
+**Planned mitigation**: collect real format examples without personal data and keep them as a regression set.
 
 ### Missing observability in the bot scope
 

@@ -111,13 +111,13 @@ The agent is delivered as a **blueprint** from which you create configured **pro
 
 How the agent reaches the external tool server.
 
-| Field         | Type             | Default   | Description                                                              |
-| ------------- | ---------------- | --------- | ------------------------------------------------------------------------ |
-| **Name**      | Text             | —         | A logical name for this connection. Required.                            |
-| **URL**       | Text             | —         | The MCP server's URL. The transport is inferred automatically. Required. |
-| **Auth mode** | Choice           | `api_key` | How to authenticate (see below).                                         |
-| **API key**   | Password         | *(empty)* | The static key, shown only when **Auth mode** is *API key*.              |
-| **Timeout**   | Number (seconds) | `30`      | How long to wait for the server before giving up. Range 1–300.           |
+| Field         | Type             | Default   | Description                                                                                                               |
+| ------------- | ---------------- | --------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Name**      | Text             | —         | A logical name for this connection. Required.                                                                             |
+| **URL**       | Text             | —         | The MCP server's URL. The transport is inferred automatically. Required.                                                  |
+| **Auth mode** | Choice           | `api_key` | How to authenticate (see below).                                                                                          |
+| **API key**   | Password         | *(empty)* | The static key, shown only when **Auth mode** is *API key*. Stored encrypted and shown masked; leave the mask to keep it. |
+| **Timeout**   | Number (seconds) | `30`      | How long to wait for the server before giving up. Range 1–300.                                                            |
 
 **Auth modes:**
 

@@ -1,6 +1,6 @@
 ---
 title: Agents
-source_sha: 24f5cd1fe74af91a65ebfe580edea49ef825185fb61831c60696c74e077a983a
+source_sha: 1f5cdee02feea71183c8c9d54a4ac5634a3799bbfac0bf7af7deac632bafca34
 ---
 
 # Agents
@@ -54,13 +54,18 @@ wirkt sofort, ohne erneutes Deployment; siehe [Zugriffskontrolle](../16_multi_te
 ## Was jeder Chat-Agent kann
 
 Die Konversations-Blueprints, die auf den gemeinsamen Fähigkeiten aufbauen (Anweisungsbasierter, Belehrbarer und
-Dokumenten-Intelligenz-Assistent, Agent für Unternehmenswissen, MCP Tool Agent und Universal Agent), verhalten sich in
-der Unterhaltung gleich:
+Dokumenten-Intelligenz-Assistent, Agent für Unternehmenswissen, MCP Tool Agent, Universal Agent und
+Webseiten-Assistent), verhalten sich in der Unterhaltung gleich:
 
 - **Angehängte Dateien.** Im Chat angehängte Dateien liest der Agent selbst und führt sie als Quellen auf. Eine lange
   Datei wird auf die Abschnitte gekürzt, die für die Frage wichtig sind, und die Antwort sagt das.
 - **Wissensverweise.** Die Eingabe von `#` in Open WebUI verweist den Agenten auf eine der Wissenssammlungen des
   Unternehmens, beschränkt auf das, was der Benutzer lesen darf.
+- **Verlinkte Webseiten.** Wo das Profil **Read Linked Web Pages** einschaltet, liest der Agent die Seiten, die eine
+  Nachricht verlinkt oder mit `#` anhängt, zitiert sie und nennt die, die er nicht lesen konnte. Verfügbar beim
+  Anweisungsbasierten Assistenten, beim Dokumenten-Intelligenz-Assistenten, beim Agent für Unternehmenswissen und beim
+  Universal Agent, im Webseiten-Assistenten immer eingeschaltet; siehe
+  [Verlinkte Webseiten](../10_chat_ui/15_linked_web_pages/).
 - **Inline-Zitate.** Aussagen verlinken auf das Dokument, aus dem sie stammen, als nummerierte Chips in der Antwort.
 - **Gedächtnis.** Was der Agent über den Benutzer und die Organisation weiss, fliesst in die Anweisungen des Modells
   ein.
@@ -72,7 +77,8 @@ der Unterhaltung gleich:
   Fehler beantwortet.
 
 Wie dies in Open WebUI erscheint, ist unter [Integrationsarchitektur](../10_chat_ui/11_integration_architecture/)
-beschrieben; die Einstellungen finden Sie unter [Blueprints & Profile](2_blueprints_and_profiles/#shared-chat-settings).
+beschrieben; die Einstellungen finden Sie unter
+[Blueprints & Profile](2_blueprints_and_profiles/#gemeinsame-chat-einstellungen).
 
 ## Werkzeuge, die das Modell wählt
 

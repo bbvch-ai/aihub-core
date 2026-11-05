@@ -4,3 +4,6 @@ response_timeout: Mi dispiace, sto impiegando troppo tempo per rispondere. Per f
 generic_error: Mi dispiace, qualcosa è andato storto. Per favore, riprova.
 user_not_provisioned: Sembra che tu non abbia ancora un account Swiss AI Hub. Accedi
   una volta su %{url}, poi torna a scrivermi qui.
+unverified_user: Non posso verificare la tua identità in questa chat, quindi non posso
+  rispondere qui. Usa Microsoft Teams o Slack.
+access_denied: Non hai accesso a questo assistente. Chiedi l'accesso al tuo amministratore.

@@ -2,7 +2,7 @@ import hashlib
 import json
 from typing import Annotated, Any, Self
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 from swiss_ai_hub.core.form import Form, Select
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.source_pipelines import SourcePipelineConfig
@@ -15,6 +15,8 @@ from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_adapter import
 from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_options import ConfluenceOptions
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_adapter import JiraAdapter
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_options import JiraOptions
+from swiss_ai_hub.pipeline.source_pipelines.mediawiki.mediawiki_adapter import MediaWikiAdapter
+from swiss_ai_hub.pipeline.source_pipelines.mediawiki.mediawiki_options import MediaWikiOptions
 
 _I18N = "lib.source_pipelines.structured.config"
 
@@ -24,24 +26,22 @@ class StructuredSyncConfig(SourcePipelineConfig):
 
     ``source_kind`` picks the application; each offered kind adds its options as a field named after it, shown only
     while it is selected, as ``RcloneSyncConfig`` does per backend. Offering a kind takes that field plus its adapter
-    in ``adapters``.
-
-    Validation errors never quote their input: the configuration is validated after its credentials are decrypted,
-    and the error would reach the run's log.
+    in ``adapters``. Like every ``SourcePipelineConfig``, its validation errors never quote their input.
     """
-
-    model_config = ConfigDict(hide_input_in_errors=True)
 
     source_kind: Annotated[str | Select, Field(description="Application the records are read from.")]
     jira: Annotated[JiraOptions, Field(description="Jira options.")] = Field(default_factory=JiraOptions)
     confluence: Annotated[ConfluenceOptions, Field(description="Confluence options.")] = Field(
         default_factory=ConfluenceOptions
     )
+    mediawiki: Annotated[MediaWikiOptions, Field(description="MediaWiki options.")] = Field(
+        default_factory=MediaWikiOptions
+    )
 
     @classmethod
     def adapters(cls) -> list[type[AbstractStructuredSourceAdapter]]:
-        """The kinds this pipeline offers: Jira and Confluence."""
-        return [JiraAdapter, ConfluenceAdapter]
+        """The kinds this pipeline offers: Jira, Confluence and MediaWiki."""
+        return [JiraAdapter, ConfluenceAdapter, MediaWikiAdapter]
 
     @classmethod
     def as_form(cls) -> Self:

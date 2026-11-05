@@ -28,6 +28,7 @@ def _llm(*, structured: bool) -> ResilientOpenAILike:
         api_base="http://litellm/v1",
         api_key="test",
         should_use_structured_outputs=structured,
+        connect_timeout=5.0,
     )
 
 
