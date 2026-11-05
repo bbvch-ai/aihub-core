@@ -1,4 +1,4 @@
-from typing import Annotated, Self
+from typing import Annotated, ClassVar, Self
 
 from pydantic import Field
 
@@ -30,6 +30,8 @@ class MailCategory(Form):
     collections can be named. The selection only applies while `draft_reply` is on, since retrieval only ever serves
     a drafted reply; a selection left behind on a category that stopped drafting is kept but ignored.
     """
+
+    repeater_help: ClassVar[LocaleString | None] = LocaleString.from_i18n_path("lib.imap.config.categories_help")
 
     category: Annotated[
         str | InputText,

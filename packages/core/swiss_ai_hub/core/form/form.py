@@ -104,6 +104,9 @@ class Form(BaseModel):
     required_access_rule_message_path: ClassVar[str] = "lib.common.authorization.no_access_section"
     """i18n path for the 403 message shown when `required_access_rule` is not satisfied."""
 
+    repeater_help: ClassVar[LocaleString | None] = None
+    """Help shown on a list of this form, explaining what the list is for."""
+
     @computed_field
     @property
     def _form_name(self) -> str:
@@ -238,6 +241,7 @@ class Form(BaseModel):
                 repeater = Repeater(
                     name=field_name,
                     label=label,
+                    help=type(field_value[0]).repeater_help,
                     children=template_elements,
                     ref=repeater_ref,
                 )

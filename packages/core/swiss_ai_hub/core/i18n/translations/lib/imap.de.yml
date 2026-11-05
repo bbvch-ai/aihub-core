@@ -1,5 +1,9 @@
 ---
 config:
+  categories_help: Die Kategorien, in die eingehende E-Mails einsortiert werden. Für
+    jede ungelesene Nachricht wählt das Modell die Kategorie, deren Beschreibung am
+    besten passt, und legt die Nachricht in deren Ordner ab. Jede Kategorie daher
+    eindeutig beschreiben.
   host:
     label: IMAP-Host
     help: Hostname des IMAP-Servers (z. B. imap.example.com).
