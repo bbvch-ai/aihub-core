@@ -183,7 +183,9 @@ for agent `StopEvent`s → wraps in `AgentWorkEvent` → publishes back to proce
 **ProcessDelegator**: Converts `ProcessWorkEvent` from sub-process completion → publishes work event to parent process.
 Handles process-to-process chaining.
 
-**Human/Program**: No delegator classes — handled by the API directly.
+**Human/Program**: No delegator classes — handled by the API directly. The API lists an open human task only to its
+assignees (`Human.Out` `user_ids`, `user_emails` or tenant `user_roles`) and rejects a submission from anyone else with
+403, even a user who can open the process instance. A form is accepted only on the route and method its step declares.
 
 ## ProcessConfig & Config Lifecycle
 
