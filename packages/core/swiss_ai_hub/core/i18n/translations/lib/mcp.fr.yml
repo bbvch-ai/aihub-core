@@ -23,7 +23,8 @@ config:
     help: Temps maximum d'attente pour une réponse du serveur MCP.
   forward_tenant_id_header:
     label: En-tête d'ID de mandant à transmettre
-    help: Optionnel. Si défini, l'ID externe du mandant actif est envoyé à chaque requête MCP
-      sous ce nom d'en-tête. La valeur est déterminée côté serveur, pas dans le profil. Les exécutions
-      sans cet ID échouent au lieu d'appeler le serveur sans l'en-tête.
-      Laisser vide pour désactiver. Exemple - X-LCDM-Tenant.
+    help: Optionnel. Si défini, l'ID externe du mandant actif est envoyé à chaque
+      requête MCP sous ce nom d'en-tête. La valeur est déterminée côté serveur, pas
+      dans le profil. Les exécutions sans cet ID échouent au lieu d'appeler le serveur
+      sans l'en-tête. Uniquement avec l'authentification « Jeton utilisateur ». Laisser
+      vide pour désactiver. Exemple - X-LCDM-Tenant.

@@ -23,6 +23,7 @@ config:
   forward_tenant_id_header:
     label: Forward tenant id header
     help: Optional. If set, the acting tenant's external id is sent on every MCP request
-      under this header name. The value is derived server-side, not stored in the profile. Runs
-      without such an id fail instead of calling the server without the header.
-      Leave empty to disable. Example - X-LCDM-Tenant.
+      under this header name. The value is derived server-side, not stored in the
+      profile. Runs without such an id fail instead of calling the server without
+      the header. Only with auth mode "User token". Leave empty to disable. Example
+      - X-LCDM-Tenant.

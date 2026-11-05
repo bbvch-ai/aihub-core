@@ -16,7 +16,7 @@ def _config(forward: str | None = HEADER) -> McpClientConfig:
     return McpClientConfig(
         name="lcdm",
         url="http://mcp:9000/mcp",
-        auth_mode="none",
+        auth_mode="user_token",
         headers={"X-Static": "1"},
         forward_tenant_id_header=forward,
     )

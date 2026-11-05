@@ -1,6 +1,6 @@
 from typing import Annotated, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from swiss_ai_hub.core.agents.agent_config import StepConfig
 from swiss_ai_hub.core.form.constraints import Gt
@@ -42,7 +42,7 @@ class McpClientConfig(StepConfig):
                 "If set, the acting tenant's external id (TenantMetadataEntity.lcdm_tenant_id) is sent on "
                 "every MCP request under this header name. Derived server-side so a profile cannot target "
                 "another tenant's external data; a run without such an id fails instead of calling unscoped. "
-                "Leave empty to disable. Example: 'X-LCDM-Tenant'."
+                "Requires auth_mode 'user_token'. Leave empty to disable. Example: 'X-LCDM-Tenant'."
             ),
         ),
     ]
@@ -51,6 +51,19 @@ class McpClientConfig(StepConfig):
         Field(default=30.0, description="Client timeout in seconds."),
         Gt(0),
     ]
+
+    @model_validator(mode="after")
+    def validate_forward_tenant_header_requires_user_token(self) -> Self:
+        """The header alone is a claim the MCP server cannot verify; only the forwarded user token lets it bind
+        the request to a user of that tenant, so any other auth mode would let a caller pick any tenant."""
+        # Skip validation for form mode (when fields are form elements)
+        if (
+            isinstance(self.forward_tenant_id_header, str)
+            and self.forward_tenant_id_header
+            and self.auth_mode != "user_token"
+        ):
+            raise ValueError("forward_tenant_id_header requires auth_mode 'user_token'")
+        return self
 
     @classmethod
     def as_form(cls) -> Self:
@@ -99,5 +112,6 @@ class McpClientConfig(StepConfig):
             forward_tenant_id_header=InputText(
                 label=LocaleString.from_i18n_path("lib.mcp.config.forward_tenant_id_header.label"),
                 help=LocaleString.from_i18n_path("lib.mcp.config.forward_tenant_id_header.help"),
+                condition_if="$get(mcp_auth_mode).value === 'user_token'",
             ),
         )
