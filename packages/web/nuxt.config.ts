@@ -83,6 +83,9 @@ export default defineNuxtConfig({
         src: createRequire(import.meta.url).resolve('rehype-sanitize'),
         options: markdownSanitizeSchema,
       },
+      'local-fragment-links': {
+        src: fileURLToPath(new URL('./utils/rehypeLocalFragmentLinks.ts', import.meta.url)),
+      },
     },
     components: {
       prose: false,
