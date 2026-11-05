@@ -1,6 +1,8 @@
 from datetime import datetime
+from typing import Literal, Self
 
-from mongoengine import DateTimeField, Document, StringField
+from beanie import Document
+from pymongo import ASCENDING, DESCENDING, IndexModel
 
 from swiss_ai_hub.core.discovery.discovery_kind import DiscoveryKind
 from swiss_ai_hub.core.discovery.discovery_settings import DiscoverySettings
@@ -21,26 +23,26 @@ class DiscoveryRoundEntity(Document):
     lies at or after the start of the round it answered.
     """
 
-    meta = {
-        "collection": "discovery_rounds",
-        "indexes": [{"fields": ["kind", "-started_at"]}],
-    }
+    kind: Literal["agent", "process"]
+    started_at: datetime
 
-    kind = StringField(required=True, choices=[kind.value for kind in DiscoveryKind])
-    started_at = DateTimeField(required=True)
+    class Settings:
+        name = "discovery_rounds"
+        keep_nulls = False
+        indexes = [IndexModel([("kind", ASCENDING), ("started_at", DESCENDING)])]
 
     @classmethod
     @trace_fn
-    def record_completed(cls, kind: DiscoveryKind, started_at: datetime, settings: DiscoverySettings) -> None:
+    async def record_completed(cls, kind: DiscoveryKind, started_at: datetime, settings: DiscoverySettings) -> None:
         """Adds the round and drops those no threshold can reach any more."""
-        cls(kind=kind.value, started_at=started_at).save()
-        oldest_needed = cls._nth_most_recent(kind, settings.MISSED_ROUNDS_BEFORE_OFFLINE)
+        await cls(kind=kind.value, started_at=started_at).insert()
+        oldest_needed = await cls._nth_most_recent(kind, settings.MISSED_ROUNDS_BEFORE_OFFLINE)
         if oldest_needed is not None:
-            cls.objects(kind=kind.value, started_at__lt=oldest_needed.started_at).delete()
+            await cls.find({"kind": kind.value, "started_at": {"$lt": oldest_needed.started_at}}).delete()
 
     @classmethod
     @trace_fn
-    def online_threshold(cls, kind: DiscoveryKind, settings: DiscoverySettings | None = None) -> datetime:
+    async def online_threshold(cls, kind: DiscoveryKind, settings: DiscoverySettings | None = None) -> datetime:
         """The oldest `last_discovered` that still counts as online.
 
         That is the start of the round `MISSED_ROUNDS_BEFORE_OFFLINE` completed rounds back: a class stamped
@@ -53,11 +55,12 @@ class DiscoveryRoundEntity(Document):
         """
         settings = settings or DiscoverySettings()
         now = datetime.now()
-        oldest_counted = cls._nth_most_recent(kind, settings.MISSED_ROUNDS_BEFORE_OFFLINE)
+        oldest_counted = await cls._nth_most_recent(kind, settings.MISSED_ROUNDS_BEFORE_OFFLINE)
         if oldest_counted is None:
             return now - settings.cold_start_window
         return max(oldest_counted.started_at, now - settings.max_silence)
 
     @classmethod
-    def _nth_most_recent(cls, kind: DiscoveryKind, n: int) -> "DiscoveryRoundEntity | None":
-        return cls.objects(kind=kind.value).order_by("-started_at").skip(n - 1).first()
+    async def _nth_most_recent(cls, kind: DiscoveryKind, n: int) -> Self | None:
+        rounds = await cls.find({"kind": kind.value}).sort("-started_at").skip(n - 1).limit(1).to_list()
+        return rounds[0] if rounds else None

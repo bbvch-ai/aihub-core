@@ -3,6 +3,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Annotated
 
+from beanie.exceptions import DocumentNotFound
 from bson import ObjectId
 from cachetools import TTLCache
 from fastapi import HTTPException
@@ -45,7 +46,9 @@ from swiss_ai_hub.api.routes.user.user_service import UserService
 
 logger = logging.getLogger(__name__)
 
-_MINIMAL_AGENT_DTO_CACHE: TTLCache = TTLCache(maxsize=128, ttl=60)
+_MINIMAL_AGENT_DTO_CACHE: TTLCache[tuple[str, str, LocaleHandler], asyncio.Task[MinimalAgentInstanceDTO | None]] = (
+    TTLCache(maxsize=128, ttl=60)
+)
 
 
 class ThreadService:
@@ -91,7 +94,7 @@ class ThreadService:
         agents = [
             AgentInstanceRef(agent_id=agent.agent_id, agent_class=agent.agent_class) for agent in (agent_dtos or [])
         ]
-        created_thread = ThreadEntity.create_thread(name=name, users=users, agents=agents)
+        created_thread = await ThreadEntity.create_thread(name=name, users=users, agents=agents)
         return await ThreadService.thread_response_from_entity(created_thread, t)
 
     @staticmethod
@@ -102,7 +105,7 @@ class ThreadService:
     ) -> ThreadDTO:
         if not ObjectId.is_valid(thread_id):
             raise ValueError("Invalid thread_id provided.")
-        thread = ThreadEntity.get_thread_by_id(thread_id)
+        thread = await ThreadEntity.get_thread_by_id(thread_id)
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
@@ -121,8 +124,8 @@ class ThreadService:
         """
         try:
             thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-        except DoesNotExist:
-            ThreadEntity.create_thread(
+        except DocumentNotFound:
+            await ThreadEntity.create_thread(
                 "chat", users=[User(user_id=user.id)], agents=[agent], thread_id=ObjectId(thread_id)
             )
             thread = await ThreadService.get_thread_by_id(thread_id, t=t)
@@ -149,7 +152,7 @@ class ThreadService:
         skip = (page - 1) * page_size
         status_thread_ids = None
         if status:
-            user_thread_ids = ThreadEntity.get_thread_ids_for_user(user_id)
+            user_thread_ids = await ThreadEntity.get_thread_ids_for_user(user_id)
             status_thread_ids = PersistedAgentEventEntity.thread_ids_by_status(status, thread_ids=user_thread_ids)
             if not status_thread_ids:
                 return 0, []
@@ -163,8 +166,8 @@ class ThreadService:
             to_date=to_date,
         )
 
-        total = ThreadEntity.count_threads_by_user(user_id, filters=filters)
-        threads = ThreadEntity.get_paginated_threads_by_user(
+        total = await ThreadEntity.count_threads_by_user(user_id, filters=filters)
+        threads = await ThreadEntity.get_paginated_threads_by_user(
             user_id, skip=skip, limit=page_size, sort_by=sort_by, sort_order=sort_order, filters=filters
         )
         thread_dtos = await asyncio.gather(
@@ -184,8 +187,8 @@ class ThreadService:
     ) -> tuple[int, list[ThreadDTO]]:
         """Returns a page of the user's threads that a specific agent is part of."""
         skip = (page - 1) * page_size
-        total = ThreadEntity.count_threads_by_agent(agent_class, agent_id, user_id)
-        threads = ThreadEntity.get_paginated_threads_by_agent(
+        total = await ThreadEntity.count_threads_by_agent(agent_class, agent_id, user_id)
+        threads = await ThreadEntity.get_paginated_threads_by_agent(
             agent_class, agent_id, user_id, skip=skip, limit=page_size
         )
         thread_dtos = await asyncio.gather(
@@ -202,7 +205,7 @@ class ThreadService:
         t: LocaleHandler,
     ) -> ThreadDTO:
         agent = AgentInstanceRef(agent_id=agent_id, agent_class=agent_class)
-        thread = ThreadEntity.add_agent_to_thread(thread_id, agent)
+        thread = await ThreadEntity.add_agent_to_thread(thread_id, agent)
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
@@ -283,7 +286,7 @@ class ThreadService:
         agent_id: str,
         t: LocaleHandler,
     ) -> ThreadDTO:
-        thread = ThreadEntity.remove_agent_from_thread(thread_id, agent_class, agent_id)
+        thread = await ThreadEntity.remove_agent_from_thread(thread_id, agent_class, agent_id)
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
@@ -294,19 +297,19 @@ class ThreadService:
         t: LocaleHandler,
     ) -> ThreadDTO:
         user = User(user_id=user_id)
-        thread = ThreadEntity.add_user_to_thread(thread_id, user)
+        thread = await ThreadEntity.add_user_to_thread(thread_id, user)
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
     @trace_fn
     async def remove_user_from_thread(thread_id: str, user_id: str, t: LocaleHandler) -> ThreadDTO:
-        thread = ThreadEntity.remove_user_from_thread(thread_id, user_id)
+        thread = await ThreadEntity.remove_user_from_thread(thread_id, user_id)
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
     @trace_fn
     async def delete_thread(thread_id: str, t: LocaleHandler) -> ThreadDTO:
-        thread = ThreadEntity.delete_thread(thread_id)
+        thread = await ThreadEntity.delete_thread(thread_id)
         return await ThreadService.thread_response_from_entity(thread, t)
 
     @staticmethod
@@ -318,14 +321,25 @@ class ThreadService:
         Fetches agent details and converts to MinimalAgentInstanceDTO.
         Returns None if the agent cannot be found or fetching fails.
 
-        Cached by hand: cachetools' `cached` decorator would store the coroutine, which can be awaited only once.
+        Caches the lookup task rather than its result: the threads of one page are built concurrently, and caching only
+        the result let every thread that shares an agent miss the cache while the first lookup was still waiting.
         """
         key = (agent_class, agent_id, t)
-        if key in _MINIMAL_AGENT_DTO_CACHE:
-            return _MINIMAL_AGENT_DTO_CACHE[key]
-        dto = await ThreadService._load_minimal_agent_dto(agent_class, agent_id, t)
-        _MINIMAL_AGENT_DTO_CACHE[key] = dto
-        return dto
+        lookup = _MINIMAL_AGENT_DTO_CACHE.get(key)
+        if lookup is None:
+            lookup = asyncio.create_task(ThreadService._load_minimal_agent_dto(agent_class, agent_id, t))
+            lookup.add_done_callback(lambda done: ThreadService._forget_failed_lookup(key, done))
+            _MINIMAL_AGENT_DTO_CACHE[key] = lookup
+        # Shielded: one cancelled request must not cancel the lookup that other threads of the page are waiting for.
+        return await asyncio.shield(lookup)
+
+    @staticmethod
+    def _forget_failed_lookup(
+        key: tuple[str, str, LocaleHandler], done: asyncio.Task[MinimalAgentInstanceDTO | None]
+    ) -> None:
+        """Drops a cancelled or failed lookup, so the next caller retries it instead of inheriting the failure."""
+        if (done.cancelled() or done.exception() is not None) and _MINIMAL_AGENT_DTO_CACHE.get(key) is done:
+            del _MINIMAL_AGENT_DTO_CACHE[key]
 
     @staticmethod
     async def _load_minimal_agent_dto(

@@ -51,7 +51,7 @@ class ExternalAgentEventDistributor:
         (StartEvent, HITL/BITL responses) so the agent can act on behalf of the user. They are
         deliberately not forwarded onto display events — see `_handle_display_message`.
         """
-        thread = ThreadEntity.get_thread_by_id(external_event.thread_id)
+        thread = await ThreadEntity.get_thread_by_id(external_event.thread_id)
 
         if user:
             user_id = user.id
