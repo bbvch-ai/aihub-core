@@ -684,6 +684,30 @@ services:
     networks:
       - data
 
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
+  ferretdb-init:
+    container_name: ferretdb-init
+    image: ghcr.io/bbvch-ai/aihub-core/postgres:17
+    restart: on-failure
+    depends_on:
+      postgres-ferretdb:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres-ferretdb
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${MONGO_USERNAME}
+      POSTGRES_PASSWORD: ${MONGO_PASSWORD}
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
+    volumes: [./configs/ferretdb/init-ferretdb.sh:/init-ferretdb.sh:ro]
+    entrypoint: [/bin/sh, /init-ferretdb.sh]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+
   # ===================================================================
   # Neo4j Stack (Graph Database)
   # ===================================================================
@@ -3346,6 +3370,9 @@ services:
       OPEN_TERMINAL_BASE_URL: http://open-terminal:8000
       OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
 
+      # Knowledge content search: read-only access to its trigram indexes
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
+
       # Mem0
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
@@ -3401,6 +3428,9 @@ services:
 
       # Mongo DB (agent configs and the knowledge documents it reads)
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # Knowledge content search: read-only access to its trigram indexes
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
