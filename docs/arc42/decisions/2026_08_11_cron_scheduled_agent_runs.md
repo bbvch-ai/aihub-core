@@ -287,6 +287,21 @@ declares. Admission control cannot see that, because the declarations would all 
   scan-side skip stays exactly as it is: a row that predates this validation must still not be able to starve every
   other schedule.
 
+## Amendment 2026-11-03: the scheduled thread id is keyed
+
+The id of decision 4 is now `HMAC-SHA256(k, "{agent_class}/{agent_id}")`, still cut to 12 bytes, where `k` is derived
+from `AIHUB_CONFIG_ENCRYPTION_KEY` (`SecretEncryptionService.derived_key`). Clients name new threads themselves (the
+OpenWebUI pipe derives the id from the chat), and the API creates an unknown id for the caller. With the plain `sha256`
+anyone could compute a profile's id and create its thread before the first run, becoming a member of every run after it
+(aihub-core-private#377). Refusing that id at the API would not have been enough, because the agents and members of a
+thread can be changed after it is created. Replicas still converge on one document, since they share the key.
+
+- On the first run after the upgrade, every scheduled profile starts a new thread. The old one keeps its events and its
+  `ThreadContext`; retention no longer prunes it, but nothing writes to it either.
+- Changing the key moves every scheduled profile to a new thread again.
+- The API needs a valid key as soon as one profile has a schedule. Without one, every tick logs the error and no
+  scheduled run starts.
+
 ## Related
 
 - Issue [#1580](https://github.com/bbvch-ai/aihub-core/issues/1580) — this change

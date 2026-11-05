@@ -52,3 +52,20 @@ async def test_timeseries_aggregation_does_not_run_on_the_event_loop() -> None:
     assert ran_on_thread[0] != threading.get_ident(), (
         "get_event_timeseries ran on the event loop thread; it must be offloaded via asyncio.to_thread"
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "query", ["agent_class=RAGAgent&agent_id=a.b", "agent_class=RAGAgent&agent_id=*", "agent_class=RAG.Agent"]
+)
+async def test_a_malformed_agent_filter_is_invalid_input(query: str) -> None:
+    """The access check raises on a dot or wildcard instead of denying, so the filter must be refused first."""
+    runner = ApiTestRunner()
+    runner.mount(EventController(auth=TestAuthHandler()).get_agent_event_timeseries())
+    app = runner.create_app()
+
+    async with LifespanManager(app) as lifespan:
+        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
+            response = await client.get(f"{TIMESERIES_ENDPOINT}?{query}")
+
+    assert response.status_code == 422, response.text

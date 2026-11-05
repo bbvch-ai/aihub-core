@@ -187,6 +187,7 @@ thread:
 chat:
   assistant: Assistant
   document: Document
+  image: Image
 event:
   list:
     firstInteraction: 'First Interaction:'
@@ -450,6 +451,10 @@ agent:
         environment.
   export:
     button: Export
+  storedSecrets:
+    title: Secrets must be re-entered
+    detail: 'Stored secrets are never copied into a new profile. Enter them again
+      before saving: {fields}'
   configuration:
     title: Agent Configuration
     description: Configure the runtime behavior and settings for this agent
