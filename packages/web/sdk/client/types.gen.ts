@@ -16349,6 +16349,12 @@ export type Repeater = {
    */
   label?: LocaleString | string | null;
   /**
+   * Help
+   *
+   * Explanation of what the list is for, shown under the header
+   */
+  help?: LocaleString | string | null;
+  /**
    * Addlabel
    *
    * Text for the add button
@@ -31168,6 +31174,12 @@ export type RepeaterWritable = {
    * Label displayed as the section header
    */
   label?: LocaleString | string | null;
+  /**
+   * Help
+   *
+   * Explanation of what the list is for, shown under the header
+   */
+  help?: LocaleString | string | null;
   /**
    * Addlabel
    *
