@@ -26,8 +26,9 @@ class SandboxTools(BaseToolSpec):
     """The user's code sandbox as tools: the operations OpenWebUI's own terminal integration offers, run by the agent.
 
     Each runs in the asking user's sandbox home, in this conversation's folder, which holds the conversation's
-    attached files. Offered only while the user has Code Interpreter switched on. Running a command and writing a
-    file ask the user on every call unless the profile relaxes it, since a document the model read can ask for them.
+    attached files. Offered only while the user has Code Interpreter switched on. Running a command, writing a file
+    and editing one ask the user on every call unless the profile relaxes it, since a document the model read can ask
+    for them.
     """
 
     spec_functions = [
@@ -152,7 +153,7 @@ class SandboxTools(BaseToolSpec):
         workspace = await self._workspace()
         return self._json(await workspace.client.write_file(workspace.path(path), content))
 
-    @ToolOptions.of(**_options("replace_file_content"))
+    @ToolOptions.of(**_options("replace_file_content", default_approval=ToolApprovalPolicy.EVERY_CALL))
     async def replace_file_content(
         self,
         path: Annotated[str, "The file, relative to this conversation's folder or starting with ~/."],

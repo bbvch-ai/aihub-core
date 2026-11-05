@@ -24,6 +24,7 @@ const UNRESTRICTED_TOOL_LOOP: ToolLoopOverrides = {
   approvals: [
     { tool: 'run_command', policy: 'never' },
     { tool: 'write_file', policy: 'never' },
+    { tool: 'replace_file_content', policy: 'never' },
   ],
 }
 

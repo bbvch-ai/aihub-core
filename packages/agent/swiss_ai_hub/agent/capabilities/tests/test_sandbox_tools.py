@@ -293,7 +293,7 @@ class TestOffer:
             if ToolApprovals.policy(name, tool_set.options(name), ToolLoopConfig()) != ToolApprovalPolicy.NEVER
         }
 
-        assert asking == {"run_command", "write_file"}
+        assert asking == {"run_command", "write_file", "replace_file_content"}
 
     def test_a_profile_can_relax_the_default(self) -> None:
         tool_set = ToolSet.of((SandboxTools,))
