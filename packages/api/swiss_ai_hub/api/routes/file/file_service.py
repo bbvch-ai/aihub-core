@@ -13,7 +13,6 @@ from swiss_ai_hub.core.events.agent import UserUploadedFile
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
-from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
 
 from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
@@ -22,6 +21,8 @@ _NOT_AUTHORIZED_TO_VIEW_FILE_DETAIL = "Forbidden: You do not have access to this
 _AGENT_FILE_KEY_SEGMENTS = 4
 
 
+# Not decorated with `trace_fn`: it records every call's inputs and outputs, and these methods take or return signed
+# URLs and link signatures.
 class FileService:
     """
     Service layer for handling file access logic, including generating
@@ -30,7 +31,6 @@ class FileService:
     """
 
     @staticmethod
-    @trace_fn
     def get_file_url(
         access: AccessChecker, container: str, file_path: str, s3_service: S3AnonymousFileAccessService
     ) -> str:
@@ -88,7 +88,6 @@ class FileService:
         return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=_NOT_AUTHORIZED_TO_VIEW_FILE_DETAIL)
 
     @staticmethod
-    @trace_fn
     def get_anonymous_file_url(
         container: str, file_path: str, expires: int, signature: str, s3_service: S3AnonymousFileAccessService
     ) -> str:
@@ -113,7 +112,6 @@ class FileService:
         return s3_service.generate_sas_url(container, file_path, lifetime_hours=lifetime_hours)
 
     @staticmethod
-    @trace_fn
     def get_anonymous_file_redirect(
         container: str, file_path: str, expires: int, signature: str, s3_service: S3AnonymousFileAccessService
     ) -> RedirectResponse:
@@ -125,7 +123,6 @@ class FileService:
         return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
     @staticmethod
-    @trace_fn
     def _generate_internal_signature(
         container: str, path: str, expires: int, s3_service: S3AnonymousFileAccessService
     ) -> str:
@@ -139,7 +136,6 @@ class FileService:
         return hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
 
     @staticmethod
-    @trace_fn
     def create_anonymous_url(
         get_anonymous_file_redirect_api_endpoint: Annotated[
             str, "https url of FileController.get_anonymous_file_redirect route"

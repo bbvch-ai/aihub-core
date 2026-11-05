@@ -280,5 +280,7 @@ def test_url_signing_secret_is_returned_when_dedicated():
     ids=["empty", "same-as-s3-secret"],
 )
 def test_url_signing_secret_must_be_set_and_dedicated(url_signing_secret: str, secret_key: str):
+    service = _service_with_secrets(url_signing_secret, secret_key)
+
     with pytest.raises(ValueError, match="S3_STORAGE_URL_SIGNING_SECRET"):
-        _service_with_secrets(url_signing_secret, secret_key).get_url_signing_secret()
+        service.get_url_signing_secret()

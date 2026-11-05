@@ -78,7 +78,7 @@ class S3AnonymousFileAccessService:
 
         S3BucketProvisioner.ensure_bucket_with_cors(self._s3_client, container)
 
-    @trace_fn
+    # Not decorated with `trace_fn`: it records every call's output, and a presigned URL grants access to its object.
     def generate_sas_url(
         self,
         container: str,
@@ -128,7 +128,7 @@ class S3AnonymousFileAccessService:
         logger.debug(f"Generated presigned URL for {container}/{file_path}, expires in {lifetime_hours}h")
         return presigned_url
 
-    @trace_fn
+    # Not decorated with `trace_fn`: it records every call's output, which here is the signing key itself.
     def get_url_signing_secret(self) -> str:
         """
         Get the HMAC key that signs the platform's own anonymous file links.
