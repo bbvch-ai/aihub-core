@@ -48,10 +48,10 @@
               v-if="block?.block_type === 'text'"
               :md="block.text"
             />
-            <img
+            <ChatImage
               v-if="block?.block_type === 'image'"
-              :src="block.url"
-            >
+              :url="block.url"
+            />
           </div>
         </div>
 

@@ -1,5 +1,8 @@
 ---
 steps:
+  answer_form:
+    name: "Answer the Request Form"
+    description: "Runs the extraction the user confirmed or corrected in the request form"
   plan:
     name: Plan the Table
     description: Resolves the selected documents and designs the table's columns
@@ -20,22 +23,11 @@ config:
     label: Extraction Model
     help: The model that reads each document and extracts its rows. Empty uses the
       main model.
-  max_files:
-    label: Files per Answer
-    help: The most documents one answer extracts from. When more match, the user is
-      shown a sample and asked to narrow the request or to continue part by part.
-  minutes_per_turn:
-    label: Minutes per Answer
-    help: About how long one answer may extract before the rest is offered as further
-      parts. The time is estimated from the documents' size, so it is approximate.
   max_documents_total:
-    label: Most Matching Documents
-    help: Above this many matching documents the user is only asked to narrow the
-      request; extracting part by part is not offered.
-  max_rows:
-    label: Rows in the Table
-    help: The most rows one answer shows. More rows are shown when the user continues;
-      nothing is dropped.
+    label: Most Documents per Table
+    help: 'Above this many matching documents nothing is extracted: the user is shown
+      a sample and asked to narrow the request. Below it, one answer extracts every
+      document.'
   max_document_chars:
     label: Longest Fully Read Document (Characters)
     help: Longer documents are read only in their relevant parts, and their rows are
@@ -48,15 +40,7 @@ tools:
   extract:
     label: Extract a Table
     approval: 'Extract a table with these columns from knowledge documents: {fields}'
-    description: Extracts one table from many knowledge documents, one row per record
-      found, each row naming its file. Use it when the user wants records collected
-      across documents, such as every hardware position on the 2025 invoices of a
-      supplier; not for a question one document or the knowledge search answers. First
-      find the documents with the listing and search tools and check them with select_knowledge_documents;
-      then call this with the same conditions. The user sees the table directly; you
-      get its summary. When more documents match than one answer extracts, the user
-      gets a sample and decides; continue only when they agree, with continue_pending
-      set to true.
+    description: "Extracts one table from many knowledge documents, one row per record found, each row naming its file. Use it when the user wants records collected across documents, such as every hardware position on the 2025 invoices of a supplier; not for a question one document or the knowledge search answers. First find the documents with the listing and search tools and check them with select_knowledge_documents; then call this with the same conditions. The user sees the table directly and can download all of it; you get its summary. When more documents match than one answer extracts unasked, the user gets a sample and decides; extract them all only when they agree, with confirm_sample set to true. Before a new extraction runs, the user confirms or corrects it in a form; follow what the result then says."
   select:
     label: Select Documents
     approval: 'Select knowledge documents for a table with these columns: {fields}'
@@ -80,38 +64,27 @@ summary:
   sample_counts_ceiling: '**Sample:** %{files} of more than %{total} matching documents
     · **Rows found:** %{rows}'
   criteria: '**Selected:** %{criteria}'
-  document_rows_cut: '**Rows left out (too many in one document for one answer):**
-    %{files}'
-  document_rows_entry: '%{file} (%{count} rows)'
   listed_more: and %{count} more
   failed_files: '**Files that could not be extracted:**'
   failed_more: …and %{count} more files that could not be extracted.
   no_documents: No document matches the selection, so nothing was extracted.
   not_started: 'The table could not be extracted: %{reason}'
-  too_broad: '**%{total} documents match**, more than one answer extracts (about %{minutes}
-    minutes in all).'
+  too_broad: '**%{total} documents match.** Extracting all of them takes about %{minutes}
+    minutes; above are the rows of a sample of them.'
   too_broad_ceiling: '**More than %{total} documents match.**'
-  options_parts: Narrow the request, for example to one of the folders or years above,
-    or reply *continue* to extract all %{total} documents in %{parts} parts of about
-    %{minutes} minutes each.
   options_narrow: 'Please narrow the request, for example to one of the folders or
     years above: this many documents are not extracted part by part.'
-  part: '**Part %{part} of %{parts}:** documents %{first}–%{last} of %{total}.'
-  continue_parts: Reply *continue* for the next %{files} documents (about %{minutes}
-    minutes).
-  rows_follow: '%{count} more rows follow; reply *continue* to see them.'
-  more_rows: '**More rows** of the previous answer.'
-  done: '**All %{total} documents are extracted** in %{parts} parts: %{rows} rows
-    found, %{files} files failed.'
-  done_short: '**%{extracted} of %{total} documents are extracted** in %{parts} parts:
-    %{rows} rows found, %{files} files failed; the others are no longer available
-    to this conversation.'
-  nothing_pending: There is no table extraction to continue in this conversation.
-  gone: '%{count} documents are no longer available to this conversation and were
-    left out.'
-  scope_changed: The collections this table was extracted from are no longer all available
-    to this conversation, so the extraction stopped. Ask again to extract from what
+  scope_changed: The collections the sample was taken from are no longer all available
+    to this conversation, so nothing was extracted. Ask again to extract from what
     is available now.
+  preview: '**Shown here:** the first %{shown} of %{rows} rows; the file holds all
+    of them.'
+  every_row: every row
+  interpretation: '**Columns:** %{columns} · **Rows kept:** %{kept}'
+  options_confirm: Reply *yes* to extract all %{total} documents in one answer, or
+    narrow the request, for example to one of the folders or years above.
+  nothing_awaiting: There is no sampled table extraction to go on with in this conversation.
+    Please ask for the table again.
 facets:
   folders: '**By folder:** %{entries}'
   years: '**By year in the path:** %{entries}'
@@ -122,7 +95,55 @@ progress:
   partial: '%{path} is long: reading only its relevant parts.'
   plan: Extracting %{fields} from %{files} documents, about %{minutes} minutes (%{criteria}).
   sample: '%{total} documents match; extracting a sample from %{files} of them (%{fields}).'
-  part: 'Extracting part %{part} of %{parts}: %{files} documents, about %{minutes}
-    minutes (%{fields}).'
   extracted: '%{done} of %{files} · %{path}: %{rows} rows'
   failed: '%{done} of %{files} · %{path}: failed, %{reason}'
+  reading: Reading %{path}, a long document.
+  still_reading: Still reading %{path} (%{minutes} min).
+  extracted_rows: '%{done} of %{files} · %{path}: %{rows} rows — %{first}'
+form:
+  intro: "Before I read the documents, please confirm what I understood:"
+  reply_hint: "Reply *yes* to go ahead, or write what to change:"
+  as_understood: "As understood"
+  where:
+    header: "Location"
+    question: "Which documents should I read? I understood: %{value}."
+    hint: "To read only some, name a folder, a file or a year."
+    folders: "Folders: %{folders}"
+    anything: "All documents"
+    anything_description: "Read every document in this agent's scope"
+    everything: "all documents in scope"
+    line: "**Location:** %{value}"
+  rows:
+    header: "Filter Condition"
+    question: "Which records should the table keep? I understood: %{value}."
+    hint: "A condition on the records, not a calculation, e.g. from Lieferant GmbH · dated 2018 · only hardware items."
+    anything: "Every row"
+    anything_description: "Keep every row the documents hold"
+    everything: "every row"
+    line: "**Filter Condition:** %{value}"
+  columns:
+    header: "Values to extract"
+    question: "Which values should each row hold? I understood: %{value}."
+    hint: "The values decide what a row is, e.g. invoice number, date, net total → one row per invoice; item, quantity, net amount → one row per line item."
+    anything: "Let the agent choose"
+    anything_description: "Values that fit the records asked for"
+    unnamed: "none named"
+    line: "**Values to extract:** %{value}"
+  exact:
+    header: "Exact keyword(s)"
+    question: "Which words do the wanted documents literally contain? I understood: %{value}."
+    hint: "Optional, e.g. a supplier name such as Lieferant GmbH · an invoice or contract number. They guide the search and never filter."
+    anything: "None"
+    anything_description: "Let the search decide"
+    none: "none"
+    line: "**Exact keyword(s):** %{value}"
+  semantic:
+    header: "Semantic keyword(s)"
+    question: "What are the wanted documents about? I understood: %{value}."
+    hint: "Optional, e.g. supplier invoice with line items · rental contract · insurance policy. They rank the documents by meaning and never filter."
+    anything: "None"
+    anything_description: "Let the search decide"
+    none: "none"
+    line: "**Semantic keyword(s):** %{value}"
+  declined: "The user declined this extraction in the request form. Do not extract; ask what they would like instead."
+  rewritten: "The user answered the request form for this extraction with: \"%{reply}\". Call extract_records again with the arguments changed to match; it runs without asking again."

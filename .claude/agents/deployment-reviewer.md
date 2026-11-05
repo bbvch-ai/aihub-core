@@ -41,16 +41,17 @@ infra/configs/{service}/*.{stage}{.gpu}.*    → ~80 generated config files
 | `nightly` | Yes     | Let's Encrypt | `nightly` tag                | GPU models      |
 | `latest`  | Yes     | Let's Encrypt | `latest` tag                 | GPU models      |
 
-### The 6 Network Zones
+### The 7 Network Zones
 
-| Network        | Purpose                    | ICC    | What goes here                                                              |
-| -------------- | -------------------------- | ------ | --------------------------------------------------------------------------- |
-| `proxy`        | External ingress           | Yes    | traefik, api, web, open-webui, langfuse-web                                 |
-| `backend`      | Application services       | Yes    | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel                          |
-| `data`         | Databases and messaging    | Yes    | postgres, ferretdb, milvus, neo4j, valkey, nats, clickhouse                 |
-| `storage`      | SeaweedFS cluster          | Yes    | seaweedfs-\*, etcd                                                          |
-| `egress`       | Outbound internet only     | **No** | playwright (containers can't reach each other)                              |
-| `code-sandbox` | Single-tenant sandbox zone | Yes    | open-terminal plus exactly its callers (see `code-sandbox` in the template) |
+| Network        | Purpose                    | ICC    | What goes here                                                                  |
+| -------------- | -------------------------- | ------ | ------------------------------------------------------------------------------- |
+| `proxy`        | External ingress           | Yes    | traefik, api, web, open-webui, langfuse-web                                     |
+| `backend`      | Application services       | Yes    | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel                              |
+| `data`         | Databases and messaging    | Yes    | postgres, ferretdb, milvus, neo4j, valkey, nats, clickhouse                     |
+| `storage`      | SeaweedFS cluster          | Yes    | seaweedfs-\*, etcd                                                              |
+| `egress`       | Outbound internet only     | **No** | browser-proxy, searxng, rclone (containers can't reach each other)              |
+| `code-sandbox` | Single-tenant sandbox zone | Yes    | open-terminal plus exactly its callers (see `code-sandbox` in the template)     |
+| `browser`      | Browser zone               | Yes    | playwright (no other network), browser-proxy, and exactly the browser's callers |
 
 **Cross-network bridges**: Services needing multiple zones get multiple networks. E.g., `milvus-standalone` is on `data`
 \+ `storage`, `api` is on `proxy` + `backend` + `data` + `storage`.

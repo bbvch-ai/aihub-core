@@ -60,7 +60,6 @@ const filter = computed(() => props.context.filter ?? true)
 
 const databases = ref<DatabaseDto[]>([])
 const isLoading = ref(false)
-const hasLoaded = ref(false)
 
 const selectedDatabases = computed({
   get: () => props.context.value ?? [],
@@ -69,19 +68,12 @@ const selectedDatabases = computed({
   },
 })
 
-const databaseOptions = computed<DatabaseOption[]>(() => {
-  const available = databases.value.map(db => ({
+const databaseOptions = computed<DatabaseOption[]>(() =>
+  databases.value.map(db => ({
     name: db.name,
     displayName: db.display_name || capitalCase(db.name),
-  }))
-  if (!hasLoaded.value) return available
-
-  const known = new Set(available.map(option => option.name))
-  const unavailable = selectedDatabases.value
-    .filter(name => !known.has(name))
-    .map(name => ({ name, displayName: t('lib.knowledgeDatabases.unavailable', { name }) }))
-  return [...available, ...unavailable]
-})
+  })),
+)
 
 async function fetchDatabases() {
   isLoading.value = true
@@ -90,7 +82,15 @@ async function fetchDatabases() {
       composable: '$fetch',
       path: { tenant_id: tenantId.value! },
     })
-    hasLoaded.value = true
+
+    // Remove selected databases that are no longer available
+    const availableNames = new Set(databases.value.map(db => db.name))
+    const validSelection = selectedDatabases.value.filter(name => availableNames.has(name))
+
+    // Update the selected databases only if the selection has changed
+    if (validSelection.length !== selectedDatabases.value.length) {
+      selectedDatabases.value = validSelection
+    }
   }
   catch (error) {
     console.error('Failed to fetch databases:', error)

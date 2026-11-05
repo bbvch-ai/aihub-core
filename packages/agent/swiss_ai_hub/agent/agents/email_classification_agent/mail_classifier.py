@@ -56,15 +56,18 @@ class CategoryVerdict(BaseModel):
     def category_name(self) -> str | None:
         return self.category.category if self.category else None
 
-    def target_folder(self, settings: EmailClassificationSettings) -> str:
-        """The folder this verdict files into.
+    def target_folder(self, settings: EmailClassificationSettings) -> str | None:
+        """The folder this verdict files into, or None when the message stays in the inbox.
 
         Routing lives on the verdict so the three outcomes cannot drift apart at a call site, mirroring
-        `ExtractedAttachment.inventory_line`, which likewise switches on its own outcome.
+        `ExtractedAttachment.inventory_line`, which likewise switches on its own outcome. Only a decline can stay: a
+        failure always leaves, or it would be re-listed and re-failed on every run.
         """
         if self.outcome is ClassificationOutcome.FAILED:
             return settings.failure_folder
-        return self.category.imap_folder if self.category else settings.fallback_folder
+        if self.category:
+            return self.category.imap_folder
+        return None if settings.keep_uncategorised_in_inbox else settings.fallback_folder
 
 
 class MailClassifier:

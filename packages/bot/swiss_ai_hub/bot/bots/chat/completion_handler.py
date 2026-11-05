@@ -5,7 +5,7 @@ from asyncio import Event, Task
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from microsoft_agents.activity import Activity, ActivityTypes, Entity
+from microsoft_agents.activity import Activity, ActivityTypes, Channels, Entity
 from microsoft_agents.activity.teams import TeamsChannelAccount
 from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
 from swiss_ai_hub.core.auth import KeycloakAdminService, UserNotProvisionedError
@@ -16,11 +16,16 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
+from swiss_ai_hub.bot.bots.chat.bot_access_denied_error import BotAccessDeniedError
 from swiss_ai_hub.bot.bots.chat.content_extractor import ContentExtractor
+from swiss_ai_hub.bot.bots.chat.unverified_bot_user_error import UnverifiedBotUserError
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import Content, ConversationEntity, Message
 from swiss_ai_hub.bot.persistence.entities.path_entity import PathEntity
+from swiss_ai_hub.bot.routes.bot_in_the_loop.slack_utils import SlackUser, SlackUtils
 
 logger = logging.getLogger(__name__)
+
+SLACK_USER_ID_PATTERN = re.compile(r"[UW][0-9A-Z]+")
 
 
 class CompletionHandler:
@@ -69,41 +74,86 @@ class CompletionHandler:
         )
 
     @staticmethod
-    async def resolve_user_email(turn_context: TurnContext) -> str:
+    async def resolve_user_email(turn_context: TurnContext, path: str) -> str:
         """
-        Resolve the user's real email address from a Bot Framework activity.
+        Resolve the user's email from the channel itself, never from sender-controlled activity fields.
 
-        Teams stores the *display name* (e.g. `John Doe`) in `from_property.name`, so the email
-        must be fetched from the Teams connector. The display name is only a usable fallback when
-        it already is an email (emulator / dev channels).
+        Channels without a server-side member lookup (web chat, Direct Line, emulator) cannot be mapped to a
+        platform account and are rejected.
         """
-        user_id = turn_context.activity.from_property.id
-
-        connector_client = turn_context.turn_state.get("ConnectorClient")
-        if user_id and isinstance(connector_client, TeamsConnectorClient):
-            teams_account: TeamsChannelAccount = await connector_client.get_conversation_member(
-                turn_context.activity.conversation.id, user_id
-            )
-            if teams_account.email is not None:
-                return teams_account.email
-
-        fallback = turn_context.activity.from_property.name
-        if fallback and "@" in fallback:
-            return fallback
-
-        raise ValueError(
-            f"Could not determine email for user '{turn_context.activity.from_property.name}'. "
-            "Ensure the user has logged in via OAuth2 before using the bot."
-        )
+        match turn_context.activity.channel_id:
+            case Channels.ms_teams:
+                return await CompletionHandler._resolve_teams_user_email(turn_context, path)
+            case Channels.slack:
+                return await CompletionHandler._resolve_slack_user_email(turn_context, path)
+            case channel_id:
+                raise UnverifiedBotUserError(channel_id, "the channel offers no verified user lookup")
 
     @staticmethod
-    async def resolve_user_identity(turn_context: TurnContext) -> UserIdentity:
+    async def _resolve_teams_user_email(turn_context: TurnContext, path: str) -> str:
+        """Teams stores the display name in `from.name`, so the email comes from the Teams member roster."""
+        user_id = turn_context.activity.from_property.id
+        connector_client = turn_context.turn_state.get("ConnectorClient")
+        if not user_id or not isinstance(connector_client, TeamsConnectorClient):
+            raise UnverifiedBotUserError(Channels.ms_teams, "no Teams member lookup is available")
+        teams_account: TeamsChannelAccount = await connector_client.get_conversation_member(
+            turn_context.activity.conversation.id, user_id
+        )
+        CompletionHandler._assert_member_of_bot_tenant(teams_account, path)
+        if not teams_account.email:
+            raise UnverifiedBotUserError(Channels.ms_teams, f"Teams member {user_id} has no email")
+        return teams_account.email
+
+    @staticmethod
+    def _assert_member_of_bot_tenant(teams_account: TeamsChannelAccount, path: str) -> None:
+        """
+        A roster email is only as trustworthy as the tenant that issued it, so only the bot's own tenant counts.
+
+        The member's tenant is used, not the conversation's: in a shared channel the conversation belongs to the host
+        tenant while external members keep their home tenant.
+        """
+        bot_tenant_id = PathEntity.get_credentials_by_path(path).APP_TENANTID
+        if not bot_tenant_id:
+            raise UnverifiedBotUserError(Channels.ms_teams, f"no tenant is configured for {path}")
+        if (teams_account.tenant_id or "").lower() != bot_tenant_id.lower():
+            raise UnverifiedBotUserError(
+                Channels.ms_teams, f"Teams member {teams_account.id} belongs to tenant {teams_account.tenant_id!r}"
+            )
+
+    @staticmethod
+    async def _resolve_slack_user_email(turn_context: TurnContext, path: str) -> str:
+        """Azure Bot Service sends Slack senders as `<user id>:<team id>`; the email comes from Slack's user profile."""
+        slack_user_id = (turn_context.activity.from_property.id or "").split(":")[0]
+        if not SLACK_USER_ID_PATTERN.fullmatch(slack_user_id):
+            raise UnverifiedBotUserError(Channels.slack, f"unexpected Slack user id {slack_user_id!r}")
+        slack_token = PathEntity.get_slack_token_by_path(path)
+        if not slack_token:
+            raise UnverifiedBotUserError(Channels.slack, f"no Slack token is configured for {path}")
+        slack_user = await SlackUtils.get_user(slack_token, slack_user_id)
+        await CompletionHandler._assert_member_of_bot_workspace(slack_user, slack_token)
+        if not slack_user.email:
+            raise UnverifiedBotUserError(
+                Channels.slack, f"Slack user {slack_user_id} has no email, or the bot token lacks users:read.email"
+            )
+        return slack_user.email
+
+    @staticmethod
+    async def _assert_member_of_bot_workspace(slack_user: SlackUser, slack_token: str) -> None:
+        """Slack Connect shows members of other workspaces too, and their own workspace vouches for their email."""
+        bot_team_id = (await SlackUtils.get_slack_ids(slack_token)).team_id
+        if slack_user.team_id != bot_team_id:
+            raise UnverifiedBotUserError(
+                Channels.slack, f"Slack user {slack_user.id} belongs to workspace {slack_user.team_id!r}"
+            )
+
+    @staticmethod
+    async def resolve_user_identity(turn_context: TurnContext, path: str) -> UserIdentity:
         """
         Resolve the Keycloak-backed identity for the user behind the given activity.
 
         Shared by every completion handler so the agent and OpenAI bots cannot drift apart.
         """
-        user_email = await CompletionHandler.resolve_user_email(turn_context)
+        user_email = await CompletionHandler.resolve_user_email(turn_context, path)
         keycloak_user = await KeycloakAdminService.find_user_by_email(user_email)
         if not keycloak_user:
             raise UserNotProvisionedError(user_email)
@@ -383,15 +433,22 @@ class CompletionHandler:
     ) -> str:
         typing_stop_signal.set()
         await typing_task
-        if isinstance(exception, UserNotProvisionedError):
-            # Expected for bot-first users with no Keycloak account: surface an actionable
-            # "sign in to the Hub first" message instead of an opaque error (see issue #1315).
-            login_url = AIHubSettings().primary_frontend_origin
-            logger.info(f"Unprovisioned bot user, prompting web login at {login_url}: {exception}")
-            response = t("bot.error.user_not_provisioned", url=login_url)
-        else:
-            logger.exception(f"Exception: {exception}\nTurnContext: {turn_context}")
-            response = t("bot.error.generic_error")
+        match exception:
+            case UserNotProvisionedError():
+                # Expected for bot-first users with no Keycloak account: surface an actionable
+                # "sign in to the Hub first" message instead of an opaque error (see issue #1315).
+                login_url = AIHubSettings().primary_frontend_origin
+                logger.info(f"Unprovisioned bot user, prompting web login at {login_url}: {exception}")
+                response = t("bot.error.user_not_provisioned", url=login_url)
+            case UnverifiedBotUserError():
+                logger.warning(f"Rejected bot user: {exception}")
+                response = t("bot.error.unverified_user")
+            case BotAccessDeniedError():
+                logger.warning(f"Rejected bot user: {exception}")
+                response = t("bot.error.access_denied")
+            case _:
+                logger.exception(f"Exception: {exception}\nTurnContext: {turn_context}")
+                response = t("bot.error.generic_error")
         await turn_context.send_activity(
             Activity(
                 type=ActivityTypes.message,

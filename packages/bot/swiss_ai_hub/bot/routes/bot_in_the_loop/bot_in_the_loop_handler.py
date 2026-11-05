@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import Annotated, Self, cast
 
-from cachetools import TTLCache
 from fastapi import Request
 from microsoft_agents.activity import ChannelAccount, Channels, ConversationAccount, ConversationReference
 from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
@@ -45,14 +44,9 @@ class BotInTheLoopHandler:
     CONTROLLER_PATH: str = "/bot_in_the_loop"
     ENDPOINT_PATH: str = "/response"
 
-    # Cache TTL of 30 days
-    CACHE_TTL_SECONDS = 60 * 60 * 24 * 30
-
     def __init__(self):
         self.threads: dict[str, BotInTheLoopThread] = {}
         self.path: str = f"/api/v1{self.CONTROLLER_PATH}{self.ENDPOINT_PATH}"
-        # Use TTLCache with max size of 100 entries
-        self.slack_ids_cache = TTLCache(maxsize=100, ttl=self.CACHE_TTL_SECONDS)
 
     async def handle_event(self, event: BaseEvent, _: AgentInstanceTopic):
         if event.is_bitl_request_event:
@@ -61,22 +55,13 @@ class BotInTheLoopHandler:
         else:
             return
 
-    def _get_slack_ids(self, path: str) -> SlackIds:
+    @staticmethod
+    async def _get_slack_ids(path: str) -> SlackIds:
         """Get bot_id and team_id using the Slack auth.test API."""
-        if path in self.slack_ids_cache:
-            return self.slack_ids_cache[path]
-
         slack_token = PathEntity.get_slack_token_by_path(path)
         if not slack_token:
             raise ValueError(f"No Slack token found for path {path}")
-
-        # Use the SlackUtils to get the IDs
-        slack_ids = SlackUtils.get_slack_ids(slack_token)
-
-        # Cache the result for future use
-        self.slack_ids_cache[path] = slack_ids
-
-        return slack_ids
+        return await SlackUtils.get_slack_ids(slack_token)
 
     async def _handle_bot_in_the_loop_request(
         self,
@@ -174,7 +159,7 @@ class BotInTheLoopHandler:
     ):
         logger.info(f"[BITL-Handler] Handling Slack BITL request: thread_id={thread_id}, question={question!r}")
 
-        slack_ids = self._get_slack_ids(self.path)
+        slack_ids = await self._get_slack_ids(self.path)
         base_conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.channel_config.channel_id}"
 
         logger.info(

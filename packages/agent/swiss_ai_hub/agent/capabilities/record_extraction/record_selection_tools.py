@@ -10,6 +10,7 @@ from swiss_ai_hub.core.generative_ai import (
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_scope import KnowledgeDocumentScope
 from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_arguments import ExtractRecordsArguments
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_estimate import ExtractionEstimate
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_sample import SAMPLE_ABOVE_DOCUMENTS
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_config import RecordExtractionConfig
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields import RecordExtractionFields
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
@@ -47,6 +48,9 @@ class RecordSelectionTools(BaseToolSpec):
         fields: Annotated[str, ExtractRecordsArguments.model_fields["fields"].description],
         instructions: Annotated[str | None, ExtractRecordsArguments.model_fields["instructions"].description] = None,
         row_terms: Annotated[str | None, ExtractRecordsArguments.model_fields["row_terms"].description] = None,
+        document_terms: Annotated[
+            str | None, ExtractRecordsArguments.model_fields["document_terms"].description
+        ] = None,
     ) -> str:
         """Settles which knowledge documents a table is extracted from, and which columns and rows it holds, and
         reports how many documents that is with example paths. Call it once you know the documents, and again with
@@ -57,7 +61,13 @@ class RecordSelectionTools(BaseToolSpec):
         if not isinstance(config, RecordExtractionFields):
             raise TypeError(f"{type(config).__name__} lacks RecordExtractionFields")
         arguments = ExtractRecordsArguments.model_validate(
-            {"any_of": any_of, "fields": fields, "instructions": instructions, "row_terms": row_terms}
+            {
+                "any_of": any_of,
+                "fields": fields,
+                "instructions": instructions,
+                "row_terms": row_terms,
+                "document_terms": document_terms,
+            }
         )
         scope = await KnowledgeDocumentScope.for_tool(self.context)
         settings = config.record_extraction
@@ -96,12 +106,11 @@ class RecordSelectionTools(BaseToolSpec):
                 f"more than {len(documents)}, more than this profile extracts; the user will be shown a sample and "
                 "asked to narrow the request."
             )
-        parallel = settings.max_parallel_extractions
-        parts = ExtractionEstimate.batches(documents, settings.max_files, settings.minutes_per_turn, parallel)
-        if len(parts) == 1:
-            return f"{len(documents)}, few enough to extract in one answer."
-        minutes = ExtractionEstimate.minutes(documents, parallel)
+        minutes = ExtractionEstimate.minutes(documents, settings.max_parallel_extractions)
+        if len(documents) <= SAMPLE_ABOVE_DOCUMENTS:
+            return f"{len(documents)}, extracted in one answer (about {minutes} minutes)."
         return (
-            f"{len(documents)}, more than one answer extracts (about {minutes} minutes in all); the user will be "
-            f"shown a sample and asked to narrow the request or to continue in {len(parts)} parts."
+            f"{len(documents)} (about {minutes} minutes). Do not ask the user yourself: the extraction shows a "
+            "sample first and asks whether to extract them all or to narrow the request. When you have the "
+            "extract_records tool, call it now."
         )

@@ -38,6 +38,10 @@ LITELLM_TEMPLATE = "templates/configs/litellm-config.yml.j2"
 # Keep in sync with AvailableModel.function_calling in packages/core (not importable here, see the note below).
 OPENWEBUI_FUNCTION_CALLING_KEY = "aihub_openwebui_function_calling"
 OPENWEBUI_FUNCTION_CALLING_MODES = {"native", "legacy"}
+# Where a model runs. The pii-anonymisation guardrail anonymises every call to a model that is not `local`, and treats a
+# model without the key as external, so a typo would silently anonymise a local model; generation rejects it instead.
+HOSTING_LOCATION_KEY = "aihub_hosting_location"
+HOSTING_LOCATIONS = {"local", "swiss_cloud", "eu", "global"}
 
 # Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
@@ -92,8 +96,10 @@ CONFIG_SPECS = [
     ("templates/configs/init.Dockerfile.j2", "configs/etcd", "init.Dockerfile"),
     ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
     ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
+    ("templates/configs/s3-ttl-init.sh.j2", "configs/seaweedfs", "ttl-init.sh"),
     ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
     ("templates/configs/openwebui-init-openwebui.sh.j2", "configs/openwebui", "init-openwebui.sh"),
+    ("templates/configs/ferretdb-init.sh.j2", "configs/ferretdb", "init-ferretdb.sh"),
     ("templates/configs/init_etcd.sh.j2", "configs/etcd", "init_etcd.sh"),
     ("templates/configs/keycloak-entrypoint.sh.j2", "configs/keycloak", "keycloak-entrypoint.sh"),
     # Keycloak theme - static files (no stage/hardware variations)
@@ -127,8 +133,10 @@ KEYCLOAK_MANAGED_TEMPLATES = [
 # (source_dir relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR)
 STATIC_COPY_DIRS = [
     ("templates/openwebui-disclaimer", "configs/openwebui/disclaimer"),
+    ("templates/openwebui-style", "configs/openwebui/style"),
     ("templates/openwebui_functions", "configs/openwebui/functions"),
     ("templates/litellm_functions", "configs/litellm"),
+    ("templates/oauth2-proxy", "configs/oauth2-proxy"),
 ]
 
 # Static files copied verbatim (no Jinja2 rendering).
@@ -169,8 +177,10 @@ OWN_IMAGE_LICENSES = {
     "sysadmin-web": "AGPL-3.0-or-later",
     "imap_agent": "Apache-2.0",
     "email_classification_agent": "Apache-2.0",
+    "release_notes_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
     "universal_agent": "Apache-2.0",
+    "web_fetch_agent": "Apache-2.0",
     "knowledge_extraction_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
@@ -178,6 +188,7 @@ OWN_IMAGE_LICENSES = {
     "expert_asking_agent": "Apache-2.0",
     "namespace_selection_agent": "Apache-2.0",
     "memory_writer_agent": "Apache-2.0",
+    "anonymiser_agent": "Apache-2.0",
     "retrieval_agent": "Apache-2.0",
     "default_rag_pipeline": "Apache-2.0",
     "shared_rag_pipeline": "Apache-2.0",
@@ -208,8 +219,10 @@ DOCKER_LICENSE_ALIASES = {
     "oauth2proxy-dagster": "oauth2-proxy",
     "backup-webserver": "dagster",
     "backup-daemon": "dagster",
+    "backup-docker-proxy": "docker-socket-proxy",
     "otel-collector": "opentelemetry-collector-contrib",
     "openwebui-init": "postgres",
+    "ferretdb-init": "postgres",
     "keycloak-config": "keycloak-config-cli",
 }
 
@@ -263,6 +276,7 @@ def generate_config(template, context, output_path):
     rendered = template.render(context)
     if template.name == LITELLM_TEMPLATE:
         _validate_openwebui_function_calling(rendered, output_path)
+        _validate_hosting_locations(rendered, output_path)
     output_path.write_text(rendered, encoding="utf-8")
 
 
@@ -274,6 +288,17 @@ def _validate_openwebui_function_calling(rendered, output_path):
             raise ValueError(
                 f"{entry.get('model_name')}: {OPENWEBUI_FUNCTION_CALLING_KEY} is {mode!r} in {output_path.name}, "
                 f"expected one of {sorted(OPENWEBUI_FUNCTION_CALLING_MODES)}"
+            )
+
+
+def _validate_hosting_locations(rendered, output_path):
+    """Every model declares where it runs, so the anonymisation guardrail knows which calls leave the deployment."""
+    for entry in yaml.safe_load(rendered).get("model_list") or []:
+        location = (entry.get("model_info") or {}).get(HOSTING_LOCATION_KEY)
+        if location not in HOSTING_LOCATIONS:
+            raise ValueError(
+                f"{entry.get('model_name')}: {HOSTING_LOCATION_KEY} is {location!r} in {output_path.name}, "
+                f"expected one of {sorted(HOSTING_LOCATIONS)}"
             )
 
 

@@ -11,3 +11,7 @@ class StructuredSyncOutcome(BaseModel):
     scope_fingerprint: Annotated[
         str, Field(description="Fingerprint of the configuration the sync ran with, re-checked by the listing.")
     ]
+    unread_file_keys: Annotated[
+        list[str],
+        Field(description="Keys of files the source would not serve this run; tried again next run, never missing."),
+    ] = []

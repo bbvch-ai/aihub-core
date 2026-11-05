@@ -34,6 +34,16 @@ class LiteLLMProxySettings(EnvironmentSettings):
         ),
     ] = None
 
+    CONNECT_TIMEOUT_SECONDS: Annotated[
+        float,
+        Field(
+            gt=0,
+            description="How long an LLM or embedding call may take to open its connection to the gateway. Kept "
+            "far below the request timeout: a connect that never completes has nothing in flight, so failing it "
+            "in seconds lets the SDK retry at once instead of waiting out the whole request timeout.",
+        ),
+    ] = 5.0
+
     USER_MAX_BUDGET: Annotated[float | None, Field(description="Budget available to a user in one period")] = None
     USER_SOFT_BUDGET: Annotated[
         float | None, Field(description="Get alerts when user crosses given budget, doesn't block requests.")

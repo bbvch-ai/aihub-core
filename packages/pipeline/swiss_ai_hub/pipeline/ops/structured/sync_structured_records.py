@@ -7,10 +7,11 @@ from dagster import AssetKey, DagsterRun, DagsterRunStatus, OpDefinition, OpExec
 from dagster_dlt import DagsterDltResource
 from dlt.common.configuration.container import Container
 from dlt.common.pipeline import PipelineContext
+from dlt.extract import DltSource
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.persistence import BucketEntity
 
-from swiss_ai_hub.pipeline.resources.structured.markdown_data_lake_destination import MarkdownDataLakeDestination
+from swiss_ai_hub.pipeline.resources.structured.structured_data_lake_destination import StructuredDataLakeDestination
 from swiss_ai_hub.pipeline.resources.structured.structured_source_state_store import StructuredSourceStateStore
 from swiss_ai_hub.pipeline.source_pipelines.structured_sync_config import StructuredSyncConfig
 from swiss_ai_hub.pipeline.types.structured_sync_outcome import StructuredSyncOutcome
@@ -41,19 +42,28 @@ def sync_structured_records_op(
         config = source_config_for_bucket(bucket, source, config_type)
         fingerprint = config.scope_fingerprint()
         store = StructuredSourceStateStore(source, bucket)
-        destination = MarkdownDataLakeDestination(bucket, context)
+        adapter, options = config.adapter(), config.options()
+        destination = StructuredDataLakeDestination(
+            bucket, context, read_file=lambda reference: adapter.read_file(options, reference)
+        )
         with tempfile.TemporaryDirectory(prefix="dlt-") as pipelines_dir:
             pipeline_dir = Path(pipelines_dir) / f"{source}_{bucket}"
             restored = store.restore(pipeline_dir, fingerprint)
-            rows_loaded = _run(context, dagster_dlt, config, destination, pipelines_dir, pipeline_dir.name)
+            rows_loaded = _run(
+                context, dagster_dlt, adapter.file_source(options), destination, pipelines_dir, pipeline_dir.name
+            )
+            unread = set(destination.failed_keys)
             if _still_filled_by(bucket, source):
-                store.save(pipeline_dir, fingerprint)
+                store.save(pipeline_dir, fingerprint, unread_files=unread)
             else:
                 context.log.warning(f"'{bucket}' left source '{source}' during the sync; its state is not kept.")
         return Output(
-            StructuredSyncOutcome(written_keys=destination.written_keys, scope_fingerprint=fingerprint),
+            StructuredSyncOutcome(
+                written_keys=destination.written_keys, scope_fingerprint=fingerprint, unread_file_keys=sorted(unread)
+            ),
             metadata={
                 "Files written": len(destination.written_keys),
+                "Files not served by the source": len(unread),
                 "Files unchanged": destination.unchanged_count,
                 "Rows loaded": rows_loaded,
                 "Resumed from stored state": restored,
@@ -66,12 +76,12 @@ def sync_structured_records_op(
 def _run(
     context: OpExecutionContext,
     dagster_dlt: DagsterDltResource,
-    config: StructuredSyncConfig,
-    destination: MarkdownDataLakeDestination,
+    file_source: DltSource,
+    destination: StructuredDataLakeDestination,
     pipelines_dir: str,
     pipeline_name: str,
 ) -> int:
-    """Runs the adapter's source into the markdown destination and returns how many rows dlt loaded.
+    """Runs the adapter's source into the destination and returns how many rows dlt loaded.
 
     dagster-dlt reports a materialization per dlt resource, an asset every database would share, so its events are
     folded into this step's metadata instead of being emitted.
@@ -84,11 +94,7 @@ def _run(
             dataset_name=pipeline_name,
         )
         pipeline.config.restore_from_destination = False
-        events = list(
-            dagster_dlt.run(
-                context=context, dlt_source=config.adapter().file_source(config.options()), dlt_pipeline=pipeline
-            )
-        )
+        events = list(dagster_dlt.run(context=context, dlt_source=file_source, dlt_pipeline=pipeline))
     finally:
         Container()[PipelineContext].deactivate()
     return sum(event.metadata["rows_loaded"].value for event in events if "rows_loaded" in event.metadata)

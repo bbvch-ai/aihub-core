@@ -320,11 +320,31 @@ class PersistedAgentEventEntity(Document):
     @classmethod
     @trace_fn
     def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
+        """Each request once: a request is persisted both as a control and as a display event."""
         return list(
             cls.objects()
-            .filter(thread_id=thread_id, event_parents__contains="HumanInTheLoopRequestEvent")
+            .filter(
+                thread_id=thread_id,
+                event_parents__contains="HumanInTheLoopRequestEvent",
+                event_type=AgentTopicManager.CONTROL_EVENT,
+            )
             .order_by("event_data__created_at")
         )
+
+    @classmethod
+    @trace_fn
+    def open_human_in_the_loop_requests_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
+        """The thread's requests no response answers yet, oldest first. Matched by the request each response names,
+        never by counting: one unmatched count once sent a new message as the answer to an answered request."""
+        answered = {
+            (response.event_data.get("request_event") or {}).get("event_id")
+            for response in cls.human_in_the_loop_response_events_for_thread(thread_id)
+        }
+        return [
+            request
+            for request in cls.human_in_the_loop_request_events_for_thread(thread_id)
+            if request.event_data.get("event_id") not in answered
+        ]
 
     @classmethod
     @trace_fn

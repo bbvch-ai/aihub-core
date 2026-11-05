@@ -4,13 +4,19 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Any, ClassVar, Self, override
+from functools import cache
+from typing import TYPE_CHECKING, Any, ClassVar, Self, override
 
 from bson import ObjectId
+from fastapi.exceptions import RequestValidationError
 from llama_index.core.base.llms.types import ChatMessage
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError, computed_field, create_model
+from pydantic.fields import FieldInfo
 
 from swiss_ai_hub.core.events.utils import get_inheritance_depth, get_parent_classes_until_base
+
+if TYPE_CHECKING:
+    from swiss_ai_hub.core.events.api_payload_context import ApiPayloadContext
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +55,9 @@ class BaseEvent(BaseModel):
     """
 
     _event_registry: ClassVar[dict[str, type["BaseEvent"]]] = {}
+    _api_server_fields: ClassVar[frozenset[str]] = frozenset(
+        {"event_id", "created_at", "user", "locale", "display_name", "display_description", "agent_config"}
+    )
     event_id: str = Field(default_factory=lambda: str(ObjectId()))
     created_at: int = Field(
         default_factory=time.time_ns,
@@ -321,6 +330,77 @@ class BaseEvent(BaseModel):
         event._unknown_parent_classes = parent_classes
 
         return event
+
+    @classmethod
+    def resolve_event_class(cls, event_name: str, event_parents: list[str]) -> type[Self]:
+        """The registered class an event name stands for: its own, else its closest registered parent."""
+        for name in [event_name, *event_parents]:
+            event_class = cls._event_registry.get(name)
+            if event_class is not None and issubclass(event_class, cls):
+                return event_class
+        return cls
+
+    @classmethod
+    def api_input_field_overrides(cls) -> dict[str, tuple[Any, FieldInfo]]:
+        """Fields an API caller sends in another shape than the event carries; `_api_input_to_event_data` converts
+        them back."""
+        return {}
+
+    @classmethod
+    @cache
+    def api_input_model(cls) -> type[BaseModel]:
+        """What an API caller sends for this event: its fields without the ones the server fills in.
+
+        Extra fields are kept, as on the event, so an agent-only subclass resolved to this class keeps its own.
+        """
+        overrides = cls.api_input_field_overrides()
+        fields = {
+            name: overrides.get(name, (field_info.annotation, field_info))
+            for name, field_info in cls.model_fields.items()
+            if name not in cls._api_server_fields
+        }
+        return create_model(
+            f"{cls.__name__}Input",
+            __config__=ConfigDict(
+                arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow"
+            ),
+            **fields,
+        )
+
+    @classmethod
+    def _api_server_data(cls, context: "ApiPayloadContext") -> dict[str, Any]:
+        return {}
+
+    @classmethod
+    async def _api_input_to_event_data(cls, api_input: BaseModel, context: "ApiPayloadContext") -> dict[str, Any]:
+        return api_input.model_dump(mode="json", exclude_unset=True)
+
+    @classmethod
+    async def from_api_payload(
+        cls,
+        payload: dict[str, Any],
+        *,
+        event_name: str,
+        event_parents: list[str],
+        context: "ApiPayloadContext",
+    ) -> Self:
+        """Builds the event an API caller asked for, validating the whole payload before any conversion runs."""
+        event_class = cls.resolve_event_class(event_name, event_parents)
+        try:
+            api_input = event_class.api_input_model().model_validate(payload)
+        except ValidationError as validation_error:
+            raise RequestValidationError(validation_error.errors(include_url=False)) from validation_error
+        event_data = await event_class._api_input_to_event_data(api_input, context)
+        return cls.deserialize_event(
+            {
+                "event_id": str(ObjectId()),
+                "created_at": time.time_ns(),
+                **event_data,
+                **event_class._api_server_data(context),
+                "_parent_event_names": event_parents,
+                "_event_name": event_name,
+            }
+        )
 
     def to_trace_dict(self) -> dict[str, Any]:
         """
