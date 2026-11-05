@@ -132,12 +132,12 @@ async def test_the_entry_of_a_deleted_collection_is_removed_even_when_creating_a
         patch.object(OpenWebuiKnowledgeSync, "listing", return_value={("hr", "reports"): ("HR / Reports", "")}),
         patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity") as entity,
     ):
-        entity.all_entries.return_value = [_entry("k1", *POLICIES)]
+        entity.current_entries.return_value = [_entry("k1", *POLICIES)]
         with pytest.raises(RuntimeError):
             await OpenWebuiKnowledgeSync(client, "en").sync(MagicMock(), [HR_GROUP], TENANT_RULES, ROLE_RULES)
 
     assert client.delete_knowledge.await_args.args[1] == "k1"
-    entity.forget.assert_called_once_with("k1")
+    entity.retire.assert_called_once_with("k1")
 
 
 @pytest.mark.asyncio
