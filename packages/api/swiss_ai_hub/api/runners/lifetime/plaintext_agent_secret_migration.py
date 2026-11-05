@@ -13,17 +13,17 @@ class PlaintextAgentSecretMigration:
     """
 
     @staticmethod
-    def run() -> list[str]:
+    async def run() -> list[str]:
         """Encrypts every plaintext secret; returns which profiles it rewrote."""
         service: SecretEncryptionService | None = None
         migrated: list[str] = []
-        for document, paths in ConfigSecrets.stored_profiles_with_secret_paths():
+        for document, paths in await ConfigSecrets.stored_profiles_with_secret_paths():
             config_data = document.config_data
             if not PlaintextAgentSecretMigration._holds_plaintext(config_data, paths):
                 continue
             service = service or SecretEncryptionService.from_settings()
-            if AgentConfigEntityDocument.replace_config_data_if_unchanged(
-                document.pk, config_data, service.encrypt_paths(config_data, paths)
+            if await AgentConfigEntityDocument.replace_config_data_if_unchanged(
+                document.id, config_data, service.encrypt_paths(config_data, paths)
             ):
                 migrated.append(f"agent {document.agent_class}/{document.agent_id}")
         return migrated

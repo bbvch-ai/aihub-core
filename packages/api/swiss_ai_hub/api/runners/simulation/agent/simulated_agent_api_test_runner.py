@@ -318,7 +318,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         ]
         return self
 
-    def create_agent_config_in_db(self) -> None:
+    async def create_agent_config_in_db(self) -> None:
         """
         Create the agent class and config in the database.
 
@@ -329,7 +329,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         - AgentClassEntity: Class-level metadata (events, form schema, online status)
         - AgentConfigEntityDocument: Instance-level configuration
         """
-        AgentClassEntity.create_or_update(
+        await AgentClassEntity.create_or_update(
             AgentClassDiscoveryResponseEvent(
                 agent_class=self.agent_class,
                 name=self.agent_config.name,
@@ -348,11 +348,11 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             )
         )
 
-        existing = AgentConfigEntityDocument.find_for_class_and_id(self.agent_class, self.agent_id)
+        existing = await AgentConfigEntityDocument.find_for_class_and_id(self.agent_class, self.agent_id)
         if existing:
             existing.update_from_agent_config(self.agent_config, self.agent_class)
-            existing.save()
+            await existing.save_changes()
         else:
             config_entity = AgentConfigEntityDocument.from_agent_config(self.agent_config, self.agent_class)
-            config_entity.save()
+            await config_entity.insert()
         logger.info(f"Created agent class and config in database: {self.agent_class}/{self.agent_id}")

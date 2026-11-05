@@ -6,7 +6,7 @@ user of every tenant (aihub-core-private#377). Asserted through HTTP rather than
 endpoint that stops calling it fails here.
 """
 
-from collections.abc import AsyncGenerator, Iterator
+from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
@@ -127,7 +127,7 @@ async def api_client() -> AsyncGenerator[AsyncClient]:
     await runner.start_simulation()
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
-        runner.create_agent_config_in_db()
+        await runner.create_agent_config_in_db()
         async with AsyncClient(
             transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1/active"
         ) as client:
@@ -152,17 +152,17 @@ def _owning_display(monkeypatch: pytest.MonkeyPatch, thread: ThreadEntity) -> No
     monkeypatch.setattr(EventService, "thread_id_for_display", staticmethod(lambda display_id: str(thread.id)))
 
 
-@pytest.fixture
-def chat_thread(monkeypatch: pytest.MonkeyPatch) -> Iterator[ThreadEntity]:
-    thread = ThreadEntity.create_thread("chat", users=[User(user_id=MEMBER)], agents=[AGENT])
+@pytest_asyncio.fixture(loop_scope="module")
+async def chat_thread(monkeypatch: pytest.MonkeyPatch) -> AsyncGenerator[ThreadEntity]:
+    thread = await ThreadEntity.create_thread("chat", users=[User(user_id=MEMBER)], agents=[AGENT])
     _owning_display(monkeypatch, thread)
     yield thread
-    thread.delete()
+    await thread.delete()
 
 
-@pytest.fixture
-def process_thread(monkeypatch: pytest.MonkeyPatch) -> Iterator[ThreadEntity]:
-    thread = ThreadEntity.create_process_thread(
+@pytest_asyncio.fixture(loop_scope="module")
+async def process_thread(monkeypatch: pytest.MonkeyPatch) -> AsyncGenerator[ThreadEntity]:
+    thread = await ThreadEntity.create_process_thread(
         "Invoice review",
         AGENT,
         ObjectId(),
@@ -172,7 +172,7 @@ def process_thread(monkeypatch: pytest.MonkeyPatch) -> Iterator[ThreadEntity]:
     )
     _owning_display(monkeypatch, thread)
     yield thread
-    thread.delete()
+    await thread.delete()
 
 
 async def _call(client: AsyncClient, caller: str, endpoint: tuple, thread: ThreadEntity) -> Response:
@@ -180,8 +180,8 @@ async def _call(client: AsyncClient, caller: str, endpoint: tuple, thread: Threa
     return await client.request(method, path.format(thread_id=thread.id), json=body, headers={USER_HEADER: caller})
 
 
-def _members_and_agents(thread: ThreadEntity) -> tuple[list[str], list[tuple[str, str]]]:
-    stored = ThreadEntity.get_thread_by_id(str(thread.id))
+async def _members_and_agents(thread: ThreadEntity) -> tuple[list[str], list[tuple[str, str]]]:
+    stored = await ThreadEntity.get_thread_by_id(str(thread.id))
     return [user.user_id for user in stored.users], [(agent.agent_class, agent.agent_id) for agent in stored.agents]
 
 
@@ -190,12 +190,12 @@ def _members_and_agents(thread: ThreadEntity) -> tuple[list[str], list[tuple[str
 @pytest.mark.parametrize("endpoint", READS + CHANGES + POSTS + DOWNLOAD)
 async def test_a_non_member_is_refused_a_chat_thread(api_client, chat_thread, caller, endpoint):
     """The neighbour shares the member's tenant, the outsider does not; both hold `aihub.user.>`."""
-    before = _members_and_agents(chat_thread)
+    before = await _members_and_agents(chat_thread)
 
     response = await _call(api_client, caller, endpoint, chat_thread)
 
     assert response.status_code == 403, response.text
-    assert _members_and_agents(chat_thread) == before
+    assert await _members_and_agents(chat_thread) == before
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -229,12 +229,12 @@ async def test_a_user_with_access_to_another_process_is_refused_its_thread(api_c
 async def test_access_to_the_process_does_not_allow_changing_or_posting_into_its_thread(
     api_client, process_thread, endpoint
 ):
-    before = _members_and_agents(process_thread)
+    before = await _members_and_agents(process_thread)
 
     response = await _call(api_client, PROCESS_USER, endpoint, process_thread)
 
     assert response.status_code == 403, response.text
-    assert _members_and_agents(process_thread) == before
+    assert await _members_and_agents(process_thread) == before
 
 
 @pytest.mark.asyncio(loop_scope="module")

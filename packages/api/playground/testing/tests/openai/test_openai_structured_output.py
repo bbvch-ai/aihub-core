@@ -81,7 +81,7 @@ async def agent():
     await runner.start_simulation()
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
-        runner.create_agent_config_in_db()
+        await runner.create_agent_config_in_db()
         client = openai.AsyncOpenAI(
             api_key="unused",
             base_url="http://test/api/v1/active/openai",
@@ -202,7 +202,7 @@ async def test_a_turn_without_the_json_comes_back_as_a_refusal(agent):
 async def test_an_agent_without_support_is_refused_before_it_is_called(agent):
     client, runner = agent
     runner.supports_response_schema = False
-    runner.create_agent_config_in_db()
+    await runner.create_agent_config_in_db()
 
     with pytest.raises(openai.BadRequestError) as refused:
         await client.chat.completions.parse(

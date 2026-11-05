@@ -1,6 +1,6 @@
 import hashlib
 import logging
-from asyncio import sleep, to_thread
+from asyncio import sleep
 from collections.abc import Awaitable, Callable
 from enum import StrEnum
 from functools import partial, reduce
@@ -128,8 +128,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         return True
 
     @override
-    def _online_class_names(self) -> set[str]:
-        return AgentClassEntity.get_online_class_names()
+    async def _online_class_names(self) -> set[str]:
+        return await AgentClassEntity.get_online_class_names()
 
     @override
     async def _after_round(self) -> None:
@@ -193,7 +193,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         name_locale_handler = ApiLocaleHandler(locale=self._openwebui_provisioner.model_name_locale)
         instances = await AgentService.get_all_agent_instances(t=name_locale_handler, online=True)
 
-        features_by_class = await to_thread(self._supported_features_by_class)
+        features_by_class = await self._supported_features_by_class()
         current_set = {
             (inst.agent_class, inst.agent_id, inst.name, ",".join(features_by_class.get(inst.agent_class, [])))
             for inst in instances
@@ -226,8 +226,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         return hashlib.sha256(",".join(normalized).encode()).hexdigest()
 
     @staticmethod
-    def _supported_features_by_class() -> dict[str, list[str]]:
-        return {entity.agent_class: sorted(entity.supported_features) for entity in AgentClassEntity.objects()}
+    async def _supported_features_by_class() -> dict[str, list[str]]:
+        return {entity.agent_class: sorted(entity.supported_features) for entity in await AgentClassEntity.get_all()}
 
     @classmethod
     def _agents_hash_key(cls, target: SyncTarget) -> str:
@@ -253,7 +253,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
     async def _sync_agent_instances_to_openwebui(self, instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
-            features_by_class = await to_thread(self._supported_features_by_class)
+            features_by_class = await self._supported_features_by_class()
             online_agents = [
                 OnlineAgent(
                     agent_class=inst.agent_class,
@@ -419,7 +419,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
-            config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
             if not config:
                 raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
 
@@ -468,7 +468,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
     async def _refuse_unsupported_response_schema(start_event_input: BaseModel, agent_class: str) -> None:
         """Called before the thread is created, so a refused request leaves no empty conversation behind."""
         if getattr(start_event_input, "response_schema", None) is not None:
-            await to_thread(AgentService.refuse_unsupported_response_schema, agent_class)
+            await AgentService.refuse_unsupported_response_schema(agent_class)
 
     @staticmethod
     async def _input_event(
@@ -522,7 +522,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
-            config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
             if not config:
                 raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
 

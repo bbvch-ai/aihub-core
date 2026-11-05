@@ -62,9 +62,12 @@ async def clean_beanie_collections(
     beanie_test_database: AsyncDatabase,
     beanie_document_models: list[type[Document]],
 ) -> None:
-    """Empties every initialised collection before the test, so no test sees another's data.
+    """Binds the documents to the session client and empties their collections before the test.
 
-    Deletes documents rather than dropping collections, which would also drop the indexes ``init_beanie`` created.
+    Rebinding is needed because ``init_beanie`` binds a document class for the whole process: a test that starts the
+    API lifespan initialises Beanie on its own loop, and every later opted-in test would otherwise reach a client
+    whose loop is closed. Deletes documents rather than dropping collections, which would also drop the indexes.
     """
+    await init_beanie(database=beanie_test_database, document_models=beanie_document_models)
     for document_model in beanie_document_models:
         await document_model.delete_all()

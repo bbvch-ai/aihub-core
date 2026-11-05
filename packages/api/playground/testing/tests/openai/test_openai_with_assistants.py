@@ -30,7 +30,7 @@ async def simulation():
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         # Create agent config in database after DB connection is established
-        runner.create_agent_config_in_db()
+        await runner.create_agent_config_in_db()
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client, runner
 
@@ -128,21 +128,21 @@ async def test_chat_completions_json(api_client):
 @pytest.mark.asyncio(loop_scope="module")
 async def test_chat_completions_json_with_custom_agent_config(api_client):
     """Test JSON chat completions with custom agent config."""
-    AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
+    await AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
     custom_agent_config = AgentConfig(
         agent_id=AGENT_ID,
         name=LocaleString(en="Override Test Agent"),
         description=LocaleString(en="This is a test agent with custom config."),
     )
     custom_agent_config_entity = AgentConfigEntityDocument.from_agent_config(custom_agent_config, AGENT_CLASS)
-    custom_agent_config_entity.save()
+    await custom_agent_config_entity.insert()
     payload = {
         "model": f"{AGENT_CLASS}/{AGENT_ID}",
         "messages": [{"role": "user", "content": "Hello!"}],
         "stream": False,
     }
     response = await api_client.post(COMPLETIONS_ENDPOINT, json=payload)
-    custom_agent_config_entity.delete()
+    await custom_agent_config_entity.delete()
 
     assert response.status_code == 200, f"Response: {response.text}"
 
@@ -160,7 +160,7 @@ async def test_chat_completions_json_with_custom_agent_config(api_client):
 @pytest.mark.asyncio(loop_scope="module")
 async def test_an_image_url_with_data_reaches_the_agent_as_a_reference(simulation):
     client, runner = simulation
-    runner.create_agent_config_in_db()
+    await runner.create_agent_config_in_db()
     png = base64.b64encode(b"\x89PNG for the agent").decode()
     content = [
         {"type": "text", "text": "What is this?"},
@@ -181,7 +181,7 @@ async def test_an_image_url_with_data_reaches_the_agent_as_a_reference(simulatio
 @pytest.mark.asyncio(loop_scope="module")
 async def test_an_image_of_another_agent_is_refused(simulation):
     client, runner = simulation
-    runner.create_agent_config_in_db()
+    await runner.create_agent_config_in_db()
     content = [{"type": "image_url", "image_url": {"url": f"s3://agent-files/Other/agent/images/{'a' * 64}.png"}}]
 
     response = await client.post(

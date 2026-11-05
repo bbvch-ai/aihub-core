@@ -57,13 +57,13 @@ class AgentService:
 
     @staticmethod
     @trace_fn
-    def get_minimal_agent_instance(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentInstanceDTO:
+    async def get_minimal_agent_instance(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentInstanceDTO:
         """Returns minimal details for an agent instance from database."""
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class=agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class=agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent config {agent_class}/{agent_id} not found.")
 
@@ -71,9 +71,9 @@ class AgentService:
 
     @staticmethod
     @trace_fn
-    def refuse_unsupported_response_schema(agent_class: str) -> None:
+    async def refuse_unsupported_response_schema(agent_class: str) -> None:
         """A caller who asked for a JSON shape must get it or an error, never prose from an agent that ignores it."""
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None or not class_entity.supports_response_schema:
             raise HTTPException(
                 status_code=400,
@@ -87,15 +87,15 @@ class AgentService:
         Returns details for a given agent instance from the database.
         Online status compares the class's last_discovered timestamp with the completed discovery rounds.
         """
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent instance {agent_class}/{agent_id} not found.")
 
-        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+        is_online = class_entity.is_online_since(await AgentClassEntity.online_threshold())
         return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
     @staticmethod
@@ -112,15 +112,15 @@ class AgentService:
         last `DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE` completed discovery rounds.
         """
         agents = []
-        online_threshold = AgentClassEntity.online_threshold()
-        for class_entity in AgentClassEntity.get_all():
+        online_threshold = await AgentClassEntity.online_threshold()
+        for class_entity in await AgentClassEntity.get_all():
             is_online = class_entity.is_online_since(online_threshold)
             if online is not None and is_online != online:
                 continue
             if agent_class is not None and class_entity.agent_class != agent_class:
                 continue
 
-            configs = AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
+            configs = await AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
             for config_entity in configs:
                 dto = InstanceDtoBuilder.build_or_skip(
                     lambda class_entity=class_entity, config_entity=config_entity, is_online=is_online: (
@@ -150,9 +150,9 @@ class AgentService:
     ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
         """Sends an event to a specific agent."""
         if thread_id:
-            thread = ThreadEntity.get_thread_by_id(str(thread_id))
+            thread = await ThreadEntity.get_thread_by_id(str(thread_id))
         else:
-            thread = ThreadEntity.create_thread(
+            thread = await ThreadEntity.create_thread(
                 "chat",
                 users=[User(user_id=user.id)],
                 agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
@@ -234,9 +234,9 @@ class AgentService:
         Yields ALL events (not just chunks) as raw events without conversion.
         """
         if thread_id:
-            thread = ThreadEntity.get_thread_by_id(str(thread_id))
+            thread = await ThreadEntity.get_thread_by_id(str(thread_id))
         else:
-            thread = ThreadEntity.create_thread(
+            thread = await ThreadEntity.create_thread(
                 "chat",
                 users=[User(user_id=user.id)],
                 agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
@@ -337,12 +337,11 @@ class AgentService:
         Deliberately not masked: the agent decrypts its secrets only when it validates the config, so the RPC
         reply, and the RunContext the agent stores it in, carry ciphertext and never plaintext.
 
-        Off the loop because `AgentConfigResponder` serves this over NATS RPC, and the requester
-        (`NCRequester`) gives it one 5 s shot with no retry. A blocking query here competes with every
-        other coroutine in this process, so a loop busy with event persistence can burn that budget
-        before the handler even runs — and the agent aborts its run on a timeout while NATS sits idle.
+        `AgentConfigResponder` serves this over NATS RPC, and the requester (`NCRequester`) gives it one 5 s shot
+        with no retry. The read is awaited rather than blocking, so it no longer competes with every other
+        coroutine in this process for that budget.
         """
-        config_entity = await asyncio.to_thread(AgentConfigEntityDocument.find_for_class_and_id, agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if config_entity and config_entity.config_data:
             return config_entity.config_data
         return {}
@@ -356,11 +355,11 @@ class AgentService:
         Update the configuration data for a specific agent instance.
         Validates the configuration against the agent's schema before saving, and stores secrets encrypted.
         """
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if not class_entity:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if not config_entity:
             raise HTTPException(status_code=404, detail=f"Agent config {agent_class}/{agent_id} not found.")
 
@@ -373,7 +372,7 @@ class AgentService:
         # Before the generated model, which only sees the schema's notion of required — a key being
         # present. A starred field submitted as "" or None satisfies that and is caught only here.
         InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, configuration)
-        config_instance = InstanceConfigHelper.validate_config_for_update(
+        config_instance = await InstanceConfigHelper.validate_config_for_update(
             configuration, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
         )
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
@@ -386,7 +385,7 @@ class AgentService:
             t=t,
         )
 
-        config_entity = InstanceConfigHelper.apply_metadata_to_entity(config_instance, config_entity)
+        config_entity = InstanceConfigHelper.apply_metadata_to_document(config_instance, config_entity)
 
         # Pin agent_id to the immutable instance key: the agent publishes under config_data["agent_id"]
         # while the SSE handler addresses it by the entity key, and a mismatch silently fails the
@@ -394,7 +393,7 @@ class AgentService:
         configuration["agent_id"] = agent_id
         configuration = ConfigSecrets.encrypted(configuration, class_entity.form_elements)
         config_entity.config_data = configuration
-        config_entity.save()
+        await config_entity.save_changes()
 
         return configuration
 
@@ -403,8 +402,8 @@ class AgentService:
     async def get_agent_classes(t: LocaleHandler, online: bool | None = None) -> list[AgentClassDTO]:
         """Returns all agent classes from the database."""
         agent_classes = []
-        online_threshold = AgentClassEntity.online_threshold()
-        for class_entity in AgentClassEntity.get_all():
+        online_threshold = await AgentClassEntity.online_threshold()
+        for class_entity in await AgentClassEntity.get_all():
             is_online = class_entity.is_online_since(online_threshold)
             if online is not None and is_online != online:
                 continue
@@ -415,23 +414,23 @@ class AgentService:
     @trace_fn
     async def get_agent_class(agent_class: str, t: LocaleHandler) -> AgentClassDTO:
         """Returns a specific agent class from the database."""
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
-        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+        is_online = class_entity.is_online_since(await AgentClassEntity.online_threshold())
         return AgentClassDTO.from_entity(class_entity, t, is_online=is_online)
 
     @staticmethod
     @trace_fn
     async def get_agent_class_instances(agent_class: str, t: LocaleHandler) -> list[FullAgentInstanceDTO]:
         """Returns all instances of a specific agent class from the database."""
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+        is_online = class_entity.is_online_since(await AgentClassEntity.online_threshold())
         instances = []
-        configs = AgentConfigEntityDocument.find_for_class(agent_class)
+        configs = await AgentConfigEntityDocument.find_for_class(agent_class)
         for config_entity in configs:
             instances.append(
                 FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
@@ -451,17 +450,17 @@ class AgentService:
         Creates a new agent instance from an existing agent class.
         Requires the agent class to be online (i.e., the agent must be running).
         """
-        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        class_entity = await AgentClassEntity.get_by_agent_class(agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class '{agent_class}' not found.")
 
-        if not class_entity.is_online_since(AgentClassEntity.online_threshold()):
+        if not class_entity.is_online_since(await AgentClassEntity.online_threshold()):
             raise HTTPException(
                 status_code=503,
                 detail=f"Agent class '{agent_class}' is not online. Make sure the agent is running.",
             )
 
-        existing_config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, request.agent_id)
+        existing_config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, request.agent_id)
         if existing_config:
             raise HTTPException(
                 status_code=409, detail=f"Agent instance '{agent_class}/{request.agent_id}' already exists."
@@ -475,7 +474,7 @@ class AgentService:
         # Before the generated model, which only sees the schema's notion of required — a key being
         # present. A starred field submitted as "" or None satisfies that and is caught only here.
         InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, config)
-        config_instance = InstanceConfigHelper.validate_config_for_create(
+        config_instance = await InstanceConfigHelper.validate_config_for_create(
             config, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=request.agent_id)
         )
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
@@ -510,10 +509,10 @@ class AgentService:
             icon=locale.icon,
             config_data=full_config_data,
         )
-        config_entity.save()
+        await config_entity.insert()
 
         if user.acting_within_tenant is not None:
-            AgentService._grant_instance_access(agent_class, request.agent_id, user, config_entity)
+            await AgentService._grant_instance_access(agent_class, request.agent_id, user, config_entity)
 
         return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=True)
 
@@ -521,11 +520,11 @@ class AgentService:
     @trace_fn
     async def delete_agent_instance(agent_class: str, agent_id: str) -> None:
         """Deletes an agent instance and the per-instance access it was granted on creation."""
-        config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if not config:
             raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found.")
 
-        AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class, agent_id)
+        await config.delete()
 
         rules = [
             AccessChecker.agent_instance_user_rule(agent_class, agent_id),
@@ -550,7 +549,7 @@ class AgentService:
         return f"{pascal_case}Admin"
 
     @staticmethod
-    def _grant_instance_access(
+    async def _grant_instance_access(
         agent_class: str, agent_id: str, user: UserIdentity, config_entity: AgentConfigEntityDocument
     ) -> None:
         """Grants the creating tenant and creator per-instance admin access, rolling back on failure.
@@ -581,7 +580,10 @@ class AgentService:
                     lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants([admin_rule]),
                     f"revoke {admin_rule}",
                 )
-            AgentService._best_effort(config_entity.delete, "delete config")
+            try:
+                await config_entity.delete()
+            except Exception:
+                logger.exception("Best-effort step failed: delete config")
             raise HTTPException(
                 status_code=500,
                 detail=(
