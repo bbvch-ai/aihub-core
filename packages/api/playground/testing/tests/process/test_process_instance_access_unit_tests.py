@@ -109,7 +109,7 @@ class TestExistingRole:
             patch.object(TenantMetadataEntity, "grant_access_rule"),
             patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants"),
             patch.object(RoleEntity, "objects", return_value=self._existing_role(*rules)),
-            patch.object(RoleEntity, "delete_role_from_all_tenants") as delete_role,
+            patch.object(RoleEntity, "delete_role") as delete_role,
             patch.object(UserTenantRoleEntity, "add_roles") as add_roles,
             pytest.raises(HTTPException) as raised,
         ):
@@ -158,14 +158,14 @@ class TestGrant:
             patch.object(ProcessInstanceAccessGrant, "_ensure_admin_role", return_value=True),
             patch.object(UserTenantRoleEntity, "add_roles", side_effect=RuntimeError("boom")),
             patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as revoke,
-            patch.object(RoleEntity, "delete_role_from_all_tenants") as delete_role,
+            patch.object(RoleEntity, "delete_role") as delete_role,
             pytest.raises(HTTPException) as raised,
         ):
             ProcessInstanceAccessGrant.grant("Onboarding", "q3-onboarding", creator_user, rollback)
 
         assert raised.value.status_code == 500
         revoke.assert_called_once_with([_ADMIN_RULE])
-        delete_role.assert_called_once_with(_ROLE_NAME)
+        delete_role.assert_called_once_with(_ROLE_NAME, "tenant_1")
         rollback.assert_called_once()
 
 
@@ -225,13 +225,26 @@ class TestDeleteRevokesTheInstance:
             patch.object(ProcessConfigEntityDocument, "find_for_class_and_id", return_value=Mock()),
             patch.object(ProcessConfigEntityDocument, "delete_if_exists_for_class_and_id") as delete_config,
             patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as revoke,
-            patch.object(RoleEntity, "delete_role_from_all_tenants") as delete_role,
+            patch.object(ProcessInstanceAccessGrant, "_delete_instance_roles") as delete_roles,
         ):
             await ProcessService.delete_process_instance("Onboarding", "q3-onboarding")
 
         delete_config.assert_called_once_with("Onboarding", "q3-onboarding")
         revoke.assert_called_once_with([_USER_RULE, _ADMIN_RULE])
-        delete_role.assert_called_once_with(_ROLE_NAME)
+        delete_roles.assert_called_once_with(_ROLE_NAME, _ADMIN_RULE)
+
+    def test_a_same_named_role_with_other_rules_survives(self):
+        instance_role = Mock(tenant_id="tenant_1", access_rules=[_ADMIN_RULE])
+        authored_role = Mock(tenant_id="tenant_2", access_rules=[_ADMIN_RULE, "aihub.admin.agent.>"])
+        roles = Mock()
+        roles.only.return_value = [instance_role, authored_role]
+        with (
+            patch.object(RoleEntity, "objects", return_value=roles),
+            patch.object(RoleEntity, "delete_role") as delete_role,
+        ):
+            ProcessInstanceAccessGrant._delete_instance_roles(_ROLE_NAME, _ADMIN_RULE)
+
+        delete_role.assert_called_once_with(_ROLE_NAME, "tenant_1")
 
     @pytest.mark.asyncio
     async def test_a_missing_instance_revokes_nothing(self):

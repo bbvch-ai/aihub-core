@@ -54,7 +54,7 @@ class ProcessInstanceAccessGrant:
         except Exception as error:
             if created_role:
                 ProcessInstanceAccessGrant._best_effort(
-                    lambda: RoleEntity.delete_role_from_all_tenants(role_name), f"delete role {role_name}"
+                    lambda: RoleEntity.delete_role(role_name, tenant.id), f"delete role {role_name}"
                 )
             if granted_tenant_rule:
                 ProcessInstanceAccessGrant._best_effort(
@@ -84,8 +84,16 @@ class ProcessInstanceAccessGrant:
             lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(rules), f"revoke {rules}"
         )
         ProcessInstanceAccessGrant._best_effort(
-            lambda: RoleEntity.delete_role_from_all_tenants(role_name), f"delete role {role_name}"
+            lambda: ProcessInstanceAccessGrant._delete_instance_roles(role_name, rules[1]), f"delete role {role_name}"
         )
+
+    @staticmethod
+    def _delete_instance_roles(role_name: str, admin_rule: str) -> None:
+        """Deletes the role in every tenant where it still grants exactly this instance; a tenant may have authored
+        a role of the same name with other rules, and that one stays."""
+        for role in RoleEntity.objects(name=role_name).only("tenant_id", "access_rules"):
+            if list(role.access_rules) == [admin_rule]:
+                RoleEntity.delete_role(role_name, role.tenant_id)
 
     @staticmethod
     def _ensure_admin_role(
