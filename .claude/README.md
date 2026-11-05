@@ -106,7 +106,7 @@ on disk. The skills use `gh` throughout.
 ## MCP Server Environment Keys
 
 **Read this first if an MCP server fails to connect on a fresh clone.** `.env` is gitignored, so it does not travel with
-the repo — `cp .env.dev .env` gives you every key the stack needs, but the MCP-only keys below arrive commented out and
+the repo — `./setup-env.sh -t .env.dev -o .env` (run by `make setup`) gives you every key the stack needs, but the MCP-only keys below arrive commented out and
 must be filled in by hand. A missing key shows up as a bare `CONNECTION_CLOSED`, which says nothing about the cause.
 
 MCP servers connect **at session start only**. Restart Claude Code after editing `.env`.

@@ -25,10 +25,10 @@ For Docker Compose or Traefik questions, use Context7 MCP to fetch up-to-date do
 docker compose -f infra/docker-compose.dev.yml --env-file .env up -d --build
 ```
 
-**Pre-check**: Verify `.env` exists at the repo root. If missing, copy from `.env.dev`:
+**Pre-check**: Verify `.env` exists at the repo root. If missing, generate it from `.env.dev` (fresh random secrets):
 
 ```bash
-cp .env.dev .env
+./setup-env.sh -t .env.dev -o .env
 ```
 
 ### `down` — Stop the development stack
@@ -175,7 +175,7 @@ Dev stage has all networks non-internal for localhost access.
 
 | Problem                         | Solution                                                                 |
 | ------------------------------- | ------------------------------------------------------------------------ |
-| `.env` file not found           | Copy `.env.dev` to `.env` at the repo root                               |
+| `.env` file not found           | Run `./setup-env.sh -t .env.dev -o .env` at the repo root                |
 | Port already in use             | Run `lsof -i :<port>` to find the process, then stop it                  |
 | Service keeps restarting        | Check logs with `/docker-dev logs <service>`                             |
 | Need Docker Compose docs        | Use Context7: library ID `/docker/compose`                               |

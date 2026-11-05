@@ -49,7 +49,7 @@ Substitute the backend directory, port and app module for your plane.
 
 ```bash
 cd packages/api                       # or packages/sysadmin-api
-set -a; . ../../.env.dev; set +a      # import-time BaseSettings read the environment
+set -a; . ../../.env; set +a         # import-time BaseSettings read the environment
 export SPEC_DIR=/tmp/spec/api/v1 APP_MODULE=app.main
 mkdir -p "$SPEC_DIR"
 uv run python - <<'PY'

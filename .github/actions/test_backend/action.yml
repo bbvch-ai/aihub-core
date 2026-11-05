@@ -96,6 +96,9 @@ runs:
       if: inputs.docker_compose_services != '' && inputs.regenerate_compose == 'true'
       shell: bash
       run: make generate-compose
+    - name: Generate .env with fresh secrets
+      shell: bash
+      run: ./setup-env.sh -t .env.dev -o .env --force
     - name: Pre-pull Docker images (if services needed)
       if: inputs.docker_compose_services != ''
       shell: bash
@@ -107,42 +110,42 @@ runs:
 
         # Pre-pull images in parallel to use cache effectively
         echo "Pre-pulling Docker images for faster startup..."
-        docker compose -f infra/docker-compose.dev.yml --env-file .env.dev pull --quiet ${{ inputs.docker_compose_services }} || true
+        docker compose -f infra/docker-compose.dev.yml --env-file .env pull --quiet ${{ inputs.docker_compose_services }} || true
     - name: Add secrets to environment variables
       shell: bash
       run: |
         if [ -n "$HUGGINGFACE_API_KEY" ]; then
-          echo "HUGGINGFACE_API_KEY=$HUGGINGFACE_API_KEY" >> .env.dev
+          echo "HUGGINGFACE_API_KEY=$HUGGINGFACE_API_KEY" >> .env
         fi
         if [ -n "$SWISS_LLM_CLOUD_API_BASE_URL" ]; then
-          echo "SWISS_LLM_CLOUD_API_BASE_URL=$SWISS_LLM_CLOUD_API_BASE_URL" >> .env.dev
+          echo "SWISS_LLM_CLOUD_API_BASE_URL=$SWISS_LLM_CLOUD_API_BASE_URL" >> .env
         fi
         if [ -n "$SWISS_LLM_CLOUD_API_KEY" ]; then
-          echo "SWISS_LLM_CLOUD_API_KEY=$SWISS_LLM_CLOUD_API_KEY" >> .env.dev
+          echo "SWISS_LLM_CLOUD_API_KEY=$SWISS_LLM_CLOUD_API_KEY" >> .env
         fi
         if [ -n "$SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL" ]; then
-          echo "SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL=$SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL" >> .env.dev
+          echo "SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL=$SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL" >> .env
         fi
         if [ -n "$SWISS_LLM_CLOUD_EMBEDDING_API_KEY" ]; then
-          echo "SWISS_LLM_CLOUD_EMBEDDING_API_KEY=$SWISS_LLM_CLOUD_EMBEDDING_API_KEY" >> .env.dev
+          echo "SWISS_LLM_CLOUD_EMBEDDING_API_KEY=$SWISS_LLM_CLOUD_EMBEDDING_API_KEY" >> .env
         fi
         if [ -n "$SWISS_LLM_CLOUD_RERANKING_API_BASE_URL" ]; then
-          echo "SWISS_LLM_CLOUD_RERANKING_API_BASE_URL=$SWISS_LLM_CLOUD_RERANKING_API_BASE_URL" >> .env.dev
+          echo "SWISS_LLM_CLOUD_RERANKING_API_BASE_URL=$SWISS_LLM_CLOUD_RERANKING_API_BASE_URL" >> .env
         fi
         if [ -n "$SWISS_LLM_CLOUD_RERANKING_API_KEY" ]; then
-          echo "SWISS_LLM_CLOUD_RERANKING_API_KEY=$SWISS_LLM_CLOUD_RERANKING_API_KEY" >> .env.dev
+          echo "SWISS_LLM_CLOUD_RERANKING_API_KEY=$SWISS_LLM_CLOUD_RERANKING_API_KEY" >> .env
         fi
         if [ -n "$SWISS_LLM_CLOUD_WHISPER_API_BASE_URL" ]; then
-          echo "SWISS_LLM_CLOUD_WHISPER_API_BASE_URL=$SWISS_LLM_CLOUD_WHISPER_API_BASE_URL" >> .env.dev
+          echo "SWISS_LLM_CLOUD_WHISPER_API_BASE_URL=$SWISS_LLM_CLOUD_WHISPER_API_BASE_URL" >> .env
         fi
         if [ -n "$SWISS_LLM_CLOUD_WHISPER_API_KEY" ]; then
-          echo "SWISS_LLM_CLOUD_WHISPER_API_KEY=$SWISS_LLM_CLOUD_WHISPER_API_KEY" >> .env.dev
+          echo "SWISS_LLM_CLOUD_WHISPER_API_KEY=$SWISS_LLM_CLOUD_WHISPER_API_KEY" >> .env
         fi
         if [ -n "$SWISS_LLM_CLOUD_OCR_API_BASE_URL" ]; then
-          echo "SWISS_LLM_CLOUD_OCR_API_BASE_URL=$SWISS_LLM_CLOUD_OCR_API_BASE_URL" >> .env.dev
+          echo "SWISS_LLM_CLOUD_OCR_API_BASE_URL=$SWISS_LLM_CLOUD_OCR_API_BASE_URL" >> .env
         fi
         if [ -n "$SWISS_LLM_CLOUD_OCR_API_KEY" ]; then
-          echo "SWISS_LLM_CLOUD_OCR_API_KEY=$SWISS_LLM_CLOUD_OCR_API_KEY" >> .env.dev
+          echo "SWISS_LLM_CLOUD_OCR_API_KEY=$SWISS_LLM_CLOUD_OCR_API_KEY" >> .env
         fi
       env:
         HUGGINGFACE_API_KEY: ${{ inputs.huggingface_api_key }}
@@ -160,18 +163,12 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        docker compose -f infra/docker-compose.dev.yml --env-file .env.dev up -d ${{ inputs.docker_compose_services }}
+        docker compose -f infra/docker-compose.dev.yml --env-file .env up -d ${{ inputs.docker_compose_services }}
     - name: Install FFmpeg
       if: inputs.install_ffmpeg == 'true'
       shell: bash
       run: make install-ffmpeg
       working-directory: ${{ inputs.working_directory }}
-    - name: Setup environment variables for tests
-      shell: bash
-      run: |
-        # Copy .env.dev to .env so that Pydantic BaseSettings can find it
-        cp .env.dev .env
-        echo "Copied .env.dev to .env for test environment"
     - name: Wait for Docker services to become healthy
       if: inputs.docker_compose_services != ''
       shell: bash

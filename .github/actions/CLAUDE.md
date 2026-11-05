@@ -63,8 +63,8 @@ cache key. Runs `nuxi prepare` before linting to generate Nuxt type stubs.
 
 - `docker_compose_services`: space-separated list of Docker services to start (empty = no Docker)
 - `install_ffmpeg`: installs FFmpeg via `make install-ffmpeg`
-- `huggingface_api_key`: added to `.env.dev` for model downloads
-- `swiss_llm_cloud_*`: Swiss LLM Cloud secrets (API, embedding, reranking, whisper, OCR) added to `.env.dev`
+- `huggingface_api_key`: added to the generated `.env` for model downloads
+- `swiss_llm_cloud_*`: Swiss LLM Cloud secrets (API, embedding, reranking, whisper, OCR) added to the generated `.env`
 - `regenerate_compose`: runs `make generate-compose` before starting Docker services
 - `pytest_timeout_seconds`: per-test budget passed as `--timeout` (default 300). Keep it well under the calling job's
   `timeout-minutes`, otherwise a hung test consumes the whole job and the forced stop discards `pytest.xml`,

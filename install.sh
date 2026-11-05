@@ -302,6 +302,20 @@ fi
 
 # ── Upgrade ───────────────────────────────────────────────────────────────────
 
+# Older bundles do not ship the check. AIHUB_ALLOW_PUBLISHED_SECRETS=true upgrades anyway, for an
+# operator who has to rotate after the upgrade rather than before it.
+if [ -f "${EXTRACTED}/check-env-secrets.sh" ]; then
+    info "Checking .env for published secrets..."
+    if ! bash "${EXTRACTED}/check-env-secrets.sh" "${INSTALL_DIR}/.env"; then
+        if [ "${AIHUB_ALLOW_PUBLISHED_SECRETS:-false}" != true ]; then
+            err "Upgrade stopped: rotate the secrets listed above, then run the installer again."
+            err "To upgrade first and rotate afterwards, rerun with AIHUB_ALLOW_PUBLISHED_SECRETS=true."
+            exit 1
+        fi
+        warn "Continuing with published secrets (AIHUB_ALLOW_PUBLISHED_SECRETS=true). Rotate them."
+    fi
+fi
+
 info "Backing up .env..."
 cp "${INSTALL_DIR}/.env" "${TMPDIR}/.env.backup"
 
@@ -310,6 +324,7 @@ info "Replacing bundle files..."
 rm -f "${INSTALL_DIR}/docker-compose.yml"
 rm -f "${INSTALL_DIR}/.env.template"
 rm -f "${INSTALL_DIR}/setup-env.sh"
+rm -f "${INSTALL_DIR}/check-env-secrets.sh"
 rm -rf "${INSTALL_DIR}/configs"
 
 # Copy new bundle files
