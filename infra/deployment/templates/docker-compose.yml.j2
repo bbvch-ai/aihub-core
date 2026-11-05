@@ -1228,7 +1228,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.keycloak.rule=Host(`auth.${DOMAIN}`)"
+      - "traefik.http.routers.keycloak.rule=Host(`auth.${DOMAIN}`) && !PathPrefix(`/admin`) && !PathPrefix(`/realms/master`)"
       - "traefik.http.routers.keycloak.entrypoints=websecure"
       - "traefik.http.routers.keycloak.tls=true"
       {%- if stage in ['nightly', 'latest'] %}
@@ -2063,7 +2063,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.litellm-api.rule=Host(`litellm.${DOMAIN}`) && (PathPrefix(`/v1/`) || Path(`/chat/completions`) || Path(`/completions`) || Path(`/embeddings`) || Path(`/models`) || Path(`/model/info`) || PathPrefix(`/audio/`) || PathPrefix(`/images/`) || Path(`/rerank`) || Path(`/v2/rerank`) || Path(`/moderations`) || Path(`/responses`) || PathPrefix(`/responses/`) || Path(`/health/liveliness`) || Path(`/health/liveness`))"
+      - "traefik.http.routers.litellm-api.rule=Host(`litellm.${DOMAIN}`) && (Path(`/v1/chat/completions`) || Path(`/v1/completions`) || Path(`/v1/embeddings`) || Path(`/v1/models`) || Path(`/v1/model/info`) || PathPrefix(`/v1/audio/`) || PathPrefix(`/v1/images/`) || Path(`/v1/rerank`) || Path(`/v1/moderations`) || Path(`/v1/responses`) || PathPrefix(`/v1/responses/`) || Path(`/chat/completions`) || Path(`/completions`) || Path(`/embeddings`) || Path(`/models`) || Path(`/model/info`) || PathPrefix(`/audio/`) || PathPrefix(`/images/`) || Path(`/rerank`) || Path(`/v2/rerank`) || Path(`/moderations`) || Path(`/responses`) || PathPrefix(`/responses/`) || Path(`/health/liveliness`) || Path(`/health/liveness`))"
       - "traefik.http.routers.litellm-api.priority=6000"
       - "traefik.http.routers.litellm-api.entrypoints=websecure"
       - "traefik.http.routers.litellm-api.middlewares=security-headers@file"

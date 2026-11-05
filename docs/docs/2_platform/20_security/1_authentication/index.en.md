@@ -183,11 +183,12 @@ full OIDC login flow against Keycloak before forwarding authenticated requests t
 the `AIHubSysAdmin` role can access these services, and the session cookie is `Secure`.
 
 `litellm.<domain>` is split by path. The OpenAI-compatible inference routes go straight to LiteLLM, which checks the
-caller's LiteLLM API key itself: everything under `/v1/`, plus the unprefixed `/chat/completions`, `/completions`,
-`/embeddings`, `/models`, `/model/info`, `/audio/*`, `/images/*`, `/rerank`, `/v2/rerank`, `/moderations`,
-`/responses[/*]` and the liveness probes `/health/liveliness` and `/health/liveness`. Every other path on the host,
-including `/ui`, `/key/*`, `/user/*`, `/team/*`, `/model/new`, `/config/*`, `/spend/*`, `/global/*`, `/sso/*` and `/`,
-goes through `oauth2proxy-litellm` and needs an SSO session with `AIHubSysAdmin` before LiteLLM's own login.
+caller's LiteLLM API key itself: `/chat/completions`, `/completions`, `/embeddings`, `/models`, `/model/info`,
+`/audio/*`, `/images/*`, `/rerank`, `/moderations`, `/responses[/*]` (each also under `/v1/`), `/v2/rerank` and the
+liveness probes `/health/liveliness` and `/health/liveness`. Every other path on the host, including the management
+routes LiteLLM keeps under `/v1/` (`/v1/agents`, `/v1/access_group`), `/ui`, `/key/*`, `/user/*`, `/team/*`,
+`/model/new`, `/config/*`, `/spend/*`, `/global/*`, `/sso/*` and `/`, goes through `oauth2proxy-litellm` and needs an
+SSO session with `AIHubSysAdmin` before LiteLLM's own login.
 
 | Request                                                        | Result                                       |
 | -------------------------------------------------------------- | -------------------------------------------- |
