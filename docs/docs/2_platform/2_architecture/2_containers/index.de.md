@@ -1,7 +1,7 @@
 ---
 title: Container
 description: C4 Level 2 – Erstanbieter-Anwendungscontainer plus die zentrale Infrastruktur, über die sie verbunden sind, nach Schichten organisiert.
-source_sha: 25bc3b6212add3b6d51075f90b8da20ed87c39bc9e9d006a02b1c86dd5902082
+source_sha: 3a19d433c517f9a59f16ff2d9b694a43da673609498f2e7fa8c40a08062b2bea
 ---
 
 # Container
@@ -102,8 +102,10 @@ eigene Datenabhängigkeiten (ClickHouse, Postgres, Valkey, SeaweedFS) gehören z
 
 Hilfsservices, die die Anwendungsschicht unterstützen, ohne zu ihrem Kern zu gehören: SearXNG für die Websuche, Open
 Terminal als Code-Ausführungs-Sandbox für OpenWebUI (reine LLM-Modelle; Isolation pro Benutzer, herunterladbare
-Dateiausgabe), Playwright für die Browser-Automatisierung und Attu als Milvus-Admin-Konsole für Operatoren. Diese werden
-hauptsächlich von OpenWebUI (als Agenten-Tools) und von Operatoren genutzt.
+Dateiausgabe), Playwright als Headless-Browser, über den der Web Loader von OpenWebUI und die Agents Webseiten lesen
+(das Internet erreicht er nur über browser-proxy, einen Squid-Proxy, der nicht-öffentliche Ziele ablehnt), und Attu als
+Milvus-Admin-Konsole für Operatoren. Diese werden hauptsächlich von OpenWebUI (als Agenten-Tools) und von Operatoren
+genutzt.
 
 <likec4-view view-id="tier_utility" style="display:block;height:420px"></likec4-view>
 

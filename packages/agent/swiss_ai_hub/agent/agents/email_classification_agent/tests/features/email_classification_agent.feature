@@ -16,6 +16,22 @@ Feature: Email Classification Agent
     Then a MailBatchClassifiedEvent with 1 classified messages was emitted
     And the message was filed into the fallback folder
     And the summary counts 1 message in the fallback folder
+    And the inbox watermark was not touched
+    And no ExceptionEvent is present
+
+  Scenario: Keeps mail no category fits in the inbox when the admin chose to
+    Given an EmailClassificationAgent runner keeping uncategorised mail, with one support message and one no category fits
+    When the user triggers classification
+    Then a MailBatchClassifiedEvent with 2 classified messages was emitted
+    And the support message was filed and the other one was left in the inbox
+    And the inbox watermark stands at uid 9
+    And no ExceptionEvent is present
+
+  Scenario: A run keeping uncategorised mail lists only mail above the inbox watermark
+    Given an EmailClassificationAgent runner keeping uncategorised mail whose inbox watermark stands at uid 5
+    When the user triggers classification
+    Then the listing started above uid 5
+    And the inbox watermark stands at uid 6
     And no ExceptionEvent is present
 
   Scenario: Reports a run over an empty inbox without filing anything

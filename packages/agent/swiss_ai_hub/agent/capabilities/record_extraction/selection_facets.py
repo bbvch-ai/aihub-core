@@ -33,6 +33,14 @@ class SelectionFacets:
         return lines if counted or not lines else [*lines, t(f"{key}.first", total=len(documents))]
 
     @staticmethod
+    def folders(documents: Annotated[list[KnowledgeDocumentSummary], "The documents in scope"]) -> str:
+        """The largest folders with their counts, paths relative to the collection; documents at its root are left out,
+        since they have no folder to name."""
+        counts = Counter(SelectionFacets._folder(document) for document in documents)
+        counts.pop("/", None)
+        return SelectionFacets._entries(counts, True)
+
+    @staticmethod
     def sample(
         documents: Annotated[list[KnowledgeDocumentSummary], "The selected documents, in order"],
         size: Annotated[int, "How many documents the sample holds"],

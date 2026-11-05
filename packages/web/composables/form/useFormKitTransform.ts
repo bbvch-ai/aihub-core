@@ -250,6 +250,7 @@ function buildLocaleInputProperties(
   const inputType = element.inputType || element.input_type
   if (inputType) cleanNode.inputType = inputType
   if (element.rows !== undefined) cleanNode.rows = element.rows
+  if (element.maxLength) cleanNode.maxLength = element.maxLength
 
   if (element.validation) cleanNode.validation = element.validation
 
@@ -881,6 +882,42 @@ export function seedNullableToggles(
           ? seedNullableToggles(item as Record<string, unknown>, children)
           : item,
       )
+    }
+  }
+
+  return result
+}
+
+/**
+ * Keeps only the keys the form declares, at every depth — the walk the API's `reject_undeclared_fields` refuses a
+ * submission by. A FormKit form can still hold the values of inputs it no longer renders.
+ */
+export function pickDeclaredFields(
+  data: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+
+  for (const element of elements) {
+    const name = element.name as string | undefined
+    if (!name || !(name in data)) continue
+
+    const formkitType = getFormkitType(element)
+    const children = (element.children as FormElement[] | undefined) ?? []
+    const value = data[name]
+
+    if (formkitType === 'group' && value && typeof value === 'object' && !Array.isArray(value)) {
+      result[name] = pickDeclaredFields(value as Record<string, unknown>, children)
+    }
+    else if (formkitType === 'repeater' && Array.isArray(value)) {
+      result[name] = value.map(item =>
+        item && typeof item === 'object' && !Array.isArray(item)
+          ? pickDeclaredFields(item as Record<string, unknown>, children)
+          : item,
+      )
+    }
+    else {
+      result[name] = value
     }
   }
 

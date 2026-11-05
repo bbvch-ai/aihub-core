@@ -26,6 +26,8 @@ _EVERY_FIVE_MINUTES = {**_HOURLY, "minute": "*/5"}
 # discovered class has to be built in the host's zone — not by stripping tzinfo off a UTC value, which is
 # the mistake this suite previously encoded.
 _LOCAL_NOW = _NOW.astimezone().replace(tzinfo=None)
+# Where the completed discovery rounds put the online cut-off; classes stamped before it read offline.
+_ONLINE_THRESHOLD = _LOCAL_NOW - timedelta(minutes=5)
 
 
 def _config(agent_class: str = "CronDemoAgent", agent_id: str = "demo", schedule: dict | None = _HOURLY):
@@ -45,10 +47,11 @@ def _agent_class(agent_class: str = "CronDemoAgent", last_discovered: datetime |
 
 
 def _snapshot_hops(to_thread: MagicMock) -> int:
-    """How many of the offloaded calls were the snapshot read. Mocked callables carry no `__name__`."""
-    return sum(
-        getattr(call.args[0], "__name__", "") == "_load_schedulable_snapshot" for call in to_thread.call_args_list
-    )
+    """How many of the offloaded calls were the snapshot's class read, the one synchronous Mongo read it does.
+
+    Profiles are Beanie and awaited on the loop. The patched class read is a mock, named in its repr.
+    """
+    return sum("get_all_schedulable" in repr(call.args[0]) for call in to_thread.call_args_list)
 
 
 def _snapshot(online: list | None = None) -> _SchedulableSnapshot:
@@ -102,6 +105,7 @@ async def _run_tick(
     with (
         patch(f"{_MODULE}.datetime", **{"now.return_value": _NOW}),
         patch(f"{_MODULE}.AgentClassEntity.get_all_schedulable", return_value=classes),
+        patch(f"{_MODULE}.AgentClassEntity.online_threshold", return_value=_ONLINE_THRESHOLD),
         patch(f"{_MODULE}.AgentConfigEntityDocument.find_for_classes", return_value=configs or [_config()]),
         patch(f"{_MODULE}.ThreadEntity.get_or_create_scheduled_thread") as scheduled_thread,
         patch(f"{_MODULE}.ThreadEntity.scheduled_thread_id", return_value="thread-1"),
@@ -577,7 +581,7 @@ class TestTheTickStaysOffTheEventLoop:
     HTTP and WebSocket request for its duration — and the stall grows with the profile count."""
 
     @pytest.mark.asyncio
-    async def test_the_snapshot_read_is_offloaded_to_a_thread(self, service: CronScheduler) -> None:
+    async def test_the_snapshot_class_read_is_offloaded_to_a_thread(self, service: CronScheduler) -> None:
         with patch(f"{_MODULE}.asyncio.to_thread", wraps=asyncio.to_thread) as to_thread:
             await _run_tick(service)
 
@@ -592,8 +596,8 @@ class TestTheTickStaysOffTheEventLoop:
         assert any(call.args[0] is scheduled_thread for call in to_thread.call_args_list)
 
     @pytest.mark.asyncio
-    async def test_the_whole_snapshot_is_one_hop_regardless_of_profile_count(self, service: CronScheduler) -> None:
-        """Reading classes and profiles separately would cost a hop each, every tick."""
+    async def test_the_snapshot_is_one_hop_regardless_of_profile_count(self, service: CronScheduler) -> None:
+        """Profiles are awaited, so only the class read crosses to a thread, once per tick however many there are."""
         with patch(f"{_MODULE}.asyncio.to_thread", wraps=asyncio.to_thread) as to_thread:
             await _run_tick(service, configs=[_config(agent_id="a"), _config(agent_id="b")])
 

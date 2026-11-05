@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 from datetime import datetime
 from typing import Self
 
@@ -8,6 +9,9 @@ from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocum
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
+from swiss_ai_hub.core.secrets.secret_encryption_service import SecretEncryptionService
+
+_SCHEDULED_THREAD_KEY_DOMAIN = b"swiss-ai-hub:scheduled-thread-id:"
 
 
 class User(EmbeddedDocument):
@@ -74,10 +78,14 @@ class ThreadEntity(Document):
     def scheduled_thread_id(agent: AgentInstanceRef) -> ObjectId:
         """The deterministic thread id of a profile's scheduled runs.
 
+        Keyed with the instance's config encryption key: clients name new threads themselves, so an id anyone
+        can compute would let them create the thread before the first run and be a member of every run after it.
+
         An ObjectId normally encodes its creation time in the leading bytes; this one does not, so read
         a scheduled thread's age from `created_at` and never from its id.
         """
-        digest = hashlib.sha256(f"{agent.agent_class}/{agent.agent_id}".encode()).digest()
+        key = SecretEncryptionService.from_settings().derived_key(_SCHEDULED_THREAD_KEY_DOMAIN)
+        digest = hmac.new(key, f"{agent.agent_class}/{agent.agent_id}".encode(), hashlib.sha256).digest()
         return ObjectId(digest[:12])
 
     @classmethod
@@ -142,9 +150,13 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def count_threads_by_agent(cls, agent_class: str, agent_id: str) -> int:
-        """Count the total number of threads that include the specified agent."""
-        return cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class).count()
+    def count_threads_by_agent(cls, agent_class: str, agent_id: str, user_id: str) -> int:
+        """Count the user's threads that include the specified agent."""
+        return (
+            cls.objects()
+            .filter(agents__agent_id=agent_id, agents__agent_class=agent_class, users__user_id=user_id)
+            .count()
+        )
 
     @classmethod
     @trace_fn
@@ -178,15 +190,10 @@ class ThreadEntity(Document):
     @classmethod
     @trace_fn
     def get_paginated_threads_by_agent(
-        cls, agent_class: str, agent_id: str, user_id: str | None = None, skip: int = 0, limit: int = 20
+        cls, agent_class: str, agent_id: str, user_id: str, skip: int = 0, limit: int = 20
     ) -> list["ThreadEntity"]:
-        """
-        Get a paginated list of threads that include the specified agent.
-        If a user_id is provided, it also filters for threads containing that user.
-        """
-        query = cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
-        if user_id:
-            query = query.filter(users__user_id=user_id)
+        """Get a page of the user's threads that include the specified agent."""
+        query = cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class, users__user_id=user_id)
         return query.order_by("-created_at").skip(skip).limit(limit)
 
     @classmethod

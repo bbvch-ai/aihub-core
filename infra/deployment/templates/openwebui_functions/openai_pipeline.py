@@ -25,12 +25,12 @@ import hmac
 import json
 import logging
 import os
+import secrets
 import urllib.parse
 from typing import Any, Annotated
 
 import httpx
 from pydantic import BaseModel, Field
-from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
@@ -178,9 +178,9 @@ class Pipe:
 
     def _str_to_object_id(self, context_id: str | None, salt: str = "") -> str:
         if not context_id:
-            return str(ObjectId())
+            return secrets.token_hex(12)
         hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
-        return str(ObjectId(hashed))
+        return hashed.hex()
 
     async def pipe_stream(
         self,

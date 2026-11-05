@@ -26,19 +26,25 @@ class ReferencedKnowledge:
         references: list[KnowledgeReference],
         access_checker: AccessChecker | None,
         namespaces_of: Callable[[str], list[str]],
-    ) -> tuple[list[KnowledgeReference], list[KnowledgeReference]]:
-        """The references to search, and those refused: a collection that is gone, or one the user may not read.
+    ) -> tuple[list[KnowledgeReference], list[KnowledgeReference], list[KnowledgeReference]]:
+        """The references to search, those whose collection is gone, and those the user may not read.
 
-        A run without a user was started by the platform, whose references are its own to make.
+        Gone and unreadable are told apart because the user acts on them differently: a gone collection was deleted
+        while a chat still referenced it, an unreadable one needs access. A run without a user was started by the
+        platform, whose references are its own to make.
         """
         unique = list(dict.fromkeys((reference.database, reference.namespace) for reference in references))
         live = {database: set(namespaces_of(database)) for database in {database for database, _ in unique}}
-        searchable, refused = [], []
+        searchable, missing, refused = [], [], []
         for database, namespace in unique:
             reference = KnowledgeReference(database=database, namespace=namespace)
-            readable = access_checker is None or access_checker.has_access_to_knowledge_namespace(database, namespace)
-            (searchable if namespace in live[database] and readable else refused).append(reference)
-        return searchable, refused
+            if namespace not in live[database]:
+                missing.append(reference)
+            elif access_checker is None or access_checker.has_access_to_knowledge_namespace(database, namespace):
+                searchable.append(reference)
+            else:
+                refused.append(reference)
+        return searchable, missing, refused
 
     @staticmethod
     def retrievers(references: list[KnowledgeReference], retrieve_k: int) -> list[RetrievalRuntimeConfig]:

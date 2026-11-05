@@ -57,10 +57,12 @@ Langfuse adds AI-specific observability on top — full prompt/response capture,
 tracing, and evaluation datasets. Both integrate via the same trace context, providing end-to-end visibility from user
 request to LLM response.
 
-**Network Isolation**: Docker Compose defines six network zones: `proxy` (external ingress via Traefik), `backend`
+**Network Isolation**: Docker Compose defines eight network zones: `proxy` (external ingress via Traefik), `backend`
 (application services), `data` (databases, caches, message broker), `storage` (SeaweedFS cluster), `egress` (outbound
-internet with inter-container communication disabled), and `code-sandbox` (single-tenant zone for the `open-terminal`
-code-execution sandbox plus exactly its callers). Services are assigned only the networks they require.
+internet with inter-container communication disabled), `code-sandbox` (single-tenant zone for the `open-terminal`
+code-execution sandbox plus exactly its callers), `pii-detection` (the Presidio analyzer plus exactly its callers), and
+`browser` (the Playwright browser plus exactly its callers, and `browser-proxy`, the browser's only way to the internet,
+which refuses addresses that are not public). Services are assigned only the networks they require.
 
 ## Dev Stack Services
 
@@ -91,8 +93,8 @@ backup/restore
 **Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
 
 **Utility**: Open Terminal (:8200 in dev, code-execution sandbox for plain LLM chats and for agents' code tools, each
-user confined to their own home), SearXNG (:8881, web search), Playwright (:3036, browser automation), Attu (:3003,
-Milvus admin UI)
+user confined to their own home), SearXNG (:8881, web search), Playwright (:3036, browser automation), browser-proxy
+(Squid, Playwright's only way out), Attu (:3003, Milvus admin UI)
 
 ## Package Architecture
 

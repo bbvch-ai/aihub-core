@@ -155,10 +155,14 @@ class AgentSelector(PrimeVueElement):
         if not agent_class and not agent_id:
             return []
 
-        # A half-filled reference is denied without consulting the checker: asking it about a blank
-        # segment raises instead of answering, which would turn this 403 into a 500.
+        # A half-filled or malformed reference is denied without consulting the checker: asking it about a
+        # blank segment, a dot or a wildcard raises instead of answering, which would turn this 403 into a 500.
         agent_ref = f"{agent_class}/{agent_id}"
-        if not agent_class or not agent_id or not access_checker.has_access_to_agent(agent_class, agent_id):
+        if (
+            not AccessChecker.is_concrete_identifier(agent_class)
+            or not AccessChecker.is_concrete_identifier(agent_id)
+            or not access_checker.has_access_to_agent(agent_class, agent_id)
+        ):
             return [
                 ConfigAuthorizationViolation(
                     field=field_path,

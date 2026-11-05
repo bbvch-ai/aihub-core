@@ -20,9 +20,11 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam, ImageURL
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMService
 
+from swiss_ai_hub.bot.bots.chat.bot_access_denied_error import BotAccessDeniedError
 from swiss_ai_hub.bot.bots.chat.completion_handler import CompletionHandler
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import Content, Message
 
@@ -107,7 +109,10 @@ class OpenaiCompletionHandler(CompletionHandler):
             OpenaiCompletionHandler._message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
 
-        user = await CompletionHandler.resolve_user_identity(turn_context)
+        user = await CompletionHandler.resolve_user_identity(turn_context, path)
+        model_capability, _, model_id = model_name.partition("/")
+        if not model_id or not AccessChecker.from_user(user).has_access_to_model(model_capability, model_id):
+            raise BotAccessDeniedError(user.id, f"model {model_name}")
 
         logger.debug(f"Using user identity: {user}")
 

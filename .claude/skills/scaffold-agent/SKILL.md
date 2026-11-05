@@ -637,6 +637,12 @@ class {EventName}(ControlEvent):
 
 Events auto-register on import — no manual registration needed. See `/nats-events` for the full event hierarchy.
 
+A custom **start event** becomes an API endpoint body automatically: its fields minus the ones the server fills in
+(`user`, `locale`, ids). If callers should send a field in another shape than the agent receives (as `UserMessageEvent`
+accepts `files` inline as base64 and stores them before publishing), override `api_input_field_overrides()` and
+`_api_input_to_event_data()` on the event; never add event-specific code to the API. Never carry raw bytes in an event,
+store them and pass a reference. See "Events Own Their API Input" in `packages/core/CLAUDE.md`.
+
 ### Events as Flow Carriers
 
 Events serve two distinct purposes:

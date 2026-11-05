@@ -8,6 +8,7 @@ from swiss_ai_hub.core.form.elements.input_number import InputNumber
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.textarea import Textarea
+from swiss_ai_hub.core.form.elements.toggle_switch import ToggleSwitch
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.imap.mail_category import MailCategory
 
@@ -19,6 +20,8 @@ _DEFAULT_CLASSIFICATION_PROMPT = (
 
 _DEFAULT_FALLBACK_FOLDER = "Uncategorised"
 _DEFAULT_FAILURE_FOLDER = "Classification failed"
+
+_KEEP_UNCATEGORISED_REF = "classification_keep_uncategorised"
 
 
 class EmailClassificationSettings(StepConfig):
@@ -37,12 +40,21 @@ class EmailClassificationSettings(StepConfig):
         ),
     ]
 
+    keep_uncategorised_in_inbox: Annotated[
+        bool | ToggleSwitch,
+        Field(
+            default=False,
+            description="Leave mail that fits no category unread in the inbox instead of moving it to the fallback "
+            "folder. It is remembered as processed by an inbox watermark, not by a flag, because Microsoft 365 "
+            "accepts no custom IMAP keywords.",
+        ),
+    ]
     fallback_folder: Annotated[
         str | InputText,
         Field(
             default=_DEFAULT_FALLBACK_FOLDER,
-            description="Folder for mail the model is not confident about. Never left in the inbox, never guessed "
-            "into a category.",
+            description="Folder for mail the model is not confident about, never guessed into a category. Unused "
+            "while uncategorised mail is kept in the inbox.",
         ),
         MinLen(1),
     ]
@@ -79,9 +91,15 @@ class EmailClassificationSettings(StepConfig):
     def as_form(cls) -> Self:
         return cls(
             categories=[MailCategory.as_form()],
+            keep_uncategorised_in_inbox=ToggleSwitch(
+                label=LocaleString.from_i18n_path("lib.imap.config.keep_uncategorised_in_inbox.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.keep_uncategorised_in_inbox.help"),
+                ref=_KEEP_UNCATEGORISED_REF,
+            ),
             fallback_folder=InputText(
                 label=LocaleString.from_i18n_path("lib.imap.config.fallback_folder.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.fallback_folder.help"),
+                condition_if=f"$get({_KEEP_UNCATEGORISED_REF}).value !== true",
             ),
             failure_folder=InputText(
                 label=LocaleString.from_i18n_path("lib.imap.config.failure_folder.label"),

@@ -24,14 +24,14 @@ class LegacyOrganizationMemoryTenantMigration:
         organization_memory = OrganizationMemory(tenant_id=self._startup_tenant_id, t=t)
         return await organization_memory.adopt_memories_of(self.LEGACY_TENANT_ID)
 
-    def retarget_profiles(self) -> list[str]:
+    async def retarget_profiles(self) -> list[str]:
         """Points every profile still scoped to the legacy owner at the startup tenant; returns which it rewrote."""
         migrated: list[str] = []
-        for document in AgentConfigEntityDocument.find_all():
+        for document in await AgentConfigEntityDocument.list_all():
             config_data = document.config_data
             rewritten = self.rewritten(config_data)
-            if rewritten != config_data and AgentConfigEntityDocument.replace_config_data_if_unchanged(
-                document.pk, config_data, rewritten
+            if rewritten != config_data and await AgentConfigEntityDocument.replace_config_data_if_unchanged(
+                document.id, config_data, rewritten
             ):
                 migrated.append(f"agent {document.agent_class}/{document.agent_id}")
         return migrated

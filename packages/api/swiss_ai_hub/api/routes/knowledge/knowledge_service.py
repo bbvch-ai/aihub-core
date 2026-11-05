@@ -495,7 +495,7 @@ class KnowledgeService:
         # unrecognised key and then reports the correctly-spelled one as missing, which names the consequence
         # rather than the mistake and says nothing about the value the user actually typed.
         InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
-        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        config_instance = await InstanceConfigHelper.validate_config_for_create(config, config_model)
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=ingestor.form, config=config, user=user, t=t
         )
@@ -527,8 +527,8 @@ class KnowledgeService:
             bucket = BucketEntity.create_bucket(
                 bucket_name=database,
                 db_name=database,
-                name=locale.name,
-                description=locale.description,
+                name=LocaleStringEntity.from_locale_string(locale.name),
+                description=LocaleStringEntity.from_locale_string(locale.description),
                 ingestor=request.ingestor,
                 configuration=configuration,
                 source=request.source,
@@ -610,9 +610,11 @@ class KnowledgeService:
     ) -> dict[str, Any]:
         """The same chain the ingestor form goes through, plus the secret handling the source form needs.
 
-        Masked secrets are restored from the stored row before validation so the schema sees real values, and
-        every secret path is encrypted before the result is persisted. Which paths are secrets is read off the
-        announced form, so the API never learns a pipeline's field names.
+        Submitted ciphertext is refused, masked secrets are restored from the stored row before validation so the
+        schema sees real values, and every secret path is encrypted before the result is persisted. Which paths are
+        secrets is read off the announced form, so the API never learns a pipeline's field names. With nothing stored
+        (a new database, or a switch to another source) masks are restored against an empty row, so a mask carried
+        over from an imported or copied form is refused as the client's mistake rather than failing in ``encrypt``.
         """
         source_pipeline = SourcePipelineEntity.find(source_id)
         if source_pipeline is None or source_pipeline.config_specs is None:
@@ -628,14 +630,14 @@ class KnowledgeService:
         encryption = SecretEncryptionService.from_settings()
         # An empty submission normalises to None; validating {} instead names the missing fields.
         config = InstanceConfigHelper.normalize_form_configuration(submitted) or {}
-        if stored is not None:
-            try:
-                config = encryption.restore_masked_paths(config, stored, secret_paths)
-            except ValueError as no_stored_secret:
-                raise HTTPException(status_code=400, detail=str(no_stored_secret)) from None
+        try:
+            encryption.reject_submitted_ciphertext(config, secret_paths)
+            config = encryption.restore_masked_paths(config, stored or {}, secret_paths)
+        except ValueError as unusable_secret:
+            raise HTTPException(status_code=400, detail=str(unusable_secret)) from None
         InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
         config_model = ModelCreationService.create_config_model(source_pipeline.config_specs.to_specs())
-        InstanceConfigHelper.validate_config_for_create(config, config_model)
+        await InstanceConfigHelper.validate_config_for_create(config, config_model)
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=source_pipeline.form, config=config, user=user, t=t
         )
