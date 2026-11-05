@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -172,13 +173,15 @@ class TestCreateGrantsTheInstance:
     @staticmethod
     def _mock_create_dependencies(stack: ExitStack) -> tuple[Mock, Mock]:
         class_entity = Mock()
-        class_entity.is_online = True
+        class_entity.is_online_since.return_value = True
         class_entity.process_config_specs.to_specs.return_value = ConfigSpecs(config_class="Onboarding")
         config_entity = Mock()
         grant = stack.enter_context(patch.object(ProcessInstanceAccessGrant, "grant"))
         stack.enter_context(patch(f"{_MODULE}.ProcessClassEntity.get_by_process_class", return_value=class_entity))
+        stack.enter_context(patch(f"{_MODULE}.ProcessClassEntity.online_threshold", return_value=datetime(2026, 1, 1)))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
-        stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        config_helper = stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        config_helper.validate_config_for_create = AsyncMock()
         stack.enter_context(
             patch(f"{_MODULE}.ModelLimitValidator.reject_values_beyond_model_limits", AsyncMock(return_value=None))
         )

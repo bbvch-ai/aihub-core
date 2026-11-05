@@ -38,12 +38,12 @@ class ProcessInstanceAccessGrant:
         it, and binds the creator to a per-instance admin role. Any failure undoes what was granted and the
         creation itself."""
         tenant = user.acting_within_tenant
-        admin_rule = AccessChecker.process_admin_rule(process_class, process_id)
         role_name = ProcessInstanceAccessGrant.role_name(process_class, process_id)
         granted_tenant_rule = False
         created_role = False
         try:
             AccessChecker.require_literal_segments(process_class, process_id)
+            admin_rule = AccessChecker.process_admin_rule(process_class, process_id)
             if not AccessChecker.rules_grant_admin(tenant.access_rules, admin_rule):
                 TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
                 granted_tenant_rule = True
