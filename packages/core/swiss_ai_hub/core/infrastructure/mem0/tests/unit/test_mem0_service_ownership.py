@@ -96,3 +96,39 @@ async def test_reassign_moves_owner_and_tenant_and_keeps_the_rest(mem0_service):
     vector_store.update.assert_called_once_with(
         vector_id="m1", payload={"user_id": "default", "_tenant_id": "default", "data": "fact"}
     )
+
+
+def _legacy(memory_id: str) -> SimpleNamespace:
+    return SimpleNamespace(id=memory_id, payload={"user_id": "AIHub", "_tenant_id": "AIHub"})
+
+
+@pytest.mark.asyncio
+async def test_reassign_continues_past_a_full_batch(mem0_service):
+    vector_store = mem0_service._memory.vector_store = MagicMock()
+    vector_store.list.side_effect = [[[_legacy("m1"), _legacy("m2")]], [[_legacy("m3")]]]
+
+    with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.REASSIGN_BATCH_SIZE", 2):
+        moved = await mem0_service.reassign_organization_memories(from_tenant_id="AIHub", to_tenant_id="default")
+
+    assert moved == 3
+    assert vector_store.update.call_count == 3
+
+
+@pytest.mark.asyncio
+async def test_reassign_stops_when_a_full_batch_holds_only_moved_memories(mem0_service):
+    vector_store = mem0_service._memory.vector_store = MagicMock()
+    vector_store.list.side_effect = [[[_legacy("m1"), _legacy("m2")]], [[_legacy("m1"), _legacy("m2")]]]
+
+    with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.REASSIGN_BATCH_SIZE", 2):
+        moved = await mem0_service.reassign_organization_memories(from_tenant_id="AIHub", to_tenant_id="default")
+
+    assert moved == 2
+    assert vector_store.list.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_reassign_to_the_same_tenant_does_nothing(mem0_service):
+    vector_store = mem0_service._memory.vector_store = MagicMock()
+
+    assert await mem0_service.reassign_organization_memories(from_tenant_id="AIHub", to_tenant_id="AIHub") == 0
+    vector_store.list.assert_not_called()
