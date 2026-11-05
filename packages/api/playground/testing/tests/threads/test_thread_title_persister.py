@@ -6,7 +6,7 @@ answer (permanently, since the producer-side once-per-thread flag is set on publ
 """
 
 import inspect
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from swiss_ai_hub.core.events.agent import ConversationTitleEvent, ThoughtEvent
@@ -31,18 +31,18 @@ def _topic() -> AgentInstanceTopic:
 
 @pytest.mark.asyncio
 async def test_title_event_persists_thread_name():
-    with patch.object(ThreadEntity, "update_thread_name") as update_thread_name:
+    with patch.object(ThreadEntity, "update_thread_name", new_callable=AsyncMock) as update_thread_name:
         await ThreadTitlePersister.persist_thread_title(ConversationTitleEvent(title="Weather in Zurich"), _topic())
 
-    update_thread_name.assert_called_once_with("thread-123", "Weather in Zurich")
+    update_thread_name.assert_awaited_once_with("thread-123", "Weather in Zurich")
 
 
 @pytest.mark.asyncio
 async def test_non_title_display_event_is_ignored():
-    with patch.object(ThreadEntity, "update_thread_name") as update_thread_name:
+    with patch.object(ThreadEntity, "update_thread_name", new_callable=AsyncMock) as update_thread_name:
         await ThreadTitlePersister.persist_thread_title(ThoughtEvent(reasoning_content="thinking..."), _topic())
 
-    update_thread_name.assert_not_called()
+    update_thread_name.assert_not_awaited()
 
 
 def test_lifetime_manager_registers_the_persister():
