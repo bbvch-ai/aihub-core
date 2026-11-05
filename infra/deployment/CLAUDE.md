@@ -265,16 +265,21 @@ faster (29 s to 21 s) at the same peak memory; 16 was no faster than 8. The reco
 so pattern changes need only `make generate-compose` and a container restart. Every text is analysed under the language
 code `de`; see the config header.
 
-Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
-`make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
-`image_tags.presidio_analyzer`, so bump that tag with every change to `docker/presidio-analyzer/` and publish **before
-any stage pulls it**: CI's backend tests start `litellm`, which depends on the analyzer. Live acceptance tests:
-`docker/presidio-analyzer/test_presidio_analyzer.py` (manual, see its docstring).
+Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or `make
+-C infra/deployment build-and-push-presidio-analyzer-image`. Both build two images from the one Dockerfile and push the
+tags pinned in `image_tags.presidio_analyzer` (CPU torch) and `image_tags.presidio_analyzer_gpu` (CUDA torch via the
+`TORCH_INDEX` build argument: a 4.8 GB download and 7.8 GB on disk, against 2.0 GB and 3.3 GB). Each deployment pulls
+only the image its compose file names, so CPU deployments never download the GPU image. Bump both tags together with
+every change to `docker/presidio-analyzer/` and publish **before any stage pulls them**: CI's backend tests start
+`litellm`, which depends on the analyzer. The `.gpu` compose variants run the GPU image with an NVIDIA device
+reservation; the CPU variants are unchanged. Presidio puts GLiNER on CUDA only when torch sees a GPU, so the GPU image
+falls back to the CPU on a host without one. Live acceptance tests: `docker/presidio-analyzer/test_presidio_analyzer.py`
+(manual, see its docstring).
 
 Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
 character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
-The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
-for.
+The image is a 2.0 GB download and 3.3 GB on disk. Long prompts are what the gunicorn worker timeout (300 s) and the
+guardrail's timeout must allow for.
 
 Capacity is per deployment: `PRESIDIO_ANALYZER_{CPUS,MEMORY,WORKERS,THREADS,TORCH_THREADS}` size the container and
 `PRESIDIO_ANALYZER_TIMEOUT_SECONDS` the guardrail's wait. All six are optional, with `${VAR:-default}` in the template
