@@ -14,6 +14,8 @@ _I18N = "lib.source_pipelines.rclone.config"
 _BACKEND_REF = "rclone_backend_type"
 _TESTED_BACKENDS = (RcloneBackendType.S3, RcloneBackendType.DRIVE, RcloneBackendType.ONEDRIVE)
 _KEY_FILE_MAX_BYTES = 65536
+_GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token"
+_GOOGLE_TOKEN_URIS = {_GOOGLE_TOKEN_URI, "https://accounts.google.com/o/oauth2/token"}
 _LOCAL_DISABLED = "rclone backend 'local' is disabled on this deployment: RCLONE_LOCAL_SOURCE_ROOT is unset."
 
 
@@ -119,6 +121,18 @@ class GoogleDriveOptions(Form):
             return json.dumps(json.loads(value), separators=(",", ":"))
         except ValueError as error:
             raise ValueError("Google Drive credentials must be the JSON blob from the downloaded key file.") from error
+
+    @field_validator("service_account_credentials", mode="after")
+    @classmethod
+    def _google_token_endpoint(cls, value: str | SecretFileInput) -> str | SecretFileInput:
+        """rclone posts the signed assertion to the key file's own `token_uri`, so any other host is one the submitter
+        picked; checked without a name lookup."""
+        if not isinstance(value, str) or not value.strip():
+            return value
+        key = json.loads(value)
+        if isinstance(key, dict) and key.get("token_uri", _GOOGLE_TOKEN_URI) not in _GOOGLE_TOKEN_URIS:
+            raise ValueError("The service account key file must use Google's token_uri.")
+        return value
 
     @classmethod
     def as_form(cls) -> Self:

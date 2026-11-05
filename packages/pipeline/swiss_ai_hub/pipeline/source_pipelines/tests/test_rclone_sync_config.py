@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from pydantic import ValidationError
 from swiss_ai_hub.core.form import ConfigSpecs
@@ -274,3 +276,21 @@ class TestValidationErrors:
 
         assert "s3.secret_access_key" in str(rejected.value)
         assert "AKIA-SECRET-VALUE" not in str(rejected.value)
+
+
+class TestServiceAccountTokenEndpoint:
+    def test_a_key_file_with_a_foreign_token_endpoint_is_refused(self):
+        key = '{"type":"service_account","token_uri":"http://seaweedfs-filer:8888/t"}'
+
+        with pytest.raises(ValidationError, match="token_uri"):
+            RcloneSyncConfig.model_validate({"backend_type": "drive", "drive": {"service_account_credentials": key}})
+
+    @pytest.mark.parametrize("token_uri", ["https://oauth2.googleapis.com/token", None])
+    def test_a_key_file_with_googles_or_no_token_endpoint_is_accepted(self, token_uri: str | None):
+        key = {"type": "service_account"} | ({"token_uri": token_uri} if token_uri else {})
+
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "drive", "drive": {"service_account_credentials": json.dumps(key)}}
+        )
+
+        assert config.drive.service_account_credentials
