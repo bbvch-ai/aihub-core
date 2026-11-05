@@ -63,6 +63,7 @@ class RetrievalAgent(Agent):
             query_mode=retriever.query_mode,
             node_types=retriever.node_types,
             vector_store=vector_store,
+            min_similarity=retriever.min_similarity,
         )
         if retriever.retrieve_prev_next:
             nodes = retrieve_prev_next_nodes(

@@ -1,13 +1,22 @@
 from typing import Annotated, Any, Self
 
 from pydantic import Field, model_validator
-from swiss_ai_hub.core.form import Checkbox, InputNumber, LocaleInput
+from swiss_ai_hub.core.form import Checkbox, LocaleInput, ModelBoundInputNumber
 from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai import LLMConfig, usable_input_budget
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+
+# Prompts are measured with tiktoken, not the served model's tokenizer, and a budget that is filled to the brim must
+# absorb the difference: measured live, Ministral counts English 6% above tiktoken and gemma 4%, which overflowed a
+# context-sufficiency prompt fitted exactly to the window (issue #2077). Same value as core's
+# SUMMARIZATION_BUDGET_SAFETY_FACTOR and the mailbox agents' BUDGET_SAFETY_FACTOR.
+WINDOW_SAFETY_FACTOR = 0.85
+# What an unset limit fills when no model window can be established: the value every profile was created with
+# before the limit followed the model.
+FALLBACK_INPUT_TOKENS = 128000
 
 
 class ConversationFields(Form):
@@ -42,10 +51,14 @@ class ConversationFields(Form):
         ),
     ] = None
     number_of_input_tokens: Annotated[
-        int | InputNumber,
-        Field(description="Maximum tokens allowed in input to manage context size or cost."),
+        int | None | ModelBoundInputNumber,
+        Field(
+            description="The admin's own limit on the input tokens, to manage cost. None fills the models' input "
+            "window (`input_budget`); a value is bounded by the main model's window when saved, and one stored above "
+            "it is capped at run time."
+        ),
         Gt(0),
-    ] = 128000
+    ] = None
     condense_question: Annotated[
         bool | Checkbox,
         Field(
@@ -56,10 +69,27 @@ class ConversationFields(Form):
         ),
     ] = False
 
+    @property
     def input_budget(self) -> int:
-        """The admin's cost ceiling capped by the narrowest model window that could receive the prompt."""
+        """The narrowest model window that could receive the prompt, less a margin for the tokenizer difference, and
+        held to the admin's own limit when one is set. Only for prompts that are filled to it; refusing an oversized
+        message compares against the exact window (`do_limit_chat_history`), so nothing the model accepts is refused.
+
+        A plain property, not a `computed_field`: it must stay out of `model_dump`, which also serializes the form-mode
+        instance, and it looks the model window up in LiteLLM."""
         budget = usable_input_budget([self.llm, self.task_llm])
-        return self.number_of_input_tokens if budget is None else min(self.number_of_input_tokens, budget)
+        if budget is None:
+            return self.input_ceiling
+        return self.held_to_ceiling(int(budget * WINDOW_SAFETY_FACTOR))
+
+    @property
+    def input_ceiling(self) -> int:
+        """The admin's own limit, or `FALLBACK_INPUT_TOKENS` when none is set, for when no window is known."""
+        return FALLBACK_INPUT_TOKENS if self.number_of_input_tokens is None else self.number_of_input_tokens
+
+    def held_to_ceiling(self, tokens: int) -> int:
+        """`tokens` held to the admin's own limit; with none set, the model window alone bounds the input."""
+        return tokens if self.number_of_input_tokens is None else min(self.number_of_input_tokens, tokens)
 
     @model_validator(mode="after")
     def derive_task_llm_from_main_llm(self) -> Self:
@@ -77,11 +107,17 @@ class ConversationFields(Form):
         return {
             "llm": LLMConfig.as_form(),
             "task_llm": LLMConfig.as_form(include_default_parameter=False),
-            "number_of_input_tokens": InputNumber(
+            "number_of_input_tokens": ModelBoundInputNumber(
                 label=AgentLocaleString.from_i18n_path("agent.conversation.config.number_of_input_tokens.label"),
                 help=AgentLocaleString.from_i18n_path("agent.conversation.config.number_of_input_tokens.help"),
+                override_label=AgentLocaleString.from_i18n_path(
+                    "agent.conversation.config.number_of_input_tokens.toggle_label"
+                ),
+                model_ref="llm.model_name",
+                max_from="max_input_tokens",
+                fill_factor=WINDOW_SAFETY_FACTOR,
+                fallback_default=FALLBACK_INPUT_TOKENS,
                 min=1024,
-                max=200000,
                 step=1024,
             ),
             "condense_question": Checkbox(

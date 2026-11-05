@@ -14,10 +14,12 @@ logger = logging.getLogger(__name__)
 # `obscure`: rclone stores password-typed options obscured and refuses plain ones for them (SFTP `pass`).
 # `nonInteractive`: an OAuth backend without a token returns a question instead of blocking the daemon.
 _CREATE_OPTIONS = {"obscure": True, "nonInteractive": True}
-# Questions rclone asks even in non-interactive mode and whose answer is fixed here: Google Drive always offers to
+# Questions rclone asks even in non-interactive mode and whose answer is fixed here. Google Drive always offers to
 # switch the remote to a Shared Drive after the credentials are in; the drive to sync is named up front, so the answer
-# is no. Any other question means a credential is missing and stays an error.
-_ANSWERED_QUESTIONS = {"config_change_team_drive": "false"}
+# is no. Every OAuth backend given a pasted token offers to refresh it; the answer is no, because a refreshed token
+# would live only in the in-memory daemon while the database keeps the one it was given. Any other question means a
+# credential is missing and stays an error.
+_ANSWERED_QUESTIONS = {"config_change_team_drive": "false", "config_refresh_token": "false"}
 
 
 class RcloneClient:
@@ -46,14 +48,18 @@ class RcloneClient:
 
         ``config/create`` drops an existing section before writing, unlike ``config/update`` which merges and
         would keep a stale option (an old key file after switching to password auth). The daemon runs without a
-        config file, so this is also what re-creates every remote after a restart.
+        config file, so this is also what re-creates every remote after a restart. A setup step the backend fails,
+        such as OneDrive checking the drive against Microsoft Graph, comes back as ``Error`` with no question; its
+        text is rclone's own and never echoes the request, so it is safe to raise.
         """
         payload = {**config.to_rclone_params(), "opt": _CREATE_OPTIONS}
         logger.info(f"Configuring rclone remote '{config.name}' ({config.backend_type.value})")
         response = self._sync_post("config/create", payload)
         answered: set[str] = set()
         while response.get("State") or response.get("Option"):
-            question = response.get("Option", {}).get("Name")
+            if response.get("Error"):
+                raise ValueError(f"rclone remote '{config.name}' could not be configured: {response['Error']}")
+            question = (response.get("Option") or {}).get("Name")
             if question not in _ANSWERED_QUESTIONS or response.get("State") in answered:
                 raise ValueError(
                     f"rclone remote '{config.name}' needs an interactive step ({question}); "

@@ -187,6 +187,7 @@ thread:
 chat:
   assistant: Assistant
   document: Document
+  image: Image
 event:
   list:
     firstInteraction: 'Première interaction:'
@@ -340,6 +341,37 @@ event:
     error: Erreur
     stop: Se termine par
     targetAgent: Rédacteur de mémoire
+    links: Liens
+    webReferences: Pages web référencées
+    pagesRead: Pages lues
+    notRead: Non lues
+    webFetchFailure:
+      malformed_url: Lien mal formé
+      unsupported_url: Lien non pris en charge
+      blocked_host: Adresse bloquée
+      not_found: Introuvable
+      access_denied: Accès refusé
+      http_error: Erreur du serveur
+      timeout: Délai dépassé
+      unsupported_content: Pas une page web
+      empty_content: Aucun contenu lisible
+      url_limit_reached: Au-delà de la limite de liens
+  extraction:
+    fields: Colonnes
+    instructions: Lignes à garder
+    criteria: Documents sélectionnés
+    collections: Collections
+    notices: Remarques
+    documentIds: '{count} documents choisis'
+    files: Fichiers
+    failedFiles: Fichiers en échec
+    rows: Lignes affichées / trouvées
+    truncated: Écourté
+    confirmed: Extrait tous les documents confirmés par l'utilisateur
+    awaitingConfirmation: Échantillon en attente de l'accord de l'utilisateur
+    previewRows: '{shown} lignes affichées sur {total}'
+    download: Télécharger le tableau entier (CSV)
+    downloadFailed: Le tableau n'a pas pu être téléchargé
   toolLoop:
     loop: Ensemble d'outils
     mode: Mode
@@ -422,6 +454,10 @@ agent:
         cet environnement.
   export:
     button: Exporter
+  storedSecrets:
+    title: Secrets à saisir à nouveau
+    detail: "Les secrets enregistrés ne sont jamais copiés dans un nouveau profil.\
+      \ Saisissez-les à nouveau avant d'enregistrer : {fields}"
   configuration:
     title: Configuration de l'agent
     description: Configurez le comportement d'exécution et les paramètres de cet agent
@@ -594,6 +630,13 @@ knowledge:
   source:
     description: Synchronisé depuis {name}
     edit: Modifier la source
+    next_sync: 'La source se synchronise une fois par jour : son contenu apparaît
+      après la prochaine synchronisation planifiée.'
+    awaiting_sync:
+      title: Rien n'a encore été synchronisé
+      description: "La source synchronise cette base de données une fois par jour\
+        \ : ses collections apparaissent ici après la prochaine synchronisation planifiée.\
+        \ Si elles n'apparaissent toujours pas, vérifiez les paramètres de la source."
   manual_management:
     description: Les collections peuvent être créées et gérées manuellement
   pipeline: 'Pipeline : {name}'
@@ -705,6 +748,9 @@ auth:
     welcomeProvider: Bienvenue sur le AI Hub — connexion avec {provider}
     pleaseLogin: Veuillez vous connecter
     pleaseLoginWith: Veuillez vous connecter avec {provider}
+    useOrganisationLink: Veuillez utiliser le lien de connexion fourni par votre organisation.
+      Si vous ne l'avez pas, contactez votre administrateur.
+    adminLogin: Connexion administrateur
     loginWith: Se connecter avec {provider}
     customSolutions: Solutions d'IA personnalisées pour votre entreprise
     logoAlt: Logo de l'entreprise
@@ -772,6 +818,8 @@ evaluation:
 role:
   title: Rôles d'accès
   name: Nom
+  name_immutable_hint: Le nom ne peut pas être modifié après la création du rôle,
+    car les utilisateurs sont associés aux rôles par leur nom.
   description: Description
   edit: Modifier le rôle
   create_new: Nouveau rôle
@@ -950,11 +998,28 @@ form:
     invalid_json: Le fichier n'est pas un JSON valide.
   locale_input:
     translate_tooltip: Traduire dans toutes les langues
+    translate_partial_summary: Certaines langues n'ont pas été traduites
+    translate_partial_detail: Impossible de traduire en {locales}. Les autres langues
+      ont été mises à jour — réessayez pour compléter le reste.
+    translate_failed_summary: La traduction n'a pas fonctionné cette fois
+    translate_failed_detail: Aucune langue n'a pu être traduite. Votre texte est inchangé
+      — veuillez réessayer dans un instant.
   warnings:
     org_memory_performance: Cette fonctionnalité peut ne pas fonctionner comme prévu
       dans certains cas. Pour éviter tout comportement inattendu, veuillez la désactiver
       temporairement jusqu'à la publication d'un correctif.
 lib:
+  modelBound:
+    providerDefault: valeur par défaut du fournisseur
+    overrideRequired: Saisissez une valeur, ou décochez le remplacement pour utiliser
+      la valeur par défaut.
+    defaultPlaceholder: 'Valeur par défaut du modèle : {value}'
+    maximumHint: Au maximum {maximum} pour {model}.
+    maximumHintWithFill: 'Au maximum {maximum} pour {model} : {percent} des {modelMaximum}
+      tokens du modèle, comme marge pour les écarts de comptage des tokens.'
+    aboveMaximum: Au maximum {maximum} sont autorisés pour {model}.
+  modelGated:
+    unavailable: '{model} ne prend pas cela en charge.'
   cron:
     errors:
       required: Chaque position est requise — une position vide ne constitue pas une
@@ -986,6 +1051,8 @@ lib:
       ne peut donc être proposée.
     empty: L'agent sélectionné n'est configuré pour interroger aucune collection.
     unavailable: Enregistrée, mais non interrogée par l'agent sélectionné
+  knowledgeDatabases:
+    unavailable: '{name} (supprimée ou non visible pour vous)'
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher
@@ -1086,7 +1153,8 @@ tenant:
   mismatch_warning: Conflit de locataire
   mismatch_description: Votre locataire actif a été changé en {tenant} dans une autre
     session. L'interface de chat utilise le locataire actif pour toutes les requêtes.
-  mismatch_switch_action: Changer de locataire
+  mismatch_switch_action: Aller à {tenant}
+  mismatch_use_this_tenant: Discuter dans {tenant}
   administration_title: Administration des tenants
   administration_description: Gérer les tenants sur l'ensemble de la plateforme
 support:
@@ -1103,43 +1171,50 @@ support:
   unavailable: Le signalement n'est pas configuré sur cette installation. Contactez
     votre administrateur.
 userFiles:
-  title: "Mes fichiers"
-  description: "Les fichiers avec lesquels vous et vos agents travaillez : pièces jointes des chats, fichiers créés pour vous par les agents et vos propres envois."
-  conversation: "Chat"
+  title: Mes fichiers
+  description: 'Les fichiers avec lesquels vous et vos agents travaillez : pièces
+    jointes des chats, fichiers créés pour vous par les agents et vos propres envois.'
+  conversation: Chat
   actions:
-    move: "Déplacer"
-    upload: "Envoyer"
-    newFolder: "Nouveau dossier"
-    refresh: "Actualiser"
-    download: "Télécharger"
-    rename: "Renommer"
-    delete: "Supprimer"
-    close: "Fermer"
-    cancel: "Annuler"
-    save: "Enregistrer"
-    openFolder: "Ouvrir le dossier {name}"
-    preview: "Aperçu de {name}"
+    move: Déplacer
+    upload: Envoyer
+    newFolder: Nouveau dossier
+    refresh: Actualiser
+    download: Télécharger
+    rename: Renommer
+    delete: Supprimer
+    close: Fermer
+    cancel: Annuler
+    save: Enregistrer
+    openFolder: Ouvrir le dossier {name}
+    preview: Aperçu de {name}
   columns:
-    name: "Nom"
-    size: "Taille"
-    modified: "Modifié"
+    name: Nom
+    size: Taille
+    modified: Modifié
   empty:
-    folder: "Ce dossier est vide. Déposez des fichiers ici pour les envoyer."
-    noSpace: "Votre espace de fichiers est créé avec votre compte de chat. Ouvrez le chat une fois, puis revenez."
+    folder: Ce dossier est vide. Déposez des fichiers ici pour les envoyer.
+    noSpace: Votre espace de fichiers est créé avec votre compte de chat. Ouvrez le
+      chat une fois, puis revenez.
   error:
-    load: "Impossible de charger ce dossier. Réessayez avec Actualiser."
+    load: Impossible de charger ce dossier. Réessayez avec Actualiser.
   move:
-    header: "Déplacer {name} vers"
-    noTargets: "Aucun dossier vers lequel le déplacer."
+    header: Déplacer {name} vers
+    noTargets: Aucun dossier vers lequel le déplacer.
   preview:
-    unavailable: "Pas d'aperçu pour ce type de fichier. Téléchargez-le pour l'ouvrir."
+    unavailable: Pas d'aperçu pour ce type de fichier. Téléchargez-le pour l'ouvrir.
+    truncated: Cet aperçu ne montre que le début du document. Téléchargez-le pour
+      le voir en entier.
+    failed: L'aperçu de ce fichier a échoué. Téléchargez-le pour l'ouvrir.
+    empty: Ce document ne contient aucun texte.
+    tooLarge: Ce fichier est trop volumineux pour un aperçu. Téléchargez-le pour l'ouvrir.
   name:
-    invalid: "Un nom ne doit pas être vide ni contenir de barre oblique."
+    invalid: Un nom ne doit pas être vide ni contenir de barre oblique.
   delete:
-    header: "Supprimer"
-    file: "Supprimer {name} ?"
-    folder: "Supprimer le dossier {name} et tout son contenu ?"
+    header: Supprimer
+    file: Supprimer {name} ?
+    folder: Supprimer le dossier {name} et tout son contenu ?
   toast:
-    uploaded: "{count} fichier(s) envoyé(s)"
-    uploadFailed: "Échec de l'envoi"
-    changeFailed: "La modification a échoué"
+    uploaded: '{count} fichier(s) envoyé(s)'
+    uploadFailed: Échec de l'envoi
+    changeFailed: La modification a échoué

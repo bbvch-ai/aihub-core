@@ -1,0 +1,290 @@
+{
+  "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "id": "10204",
+  "self": "https://jira.acme.ch/jira/rest/api/2/issue/10204",
+  "key": "ENG-42",
+  "fields": {
+    "summary": "Login fails after a wrong password",
+    "issuetype": {
+      "self": "https://jira.acme.ch/jira/rest/api/2/issuetype/10004",
+      "id": "10004",
+      "name": "Bug",
+      "subtask": false
+    },
+    "status": {
+      "self": "https://jira.acme.ch/jira/rest/api/2/status/3",
+      "name": "In Progress",
+      "id": "3",
+      "statusCategory": {
+        "id": 4,
+        "key": "indeterminate",
+        "name": "In Progress"
+      }
+    },
+    "priority": {
+      "self": "https://jira.acme.ch/jira/rest/api/2/priority/2",
+      "name": "High",
+      "id": "2"
+    },
+    "labels": [
+      "backend",
+      "auth"
+    ],
+    "components": [
+      {
+        "self": "https://jira.acme.ch/jira/rest/api/2/component/10100",
+        "id": "10100",
+        "name": "API"
+      }
+    ],
+    "fixVersions": [
+      {
+        "self": "https://jira.acme.ch/jira/rest/api/2/version/10200",
+        "id": "10200",
+        "name": "1.0",
+        "archived": false,
+        "released": false
+      }
+    ],
+    "reporter": {
+      "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+      "name": "k.nguyen",
+      "key": "JIRAUSER10100",
+      "emailAddress": "k.nguyen@acme.ch",
+      "avatarUrls": {
+        "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+      },
+      "displayName": "Khoi Nguyen",
+      "active": true,
+      "timeZone": "Asia/Ho_Chi_Minh"
+    },
+    "assignee": {
+      "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+      "name": "k.nguyen",
+      "key": "JIRAUSER10100",
+      "emailAddress": "k.nguyen@acme.ch",
+      "avatarUrls": {
+        "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+      },
+      "displayName": "Khoi Nguyen",
+      "active": true,
+      "timeZone": "Asia/Ho_Chi_Minh"
+    },
+    "created": "2026-10-08T14:29:58.000+0700",
+    "updated": "2026-10-08T14:34:05.000+0700",
+    "description": "h2. Steps to reproduce\n# Open the login page\n# Enter a valid user and a *wrong* password\n## Wait for the error message\n# Press _Sign in_ again",
+    "comment": {
+      "comments": [
+        {
+          "self": "https://jira.acme.ch/jira/rest/api/2/issue/10204/comment/10300",
+          "id": "10300",
+          "author": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+            "name": "k.nguyen",
+            "key": "JIRAUSER10100",
+            "emailAddress": "k.nguyen@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+            },
+            "displayName": "Khoi Nguyen",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "body": "I can reproduce this on *staging*.",
+          "updateAuthor": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+            "name": "k.nguyen",
+            "key": "JIRAUSER10100",
+            "emailAddress": "k.nguyen@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+            },
+            "displayName": "Khoi Nguyen",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "created": "2026-10-08T14:30:12.000+0700",
+          "updated": "2026-10-08T14:30:12.000+0700"
+        },
+        {
+          "self": "https://jira.acme.ch/jira/rest/api/2/issue/10204/comment/10301",
+          "id": "10301",
+          "author": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=j.agent",
+            "name": "j.agent",
+            "key": "JIRAUSER10400",
+            "emailAddress": "j.agent@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10400"
+            },
+            "displayName": "Jana Agent",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "body": "Restricted: the customer is ACME-12.",
+          "updateAuthor": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=j.agent",
+            "name": "j.agent",
+            "key": "JIRAUSER10400",
+            "emailAddress": "j.agent@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10400"
+            },
+            "displayName": "Jana Agent",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "created": "2026-10-08T14:31:40.000+0700",
+          "updated": "2026-10-08T14:31:40.000+0700",
+          "visibility": {
+            "type": "role",
+            "value": "Developers"
+          }
+        },
+        {
+          "self": "https://jira.acme.ch/jira/rest/api/2/issue/10204/comment/10302",
+          "id": "10302",
+          "author": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+            "name": "k.nguyen",
+            "key": "JIRAUSER10100",
+            "emailAddress": "k.nguyen@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+            },
+            "displayName": "Khoi Nguyen",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "body": "Fixed in build 1.2 — please verify.",
+          "updateAuthor": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+            "name": "k.nguyen",
+            "key": "JIRAUSER10100",
+            "emailAddress": "k.nguyen@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+            },
+            "displayName": "Khoi Nguyen",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "created": "2026-10-08T14:33:05.000+0700",
+          "updated": "2026-10-08T14:33:05.000+0700"
+        }
+      ],
+      "maxResults": 3,
+      "total": 3,
+      "startAt": 0
+    }
+  },
+  "renderedFields": {
+    "description": "<h2><a name=\"Stepstoreproduce\"></a>Steps to reproduce</h2>\n\n<ol>\n\t<li>Open the login page</li>\n\t<li>Enter a valid user and a <b>wrong</b> password\n\t<ol>\n\t\t<li>Wait for the error message</li>\n\t</ol>\n\t</li>\n\t<li>Press <em>Sign in</em> again</li>\n</ol>\n\n\n<h3><a name=\"Environment\"></a>Environment</h3>\n<div class='table-wrap'>\n<table class='confluenceTable'><tbody>\n<tr>\n<th class='confluenceTh'>Field</th>\n<th class='confluenceTh'>Value</th>\n</tr>\n<tr>\n<td class='confluenceTd'>Browser</td>\n<td class='confluenceTd'>Firefox 131</td>\n</tr>\n</tbody></table>\n</div>\n\n\n<div class=\"code panel\" style=\"border-width: 1px;\"><div class=\"codeContent panelContent\">\n<pre class=\"code-java\">\n<span class=\"code-object\">int</span> attempts = 0;\n</pre>\n</div></div>\n\n<blockquote><p>Users report it since the last release.</p></blockquote>\n\n<p>Reported by <a href=\"https://jira.acme.ch/jira/secure/ViewProfile.jspa?name=k.nguyen\" class=\"user-hover\" rel=\"k.nguyen\">Khoi Nguyen</a>, see <a href=\"https://jira.acme.ch/jira/browse/ENG-41\" title=\"Pipeline drops tables with merged cells\" class=\"issue-link\" data-issue-key=\"ENG-41\">ENG-41</a> and <a href=\"/jira/secure/attachment/10000/10000_log.txt\" title=\"log.txt attached to ENG-42\">log.txt</a>.</p>\n\n<p><span class=\"image-wrap\" style=\"\"><img src=\"/jira/secure/attachment/10001/10001_screenshot.png\" style=\"border: 0px solid black\" /></span></p>",
+    "created": "08/Oct/26 2:29 PM",
+    "updated": "Today 2:34 PM",
+    "comment": {
+      "comments": [
+        {
+          "self": "https://jira.acme.ch/jira/rest/api/2/issue/10204/comment/10300",
+          "id": "10300",
+          "author": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+            "name": "k.nguyen",
+            "key": "JIRAUSER10100",
+            "emailAddress": "k.nguyen@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+            },
+            "displayName": "Khoi Nguyen",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "body": "<p>I can reproduce this on <b>staging</b>.</p>",
+          "updateAuthor": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+            "name": "k.nguyen",
+            "key": "JIRAUSER10100",
+            "emailAddress": "k.nguyen@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+            },
+            "displayName": "Khoi Nguyen",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "created": "08/Oct/26 2:30 PM",
+          "updated": "2026-10-08T14:30:12.000+0700"
+        },
+        {
+          "self": "https://jira.acme.ch/jira/rest/api/2/issue/10204/comment/10301",
+          "id": "10301",
+          "author": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=j.agent",
+            "name": "j.agent",
+            "key": "JIRAUSER10400",
+            "emailAddress": "j.agent@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10400"
+            },
+            "displayName": "Jana Agent",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "body": "<p>Restricted: the customer is ACME-12.</p>",
+          "updateAuthor": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=j.agent",
+            "name": "j.agent",
+            "key": "JIRAUSER10400",
+            "emailAddress": "j.agent@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10400"
+            },
+            "displayName": "Jana Agent",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "created": "08/Oct/26 2:30 PM",
+          "updated": "2026-10-08T14:31:40.000+0700",
+          "visibility": {
+            "type": "role",
+            "value": "Developers"
+          }
+        },
+        {
+          "self": "https://jira.acme.ch/jira/rest/api/2/issue/10204/comment/10302",
+          "id": "10302",
+          "author": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+            "name": "k.nguyen",
+            "key": "JIRAUSER10100",
+            "emailAddress": "k.nguyen@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+            },
+            "displayName": "Khoi Nguyen",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "body": "<p>Fixed in build 1.2 &#8212; please verify.</p>",
+          "updateAuthor": {
+            "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+            "name": "k.nguyen",
+            "key": "JIRAUSER10100",
+            "emailAddress": "k.nguyen@acme.ch",
+            "avatarUrls": {
+              "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+            },
+            "displayName": "Khoi Nguyen",
+            "active": true,
+            "timeZone": "Asia/Ho_Chi_Minh"
+          },
+          "created": "08/Oct/26 2:30 PM",
+          "updated": "2026-10-08T14:33:05.000+0700"
+        }
+      ],
+      "maxResults": 3,
+      "total": 3,
+      "startAt": 0
+    }
+  }
+}

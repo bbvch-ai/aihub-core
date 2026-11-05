@@ -6,7 +6,10 @@
     size="small"
   >
     <div class="flex flex-col gap-4">
-      <RoleEdit v-model="clonedRole" />
+      <RoleEdit
+        v-model="clonedRole"
+        name-readonly
+      />
       <div class="flex justify-end">
         <Button
           type="button"

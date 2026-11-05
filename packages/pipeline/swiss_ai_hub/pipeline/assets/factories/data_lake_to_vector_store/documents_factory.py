@@ -2,6 +2,7 @@ from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDef
 
 from swiss_ai_hub.pipeline.ops.data_lake.generate_figure_descriptions import generate_figure_descriptions
 from swiss_ai_hub.pipeline.ops.data_lake.parse_document_from_data_lake import parse_document_from_data_lake
+from swiss_ai_hub.pipeline.ops.document.apply_markdown_frontmatter import apply_markdown_frontmatter
 from swiss_ai_hub.pipeline.ops.document.ensure_refdoc_default_metadata import ensure_refdoc_default_metadata
 from swiss_ai_hub.pipeline.ops.document.insert_ref_doc_into_docstore import insert_ref_doc_into_docstore
 from swiss_ai_hub.pipeline.ops.document.refine_document_tables import refine_document_tables
@@ -22,7 +23,8 @@ def documents_factory(
     downstream assets.
 
     Figure descriptions and table refinement are always part of the graph; each op decides per run, from the
-    knowledge database in the partition key, whether it has work to do.
+    knowledge database in the partition key, whether it has work to do. A markdown file's frontmatter is applied
+    right after parsing, so no later op, and in particular no LLM, is handed the YAML.
     """
 
     @graph_asset(
@@ -37,7 +39,8 @@ def documents_factory(
         data_lake_file: DataLakeFile,
     ) -> Output[RefDocDocument]:
         parsed = parse_document_from_data_lake(data_lake_file)
-        described = generate_figure_descriptions(parsed)
+        fronted = apply_markdown_frontmatter(parsed)
+        described = generate_figure_descriptions(fronted)
         refined = refine_document_tables(described)
         validated = ensure_refdoc_default_metadata(refined)
 

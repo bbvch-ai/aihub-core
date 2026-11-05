@@ -352,11 +352,13 @@ export const CreateRoleRequestSchema = {
   properties: {
     name: {
       type: "string",
+      maxLength: 120,
       title: "Name",
       description: "The unique name of the role.",
     },
     description: {
       type: "string",
+      maxLength: 500,
       title: "Description",
       description: "A short description of the role's purpose.",
     },
@@ -700,6 +702,55 @@ export const LocaleStringSchema = {
     'A multi-language string container supporting German, English, French, and Italian.\n\nLocaleString serves as a data container for translated strings. For form rendering,\nuse the `LocaleInput` FormKit element with the duality pattern.\n\n## Basic Usage (Data Mode)\n\n```python\ngreeting = LocaleString(\n    de="Hallo",\n    en="Hello",\n    fr="Bonjour",\n    it="Ciao",\n)\nprint(greeting.in_locale("en"))  # "Hello"\n```\n\n## Form Duality Pattern\n\nFor form fields that accept LocaleString values, use the union type pattern:\n\n```python\nclass MyConfig(Form):\n    name: Annotated[LocaleString | LocaleInput, Field(description="Name")]\n\n# Form mode - for rendering:\nconfig = MyConfig(name=LocaleInput(label=LocaleString(en="Name", de="Name")))\n\n# Data mode - from submission:\nconfig = MyConfig(name=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"))\n```\n\nFor convenience, use `LocaleString.as_form()` to create a pre-configured `LocaleInput`:\n\n```python\nconfig = MyConfig(name=LocaleString.as_form(label=LocaleString(en="Name", de="Name")))\n```',
 } as const;
 
+export const LoginOptionsResponseSchema = {
+  properties: {
+    welcome_page: {
+      type: "boolean",
+      title: "Welcome Page",
+      description:
+        "Show a welcome page pointing to the organisation's login link instead of provider buttons",
+    },
+    providers: {
+      items: {
+        $ref: "#/components/schemas/AuthProviderResponse",
+      },
+      type: "array",
+      title: "Providers",
+      description:
+        "Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use",
+    },
+  },
+  type: "object",
+  required: ["welcome_page", "providers"],
+  title: "LoginOptionsResponse",
+  description:
+    "What the generic login page may offer. A welcome-page instance never lists a federated provider here.",
+} as const;
+
+export const MyTenantsResponseSchema = {
+  properties: {
+    tenants: {
+      items: {
+        $ref: "#/components/schemas/TenantMembershipDTO",
+      },
+      type: "array",
+      title: "Tenants",
+      description: "Tenants the user making the call belongs to",
+    },
+    is_sys_admin: {
+      type: "boolean",
+      title: "Is Sys Admin",
+      description: "Whether the user has system administrator privileges",
+      default: false,
+    },
+  },
+  type: "object",
+  required: ["tenants"],
+  title: "MyTenantsResponse",
+  description:
+    "Response for the GET /my-tenants endpoint, including sysadmin status.",
+} as const;
+
 export const PaginatedUsersResponseSchema = {
   properties: {
     total: {
@@ -807,6 +858,30 @@ export const RoleResponseSchema = {
   description: "Response model representing a role.",
 } as const;
 
+export const TenantMembershipDTOSchema = {
+  properties: {
+    id: {
+      type: "string",
+      title: "Id",
+      description: "Tenant identifier",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "Tenant display name",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "Tenant description",
+    },
+  },
+  type: "object",
+  required: ["id", "name", "description"],
+  title: "TenantMembershipDTO",
+  description: "A tenant the current user belongs to.",
+} as const;
+
 export const TenantResponseSchema = {
   properties: {
     id: {
@@ -884,6 +959,7 @@ export const UpdateRoleRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 120,
         },
         {
           type: "null",
@@ -896,6 +972,7 @@ export const UpdateRoleRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 500,
         },
         {
           type: "null",

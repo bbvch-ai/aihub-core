@@ -1,0 +1,12 @@
+{
+  "self": "https://jira.acme.ch/jira/rest/api/2/user?username=svc-aihub",
+  "key": "JIRAUSER10300",
+  "name": "svc-aihub",
+  "emailAddress": "svc-aihub@acme.ch",
+  "displayName": "AI Hub Sync",
+  "active": true,
+  "deleted": false,
+  "timeZone": "Europe/Zurich",
+  "locale": "de_CH",
+  "expand": "groups,applicationRoles"
+}

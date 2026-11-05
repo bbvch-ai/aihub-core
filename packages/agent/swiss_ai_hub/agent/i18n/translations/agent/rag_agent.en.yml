@@ -5,8 +5,10 @@ metadata:
     context-aware answers
 config:
   restrict_to_user_access:
-    label: "Restrict to the user's access"
-    help: "Retrieve only from the configured collections the person asking may read in the knowledge area. Without it, everyone who can use this agent gets answers from all its collections."
+    label: Restrict to the user's access
+    help: Retrieve only from the configured collections the person asking may read
+      in the knowledge area. Without it, everyone who can use this agent gets answers
+      from all its collections.
   number_of_input_tokens:
     label: Max input tokens
     help: Maximum number of tokens allowed in the LLM input. Limits context size to
@@ -33,11 +35,15 @@ config:
       \ in the form of structured documents. Each document follows a\nconsistent format,\
       \ beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`.\
       \ These documents contain\nessential details that should be utilized to accurately\
-      \ understand and respond to the user's query.\n\nEach document includes metadata\
-      \ such as source, namespace, type, language, version, and timestamps. The content\n\
-      within these documents provides crucial insights relevant to the given context.\n\
-      \nBelow are the relevant documents:\n\n<context_documents>\n{% for block in\
-      \ context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+      \ understand and respond to the user's query.\n\nEach document's metadata gives\
+      \ its source, title, version and timestamps: created_at is when the record or\
+      \ file\nwas created, updated_at and inserted_at are when the platform last processed\
+      \ it. A document synced from a business\napplication, such as a Jira issue or\
+      \ a Confluence page, also carries that record's own fields, e.g. its status,\n\
+      priority, issue_type, project, labels or space, and its own updated time. The\
+      \ content\nwithin these documents provides crucial insights relevant to the\
+      \ given context.\n\nBelow are the relevant documents:\n\n<context_documents>\n\
+      {% for block in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
       {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url | string | image}}\n\
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction: Using the information\
       \ from the provided documents, generate a detailed and well-structured response\n\
@@ -114,7 +120,9 @@ thoughts:
   input_too_large: 'The input does not fit the model context window: about %{tokens}
     tokens against a usable budget of %{budget}. Refusing instead of calling the model.'
 messages:
-  no_accessible_knowledge: "This agent's knowledge is not available to you: you do not have access to any of the collections it answers from. Ask an administrator for access if you need it."
+  no_accessible_knowledge: "This agent's knowledge is not available to you: you do\
+    \ not have access to any of the collections it answers from. Ask an administrator\
+    \ for access if you need it."
   condensation_empty: I could not work out what to search for from that message. Please
     rephrase your question and try again.
   input_too_large: This file is too large for me to read in one go. Please upload

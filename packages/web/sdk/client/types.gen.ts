@@ -368,6 +368,8 @@ export type AgentClassDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -428,6 +430,12 @@ export type AgentClassDto = {
    * Whether the agent class can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
   /**
    * Is Online
    *
@@ -504,6 +512,8 @@ export type AgentConfigDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -561,6 +571,40 @@ export type AgentEvent = {
 };
 
 /**
+ * AgentFileBatchValidationRequest
+ *
+ * All files of one chat turn, checked together so a turn costs one call and places its files once.
+ */
+export type AgentFileBatchValidationRequest = {
+  /**
+   * Thread Id
+   *
+   * The conversation the files are attached in; once none is missing, they are also placed in the user's files there.
+   */
+  thread_id?: string | null;
+  /**
+   * Files
+   *
+   * The uploaded files to check.
+   */
+  files: Array<AgentFileValidationItem>;
+};
+
+/**
+ * AgentFileBatchValidationResponse
+ *
+ * Which of the checked files the agent's bucket does not hold; uploads expire, so a known file can be gone.
+ */
+export type AgentFileBatchValidationResponse = {
+  /**
+   * Missing
+   *
+   * The file_ids not found in the agent's bucket.
+   */
+  missing: Array<string>;
+};
+
+/**
  * AgentFileUploadRequest
  *
  * Request to initiate a file upload to an agent's dedicated bucket.
@@ -607,11 +651,11 @@ export type AgentFileUploadResponse = {
 };
 
 /**
- * AgentFileValidationRequest
+ * AgentFileValidationItem
  *
- * Request to validate that a file was uploaded successfully.
+ * One uploaded file, named as the initiate endpoint stored it.
  */
-export type AgentFileValidationRequest = {
+export type AgentFileValidationItem = {
   /**
    * File Id
    *
@@ -624,32 +668,6 @@ export type AgentFileValidationRequest = {
    * Original filename with extension. Must not contain path separators.
    */
   filename: string;
-  /**
-   * Thread Id
-   *
-   * The conversation the file is attached in; it is also placed in the user's files there.
-   */
-  thread_id?: string | null;
-};
-
-/**
- * AgentFileValidationResponse
- *
- * Response confirming whether a file exists in the agent's bucket.
- */
-export type AgentFileValidationResponse = {
-  /**
-   * File Id
-   *
-   * The file_id that was checked.
-   */
-  file_id: string;
-  /**
-   * Exists
-   *
-   * True if the file was found in the agent's bucket.
-   */
-  exists: boolean;
 };
 
 /**
@@ -3106,7 +3124,7 @@ export type ChatCompletionRequest = {
   /**
    * Service Tier
    */
-  service_tier?: "auto" | "default" | null;
+  service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
   /**
    * Stop
    */
@@ -4373,6 +4391,7 @@ export type ContextualizedAgentEvent = {
     | HumanInTheLoopInputRequestEvent
     | ToolApprovalRequestEvent
     | HumanInTheLoopConfirmationRequestEvent
+    | HumanInTheLoopQuestionsRequestEvent
     | HumanInTheLoopChatRequestEvent
     | HumanInTheLoopRequestEvent
     | AgentInTheLoopRequestEvent
@@ -4394,6 +4413,8 @@ export type ContextualizedAgentEvent = {
     | MemoryRecalledEvent
     | MemoryStorageRequestedEvent
     | SearchKnowledgeEvent
+    | FetchWebPagesEvent
+    | ExtractRecordsEvent
     | ReadAttachedFilesEvent
     | AttachedFilesReadEvent
     | RunToolLoopEvent
@@ -4409,6 +4430,8 @@ export type ContextualizedAgentEvent = {
     | ThoughtEvent
     | AttachedFileEvent
     | KnowledgeSearchedEvent
+    | WebPagesFetchedEvent
+    | RecordsExtractedEvent
     | ToolResultEvent
     | ToolLoopStatusEvent
     | ToolLoopCondensedEvent
@@ -6192,9 +6215,9 @@ export type Embeddings = {
   /**
    * Embedding
    *
-   * The list of embeddings.
+   * The embedding vector, or the vector's float32 bytes as base64 when requested so.
    */
-  embedding: Array<number>;
+  embedding: Array<number> | string;
   /**
    * Index
    *
@@ -6261,6 +6284,10 @@ export type EmbeddingsResponse = {
    * The list of embeddings.
    */
   data: Array<Embeddings>;
+  /**
+   * Tokens the request used.
+   */
+  usage?: OpenaiTypesCreateEmbeddingResponseUsage | null;
 };
 
 /**
@@ -6317,6 +6344,14 @@ export type EventSpecs = {
   event_schema: {
     [key: string]: unknown;
   };
+  /**
+   * Api Input Schema
+   *
+   * The schema of what an API caller sends for this event: the event without the fields the server fills in, and with the inputs the event converts itself, such as files sent inline. Absent for a specification stored before agents announced it.
+   */
+  api_input_schema?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * Event Parents
    *
@@ -6430,6 +6465,222 @@ export type ExceptionEvent = {
    * HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).
    */
   http_status_code?: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ExtractRecordsEvent
+ *
+ * Asks the record-extraction capability for one table across the selected knowledge documents.
+ *
+ * Built with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose
+ * `extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to
+ * what the asking user may read, never the model's.
+ */
+export type ExtractRecordsEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The documents to extract from; none when the request confirms a sample.
+   */
+  selection?: KnowledgeDocumentSelection | null;
+  /**
+   * Confirmed
+   *
+   * Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.
+   */
+  confirmed?: boolean;
+  /**
+   * Fields
+   *
+   * What each row holds, in the user's words, e.g. 'date, item, amount'.
+   */
+  fields: string;
+  /**
+   * Instructions
+   *
+   * Which records to keep, e.g. 'only hardware'; never turned into a column.
+   */
+  instructions?: string | null;
+  /**
+   * Row Terms
+   *
+   * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
+   */
+  row_terms?: string | null;
+  /**
+   * Document Terms
+   *
+   * Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.
+   */
+  document_terms?: string | null;
+  /**
+   * Collections
+   *
+   * The collections the documents are selected from.
+   */
+  collections: Array<BucketNamespacePair>;
+  /**
+   * Notices
+   *
+   * What the caller wants said with the table's summary, e.g. ignored references.
+   */
+  notices?: Array<string>;
+  /**
+   * Cut Short
+   *
+   * Whether the caller stopped looking for documents at a limit before it was done.
+   */
+  cut_short?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ExtractedTableFile
+ *
+ * Where the whole table of an extraction is stored, as CSV.
+ *
+ * Events carry this reference and a preview, never every row: a table of any size then stays out of the message
+ * broker, the event store and the traces, and clients download it from object storage instead.
+ */
+export type ExtractedTableFile = {
+  /**
+   * Bucket
+   *
+   * The object storage bucket holding the file.
+   */
+  bucket: string;
+  /**
+   * Key
+   *
+   * The object key of the file within the bucket.
+   */
+  key: string;
+  /**
+   * Filename
+   *
+   * The name the file is downloaded under.
+   */
+  filename: string;
+  /**
+   * Size
+   *
+   * The file's size in bytes.
+   */
+  size: number;
+  /**
+   * Row Count
+   *
+   * Rows the file holds, without the header.
+   */
+  row_count: number;
+  /**
+   * Content Type
+   *
+   * The file's media type.
+   */
+  content_type?: string;
+};
+
+/**
+ * FetchWebPagesEvent
+ *
+ * Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.
+ *
+ * Built with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the
+ * profile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.
+ */
+export type FetchWebPagesEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Urls
+   *
+   * The links to read, in the order the user gave them.
+   */
+  urls?: Array<string>;
+  /**
+   * Reading
+   *
+   * Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.
+   */
+  reading?: boolean;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the pages by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   /**
    * Event Name
    *
@@ -6637,6 +6888,32 @@ export type FilePathDto = {
 };
 
 /**
+ * FilePreviewDTO
+ *
+ * An office document as the text a reader sees, for a browser that cannot show the file itself.
+ */
+export type FilePreviewDto = {
+  /**
+   * Path
+   *
+   * The previewed file, relative to the user's file space.
+   */
+  path: string;
+  /**
+   * Markdown
+   *
+   * The document's content as markdown, without its images.
+   */
+  markdown: string;
+  /**
+   * Truncated
+   *
+   * Whether the content was cut short; the download has all of it.
+   */
+  truncated: boolean;
+};
+
+/**
  * FilePromptCacheBreakpoint
  *
  * Marks the exact end of a reusable prompt prefix.
@@ -6767,6 +7044,12 @@ export type FullAgentInstanceDto = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Start Events
    *
    * A list of `EventSpecs` representing events that can start this agent's workflow.
@@ -6803,7 +7086,7 @@ export type FullAgentInstanceDto = {
   /**
    * Configuration
    *
-   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.
+   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.
    */
   configuration?: {
     [key: string]: unknown;
@@ -6890,6 +7173,8 @@ export type FullProcessInstanceDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -7091,6 +7376,8 @@ export type Group = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -7461,6 +7748,8 @@ export type HumanInDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -7544,6 +7833,8 @@ export type HumanInSpecs = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -7669,6 +7960,64 @@ export type HumanInTheLoopChatResponseEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * HumanInTheLoopChoiceOption
+ *
+ * One answer a choice question offers; lengths are capped as OpenWebUI's dialog caps them.
+ */
+export type HumanInTheLoopChoiceOption = {
+  /**
+   * Label
+   *
+   * The answer's short label.
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * What choosing the answer means.
+   */
+  description: string;
+};
+
+/**
+ * HumanInTheLoopChoiceQuestion
+ *
+ * A question a client with a dialog shows with its options; the first option is the one the agent recommends.
+ */
+export type HumanInTheLoopChoiceQuestion = {
+  /**
+   * Id
+   *
+   * Key the answer is returned under.
+   */
+  id: string;
+  /**
+   * Header
+   *
+   * A short title for the question.
+   */
+  header: string;
+  /**
+   * Question
+   *
+   * The question itself.
+   */
+  question: string;
+  /**
+   * Options
+   *
+   * The answers offered, the recommended one first.
+   */
+  options: Array<HumanInTheLoopChoiceOption>;
+  /**
+   * Allow Other
+   *
+   * Whether the user may write an answer of their own.
+   */
+  allow_other?: boolean;
 };
 
 /**
@@ -7867,6 +8216,72 @@ export type HumanInTheLoopInputResponseEvent = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopInputRequestEvent;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * HumanInTheLoopQuestionsRequestEvent
+ *
+ * A chat question that also carries its parts as choice questions.
+ *
+ * Clients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows
+ * `question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to
+ * five questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
+ */
+export type HumanInTheLoopQuestionsRequestEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Question
+   *
+   * The query or prompt presented to the human operator.
+   */
+  question: string;
+  /**
+   * Topic
+   *
+   * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+   */
+  topic: PartialAgentTopic | AgentInstanceTopic;
+  /**
+   * Hitl Type
+   */
+  hitl_type?: "chat";
+  /**
+   * Questions
+   *
+   * The question's parts, for clients that show a dialog.
+   */
+  questions: Array<HumanInTheLoopChoiceQuestion>;
   /**
    * Event Name
    *
@@ -8436,7 +8851,7 @@ export type ImageGenerationRequest = {
   /**
    * Quality
    */
-  quality?: "standard" | "hd" | null;
+  quality?: "standard" | "hd" | "low" | "medium" | "high" | "auto" | null;
   /**
    * Response Format
    */
@@ -8444,7 +8859,16 @@ export type ImageGenerationRequest = {
   /**
    * Size
    */
-  size?: "256x256" | "512x512" | "1024x1024" | "1792x1024" | "1024x1792" | null;
+  size?:
+    | "auto"
+    | "256x256"
+    | "512x512"
+    | "1024x1024"
+    | "1536x1024"
+    | "1024x1536"
+    | "1792x1024"
+    | "1024x1792"
+    | null;
   /**
    * Style
    */
@@ -8612,6 +9036,8 @@ export type IncidentFormDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -8830,6 +9256,14 @@ export type IngestedNode = {
    */
   heading_level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | null;
   /**
+   * Record Fields
+   *
+   * Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.
+   */
+  record_fields?: {
+    [key: string]: string | number | number | Array<string>;
+  };
+  /**
    * Score
    *
    * Score representing the relevance of the document.
@@ -8890,6 +9324,8 @@ export type IngestorDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -9569,6 +10005,12 @@ export type InputText = {
    */
   iconSuffix?: string | null;
   /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
+  /**
    * Validation
    */
   readonly validation: string;
@@ -10084,6 +10526,62 @@ export type KnowledgeDatabaseSelector = {
 };
 
 /**
+ * KnowledgeDocumentCriteria
+ *
+ * One way to pick documents: every condition given must hold, conditions left out do not narrow.
+ */
+export type KnowledgeDocumentCriteria = {
+  /**
+   * Path Glob
+   *
+   * Glob on the path relative to the collection, e.g. 'invoices/2025**'.
+   */
+  path_glob?: string | null;
+  /**
+   * Path Regex
+   *
+   * Regular expression searched anywhere in the path.
+   */
+  path_regex?: string | null;
+  /**
+   * Content Query
+   *
+   * Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a year, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.
+   */
+  content_query?: string | null;
+  /**
+   * Content Is Regex
+   *
+   * Whether `content_query` is a regular expression.
+   */
+  content_is_regex?: boolean;
+  /**
+   * Document Ids
+   *
+   * Only these documents, by the ids a listing or a search returned.
+   */
+  document_ids?: Array<string>;
+};
+
+/**
+ * KnowledgeDocumentSelection
+ *
+ * The documents a request is about, described rather than listed: a document is selected when it meets any of the
+ * criteria.
+ *
+ * Describing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob
+ * and limits when it resolves the set, so a model can only narrow what it was given.
+ */
+export type KnowledgeDocumentSelection = {
+  /**
+   * Any Of
+   *
+   * A document is selected when it meets every condition of at least one entry.
+   */
+  any_of: Array<KnowledgeDocumentCriteria>;
+};
+
+/**
  * KnowledgeReference
  *
  * A knowledge collection the user pointed the conversation at, e.g. with `#` in a chat client.
@@ -10144,6 +10642,12 @@ export type KnowledgeSearchedEvent = {
    * The document sections the block holds, for listing as sources.
    */
   grounding_nodes?: Array<IngestedNode>;
+  /**
+   * Missing
+   *
+   * Referenced collections that were not searched, because they no longer exist.
+   */
+  missing?: Array<KnowledgeReference>;
   /**
    * Refused
    *
@@ -10555,6 +11059,14 @@ export type LlmStopEvent = {
     [key: string]: unknown;
   }> | null;
   /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -10922,6 +11434,12 @@ export type LocaleInput = {
    */
   placeholder?: LocaleString | string | null;
   /**
+   * Maxlength
+   *
+   * Maximum number of characters per language
+   */
+  maxLength?: number | null;
+  /**
    * Validation
    *
    * Emits `localeRequired` where other elements emit FormKit's `required`.
@@ -11021,6 +11539,26 @@ export type LocaleString = {
    * Italian
    */
   it?: string | null;
+};
+
+/**
+ * LoginOptionsResponse
+ *
+ * What the generic login page may offer. A welcome-page instance never lists a federated provider here.
+ */
+export type LoginOptionsResponse = {
+  /**
+   * Welcome Page
+   *
+   * Show a welcome page pointing to the organisation's login link instead of provider buttons
+   */
+  welcome_page: boolean;
+  /**
+   * Providers
+   *
+   * Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use
+   */
+  providers: Array<AuthProviderResponse>;
 };
 
 /**
@@ -11267,7 +11805,7 @@ export type MailClassificationRef = {
   /**
    * Target Folder
    *
-   * Folder the message was filed into.
+   * Folder the message was filed into, or the inbox when it was kept there.
    */
   target_folder: string;
   /**
@@ -12080,7 +12618,7 @@ export type Metadata = {
 /**
  * MetadataFilterPair
  *
- * A metadata key/value equality filter for RAG retrieval.
+ * A metadata key/value filter for RAG retrieval: the stored value equals it, or a stored list contains it.
  */
 export type MetadataFilterPair = {
   /**
@@ -12092,7 +12630,7 @@ export type MetadataFilterPair = {
   /**
    * Value
    *
-   * The value the metadata key must equal.
+   * The value the metadata key must equal, or, where the key holds a list, contain.
    */
   value: string | number | number | boolean;
 };
@@ -12135,6 +12673,12 @@ export type MinimalAgentInstanceDto = {
    * Whether the agent can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
 };
 
 /**
@@ -12210,6 +12754,261 @@ export type MinimalUserDto = {
 };
 
 /**
+ * ModelBoundInputNumber
+ *
+ * A number input whose upper bound and default hint come from the model picked elsewhere on the same form.
+ *
+ * A static range cannot be right for every model: an input-token budget a small-context model cannot serve, or
+ * a temperature hint that is only the default of some other model. The frontend reads the selected model's
+ * LiteLLM `model_info` and applies `max_from` as the maximum and `default_from` as the placeholder; the API
+ * rejects a save above the model's limit, since this bound is not part of the announced JSON schema.
+ *
+ * With an `override_label`, a nullable field gets an override checkbox of its own instead of the form's generic
+ * enable toggle: the input stays in view, disabled and showing the model's default while unset, and is pre-filled
+ * with that default when the admin starts overriding it, so the default is visible before deciding. A budget
+ * such as the input tokens has no curated default: unset, it fills `fill_factor` of the model's `max_from` limit,
+ * which is also the highest value it accepts (`maximum_for`).
+ *
+ * ```python
+ * number_of_input_tokens=ModelBoundInputNumber(
+ * label=LocaleString(en="Input tokens"), model_ref="llm.model_name", max_from="max_input_tokens", min=1024
+ * )
+ * ```
+ */
+export type ModelBoundInputNumber = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Model-bound number input.
+   */
+  formkit?: "modelBoundNumber";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Disabled
+   *
+   * Whether the input is disabled
+   */
+  disabled?: boolean;
+  /**
+   * Readonly
+   *
+   * Whether the input is readonly
+   */
+  readonly?: boolean;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Min
+   *
+   * Minimum value
+   */
+  min?: number | null;
+  /**
+   * Max
+   *
+   * Maximum value
+   */
+  max?: number | null;
+  /**
+   * Step
+   *
+   * Step factor for increment/decrement
+   */
+  step?: number | null;
+  /**
+   * Usegrouping
+   *
+   * Whether to use grouping separators
+   */
+  useGrouping?: boolean;
+  /**
+   * Minfractiondigits
+   *
+   * Minimum number of fraction digits
+   */
+  minFractionDigits?: number;
+  /**
+   * Maxfractiondigits
+   *
+   * Maximum number of fraction digits
+   */
+  maxFractionDigits?: number;
+  /**
+   * Locale
+   *
+   * Locale to use for number formatting
+   */
+  locale?: string | null;
+  /**
+   * Mode
+   *
+   * Input mode
+   */
+  mode?: "decimal" | "currency" | null;
+  /**
+   * Currency
+   *
+   * Currency code for currency mode
+   */
+  currency?: string | null;
+  /**
+   * Prefix
+   *
+   * Prefix text
+   */
+  prefix?: LocaleString | string | null;
+  /**
+   * Suffix
+   *
+   * Suffix text
+   */
+  suffix?: LocaleString | string | null;
+  /**
+   * Showbuttons
+   *
+   * Whether to show increment/decrement buttons
+   */
+  showButtons?: boolean;
+  /**
+   * Buttonlayout
+   *
+   * Layout of increment/decrement buttons
+   */
+  buttonLayout?: "stacked" | "horizontal" | null;
+  /**
+   * Modelref
+   *
+   * Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered. Never prefix it with '$': FormKit compiles such schema strings as expressions.
+   */
+  modelRef: string;
+  /**
+   * Maxfrom
+   *
+   * The model_info key supplying the maximum, e.g. 'max_input_tokens'.
+   */
+  maxFrom?: string | null;
+  /**
+   * Defaultfrom
+   *
+   * The model_info key shown as the default the model uses when the field is left empty, e.g. 'default_temperature'.
+   */
+  defaultFrom?: string | null;
+  /**
+   * Fallbackdefault
+   *
+   * What applies when the model curates no `default_from` value, shown in its place; unset means the provider decides and the label says so.
+   */
+  fallbackDefault?: number | null;
+  /**
+   * Overridelabel
+   *
+   * Label of the element's own override checkbox, followed by the model's default. Set it on a nullable field whose unset value means 'use the model's default'.
+   */
+  overrideLabel?: LocaleString | string | null;
+  /**
+   * Fillfactor
+   *
+   * The share of the `max_from` limit the runtime actually fills, when it keeps a margin below it. It is the field's bound, so a value never promises more than a run uses, and without a `default_from` also what an unset field applies, as a budget left to the model fills its window.
+   */
+  fillFactor?: number | null;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
  * ModelDTO
  */
 export type ModelDto = {
@@ -12269,6 +13068,176 @@ export type ModelDetails = {
    * The agent ID of the model.
    */
   agent_id?: string | null;
+};
+
+/**
+ * ModelGatedCheckbox
+ *
+ * A checkbox that can only be switched on while the model picked elsewhere on the same form has a capability.
+ *
+ * The frontend disables it and shows it unchecked while the selected model's LiteLLM `model_info` sets
+ * `requires` to false; the API rejects a save that enables it for such a model. A model that does not declare
+ * the capability at all is not held against it, as LiteLLM leaves most flags unset.
+ */
+export type ModelGatedCheckbox = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Model-gated checkbox.
+   */
+  formkit?: "modelGatedCheckbox";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Disabled
+   *
+   * Whether the input is disabled
+   */
+  disabled?: boolean;
+  /**
+   * Readonly
+   *
+   * Whether the input is readonly
+   */
+  readonly?: boolean;
+  /**
+   * Binary
+   *
+   * Whether the checkbox works in binary mode
+   */
+  binary?: boolean;
+  /**
+   * Indeterminate
+   *
+   * Whether the checkbox is in indeterminate state
+   */
+  indeterminate?: boolean;
+  /**
+   * Truevalue
+   *
+   * Value to emit when checked
+   */
+  trueValue?: boolean | string | number | null;
+  /**
+   * Falsevalue
+   *
+   * Value to emit when unchecked
+   */
+  falseValue?: boolean | string | number | null;
+  /**
+   * Prefix
+   *
+   * Prefix text
+   */
+  prefix?: LocaleString | string | null;
+  /**
+   * Suffix
+   *
+   * Suffix text
+   */
+  suffix?: LocaleString | string | null;
+  /**
+   * Modelref
+   *
+   * Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered.
+   */
+  modelRef: string;
+  /**
+   * Requires
+   *
+   * The model_info capability flag that must not be false, e.g. 'supports_vision'.
+   */
+  requires: string;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
 };
 
 /**
@@ -12405,6 +13374,24 @@ export type ModelInfoDto = {
    * Whether the model supports vision/image input
    */
   supports_vision?: boolean | null;
+  /**
+   * Max Images
+   *
+   * Most images one request may carry, curated in the LiteLLM config
+   */
+  max_images?: number | null;
+  /**
+   * Default Temperature
+   *
+   * Sampling temperature used when a profile sets none, curated per model
+   */
+  default_temperature?: number | null;
+  /**
+   * Default Top P
+   *
+   * Nucleus-sampling top_p used when a profile sets none, curated per model
+   */
+  default_top_p?: number | null;
   /**
    * Supports Function Calling
    *
@@ -13920,6 +14907,8 @@ export type ProcessClassDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -14870,6 +15859,12 @@ export type ReadAttachedFilesEvent = {
    */
   files?: Array<UserUploadedFile>;
   /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -14989,14 +15984,133 @@ export type RecallMemoryEvent = {
 };
 
 /**
+ * RecordsExtractedEvent
+ *
+ * The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a
+ * file, and its summary.
+ *
+ * The event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size
+ * stays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.
+ * When a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients
+ * show the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients
+ * offer the file for download.
+ */
+export type RecordsExtractedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Extraction Id
+   *
+   * The `ExtractRecordsEvent` this answers.
+   */
+  extraction_id: string;
+  /**
+   * Columns
+   *
+   * The table's columns, the source columns first.
+   */
+  columns?: Array<string>;
+  /**
+   * Table
+   *
+   * The first rows as a markdown table, a preview when `file` holds more; empty without rows.
+   */
+  table?: string;
+  /**
+   * The whole table as a CSV file; none when there are no rows.
+   */
+  file?: ExtractedTableFile | null;
+  /**
+   * Summary
+   *
+   * Files matched, rows found, files that failed and why, and what was cut short.
+   */
+  summary: string;
+  /**
+   * File Count
+   *
+   * Documents extracted from.
+   */
+  file_count?: number;
+  /**
+   * Failed Count
+   *
+   * Documents that could not be extracted.
+   */
+  failed_count?: number;
+  /**
+   * Row Count
+   *
+   * Rows in the preview.
+   */
+  row_count?: number;
+  /**
+   * Total Row Count
+   *
+   * Rows found; every one of them is in `file`.
+   */
+  total_row_count?: number;
+  /**
+   * Truncated
+   *
+   * Whether the search for documents stopped at a limit, so documents may be missing.
+   */
+  truncated?: boolean;
+  /**
+   * Awaiting Confirmation
+   *
+   * Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.
+   */
+  awaiting_confirmation?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * RefusalReason
  *
  * Why a conversational turn was refused before any answer was attempted.
  */
 export const RefusalReason = {
   CONDENSATION_EMPTY: "condensation_empty",
+  IMAGES_NOT_ACCEPTED: "images_not_accepted",
   INPUT_TOO_LARGE: "input_too_large",
   OUT_OF_SCOPE: "out_of_scope",
+  TOO_MANY_IMAGES: "too_many_images",
 } as const;
 
 /**
@@ -15118,6 +16232,14 @@ export type RefusalStopEvent = {
   tools?: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * What about the input made the turn unanswerable.
    */
@@ -15293,6 +16415,8 @@ export type Repeater = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -15459,6 +16583,43 @@ export type ResponseFormatText = {
    */
   type: "text";
   [key: string]: unknown;
+};
+
+/**
+ * ResponseSchema
+ *
+ * The JSON shape a caller wants the agent's answer in.
+ *
+ * One request whatever the caller's API calls it: the OpenAI endpoint maps both `response_format` and a forced
+ * function call onto it, and decides on its own how to hand the result back.
+ */
+export type ResponseSchema = {
+  /**
+   * Name
+   *
+   * A name for the shape, as OpenAI's `json_schema.name` or a function name.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * What the shape is for; the model reads it.
+   */
+  description?: string | null;
+  /**
+   * Json Schema
+   *
+   * The JSON schema the answer must match. Without one, any JSON object is accepted.
+   */
+  json_schema?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Strict
+   *
+   * Ask the model to follow the schema exactly, as OpenAI's structured outputs `strict`.
+   */
+  strict?: boolean;
 };
 
 /**
@@ -15939,6 +17100,12 @@ export type RunToolLoopEvent = {
    */
   cite_sources?: boolean;
   /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.
+   */
+  hands_back_results?: boolean;
+  /**
    * Files
    *
    * The files attached to the message, for tools that read them.
@@ -15950,6 +17117,12 @@ export type RunToolLoopEvent = {
    * The collections the user referenced on the message, for tools that search knowledge.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * The web pages the message links or references, for tools that read them.
+   */
+  web_references?: Array<string>;
   /**
    * Event Name
    *
@@ -17037,6 +18210,8 @@ export type SourcePipelineDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -17463,6 +18638,12 @@ export type StoreUserMemoryRequestedEvent = {
    */
   origin_memory_llm?: string | null;
   /**
+   * Origin Anonymise
+   *
+   * Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.
+   */
+  origin_anonymise?: boolean;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -17538,6 +18719,20 @@ export type TemplateData = {
    */
   icon?: string | null;
   [key: string]: unknown;
+};
+
+/**
+ * TenantAuthProviderResponse
+ *
+ * Unknown and unlisted tenants both get a null alias, so the answer never reveals whether a tenant exists.
+ */
+export type TenantAuthProviderResponse = {
+  /**
+   * Alias
+   *
+   * Keycloak IDP alias to start the tenant's login with, or null when it has no login link
+   */
+  alias: string | null;
 };
 
 /**
@@ -17793,13 +18988,17 @@ export type TextToSpeechRequest = {
   voice:
     | "alloy"
     | "ash"
+    | "ballad"
     | "coral"
     | "echo"
     | "fable"
     | "onyx"
     | "nova"
     | "sage"
-    | "shimmer";
+    | "shimmer"
+    | "verse"
+    | "marin"
+    | "cedar";
   /**
    * Response Format
    *
@@ -17944,6 +19143,12 @@ export type Textarea = {
    * Whether to automatically resize based on content
    */
   autoResize?: boolean;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   /**
    * Validation
    */
@@ -19222,6 +20427,12 @@ export type ToolLoopState = {
    */
   cite_sources?: boolean;
   /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop collects its tool results in `gathered`.
+   */
+  hands_back_results?: boolean;
+  /**
    * Gathered
    *
    * The tool results as context, for the blueprint's own answer.
@@ -19543,13 +20754,19 @@ export type TranslationRequest = {
 /**
  * TranslationResponse
  *
- * Response containing the translated LocaleString with all supported locales populated.
+ * Response containing the translated LocaleString and the locales that could not be translated.
  */
 export type TranslationResponse = {
   /**
-   * The LocaleString with translations for all supported locales
+   * The LocaleString with every empty locale that could be translated filled in
    */
   translated: LocaleString;
+  /**
+   * Failed Locales
+   *
+   * Empty locales that could not be translated and stay empty
+   */
+  failed_locales?: Array<string>;
 };
 
 /**
@@ -19582,6 +20799,12 @@ export type UnreadMailListedEvent = {
    * Header summaries of the unread messages in the inbox.
    */
   messages?: Array<UnreadMailSummary>;
+  /**
+   * Uid Validity
+   *
+   * The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.
+   */
+  uid_validity?: number | null;
   /**
    * Event Name
    *
@@ -20126,6 +21349,16 @@ export type UserMessageEvent = {
    */
   knowledge_references?: Array<KnowledgeReference>;
   /**
+   * Web References
+   *
+   * Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.
+   */
+  web_references?: Array<string>;
+  /**
+   * The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.
+   */
+  response_schema?: ResponseSchema | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -20487,6 +21720,118 @@ export type VoiceId = {
 };
 
 /**
+ * WebFetchFailure
+ *
+ * A linked page the agent could not read, with the reason the answer reports to the user.
+ */
+export type WebFetchFailure = {
+  /**
+   * Url
+   *
+   * The URL as the user sent it.
+   */
+  url: string;
+  /**
+   * Why the page could not be read.
+   */
+  reason: WebFetchFailureReason;
+};
+
+/**
+ * WebFetchFailureReason
+ *
+ * Why a linked page could not be read, so the answer can tell the user instead of inventing the page.
+ */
+export const WebFetchFailureReason = {
+  MALFORMED_URL: "malformed_url",
+  UNSUPPORTED_URL: "unsupported_url",
+  BLOCKED_HOST: "blocked_host",
+  NOT_FOUND: "not_found",
+  ACCESS_DENIED: "access_denied",
+  HTTP_ERROR: "http_error",
+  TIMEOUT: "timeout",
+  UNSUPPORTED_CONTENT: "unsupported_content",
+  EMPTY_CONTENT: "empty_content",
+  URL_LIMIT_REACHED: "url_limit_reached",
+} as const;
+
+/**
+ * WebFetchFailureReason
+ *
+ * Why a linked page could not be read, so the answer can tell the user instead of inventing the page.
+ */
+export type WebFetchFailureReason =
+  (typeof WebFetchFailureReason)[keyof typeof WebFetchFailureReason];
+
+/**
+ * WebPagesFetchedEvent
+ *
+ * The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.
+ *
+ * Displayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources
+ * the answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of
+ * those pages, with the failures beside them.
+ */
+export type WebPagesFetchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the pages read and the links that failed.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The pages the block holds, one per page, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNode>;
+  /**
+   * Failures
+   *
+   * The links that could not be read, with the reason for each.
+   */
+  failures?: Array<WebFetchFailure>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * WebhookResponse
  */
 export type WebhookResponse = {
@@ -20610,6 +21955,23 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
   parameters?: {
     [key: string]: unknown;
   };
+  [key: string]: unknown;
+};
+
+/**
+ * Usage
+ *
+ * The usage information for the request.
+ */
+export type OpenaiTypesCreateEmbeddingResponseUsage = {
+  /**
+   * Prompt Tokens
+   */
+  prompt_tokens: number;
+  /**
+   * Total Tokens
+   */
+  total_tokens: number;
   [key: string]: unknown;
 };
 
@@ -20809,6 +22171,8 @@ export type AgentClassDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -20869,6 +22233,12 @@ export type AgentClassDtoWritable = {
    * Whether the agent class can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
   /**
    * Is Online
    *
@@ -20945,6 +22315,8 @@ export type AgentConfigDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -22791,6 +24163,7 @@ export type ContextualizedAgentEventWritable = {
     | HumanInTheLoopInputRequestEventWritable
     | ToolApprovalRequestEventWritable
     | HumanInTheLoopConfirmationRequestEventWritable
+    | HumanInTheLoopQuestionsRequestEventWritable
     | HumanInTheLoopChatRequestEventWritable
     | HumanInTheLoopRequestEventWritable
     | AgentInTheLoopRequestEventWritable
@@ -22812,6 +24185,8 @@ export type ContextualizedAgentEventWritable = {
     | MemoryRecalledEventWritable
     | MemoryStorageRequestedEventWritable
     | SearchKnowledgeEventWritable
+    | FetchWebPagesEventWritable
+    | ExtractRecordsEventWritable
     | ReadAttachedFilesEventWritable
     | AttachedFilesReadEventWritable
     | RunToolLoopEventWritable
@@ -22827,6 +24202,8 @@ export type ContextualizedAgentEventWritable = {
     | ThoughtEventWritable
     | AttachedFileEventWritable
     | KnowledgeSearchedEventWritable
+    | WebPagesFetchedEventWritable
+    | RecordsExtractedEventWritable
     | ToolResultEventWritable
     | ToolLoopStatusEventWritable
     | ToolLoopCondensedEventWritable
@@ -23562,6 +24939,149 @@ export type ExceptionEventWritable = {
 };
 
 /**
+ * ExtractRecordsEvent
+ *
+ * Asks the record-extraction capability for one table across the selected knowledge documents.
+ *
+ * Built with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose
+ * `extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to
+ * what the asking user may read, never the model's.
+ */
+export type ExtractRecordsEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The documents to extract from; none when the request confirms a sample.
+   */
+  selection?: KnowledgeDocumentSelection | null;
+  /**
+   * Confirmed
+   *
+   * Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.
+   */
+  confirmed?: boolean;
+  /**
+   * Fields
+   *
+   * What each row holds, in the user's words, e.g. 'date, item, amount'.
+   */
+  fields: string;
+  /**
+   * Instructions
+   *
+   * Which records to keep, e.g. 'only hardware'; never turned into a column.
+   */
+  instructions?: string | null;
+  /**
+   * Row Terms
+   *
+   * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
+   */
+  row_terms?: string | null;
+  /**
+   * Document Terms
+   *
+   * Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.
+   */
+  document_terms?: string | null;
+  /**
+   * Collections
+   *
+   * The collections the documents are selected from.
+   */
+  collections: Array<BucketNamespacePair>;
+  /**
+   * Notices
+   *
+   * What the caller wants said with the table's summary, e.g. ignored references.
+   */
+  notices?: Array<string>;
+  /**
+   * Cut Short
+   *
+   * Whether the caller stopped looking for documents at a limit before it was done.
+   */
+  cut_short?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * FetchWebPagesEvent
+ *
+ * Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.
+ *
+ * Built with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the
+ * profile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.
+ */
+export type FetchWebPagesEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Urls
+   *
+   * The links to read, in the order the user gave them.
+   */
+  urls?: Array<string>;
+  /**
+   * Reading
+   *
+   * Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.
+   */
+  reading?: boolean;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the pages by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * FewShotAcceptEvent
  *
  * Event indicating that the few-shot guard accepted the request.
@@ -23716,6 +25236,12 @@ export type FullAgentInstanceDtoWritable = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Start Events
    *
    * A list of `EventSpecs` representing events that can start this agent's workflow.
@@ -23752,7 +25278,7 @@ export type FullAgentInstanceDtoWritable = {
   /**
    * Configuration
    *
-   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.
+   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.
    */
   configuration?: {
     [key: string]: unknown;
@@ -23839,6 +25365,8 @@ export type FullProcessInstanceDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -23979,6 +25507,8 @@ export type GroupWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -24185,6 +25715,8 @@ export type HumanInDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -24268,6 +25800,8 @@ export type HumanInSpecsWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -24526,6 +26060,59 @@ export type HumanInTheLoopInputResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopInputRequestEventWritable;
+  [key: string]: unknown;
+};
+
+/**
+ * HumanInTheLoopQuestionsRequestEvent
+ *
+ * A chat question that also carries its parts as choice questions.
+ *
+ * Clients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows
+ * `question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to
+ * five questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
+ */
+export type HumanInTheLoopQuestionsRequestEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Question
+   *
+   * The query or prompt presented to the human operator.
+   */
+  question: string;
+  /**
+   * Topic
+   *
+   * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+   */
+  topic: PartialAgentTopic | AgentInstanceTopic;
+  /**
+   * Hitl Type
+   */
+  hitl_type?: "chat";
+  /**
+   * Questions
+   *
+   * The question's parts, for clients that show a dialog.
+   */
+  questions: Array<HumanInTheLoopChoiceQuestion>;
   [key: string]: unknown;
 };
 
@@ -24797,6 +26384,8 @@ export type IncidentFormDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -25015,6 +26604,14 @@ export type IngestedNodeWritable = {
    */
   heading_level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | null;
   /**
+   * Record Fields
+   *
+   * Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.
+   */
+  record_fields?: {
+    [key: string]: string | number | number | Array<string>;
+  };
+  /**
    * Score
    *
    * Score representing the relevance of the document.
@@ -25069,6 +26666,8 @@ export type IngestorDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -25720,6 +27319,12 @@ export type InputTextWritable = {
    * Icon suffix
    */
   iconSuffix?: string | null;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   [key: string]: unknown;
 };
 
@@ -26232,6 +27837,12 @@ export type KnowledgeSearchedEventWritable = {
    */
   grounding_nodes?: Array<IngestedNodeWritable>;
   /**
+   * Missing
+   *
+   * Referenced collections that were not searched, because they no longer exist.
+   */
+  missing?: Array<KnowledgeReference>;
+  /**
    * Refused
    *
    * Referenced collections that were not searched, because the user may not read them.
@@ -26549,6 +28160,14 @@ export type LlmStopEventWritable = {
   tools?: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
   [key: string]: unknown;
 };
 
@@ -26886,6 +28505,12 @@ export type LocaleInputWritable = {
    * Placeholder text for each language
    */
   placeholder?: LocaleString | string | null;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters per language
+   */
+  maxLength?: number | null;
   [key: string]: unknown;
 };
 
@@ -27390,6 +29015,263 @@ export type MinimalAgentInstanceDtoWritable = {
    * Whether the agent can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+};
+
+/**
+ * ModelBoundInputNumber
+ *
+ * A number input whose upper bound and default hint come from the model picked elsewhere on the same form.
+ *
+ * A static range cannot be right for every model: an input-token budget a small-context model cannot serve, or
+ * a temperature hint that is only the default of some other model. The frontend reads the selected model's
+ * LiteLLM `model_info` and applies `max_from` as the maximum and `default_from` as the placeholder; the API
+ * rejects a save above the model's limit, since this bound is not part of the announced JSON schema.
+ *
+ * With an `override_label`, a nullable field gets an override checkbox of its own instead of the form's generic
+ * enable toggle: the input stays in view, disabled and showing the model's default while unset, and is pre-filled
+ * with that default when the admin starts overriding it, so the default is visible before deciding. A budget
+ * such as the input tokens has no curated default: unset, it fills `fill_factor` of the model's `max_from` limit,
+ * which is also the highest value it accepts (`maximum_for`).
+ *
+ * ```python
+ * number_of_input_tokens=ModelBoundInputNumber(
+ * label=LocaleString(en="Input tokens"), model_ref="llm.model_name", max_from="max_input_tokens", min=1024
+ * )
+ * ```
+ */
+export type ModelBoundInputNumberWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Model-bound number input.
+   */
+  formkit?: "modelBoundNumber";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Disabled
+   *
+   * Whether the input is disabled
+   */
+  disabled?: boolean;
+  /**
+   * Readonly
+   *
+   * Whether the input is readonly
+   */
+  readonly?: boolean;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Min
+   *
+   * Minimum value
+   */
+  min?: number | null;
+  /**
+   * Max
+   *
+   * Maximum value
+   */
+  max?: number | null;
+  /**
+   * Step
+   *
+   * Step factor for increment/decrement
+   */
+  step?: number | null;
+  /**
+   * Usegrouping
+   *
+   * Whether to use grouping separators
+   */
+  useGrouping?: boolean;
+  /**
+   * Minfractiondigits
+   *
+   * Minimum number of fraction digits
+   */
+  minFractionDigits?: number;
+  /**
+   * Maxfractiondigits
+   *
+   * Maximum number of fraction digits
+   */
+  maxFractionDigits?: number;
+  /**
+   * Locale
+   *
+   * Locale to use for number formatting
+   */
+  locale?: string | null;
+  /**
+   * Mode
+   *
+   * Input mode
+   */
+  mode?: "decimal" | "currency" | null;
+  /**
+   * Currency
+   *
+   * Currency code for currency mode
+   */
+  currency?: string | null;
+  /**
+   * Prefix
+   *
+   * Prefix text
+   */
+  prefix?: LocaleString | string | null;
+  /**
+   * Suffix
+   *
+   * Suffix text
+   */
+  suffix?: LocaleString | string | null;
+  /**
+   * Showbuttons
+   *
+   * Whether to show increment/decrement buttons
+   */
+  showButtons?: boolean;
+  /**
+   * Buttonlayout
+   *
+   * Layout of increment/decrement buttons
+   */
+  buttonLayout?: "stacked" | "horizontal" | null;
+  /**
+   * Modelref
+   *
+   * Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered. Never prefix it with '$': FormKit compiles such schema strings as expressions.
+   */
+  modelRef: string;
+  /**
+   * Maxfrom
+   *
+   * The model_info key supplying the maximum, e.g. 'max_input_tokens'.
+   */
+  maxFrom?: string | null;
+  /**
+   * Defaultfrom
+   *
+   * The model_info key shown as the default the model uses when the field is left empty, e.g. 'default_temperature'.
+   */
+  defaultFrom?: string | null;
+  /**
+   * Fallbackdefault
+   *
+   * What applies when the model curates no `default_from` value, shown in its place; unset means the provider decides and the label says so.
+   */
+  fallbackDefault?: number | null;
+  /**
+   * Overridelabel
+   *
+   * Label of the element's own override checkbox, followed by the model's default. Set it on a nullable field whose unset value means 'use the model's default'.
+   */
+  overrideLabel?: LocaleString | string | null;
+  /**
+   * Fillfactor
+   *
+   * The share of the `max_from` limit the runtime actually fills, when it keeps a margin below it. It is the field's bound, so a value never promises more than a run uses, and without a `default_from` also what an unset field applies, as a budget left to the model fills its window.
+   */
+  fillFactor?: number | null;
+  [key: string]: unknown;
 };
 
 /**
@@ -27406,6 +29288,172 @@ export type ModelDtoWritable = {
    * Detailed information about the model
    */
   model_info: ModelInfoDto;
+};
+
+/**
+ * ModelGatedCheckbox
+ *
+ * A checkbox that can only be switched on while the model picked elsewhere on the same form has a capability.
+ *
+ * The frontend disables it and shows it unchecked while the selected model's LiteLLM `model_info` sets
+ * `requires` to false; the API rejects a save that enables it for such a model. A model that does not declare
+ * the capability at all is not held against it, as LiteLLM leaves most flags unset.
+ */
+export type ModelGatedCheckboxWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Model-gated checkbox.
+   */
+  formkit?: "modelGatedCheckbox";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Disabled
+   *
+   * Whether the input is disabled
+   */
+  disabled?: boolean;
+  /**
+   * Readonly
+   *
+   * Whether the input is readonly
+   */
+  readonly?: boolean;
+  /**
+   * Binary
+   *
+   * Whether the checkbox works in binary mode
+   */
+  binary?: boolean;
+  /**
+   * Indeterminate
+   *
+   * Whether the checkbox is in indeterminate state
+   */
+  indeterminate?: boolean;
+  /**
+   * Truevalue
+   *
+   * Value to emit when checked
+   */
+  trueValue?: boolean | string | number | null;
+  /**
+   * Falsevalue
+   *
+   * Value to emit when unchecked
+   */
+  falseValue?: boolean | string | number | null;
+  /**
+   * Prefix
+   *
+   * Prefix text
+   */
+  prefix?: LocaleString | string | null;
+  /**
+   * Suffix
+   *
+   * Suffix text
+   */
+  suffix?: LocaleString | string | null;
+  /**
+   * Modelref
+   *
+   * Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered.
+   */
+  modelRef: string;
+  /**
+   * Requires
+   *
+   * The model_info capability flag that must not be false, e.g. 'supports_vision'.
+   */
+  requires: string;
+  [key: string]: unknown;
 };
 
 /**
@@ -28105,6 +30153,8 @@ export type ProcessClassDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -28701,6 +30751,12 @@ export type ReadAttachedFilesEventWritable = {
    */
   files?: Array<UserUploadedFile>;
   /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -28788,6 +30844,110 @@ export type RecallMemoryEventWritable = {
    * Tool Call Id
    *
    * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * RecordsExtractedEvent
+ *
+ * The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a
+ * file, and its summary.
+ *
+ * The event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size
+ * stays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.
+ * When a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients
+ * show the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients
+ * offer the file for download.
+ */
+export type RecordsExtractedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Extraction Id
+   *
+   * The `ExtractRecordsEvent` this answers.
+   */
+  extraction_id: string;
+  /**
+   * Columns
+   *
+   * The table's columns, the source columns first.
+   */
+  columns?: Array<string>;
+  /**
+   * Table
+   *
+   * The first rows as a markdown table, a preview when `file` holds more; empty without rows.
+   */
+  table?: string;
+  /**
+   * The whole table as a CSV file; none when there are no rows.
+   */
+  file?: ExtractedTableFile | null;
+  /**
+   * Summary
+   *
+   * Files matched, rows found, files that failed and why, and what was cut short.
+   */
+  summary: string;
+  /**
+   * File Count
+   *
+   * Documents extracted from.
+   */
+  file_count?: number;
+  /**
+   * Failed Count
+   *
+   * Documents that could not be extracted.
+   */
+  failed_count?: number;
+  /**
+   * Row Count
+   *
+   * Rows in the preview.
+   */
+  row_count?: number;
+  /**
+   * Total Row Count
+   *
+   * Rows found; every one of them is in `file`.
+   */
+  total_row_count?: number;
+  /**
+   * Truncated
+   *
+   * Whether the search for documents stopped at a limit, so documents may be missing.
+   */
+  truncated?: boolean;
+  /**
+   * Awaiting Confirmation
+   *
+   * Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.
+   */
+  awaiting_confirmation?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
    */
   tool_call_id?: string | null;
   [key: string]: unknown;
@@ -28905,6 +31065,14 @@ export type RefusalStopEventWritable = {
   tools?: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * What about the input made the turn unanswerable.
    */
@@ -29067,6 +31235,8 @@ export type RepeaterWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -29504,6 +31674,12 @@ export type RunToolLoopEventWritable = {
    */
   cite_sources?: boolean;
   /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.
+   */
+  hands_back_results?: boolean;
+  /**
    * Files
    *
    * The files attached to the message, for tools that read them.
@@ -29515,6 +31691,12 @@ export type RunToolLoopEventWritable = {
    * The collections the user referenced on the message, for tools that search knowledge.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * The web pages the message links or references, for tools that read them.
+   */
+  web_references?: Array<string>;
   [key: string]: unknown;
 };
 
@@ -30410,6 +32592,8 @@ export type SourcePipelineDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -30770,6 +32954,12 @@ export type StoreUserMemoryRequestedEventWritable = {
    * Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.
    */
   origin_memory_llm?: string | null;
+  /**
+   * Origin Anonymise
+   *
+   * Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.
+   */
+  origin_anonymise?: boolean;
   [key: string]: unknown;
 };
 
@@ -31041,6 +33231,12 @@ export type TextareaWritable = {
    * Whether to automatically resize based on content
    */
   autoResize?: boolean;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   [key: string]: unknown;
 };
 
@@ -31999,6 +34195,12 @@ export type ToolLoopStateWritable = {
    */
   cite_sources?: boolean;
   /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop collects its tool results in `gathered`.
+   */
+  hands_back_results?: boolean;
+  /**
    * Gathered
    *
    * The tool results as context, for the blueprint's own answer.
@@ -32144,6 +34346,12 @@ export type UnreadMailListedEventWritable = {
    * Header summaries of the unread messages in the inbox.
    */
   messages?: Array<UnreadMailSummary>;
+  /**
+   * Uid Validity
+   *
+   * The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.
+   */
+  uid_validity?: number | null;
   [key: string]: unknown;
 };
 
@@ -32226,6 +34434,16 @@ export type UserMessageEventWritable = {
    * Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.
+   */
+  web_references?: Array<string>;
+  /**
+   * The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.
+   */
+  response_schema?: ResponseSchema | null;
   [key: string]: unknown;
 };
 
@@ -32402,6 +34620,61 @@ export type VectorStoreInputWritable = {
   [key: string]: unknown;
 };
 
+/**
+ * WebPagesFetchedEvent
+ *
+ * The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.
+ *
+ * Displayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources
+ * the answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of
+ * those pages, with the failures beside them.
+ */
+export type WebPagesFetchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the pages read and the links that failed.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The pages the block holds, one per page, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNodeWritable>;
+  /**
+   * Failures
+   *
+   * The links that could not be read, with the reason for each.
+   */
+  failures?: Array<WebFetchFailure>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
 export type GetHealthData = {
   body?: never;
   path?: never;
@@ -32443,15 +34716,83 @@ export type GetAuthProvidersData = {
 
 export type GetAuthProvidersResponses = {
   /**
-   * Response Get Auth Providers
-   *
    * Successful Response
    */
-  200: Array<AuthProviderResponse>;
+  200: LoginOptionsResponse;
 };
 
 export type GetAuthProvidersResponse =
   GetAuthProvidersResponses[keyof GetAuthProvidersResponses];
+
+export type GetAuthProviderData = {
+  body?: never;
+  path: {
+    /**
+     * Alias
+     *
+     * Keycloak IDP alias taken from a /auth/login/<idp-alias> link
+     */
+    alias: string;
+  };
+  query?: never;
+  url: "/auth-providers/{alias}";
+};
+
+export type GetAuthProviderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAuthProviderError =
+  GetAuthProviderErrors[keyof GetAuthProviderErrors];
+
+export type GetAuthProviderResponses = {
+  /**
+   * Response Get Auth Provider
+   *
+   * Successful Response
+   */
+  200: AuthProviderResponse | null;
+};
+
+export type GetAuthProviderResponse =
+  GetAuthProviderResponses[keyof GetAuthProviderResponses];
+
+export type GetTenantAuthProviderData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant ID taken from the tenant's login link
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/auth-providers/tenants/{tenant_id}";
+};
+
+export type GetTenantAuthProviderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetTenantAuthProviderError =
+  GetTenantAuthProviderErrors[keyof GetTenantAuthProviderErrors];
+
+export type GetTenantAuthProviderResponses = {
+  /**
+   * Successful Response
+   */
+  200: TenantAuthProviderResponse;
+};
+
+export type GetTenantAuthProviderResponse =
+  GetTenantAuthProviderResponses[keyof GetTenantAuthProviderResponses];
 
 export type GetSuiteData = {
   body?: never;
@@ -33565,6 +35906,56 @@ export type GetOpenChatHitlResponses = {
 export type GetOpenChatHitlResponse =
   GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
 
+export type GetExtractedTableDownloadUrlData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Thread ID
+     */
+    thread_id: string;
+    /**
+     * Extraction ID
+     */
+    extraction_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/threads/{thread_id}/extracted-tables/{extraction_id}/download-url";
+};
+
+export type GetExtractedTableDownloadUrlErrors = {
+  /**
+   * The thread holds no extracted table with this id
+   */
+  404: unknown;
+  /**
+   * The table was stored, but its retention has passed and it is deleted
+   */
+  410: unknown;
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetExtractedTableDownloadUrlError =
+  GetExtractedTableDownloadUrlErrors[keyof GetExtractedTableDownloadUrlErrors];
+
+export type GetExtractedTableDownloadUrlResponses = {
+  /**
+   * Successful Response
+   */
+  200: SignedUrlDto;
+};
+
+export type GetExtractedTableDownloadUrlResponse =
+  GetExtractedTableDownloadUrlResponses[keyof GetExtractedTableDownloadUrlResponses];
+
 export type GetAgentClassesData = {
   body?: never;
   path: {
@@ -34002,7 +36393,7 @@ export type InitiateFileUploadResponse =
   InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
 
 export type ValidateFileUploadData = {
-  body: AgentFileValidationRequest;
+  body: AgentFileBatchValidationRequest;
   path: {
     /**
      * Tenant Id
@@ -34037,11 +36428,53 @@ export type ValidateFileUploadResponses = {
   /**
    * Successful Response
    */
-  200: AgentFileValidationResponse;
+  200: AgentFileBatchValidationResponse;
 };
 
 export type ValidateFileUploadResponse =
   ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
+
+export type GetImageData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Agent Class
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     */
+    agent_id: string;
+    /**
+     * Name
+     */
+    name: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/images/{name}";
+};
+
+export type GetImageErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetImageError = GetImageErrors[keyof GetImageErrors];
+
+export type GetImageResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
 
 export type GetProcessClassesData = {
   body?: never;
@@ -35020,9 +37453,25 @@ export type GetModelsData = {
      */
     tenant_id: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Include Agents
+     *
+     * Also list the agents the user may call. Off by default: OpenWebUI lists this endpoint and shows agents through its own pipe, so listing them here would show each twice.
+     */
+    include_agents?: boolean;
+  };
   url: "/{tenant_id}/openai/models";
 };
+
+export type GetModelsErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetModelsError = GetModelsErrors[keyof GetModelsErrors];
 
 export type GetModelsResponses = {
   /**
@@ -36648,6 +39097,47 @@ export type GetUserFileContentResponses = {
    */
   200: unknown;
 };
+
+export type PreviewUserFileData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query: {
+    /**
+     * Path
+     *
+     * The office document to preview.
+     */
+    path: string;
+  };
+  url: "/{tenant_id}/user-knowledge/preview";
+};
+
+export type PreviewUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type PreviewUserFileError =
+  PreviewUserFileErrors[keyof PreviewUserFileErrors];
+
+export type PreviewUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePreviewDto;
+};
+
+export type PreviewUserFileResponse =
+  PreviewUserFileResponses[keyof PreviewUserFileResponses];
 
 export type UploadUserFileData = {
   body: BodyUploadUserFile;

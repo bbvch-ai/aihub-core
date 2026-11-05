@@ -21,6 +21,8 @@ from swiss_ai_hub.core.form.elements.knowledge_collection_selector import Knowle
 from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
 from swiss_ai_hub.core.form.elements.listbox import Listbox
 from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
+from swiss_ai_hub.core.form.elements.model_bound_input_number import ModelBoundInputNumber
+from swiss_ai_hub.core.form.elements.model_gated_checkbox import ModelGatedCheckbox
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.multi_select import MultiSelect
 from swiss_ai_hub.core.form.elements.password import Password
@@ -46,6 +48,8 @@ _FORMKIT_TYPE_MAP: dict[str, str] = {
     "knowledgeCollectionSelector": "KnowledgeCollectionSelector",
     "knowledgeDatabaseSelector": "KnowledgeDatabaseSelector",
     "localeInput": "LocaleInput",
+    "modelBoundNumber": "ModelBoundInputNumber",
+    "modelGatedCheckbox": "ModelGatedCheckbox",
     "modelSelect": "ModelSelect",
     "primeCascadeSelect": "CascadeSelect",
     "primeCheckbox": "Checkbox",
@@ -108,6 +112,8 @@ _FormElementUnion = (
     | Annotated[Knob, Tag("Knob")]
     | Annotated[Listbox, Tag("Listbox")]
     | Annotated[LocaleInput, Tag("LocaleInput")]
+    | Annotated[ModelBoundInputNumber, Tag("ModelBoundInputNumber")]
+    | Annotated[ModelGatedCheckbox, Tag("ModelGatedCheckbox")]
     | Annotated[ModelSelect, Tag("ModelSelect")]
     | Annotated[MultiSelect, Tag("MultiSelect")]
     | Annotated[Password, Tag("Password")]

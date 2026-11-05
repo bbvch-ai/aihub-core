@@ -237,6 +237,23 @@ class TestNestedForms:
         assert "street" in child_names
         assert "city" in child_names
 
+    def test_a_group_with_differently_shown_children_shows_when_any_child_would(self) -> None:
+        """FormKit evaluates ``a || a && b`` as ``(a || a) && b``; unparenthesised, a group whose field depends on a
+        sibling inside it would never show, because the sibling never mounts."""
+        kind = "$get(kind).value === 'x'"
+        cloud_only = f"{kind} && $get(edition).value === 'cloud'"
+        form = NestedOuterForm(
+            name=InputText(label=LocaleString(en="Name")),
+            address=NestedInnerForm(
+                street=InputText(label=LocaleString(en="Street"), condition_if=kind),
+                city=InputText(label=LocaleString(en="City"), condition_if=cloud_only),
+            ),
+        )
+
+        group = form.to_formkit_form()[1]
+
+        assert group.condition_if == f"$: ({kind}) || ({cloud_only})"
+
     def test_deeply_nested_forms(self) -> None:
         """Test that deeply nested forms produce nested Groups."""
         form = DeepNestedLevel1(

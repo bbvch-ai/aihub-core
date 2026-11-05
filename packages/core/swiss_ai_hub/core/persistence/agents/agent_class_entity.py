@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import TYPE_CHECKING, Self
 
 from bson import ObjectId
@@ -16,12 +16,14 @@ from mongoengine import (
 )
 from pydantic import TypeAdapter
 
+from swiss_ai_hub.core.discovery.discovery_kind import DiscoveryKind
 from swiss_ai_hub.core.events.agent.discovery.agent_class_discovery_response_event import (
     AgentClassDiscoveryResponseEvent,
 )
 from swiss_ai_hub.core.events.discovery.event_specs import EventSpecs
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
 from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
@@ -36,6 +38,7 @@ class EventSpec(EmbeddedDocument):
 
     event_name = StringField(required=True)
     event_schema_json = StringField(required=True)  # Store as JSON string to avoid issues with $ in keys
+    api_input_schema_json = StringField()
     event_parents = ListField(StringField(), default=list)
 
     @property
@@ -43,12 +46,17 @@ class EventSpec(EmbeddedDocument):
         """Deserialize the event schema from JSON string to dictionary."""
         return json.loads(self.event_schema_json)
 
+    @property
+    def api_input_schema(self) -> dict | None:
+        return json.loads(self.api_input_schema_json) if self.api_input_schema_json else None
+
     @classmethod
     def from_specs(cls, event_specs: EventSpecs) -> Self:
         """Create an EventSpec from an EventSpecs object."""
         return cls(
             event_name=event_specs.event_name,
             event_schema_json=json.dumps(event_specs.event_schema),
+            api_input_schema_json=json.dumps(event_specs.api_input_schema) if event_specs.api_input_schema else None,
             event_parents=event_specs.event_parents,
         )
 
@@ -57,6 +65,7 @@ class EventSpec(EmbeddedDocument):
         return EventSpecs(
             event_name=self.event_name,
             event_schema=self.event_schema,
+            api_input_schema=self.api_input_schema,
             event_parents=self.event_parents,
         )
 
@@ -67,13 +76,11 @@ class AgentClassEntity(Document):
 
     Stores the class-level metadata (name, description, icon), form schema for
     creating agent instances, and the validation specs.
-    Online status is determined by the last_discovered timestamp.
+    Online status compares the last_discovered timestamp with the completed discovery rounds.
 
     NOTE: This entity stores CLASS information only (one record per agent_class).
     Instance/configuration data is stored in AgentConfigEntityDocument.
     """
-
-    ONLINE_THRESHOLD = timedelta(minutes=5)
 
     meta = {
         "collection": "agent_classes",
@@ -98,6 +105,7 @@ class AgentClassEntity(Document):
     # value, and reads must not yield None into the non-optional DTO field. Self-heals on next discovery.
     is_schedulable = BooleanField(required=True, default=False)
     supported_features = ListField(StringField(), default=list)
+    supports_response_schema = BooleanField(required=True, default=False)
     start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     hitl_request_events = ListField(EmbeddedDocumentField(EventSpec), default=list)
@@ -107,12 +115,13 @@ class AgentClassEntity(Document):
     first_discovered = DateTimeField(required=True, default=datetime.now)
     last_discovered = DateTimeField(required=True, default=datetime.now)
 
-    @property
-    def is_online(self) -> bool:
-        """Agent is online if it responded to discovery within the threshold."""
-        if self.last_discovered is None:
-            return False
-        return datetime.now() - self.last_discovered < self.ONLINE_THRESHOLD
+    def is_online_since(self, threshold: datetime) -> bool:
+        """Whether the class answered a discovery round at or after `threshold`, from `online_threshold()`.
+
+        `last_discovered` is nominally required, but the collection is `strict: False`, and a row missing it
+        would otherwise raise inside a caller's loop — the scheduler's snapshot would abort every tick.
+        """
+        return self.last_discovered is not None and self.last_discovered >= threshold
 
     @property
     def form_elements(self) -> list["FormkitElement"]:
@@ -142,6 +151,7 @@ class AgentClassEntity(Document):
         network_graph: dict,
         templates: list[dict] | None = None,
         agent_class_entity_id: ObjectId | None = None,
+        supports_response_schema: bool = False,
     ) -> Self:
         agent = cls(
             id=agent_class_entity_id or ObjectId(),
@@ -154,6 +164,7 @@ class AgentClassEntity(Document):
             is_conversational=is_conversational,
             is_schedulable=is_schedulable,
             supported_features=supported_features,
+            supports_response_schema=supports_response_schema,
             start_events=start_events,
             stop_events=stop_events,
             hitl_request_events=hitl_request_events,
@@ -203,6 +214,7 @@ class AgentClassEntity(Document):
             existing_agent.is_conversational = discovery.is_conversational
             existing_agent.is_schedulable = discovery.is_schedulable
             existing_agent.supported_features = [str(feature) for feature in discovery.supported_features]
+            existing_agent.supports_response_schema = discovery.supports_response_schema
             existing_agent.start_events = start_events_entities
             existing_agent.stop_events = stop_events_entities
             existing_agent.hitl_request_events = hitl_request_events_entities
@@ -223,6 +235,7 @@ class AgentClassEntity(Document):
                 is_conversational=discovery.is_conversational,
                 is_schedulable=discovery.is_schedulable,
                 supported_features=[str(feature) for feature in discovery.supported_features],
+                supports_response_schema=discovery.supports_response_schema,
                 start_events=start_events_entities,
                 stop_events=stop_events_entities,
                 hitl_request_events=hitl_request_events_entities,
@@ -240,8 +253,18 @@ class AgentClassEntity(Document):
     @classmethod
     @trace_fn
     def get_online_conversational(cls) -> list["AgentClassEntity"]:
-        threshold = datetime.now() - cls.ONLINE_THRESHOLD
-        return list(cls.objects(is_conversational=True, last_discovered__gte=threshold))
+        return list(cls.objects(is_conversational=True, last_discovered__gte=cls.online_threshold()))
+
+    @classmethod
+    @trace_fn
+    def get_online_class_names(cls) -> set[str]:
+        online = cls.objects(last_discovered__gte=cls.online_threshold()).only("agent_class")
+        return {entity.agent_class for entity in online}
+
+    @classmethod
+    def online_threshold(cls) -> datetime:
+        """Read once per request or tick and passed to `is_online_since`, so a listing costs one lookup."""
+        return DiscoveryRoundEntity.online_threshold(DiscoveryKind.AGENT)
 
     @classmethod
     @trace_fn
@@ -249,32 +272,11 @@ class AgentClassEntity(Document):
         """Every schedulable class, online or not, for a caller that needs both halves.
 
         The scheduler needs online and offline classes on the same tick — one set to fire, the other to
-        report what it dropped. Fetching them together and splitting in Python with `is_online_at` costs
+        report what it dropped. Fetching them together and splitting in Python with `is_online_since` costs
         one round-trip instead of two, on a query that runs inside the API process every tick. That is
         why there is no online-only or offline-only query to reach for here.
         """
         return list(cls.objects(is_schedulable=True))
-
-    @classmethod
-    def is_online_at(cls, entity: "AgentClassEntity", now: datetime) -> bool:
-        """Whether `entity` counts as online at `now`, matching the online/offline queries' threshold.
-
-        `last_discovered` is stored as naive **local** time — the field defaults to `datetime.now()` — so
-        an aware `now` is converted to local wall clock rather than merely stripped of its tzinfo.
-        Stripping UTC would compare two different zones and misclassify every class by the host's offset:
-        on a host ahead of UTC every dead class reads online, so runs fire into NATS with no consumer and
-        vanish; on a host behind UTC nothing ever fires. The API runs locally in dev, so that offset is
-        routinely non-zero.
-
-        Mirrors the `is_online` property's None guard: `last_discovered` is nominally required, but the
-        collection is `strict: False`, and a row missing it would otherwise raise inside the caller's
-        snapshot and abort every tick from then on.
-        """
-        if entity.last_discovered is None:
-            return False
-
-        local_now = now.astimezone().replace(tzinfo=None) if now.tzinfo else now
-        return entity.last_discovered >= local_now - cls.ONLINE_THRESHOLD
 
     @classmethod
     @trace_fn

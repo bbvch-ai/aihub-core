@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
@@ -27,6 +28,7 @@ from swiss_ai_hub.core.generative_ai import (
     RetrievalRuntimeConfig,
     combine_nodes_in_order,
     context_sufficient_guard,
+    context_sufficient_guard_messages,
     estimate_prompt_tokens,
     few_shot_guard,
     limit_chat_history,
@@ -42,6 +44,8 @@ from swiss_ai_hub.agent.agents.rag_agent.events.context_insufficient_with_query_
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.expert_answer_context_event import ExpertAnswerContextEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import FALLBACK_INPUT_TOKENS, ConversationFields
 from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
@@ -67,7 +71,7 @@ def effective_input_token_limit(
 
 async def do_limit_chat_history(
     messages: list[ChatMessage],
-    number_of_input_tokens: int,
+    number_of_input_tokens: int | None,
     last_user_message: ChatMessage,
     llm_configs: list[LLMConfig | None],
     displayer: EventDisplayer,
@@ -93,13 +97,21 @@ async def do_limit_chat_history(
     here and still overflows downstream gets the provider's own 400, which `ModelGatewayErrorHandler` rewrites into a
     sentence naming the limit.
 
+    An unset `number_of_input_tokens` sets no ceiling of the admin's own: the window alone bounds the history, and
+    `FALLBACK_INPUT_TOKENS` stands in when no window can be established.
+
     Refusing loses the thread's title, which `generate_conversation_title_step` anchors on the event this no longer
     emits. Generating one here would hand the same oversized turn to the same model and fail the same way.
     """
     budget = usable_input_budget(llm_configs)
     if budget is None:
         return LimitChatHistoryEvent(
-            limited_history=limit_chat_history(chat_history=messages, number_of_input_tokens=number_of_input_tokens)
+            limited_history=limit_chat_history(
+                chat_history=messages,
+                number_of_input_tokens=FALLBACK_INPUT_TOKENS
+                if number_of_input_tokens is None
+                else number_of_input_tokens,
+            )
         )
 
     answering_config = next(config for config in llm_configs if config is not None)
@@ -111,7 +123,8 @@ async def do_limit_chat_history(
     # the turns. Reserving room for the turn and then handing the trimmer a list that still contains it charges the
     # turn twice: no subset holding it fits the reduced limit, so `ChatMemoryBuffer` falls through to its most-recent-
     # message branch and the whole earlier conversation is dropped for any turn past half the budget.
-    older_limit = min(number_of_input_tokens, budget - last_turn_tokens)
+    room = budget - last_turn_tokens
+    older_limit = room if number_of_input_tokens is None else min(number_of_input_tokens, room)
     limited = [*limit_chat_history(chat_history=messages[:-1], number_of_input_tokens=older_limit), *messages[-1:]]
     return LimitChatHistoryEvent(limited_history=limited)
 
@@ -201,9 +214,7 @@ async def do_retrieve(
         query = event.condensed_question
     else:
         query = event.new_query
-    all_nodes = await retrieve_from_all_sources(query, runtime_configs, t, user)
-    nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
-    return RetrieverEvent.from_nodes(nodes_with_score)
+    return RetrieverEvent(nodes=await retrieve_from_all_sources(query, runtime_configs, t, user))
 
 
 async def do_rerank_nodes(
@@ -214,22 +225,33 @@ async def do_rerank_nodes(
     t: LocaleHandler,
     user: UserIdentity | None,
 ) -> RerankerEvent:
-    """Rerank nodes and build RerankerEvent."""
+    """Rerank nodes and build RerankerEvent; ordered by retrieval score when the reranker is unavailable.
+
+    The fallback keeps the turn answering from what was retrieved rather than failing on the ranking, as `Knowledge`
+    does; `reranked` on the event tells a reader which order the answer was built from.
+    """
     await displayer.display_thought(t("agent.thought.reranking_results"))
-    reranked_nodes = await rerank_nodes(
-        nodes=nodes,
-        query=query,
-        reranking_model=reranking_config.reranking_model,
-        user=user,
-    )
+    top_n = reranking_config.reranking_model.top_n
+    try:
+        output_nodes = await rerank_nodes(
+            nodes=nodes,
+            query=query,
+            reranking_model=reranking_config.reranking_model,
+            user=user,
+        )
+        reranked = True
+    except Exception:
+        logger.exception("[rag] Could not rerank the retrieved nodes, keeping retrieval order")
+        output_nodes = sorted(nodes, key=lambda node: node.score or 0.0, reverse=True)[:top_n]
+        reranked = False
 
     return RerankerEvent(
         query=query,
         rerank_model_name=reranking_config.reranking_model.model_name,
-        top_n=reranking_config.reranking_model.top_n,
+        top_n=top_n,
         input_nodes=nodes,
-        output_nodes=reranked_nodes,
-        reranked=reranking_config.reranking_model is not None,
+        output_nodes=output_nodes,
+        reranked=reranked,
     )
 
 
@@ -287,15 +309,29 @@ async def do_context_sufficient_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    chat_history: list[ChatMessage],
+    history: list[ChatMessage],
+    blocks: Sequence[list[ChatMessage]],
+    conversation: ConversationFields,
     user: UserIdentity | None,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
+    """Ask the task model whether the retrieved documents answer the question.
+
+    The history is fitted here, not by the caller: the guard renders the documents and its own instructions next to
+    it, so only the room left after them may hold the history. Fitted to the whole budget, the prompt overflowed
+    by the size of the documents (issue #2077).
+    """
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
 
     prev_queries = await run_context.get("prev_queries", [])
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
+
+    guard_prompt = context_sufficient_guard_messages(
+        t, user_query, context_message, prev_queries, more_hops_available, chat_history=[]
+    )
+    reserve_tokens = estimate_prompt_tokens(guard_prompt, conversation.llm.token_counter)
+    chat_history = Conversation.fit(history, blocks, conversation, reserve_tokens=reserve_tokens)
 
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         guard_result = await context_sufficient_guard(

@@ -139,6 +139,9 @@ import type {
   GetAnonymousFileRedirectError,
   GetAnonymousFileUrlData,
   GetAnonymousFileUrlError,
+  GetAuthProviderData,
+  GetAuthProviderError,
+  GetAuthProviderResponse,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
   GetChatDisclaimerData,
@@ -164,11 +167,16 @@ import type {
   GetEmbeddingsData,
   GetEmbeddingsError,
   GetEmbeddingsResponse,
+  GetExtractedTableDownloadUrlData,
+  GetExtractedTableDownloadUrlError,
+  GetExtractedTableDownloadUrlResponse,
   GetFileUrlData,
   GetFileUrlError,
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetImageData,
+  GetImageError,
   GetIncidentAvailabilityData,
   GetIncidentAvailabilityResponse,
   GetIncidentFormData,
@@ -192,6 +200,7 @@ import type {
   GetLocaleData,
   GetLocaleResponse,
   GetModelsData,
+  GetModelsError,
   GetModelsResponse,
   GetModelWithAssistantsData,
   GetModelWithAssistantsError,
@@ -255,6 +264,9 @@ import type {
   GetSummaryNodesForDocumentResponse,
   GetSupportedFileTypesData,
   GetSupportedFileTypesResponse,
+  GetTenantAuthProviderData,
+  GetTenantAuthProviderError,
+  GetTenantAuthProviderResponse,
   GetThreadData,
   GetThreadError,
   GetThreadResponse,
@@ -286,6 +298,9 @@ import type {
   MoveUserFileData,
   MoveUserFileError,
   MoveUserFileResponse,
+  PreviewUserFileData,
+  PreviewUserFileError,
+  PreviewUserFileResponse,
   ProcessDocumentData,
   ProcessDocumentError,
   ProcessDocumentResponse,
@@ -452,6 +467,49 @@ export const getAuthProviders = <
     unknown,
     DefaultT
   >({ url: "/auth-providers/", ...options });
+
+/**
+ * Get Auth Provider
+ */
+export const getAuthProvider = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAuthProviderResponse = GetAuthProviderResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAuthProviderData,
+    GetAuthProviderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetAuthProviderResponse | DefaultT,
+    GetAuthProviderError,
+    DefaultT
+  >({ url: "/auth-providers/{alias}", ...options });
+
+/**
+ * Get Tenant Auth Provider
+ */
+export const getTenantAuthProvider = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetTenantAuthProviderResponse =
+    GetTenantAuthProviderResponse,
+>(
+  options: Options<
+    TComposable,
+    GetTenantAuthProviderData,
+    GetTenantAuthProviderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetTenantAuthProviderResponse | DefaultT,
+    GetTenantAuthProviderError,
+    DefaultT
+  >({ url: "/auth-providers/tenants/{tenant_id}", ...options });
 
 /**
  * Get Suite
@@ -1374,6 +1432,39 @@ export const getOpenChatHitl = <
   });
 
 /**
+ * Get Extracted Table Download Url
+ *
+ * Returns a link that downloads the whole table of an extraction in the thread as CSV, valid for 24 hours.
+ *
+ * Events carry only a preview of the table; the link is signed for thread members only.
+ */
+export const getExtractedTableDownloadUrl = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetExtractedTableDownloadUrlResponse =
+    GetExtractedTableDownloadUrlResponse,
+>(
+  options: Options<
+    TComposable,
+    GetExtractedTableDownloadUrlData,
+    GetExtractedTableDownloadUrlResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetExtractedTableDownloadUrlResponse | DefaultT,
+    GetExtractedTableDownloadUrlError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/threads/{thread_id}/extracted-tables/{extraction_id}/download-url",
+    ...options,
+  });
+
+/**
  * Get Agent Classes
  *
  * Retrieve the agent classes this caller may reach.
@@ -1596,7 +1687,7 @@ export const updateAgentInstance = <
 /**
  * Get Agent Instance Threads
  *
- * Retrieve all threads that a specific agent instance is part of.
+ * Retrieve the caller's threads with a specific agent instance; agent admins see only their own too.
  */
 export const getAgentInstanceThreads = <
   TComposable extends Composable = "$fetch",
@@ -1693,10 +1784,10 @@ export const initiateFileUpload = <
 /**
  * Validate File Upload
  *
- * Validate that a file was successfully uploaded to the agent's dedicated bucket.
+ * Report which of a turn's files the agent's dedicated bucket does not hold.
  *
- * Given the conversation, the file is also placed in the user's files there once the answer is sent, so a
- * slow or unavailable sandbox never holds up or fails the chat.
+ * Once none is missing, the files are placed in the user's files of the conversation together, after the
+ * answer is sent, so a slow or unavailable sandbox never holds up or fails the chat.
  */
 export const validateFileUpload = <
   TComposable extends Composable = "$fetch",
@@ -1725,6 +1816,33 @@ export const validateFileUpload = <
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Get Image
+ *
+ * An image sent in a message to the agent, which the message references instead of carrying it.
+ *
+ * Its name is the digest of its content, so it never changes and may be cached for as long as it is kept.
+ */
+export const getImage = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, GetImageData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    unknown | DefaultT,
+    GetImageError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/images/{name}",
+    ...options,
   });
 
 /**
@@ -2046,7 +2164,7 @@ export const getProcessStartForms = <
 /**
  * Get Process Open Forms
  *
- * Returns a list of formkit forms that the user can submit to continue the given process walkthrough
+ * Returns the forms the user can submit to continue the walkthrough: only tasks assigned to them.
  */
 export const getProcessOpenForms = <
   TComposable extends Composable = "$fetch",
@@ -2500,7 +2618,7 @@ export const getChatDisclaimer = <
 /**
  * List Models
  *
- * Lists the currently available models, and provides basic information about each one such as the owner and availability.
+ * Lists the currently available models, and provides basic information about each one such as the owner and availability. With `include_agents`, the agents the user may call are listed too, as models named `AgentClass/agent_id`.
  */
 export const getModels = <
   TComposable extends Composable = "$fetch",
@@ -2511,7 +2629,7 @@ export const getModels = <
   (options.client ?? client).get<
     TComposable,
     GetModelsResponse | DefaultT,
-    unknown,
+    GetModelsError,
     DefaultT
   >({
     security: [
@@ -3837,6 +3955,34 @@ export const getUserFileContent = <
   });
 
 /**
+ * Preview User File
+ */
+export const previewUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends PreviewUserFileResponse = PreviewUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    PreviewUserFileData,
+    PreviewUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    PreviewUserFileResponse | DefaultT,
+    PreviewUserFileError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/preview",
+    ...options,
+  });
+
+/**
  * Upload User File
  */
 export const uploadUserFile = <
@@ -4260,10 +4406,10 @@ export const processDocument = <
 /**
  * Translate Text
  *
- * Translate a LocaleString to all supported locales.
+ * Fill in the empty locales of a LocaleString by translating its source locale.
  *
- * Takes a LocaleString with at least one locale populated and translates it
- * to all other supported locales (de, en, fr, it) using an LLM.
+ * Locales that already have a value are left unchanged, so retrying after a partial failure
+ * fills in only the rest. Locales that could not be translated stay empty and are listed in failed_locales.
  */
 export const translateText = <
   TComposable extends Composable = "$fetch",

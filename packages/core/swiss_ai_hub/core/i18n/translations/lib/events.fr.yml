@@ -10,6 +10,9 @@ knowledge_searched_event:
   name: Connaissances consultées
   description: L'agent a recherché dans les collections de connaissances référencées
     par l'utilisateur.
+web_pages_fetched_event:
+  name: Pages web lues
+  description: L'agent a lu les pages web indiquées par l'utilisateur.
 tool_result_event:
   name: Résultat d'outil
   description: Ce qu'a renvoyé un outil choisi par l'agent.
@@ -18,7 +21,8 @@ tool_loop_status_event:
   description: Ce que fait la boucle d'outils de l'agent.
 sandbox_file_displayed_event:
   name: Fichier affiché
-  description: L'agent a montré à l'utilisateur un fichier de son bac à sable de code en pièce jointe.
+  description: L'agent a montré à l'utilisateur un fichier de son bac à sable de code
+    en pièce jointe.
 tool_loop_condensed_event:
   name: Boucle d'outils condensée
   description: L'agent a condensé les résultats d'outils et les échanges précédents
@@ -301,6 +305,9 @@ memory_recalled_event:
 search_knowledge_event:
   name: Rechercher dans les connaissances
   description: Recherche dans les collections de connaissances
+fetch_web_pages_event:
+  name: Lire les pages web
+  description: Lecture des pages web indiquées
 read_attached_files_event:
   name: Lire les fichiers joints
   description: Lecture des fichiers joints
@@ -331,3 +338,14 @@ memory_storage_requested_event:
 not_a_meta_question_event:
   name: Pas une méta-question
   description: Réponse à la demande
+extract_records_event:
+  name: Extraire des enregistrements
+  description: Extraction d'un tableau à partir des documents sélectionnés
+records_extracted_event:
+  name: Enregistrements extraits
+  description: Le tableau extrait des documents sélectionnés
+hitl_questions_request_event:
+  name: Questions à confirmer
+  description: L'agent demande à l'utilisateur de confirmer ou de corriger les parties
+    d'une demande, sous forme de formulaire si le client en affiche un, sinon comme message
+    de chat.

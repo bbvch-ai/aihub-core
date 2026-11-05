@@ -17,6 +17,7 @@ from mongoengine.connection import get_db
 from psycopg import sql
 
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search import KnowledgeContentSearch
+from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_search_budget import KnowledgeSearchBudget
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_text_index import KnowledgeTextIndex
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_text_index_query import KnowledgeTextIndexQuery
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_text_index_settings import (
@@ -180,6 +181,28 @@ async def test_the_index_path_returns_exactly_what_the_scan_returns(
 
     assert {match.summary.id for match in indexed.matches} == {indexed_database[key] for key in keys}
     assert indexed.model_dump() == scanned.model_dump()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("query", "keys"),
+    [
+        ("Zeta Dynamics AG", {"acme"}),
+        ("PRÜFBERICHT", {"pruef", "nfd"}),
+        ("5 μg Wirkstoff", {"micro", "mu"}),
+        ("nirgends vorhanden", set()),
+    ],
+)
+async def test_matching_ids_from_the_index_are_those_of_the_scan(
+    monkeypatch: pytest.MonkeyPatch, indexed_database: dict[str, str], query: str, keys: set[str]
+) -> None:
+    """The document selector's content criterion takes this path, so it must not differ from the scan either."""
+    indexed = await KnowledgeContentSearch.matching_ids([_FINANCE], query, KnowledgeSearchBudget(5.0))
+    monkeypatch.setenv("KNOWLEDGE_TEXT_INDEX_PASSWORD", "")
+    scanned = await KnowledgeContentSearch.matching_ids([_FINANCE], query, KnowledgeSearchBudget(5.0))
+
+    assert indexed == {(_DB, "finance", indexed_database[key]) for key in keys}
+    assert indexed == scanned
 
 
 @pytest.mark.asyncio

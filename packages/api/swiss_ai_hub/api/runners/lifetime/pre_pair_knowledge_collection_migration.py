@@ -24,14 +24,14 @@ class PrePairKnowledgeCollectionMigration:
     """
 
     @staticmethod
-    def run() -> list[str]:
+    async def run() -> list[str]:
         """Rewrites every agent profile still holding the old keys; returns which ones it rewrote."""
         migrated: list[str] = []
-        for document in AgentConfigEntityDocument.find_all():
+        for document in await AgentConfigEntityDocument.list_all():
             config_data = document.config_data
             rewritten = PrePairKnowledgeCollectionMigration.rewritten(config_data)
-            if rewritten != config_data and AgentConfigEntityDocument.replace_config_data_if_unchanged(
-                document.pk, config_data, rewritten
+            if rewritten != config_data and await AgentConfigEntityDocument.replace_config_data_if_unchanged(
+                document.id, config_data, rewritten
             ):
                 migrated.append(f"agent {document.agent_class}/{document.agent_id}")
         return migrated

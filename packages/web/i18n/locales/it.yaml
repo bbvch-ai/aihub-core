@@ -187,6 +187,7 @@ thread:
 chat:
   assistant: Assistente
   document: Documento
+  image: Immagine
 event:
   list:
     firstInteraction: 'Prima interazione:'
@@ -341,6 +342,37 @@ event:
     error: Errore
     stop: Termina con
     targetAgent: Scrittore di memoria
+    links: Link
+    webReferences: Pagine web indicate
+    pagesRead: Pagine lette
+    notRead: Non lette
+    webFetchFailure:
+      malformed_url: Link non valido
+      unsupported_url: Link non supportato
+      blocked_host: Indirizzo bloccato
+      not_found: Non trovata
+      access_denied: Accesso negato
+      http_error: Errore del server
+      timeout: Tempo scaduto
+      unsupported_content: Non è una pagina web
+      empty_content: Nessun contenuto leggibile
+      url_limit_reached: Oltre il limite di link
+  extraction:
+    fields: Colonne
+    instructions: Righe da tenere
+    criteria: Documenti selezionati
+    collections: Raccolte
+    notices: Avvisi
+    documentIds: '{count} documenti scelti'
+    files: File
+    failedFiles: File non riusciti
+    rows: Righe mostrate / trovate
+    truncated: Abbreviato
+    confirmed: Estrae tutti i documenti confermati dall'utente
+    awaitingConfirmation: Campione in attesa del via libera dell'utente
+    previewRows: '{shown} di {total} righe mostrate'
+    download: Scarica l'intera tabella (CSV)
+    downloadFailed: Non è stato possibile scaricare la tabella
   toolLoop:
     loop: Insieme di strumenti
     mode: Modalità
@@ -424,6 +456,10 @@ agent:
         questo ambiente.
   export:
     button: Esporta
+  storedSecrets:
+    title: Reinserire i segreti
+    detail: 'I segreti salvati non vengono mai copiati in un nuovo profilo. Reinseriscili
+      prima di salvare: {fields}'
   configuration:
     title: Configurazione dell'agente
     description: Configura il comportamento runtime e le impostazioni per questo agente
@@ -594,6 +630,13 @@ knowledge:
   source:
     description: Sincronizzato da {name}
     edit: Modifica sorgente
+    next_sync: La sorgente si sincronizza una volta al giorno, quindi i suoi contenuti
+      compaiono dopo la prossima sincronizzazione pianificata.
+    awaiting_sync:
+      title: Nessun contenuto ancora sincronizzato
+      description: La sorgente sincronizza questo database una volta al giorno, quindi
+        le sue collezioni compaiono qui dopo la prossima sincronizzazione pianificata.
+        Se ancora non compaiono, controlla le impostazioni della sorgente.
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
   pipeline: 'Pipeline: {name}'
@@ -705,6 +748,9 @@ auth:
     welcomeProvider: Benvenuti nell'AI Hub — accesso con {provider}
     pleaseLogin: Effettua il login
     pleaseLoginWith: Effettua il login con {provider}
+    useOrganisationLink: Usa il link di accesso fornito dalla tua organizzazione.
+      Se non lo hai, contatta il tuo amministratore.
+    adminLogin: Accesso amministratore
     loginWith: Accedi con {provider}
     customSolutions: Soluzioni AI personalizzate per la tua azienda
     logoAlt: Logo dell'azienda
@@ -772,6 +818,8 @@ evaluation:
 role:
   title: Ruoli di accesso
   name: Nome
+  name_immutable_hint: Il nome non può essere modificato dopo la creazione del ruolo,
+    perché gli utenti sono assegnati ai ruoli tramite il nome.
   description: Descrizione
   edit: Modifica ruolo
   create_new: Nuovo ruolo
@@ -948,11 +996,28 @@ form:
     invalid_json: Il file non è un JSON valido.
   locale_input:
     translate_tooltip: Traduci in tutte le lingue
+    translate_partial_summary: Alcune lingue non sono state tradotte
+    translate_partial_detail: Impossibile tradurre in {locales}. Le altre lingue sono
+      state aggiornate — riprova per completare il resto.
+    translate_failed_summary: La traduzione non è riuscita questa volta
+    translate_failed_detail: Nessuna lingua è stata tradotta. Il tuo testo è invariato
+      — riprova tra un momento.
   warnings:
     org_memory_performance: Questa funzionalità potrebbe non funzionare come previsto
       in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
       fino al rilascio di una correzione.
 lib:
+  modelBound:
+    providerDefault: predefinito del fornitore
+    overrideRequired: Inserisci un valore, oppure deseleziona la sostituzione per
+      usare il valore predefinito.
+    defaultPlaceholder: 'Predefinito del modello: {value}'
+    maximumHint: Al massimo {maximum} per {model}.
+    maximumHintWithFill: 'Al massimo {maximum} per {model}: il {percent} dei {modelMaximum}
+      token del modello, come margine per le differenze nel conteggio dei token.'
+    aboveMaximum: Per {model} sono consentiti al massimo {maximum}.
+  modelGated:
+    unavailable: '{model} non lo supporta.'
   cron:
     errors:
       required: Ogni posizione è obbligatoria — una vuota non è una pianificazione
@@ -984,6 +1049,8 @@ lib:
       è possibile offrire raccolte.
     empty: L'agente selezionato non è configurato per alcuna raccolta.
     unavailable: Salvata, ma non consultata dall'agente selezionato
+  knowledgeDatabases:
+    unavailable: '{name} (eliminato o non visibile a te)'
   vectorStore:
     label: Archivio vettoriale
     help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare
@@ -1083,7 +1150,8 @@ tenant:
   mismatch_warning: Conflitto di tenant
   mismatch_description: Il tuo tenant attivo è stato cambiato in {tenant} in un'altra
     sessione. L'interfaccia di chat utilizza il tenant attivo per tutte le richieste.
-  mismatch_switch_action: Cambia tenant
+  mismatch_switch_action: Vai a {tenant}
+  mismatch_use_this_tenant: Chatta in {tenant}
   administration_title: Amministrazione tenant
   administration_description: Gestisci i tenant nell'intera piattaforma
 support:
@@ -1100,43 +1168,51 @@ support:
   unavailable: La segnalazione non è configurata su questa installazione. Contatta
     l'amministratore.
 userFiles:
-  title: "I miei file"
-  description: "I file con cui lavorate tu e i tuoi agenti: allegati delle chat, file creati per te dagli agenti e i tuoi caricamenti."
-  conversation: "Chat"
+  title: I miei file
+  description: 'I file con cui lavorate tu e i tuoi agenti: allegati delle chat, file
+    creati per te dagli agenti e i tuoi caricamenti.'
+  conversation: Chat
   actions:
-    move: "Sposta"
-    upload: "Carica"
-    newFolder: "Nuova cartella"
-    refresh: "Aggiorna"
-    download: "Scarica"
-    rename: "Rinomina"
-    delete: "Elimina"
-    close: "Chiudi"
-    cancel: "Annulla"
-    save: "Salva"
-    openFolder: "Apri la cartella {name}"
-    preview: "Anteprima di {name}"
+    move: Sposta
+    upload: Carica
+    newFolder: Nuova cartella
+    refresh: Aggiorna
+    download: Scarica
+    rename: Rinomina
+    delete: Elimina
+    close: Chiudi
+    cancel: Annulla
+    save: Salva
+    openFolder: Apri la cartella {name}
+    preview: Anteprima di {name}
   columns:
-    name: "Nome"
-    size: "Dimensione"
-    modified: "Modificato"
+    name: Nome
+    size: Dimensione
+    modified: Modificato
   empty:
-    folder: "Questa cartella è vuota. Trascina qui i file per caricarli."
-    noSpace: "Il tuo spazio file viene creato con il tuo account chat. Apri la chat una volta, poi torna qui."
+    folder: Questa cartella è vuota. Trascina qui i file per caricarli.
+    noSpace: Il tuo spazio file viene creato con il tuo account chat. Apri la chat
+      una volta, poi torna qui.
   error:
-    load: "Impossibile caricare questa cartella. Riprova con Aggiorna."
+    load: Impossibile caricare questa cartella. Riprova con Aggiorna.
   move:
-    header: "Sposta {name} in"
-    noTargets: "Nessuna cartella in cui spostarlo."
+    header: Sposta {name} in
+    noTargets: Nessuna cartella in cui spostarlo.
   preview:
-    unavailable: "Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo."
+    unavailable: Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo.
+    truncated: Questa anteprima mostra solo l'inizio del documento. Scaricalo per
+      vederlo tutto.
+    failed: Non è stato possibile creare l'anteprima di questo file. Scaricalo per
+      aprirlo.
+    empty: Questo documento non contiene testo.
+    tooLarge: Questo file è troppo grande per l'anteprima. Scaricalo per aprirlo.
   name:
-    invalid: "Un nome non può essere vuoto né contenere una barra."
+    invalid: Un nome non può essere vuoto né contenere una barra.
   delete:
-    header: "Elimina"
-    file: "Eliminare {name}?"
-    folder: "Eliminare la cartella {name} con tutto il contenuto?"
+    header: Elimina
+    file: Eliminare {name}?
+    folder: Eliminare la cartella {name} con tutto il contenuto?
   toast:
-    uploaded: "{count} file caricati"
-    uploadFailed: "Caricamento non riuscito"
-    changeFailed: "La modifica non è riuscita"
+    uploaded: '{count} file caricati'
+    uploadFailed: Caricamento non riuscito
+    changeFailed: La modifica non è riuscita

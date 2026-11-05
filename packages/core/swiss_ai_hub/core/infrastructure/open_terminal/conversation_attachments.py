@@ -25,8 +25,10 @@ class ConversationAttachments:
     async def place(self, files: dict[str, str], read: Callable[[str, str], Awaitable[bytes]]) -> dict[str, str]:
         """Place the files, given as file id to name, that are not placed yet; `read` fetches one by id and name.
 
-        Returns where each placed file lies, by file id, relative to the home."""
+        Returns where each placed file lies, by file id, relative to the home. The folder is created even when there
+        is nothing to place, because every command runs in it."""
         if not files:
+            await self._client.mkdir(self.folder)
             return {}
         placed = await self._placed()
         new_files = {file_id: name for file_id, name in files.items() if file_id not in placed}

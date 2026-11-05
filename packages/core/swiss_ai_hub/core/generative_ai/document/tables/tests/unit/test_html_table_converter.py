@@ -144,3 +144,36 @@ class TestEmptyCellsAreNotRenderedAsPlaceholders:
 
         assert df is not None
         assert len(df) == 1
+
+
+class TestCellsAreKeptAsWritten:
+    """pandas' number parsing read the comma of `1,00` as a thousands separator, so invoice amounts came out a
+    hundred times too large in every MinerU table."""
+
+    @staticmethod
+    def rows(html: str) -> list[list[str]]:
+        result = HtmlTableConverter.convert(html)
+        df = parse_markdown_table(result.removeprefix("<table>").removesuffix("</table>"))
+        assert df is not None
+        return [[str(cell) for cell in row] for row in [list(df.columns), *df.values.tolist()]]
+
+    def test_comma_decimals_keep_their_comma(self) -> None:
+        html = (
+            "<table><tr><td>Menge</td><td>Summe</td><td>Anteil</td></tr>"
+            "<tr><td>1,00</td><td>197,65</td><td>0,5</td></tr></table>"
+        )
+
+        assert self.rows(html)[1] == ["1,00", "197,65", "0,5"]
+
+    def test_trailing_and_leading_zeros_survive_a_header_row(self) -> None:
+        html = (
+            "<table><thead><tr><th>Preis</th><th>PLZ</th><th>Betrag</th></tr></thead>"
+            "<tr><td>0.10</td><td>0042</td><td>1.234,56</td></tr></table>"
+        )
+
+        assert self.rows(html) == [["Preis", "PLZ", "Betrag"], ["0.10", "0042", "1.234,56"]]
+
+    def test_na_is_text_and_an_empty_cell_stays_empty(self) -> None:
+        html = "<table><tr><td>Code</td><td>Notiz</td></tr><tr><td>NA</td><td></td></tr></table>"
+
+        assert self.rows(html)[1] == ["NA", ""]

@@ -35,6 +35,9 @@ import type {
   GetAccessCapabilitiesResponse,
   GetAccessPresetsData,
   GetAccessPresetsResponse,
+  GetAuthProviderData,
+  GetAuthProviderError,
+  GetAuthProviderResponse,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
   GetDefaultAccessRulesData,
@@ -43,6 +46,8 @@ import type {
   GetHealthResponse,
   GetMyIdentityData,
   GetMyIdentityResponse,
+  GetMyTenantsData,
+  GetMyTenantsResponse,
   GetRoleData,
   GetRoleError,
   GetRoleResponse,
@@ -361,6 +366,36 @@ export const getMyIdentity = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/my-account/identity",
+    ...options,
+  });
+
+/**
+ * Get My Tenants
+ *
+ * Returns all tenants the current user belongs to, along with sysadmin status.
+ */
+export const getMyTenants = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetMyTenantsResponse = GetMyTenantsResponse,
+>(
+  options: Options<
+    TComposable,
+    GetMyTenantsData,
+    GetMyTenantsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetMyTenantsResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/my-tenants",
     ...options,
   });
 
@@ -687,3 +722,24 @@ export const getAuthProviders = <
     unknown,
     DefaultT
   >({ url: "/auth-providers/", ...options });
+
+/**
+ * Get Auth Provider
+ */
+export const getAuthProvider = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAuthProviderResponse = GetAuthProviderResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAuthProviderData,
+    GetAuthProviderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetAuthProviderResponse | DefaultT,
+    GetAuthProviderError,
+    DefaultT
+  >({ url: "/auth-providers/{alias}", ...options });

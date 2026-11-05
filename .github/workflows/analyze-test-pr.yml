@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
     types: [opened, edited, synchronize, reopened, ready_for_review]
+concurrency:
+  # Editing the PR body (e.g. ticking a test-plan box) re-runs this workflow; overlapping runs upload
+  # SonarCloud analyses for the same PR at once and SonarCloud cancels them. Pushes to main are never cancelled.
+  group: analyze-test-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: write
   security-events: write

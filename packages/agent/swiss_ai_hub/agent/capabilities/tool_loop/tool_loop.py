@@ -9,6 +9,7 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     LLMEvent,
     Message,
+    ResponseSchema,
     RunToolLoopEvent,
     TextContent,
     ToolApprovalRequestEvent,
@@ -31,7 +32,9 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.conversation.structured_answer import StructuredAnswer
 from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
+from swiss_ai_hub.agent.capabilities.requested_response_schema import RequestedResponseSchema
 from swiss_ai_hub.agent.capabilities.tool_loop.earlier_tool_turns import EarlierToolTurns
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
@@ -153,8 +156,9 @@ class ToolLoop(Capability):
                 mode=request.mode,
                 max_iterations=request.max_iterations,
                 cite_sources=request.cite_sources,
+                hands_back_results=request.hands_back_results,
                 needs_condensing=ToolLoopCondenser.outgrown(
-                    messages, offered, conversation.input_budget(), conversation.llm.token_counter
+                    messages, offered, conversation.input_budget, conversation.llm.token_counter
                 ),
             )
         )
@@ -202,10 +206,16 @@ class ToolLoop(Capability):
             # model told by its instructions to use tools calls one anyway, and the gateway strips the call to nothing.
             note = "limit_reached" if exhausted else "no_tools"
             messages.append(ChatMessage(role=MessageRole.USER, content=t(f"agent.tool_loop.prompt.{note}")))
-        turn = await ToolLoop._turn(messages, tools, state.mode, conversation, displayer, user)
+        requested = (
+            await RequestedResponseSchema.of(run_context, type(agent)) if state.mode == ToolLoopMode.ANSWER else None
+        )
+        turn = await ToolLoop._turn(
+            messages, tools, state.mode, conversation, displayer, user, None if tools else requested
+        )
 
         assistant = turn.output_messages[-1]
         if not assistant.tool_calls:
+            await ToolLoop._keep_answer_prompt(run_context, turn, tools, state.messages, requested)
             await EarlierToolTurns(thread_context, state.loop).keep(state.question, state.messages)
             return await ToolLoop._finish(state, turn, exhausted, displayer, t)
 
@@ -235,7 +245,7 @@ class ToolLoop(Capability):
         user: UserIdentity | None = None,
     ) -> ToolLoopIterationEvent:
         """Condense the loop's conversation to fit the prompt again before the model decides on it."""
-        condenser = ToolLoopCondenser(conversation.task_llm, conversation.input_budget(), displayer, t, user)
+        condenser = ToolLoopCondenser(conversation.task_llm, conversation.input_budget, displayer, t, user)
         return ToolLoopIterationEvent(state=await condenser.condense(iteration.state))
 
     @staticmethod
@@ -331,7 +341,7 @@ class ToolLoop(Capability):
     @step(
         name=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.run_function.name"),
         description=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.run_function.description"),
-        icon="mage:wand",
+        icon="mage:stars-c",
         precondition=runs_in_the_loop,
     )
     async def run_function_step(
@@ -367,6 +377,24 @@ class ToolLoop(Capability):
         )
 
     @staticmethod
+    def _gathered(state: ToolLoopState, answered: list[ToolResultEvent]) -> list[ChatMessage]:
+        """The context a gathering loop hands its blueprint. An answering loop never reads it, and every iteration
+        event carries it, so it is only kept where it is used rather than doubling each result on the wire."""
+        if state.mode != ToolLoopMode.GATHER or not state.hands_back_results:
+            return state.gathered
+        return [
+            *state.gathered,
+            *(
+                message
+                for result in answered
+                if not result.is_error
+                for message in (
+                    result.block or [ChatMessage(role=MessageRole.SYSTEM, content=f"{result.name}: {result.content}")]
+                )
+            ),
+        ]
+
+    @staticmethod
     @step(
         name=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.join.name"),
         description=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.join.description"),
@@ -396,30 +424,18 @@ class ToolLoop(Capability):
             )
             for result in answered
         ]
-        gathered = [
-            *state.gathered,
-            *(
-                message
-                for result in answered
-                if not result.is_error
-                for message in (
-                    result.block or [ChatMessage(role=MessageRole.SYSTEM, content=f"{result.name}: {result.content}")]
-                )
-            ),
-        ]
         messages = [*state.messages, *tool_messages]
+        joined = state.model_copy(
+            update={
+                "messages": messages,
+                "iteration": state.iteration + 1,
+                "tool_calls_made": state.tool_calls_made + len(answered),
+                "gathered": ToolLoop._gathered(state, answered),
+            }
+        )
+        outgrown = ToolLoopCondenser.outgrown(messages, state.tools, conversation.input_budget, counter)
         return ToolLoopIterationEvent(
-            state=state.model_copy(
-                update={
-                    "messages": messages,
-                    "iteration": state.iteration + 1,
-                    "tool_calls_made": state.tool_calls_made + len(answered),
-                    "gathered": gathered,
-                    "needs_condensing": ToolLoopCondenser.outgrown(
-                        messages, state.tools, conversation.input_budget(), counter
-                    ),
-                }
-            )
+            state=joined.model_copy(update={"needs_condensing": outgrown or ToolLoopCondenser.oversized(joined)})
         )
 
     @staticmethod
@@ -468,6 +484,7 @@ class ToolLoop(Capability):
             access=access,
             files=request.files,
             knowledge_references=request.knowledge_references,
+            web_references=request.web_references,
             topic=topic,
         )
 
@@ -529,6 +546,23 @@ class ToolLoop(Capability):
         return state.iteration >= max_iterations or state.tool_calls_made >= loop.tool_loop.max_tool_calls
 
     @staticmethod
+    async def _keep_answer_prompt(
+        run_context: RunContext,
+        turn: LLMEvent,
+        tools: list[dict] | None,
+        loop_messages: list[Message],
+        requested: ResponseSchema | None,
+    ) -> None:
+        """Keep the prompt behind the answer for its structured correction, with the tool calls as text: the shape
+        an answer offered no tools is asked in, and one a provider accepts without the tool definitions."""
+        kept = (
+            turn
+            if tools is None
+            else turn.model_copy(update={"input_messages": ToolLoop._tool_turns_as_text(loop_messages)})
+        )
+        await StructuredAnswer.keep_prompt(run_context, kept, requested)
+
+    @staticmethod
     async def _turn(
         messages: list[ChatMessage],
         tools: list[dict] | None,
@@ -536,11 +570,14 @@ class ToolLoop(Capability):
         conversation: ConversationFields,
         displayer: EventDisplayer,
         user: UserIdentity | None,
+        response_schema: ResponseSchema | None = None,
     ) -> LLMEvent:
         """The model's turn: streamed when it may be the reply, silent when the loop only gathers."""
         async with conversation.llm.cost_reporting_llm(displayer, user=user) as llm:
             if mode == ToolLoopMode.ANSWER:
-                return await displayer.display_llm_stream(conversation.llm, llm, messages, tools=tools)
+                return await displayer.display_llm_stream(
+                    conversation.llm, llm, messages, tools=tools, response_schema=response_schema
+                )
             response = await (llm.achat(messages, tools=tools) if tools else llm.achat(messages))
         return LLMEvent(
             input_messages=[Message.from_llama_index(message) for message in messages],

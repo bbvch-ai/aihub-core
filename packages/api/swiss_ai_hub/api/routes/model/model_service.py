@@ -1,6 +1,8 @@
 import logging
 
+import httpx
 from fastapi import HTTPException
+from openai import APIStatusError
 from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
@@ -21,6 +23,7 @@ class ModelService:
         response = await LiteLLMProxySettings().httpx_aclient.get(
             url="v1/model/info", headers=await LiteLLMService.authorization_header_for_user(user)
         )
+        ModelService._raise_for_gateway_error(response)
         data = response.json()["data"]
         models: list[ModelDTO] = []
         access_checker = AccessChecker.from_user(user)
@@ -44,6 +47,22 @@ class ModelService:
             models.append(updated_model)
 
         return models
+
+    @staticmethod
+    def _raise_for_gateway_error(response: httpx.Response) -> None:
+        """
+        The listing is a raw LiteLLM call rather than an OpenAI SDK one, so its failures are raised as the SDK's
+        own status error: `ModelGatewayErrorHandler` then maps, logs and reports them as it does every model call,
+        passing a budget or rate-limit rejection through and turning this deployment's own faults into 502.
+        """
+        if not response.is_error:
+            return
+
+        has_json_body = bool(response.content) and response.headers.get("content-type", "").startswith(
+            "application/json"
+        )
+        body = response.json() if has_json_body else None
+        raise APIStatusError(f"Error code: {response.status_code} - {response.text}", response=response, body=body)
 
     @staticmethod
     @trace_fn

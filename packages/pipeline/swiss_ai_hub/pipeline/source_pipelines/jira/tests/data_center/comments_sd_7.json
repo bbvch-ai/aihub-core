@@ -1,0 +1,87 @@
+{
+  "comments": [
+    {
+      "self": "https://jira.acme.ch/jira/rest/api/2/issue/10204/comment/10500",
+      "id": "10500",
+      "author": {
+        "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+        "name": "k.nguyen",
+        "key": "JIRAUSER10100",
+        "emailAddress": "k.nguyen@acme.ch",
+        "avatarUrls": {
+          "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+        },
+        "displayName": "Khoi Nguyen",
+        "active": true,
+        "timeZone": "Asia/Ho_Chi_Minh"
+      },
+      "body": "Thanks, we are looking into it.",
+      "updateAuthor": {
+        "self": "https://jira.acme.ch/jira/rest/api/2/user?username=k.nguyen",
+        "name": "k.nguyen",
+        "key": "JIRAUSER10100",
+        "emailAddress": "k.nguyen@acme.ch",
+        "avatarUrls": {
+          "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10100"
+        },
+        "displayName": "Khoi Nguyen",
+        "active": true,
+        "timeZone": "Asia/Ho_Chi_Minh"
+      },
+      "created": "2026-10-09T09:00:00.000+0700",
+      "updated": "2026-10-09T09:00:00.000+0700",
+      "renderedBody": "<p>Thanks, we are looking into it.</p>",
+      "properties": [
+        {
+          "key": "sd.public.comment",
+          "value": {
+            "internal": false
+          }
+        }
+      ]
+    },
+    {
+      "self": "https://jira.acme.ch/jira/rest/api/2/issue/10204/comment/10501",
+      "id": "10501",
+      "author": {
+        "self": "https://jira.acme.ch/jira/rest/api/2/user?username=j.agent",
+        "name": "j.agent",
+        "key": "JIRAUSER10400",
+        "emailAddress": "j.agent@acme.ch",
+        "avatarUrls": {
+          "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10400"
+        },
+        "displayName": "Jana Agent",
+        "active": true,
+        "timeZone": "Asia/Ho_Chi_Minh"
+      },
+      "body": "INTERNAL: the customer is on the legacy plan.",
+      "updateAuthor": {
+        "self": "https://jira.acme.ch/jira/rest/api/2/user?username=j.agent",
+        "name": "j.agent",
+        "key": "JIRAUSER10400",
+        "emailAddress": "j.agent@acme.ch",
+        "avatarUrls": {
+          "48x48": "https://jira.acme.ch/jira/secure/useravatar?ownerId=JIRAUSER10400"
+        },
+        "displayName": "Jana Agent",
+        "active": true,
+        "timeZone": "Asia/Ho_Chi_Minh"
+      },
+      "created": "2026-10-09T09:05:00.000+0700",
+      "updated": "2026-10-09T09:05:00.000+0700",
+      "renderedBody": "<p>INTERNAL: the customer is on the legacy plan.</p>",
+      "properties": [
+        {
+          "key": "sd.public.comment",
+          "value": {
+            "internal": true
+          }
+        }
+      ]
+    }
+  ],
+  "maxResults": 50,
+  "total": 2,
+  "startAt": 0
+}

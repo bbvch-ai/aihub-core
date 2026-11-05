@@ -31,6 +31,7 @@ deployment/
 │       ├── init_etcd.sh.j2            # etcd auth setup (idempotent)
 │       ├── s3-entrypoint.sh.j2        # SeaweedFS S3 gateway startup
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
+│       ├── s3-ttl-init.sh.j2          # Bucket expiry as filer TTL rules (never S3 lifecycle, see ADR 2026_10_27)
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
 │       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
 │       ├── ferretdb-init.sh.j2        # FerretDB PG init (read-only role of the knowledge content search)
@@ -65,8 +66,15 @@ keeps the two-axis shape.
 
 Both files ship in every compose variant and in every release bundle, mounted side by side. The deployment chooses one
 at `docker compose up` via **`LITELLM_CONFIG_VARIANT`**, which compose interpolates into the litellm `command:`. Only
-the default chat model (`text-generation/gemma-4-31B-it`) differs between them — stoney-cloud with a 155648-token window
-on `stoney`, Infomaniak with 100000 on `infomaniak`. Every other model is identical.
+the default chat model (`text-generation/gemma-4-31B-it`) differs between them — stoney-cloud with a 155648-token input
+limit on `stoney`, Infomaniak with 91824 on `infomaniak`. Every other model is identical.
+
+**`max_input_tokens` is the provider's window minus `max_output_tokens`.** Both providers count input and output against
+one window, and every agent call requests the full `max_output_tokens`, so agents fitting prompts to the provider's
+whole window get a "maximum context length" 400 on every long conversation (issue #2077). The window is the number in
+that 400, not what a provider's model catalogue declares as its input limit: Infomaniak lists 100000 for gemma (window
+100016\) and for Ministral (window 80000). To measure it, send one prompt twice, with `max_tokens=1` and with
+`max_output_tokens`; the second one's 400 names the window.
 
 This is deliberately **not** a stage or channel conditional. Every release bundle renders as `stage='latest'`
 (`generate_release`), and all customers deploy the same `latest` artifact, so which provider serves a model is a
@@ -77,6 +85,34 @@ so LiteLLM fails to start loudly instead of silently falling back.
 `max_input_tokens` and the cost fields must stay **literal numbers** in the template. LiteLLM does resolve `os.environ/`
 inside `model_info`, but the result is a *string* and nothing coerces it — which would break `context_window` arithmetic
 and make `ModelInfoDTO` silently drop the field. Only `api_base`/`api_key` are safe to drive from env.
+
+`default_temperature`, `default_top_p` and `max_images` are AI-Hub keys curated by hand per chat model, under the same
+literal-number rule.
+
+- **`default_temperature` and `default_top_p`** are what an agent samples at when its profile leaves the field unset
+  (`LLMConfig.resolved_temperature` / `resolved_top_p`). Take them from the model's `generation_config.json` on Hugging
+  Face, or from its model card when that file sets none. A model without `default_temperature` is sampled at 0.0;
+  without `default_top_p`, the provider decides.
+- **`max_images`** is the most images one request may carry, so `ImageAdmission` refuses or trims before the provider
+  rejects the call. Set it only where the limit is known: for the local Qwen3-VL it must match vLLM's
+  `--limit-mm-per-prompt` in the compose template.
+
+`aihub_hosting_location` (`local`, `swiss_cloud`, `eu`, `global`) is required on **every** model. The
+`pii-anonymisation` guardrail (`templates/litellm_functions/pii_anonymisation_guardrail.py`, mounted into litellm like
+`custom_callbacks.py`) anonymises a chat call through the Presidio analyzer and restores the answer, streamed or not,
+when the call sends `"guardrails": ["pii-anonymisation"]` (profiles with the checkbox do), and, only where
+`PII_ANONYMISE_EXTERNAL_MODELS=true` (off in `.env.dev` and `.env.prod`), on every call to a model that is not `local`.
+Any other value of the switch counts as `true`: never make the guardrail's constructor raise, because LiteLLM v1.106.2
+then starts without the guardrail and drops the requested anonymisation too. The guardrail treats a model without the
+key as external; `generate_compose.py` rejects a missing or unknown location anyway, so a typo cannot silently anonymise
+a local model. Each handled call also leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`,
+mounted next to the guardrail, sent to `OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
+`uv run --with "litellm==1.106.4" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
+(unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
+on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. LiteLLM follows its plain release tags (no
+more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollback path are in ADR
+`docs/arc42/decisions/2026_10_22_litellm_follows_plain_release_tags.md`. See ADR
+`docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.
 
 `aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
 `model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
@@ -195,7 +231,9 @@ continues to build locally so developers test Dockerfile edits without round-tri
 
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
 libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/xlsxwriter/python-docx/python-pptx/weasyprint/
-pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and is published manually via
+pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and headless LibreOffice with
+`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX
+and `pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
 `make -C infra/deployment build-and-push-open-terminal-image` (requires `docker login ghcr.io`). Re-publish whenever:
 
 - The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
@@ -207,10 +245,75 @@ in `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` whenever the
 After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
 `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
-> **Deployment checklist:** Publish `open-terminal-office:0.11.34-1` to ghcr **before any non-dev stage pulls it**.
+> **Deployment checklist:** Publish `open-terminal-office:0.11.34-4` to ghcr **before any non-dev stage pulls it**.
 > Non-dev stages (`local`/`build` build locally, but `nightly`/`latest` pull from the registry) reference this exact
 > tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
 > stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.
+
+### Publishing the Presidio analyzer image
+
+The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's multilingual PII model
+(`urchade/gliner_multi_pii-v1`, pinned revision) and spaCy's `de_core_news_lg` baked in, the hub offline at run time,
+and Presidio's stock REST server with two changes: every route but `/health` needs
+`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
+(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
+recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
+mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
+analysed under the language code `de`; see the config header.
+
+Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
+`make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
+`image_tags.presidio_analyzer`, so bump that tag with every change to `docker/presidio-analyzer/` and publish **before
+any stage pulls it**: CI's backend tests start `litellm`, which depends on the analyzer. Live acceptance tests:
+`docker/presidio-analyzer/test_presidio_analyzer.py` (manual, see its docstring).
+
+Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
+character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
+The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
+for.
+
+Capacity is per deployment: `PRESIDIO_ANALYZER_{CPUS,MEMORY,WORKERS,THREADS,TORCH_THREADS}` size the container and
+`PRESIDIO_ANALYZER_TIMEOUT_SECONDS` the guardrail's wait. All six are optional, with `${VAR:-default}` in the template
+(4 / 4G / 1 / 4 / 2 / 150) and only commented out in `.env.dev` / `.env.prod`, because `make check-env` rejects a
+defaulted variable that `.env` defines (see Env Var Conventions). One analysis takes the same time on any host (GLiNER
+is 99% of it); more CPUs only serve more calls at once, 4 to 8 CPUs measured 1.8 to 1.9 times the throughput. Keep
+workers x threads x torch threads at the CPU limit, about 3 GiB per worker, and torch threads at 2 (1 makes a long text
+3 to 4 times slower). The sizing table for operators is in `docs/docs/2_platform/13_language_models/2_anonymization/`.
+The guardrail analyses the texts of one call side by side (at most `PARALLEL_ANALYSES_PER_CALL`) and reuses spans of
+texts it has seen from an in-memory cache keyed by the text's hash, so a conversation's history is not re-analysed on
+every call.
+
+### Publishing the browser-proxy image
+
+The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages, built
+from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image` (requires
+`docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and `image_tags.browser_proxy`
+with every change to that folder. Three settings look optional and are not (each verified against Playwright 1.63):
+`CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://` with `CONNECT` too; the
+error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted` instead of a 403 with
+`X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that form and the range
+would refuse all of IPv4.
+
+Check the [Squid advisories](https://github.com/squid-cache/squid/security/advisories) when bumping the base, not an
+image scan. Alpine 3.22 froze Squid at 6.12, which upstream no longer fixes, and Alpine's secdb lists only the CVEs
+Alpine patched, so Trivy and Grype reported that image clean despite 11 published advisories.
+
+> **Deployment checklist:** publish `browser-proxy:7.6-1` to ghcr **before any non-dev stage pulls it**. Without it the
+> pull fails and with it the whole `docker compose up`.
+
+### Images rebuilt for a current CA bundle
+
+Upstream images freeze their CA bundles at build time. After the eMudhra intermediate CA compromise (2026-10), releases
+built earlier still trust `emSign ECC Root CA - G3`, so three images refresh their bundles in our own Dockerfile:
+
+- `docker/rclone/` (`rclone:1.71.2-1`, `make -C infra/deployment build-and-push-rclone-image`): Alpine
+  `ca-certificates`. Drop it for the plain mirror once an upstream rclone release ships a clean bundle.
+- `docker/playwright/` (`build-and-push-playwright-image`): Ubuntu `ca-certificates` and `libnss3`. Chromium and Firefox
+  compile their own root stores in, which change only with a Playwright release.
+- `docker/open-webui/` (`build-and-push-openwebui-image`): Debian `ca-certificates`, `certifi`, and
+  `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` pointing gRPC at the system bundle instead of its bundled root list.
+
+Keep these lines when bumping the base tag, and publish the new tag **before** pinning it in `compose-config.yml`.
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
@@ -230,16 +333,18 @@ The template conditionally includes services based on stage and GPU mode:
 Port exposure: direct localhost ports (`8080:8080`) only in `dev`, `local`, `build`. In `nightly`/`latest`, all traffic
 routes through Traefik.
 
-## Network Isolation (6 Zones)
+## Network Isolation (7 Zones)
 
-| Network        | Purpose                           | Internal | ICC | Key Services                                                  |
-| -------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
-| `proxy`        | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
-| `backend`      | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
-| `data`         | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
-| `storage`      | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
-| `egress`       | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other) |
-| `code-sandbox` | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
+| Network         | Purpose                           | Internal | ICC | Key Services                                                                          |
+| --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------------------------------- |
+| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                                           |
+| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel                                    |
+| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click                                |
+| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                                                    |
+| `egress`        | Outbound internet only            | No       | No  | browser-proxy, searxng, rclone, structured_pipeline, mail agents, release notes agent |
+| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up)                         |
+| `browser`       | Playwright browser + callers      | Yes\*    | Yes | playwright, browser-proxy (+ open-webui and the web-fetching agents)                  |
+| `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent, anonymiser_agent)                      |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
 
@@ -252,6 +357,23 @@ proxy+backend+data+storage+code-sandbox).
 service. Callers (open-webui now, agents later) opt in by adding `code-sandbox` to their own network list; the sandbox
 itself never joins another zone, so it can reach only its callers. `internal: true` in non-dev also denies it outbound
 internet.
+
+**`browser` rationale**: the same pattern for `playwright`, which loads pages users link, so the browser must not share
+`backend`. It sits on `browser` only (internal in non-dev): its one way to the internet is `browser-proxy` (Squid, on
+`browser` + `egress`), which resolves each name, refuses every address that is not public, and connects to the address
+it checked. That is what stops a page reaching the Docker host, the LAN or cloud metadata, including through DNS
+rebinding; the agents' URL guard checks only the URL text, because agents have no outside DNS (ADR
+`2026_10_29_browser_reaches_the_internet_only_through_a_filtering_proxy`). Callers (open-webui's web loader; the LLM
+wrapping, Web Page Assistant, RAG, Expert RAG and Universal agents) add `browser` to their network list; a new
+web-fetching agent must too, or it cannot reach `ws://playwright:3000`, and must get `PLAYWRIGHT_PROXY_URL` or it reads
+nothing. Open WebUI needs no proxy: its loader performs every request itself and only renders in the browser. In dev,
+agents and open-webui reach Playwright through `localhost:3036`, and dev networks are not internal, so only the `local`
+stage proves the isolation.
+
+**`pii-detection` rationale**: `presidio-analyzer` receives the personal data the platform anonymises, so it lives alone
+in `pii-detection` and only its callers (litellm, agents) join that network. With its models baked in it needs no
+outbound internet, which `internal: true` denies in non-dev stages. In dev it publishes port 5002 for agents running on
+the host.
 
 **Special**: `open-webui` uses `network_mode: "host"` in dev (to reach services running locally outside Docker).
 
@@ -285,7 +407,9 @@ Rules when editing:
   managed into `aihub-realm.{stage}.json` for `--import-realm` (fresh boots come up complete without waiting for the
   reconciler). Run `make generate-compose` after any edit and commit the regenerated files.
 - The `keycloak-config-cli` image tag in `compose-config.yml` must be bumped together with the Keycloak image (tag
-  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`).
+  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`). When upstream has no build for the new
+  Keycloak version yet, keep the newest release and check on the dev stack that `keycloak-config` still exits 0 against
+  an upgraded realm and a fresh `--import-realm` (Keycloak 26.8.1 currently runs with `6.5.1-26.5.5`).
 
 The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
 `realm-management` client roles. The current minimum required for the API to function correctly is:
@@ -298,6 +422,11 @@ query-groups, view-groups, view-realm, view-clients
 `view-realm` and `view-clients` are required by the realm-role-members endpoint
 (`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status. Role changes here now reach running
 deployments on the next start.
+
+**AIHubAccess gate**: `Post Broker Login - AIHubAccess Check` only runs for users brokered through an external IdP, so
+`browser-aihub` carries its own CONDITIONAL `aihub-access-gate-browser` sub-flow (deny unless the user has
+`AIHubAccess`) right after the REQUIRED authenticate wrapper and before the Langfuse gate. It is the only `AIHubAccess`
+check for local realm users (username/password and their SSO-cookie sessions). Both gates use the same deny message.
 
 **Langfuse sysadmin gate**: the `langfuse` client carries the marker client scope `langfuse-sysadmin-gate` (default
 scope, no mappers). It activates a conditional deny sub-flow — deny unless the user has `AIHubSysAdmin` — in the custom
@@ -317,11 +446,17 @@ the same level as ALTERNATIVE executions, or Keycloak ignores the alternatives a
 
 - `.env.dev` — local development template (copy to `.env` to get started)
 - `.env.prod` — production template (all secrets as `REPLACE_WITH_RANDOM_STRING` placeholders)
-- **No `${VAR:-default}` in templates** — all defaults must be in `.env.dev` / `.env.prod`
+- **No `${VAR:-default}` in templates** — all defaults must be in `.env.dev` / `.env.prod`, except the two sanctioned
+  groups below
 - Internal Docker hostnames are hardcoded in the Jinja2 template as variables (e.g.,
   `NATS_ENDPOINT = "nats://nats:4222"`) — never use env vars for Docker-to-Docker communication
 - Only external/override endpoints (for services running on the host outside Docker) use env vars
-- **`OTEL_DEPLOYMENT_ENVIRONMENT` / `OTEL_HOST_NAME` are the one sanctioned `${VAR:-default}`.** The collector's
+- **The analyzer sizing variables (`PRESIDIO_ANALYZER_CPUS`, `_MEMORY`, `_WORKERS`, `_THREADS`, `_TORCH_THREADS`,
+  `_TIMEOUT_SECONDS`) are sanctioned `${VAR:-default}` too.** An unset CPU or memory limit renders as an empty string,
+  which stops Compose from parsing the whole file, so every `docker compose` call without `--env-file` (CI's cleanup
+  step, the session-start hook, the commands in the docs and skills) would fail; an empty worker count stops gunicorn.
+  Keep them out of `.env` (commented out only), or `make check-env` fails.
+- **`OTEL_DEPLOYMENT_ENVIRONMENT` / `OTEL_HOST_NAME` are sanctioned `${VAR:-default}` as well.** The collector's
   `resource/deployment` processor stamps them onto every pipeline, and an *empty* value makes that processor fail to
   build — which exits the collector. Every service that exports OTLP now declares `depends_on: otel-collector`, so an
   unset var no longer merely drops telemetry: it holds up the app plane. Values are written per-VM into the stage's
@@ -361,6 +496,11 @@ logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symli
 - `local`/`build`: mkcert self-signed certs — generate with `make local-cert`
 - `nightly`/`latest`: Let's Encrypt ACME auto-renewal
 - Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth
+- `security-headers@file` sends `X-Frame-Options: DENY`, except on the `web-auth` and `sysadmin-web-auth` routers
+  (`/{locale}/auth/*`), which use `auth-route-security-headers@file` with `SAMEORIGIN`. The frontend loads
+  `/{locale}/auth/renew` in a hidden same-origin iframe for its SSO session probe and silent renew; under `DENY` the
+  probe always times out, users with an expired Keycloak session keep a stale login, and the OpenWebUI iframe then signs
+  in through Entra inside the frame, where OpenWebUI loses its OAuth state (`mismatching_state`).
 
 ## Adding a New Service
 

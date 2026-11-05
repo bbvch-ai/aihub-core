@@ -6,6 +6,7 @@ from swiss_ai_hub.backup.dagster.assets.backup_session_factory import backup_ses
 from swiss_ai_hub.backup.dagster.assets.maintenance_finalize_factory import maintenance_finalize_factory
 from swiss_ai_hub.backup.dagster.assets.maintenance_handler_factory import (
     CLEANUP_HANDLER_NAMES,
+    LZ4_REWRITE_HANDLER_NAMES,
     REPACK_HANDLER_NAMES,
     TEXT_INDEX_HANDLER_NAMES,
     TEXT_INDEX_REBUILD_HANDLER_NAMES,
@@ -18,6 +19,7 @@ from swiss_ai_hub.backup.dagster.assets.restore_session_factory import restore_s
 from swiss_ai_hub.backup.dagster.jobs.factory import (
     backup_asset_job,
     cleanup_asset_job,
+    ferretdb_lz4_rewrite_asset_job,
     repack_asset_job,
     restore_asset_job,
     text_index_asset_job,
@@ -124,6 +126,7 @@ def backup_definitions() -> Definitions:
     text_index_rebuild_assets = _maintenance_assets(
         TEXT_INDEX_REBUILD_HANDLER_NAMES, "text_index_rebuild_finalize", maintenance_session_key
     )
+    lz4_rewrite_assets = _maintenance_assets(LZ4_REWRITE_HANDLER_NAMES, "lz4_rewrite_finalize", maintenance_session_key)
 
     backup_job = backup_asset_job(backup_assets)
     restore_job = restore_asset_job(restore_assets)
@@ -131,6 +134,7 @@ def backup_definitions() -> Definitions:
     repack_job = repack_asset_job([maintenance_session_asset, *repack_service_assets, repack_finalize])
     text_index_job = text_index_asset_job([maintenance_session_asset, *text_index_assets])
     text_index_rebuild_job = text_index_rebuild_asset_job([maintenance_session_asset, *text_index_rebuild_assets])
+    lz4_rewrite_job = ferretdb_lz4_rewrite_asset_job([maintenance_session_asset, *lz4_rewrite_assets])
 
     schedule = daily_backup_schedule(backup_job)
     cleanup_schedule = weekly_cleanup_schedule(cleanup_job)
@@ -145,10 +149,19 @@ def backup_definitions() -> Definitions:
             *restore_assets,
             *cleanup_assets,
             *repack_assets,
+            *lz4_rewrite_assets,
             *text_index_assets,
             *text_index_rebuild_assets,
         ],
-        jobs=[backup_job, restore_job, cleanup_job, repack_job, text_index_job, text_index_rebuild_job],
+        jobs=[
+            backup_job,
+            restore_job,
+            cleanup_job,
+            repack_job,
+            lz4_rewrite_job,
+            text_index_job,
+            text_index_rebuild_job,
+        ],
         schedules=[schedule, cleanup_schedule, repack_schedule, text_index_schedule],
         resources=resources,
     )

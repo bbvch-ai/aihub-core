@@ -2,11 +2,11 @@ import asyncio
 from functools import partial
 from typing import Annotated, Self
 
-from fastapi import BackgroundTasks, Depends, HTTPException, Query, Security
+from fastapi import BackgroundTasks, Depends, HTTPException, Path, Query, Response, Security
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
-from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.events.agent import StoredImage
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
@@ -21,10 +21,10 @@ from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUpl
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
 from swiss_ai_hub.api.routes.agent.dependencies.use_agent_file_upload import use_agent_file_upload_service
 from swiss_ai_hub.api.routes.agent.dto.agent_class_dto import AgentClassDTO
+from swiss_ai_hub.api.routes.agent.dto.agent_file_batch_validation_request import AgentFileBatchValidationRequest
+from swiss_ai_hub.api.routes.agent.dto.agent_file_batch_validation_response import AgentFileBatchValidationResponse
 from swiss_ai_hub.api.routes.agent.dto.agent_file_upload_request import AgentFileUploadRequest
 from swiss_ai_hub.api.routes.agent.dto.agent_file_upload_response import AgentFileUploadResponse
-from swiss_ai_hub.api.routes.agent.dto.agent_file_validation_request import AgentFileValidationRequest
-from swiss_ai_hub.api.routes.agent.dto.agent_file_validation_response import AgentFileValidationResponse
 from swiss_ai_hub.api.routes.agent.dto.create_agent_instance_request import CreateAgentInstanceRequest
 from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
 from swiss_ai_hub.api.routes.agent.dto.update_agent_instance_dto import UpdateAgentInstanceDTO
@@ -174,12 +174,13 @@ class AgentController(TenantScopedController):
             await AgentService.update_agent_instance(agent_class, agent_id, request.configuration, t, user=user)
 
             class_entity = AgentClassEntity.get_by_agent_class(agent_class)
-            config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
 
             if not class_entity or not config_entity:
                 raise HTTPException(status_code=404, detail=f"Agent instance {agent_class}/{agent_id} not found.")
 
-            return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+            is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
+            return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
         return self
 
@@ -215,16 +216,15 @@ class AgentController(TenantScopedController):
             page_size: PageSize = 20,
         ) -> PaginatedThreadsResponse:
             """
-            Retrieve all threads that a specific agent instance is part of.
+            Retrieve the caller's threads with a specific agent instance; agent admins see only their own too.
             """
-            access_level = AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)
             total, threads = await AgentService.get_agent_instance_threads(
                 agent_class=agent_class,
                 agent_id=agent_id,
                 t=t,
                 page=page,
                 page_size=page_size,
-                user_id=None if access_level == AccessLevel.ACCESS_ADMIN else user.id,
+                user_id=user.id,
             )
 
             total_pages = (total + page_size - 1) // page_size
@@ -290,6 +290,38 @@ class AgentController(TenantScopedController):
 
         return self
 
+    def get_image(self, route: str = "/classes/{agent_class}/instances/{agent_id}/images/{name}") -> Self:
+        @self.router.get(route, tags=self.tags, response_class=Response, responses={200: {"content": {"image/*": {}}}})
+        async def get_image(
+            agent_class: str,
+            agent_id: str,
+            name: Annotated[str, Path(pattern=r"^[0-9a-f]{64}(\.[a-z0-9]+)?$")],
+            _: Annotated[
+                UserIdentity,
+                Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}")),
+            ],
+            upload_service: Annotated[AgentFileUploadService, Depends(use_agent_file_upload_service)],
+        ) -> Response:
+            """An image sent in a message to the agent, which the message references instead of carrying it.
+
+            Its name is the digest of its content, so it never changes and may be cached for as long as it is kept.
+            """
+            content, content_type = await asyncio.to_thread(upload_service.read_image, agent_class, agent_id, name)
+            if content_type not in StoredImage.MEDIA_TYPES:
+                raise HTTPException(status_code=404, detail="Image not found.")
+            return Response(
+                content=content,
+                media_type=content_type,
+                headers={
+                    "Cache-Control": "private, max-age=604800, immutable",
+                    "Content-Disposition": "inline",
+                    "Content-Security-Policy": "sandbox; default-src 'none'",
+                    "X-Content-Type-Options": "nosniff",
+                },
+            )
+
+        return self
+
     def validate_file_upload(
         self, route: str = "/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
     ) -> Self:
@@ -297,38 +329,28 @@ class AgentController(TenantScopedController):
         async def validate_file_upload(
             agent_class: str,
             agent_id: str,
-            request: AgentFileValidationRequest,
+            request: AgentFileBatchValidationRequest,
             user: Annotated[
                 UserIdentity,
                 Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}")),
             ],
             upload_service: Annotated[AgentFileUploadService, Depends(use_agent_file_upload_service)],
             background_tasks: BackgroundTasks,
-        ) -> AgentFileValidationResponse:
-            """Validate that a file was successfully uploaded to the agent's dedicated bucket.
+        ) -> AgentFileBatchValidationResponse:
+            """Report which of a turn's files the agent's dedicated bucket does not hold.
 
-            Given the conversation, the file is also placed in the user's files there once the answer is sent, so a
-            slow or unavailable sandbox never holds up or fails the chat.
+            Once none is missing, the files are placed in the user's files of the conversation together, after the
+            answer is sent, so a slow or unavailable sandbox never holds up or fails the chat.
             """
-            exists = await asyncio.to_thread(
-                upload_service.verify_file_exists,
-                agent_class=agent_class,
-                agent_id=agent_id,
-                file_id=request.file_id,
-                filename=request.filename,
-            )
-            if exists and request.thread_id:
+            missing = await upload_service.missing_files(agent_class, agent_id, request.files)
+            if not missing and request.thread_id:
                 background_tasks.add_task(
-                    UserKnowledgeService.place_attachment,
+                    UserKnowledgeService.place_attachments,
                     user,
                     request.thread_id,
-                    request.file_id,
-                    request.filename,
-                    partial(upload_service.read_file, agent_class, agent_id, request.file_id, request.filename),
+                    {file.file_id: file.filename for file in request.files},
+                    partial(upload_service.read_file, agent_class, agent_id),
                 )
-            return AgentFileValidationResponse(
-                file_id=request.file_id,
-                exists=exists,
-            )
+            return AgentFileBatchValidationResponse(missing=missing)
 
         return self

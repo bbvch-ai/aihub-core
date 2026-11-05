@@ -11,9 +11,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import yaml
+from mongoengine import DoesNotExist
 from pydantic import ValidationError
 from swiss_ai_hub.core.events.agent import StopEvent
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.persistence import BucketEntity, NamespaceEntity
 from swiss_ai_hub.core.testing.auth_utils.test_identity import fake_user
 
 import swiss_ai_hub.agent
@@ -499,3 +501,66 @@ class TestSelectionRevalidatedOnHandOver:
         result, _, _ = await _forward(None)
 
         assert _forwarded_pairs(result) == SELECTION
+
+
+def _bucket(bucket_id: str, *, deleting: bool = False) -> MagicMock:
+    return MagicMock(id=bucket_id, deleting=deleting)
+
+
+def _namespace(namespace_name: str, *, deleting: bool = False) -> MagicMock:
+    return MagicMock(namespace_name=namespace_name, deleting=deleting)
+
+
+async def _initialize(monkeypatch, buckets: dict, namespaces: dict) -> dict[str, list[str]]:
+    def get_bucket(bucket_name):
+        if bucket_name not in buckets:
+            raise DoesNotExist
+        return buckets[bucket_name]
+
+    monkeypatch.setattr(BucketEntity, "get_bucket_by_bucket_name", get_bucket)
+    monkeypatch.setattr(NamespaceEntity, "get_namespaces_by_bucket", lambda bucket_id: namespaces[bucket_id])
+
+    agent = NamespaceSelectionAgent.__new__(NamespaceSelectionAgent)
+    agent_config = MagicMock(bucket_names=list(buckets), restrict_to_user_access=False)
+    run_context = _FakeRunContext({})
+    await NamespaceSelectionAgent.initialize_determination_step(
+        agent, MagicMock(user_query="leave policy?"), agent_config, run_context, AsyncMock(), _FakeLocaleHandler()
+    )
+    return run_context.data["available_namespaces"]
+
+
+class TestKnowledgePendingDeletionIsNotOfferedToModel:
+    """Deleting a database only marks its rows as deleted.
+    Until the teardown process removes them, the agent must ensure they are not
+    exposed to the model.
+    """
+
+    @pytest.mark.asyncio
+    async def test_database_being_deleted_is_skipped(self, monkeypatch):
+        available = await _initialize(
+            monkeypatch,
+            buckets={"kept": _bucket("kept"), "removed": _bucket("removed", deleting=True)},
+            namespaces={"kept": [_namespace("hr")], "removed": [_namespace("old")]},
+        )
+
+        assert available == {"kept": ["hr"]}
+
+    @pytest.mark.asyncio
+    async def test_folder_being_deleted_is_skipped(self, monkeypatch):
+        available = await _initialize(
+            monkeypatch,
+            buckets={"kept": _bucket("kept")},
+            namespaces={"kept": [_namespace("hr"), _namespace("old", deleting=True)]},
+        )
+
+        assert available == {"kept": ["hr"]}
+
+    @pytest.mark.asyncio
+    async def test_database_whose_every_folder_is_being_deleted_is_skipped(self, monkeypatch):
+        available = await _initialize(
+            monkeypatch,
+            buckets={"kept": _bucket("kept"), "emptied": _bucket("emptied")},
+            namespaces={"kept": [_namespace("hr")], "emptied": [_namespace("old", deleting=True)]},
+        )
+
+        assert available == {"kept": ["hr"]}

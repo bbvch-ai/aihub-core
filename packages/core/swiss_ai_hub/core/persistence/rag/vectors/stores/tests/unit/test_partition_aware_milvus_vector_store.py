@@ -1,17 +1,24 @@
 import json
+from typing import Any
 from unittest.mock import MagicMock, call
 
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from llama_index.core.vector_stores.types import FilterCondition, VectorStoreQuery
+from llama_index.core.vector_stores.types import FilterCondition, VectorStoreQuery, VectorStoreQueryResult
 from llama_index.core.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.milvus import MilvusVectorStore
 
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE, TYPE
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
     DEFAULT_PARTITION_NAME,
+    MANUAL_PARTITIONS_MARKER,
+    MAX_PARTITIONS,
+    create_manual_partitions,
+    get_partition_name,
     get_partition_name_for_namespace,
 )
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_state import MilvusPartitionState
 from swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vector_store import (
     DOCUMENT_IDS_PER_DELETE_EXPRESSION,
     MILVUS_DYNAMIC_FIELD_MAX_BYTES,
@@ -25,15 +32,18 @@ def _make_store() -> PartitionAwareMilvusVectorStore:
     return PartitionAwareMilvusVectorStore.__new__(PartitionAwareMilvusVectorStore)
 
 
-def _store_with_client(client: MagicMock, has_manual_partitions: bool = True) -> PartitionAwareMilvusVectorStore:
-    """Bypass pydantic init to inject a mock client for the teardown delete/drop paths."""
+def _store_with_client(
+    client: Any, partition_state: MilvusPartitionState | None = MilvusPartitionState.COMPLETE
+) -> PartitionAwareMilvusVectorStore:
+    """Bypass pydantic init to inject a client; ``partition_state=None`` makes the store read it from the client."""
     store = PartitionAwareMilvusVectorStore.__new__(PartitionAwareMilvusVectorStore)
     object.__setattr__(store, "__dict__", {})
     object.__setattr__(store, "__pydantic_private__", {})
     object.__setattr__(store, "__pydantic_fields_set__", set())
     object.__setattr__(store, "__pydantic_extra__", {})
     store._milvusclient = client
-    store._has_manual_partitions = has_manual_partitions
+    store._settled_partition_state = partition_state
+    store._collection_description = None
     store.collection_name = "tenant_db"
     return store
 
@@ -58,7 +68,7 @@ def _make_store_with_stub_client() -> PartitionAwareMilvusVectorStore:
     store = _make_store()
     object.__setattr__(store, "__dict__", {"collection_name": "defaultknowledge"})
     store._milvusclient = _StubMilvusClient()
-    store._declared_fields = None
+    store._collection_description = None
     return store
 
 
@@ -172,7 +182,7 @@ def test_delete_by_namespace_is_a_filtered_delete_scoped_to_the_namespace_partit
     namespace's hashed partition and ``_default`` — never drop a partition, which would wipe colliding
     namespaces. ``_default`` holds nodes stranded by #1923 that all-namespaces retrieval still finds."""
     client = MagicMock()
-    store = _store_with_client(client, has_manual_partitions=True)
+    store = _store_with_client(client)
 
     store.delete_by_namespace("alpha")
 
@@ -194,7 +204,7 @@ def test_delete_by_namespace_is_a_filtered_delete_scoped_to_the_namespace_partit
 
 def test_delete_by_namespace_without_manual_partitions_deletes_collection_wide() -> None:
     client = MagicMock()
-    store = _store_with_client(client, has_manual_partitions=False)
+    store = _store_with_client(client, partition_state=MilvusPartitionState.LEGACY)
 
     store.delete_by_namespace("alpha")
 
@@ -226,9 +236,9 @@ def test_drop_collection_is_idempotent_when_absent() -> None:
 
 
 def _store_for_document_deletes(
-    client: MagicMock, has_manual_partitions: bool = True
+    client: MagicMock, partition_state: MilvusPartitionState = MilvusPartitionState.COMPLETE
 ) -> PartitionAwareMilvusVectorStore:
-    store = _store_with_client(client, has_manual_partitions=has_manual_partitions)
+    store = _store_with_client(client, partition_state=partition_state)
     store.doc_id_field = DOCUMENT_ID
     client.delete.return_value = {"delete_count": 2}
     return store
@@ -268,7 +278,7 @@ def test_document_delete_is_a_filter_on_the_document_id_field() -> None:
 
 def test_document_delete_batches_the_id_expression() -> None:
     client = MagicMock()
-    store = _store_for_document_deletes(client, has_manual_partitions=False)
+    store = _store_for_document_deletes(client, partition_state=MilvusPartitionState.LEGACY)
     ids = [f"doc{index}" for index in range(DOCUMENT_IDS_PER_DELETE_EXPRESSION + 1)]
 
     store.delete_documents(ids, ["alpha"])
@@ -281,7 +291,7 @@ def test_document_delete_batches_the_id_expression() -> None:
 
 def test_document_delete_on_a_legacy_collection_targets_default_only() -> None:
     client = MagicMock()
-    store = _store_for_document_deletes(client, has_manual_partitions=False)
+    store = _store_for_document_deletes(client, partition_state=MilvusPartitionState.LEGACY)
 
     store.delete_documents(["doc1"], ["alpha"])
 
@@ -477,3 +487,329 @@ def test_guard_measures_bytes_not_characters() -> None:
 
     with pytest.raises(ValueError):
         store._verify_dynamic_field_fits(dynamic_field, node)
+
+
+_ALL_MANUAL_PARTITIONS = [get_partition_name(partition_id) for partition_id in range(MAX_PARTITIONS)]
+
+
+class _PartitionStubClient:
+    """A collection with the given manual partitions; rejects unknown partition names the way Milvus does."""
+
+    def __init__(self, manual_partitions: list[str], marker: bool = True) -> None:
+        self.partitions = [DEFAULT_PARTITION_NAME, *manual_partitions]
+        self.description = MANUAL_PARTITIONS_MARKER if marker else ""
+        self.list_calls = 0
+        self.written_partitions: list[str] = []
+
+    def list_partitions(self, collection_name: str) -> list[str]:
+        self.list_calls += 1
+        return list(self.partitions)
+
+    def describe_collection(self, collection_name: str) -> dict[str, Any]:
+        fields = ("id", DOCUMENT_ID, NAMESPACE, "embedding", "sparse_embedding", "text")
+        return {"description": self.description, "fields": [{"name": name} for name in fields]}
+
+    def create_partition(self, collection_name: str, partition_name: str) -> None:
+        if partition_name not in self.partitions:
+            self.partitions.append(partition_name)
+
+    def load_partitions(self, collection_name: str, partition_names: list[str]) -> None:
+        missing = set(partition_names) - set(self.partitions)
+        if missing:
+            raise ValueError(f"partition not found: {sorted(missing)}")
+
+    def load_collection(self, collection_name: str) -> None:
+        pass
+
+    def upsert(self, collection_name: str, data: list[dict[str, Any]], partition_name: str | None = None) -> None:
+        self.written_partitions.append(partition_name or DEFAULT_PARTITION_NAME)
+
+
+def _writable_store(client: _PartitionStubClient) -> PartitionAwareMilvusVectorStore:
+    store = _store_with_client(client, partition_state=None)
+    store.text_key = "text"
+    store.enable_dense = True
+    store.embedding_field = "embedding"
+    store.enable_sparse = False
+    store.upsert_mode = True
+    store.batch_size = 100
+    return store
+
+
+def _node_in(namespace: str) -> TextNode:
+    return TextNode(text="content", metadata={DOCUMENT_ID: "doc1", NAMESPACE: namespace}, embedding=[0.1, 0.2])
+
+
+def _without(partition_name: str) -> list[str]:
+    return [name for name in _ALL_MANUAL_PARTITIONS if name != partition_name]
+
+
+@pytest.mark.parametrize("marker", [True, False], ids=["created-with-marker", "created-before-the-marker"])
+def test_a_half_built_collection_is_completed_before_a_write_and_nothing_lands_in_default(marker: bool) -> None:
+    """#1923: the e2egdrive collection had 868 of its partitions; every write of every process went to _default."""
+    client = _PartitionStubClient(_ALL_MANUAL_PARTITIONS[:868], marker=marker)
+    store = _writable_store(client)
+
+    store.add([_node_in("alpha")])
+
+    assert len(client.partitions) == MAX_PARTITIONS + 1
+    assert client.written_partitions == [get_partition_name_for_namespace("alpha")]
+    assert store.partition_state() is MilvusPartitionState.COMPLETE
+
+
+def test_a_marked_collection_without_partitions_is_half_built_not_legacy() -> None:
+    """Its creator has not yet created a partition, or died before the first one."""
+    store = _store_with_client(_PartitionStubClient([], marker=True), partition_state=None)
+
+    assert store.partition_state() is MilvusPartitionState.PARTIAL
+
+
+def test_a_collection_without_marker_or_partitions_is_legacy_and_keeps_writing_to_default() -> None:
+    client = _PartitionStubClient([], marker=False)
+    store = _writable_store(client)
+
+    store.add([_node_in("alpha")])
+
+    assert store.partition_state() is MilvusPartitionState.LEGACY
+    assert client.partitions == [DEFAULT_PARTITION_NAME]
+    assert client.written_partitions == [DEFAULT_PARTITION_NAME]
+
+
+def test_a_half_built_state_is_read_again_while_a_settled_one_is_cached() -> None:
+    """Pipeline stores live for the whole process; caching PARTIAL is what stranded every later write."""
+    client = _PartitionStubClient(_ALL_MANUAL_PARTITIONS[:500])
+    store = _store_with_client(client, partition_state=None)
+
+    assert store.partition_state() is MilvusPartitionState.PARTIAL
+    client.partitions = [DEFAULT_PARTITION_NAME, *_ALL_MANUAL_PARTITIONS]
+    assert store.partition_state() is MilvusPartitionState.COMPLETE
+    assert store.partition_state() is MilvusPartitionState.COMPLETE
+    assert client.list_calls == 2
+
+
+def test_ensure_partitions_leaves_a_legacy_collection_unpartitioned() -> None:
+    client = _PartitionStubClient([], marker=False)
+    store = _store_with_client(client, partition_state=None)
+
+    assert store.ensure_partitions() is MilvusPartitionState.LEGACY
+    assert client.partitions == [DEFAULT_PARTITION_NAME]
+
+
+def test_reads_of_a_half_built_collection_skip_hashed_partitions_that_do_not_exist_yet() -> None:
+    """Milvus rejects an unknown partition name, and nothing can be stored in a partition that does not exist."""
+    missing = get_partition_name_for_namespace("beta")
+    store = _store_with_client(_PartitionStubClient(_without(missing)), partition_state=None)
+
+    assert store.document_partition_names(["alpha", "beta"]) == [
+        get_partition_name_for_namespace("alpha"),
+        DEFAULT_PARTITION_NAME,
+    ]
+
+
+def test_get_nodes_by_namespace_reads_the_hashed_partition_and_default() -> None:
+    """The API node listing goes through here; nodes stranded in _default must stay visible until repaired."""
+    client = MagicMock()
+    store = _store_with_client(client)
+    expected = [get_partition_name_for_namespace("alpha"), DEFAULT_PARTITION_NAME]
+
+    store.get_nodes(
+        filters=MetadataFilters(filters=[MetadataFilter(key=DOCUMENT_ID, value="doc1")]), namespaces=["alpha"]
+    )
+
+    client.load_partitions.assert_called_once_with(collection_name="tenant_db", partition_names=expected)
+    assert client.query.call_args.kwargs["partition_names"] == expected
+
+
+def test_get_nodes_by_namespace_on_a_legacy_collection_reads_default() -> None:
+    client = MagicMock()
+    store = _store_with_client(client, partition_state=MilvusPartitionState.LEGACY)
+
+    store.get_nodes(
+        filters=MetadataFilters(filters=[MetadataFilter(key=DOCUMENT_ID, value="doc1")]), namespaces=["alpha"]
+    )
+
+    assert client.query.call_args.kwargs["partition_names"] == [DEFAULT_PARTITION_NAME]
+
+
+def test_query_by_namespace_searches_the_hashed_partition_and_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = MagicMock()
+    store = _store_with_client(client)
+    searched: dict[str, Any] = {}
+    monkeypatch.setattr(
+        MilvusVectorStore, "query", lambda self, query, **kwargs: searched.update(kwargs) or VectorStoreQueryResult()
+    )
+    filters = MetadataFilters(filters=[MetadataFilter(key=NAMESPACE, value="alpha")])
+
+    store.query(VectorStoreQuery(query_embedding=[0.1], similarity_top_k=5, filters=filters))
+
+    assert searched["milvus_partition_names"] == [get_partition_name_for_namespace("alpha"), DEFAULT_PARTITION_NAME]
+
+
+def test_create_manual_partitions_creates_only_the_missing_ones() -> None:
+    client = MagicMock()
+    client.list_partitions.return_value = [DEFAULT_PARTITION_NAME, "partition_0", "partition_5"]
+
+    create_manual_partitions(client=client, collection_name="tenant_db")
+
+    created = [call.kwargs["partition_name"] for call in client.create_partition.call_args_list]
+    assert len(created) == MAX_PARTITIONS - 2
+    assert "partition_0" not in created
+    assert "partition_5" not in created
+    client.has_partition.assert_not_called()
+
+
+def _iterator_over(*pages: list[dict[str, Any]]) -> MagicMock:
+    iterator = MagicMock()
+    iterator.next.side_effect = [*pages, []]
+    return iterator
+
+
+def test_stranded_nodes_are_read_from_default_without_text_or_vector() -> None:
+    client = MagicMock()
+    client.query_iterator.return_value = _iterator_over(
+        [{"id": "n1", DOCUMENT_ID: "doc1", NAMESPACE: "alpha", TYPE: "summary"}],
+        [{"id": "n2", DOCUMENT_ID: "doc1", NAMESPACE: "alpha"}],
+    )
+    store = _store_for_document_deletes(client)
+
+    stranded = store.stranded_nodes()
+
+    assert [(node.node_id, node.node_type) for node in stranded] == [("n1", "summary"), ("n2", None)]
+    assert client.query_iterator.call_args.kwargs["partition_names"] == [DEFAULT_PARTITION_NAME]
+    assert client.query_iterator.call_args.kwargs["output_fields"] == ["id", DOCUMENT_ID, NAMESPACE, TYPE]
+
+
+def test_a_legacy_collection_has_no_stranded_nodes() -> None:
+    """All of a legacy collection's nodes belong in _default; none of them may be moved."""
+    client = MagicMock()
+    store = _store_for_document_deletes(client, partition_state=MilvusPartitionState.LEGACY)
+
+    assert store.stranded_nodes() == []
+    client.query_iterator.assert_not_called()
+
+
+def test_node_keys_of_a_document_are_read_from_its_namespace_partition() -> None:
+    client = MagicMock()
+    client.query_iterator.return_value = _iterator_over([])
+    store = _store_for_document_deletes(client)
+
+    store.node_keys_of_document("doc1", "alpha")
+
+    assert client.query_iterator.call_args.kwargs["partition_names"] == [get_partition_name_for_namespace("alpha")]
+    assert client.query_iterator.call_args.kwargs["filter"] == f'{DOCUMENT_ID} == "doc1"'
+
+
+def test_restoring_copies_stored_rows_into_the_namespace_partition_and_flushes() -> None:
+    """Rows are copied as stored, so nothing is parsed or embedded again; the flush makes the copy durable before
+    the caller deletes the originals."""
+    client = MagicMock()
+    rows = [{"id": "n1", "text": "a", "embedding": [0.1]}, {"id": "n2", "text": "b", "embedding": [0.2]}]
+    client.query_iterator.return_value = _iterator_over(rows)
+    store = _store_for_document_deletes(client)
+    store.batch_size = 1
+
+    copied = store.restore_stranded_nodes({"alpha": ["n1", "n2"]})
+
+    assert copied == 2
+    scan = client.query_iterator.call_args.kwargs
+    assert (scan["partition_names"], scan["output_fields"], scan["filter"]) == (
+        [DEFAULT_PARTITION_NAME],
+        ["*"],
+        'id in ["n1","n2"]',
+    )
+    target = get_partition_name_for_namespace("alpha")
+    assert client.upsert.call_args_list == [
+        call(collection_name="tenant_db", data=[rows[0]], partition_name=target),
+        call(collection_name="tenant_db", data=[rows[1]], partition_name=target),
+    ]
+    assert client.mock_calls.index(call.flush("tenant_db")) > client.mock_calls.index(
+        call.upsert(collection_name="tenant_db", data=[rows[1]], partition_name=target)
+    )
+
+
+def test_restoring_several_namespaces_flushes_once_after_the_last_copy() -> None:
+    """Milvus allows a collection one flush every 10 s; a flush per namespace or document throttles the repair."""
+    client = MagicMock()
+    alpha_row = {"id": "n1", "text": "a", "embedding": [0.1]}
+    beta_row = {"id": "n2", "text": "b", "embedding": [0.2]}
+    client.query_iterator.side_effect = [_iterator_over([alpha_row]), _iterator_over([beta_row])]
+    store = _store_for_document_deletes(client)
+    store.batch_size = 10
+
+    copied = store.restore_stranded_nodes({"alpha": ["n1"], "beta": ["n2"], "gamma": []})
+
+    assert copied == 2
+    assert client.upsert.call_args_list == [
+        call(collection_name="tenant_db", data=[alpha_row], partition_name=get_partition_name_for_namespace("alpha")),
+        call(collection_name="tenant_db", data=[beta_row], partition_name=get_partition_name_for_namespace("beta")),
+    ]
+    client.flush.assert_called_once_with("tenant_db")
+    assert client.mock_calls[-1] == call.flush("tenant_db")
+    assert client.query_iterator.call_count == 2
+
+
+def test_restoring_nothing_neither_loads_nor_flushes() -> None:
+    client = MagicMock()
+    store = _store_for_document_deletes(client)
+
+    assert store.restore_stranded_nodes({"alpha": []}) == 0
+    client.load_partitions.assert_not_called()
+    client.query_iterator.assert_not_called()
+    client.flush.assert_not_called()
+
+
+def test_stranded_nodes_are_deleted_from_default_only() -> None:
+    client = MagicMock()
+    client.delete.side_effect = lambda **kwargs: kwargs["ids"]
+    store = _store_for_document_deletes(client)
+
+    assert store.delete_stranded_nodes(["n1", "n2"]) == 2
+    client.delete.assert_called_once_with(
+        collection_name="tenant_db", ids=["n1", "n2"], partition_name=DEFAULT_PARTITION_NAME
+    )
+
+
+def test_passages_grouped_by_document_search_only_the_namespaces_partitions_grouped_in_milvus() -> None:
+    client = MagicMock()
+    client.search.return_value = [
+        [
+            {"distance": 0.8, "entity": {DOCUMENT_ID: "doc1", "text": "Liability is limited"}},
+            {"distance": 0.5, "entity": {DOCUMENT_ID: "doc2", "text": "Termination"}},
+        ]
+    ]
+    store = _store_with_client(client)
+    store.embedding_field, store.doc_id_field, store.text_key, store.similarity_metric = (
+        "embedding",
+        DOCUMENT_ID,
+        "text",
+        "IP",
+    )
+
+    hits = store.passages_grouped_by_document([0.1], ["alpha"], 'document_id in ["doc1"]', 10, 5, timeout=3.0)
+
+    partitions = [get_partition_name_for_namespace("alpha"), DEFAULT_PARTITION_NAME]
+    client.load_partitions.assert_called_once_with(collection_name="tenant_db", partition_names=partitions)
+    search = client.search.call_args.kwargs
+    assert (search["group_by_field"], search["group_size"], search["limit"]) == (DOCUMENT_ID, 5, 10)
+    assert search["partition_names"] == partitions
+    assert search["timeout"] == 3.0
+    assert search["filter"] == 'document_id in ["doc1"]'
+    assert [(hit.document_id, hit.score) for hit in hits] == [("doc1", 0.8), ("doc2", 0.5)]
+
+
+def test_documents_with_passages_asks_for_one_hit_per_document_and_no_text() -> None:
+    client = MagicMock()
+    client.search.return_value = [[{"distance": 0.8, "entity": {DOCUMENT_ID: "doc1"}}]]
+    store = _store_with_client(client)
+    store.embedding_field, store.doc_id_field, store.text_key, store.similarity_metric = (
+        "embedding",
+        DOCUMENT_ID,
+        "text",
+        "IP",
+    )
+
+    found = store.documents_with_passages([0.1], ["alpha"], 'document_id in ["doc1", "doc2"]', 2)
+
+    search = client.search.call_args.kwargs
+    assert (search["group_size"], search["limit"], search["output_fields"]) == (1, 2, [DOCUMENT_ID])
+    assert found == {"doc1"}

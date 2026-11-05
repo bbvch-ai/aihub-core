@@ -97,7 +97,8 @@ capabilities:
         description: Configurer et ingérer des documents dans ce namespace.
       manage_database:
         label: Gérer
-        description: Configurer cette base de connaissances, y ajouter des dossiers et la supprimer.
+        description: Configurer cette base de connaissances, y ajouter des dossiers
+          et la supprimer.
     model:
       use:
         description: Utiliser ce modèle.
@@ -106,8 +107,8 @@ capabilities:
           fonctions sont indisponibles.
     files:
       own:
-        label: "Utiliser votre espace de fichiers"
-        description: "Parcourir, envoyer, télécharger et gérer vos propres fichiers."
+        label: Utiliser votre espace de fichiers
+        description: Parcourir, envoyer, télécharger et gérer vos propres fichiers.
     memory:
       org:
         label: Utiliser la mémoire d'organisation

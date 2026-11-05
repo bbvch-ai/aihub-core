@@ -3,7 +3,7 @@ import logging
 from unittest.mock import MagicMock
 
 import pytest
-from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.core.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.llms.openai_like import OpenAILike
 
 from swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser import (
@@ -241,6 +241,25 @@ def test_basic_summarization(mock_llm):
     assert level1_summary.text == "Summarized text"
     assert level1_summary.metadata.get("h1") == "Test Header"
     assert level1_summary.metadata.get(INDEX) == 0
+
+
+def test_summaries_keep_the_keys_their_chunks_leave_out_of_embeddings(mock_llm):
+    """#1953: a document's frontmatter keys are stored on its summaries but embedded in none of them."""
+    mock_llm.predict.return_value = "Summarized text"
+    node = TextNode(
+        text="This is some content to summarize. " * 50,
+        metadata={"h1": "Test Header", "project": "ABC"},
+        excluded_embed_metadata_keys=["project"],
+        relationships={},
+    )
+
+    summarized_nodes = RecursiveNodeSummarizer(llm=mock_llm).summarize_nodes([node])
+    summary_nodes = [n for n in summarized_nodes if n.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+
+    assert summary_nodes
+    for summary in summary_nodes:
+        assert summary.metadata["project"] == "ABC"
+        assert "project" not in summary.get_content(metadata_mode=MetadataMode.EMBED)
 
 
 def test_short_text_not_summarized(mock_llm):

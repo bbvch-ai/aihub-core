@@ -29,16 +29,16 @@ Dateien, deren Name mit einem Punkt beginnt, sind ausgeblendet; sie gehören zur
 
 ## Was Sie tun können
 
-| Aktion               | So geht's                                                                                        |
-| -------------------- | ------------------------------------------------------------------------------------------------ |
-| Ordner öffnen        | Klicken Sie darauf; der Pfad über der Liste führt Sie zurück.                                    |
-| Datei in der Vorschau anzeigen | Klicken Sie darauf. Text, Bilder und PDFs werden neben der Liste angezeigt.            |
-| Herunterladen        | Das Download-Symbol. Jede Datei wird genau so heruntergeladen, wie sie gespeichert ist, auch Office-Dokumente. |
-| Hochladen            | **Upload**, oder ziehen Sie Dateien auf die Liste. Eine Datei mit demselben Namen wird ersetzt.  |
-| Neuer Ordner         | **New folder**.                                                                                  |
-| Umbenennen           | Das Stift-Symbol.                                                                                |
-| Verschieben          | Das Ordner-Symbol: in einen Ordner im aktuellen Ordner oder eine Ebene nach oben.                |
-| Löschen              | Das Papierkorb-Symbol. Ein Ordner wird mit allem darin gelöscht.                                 |
+| Aktion                         | So geht's                                                                                                      |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Ordner öffnen                  | Klicken Sie darauf; der Pfad über der Liste führt Sie zurück.                                                  |
+| Datei in der Vorschau anzeigen | Klicken Sie darauf. Text, Bilder und PDFs werden neben der Liste angezeigt.                                    |
+| Herunterladen                  | Das Download-Symbol. Jede Datei wird genau so heruntergeladen, wie sie gespeichert ist, auch Office-Dokumente. |
+| Hochladen                      | **Upload**, oder ziehen Sie Dateien auf die Liste. Eine Datei mit demselben Namen wird ersetzt.                |
+| Neuer Ordner                   | **New folder**.                                                                                                |
+| Umbenennen                     | Das Stift-Symbol.                                                                                              |
+| Verschieben                    | Das Ordner-Symbol: in einen Ordner im aktuellen Ordner oder eine Ebene nach oben.                              |
+| Löschen                        | Das Papierkorb-Symbol. Ein Ordner wird mit allem darin gelöscht.                                               |
 
 Änderungen wirken sofort: Code, den ein Agent anschließend ausführt, sieht sie.
 

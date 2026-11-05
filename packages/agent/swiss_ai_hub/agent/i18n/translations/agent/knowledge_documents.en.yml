@@ -1,0 +1,27 @@
+---
+config:
+  enabled:
+    label: Work on Whole Documents
+    help: Let the model list the documents of the knowledge collections, search their
+      text for exact terms and read them in full.
+  path_glob:
+    label: Document Path Filter
+    help: Only documents whose path in their collection matches this pattern, e.g.
+      invoices/2025/** or **/*.pdf. Applies to the document tools only, not to the
+      knowledge search. Leave empty for every document.
+  discovery:
+    label: "Discovery mode"
+    help: "Off: every document in the collections and path filter is read, so none is missed; the user narrows by naming folders, files or years. On: the model first finds the documents, searching by keyword for what the request names exactly (a supplier, a number, a folder) and ranking by meaning for what it only describes, and only the documents it selects are read. That is faster on large collections but can miss documents. The request form then also asks for exact and semantic keywords. How long the model may search is set by Maximum Decisions and Maximum Tool Calls under Tools."
+tools:
+  rank_knowledge_documents:
+    label: Rank Knowledge Documents
+    approval: Rank the knowledge documents by how closely they match "{query}"
+  list_knowledge_documents:
+    label: List Knowledge Documents
+    approval: List the knowledge documents matching {path_glob}
+  search_knowledge_content:
+    label: Search Knowledge Documents
+    approval: Search the knowledge documents for "{query}"
+  read_knowledge_document:
+    label: Read Knowledge Document
+    approval: Read the knowledge document {document_id}

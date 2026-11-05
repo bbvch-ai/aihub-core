@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-pipeline"
-version = "0.324.0"
+version = "0.325.0"
 description = "Swiss AI Hub Pipeline SDK: Dagster-based document ingestion, parsing, embedding, and vector storage for RAG."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "swiss-ai-hub-core==0.324.0",
+    "swiss-ai-hub-core==0.325.0",
     "dagster-webserver>=1.11.2",
     "dagster-postgres>=0.27.2",
     "dagster-azure>=0.27.2",
@@ -33,7 +33,8 @@ dependencies = [
     "apprise>=1.9.9",
     "openai>=1.76.2",
     "dlt>=1.30.0",
-    "dagster-dlt>=0.29.23",
+    "dagster-dlt>=0.29.24",
+    "beautifulsoup4>=4.14.3",
 ]
 
 [dependency-groups]
@@ -46,7 +47,7 @@ Documentation = "https://bbvch-ai.github.io/aihub-core/"
 Issues = "https://github.com/bbvch-ai/aihub-core/issues"
 
 [build-system]
-requires = ["uv_build>=0.10.4,<0.11.0"]
+requires = ["uv_build>=0.10.4,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

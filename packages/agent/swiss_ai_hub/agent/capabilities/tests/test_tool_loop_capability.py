@@ -19,6 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     KnowledgeSearchedEvent,
     LLMEvent,
     Message,
+    ResponseSchema,
     RunToolLoopEvent,
     SearchKnowledgeEvent,
     TextContent,
@@ -41,6 +42,7 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.conversation.structured_answer import StructuredAnswer
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge, answers_a_tool_call
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_config import KnowledgeToolConfig
@@ -156,7 +158,7 @@ def _conversation(reply: Message) -> MagicMock:
     conversation.llm.cost_reporting_llm = cost_reporting_llm
     conversation.llm.model_name = "text-generation/test"
     conversation.llm.token_counter = lambda text: text.split()
-    conversation.input_budget.return_value = 100_000
+    conversation.input_budget = 100_000
     return conversation
 
 
@@ -312,6 +314,65 @@ class TestDecisions:
         assert isinstance(finished, ToolLoopFinishedEvent)
         assert finished.answer.output_messages[-1].content == "It is noon."
         assert displayer.display_llm_stream.await_args.kwargs["tools"][0]["function"]["name"] == "echo"
+
+    @pytest.mark.asyncio
+    async def test_a_turn_offering_tools_does_not_ask_for_the_json_shape(self):
+        """Asked for the shape next to the tools, a model answered at once instead of reading the attached file."""
+        schema = ResponseSchema(
+            name="clock", json_schema={"type": "object", "properties": {"time": {"type": "string"}}}
+        )
+        with patch(f"{MODULE}.RequestedResponseSchema.of", new=AsyncMock(return_value=schema)):
+            _, displayer = await _decide(_state(), ANSWER)
+
+        assert displayer.display_llm_stream.await_args.kwargs["response_schema"] is None
+        assert displayer.display_llm_stream.await_args.kwargs["tools"][0]["function"]["name"] == "echo"
+
+    @pytest.mark.asyncio
+    async def test_the_turn_answering_without_tools_asks_for_the_json_shape(self):
+        schema = ResponseSchema(
+            name="clock", json_schema={"type": "object", "properties": {"time": {"type": "string"}}}
+        )
+        with patch(f"{MODULE}.RequestedResponseSchema.of", new=AsyncMock(return_value=schema)):
+            _, displayer = await _decide(_state(iteration=5), ANSWER, max_iterations=5)
+
+        assert displayer.display_llm_stream.await_args.kwargs["tools"] is None
+        assert displayer.display_llm_stream.await_args.kwargs["response_schema"] == schema
+
+    @pytest.mark.asyncio
+    async def test_an_answer_asked_in_a_shape_keeps_its_prompt_with_the_tool_calls_as_text(self):
+        """The completion only receives the conversation; the correction reads this prompt instead."""
+        schema = ResponseSchema(name="clock", json_schema={"type": "object"})
+        result = Message(role="tool", tool_call_id="c1", name="echo", contents=[TextContent(text="It is 12:00.")])
+        state = _state().model_copy(
+            update={"messages": [*_state().messages, _calling(_tool_call("c1", "echo", "{}")), result]}
+        )
+        run_context = _Context()
+
+        with patch(f"{MODULE}.RequestedResponseSchema.of", new=AsyncMock(return_value=schema)):
+            await _decide(state, ANSWER, run_context=run_context)
+
+        kept = LLMEvent.model_validate(run_context.values[StructuredAnswer.PROMPT_KEY])
+        assert not any(message.tool_calls or message.role == "tool" for message in kept.input_messages)
+        assert any("It is 12:00." in message.content for message in kept.input_messages)
+        assert kept.output_messages[-1].content == "It is noon."
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("mode", "schema"),
+        [
+            (ToolLoopMode.GATHER, ResponseSchema(name="clock", json_schema={"type": "object"})),
+            (ToolLoopMode.ANSWER, None),
+        ],
+    )
+    async def test_no_prompt_is_kept_for_a_gathering_loop_or_without_a_shape(
+        self, mode: ToolLoopMode, schema: ResponseSchema | None
+    ):
+        run_context = _Context()
+
+        with patch(f"{MODULE}.RequestedResponseSchema.of", new=AsyncMock(return_value=schema)):
+            await _decide(_state(mode), ANSWER, run_context=run_context)
+
+        assert StructuredAnswer.PROMPT_KEY not in run_context.values
 
     @pytest.mark.asyncio
     async def test_tool_calls_become_one_tool_event_each_and_a_join_point(self):
@@ -674,6 +735,21 @@ class TestJoin:
             ("tool", "c2", "second"),
         ]
         assert [message.content for message in state.gathered] == [block[0].content, "echo: second"]
+
+    @pytest.mark.asyncio
+    async def test_an_answering_loop_keeps_no_gathered_context(self):
+        decided = ToolCallsDecidedEvent(state=_state(ToolLoopMode.ANSWER), tool_call_ids=["c1", "c2"])
+
+        event = await ToolLoop.join_step(
+            LoopAgent(),
+            decided=decided,
+            results=[self._result("c1", "first"), self._result("c2", "second")],
+            loop=_config(),
+            conversation=_conversation(ANSWER),
+        )
+
+        assert event.state.gathered == []
+        assert [message.content for message in event.state.messages[-2:]] == ["first", "second"]
 
     @pytest.mark.asyncio
     async def test_a_result_larger_than_its_room_is_cut(self):

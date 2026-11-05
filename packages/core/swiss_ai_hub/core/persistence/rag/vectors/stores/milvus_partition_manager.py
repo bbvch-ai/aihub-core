@@ -6,6 +6,10 @@ from pymilvus import MilvusClient
 # So we create 1023 manual partitions (partition_0 to partition_1022)
 MAX_PARTITIONS = 1023
 DEFAULT_PARTITION_NAME = "_default"
+MANUAL_PARTITION_PREFIX = "partition_"
+# Written into the schema description, atomically with the collection, so a collection whose creator has not yet
+# created any partition is told apart from a legacy one that never gets any.
+MANUAL_PARTITIONS_MARKER = f"aihub:manual_partitions:{MAX_PARTITIONS}"
 
 
 def hash_namespace_to_partition(namespace: str) -> int:
@@ -18,14 +22,19 @@ def hash_namespace_to_partition(namespace: str) -> int:
 def get_partition_name(partition_id: int) -> str:
     if not 0 <= partition_id < MAX_PARTITIONS:
         raise ValueError(f"Partition ID must be in range [0, {MAX_PARTITIONS - 1}], got {partition_id}")
-    return f"partition_{partition_id}"
+    return f"{MANUAL_PARTITION_PREFIX}{partition_id}"
 
 
 def create_manual_partitions(client: MilvusClient, collection_name: str) -> None:
-    """Idempotent creation of all 1023 manual partitions."""
+    """Create whichever of the 1023 manual partitions are missing.
+
+    Milvus accepts creating a partition that already exists, so a concurrent creator completing the same collection
+    is harmless.
+    """
+    existing = set(client.list_partitions(collection_name=collection_name))
     for partition_id in range(MAX_PARTITIONS):
         partition_name = get_partition_name(partition_id)
-        if not client.has_partition(collection_name=collection_name, partition_name=partition_name):
+        if partition_name not in existing:
             client.create_partition(collection_name=collection_name, partition_name=partition_name)
 
 

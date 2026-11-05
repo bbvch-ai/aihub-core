@@ -1,0 +1,73 @@
+import time
+from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import MagicMock
+
+import pytest
+from botocore.exceptions import ClientError
+
+from swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket import ParseCacheBucket
+
+
+def bucket_with(client: MagicMock, monkeypatch: pytest.MonkeyPatch) -> ParseCacheBucket:
+    bucket = ParseCacheBucket()
+    monkeypatch.setattr(bucket, "_client", lambda: client)
+    return bucket
+
+
+def test_the_s3_body_is_closed_after_a_hit(monkeypatch: pytest.MonkeyPatch):
+    body = MagicMock()
+    body.read.return_value = b"cached"
+    client = MagicMock()
+    client.get_object.return_value = {"Body": body}
+
+    assert bucket_with(client, monkeypatch).read("mineru/key") == b"cached"
+    client.get_object.assert_called_once_with(Bucket="parse-cache", Key="mineru/key")
+    body.close.assert_called_once()
+
+
+@pytest.mark.parametrize("code", ["NoSuchKey", "404"])
+def test_a_missing_entry_is_a_miss(code: str, monkeypatch: pytest.MonkeyPatch):
+    client = MagicMock()
+    client.get_object.side_effect = ClientError({"Error": {"Code": code}}, "GetObject")
+
+    assert bucket_with(client, monkeypatch).read("markitdown/key") is None
+
+
+def test_any_other_storage_error_propagates(monkeypatch: pytest.MonkeyPatch):
+    client = MagicMock()
+    client.get_object.side_effect = ClientError({"Error": {"Code": "NoSuchBucket"}}, "GetObject")
+    bucket = bucket_with(client, monkeypatch)
+
+    with pytest.raises(ClientError):
+        bucket.read("markitdown/key")
+
+
+def test_write_stores_the_content_with_its_type(monkeypatch: pytest.MonkeyPatch):
+    client = MagicMock()
+
+    bucket_with(client, monkeypatch).write("markitdown/key", b"# text", "text/markdown; charset=utf-8")
+
+    client.put_object.assert_called_once_with(
+        Bucket="parse-cache", Key="markitdown/key", Body=b"# text", ContentType="text/markdown; charset=utf-8"
+    )
+
+
+def test_concurrent_first_reads_build_one_client(monkeypatch: pytest.MonkeyPatch):
+    """boto3's default session is not thread-safe, so two worker threads must not build their clients at once."""
+    clients: list[MagicMock] = []
+
+    def slow_client() -> MagicMock:
+        time.sleep(0.05)
+        clients.append(MagicMock())
+        return clients[-1]
+
+    monkeypatch.setattr(
+        "swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket.create_s3_client", slow_client
+    )
+    bucket = ParseCacheBucket()
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        built = list(pool.map(lambda _: bucket._client(), range(4)))
+
+    assert len(clients) == 1
+    assert all(client is clients[0] for client in built)

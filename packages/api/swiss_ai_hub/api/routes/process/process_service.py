@@ -5,10 +5,12 @@ from bson import ObjectId
 from fastapi import HTTPException
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalProcessEvent, ExternalProcessEventDistributor
-from swiss_ai_hub.core.events.process import ProcessStartEvent, WorkEvent
+from swiss_ai_hub.core.events.process import HumanInSpecs, ProcessStartEvent, WorkEvent
 from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_process_event_entity import PersistedProcessEventEntity
 from swiss_ai_hub.core.persistence.process import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
@@ -26,10 +28,12 @@ from swiss_ai_hub.api.routes.process.dto.in_specs.human_in_dto import HumanInDTO
 from swiss_ai_hub.api.routes.process.dto.process_class_dto import ProcessClassDTO
 from swiss_ai_hub.api.routes.process.dto.process_walkthrough_dto import ProcessWalkthroughDTO
 from swiss_ai_hub.api.routes.process.dto.submitted_form_dto import SubmittedFormDTO
+from swiss_ai_hub.api.routes.process.human_work_request_assignment import HumanWorkRequestAssignment
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
+from swiss_ai_hub.api.util.model_limit_validator import ModelLimitValidator
 
 
 class ProcessService:
@@ -58,9 +62,9 @@ class ProcessService:
     @staticmethod
     @trace_fn
     async def get_process_open_forms(
-        process_class: str, process_id: str, process_walkthrough_id: str, t: LocaleHandler
+        process_class: str, process_id: str, process_walkthrough_id: str, user: UserIdentity, t: LocaleHandler
     ) -> list[HumanInDTO]:
-        """Returns a list of formkit forms that the user can submit to continue the given process walkthrough."""
+        """Returns the forms of open work requests in the walkthrough that are assigned to the user."""
         class_entity = ProcessClassEntity.get_by_process_class(process_class)
         if not class_entity:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
@@ -73,6 +77,8 @@ class ProcessService:
         )
 
         for persisted_event in persisted_events:
+            if not HumanWorkRequestAssignment.is_assigned_to(persisted_event["event_data"], user):
+                continue
             for work_form in persisted_event["event_data"]["forms"]:
                 human_in_specs = next(
                     (
@@ -85,32 +91,46 @@ class ProcessService:
                 if not human_in_specs:
                     continue
 
-                work_form_elements: list[dict] = []
-
-                for key, value in work_form.items():
-                    if isinstance(value, dict) and value.get("is_formkit_element"):
-                        work_form_elements.append(
-                            {
-                                **value,
-                                "name": key,
-                            }
-                        )
-
-                process_human_input_dto = HumanInDTO(
-                    name=t.extract_required(human_in_specs.name, field_name="human_input.name"),
-                    description=t.extract_required(human_in_specs.description, field_name="human_input.description"),
-                    route=human_in_specs.route,
-                    method=human_in_specs.method,
-                    form=work_form_elements,
-                    is_process_start=False,
-                    event_specs=human_in_specs.event_specs,
-                )
-                process_human_input_dto.form = [
-                    form_element.in_locale(t) for form_element in process_human_input_dto.form
-                ]
-                process_human_input_dtos.append(process_human_input_dto)
+                process_human_input_dtos.append(ProcessService._open_form_dto(human_in_specs, work_form, t))
 
         return process_human_input_dtos
+
+    @staticmethod
+    def _open_form_dto(human_in_specs: HumanInSpecs, work_form: dict[str, Any], t: LocaleHandler) -> HumanInDTO:
+        work_form_elements = [
+            {**value, "name": key}
+            for key, value in work_form.items()
+            if isinstance(value, dict) and value.get("is_formkit_element")
+        ]
+        process_human_input_dto = HumanInDTO(
+            name=t.extract_required(human_in_specs.name, field_name="human_input.name"),
+            description=t.extract_required(human_in_specs.description, field_name="human_input.description"),
+            route=human_in_specs.route,
+            method=human_in_specs.method,
+            form=work_form_elements,
+            is_process_start=False,
+            event_specs=human_in_specs.event_specs,
+        )
+        process_human_input_dto.form = [form_element.in_locale(t) for form_element in process_human_input_dto.form]
+        return process_human_input_dto
+
+    @staticmethod
+    def _human_input_for(
+        class_entity: ProcessClassEntity, route: str, method: str, *, is_process_start: bool
+    ) -> HumanInSpecs:
+        """The human input declared on exactly this route and method, so a form is never submitted through
+        another step's endpoint."""
+        human_in = next(
+            (
+                specs
+                for specs in (entity.to_specs() for entity in class_entity.human_inputs)
+                if specs.route == route and specs.method == method and specs.is_process_start == is_process_start
+            ),
+            None,
+        )
+        if human_in is None:
+            raise HTTPException(status_code=404, detail=f"No human input found for route {route} and method {method}.")
+        return human_in
 
     @staticmethod
     @trace_fn
@@ -130,14 +150,7 @@ class ProcessService:
         if not class_entity:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
 
-        human_inputs_specs = [specs.to_specs() for specs in class_entity.human_inputs]
-        human_in = next(
-            (human_in for human_in in human_inputs_specs if human_in.route == route and human_in.method == method),
-            None,
-        )
-
-        if not human_in:
-            raise ValueError(f"No human input found for route {route} and method {method}")
+        human_in = ProcessService._human_input_for(class_entity, route, method, is_process_start=True)
 
         event: ProcessStartEvent = ProcessStartEvent.from_raw_data(
             raw_event_data=raw_event_data, human_in=human_in, process_config=process_config
@@ -169,35 +182,18 @@ class ProcessService:
         user: UserIdentity,
         t: LocaleHandler,
     ) -> SubmittedFormDTO:
-        """Submit an object satisfying a form to continue a process walkthrough."""
+        """Submit an object satisfying a form to continue a process walkthrough.
+
+        The form must answer an open work request of this walkthrough that is assigned to the user.
+        """
         class_entity = ProcessClassEntity.get_by_process_class(process_class)
         if not class_entity:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
 
-        human_inputs_specs = [specs.to_specs() for specs in class_entity.human_inputs]
-        persisted_events = PersistedProcessEventEntity.get_open_human_work_requests(
-            process_class, process_id, process_walkthrough_id
+        human_in = ProcessService._human_input_for(class_entity, route, method, is_process_start=False)
+        in_response_to = ProcessService._assigned_open_request_id(
+            process_class, process_id, process_walkthrough_id, human_in, user
         )
-
-        human_in = None
-        in_response_to = None
-        for persisted_event in persisted_events:
-            for work_form in persisted_event["event_data"]["forms"]:
-                potential_human_in = next(
-                    (
-                        human_in
-                        for human_in in human_inputs_specs
-                        if human_in.event_specs.event_name == work_form["_event_name"]
-                    ),
-                    None,
-                )
-                if potential_human_in:
-                    human_in = potential_human_in
-                    in_response_to = persisted_event["event_id"]
-                    break
-
-        if not human_in:
-            raise ValueError(f"No human input found for route {route} and method {method}")
 
         json_data: dict[str, Any] = {
             "event_id": str(ObjectId()),
@@ -223,6 +219,36 @@ class ProcessService:
             process_id=process_id,
             process_walkthrough_id=external_event.process_walkthrough_id,
         )
+
+    @staticmethod
+    def _assigned_open_request_id(
+        process_class: str, process_id: str, process_walkthrough_id: str, human_in: HumanInSpecs, user: UserIdentity
+    ) -> str:
+        """The id of the open work request this form answers, provided the user is one of its assignees."""
+        event_name = human_in.event_specs.event_name
+        open_requests = [
+            persisted_event
+            for persisted_event in PersistedProcessEventEntity.get_open_human_work_requests(
+                process_class, process_id, process_walkthrough_id
+            )
+            if any(work_form["_event_name"] == event_name for work_form in persisted_event["event_data"]["forms"])
+        ]
+        if not open_requests:
+            raise HTTPException(
+                status_code=404, detail=f"No open work request accepts {event_name} in this walkthrough."
+            )
+
+        assigned_request = next(
+            (
+                persisted_event
+                for persisted_event in open_requests
+                if HumanWorkRequestAssignment.is_assigned_to(persisted_event["event_data"], user)
+            ),
+            None,
+        )
+        if assigned_request is None:
+            raise HTTPException(status_code=403, detail="This work request is not assigned to you.")
+        return assigned_request["event_id"]
 
     @staticmethod
     async def _send_event(
@@ -264,10 +290,12 @@ class ProcessService:
     async def get_process_classes(t: LocaleHandler, online: bool | None = None) -> list[ProcessClassDTO]:
         """Returns all process classes from the database."""
         process_classes = []
+        online_threshold = ProcessClassEntity.online_threshold()
         for class_entity in ProcessClassEntity.get_all():
-            if online is not None and class_entity.is_online != online:
+            is_online = class_entity.is_online_since(online_threshold)
+            if online is not None and is_online != online:
                 continue
-            process_classes.append(ProcessClassDTO.from_entity(class_entity, t))
+            process_classes.append(ProcessClassDTO.from_entity(class_entity, t, is_online=is_online))
         return process_classes
 
     @staticmethod
@@ -277,7 +305,8 @@ class ProcessService:
         class_entity = ProcessClassEntity.get_by_process_class(process_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
-        return ProcessClassDTO.from_entity(class_entity, t)
+        is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
+        return ProcessClassDTO.from_entity(class_entity, t, is_online=is_online)
 
     @staticmethod
     @trace_fn
@@ -287,12 +316,13 @@ class ProcessService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Process class {process_class} not found.")
 
+        is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
         instances = []
         configs = ProcessConfigEntityDocument.find_for_class(process_class)
         for config_entity in configs:
             dto = InstanceDtoBuilder.build_or_skip(
                 lambda config_entity=config_entity: FullProcessInstanceDTO.from_class_and_config(
-                    class_entity, config_entity, t
+                    class_entity, config_entity, t, is_online=is_online
                 ),
                 kind="process instance",
                 key=f"{process_class}/{getattr(config_entity, 'process_id', '?')}",
@@ -313,7 +343,8 @@ class ProcessService:
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Process instance {process_class}/{process_id} not found.")
 
-        return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+        is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
+        return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
     @staticmethod
     @trace_fn
@@ -329,7 +360,7 @@ class ProcessService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Process class '{process_class}' not found.")
 
-        if not class_entity.is_online:
+        if not class_entity.is_online_since(ProcessClassEntity.online_threshold()):
             raise HTTPException(
                 status_code=503,
                 detail=f"Process class '{process_class}' is not online. Make sure the process is running.",
@@ -346,8 +377,9 @@ class ProcessService:
         config_model = ModelCreationService.create_config_model(
             class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
-        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        config_instance = await InstanceConfigHelper.validate_config_for_create(config, config_model)
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
+        await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, config, user, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -370,14 +402,14 @@ class ProcessService:
         config_entity = ProcessConfigEntityDocument(
             process_class=process_class,
             process_id=request.process_id,
-            name=locale.name,
-            description=locale.description,
+            name=LocaleStringEntity.from_locale_string(locale.name),
+            description=LocaleStringEntity.from_locale_string(locale.description),
             icon=locale.icon,
             config_data=full_config_data,
         )
         config_entity.save()
 
-        return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+        return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=True)
 
     @staticmethod
     @trace_fn
@@ -398,8 +430,9 @@ class ProcessService:
         config_model = ModelCreationService.create_config_model(
             class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
-        config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
+        config_instance = await InstanceConfigHelper.validate_config_for_update(configuration, config_model)
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
+        await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, configuration, user, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -430,15 +463,19 @@ class ProcessService:
     async def get_all_process_instances(t: LocaleHandler, online: bool | None = None) -> list[FullProcessInstanceDTO]:
         """Returns all registered process instances from the database."""
         instances = []
+        online_threshold = ProcessClassEntity.online_threshold()
         for class_entity in ProcessClassEntity.get_all():
-            if online is not None and class_entity.is_online != online:
+            is_online = class_entity.is_online_since(online_threshold)
+            if online is not None and is_online != online:
                 continue
 
             configs = ProcessConfigEntityDocument.find_for_class(class_entity.process_class)
             for config_entity in configs:
                 dto = InstanceDtoBuilder.build_or_skip(
-                    lambda class_entity=class_entity, config_entity=config_entity: (
-                        FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                    lambda class_entity=class_entity, config_entity=config_entity, is_online=is_online: (
+                        FullProcessInstanceDTO.from_class_and_config(
+                            class_entity, config_entity, t, is_online=is_online
+                        )
                     ),
                     kind="process instance",
                     key=f"{class_entity.process_class}/{getattr(config_entity, 'process_id', '?')}",
@@ -461,10 +498,22 @@ class ProcessService:
             process_class, process_id, page, page_size
         )
 
+        agent_configs = await AgentConfigEntityDocument.find_for_instances(
+            {
+                instance
+                for walkthrough_data in walkthroughs_data
+                for instance in ProcessService._agent_instances_in(walkthrough_data["events"])
+            }
+        )
+
         walkthroughs = []
         for walkthrough_data in walkthroughs_data:
             process_steps = ProcessService._build_process_steps_from_events(
-                walkthrough_data["events"], t, walkthrough_data["process_class"], walkthrough_data["process_id"]
+                walkthrough_data["events"],
+                t,
+                walkthrough_data["process_class"],
+                walkthrough_data["process_id"],
+                agent_configs,
             )
 
             completed_steps = sum(1 for step in process_steps if step.is_completed)
@@ -476,7 +525,9 @@ class ProcessService:
                     is_active = False
                     break
 
-            involved_agents, involved_humans = ProcessService._extract_involved_entities(walkthrough_data["events"], t)
+            involved_agents, involved_humans = ProcessService._extract_involved_entities(
+                walkthrough_data["events"], t, agent_configs
+            )
 
             walkthrough = ProcessWalkthroughDTO(
                 process_walkthrough_id=walkthrough_data["process_walkthrough_id"],
@@ -496,8 +547,26 @@ class ProcessService:
         return total_count, walkthroughs
 
     @staticmethod
+    def _agent_instances_in(events: list[dict]) -> set[tuple[str, str]]:
+        """Every (agent_class, agent_id) an agent work request or response in `events` names.
+
+        The step DTOs are built synchronously, so the profiles they show are loaded up front in one query.
+        """
+        instances: set[tuple[str, str]] = set()
+        for event in events:
+            event_data = event.get("event_data", {})
+            for reference in (event_data, event_data.get("submitted_by")):
+                if isinstance(reference, dict) and "agent_class" in reference and "agent_id" in reference:
+                    instances.add((reference["agent_class"], reference["agent_id"]))
+        return instances
+
+    @staticmethod
     def _build_process_steps_from_events(
-        events: list[dict], t: LocaleHandler, process_class: str, process_id: str
+        events: list[dict],
+        t: LocaleHandler,
+        process_class: str,
+        process_id: str,
+        agent_configs: dict[tuple[str, str], AgentConfigEntityDocument],
     ) -> list:
         """
         Builds a list of ProcessStepDTO objects from raw event data by pairing
@@ -549,7 +618,7 @@ class ProcessService:
             if request_type == "human":
                 step = HumanProcessStepDTO.from_events(request_event, response_event, step_index, t)
             elif request_type == "agent":
-                step = AgentProcessStepDTO.from_events(request_event, response_event, step_index, t)
+                step = AgentProcessStepDTO.from_events(request_event, response_event, step_index, t, agent_configs)
             else:  # program
                 step = ProgramProcessStepDTO.from_events(request_event, response_event, step_index, t)
 
@@ -565,7 +634,7 @@ class ProcessService:
             if response_type == "human":
                 standalone_step = HumanProcessStepDTO.from_events(None, response_event, step_index, t)
             elif response_type == "agent":
-                standalone_step = AgentProcessStepDTO.from_events(None, response_event, step_index, t)
+                standalone_step = AgentProcessStepDTO.from_events(None, response_event, step_index, t, agent_configs)
             else:  # program
                 standalone_step = ProgramProcessStepDTO.from_events(None, response_event, step_index, t)
 
@@ -582,68 +651,73 @@ class ProcessService:
         return steps
 
     @staticmethod
-    def _extract_involved_entities(events: list[dict], t) -> tuple[list, list]:
+    def _extract_involved_entities(
+        events: list[dict], t, agent_configs: dict[tuple[str, str], AgentConfigEntityDocument]
+    ) -> tuple[list, list]:
         """
         Extracts involved agents and humans from events.
         Returns a tuple of (involved_agents, involved_humans).
         """
-        from swiss_ai_hub.core.persistence.agents import AgentClassEntity
-        from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-
-        from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
-        from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
-
-        involved_agents = {}  # Use dict to avoid duplicates by agent_id
-        involved_humans = {}  # Use dict to avoid duplicates by user_id
+        involved_agents: dict[str, Any] = {}  # Use dict to avoid duplicates by agent_id
+        involved_humans: dict[str, Any] = {}  # Use dict to avoid duplicates by user_id
 
         for event in events:
-            event_data = event.get("event_data", {})
             event_parents = event.get("event_parents", [])
-
-            if any("WorkEvent" in parent and "WorkRequestEvent" not in parent for parent in event_parents):
-                if any("AgentWork" in parent for parent in event_parents):
-                    agent_class = event_data["submitted_by"]["agent_class"]
-                    agent_id = event_data["submitted_by"]["agent_id"]
-                    agent_key = f"{agent_class}:{agent_id}"
-                    if agent_key not in involved_agents:
-                        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
-                        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
-                        if class_entity and config_entity:
-                            involved_agents[agent_key] = MinimalAgentInstanceDTO.from_class_and_config(
-                                class_entity, config_entity, t
-                            )
-
-                elif any("HumanWork" in parent for parent in event_parents):
-                    submitted_by = event_data["submitted_by"]
-                    user_id = (
-                        submitted_by.get("id") if isinstance(submitted_by, dict) else getattr(submitted_by, "id", None)
-                    )
-                    if user_id and user_id not in involved_humans:
-                        profile_image = (
-                            submitted_by.get("profile_image")
-                            if isinstance(submitted_by, dict)
-                            else getattr(submitted_by, "profile_image", None)
-                        )
-
-                        if user_id not in involved_humans:
-                            involved_humans[user_id] = MinimalUserDTO.model_validate(
-                                {
-                                    "id": user_id,
-                                    "name": (
-                                        submitted_by.get("name")
-                                        if isinstance(submitted_by, dict)
-                                        else getattr(submitted_by, "name", "")
-                                    ),
-                                    "email": (
-                                        submitted_by.get("email")
-                                        if isinstance(submitted_by, dict)
-                                        else getattr(submitted_by, "email", "")
-                                    ),
-                                    "profile_image": profile_image,
-                                }
-                            )
+            if not any("WorkEvent" in parent and "WorkRequestEvent" not in parent for parent in event_parents):
+                continue
+            if any("AgentWork" in parent for parent in event_parents):
+                submitted_by = event.get("event_data", {})["submitted_by"]
+                ProcessService._add_involved_agent(involved_agents, submitted_by, t, agent_configs)
+            elif any("HumanWork" in parent for parent in event_parents):
+                ProcessService._add_involved_human(involved_humans, event.get("event_data", {})["submitted_by"])
 
         return list(involved_agents.values()), list(involved_humans.values())
+
+    @staticmethod
+    def _add_involved_agent(
+        involved_agents: dict[str, Any],
+        submitted_by: dict,
+        t,
+        agent_configs: dict[tuple[str, str], AgentConfigEntityDocument],
+    ) -> None:
+        """Adds the agent that did the work, unless it is listed already or its class or profile is gone."""
+        from swiss_ai_hub.core.persistence.agents import AgentClassEntity
+
+        from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
+
+        agent_class = submitted_by["agent_class"]
+        agent_id = submitted_by["agent_id"]
+        agent_key = f"{agent_class}:{agent_id}"
+        if agent_key in involved_agents:
+            return
+        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        config_entity = agent_configs.get((agent_class, agent_id))
+        if class_entity and config_entity:
+            involved_agents[agent_key] = MinimalAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+
+    @staticmethod
+    def _add_involved_human(involved_humans: dict[str, Any], submitted_by: Any) -> None:
+        """Adds the human that did the work, unless it has no id or is listed already."""
+        from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
+
+        user_id = ProcessService._submitted_by_field(submitted_by, "id", None)
+        if not user_id or user_id in involved_humans:
+            return
+        involved_humans[user_id] = MinimalUserDTO.model_validate(
+            {
+                "id": user_id,
+                "name": ProcessService._submitted_by_field(submitted_by, "name", ""),
+                "email": ProcessService._submitted_by_field(submitted_by, "email", ""),
+                "profile_image": ProcessService._submitted_by_field(submitted_by, "profile_image", None),
+            }
+        )
+
+    @staticmethod
+    def _submitted_by_field(submitted_by: Any, field: str, object_default: Any) -> Any:
+        """A field of `submitted_by`, stored as a dict or kept as an object; a dict yields None for a missing field."""
+        if isinstance(submitted_by, dict):
+            return submitted_by.get(field)
+        return getattr(submitted_by, field, object_default)
 
     @staticmethod
     def _get_step_type_from_event_parents(event_parents: list[str]) -> str:

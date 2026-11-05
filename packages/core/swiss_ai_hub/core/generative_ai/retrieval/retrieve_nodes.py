@@ -27,6 +27,7 @@ def retrieve_nodes(
     node_types: list[str],
     vector_store: BasePydanticVectorStore,
     additional_filters: list[MetadataFilterPair] | None = None,
+    min_similarity: Annotated[float | None, "Dense results below this cosine similarity are dropped"] = None,
 ) -> list[NodeWithScore] | None:
     """An empty namespace list is a scope of nothing and returns no nodes; only ``None`` lifts the filter."""
     if retrieve_k <= 0:
@@ -36,7 +37,7 @@ def retrieve_nodes(
     if index_namespaces is not None and not index_namespaces:
         return []
 
-    extra_filters = [MetadataFilter(key=f.key, value=f.value) for f in (additional_filters or [])]
+    extra_filters = [f.to_llama_index() for f in (additional_filters or [])]
 
     if index_namespaces:
         filters = MetadataFilters(
@@ -82,6 +83,11 @@ def retrieve_nodes(
     nodes = [
         NodeWithScore(node=node, score=score) for node, score in zip(question_query.nodes, question_query.similarities)
     ]
+    # Only dense scores are cosine similarities: hybrid scores are normalised per query and sparse ones are BM25, so an
+    # absolute floor would drop their bottom results however relevant. Neighbours and summaries are added by the
+    # caller, after this, for the results kept here.
+    if query_mode == VectorStoreQueryMode.DEFAULT and min_similarity:
+        nodes = [node for node in nodes if (node.score or 0.0) >= min_similarity]
 
     if query_mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
         nodes = ScoreScalerPostProcessor(from_min=0, from_max=4).postprocess_nodes(nodes)

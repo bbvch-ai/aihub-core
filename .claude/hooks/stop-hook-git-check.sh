@@ -24,11 +24,11 @@ if echo "$all_changed" | grep -qE '\.md$'; then
   md_changed=true
 fi
 
-# Check for YAML changes
-yaml_changed=false
-if echo "$all_changed" | grep -qE '\.(yaml|yml)$'; then
-  yaml_changed=true
-fi
+# Only the changed YAML files are formatted: formatting every tracked file drags unrelated files into the diff
+changed_yaml=()
+while IFS= read -r file; do
+  [[ -f "$file" ]] && changed_yaml+=("$file")
+done < <(echo "$all_changed" | grep -E '\.(yaml|yml)$' | grep -v 'pnpm-lock.yaml')
 
 # Run make pr-ready on each dirty scope
 failed=false
@@ -49,11 +49,10 @@ if [[ "$md_changed" == "true" ]]; then
   fi
 fi
 
-# Run make format-yaml if YAML files changed
-if [[ "$yaml_changed" == "true" ]]; then
-  echo "Running make format-yaml..." >&2
-  if ! make -C "$REPO_ROOT" format-yaml 2>&1 | tail -3 >&2; then
-    echo "FAILED: make format-yaml" >&2
+if [[ ${#changed_yaml[@]} -gt 0 ]]; then
+  echo "Running yamlfix on ${#changed_yaml[@]} changed YAML file(s)..." >&2
+  if ! uv run yamlfix "${changed_yaml[@]}" 2>&1 | tail -3 >&2; then
+    echo "FAILED: yamlfix" >&2
     failed=true
   fi
 fi

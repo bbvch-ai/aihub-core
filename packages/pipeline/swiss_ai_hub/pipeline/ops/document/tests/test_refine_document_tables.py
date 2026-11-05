@@ -44,3 +44,18 @@ class TestRefineDocumentTables:
         resource.refine.assert_called_once()
         assert resource.refine.call_args.args[1] is own_model
         assert result.value.text == "refined"
+
+    def test_refining_keeps_the_keys_left_out_of_the_embedded_text(self):
+        """#1953: frontmatter keys are excluded from embedding before refinement and must stay excluded after it."""
+        resource = Mock()
+        resource.refine.return_value = RefDocDocument(text="refined", id_="doc", metadata={})
+        ref_doc = RefDocDocument(
+            text="| a | b |", id_="doc", metadata={"project": "ABC"}, excluded_embed_metadata_keys=["project"]
+        )
+        with (
+            patch(f"{_MODULE}.ingestor_config_for_bucket", return_value=_config(True)),
+            patch(f"{_MODULE}.llm_config_for_bucket", return_value=LLMConfig(model_name="text-generation/picked")),
+        ):
+            result = refine_document_tables(build_op_context(partition_key=_PARTITION), ref_doc, resource)
+
+        assert result.value.excluded_embed_metadata_keys == ["project"]

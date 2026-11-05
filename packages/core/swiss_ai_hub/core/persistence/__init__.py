@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
     from swiss_ai_hub.core.persistence.agents.agent_config_change_hook import AgentConfigChangeHook
     from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+    from swiss_ai_hub.core.persistence.beanie_initializer import BeanieInitializer
+    from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
     from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
     from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
     from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import (
@@ -88,6 +90,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
         get_partition_name_for_namespace,
     )
+    from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_state import MilvusPartitionState
     from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig
     from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory import (
         MilvusIndexType,
@@ -96,6 +99,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vector_store import (
         PartitionAwareMilvusVectorStore,
     )
+    from swiss_ai_hub.core.persistence.rag.vectors.stores.stored_node_key import StoredNodeKey
     from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
     from swiss_ai_hub.core.persistence.utils import str_to_object_id
 
@@ -105,12 +109,14 @@ __all__ = [
     "AgentConfigChangeHook",
     "KnowledgeChangeHook",
     "AgentConfigEntityDocument",
+    "BeanieInitializer",
     "AgentInSpecsEntity",
     "AgentInstanceRef",
     "BearerToken",
     "BucketEntity",
     "ConfigSpecsEntity",
     "CREATED_AT",
+    "DiscoveryRoundEntity",
     "DOCUMENT_ID",
     "DOCUMENT_STORE_NAME",
     "DOCUMENT_TITLE",
@@ -136,8 +142,10 @@ __all__ = [
     "LANGUAGE",
     "LocaleStringEntity",
     "MilvusIndexType",
+    "MilvusPartitionState",
     "MilvusVectorStoreConfig",
     "PartitionAwareMilvusVectorStore",
+    "StoredNodeKey",
     "NAMESPACE",
     "NODE_CONTENT_TYPE",
     "NODE_CONTENT_TYPE_FIGURE",
@@ -187,12 +195,14 @@ _LAZY_IMPORTS = {
     "AgentConfigChangeHook": "swiss_ai_hub.core.persistence.agents.agent_config_change_hook",
     "KnowledgeChangeHook": "swiss_ai_hub.core.persistence.rag.datalake.knowledge_change_hook",
     "AgentConfigEntityDocument": "swiss_ai_hub.core.persistence.agents.agent_config_entity_document",
+    "BeanieInitializer": "swiss_ai_hub.core.persistence.beanie_initializer",
     "AgentInSpecsEntity": "swiss_ai_hub.core.persistence.process.process_class_entity",
     "AgentInstanceRef": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",
     "BearerToken": "swiss_ai_hub.core.persistence.access.entities.bearer_token",
     "BucketEntity": "swiss_ai_hub.core.persistence.rag.datalake.entities.bucket_entity",
     "ConfigSpecsEntity": "swiss_ai_hub.core.persistence.form.config_specs_entity",
     "CREATED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
+    "DiscoveryRoundEntity": "swiss_ai_hub.core.persistence.discovery.discovery_round_entity",
     "DOCUMENT_ID": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "DOCUMENT_STORE_NAME": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "DOCUMENT_TITLE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
@@ -218,6 +228,8 @@ _LAZY_IMPORTS = {
     "LANGUAGE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "LocaleStringEntity": "swiss_ai_hub.core.persistence.i18n.locale_string_entity",
     "MilvusIndexType": "swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory",
+    "MilvusPartitionState": "swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_state",
+    "StoredNodeKey": "swiss_ai_hub.core.persistence.rag.vectors.stores.stored_node_key",
     "MilvusVectorStoreConfig": "swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config",
     "PartitionAwareMilvusVectorStore": (
         "swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vector_store"

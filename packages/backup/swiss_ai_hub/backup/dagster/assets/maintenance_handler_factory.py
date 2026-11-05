@@ -2,6 +2,7 @@ from sqlalchemy import Engine
 
 from swiss_ai_hub.backup.maintenance.base import MaintenanceHandler
 from swiss_ai_hub.backup.maintenance.dagster_unimportant_events import DagsterUnimportantEventsHandler
+from swiss_ai_hub.backup.maintenance.ferretdb_lz4_rewrite import FerretdbLz4RewriteHandler
 from swiss_ai_hub.backup.maintenance.ferretdb_text_index import FerretdbTextIndexHandler
 from swiss_ai_hub.backup.maintenance.log_level_cleanup_handler import LogLevelCleanupHandler
 from swiss_ai_hub.backup.maintenance.postgres_autovacuum_tune import PostgresAutovacuumTuneHandler
@@ -20,6 +21,8 @@ CLEANUP_HANDLER_NAMES: tuple[str, ...] = (
     "dagster_unimportant_events",
 )
 REPACK_HANDLER_NAMES: tuple[str, ...] = ("postgres_repack",)
+# Launched by hand once per deployment, never scheduled: see FerretdbLz4RewriteHandler.
+LZ4_REWRITE_HANDLER_NAMES: tuple[str, ...] = ("ferretdb_lz4_rewrite",)
 TEXT_INDEX_HANDLER_NAMES: tuple[str, ...] = ("ferretdb_text_index",)
 # Launched by hand, never scheduled: only reclaims space, see FerretdbTextIndexHandler.
 TEXT_INDEX_REBUILD_HANDLER_NAMES: tuple[str, ...] = ("ferretdb_text_index_rebuild",)
@@ -59,6 +62,8 @@ def create_maintenance_handler(
         )
     if service_name == "postgres_repack":
         return PostgresRepackHandler(settings)
+    if service_name == "ferretdb_lz4_rewrite":
+        return FerretdbLz4RewriteHandler(settings)
     if service_name == "ferretdb_text_index":
         return FerretdbTextIndexHandler(settings)
     if service_name == "ferretdb_text_index_rebuild":

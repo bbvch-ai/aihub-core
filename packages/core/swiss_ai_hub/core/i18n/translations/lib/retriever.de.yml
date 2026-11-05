@@ -10,6 +10,10 @@ config:
   query_mode:
     label: Abfragemodus
     help: Legt fest, wie der Vektorspeicher abgefragt werden soll.
+  min_similarity:
+    label: Mindestähnlichkeit
+    help: Ergebnisse, die der Frage weniger ähnlich sind, werden vor dem Reranking
+      verworfen. Gilt für den Abfragemodus Default; 0 behält alle Ergebnisse.
   node_types:
     label: Knotentypen
     help: Arten von Knoten, die aus dem Index abgerufen werden sollen.

@@ -42,7 +42,7 @@ packages/web/
 ├── sdk/client/              # Auto-generated HeyAPI TypeScript client (NEVER edit)
 ├── themes/                  # aihub-theme.ts (PrimeVue Aura preset customization)
 ├── types/                   # Shared TypeScript types (NavItem, DashboardWidget, etc.)
-└── utils/                   # Plain helpers with no Vue/Nuxt context (apiResponseGuard — SDK onResponse hook)
+└── utils/                   # Plain helpers with no Vue/Nuxt context (apiResponseGuard — SDK onResponse hook; ssoSessionCheck — once-per-session SSO probe flag)
 ```
 
 ## Auth and locale
@@ -52,6 +52,11 @@ the live locale; the `UserManager` built once in `plugins/oidc-client.ts` keeps 
 silent renew. Do not read the locale in the plugin for anything user-visible. The preferred locale is persisted
 server-side (`PUT` on my-account locale, restored by `useRestorePreferredLocale`), so it survives logout and a second
 device. `logout()` is a top-level `signoutRedirect()`, not a cross-origin `fetch`.
+
+A page embedding an iframe that signs in through Keycloak's SSO cookie (the OpenWebUI chat) declares
+`definePageMeta({ embedsSsoIframe: true })`. `middleware/auth.global.ts` then renews the session on entering it and
+sends the user to a top-level login if Keycloak has ended the session, so the frame never shows Keycloak's login form.
+See the 2026-10-30 addendum of ADR `2026_02_19_parent_app_owns_auth_state_for_iframe_services`.
 
 ## Nuxt Layer Architecture
 
@@ -171,8 +176,10 @@ The backend defines form schemas (`FormkitElement[]`), the frontend renders them
 `<FormKitSchema :schema="schema" />` → rendered form.
 
 **Custom FormKit inputs** (registered in `formkit.config.ts`, which `nuxt.config.ts` points `formkit.configFile` at):
-`agentSelector`, `chipsInput`, `cronInput`, `knowledgeDatabaseSelector`, `iconSelector`, `localeInput`, `modelSelect`,
-`secretFileInput`, `tenantSelect`, `vectorStoreInput`.
+`agentSelector`, `chipsInput`, `cronInput`, `knowledgeDatabaseSelector`, `iconSelector`, `localeInput`,
+`modelBoundNumber`, `modelGatedCheckbox`, `modelSelect`, `secretFileInput`, `tenantSelect`, `vectorStoreInput`.
+`modelBoundNumber` and `modelGatedCheckbox` read the model picked elsewhere on the form through `useReferencedModel`,
+which follows the root node's `commit` the way `KnowledgeCollectionSelector` does.
 
 **Custom validation rules** are registered in the same file under `rules`, with their messages under `messages` (one
 entry per locale). The backend attaches a rule to a field via `PrimeVueElement.additional_validation_rules`, which

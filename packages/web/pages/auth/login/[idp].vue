@@ -32,23 +32,13 @@ definePageMeta({
 })
 
 const { t, locale } = useI18n()
-const route = useRoute()
 const { login } = useAuth()
-const { authProviders, isLoading } = useAuthProviders()
+// The API never resolves the synthetic "Keycloak" entry (empty alias, no
+// kc_idp_hint), so a tenant link can only ever name a federated provider.
+const { provider, isLoading } = useAuthProvider()
 
-/**
- * The empty alias belongs to the synthetic "Keycloak" entry, which has no
- * kc_idp_hint and must therefore not be addressable through a tenant link.
- */
-const requestedAlias = computed(() => String(route.params.idp ?? ''))
-const provider = computed(() =>
-  requestedAlias.value
-    ? authProviders.value?.find(candidate => candidate.alias === requestedAlias.value)
-    : undefined,
-)
-
-// Only decide once the query settled — an unknown, disabled or hidden alias
-// (and a failed provider request) falls back to the all-providers page.
+// Only decide once the query settled — an unknown, disabled or link-only alias
+// (and a failed provider request) falls back to the generic login page.
 watch([isLoading, provider], ([providersLoading, matchedProvider]) => {
   if (!providersLoading && !matchedProvider) {
     navigateTo(`/${locale.value}/auth/login`, { replace: true })

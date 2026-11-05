@@ -22,6 +22,13 @@ TEMPLATE_PIPE = REPO_ROOT / "infra/deployment/templates/openwebui_functions/aihu
 GENERATED_PIPE = REPO_ROOT / "infra/configs/openwebui/functions/aihub_pipeline.py"
 OPEN_WEBUI_MODULES = ["open_webui", "open_webui.models", "open_webui.models.chats", "open_webui.models.files"]
 OPEN_WEBUI_MODULES += ["open_webui.models.users"]
+OPEN_WEBUI_MODULES += ["open_webui.utils", "open_webui.utils.chat_id"]
+
+
+def _is_saved_chat_id(chat_id: str | None) -> bool:
+    """Open WebUI 0.11.3's own rule, since a stubbed one would call every chat saved."""
+    return bool(chat_id) and not chat_id.startswith(("temporary:", "local:", "channel:"))
+
 
 HANDBOOK = CitationId.of("handbook.pdf")
 POLICY = CitationId.of("policy.pdf")
@@ -31,6 +38,7 @@ POLICY = CitationId.of("policy.pdf")
 def pipe(monkeypatch: pytest.MonkeyPatch) -> Any:
     for name in OPEN_WEBUI_MODULES:
         monkeypatch.setitem(sys.modules, name, MagicMock())
+    sys.modules["open_webui.utils.chat_id"].is_saved_chat_id = _is_saved_chat_id
     spec = importlib.util.spec_from_file_location("aihub_pipeline", TEMPLATE_PIPE)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -210,7 +218,7 @@ class TestReferencedKnowledge:
         service = pipe.FileProcessingService.__new__(pipe.FileProcessingService)
 
         files, owui_file_ids = await service.prepare_files_for_event(
-            [{"type": "collection", "id": "k1", "name": "HR / Policies"}], "RAGAgent", "hr", {}, "t1"
+            [{"type": "collection", "id": "k1", "name": "HR / Policies"}], "RAGAgent", "hr", {}, "t1", "user-1"
         )
 
         assert (files, owui_file_ids) == ([], {})

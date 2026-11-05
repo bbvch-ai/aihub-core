@@ -1,3 +1,5 @@
+from dagster import ScheduleDefinition
+
 from swiss_ai_hub.backup.dagster.definitions import backup_definitions
 
 
@@ -141,6 +143,8 @@ def test_maintenance_definitions_has_all_cleanup_assets() -> None:
     assert "maintenance/cleanup_finalize" in all_keys
     assert "maintenance/postgres_repack" in all_keys
     assert "maintenance/repack_finalize" in all_keys
+    assert "maintenance/ferretdb_lz4_rewrite" in all_keys
+    assert "maintenance/lz4_rewrite_finalize" in all_keys
     assert "maintenance/ferretdb_text_index" in all_keys
     assert "maintenance/text_index_finalize" in all_keys
     assert "maintenance/ferretdb_text_index_rebuild" in all_keys
@@ -153,6 +157,16 @@ def test_maintenance_jobs_registered() -> None:
     repack = defs.get_job_def("postgres_repack_job")
     assert cleanup.name == "dagster_cleanup_job"
     assert repack.name == "postgres_repack_job"
+
+
+def test_lz4_rewrite_job_is_launched_by_hand_only() -> None:
+    defs = backup_definitions()
+    job = defs.get_job_def("ferretdb_lz4_rewrite_job")
+    selected = {key.to_user_string() for key in job.asset_layer.selected_asset_keys}
+
+    assert selected == {"maintenance/session", "maintenance/ferretdb_lz4_rewrite", "maintenance/lz4_rewrite_finalize"}
+    scheduled = {schedule.job_name for schedule in defs.schedules or [] if isinstance(schedule, ScheduleDefinition)}
+    assert "ferretdb_lz4_rewrite_job" not in scheduled
 
 
 def test_text_index_jobs_select_only_their_own_handler() -> None:
@@ -191,6 +205,7 @@ def test_maintenance_handlers_depend_on_session() -> None:
         "maintenance/dagster_warning_logs",
         "maintenance/dagster_unimportant_events",
         "maintenance/postgres_repack",
+        "maintenance/ferretdb_lz4_rewrite",
         "maintenance/ferretdb_text_index",
         "maintenance/ferretdb_text_index_rebuild",
     ]
@@ -241,6 +256,7 @@ def test_postgres_affecting_jobs_carry_mutex_tag() -> None:
         "full_restore_job",
         "dagster_cleanup_job",
         "postgres_repack_job",
+        "ferretdb_lz4_rewrite_job",
         "ferretdb_text_index_job",
         "ferretdb_text_index_rebuild_job",
     ):

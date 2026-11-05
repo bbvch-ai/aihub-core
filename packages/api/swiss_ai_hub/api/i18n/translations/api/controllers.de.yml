@@ -66,8 +66,9 @@ user:
   name: Benutzerverwaltung
   description: Benutzer und deren Zugriff verwalten
 user_knowledge:
-  name: "Meine Dateien"
-  description: "Die Dateien, mit denen Sie und Ihre Agenten arbeiten: Anhänge, erstellte Dateien und Ihre Uploads"
+  name: Meine Dateien
+  description: 'Die Dateien, mit denen Sie und Ihre Agenten arbeiten: Anhänge, erstellte
+    Dateien und Ihre Uploads'
 user_memory:
   name: Benutzer-Erinnerungen
   description: Persönliche Erinnerungen aus mem0 anzeigen und verwalten

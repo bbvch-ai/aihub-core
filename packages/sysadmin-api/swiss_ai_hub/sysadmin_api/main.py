@@ -6,7 +6,13 @@ from swiss_ai_hub.core.infrastructure import AihubInstrumentor
 
 AihubInstrumentor().instrument()
 
-from swiss_ai_hub.api import AuthProviderController, MyAccountController, RoleController, UserController
+from swiss_ai_hub.api import (
+    AuthProviderController,
+    MyAccountController,
+    MyTenantController,
+    RoleController,
+    UserController,
+)
 from swiss_ai_hub.core.auth import TokenAndOauth2Handler
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.routes import HealthController
@@ -44,12 +50,15 @@ runner.mount(
     # narrow subset of the platform surface. The middleware-relevant ``is_sys_admin``
     # field lives on the identity DTO already.
     MyAccountController(auth=auth).get_my_identity(),
+    # The sysadmin sees every tenant but its tenant-scoped routes (users, roles) only serve
+    # tenants whose Keycloak group the sysadmin belongs to; the UI needs this list to say so.
+    MyTenantController(auth=auth).get_my_tenants(),
     UserController(auth=auth).get_user().get_users().assign_role().revoke_role(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
     # The access catalog depends on the full controller surface a deployment serves, which this curated
     # plane does not have — SysadminAccessController overrides the endpoints to proxy them to the main API.
     SysadminAccessController(auth=auth).get_access_capabilities().get_access_presets(),
-    AuthProviderController(auth=auth).get_auth_providers(),
+    AuthProviderController(auth=auth).get_auth_providers().get_auth_provider(),
 )
 
 app = runner.create_app()

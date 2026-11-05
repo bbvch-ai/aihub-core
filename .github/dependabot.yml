@@ -176,6 +176,7 @@ updates:
       - /packages/sysadmin-web
       - /infra/deployment/docker/playwright
       - /infra/deployment/docker/open-terminal
+      - /infra/deployment/docker/presidio-analyzer
     schedule:
       interval: monthly
     # docker/github-actions ecosystems only support cooldown.default-days —
