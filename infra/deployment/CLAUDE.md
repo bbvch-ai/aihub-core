@@ -254,12 +254,16 @@ After publishing, all stages pull the new image automatically via `docker compos
 
 The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's multilingual PII model
 (`urchade/gliner_multi_pii-v1`, pinned revision) and spaCy's `de_core_news_lg` baked in, the hub offline at run time,
-and Presidio's stock REST server with two changes: every route but `/health` needs
-`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
-(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
-recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
-mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
-analysed under the language code `de`; see the config header.
+and Presidio's stock REST server with three changes: every route but `/health` needs
+`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`; GLiNER reads long texts in chunks that start at a word
+(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names); and
+the chunks of one text go to GLiNER `GLINER_BATCH_SIZE` at a time (`batched_gliner_recognizer.py`, image default 8)
+instead of one model call per chunk. Batching keeps Presidio's chunks, offsets and deduplication, so the spans are the
+stock recognizer's; padding moves scores by at most about 1e-5. On a 4-CPU laptop it made a 20,000-character text 28%
+faster (29 s to 21 s) at the same peak memory; 16 was no faster than 8. The recognizer config
+(`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in,
+so pattern changes need only `make generate-compose` and a container restart. Every text is analysed under the language
+code `de`; see the config header.
 
 Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
 `make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
