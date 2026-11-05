@@ -8,9 +8,11 @@ import requests
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
 from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
@@ -20,6 +22,8 @@ from swiss_ai_hub.core.testing import ASGIAdapter
 from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID, TestAuthHandler
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
+from playground.testing.tests.bot_framework_token_factory import BotFrameworkTokenFactory
+from swiss_ai_hub.bot.bots.chat.completion_handler import CompletionHandler
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import ConversationEntity
 from swiss_ai_hub.bot.persistence.entities.path_entity import Credentials, PathEntity
 from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController
@@ -43,6 +47,8 @@ BOT_ID = "test_bot_id"
 USER_ID = "test_user_id"
 USER_EMAIL = "test@example.com"
 ACTIVITY_ID = "test_activity_id"
+APP_ID = "test_app_id"
+AGENT_USER_ROLE = "bot_test_agent_user"
 
 
 @pytest.fixture(scope="module")
@@ -65,7 +71,7 @@ def setup_test_credentials():
 
     # Create test credentials
     test_credentials = Credentials(
-        APP_TYPE="MultiTenant", APP_ID="test_app_id", APP_PASSWORD="test_app_password", APP_TENANTID="test_tenant_id"
+        APP_TYPE="MultiTenant", APP_ID=APP_ID, APP_PASSWORD="test_app_password", APP_TENANTID="test_tenant_id"
     )
 
     # Create PathEntity records for both endpoints
@@ -78,14 +84,21 @@ def setup_test_credentials():
     )
     tenant_id = str(default_tenant.id)
 
-    # Assign test user to default tenant with admin role. Use the OID that
+    # Grant the test user exactly this agent. Use the OID that
     # ``KeycloakAdminService.find_user_by_email`` resolves to in tests (the fake
     # admin returns a single stub user keyed by this OID).
     dev_oid = TEST_USER_OID
+    RoleEntity.objects(name=AGENT_USER_ROLE, tenant_id=tenant_id).delete()
+    RoleEntity(
+        name=AGENT_USER_ROLE,
+        description="Bot test agent user",
+        access_rules=[AccessChecker.agent_instance_user_rule(AGENT_CLASS, AGENT_ID)],
+        tenant_id=tenant_id,
+    ).save()
     UserTenantRoleEntity.create_or_update(
         user_id=dev_oid,
         tenant_id=tenant_id,
-        roles=["admin"],
+        roles=[AGENT_USER_ROLE],
         validate_roles=False,
     )
 
@@ -96,6 +109,7 @@ def setup_test_credentials():
         PathEntity.objects(path=json_path).delete()
         PathEntity.objects(path=stream_path).delete()
         UserTenantRoleEntity.objects(user_id=dev_oid).delete()
+        RoleEntity.objects(name=AGENT_USER_ROLE, tenant_id=tenant_id).delete()
     except Exception:
         # Connection may already be closed, ignore cleanup errors
         pass
@@ -110,6 +124,25 @@ def setup_test_credentials():
 def seed_test_user(mock_keycloak_admin_service):
     """The fake Keycloak store is cleared per test, so its user must be seeded per test."""
     register_fake_keycloak_user(user_id=TEST_USER_OID, name="Test User", email=USER_EMAIL)
+
+
+@pytest.fixture
+def signed_headers(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+    BotFrameworkTokenFactory.trust_signing_key(monkeypatch)
+    return BotFrameworkTokenFactory.authorization_header(app_id=APP_ID, service_url=SERVICE_ENDPOINT)
+
+
+@pytest.fixture
+def resolve_sender_as(monkeypatch: pytest.MonkeyPatch):
+    """The channel lookups (Teams roster, Slack profile) are covered in test_UserEmailResolution."""
+
+    def _resolve_sender_as(email: str) -> None:
+        async def _resolve(turn_context, path):  # noqa: ANN001
+            return email
+
+        monkeypatch.setattr(CompletionHandler, "resolve_user_email", staticmethod(_resolve))
+
+    return _resolve_sender_as
 
 
 @pytest.fixture
@@ -169,7 +202,12 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
 
 @pytest.mark.asyncio
 async def test_send_message(
-    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials
+    test_runner: SimulatedAgentBotTestRunner,
+    client: AsyncClient,
+    patch_requests_adapter,
+    setup_test_credentials,
+    signed_headers,
+    resolve_sender_as,
 ):
     with open(Path(__file__).parent / "user_message.json") as file:
         payload: dict = json.loads(file.read())
@@ -180,12 +218,10 @@ async def test_send_message(
     payload["from"]["name"] = USER_EMAIL
     payload["recipient"]["id"] = BOT_ID
     payload["id"] = ACTIVITY_ID
-    payload["channelId"] = "emulator"  # Required by Bot Framework
+    payload["channelId"] = "msteams"
+    resolve_sender_as(USER_EMAIL)
 
-    response = await client.post(
-        url=JSON_ENDPOINT,
-        json=payload,
-    )
+    response = await client.post(url=JSON_ENDPOINT, json=payload, headers=signed_headers)
 
     assert response.status_code == 200
     assert test_runner.responses[-1].path == f"/v3/conversations/{CONVERSATION_ID}/activities/{ACTIVITY_ID}"
@@ -196,9 +232,38 @@ async def test_send_message(
     assert test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
 
 
+@pytest.mark.parametrize("endpoint", [JSON_ENDPOINT, STREAM_ENDPOINT])
+@pytest.mark.asyncio
+async def test_unsigned_activity_is_rejected_before_reaching_the_agent(
+    test_runner: SimulatedAgentBotTestRunner,
+    client: AsyncClient,
+    patch_requests_adapter,
+    setup_test_credentials,
+    signed_headers,
+    endpoint: str,
+):
+    with open(Path(__file__).parent / "user_message.json") as file:
+        payload: dict = json.loads(file.read())
+
+    payload["serviceUrl"] = SERVICE_ENDPOINT
+    payload["conversation"]["id"] = CONVERSATION_ID
+    payload["from"]["name"] = USER_EMAIL
+    payload["channelId"] = "webchat"
+
+    response = await client.post(url=endpoint, json=payload)
+
+    assert response.status_code == 401
+    assert test_runner.responses == []
+
+
 @pytest.mark.asyncio
 async def test_unprovisioned_user_is_prompted_to_log_in(
-    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials
+    test_runner: SimulatedAgentBotTestRunner,
+    client: AsyncClient,
+    patch_requests_adapter,
+    setup_test_credentials,
+    signed_headers,
+    resolve_sender_as,
 ):
     """Issue #1315: a Teams/bot-first user with no Keycloak account gets an actionable message.
 
@@ -213,12 +278,12 @@ async def test_unprovisioned_user_is_prompted_to_log_in(
     payload["serviceUrl"] = SERVICE_ENDPOINT
     payload["conversation"]["id"] = CONVERSATION_ID
     payload["from"]["id"] = USER_ID
-    payload["from"]["name"] = "ghost@example.com"  # an email NOT provisioned in Keycloak
     payload["recipient"]["id"] = BOT_ID
     payload["id"] = ACTIVITY_ID
-    payload["channelId"] = "emulator"
+    payload["channelId"] = "msteams"
+    resolve_sender_as("ghost@example.com")
 
-    response = await client.post(url=JSON_ENDPOINT, json=payload)
+    response = await client.post(url=JSON_ENDPOINT, json=payload, headers=signed_headers)
 
     # The webhook itself succeeds; the failure is surfaced to the user as a chat reply.
     assert response.status_code == 200
@@ -238,7 +303,12 @@ async def test_unprovisioned_user_is_prompted_to_log_in(
 @pytest.mark.flaky
 @pytest.mark.asyncio
 async def test_stream_response(
-    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials
+    test_runner: SimulatedAgentBotTestRunner,
+    client: AsyncClient,
+    patch_requests_adapter,
+    setup_test_credentials,
+    signed_headers,
+    resolve_sender_as,
 ):
     with open(Path(__file__).parent / "user_message.json") as file:
         payload: dict = json.loads(file.read())
@@ -249,12 +319,10 @@ async def test_stream_response(
     payload["from"]["name"] = USER_EMAIL
     payload["recipient"]["id"] = BOT_ID
     payload["id"] = ACTIVITY_ID
-    payload["channelId"] = "emulator"  # Required by Bot Framework
+    payload["channelId"] = "msteams"
+    resolve_sender_as(USER_EMAIL)
 
-    response = await client.post(
-        url=STREAM_ENDPOINT,
-        json=payload,
-    )
+    response = await client.post(url=STREAM_ENDPOINT, json=payload, headers=signed_headers)
 
     assert response.status_code == 200
 

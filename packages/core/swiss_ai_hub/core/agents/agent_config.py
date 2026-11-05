@@ -10,11 +10,12 @@ from swiss_ai_hub.core.form.elements.icon_selector import IconSelector
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 from swiss_ai_hub.core.form.form import Form
+from swiss_ai_hub.core.form.secret_field_walker import SecretFieldWalker
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.persistence.agents import AgentConfigEntity
+    from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 
 logger = logging.getLogger(__name__)
 
@@ -163,6 +164,12 @@ class AgentConfig(Form):
         )
 
     @classmethod
+    def secret_field_paths(cls) -> set[str]:
+        """Calls ``as_form()``, which a config that does not override it may fail to construct, so ask lazily: only
+        once a secret actually has to be handled, never at construction."""
+        return SecretFieldWalker.secret_paths(cls.as_form().to_formkit_form())
+
+    @classmethod
     def cron_form_field(cls) -> CronInput:
         """The schedule element, offered to schedulable classes only."""
         return CronInput(
@@ -196,11 +203,11 @@ class AgentConfig(Form):
         )
 
     @classmethod
-    def from_entity(cls, entity: "AgentConfigEntity") -> Self:
+    def from_entity(cls, entity: "AgentConfigEntityDocument") -> Self:
         data = {
             "agent_id": entity.agent_id,
-            "name": entity.name.to_locale_string(),
-            "description": entity.description.to_locale_string(),
+            "name": entity.name,
+            "description": entity.description,
             "icon": entity.icon,
             **entity.config_data,
         }

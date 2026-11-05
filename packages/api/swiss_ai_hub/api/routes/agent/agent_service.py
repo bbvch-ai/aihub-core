@@ -40,6 +40,7 @@ from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
+from swiss_ai_hub.api.util.config_secrets import ConfigSecrets
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
 from swiss_ai_hub.api.util.model_limit_validator import ModelLimitValidator
@@ -56,17 +57,28 @@ class AgentService:
 
     @staticmethod
     @trace_fn
-    def get_minimal_agent_instance(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentInstanceDTO:
+    async def get_minimal_agent_instance(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentInstanceDTO:
         """Returns minimal details for an agent instance from database."""
         class_entity = AgentClassEntity.get_by_agent_class(agent_class=agent_class)
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent config {agent_class}/{agent_id} not found.")
 
         return MinimalAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+
+    @staticmethod
+    @trace_fn
+    def refuse_unsupported_response_schema(agent_class: str) -> None:
+        """A caller who asked for a JSON shape must get it or an error, never prose from an agent that ignores it."""
+        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        if class_entity is None or not class_entity.supports_response_schema:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Agent class '{agent_class}' does not support a response schema (structured output).",
+            )
 
     @staticmethod
     @trace_fn
@@ -79,7 +91,7 @@ class AgentService:
         if class_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if config_entity is None:
             raise HTTPException(status_code=404, detail=f"Agent instance {agent_class}/{agent_id} not found.")
 
@@ -108,7 +120,7 @@ class AgentService:
             if agent_class is not None and class_entity.agent_class != agent_class:
                 continue
 
-            configs = AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
+            configs = await AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
             for config_entity in configs:
                 dto = InstanceDtoBuilder.build_or_skip(
                     lambda class_entity=class_entity, config_entity=config_entity, is_online=is_online: (
@@ -179,33 +191,21 @@ class AgentService:
         nc: NATS,
         agent_class: str,
         agent_id: str,
-        input_event_parents: list[str],
-        input_event_name: str,
-        raw_event_data: dict,
+        input_event: StartEvent | HumanInTheLoopResponseEvent,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None,
         display_id: ObjectId | None,
         user: UserIdentity,
-        t: LocaleHandler,
-        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
     ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
         """Sends an event (start or HITL response) to a specific agent and waits for a response."""
-        event: StartEvent | HumanInTheLoopResponseEvent = expected_type.from_raw_data(
-            raw_event_data=raw_event_data,
-            user=user,
-            start_event_name=input_event_name,
-            start_event_parents=input_event_parents,
-            t=t,
-        )
-
         return await AgentService._send_event(
             nc=nc,
             external_agent_event_distributor=external_agent_event_distributor,
             user=user,
-            input_event=event,
+            input_event=input_event,
             agent_class=agent_class,
             agent_id=agent_id,
             thread_id=thread_id,
@@ -220,15 +220,11 @@ class AgentService:
         nc: NATS,
         agent_class: str,
         agent_id: str,
-        input_event_parents: list[str],
-        input_event_name: str,
-        raw_event_data: dict,
+        input_event: StartEvent | HumanInTheLoopResponseEvent,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         thread_id: ObjectId | None,
         display_id: ObjectId | None,
         user: UserIdentity,
-        t: LocaleHandler,
-        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
@@ -237,14 +233,6 @@ class AgentService:
         Sends an event (start or HITL response) to a specific agent and returns streaming resources for SSE.
         Yields ALL events (not just chunks) as raw events without conversion.
         """
-        event: StartEvent | HumanInTheLoopResponseEvent = expected_type.from_raw_data(
-            raw_event_data=raw_event_data,
-            user=user,
-            start_event_name=input_event_name,
-            start_event_parents=input_event_parents,
-            t=t,
-        )
-
         if thread_id:
             thread = ThreadEntity.get_thread_by_id(str(thread_id))
         else:
@@ -265,7 +253,7 @@ class AgentService:
         external_event = ExternalAgentEvent(
             thread_id=topic_manager.thread_id,
             display_id=topic_manager.display_id,
-            event=event,
+            event=input_event,
         )
 
         stop_signal = asyncio.Event()
@@ -327,9 +315,9 @@ class AgentService:
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
-        user_id: str | None = None,
+        user_id: str,
     ) -> tuple[int, list[ThreadDTO]]:
-        """Retrieves a paginated list of threads that a specific agent instance is part of."""
+        """Retrieves a paginated list of the user's threads that a specific agent instance is part of."""
         return await ThreadService.get_paginated_threads_for_agent(
             agent_class,
             agent_id,
@@ -343,15 +331,17 @@ class AgentService:
     @trace_fn
     async def get_agent_configuration(agent_class: str, agent_id: str) -> dict[str, Any]:
         """
-        Retrieve the current configuration data for a specific agent.
+        Retrieve the current configuration data for a specific agent, encrypted at secret paths.
         Returns empty dict if no configuration has been saved.
 
-        Off the loop because `AgentConfigResponder` serves this over NATS RPC, and the requester
-        (`NCRequester`) gives it one 5 s shot with no retry. A blocking query here competes with every
-        other coroutine in this process, so a loop busy with event persistence can burn that budget
-        before the handler even runs — and the agent aborts its run on a timeout while NATS sits idle.
+        Deliberately not masked: the agent decrypts its secrets only when it validates the config, so the RPC
+        reply, and the RunContext the agent stores it in, carry ciphertext and never plaintext.
+
+        `AgentConfigResponder` serves this over NATS RPC, and the requester (`NCRequester`) gives it one 5 s shot
+        with no retry. The read is awaited rather than blocking, so it no longer competes with every other
+        coroutine in this process for that budget.
         """
-        config_entity = await asyncio.to_thread(AgentConfigEntityDocument.find_for_class_and_id, agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if config_entity and config_entity.config_data:
             return config_entity.config_data
         return {}
@@ -363,23 +353,26 @@ class AgentService:
     ) -> dict[str, Any]:
         """
         Update the configuration data for a specific agent instance.
-        Validates the configuration against the agent's schema before saving.
+        Validates the configuration against the agent's schema before saving, and stores secrets encrypted.
         """
         class_entity = AgentClassEntity.get_by_agent_class(agent_class)
         if not class_entity:
             raise HTTPException(status_code=404, detail=f"Agent class {agent_class} not found.")
 
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if not config_entity:
             raise HTTPException(status_code=404, detail=f"Agent config {agent_class}/{agent_id} not found.")
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
+        # Before the required-field check, so a secret left untouched in the form, which comes back as its mask,
+        # counts as filled in.
+        configuration = ConfigSecrets.restored(configuration, config_entity.config_data, class_entity.form_elements)
 
         config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
         # Before the generated model, which only sees the schema's notion of required — a key being
         # present. A starred field submitted as "" or None satisfies that and is caught only here.
         InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, configuration)
-        config_instance = InstanceConfigHelper.validate_config_for_update(
+        config_instance = await InstanceConfigHelper.validate_config_for_update(
             configuration, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
         )
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
@@ -392,14 +385,15 @@ class AgentService:
             t=t,
         )
 
-        config_entity = InstanceConfigHelper.apply_metadata_to_entity(config_instance, config_entity)
+        config_entity = InstanceConfigHelper.apply_metadata_to_document(config_instance, config_entity)
 
         # Pin agent_id to the immutable instance key: the agent publishes under config_data["agent_id"]
         # while the SSE handler addresses it by the entity key, and a mismatch silently fails the
         # is_primary_agent stop check (stream never closes -> no title/follow-up). Mirrors create.
         configuration["agent_id"] = agent_id
+        configuration = ConfigSecrets.encrypted(configuration, class_entity.form_elements)
         config_entity.config_data = configuration
-        config_entity.save()
+        await config_entity.save_changes()
 
         return configuration
 
@@ -436,7 +430,7 @@ class AgentService:
 
         is_online = class_entity.is_online_since(AgentClassEntity.online_threshold())
         instances = []
-        configs = AgentConfigEntityDocument.find_for_class(agent_class)
+        configs = await AgentConfigEntityDocument.find_for_class(agent_class)
         for config_entity in configs:
             instances.append(
                 FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
@@ -466,19 +460,21 @@ class AgentService:
                 detail=f"Agent class '{agent_class}' is not online. Make sure the agent is running.",
             )
 
-        existing_config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, request.agent_id)
+        existing_config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, request.agent_id)
         if existing_config:
             raise HTTPException(
                 status_code=409, detail=f"Agent instance '{agent_class}/{request.agent_id}' already exists."
             )
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
+        # Nothing is stored yet, so a mask carried over from a cloned or imported profile is refused with a 400.
+        config = ConfigSecrets.restored(config, None, class_entity.form_elements)
 
         config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
         # Before the generated model, which only sees the schema's notion of required — a key being
         # present. A starred field submitted as "" or None satisfies that and is caught only here.
         InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, config)
-        config_instance = InstanceConfigHelper.validate_config_for_create(
+        config_instance = await InstanceConfigHelper.validate_config_for_create(
             config, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=request.agent_id)
         )
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
@@ -496,11 +492,14 @@ class AgentService:
             metadata.name, metadata.description, agent_class, metadata.icon
         )
 
-        full_config_data = {
-            **config,
-            "agent_class": agent_class,
-            "agent_id": request.agent_id,
-        }
+        full_config_data = ConfigSecrets.encrypted(
+            {
+                **config,
+                "agent_class": agent_class,
+                "agent_id": request.agent_id,
+            },
+            class_entity.form_elements,
+        )
 
         config_entity = AgentConfigEntityDocument(
             agent_class=agent_class,
@@ -510,10 +509,10 @@ class AgentService:
             icon=locale.icon,
             config_data=full_config_data,
         )
-        config_entity.save()
+        await config_entity.insert()
 
         if user.acting_within_tenant is not None:
-            AgentService._grant_instance_access(agent_class, request.agent_id, user, config_entity)
+            await AgentService._grant_instance_access(agent_class, request.agent_id, user, config_entity)
 
         return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=True)
 
@@ -521,11 +520,11 @@ class AgentService:
     @trace_fn
     async def delete_agent_instance(agent_class: str, agent_id: str) -> None:
         """Deletes an agent instance and the per-instance access it was granted on creation."""
-        config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if not config:
             raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found.")
 
-        AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class, agent_id)
+        await config.delete()
 
         rules = [
             AccessChecker.agent_instance_user_rule(agent_class, agent_id),
@@ -550,7 +549,7 @@ class AgentService:
         return f"{pascal_case}Admin"
 
     @staticmethod
-    def _grant_instance_access(
+    async def _grant_instance_access(
         agent_class: str, agent_id: str, user: UserIdentity, config_entity: AgentConfigEntityDocument
     ) -> None:
         """Grants the creating tenant and creator per-instance admin access, rolling back on failure.
@@ -581,7 +580,10 @@ class AgentService:
                     lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants([admin_rule]),
                     f"revoke {admin_rule}",
                 )
-            AgentService._best_effort(config_entity.delete, "delete config")
+            try:
+                await config_entity.delete()
+            except Exception:
+                logger.exception("Best-effort step failed: delete config")
             raise HTTPException(
                 status_code=500,
                 detail=(

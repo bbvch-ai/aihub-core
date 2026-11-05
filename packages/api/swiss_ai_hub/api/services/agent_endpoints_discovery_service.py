@@ -9,13 +9,13 @@ from typing import Annotated, override
 
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Security
-from mongoengine import DoesNotExist
+from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 from stringcase import snakecase
-from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.auth.usage import (
     ResourceType,
     UsageLimitMessages,
@@ -25,7 +25,7 @@ from swiss_ai_hub.core.auth.usage import (
 from swiss_ai_hub.core.dependencies import use_nats
 from swiss_ai_hub.core.discovery import DiscoveryKind, DiscoverySettings
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
-from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
+from swiss_ai_hub.core.events import ApiPayloadContext, ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
     ExceptionEvent,
@@ -33,13 +33,11 @@ from swiss_ai_hub.core.events.agent import (
     StartEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.infrastructure import LangfuseProvisioner, OnlineAgent, OpenWebuiProvisioner
+from swiss_ai_hub.core.infrastructure import LangfuseProvisioner, OnlineAgent, OpenWebuiProvisioner, use_s3
 from swiss_ai_hub.core.persistence import (
     AgentClassEntity,
     AgentConfigEntityDocument,
     AgentInstanceRef,
-    ThreadEntity,
-    User,
 )
 from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.routes import ChatService
@@ -105,7 +103,21 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         return dto.agent_class
 
     @override
-    def _register_discovered_class(self, dto: AgentClassDTO) -> None:
+    def _register_discovered_class(self, dto: AgentClassDTO) -> bool:
+        """An agent on a core older than this API announces no API input schema, so its endpoints cannot be built;
+        it is skipped rather than failing the round, which would leave every class after it unregistered and stop
+        the syncs that follow a round."""
+        without_input_schema = [
+            specs.event_name
+            for specs in [*dto.start_events, *dto.hitl_response_events]
+            if specs.api_input_schema is None
+        ]
+        if without_input_schema:
+            logger.warning(
+                f"Agent class {dto.agent_class} announces no API input schema for {', '.join(without_input_schema)}; "
+                "it runs an older swiss-ai-hub core than this API, so its endpoints are registered once it is updated."
+            )
+            return False
         self._register_class_endpoints(
             agent_class=dto.agent_class,
             start_events=dto.start_events,
@@ -113,6 +125,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             hitl_request_events=dto.hitl_request_events,
             hitl_response_events=dto.hitl_response_events,
         )
+        return True
 
     @override
     def _online_class_names(self) -> set[str]:
@@ -393,6 +406,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
+            s3_client: Annotated[S3Client, Depends(use_s3)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
@@ -405,46 +419,41 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
-            config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
             if not config:
                 raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
 
             await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
-            if thread_id is not None:
-                try:
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-                except DoesNotExist:
-                    ThreadEntity.create_thread(
-                        "chat",
-                        users=[User(user_id=user.id)],
-                        agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
-                        thread_id=ObjectId(thread_id),
-                    )
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+            await AgentEndpointsDiscoveryService._refuse_unsupported_response_schema(start_event_input, agent_class)
 
-                user_in_thread = user.id in [u.id for u in thread.users]
-                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                    thread.process_class, thread.process_id
+            if thread_id is not None:
+                await ThreadService.get_or_create_thread_to_post_in(
+                    thread_id, user, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id), t=t
                 )
-                if not (user_in_thread or thread_belongs_to_users_process):
-                    raise agent_controller.not_authorized_to_view_exception
 
             response_event = await AgentService.send_agent_input_event(
                 nc=nc,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                input_event_parents=start_event_parents,
-                input_event_name=start_event_name,
-                # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
-                # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
-                raw_event_data=start_event_input.model_dump(mode="json", exclude_none=True),
+                input_event=await AgentEndpointsDiscoveryService._input_event(
+                    start_event_input,
+                    expected_type=expected_type,
+                    event_name=start_event_name,
+                    event_parents=start_event_parents,
+                    context=ApiPayloadContext(
+                        user=user,
+                        locale=t.locale,
+                        agent_class=agent_class,
+                        agent_id=agent_id,
+                        thread_id=thread_id,
+                        s3_client=s3_client,
+                    ),
+                ),
                 external_agent_event_distributor=external_agent_event_distributor,
                 thread_id=thread_id,
                 display_id=display_id,
                 user=user,
-                t=t,
-                expected_type=expected_type,
                 subscribe_to_thread=True,
             )
 
@@ -454,6 +463,30 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             return response_event
 
         return send_event
+
+    @staticmethod
+    async def _refuse_unsupported_response_schema(start_event_input: BaseModel, agent_class: str) -> None:
+        """Called before the thread is created, so a refused request leaves no empty conversation behind."""
+        if getattr(start_event_input, "response_schema", None) is not None:
+            await to_thread(AgentService.refuse_unsupported_response_schema, agent_class)
+
+    @staticmethod
+    async def _input_event(
+        start_event_input: BaseModel,
+        *,
+        expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
+        event_name: str,
+        event_parents: list[str],
+        context: ApiPayloadContext,
+    ) -> StartEvent | HumanInTheLoopResponseEvent:
+        return await expected_type.from_api_payload(
+            # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
+            # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
+            start_event_input.model_dump(mode="json", exclude_none=True),
+            event_name=event_name,
+            event_parents=event_parents,
+            context=context,
+        )
 
     @staticmethod
     def _create_streaming_endpoint(
@@ -476,6 +509,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
+            s3_client: Annotated[S3Client, Depends(use_s3)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
@@ -488,7 +522,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
-            config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            config = await AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
             if not config:
                 raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
 
@@ -496,40 +530,35 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
                 user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
             )
 
-            if thread_id is not None:
-                try:
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-                except DoesNotExist:
-                    ThreadEntity.create_thread(
-                        "chat",
-                        users=[User(user_id=user.id)],
-                        agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
-                        thread_id=ObjectId(thread_id),
-                    )
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+            await AgentEndpointsDiscoveryService._refuse_unsupported_response_schema(start_event_input, agent_class)
 
-                user_in_thread = user.id in [u.id for u in thread.users]
-                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                    thread.process_class, thread.process_id
+            if thread_id is not None:
+                await ThreadService.get_or_create_thread_to_post_in(
+                    thread_id, user, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id), t=t
                 )
-                if not (user_in_thread or thread_belongs_to_users_process):
-                    raise agent_controller.not_authorized_to_view_exception
 
             resources = await AgentService.send_agent_input_event_stream(
                 nc=nc,
                 agent_class=agent_class,
                 agent_id=agent_id,
-                input_event_parents=start_event_parents,
-                input_event_name=start_event_name,
-                # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
-                # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
-                raw_event_data=start_event_input.model_dump(mode="json", exclude_none=True),
+                input_event=await AgentEndpointsDiscoveryService._input_event(
+                    start_event_input,
+                    expected_type=expected_type,
+                    event_name=start_event_name,
+                    event_parents=start_event_parents,
+                    context=ApiPayloadContext(
+                        user=user,
+                        locale=t.locale,
+                        agent_class=agent_class,
+                        agent_id=agent_id,
+                        thread_id=thread_id,
+                        s3_client=s3_client,
+                    ),
+                ),
                 external_agent_event_distributor=external_agent_event_distributor,
                 thread_id=thread_id,
                 display_id=display_id,
                 user=user,
-                t=t,
-                expected_type=expected_type,
                 subscribe_to_thread=True,
             )
 

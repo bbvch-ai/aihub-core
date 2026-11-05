@@ -159,7 +159,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | jiter                                            | 0.15.0          | MIT                                                     |                                                                      |
 | ✅     | jmespath                                         | 1.1.0           | MIT License                                             |                                                                      |
 | ✅     | joblib                                           | 1.5.3           | BSD-3-Clause                                            |                                                                      |
-| ✅     | joserfc                                          | 1.6.5           | BSD License                                             |                                                                      |
+| ✅     | joserfc                                          | 1.7.7           | BSD License                                             |                                                                      |
 | ✅     | json_repair                                      | 0.59.10         | MIT                                                     |                                                                      |
 | ✅     | jsonpatch                                        | 1.33            | BSD License                                             |                                                                      |
 | ✅     | jsonpointer                                      | 3.1.1           | BSD License                                             |                                                                      |
@@ -327,7 +327,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | pymilvus                                         | 2.6.14          | Apache Software License                                 |                                                                      |
 | ✅     | pymongo                                          | 4.17.0          | Apache-2.0                                              |                                                                      |
 | ✅     | pyparsing                                        | 3.3.2           | MIT                                                     |                                                                      |
-| ✅     | pypdf                                            | 6.11.0          | BSD-3-Clause (override)                                 |                                                                      |
+| ✅     | pypdf                                            | 6.21.4          | BSD-3-Clause (override)                                 |                                                                      |
 | ✅     | pyperclip                                        | 1.11.0          | BSD License                                             |                                                                      |
 | ✅     | pytest                                           | 9.0.3           | MIT                                                     |                                                                      |
 | ✅     | pytest-asyncio                                   | 1.3.0           | Apache-2.0                                              |                                                                      |

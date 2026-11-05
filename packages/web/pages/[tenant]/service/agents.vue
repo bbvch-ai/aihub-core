@@ -214,9 +214,24 @@ const openCreateModal = (agentClass: string) => {
   createModalOpen.value = true
 }
 
+// A stored secret reaches the client only as a mask bound to the profile it came from, so it cannot carry over
+// into a new profile: clear it and ask for it again.
+const withStoredSecretsCleared = (configuration: Record<string, unknown>): Record<string, unknown> => {
+  const { configuration: cleared, clearedPaths } = withoutStoredSecrets(configuration)
+  if (clearedPaths.length > 0) {
+    toast.add({
+      severity: 'warn',
+      summary: t('agent.storedSecrets.title'),
+      detail: t('agent.storedSecrets.detail', { fields: clearedPaths.join(', ') }),
+      life: 10000,
+    })
+  }
+  return cleared
+}
+
 const handleClone = (agent: FullAgentInstanceDto) => {
   selectedClassForCreate.value = agent.agent_class
-  initialDataForCreate.value = agent.configuration ?? null
+  initialDataForCreate.value = agent.configuration ? withStoredSecretsCleared(agent.configuration) : null
   createModalOpen.value = true
 }
 
@@ -250,7 +265,7 @@ const handleFileSelected = async () => {
     }
 
     selectedClassForCreate.value = exported.agentClass
-    initialDataForCreate.value = configuration
+    initialDataForCreate.value = withStoredSecretsCleared(configuration)
     createModalOpen.value = true
   }
   catch (error) {

@@ -29,6 +29,7 @@ class ParsingController(TenantScopedController):
     icon = "mage:file"
 
     MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
+    STREAMED_UPLOAD_PATH = "/parsing/process"
 
     def __init__(
         self,

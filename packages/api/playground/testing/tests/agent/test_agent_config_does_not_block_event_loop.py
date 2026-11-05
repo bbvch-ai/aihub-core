@@ -7,14 +7,17 @@ config RPC's requester (`NCRequester`) gives it one 5 s shot with no retry — s
 busy loop fails agent runs at start while NATS itself is idle.
 
 These tests assert the property directly rather than the implementation: a ticker
-coroutine must keep running while the call is in flight. Replacing the
-`asyncio.to_thread` hop with a direct call makes them fail.
+coroutine must keep running while the call is in flight. The config read is a Beanie
+query awaited on the loop, so its stand-in is a slow awaitable; the discovery write is
+still MongoEngine, so its stand-in blocks the thread and only the `asyncio.to_thread`
+hop keeps the loop free.
 """
 
 import asyncio
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 
@@ -65,15 +68,28 @@ def blocking_stub(return_value: object) -> Mock:
     return Mock(side_effect=_blocking)
 
 
+def slow_awaitable_stub(return_value: object) -> AsyncMock:
+    """A stand-in for a slow round-trip through the async Mongo driver: it yields the loop while waiting."""
+
+    async def _slow(*_args: object, **_kwargs: object) -> object:
+        await asyncio.sleep(BLOCKING_SECONDS)
+        return return_value
+
+    return AsyncMock(side_effect=_slow)
+
+
 @pytest.mark.asyncio
 async def test_get_agent_configuration_leaves_the_event_loop_free() -> None:
     """The NATS config RPC handler must not stall every other coroutine in the process."""
     config_entity = Mock(config_data={"temperature": 0.7})
 
-    with patch.object(AgentConfigEntityDocument, "find_for_class_and_id", blocking_stub(config_entity)):
+    with patch.object(
+        AgentConfigEntityDocument, "find_for_class_and_id", slow_awaitable_stub(config_entity)
+    ) as find_config:
         async with Ticker() as ticker:
             config = await AgentService.get_agent_configuration(agent_class="RAGAgent", agent_id="default")
 
+    find_config.assert_awaited_once_with("RAGAgent", "default")
     assert config == {"temperature": 0.7}
     assert ticker.ticks >= MINIMUM_EXPECTED_TICKS, (
         f"The event loop was starved: {ticker.ticks} ticks during a {BLOCKING_SECONDS}s query, "
@@ -99,3 +115,24 @@ async def test_agent_class_persistence_leaves_the_event_loop_free() -> None:
         f"expected at least {minimum}. Blocking writes starve every request this process serves and "
         f"can push the discovery round past DISCOVERY_ROUND_TIMEOUT_SECONDS."
     )
+
+
+@pytest.mark.beanie
+async def test_get_agent_configuration_returns_the_stored_config_data() -> None:
+    await AgentConfigEntityDocument(
+        agent_class="RAGAgent",
+        agent_id="default",
+        name=LocaleString(en="default"),
+        description=LocaleString(en="default profile"),
+        icon="meteor-icons:robot",
+        config_data={"temperature": 0.7},
+    ).insert()
+
+    assert await AgentService.get_agent_configuration(agent_class="RAGAgent", agent_id="default") == {
+        "temperature": 0.7
+    }
+
+
+@pytest.mark.beanie
+async def test_get_agent_configuration_of_a_missing_profile_is_empty() -> None:
+    assert await AgentService.get_agent_configuration(agent_class="RAGAgent", agent_id="missing") == {}
