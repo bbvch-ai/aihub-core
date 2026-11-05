@@ -16,6 +16,9 @@ from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import S
 from swiss_ai_hub.core.secrets.secret_encryption_service import SecretEncryptionService
 
 _SCHEDULED_THREAD_KEY_DOMAIN = b"swiss-ai-hub:scheduled-thread-id:"
+_USER_ID_PATH = "users.user_id"
+_AGENT_ID_PATH = "agents.agent_id"
+_AGENT_CLASS_PATH = "agents.agent_class"
 
 
 class User(BaseModel):
@@ -59,9 +62,9 @@ class ThreadEntity(Document):
         indexes = [
             IndexModel([("created_at", ASCENDING)]),
             IndexModel([("process_walkthrough_id", ASCENDING)]),
-            IndexModel([("agents.agent_id", ASCENDING), ("agents.agent_class", ASCENDING)]),
-            IndexModel([("users.user_id", ASCENDING), ("created_at", DESCENDING)]),
-            IndexModel([("users.user_id", ASCENDING), ("name", ASCENDING)]),
+            IndexModel([(_AGENT_ID_PATH, ASCENDING), (_AGENT_CLASS_PATH, ASCENDING)]),
+            IndexModel([(_USER_ID_PATH, ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([(_USER_ID_PATH, ASCENDING), ("name", ASCENDING)]),
         ]
 
     @classmethod
@@ -141,7 +144,7 @@ class ThreadEntity(Document):
     @classmethod
     @trace_fn
     async def get_threads_by_user(cls, user_id: str) -> list[Self]:
-        return await cls.find({"users.user_id": user_id}).to_list()
+        return await cls.find({_USER_ID_PATH: user_id}).to_list()
 
     @staticmethod
     def _filter_criteria(filters: ThreadFilters | None) -> dict[str, Any]:
@@ -151,9 +154,9 @@ class ThreadEntity(Document):
         if filters.search:
             criteria["name"] = {"$regex": re.escape(filters.search), "$options": "i"}
         if filters.agent_id:
-            criteria["agents.agent_id"] = filters.agent_id
+            criteria[_AGENT_ID_PATH] = filters.agent_id
         if filters.user_search_id:
-            criteria["$and"] = [{"users.user_id": filters.user_search_id}]
+            criteria["$and"] = [{_USER_ID_PATH: filters.user_search_id}]
         if filters.status_thread_ids is not None:
             criteria["_id"] = {"$in": [ObjectId(thread_id) for thread_id in filters.status_thread_ids]}
         created_at: dict[str, datetime] = {}
@@ -169,13 +172,13 @@ class ThreadEntity(Document):
     @trace_fn
     async def count_threads_by_user(cls, user_id: str, filters: ThreadFilters | None = None) -> int:
         """Count the total number of threads that include the specified user."""
-        return await cls.find({"users.user_id": user_id, **cls._filter_criteria(filters)}).count()
+        return await cls.find({_USER_ID_PATH: user_id, **cls._filter_criteria(filters)}).count()
 
     @classmethod
     @trace_fn
     async def count_threads_by_agent(cls, agent_class: str, agent_id: str, user_id: str) -> int:
         """Count the user's threads that include the specified agent."""
-        return await cls.find({**cls._agent_criteria(agent_class, agent_id), "users.user_id": user_id}).count()
+        return await cls.find({**cls._agent_criteria(agent_class, agent_id), _USER_ID_PATH: user_id}).count()
 
     @classmethod
     @trace_fn
@@ -189,7 +192,7 @@ class ThreadEntity(Document):
         filters: ThreadFilters | None = None,
     ) -> list[Self]:
         """Get a paginated list of threads that include the specified user."""
-        query = cls.find({"users.user_id": user_id, **cls._filter_criteria(filters)})
+        query = cls.find({_USER_ID_PATH: user_id, **cls._filter_criteria(filters)})
         return await query.sort(cls.get_order_by(sort_by, sort_order)).skip(skip).limit(limit).to_list()
 
     @staticmethod
@@ -207,7 +210,7 @@ class ThreadEntity(Document):
     @staticmethod
     def _agent_criteria(agent_class: str, agent_id: str) -> dict[str, Any]:
         """Matches what MongoEngine's `agents__agent_id=..., agents__agent_class=...` did: each on any member."""
-        return {"agents.agent_id": agent_id, "agents.agent_class": agent_class}
+        return {_AGENT_ID_PATH: agent_id, _AGENT_CLASS_PATH: agent_class}
 
     @classmethod
     @trace_fn
@@ -215,13 +218,13 @@ class ThreadEntity(Document):
         cls, agent_class: str, agent_id: str, user_id: str, skip: int = 0, limit: int = 20
     ) -> list[Self]:
         """Get a page of the user's threads that include the specified agent."""
-        criteria = {**cls._agent_criteria(agent_class, agent_id), "users.user_id": user_id}
+        criteria = {**cls._agent_criteria(agent_class, agent_id), _USER_ID_PATH: user_id}
         return await cls.find(criteria).sort("-created_at").skip(skip).limit(limit).to_list()
 
     @classmethod
     @trace_fn
     async def get_threads_by_users(cls, user_ids: list[str]) -> list[Self]:
-        return await cls.find({"users.user_id": {"$in": user_ids}}).to_list()
+        return await cls.find({_USER_ID_PATH: {"$in": user_ids}}).to_list()
 
     @classmethod
     @trace_fn
@@ -232,7 +235,7 @@ class ThreadEntity(Document):
     @trace_fn
     async def get_thread_ids_for_user(cls, user_id: str) -> list[str]:
         collection = cls.get_pymongo_collection()
-        return [str(row["_id"]) async for row in collection.find({"users.user_id": user_id}, {"_id": 1})]
+        return [str(row["_id"]) async for row in collection.find({_USER_ID_PATH: user_id}, {"_id": 1})]
 
     @classmethod
     @trace_fn
