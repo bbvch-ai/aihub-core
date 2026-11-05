@@ -4566,6 +4566,7 @@ services:
       - backend
       - data
       - storage
+      - egress  # resolves the hosts a source names (public host check) before the rclone daemon connects to them
   # ===================================================================
   # Structured Source Pipeline (Stage 1: API records such as Jira issues -> markdown in the data lake, via dlt,
   # configured per knowledge database)

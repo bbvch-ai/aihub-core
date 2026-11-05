@@ -5180,6 +5180,7 @@ services:
       - backend
       - data
       - storage
+      - egress  # resolves the hosts a source names (public host check) before the rclone daemon connects to them
   {%- endif %}
 
   {%- if image_tags.structured_pipeline[stage] %}

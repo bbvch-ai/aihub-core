@@ -267,8 +267,8 @@ The platform ships the pipeline as the `structured_pipeline` compose service (Da
 | `AIHUB_CONFIG_ENCRYPTION_KEY`                      | Decrypts stored credentials; must equal the API's key |
 | `STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR` / `_MINUTE` | Time of the daily per-database sync                   |
 
-The pipeline calls each business application's API itself, so unlike the rclone pipeline it joins the `egress` network
-as well as `backend`, `data` and `storage`. A Jira or Confluence Data Center, or a wiki, inside the company network must
+The pipeline calls each business application's API itself, so it joins the `egress` network as well as `backend`,
+`data` and `storage`. A Jira or Confluence Data Center, or a wiki, inside the company network must
 be reachable from the Docker host.
 
 ### Adding a Source Kind
