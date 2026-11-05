@@ -1,5 +1,5 @@
 import logging
-from asyncio import sleep
+from asyncio import sleep, to_thread
 from functools import partial
 from typing import Annotated, override
 
@@ -74,8 +74,9 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService[ProcessClassDTO
         return True
 
     @override
-    def _online_class_names(self) -> set[str]:
-        return ProcessClassEntity.get_online_class_names()
+    async def _online_class_names(self) -> set[str]:
+        threshold = await ProcessClassEntity.online_threshold()
+        return await to_thread(ProcessClassEntity.get_online_class_names, threshold)
 
     @override
     async def _broadcast_discovery(self) -> list[ProcessClassDTO]:
@@ -120,6 +121,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService[ProcessClassDTO
             process_class_dto = ProcessClassDTO.from_discovery_event(response)
             # Persist the process class entity in database (updates last_discovered timestamp)
             stamp = partial(
+                to_thread,
                 ProcessClassEntity.create_or_update,
                 process_class=process_class_dto.process_class,
                 name=process_class_dto.name,
