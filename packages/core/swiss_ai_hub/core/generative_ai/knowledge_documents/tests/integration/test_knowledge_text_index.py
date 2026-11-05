@@ -253,5 +253,6 @@ def test_the_read_only_role_cannot_write() -> None:
         _admin() as admin,
     ):
         table = sql.Identifier("documentdb_data", f"documents_{_collection_id(admin)}")
+        delete = sql.SQL("DELETE FROM {}").format(table)
         with pytest.raises(psycopg.errors.InsufficientPrivilege):
-            reader.execute(sql.SQL("DELETE FROM {}").format(table))
+            reader.execute(delete)

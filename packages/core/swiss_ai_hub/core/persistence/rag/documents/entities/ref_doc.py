@@ -29,6 +29,10 @@ _RAW_NAMESPACE = "__data__.metadata.namespace"
 _RAW_IS_INGESTED = "__data__.metadata.is_ingested"
 _RAW_SOURCE = "__data__.metadata.source"
 _RAW_TEXT = "__data__.text"
+# What a summary needs from a row: type, metadata and mimetype, never either copy of the text
+_SUMMARY_FIELDS = {"__type__": 1, "__data__.metadata": 1, "__data__.mimetype": 1}
+_PROJECT = "$project"
+_TEXT_LENGTH = "$text_length"
 
 
 class Metadata(DynamicEmbeddedDocument):
@@ -121,7 +125,7 @@ class RefDoc(Document):
                     _RAW_IS_INGESTED: {"$ne": False},
                     "__type__": {"$ne": "placeholder"},
                 },
-                {"__type__": 1, "__data__.metadata": 1, "__data__.mimetype": 1},
+                _SUMMARY_FIELDS,
             )
             .sort(_RAW_SOURCE, 1)
         )
@@ -213,20 +217,16 @@ class RefDoc(Document):
             [
                 {"$match": {"_id": doc_id, _RAW_NAMESPACE: namespace}},
                 {
-                    "$project": {
-                        "__type__": 1,
-                        "__data__.metadata": 1,
-                        "__data__.mimetype": 1,
+                    _PROJECT: {
+                        **_SUMMARY_FIELDS,
                         "full_text": {"$ifNull": [f"${_RAW_TEXT}", ""]},
                         "text_length": {"$strLenCP": {"$ifNull": [f"${_RAW_TEXT}", ""]}},
                     }
                 },
                 {"$addFields": {"range_start": cls._range_bound(start, 0), "range_end": cls._range_bound(end, None)}},
                 {
-                    "$project": {
-                        "__type__": 1,
-                        "__data__.metadata": 1,
-                        "__data__.mimetype": 1,
+                    _PROJECT: {
+                        **_SUMMARY_FIELDS,
                         "__data__.text": {
                             "$substrCP": [
                                 "$full_text",
@@ -250,10 +250,10 @@ class RefDoc(Document):
     def _range_bound(bound: int | None, default: int | None) -> int | str | dict[str, Any]:
         """A slice bound as a database expression over the text's length; a None default means the length itself."""
         if bound is None:
-            return "$text_length" if default is None else default
+            return _TEXT_LENGTH if default is None else default
         if bound < 0:
-            return {"$max": [0, {"$add": ["$text_length", bound]}]}
-        return {"$min": [bound, "$text_length"]}
+            return {"$max": [0, {"$add": [_TEXT_LENGTH, bound]}]}
+        return {"$min": [bound, _TEXT_LENGTH]}
 
     @classmethod
     @trace_fn
@@ -269,7 +269,7 @@ class RefDoc(Document):
                     _RAW_IS_INGESTED: {"$ne": False},
                     "__type__": {"$ne": "placeholder"},
                 },
-                {"__type__": 1, "__data__.metadata": 1, "__data__.mimetype": 1, _RAW_TEXT: 1},
+                {**_SUMMARY_FIELDS, _RAW_TEXT: 1},
             )
             .max_time_ms(max_time_ms)
             .limit(1)
@@ -371,7 +371,7 @@ class RefDoc(Document):
             },
             # Format the output
             {
-                "$project": {
+                _PROJECT: {
                     "name": "$_id",
                     "number_of_documents": "$count",
                     "last_updated_at": 1,
