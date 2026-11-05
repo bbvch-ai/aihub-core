@@ -184,11 +184,12 @@ the `AIHubSysAdmin` role can access these services, and the session cookie is `S
 
 `litellm.<domain>` is split by path. The OpenAI-compatible inference routes go straight to LiteLLM, which checks the
 caller's LiteLLM API key itself: `/chat/completions`, `/completions`, `/embeddings`, `/models`, `/model/info`,
-`/audio/*`, `/images/*`, `/rerank`, `/moderations`, `/responses[/*]` (each also under `/v1/`), `/v2/rerank` and the
-liveness probes `/health/liveliness` and `/health/liveness`. Every other path on the host, including the management
-routes LiteLLM keeps under `/v1/` (`/v1/agents`, `/v1/access_group`), `/ui`, `/key/*`, `/user/*`, `/team/*`,
-`/model/new`, `/config/*`, `/spend/*`, `/global/*`, `/sso/*` and `/`, goes through `oauth2proxy-litellm` and needs an
-SSO session with `AIHubSysAdmin` before LiteLLM's own login.
+`/audio/*`, `/images/*`, `/rerank`, `/moderations`, `/responses[/*]` (each also under `/v1/`), `/v1/messages[/*]`,
+`/v1/files[/*]`, `/v1/batches[/*]`, `/v1/realtime[/*]`, `/v1/videos[/*]`, `/v2/rerank` and the liveness probes
+`/health/liveliness` and `/health/liveness`. Every other path on the host, including the management routes LiteLLM keeps
+under `/v1/` (`/v1/agents`, `/v1/access_group`), `/ui`, `/key/*`, `/user/*`, `/team/*`, `/model/new`, `/config/*`,
+`/spend/*`, `/global/*`, `/sso/*` and `/`, goes through `oauth2proxy-litellm` and needs an SSO session with
+`AIHubSysAdmin` before LiteLLM's own login.
 
 | Request                                                        | Result                                       |
 | -------------------------------------------------------------- | -------------------------------------------- |

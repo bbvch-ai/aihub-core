@@ -1589,11 +1589,14 @@ services:
         || Path(`/v1/completions`) || Path(`/v1/embeddings`) || Path(`/v1/models`)
         || Path(`/v1/model/info`) || PathPrefix(`/v1/audio/`) || PathPrefix(`/v1/images/`)
         || Path(`/v1/rerank`) || Path(`/v1/moderations`) || Path(`/v1/responses`)
-        || PathPrefix(`/v1/responses/`) || Path(`/chat/completions`) || Path(`/completions`)
-        || Path(`/embeddings`) || Path(`/models`) || Path(`/model/info`) || PathPrefix(`/audio/`)
-        || PathPrefix(`/images/`) || Path(`/rerank`) || Path(`/v2/rerank`) || Path(`/moderations`)
-        || Path(`/responses`) || PathPrefix(`/responses/`) || Path(`/health/liveliness`)
-        || Path(`/health/liveness`))
+        || PathPrefix(`/v1/responses/`) || Path(`/v1/messages`) || PathPrefix(`/v1/messages/`)
+        || Path(`/v1/files`) || PathPrefix(`/v1/files/`) || Path(`/v1/batches`) ||
+        PathPrefix(`/v1/batches/`) || Path(`/v1/realtime`) || PathPrefix(`/v1/realtime/`)
+        || Path(`/v1/videos`) || PathPrefix(`/v1/videos/`) || Path(`/chat/completions`)
+        || Path(`/completions`) || Path(`/embeddings`) || Path(`/models`) || Path(`/model/info`)
+        || PathPrefix(`/audio/`) || PathPrefix(`/images/`) || Path(`/rerank`) || Path(`/v2/rerank`)
+        || Path(`/moderations`) || Path(`/responses`) || PathPrefix(`/responses/`)
+        || Path(`/health/liveliness`) || Path(`/health/liveness`))
       - traefik.http.routers.litellm-api.priority=6000
       - traefik.http.routers.litellm-api.entrypoints=websecure
       - traefik.http.routers.litellm-api.middlewares=security-headers@file
