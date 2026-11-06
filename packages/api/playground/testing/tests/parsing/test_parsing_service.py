@@ -1,12 +1,18 @@
 import asyncio
+import json
+from io import BytesIO
+from pathlib import PurePath
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from pypdf import PdfWriter
 from swiss_ai_hub.core.generative_ai import MineruLoader, ParseCacheBucket
-from swiss_ai_hub.core.generative_ai.document.loaders.mineru_file_result import MineruFileResult
+from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruParseResponse
+from swiss_ai_hub.core.infrastructure import MineruSettings
 
+from swiss_ai_hub.api.routes.parsing import parsing_service
 from swiss_ai_hub.api.routes.parsing.dto.image_mode import ImageMode
-from swiss_ai_hub.api.routes.parsing.parsing_service import MAX_CONCURRENT_MINERU_CONVERSIONS, ParsingService
+from swiss_ai_hub.api.routes.parsing.parsing_service import MAX_CONCURRENT_MINERU_REQUESTS, ParsingService
 
 UPLOADS_IN_ONE_MESSAGE = 10
 
@@ -21,21 +27,55 @@ def in_memory_parse_cache(monkeypatch: pytest.MonkeyPatch) -> dict[str, bytes]:
     return store
 
 
-class ConversionTracker:
-    """Stands in for MinerU, remembering how many conversions it was asked to run at once."""
+@pytest.fixture
+def batch_settings(monkeypatch: pytest.MonkeyPatch):
+    def apply(page_batch_size: int, concurrent_batch_requests: int) -> None:
+        monkeypatch.setenv("MINERU_PAGE_BATCH_SIZE", str(page_batch_size))
+        monkeypatch.setenv("MINERU_MAX_CONCURRENT_BATCH_REQUESTS", str(concurrent_batch_requests))
+        monkeypatch.setattr(parsing_service, "_mineru_settings", MineruSettings())
+
+    return apply
+
+
+def make_pdf(pages: int, marker: int) -> bytes:
+    writer = PdfWriter()
+    for _ in range(pages):
+        writer.add_blank_page(width=72, height=72)
+    writer.add_metadata({"/Subject": f"upload {marker}"})
+    buffer = BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+class MineruRequestTracker:
+    """Stands in for MinerU, remembering how many requests it was sent at once."""
 
     def __init__(self) -> None:
         self.in_flight = 0
         self.most_at_once = 0
-        self.conversions = 0
+        self.requests = 0
 
-    async def convert(self, file_bytes: bytes, filename: str, include_images: bool) -> MineruFileResult:
+    async def execute(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        include_images: bool,
+        start_page_id: int | None = None,
+        end_page_id: int | None = None,
+    ) -> MineruParseResponse:
         self.in_flight += 1
-        self.conversions += 1
+        self.requests += 1
         self.most_at_once = max(self.most_at_once, self.in_flight)
         await asyncio.sleep(0.01)
         self.in_flight -= 1
-        return MineruFileResult(backend="b", version="v", md_content=filename, num_pages=1, images={})
+        pages = 1 if start_page_id is None or end_page_id is None else end_page_id - start_page_id + 1
+        return MineruParseResponse(
+            backend="b",
+            version="v",
+            results={
+                PurePath(filename).stem: {"md_content": filename, "middle_json": json.dumps({"pdf_info": [{}] * pages})}
+            },
+        )
 
 
 async def upload(content: bytes, filename: str) -> str:
@@ -45,33 +85,52 @@ async def upload(content: bytes, filename: str) -> str:
     return response.page_content
 
 
-@pytest.mark.asyncio
-async def test_should_convert_no_more_uploads_at_once_than_mineru_slots_when_a_message_attaches_ten_pdfs():
-    tracker = ConversionTracker()
-
-    with patch.object(MineruLoader, "_convert_uncached", AsyncMock(side_effect=tracker.convert)):
-        contents = await asyncio.gather(
-            *(upload(f"pdf {index}".encode(), f"file_{index}.pdf") for index in range(UPLOADS_IN_ONE_MESSAGE))
+async def upload_all(tracker: MineruRequestTracker, pages: int) -> list[str]:
+    with patch.object(MineruLoader, "_execute_conversion", AsyncMock(side_effect=tracker.execute)):
+        return await asyncio.gather(
+            *(upload(make_pdf(pages, index), f"file_{index}.pdf") for index in range(UPLOADS_IN_ONE_MESSAGE))
         )
 
-    assert tracker.most_at_once == MAX_CONCURRENT_MINERU_CONVERSIONS
-    assert contents == [f"file_{index}.pdf" for index in range(UPLOADS_IN_ONE_MESSAGE)]
+
+@pytest.mark.asyncio
+async def test_should_send_mineru_no_more_requests_than_the_bound_when_a_message_attaches_ten_pdfs(batch_settings):
+    batch_settings(page_batch_size=20, concurrent_batch_requests=1)
+    tracker = MineruRequestTracker()
+
+    contents = await upload_all(tracker, pages=3)
+
+    assert tracker.most_at_once == MAX_CONCURRENT_MINERU_REQUESTS
+    assert all(content.startswith(f"file_{index}.pdf") for index, content in enumerate(contents))
 
 
 @pytest.mark.asyncio
-async def test_should_serve_a_parsed_upload_from_the_cache_when_every_slot_is_busy():
-    tracker = ConversionTracker()
-    with patch.object(MineruLoader, "_convert_uncached", AsyncMock(side_effect=tracker.convert)):
+async def test_should_send_mineru_no_more_requests_than_the_bound_when_each_pdf_sends_batches_side_by_side(
+    batch_settings,
+):
+    batch_settings(page_batch_size=2, concurrent_batch_requests=2)
+    tracker = MineruRequestTracker()
+
+    await upload_all(tracker, pages=6)
+
+    assert tracker.requests == UPLOADS_IN_ONE_MESSAGE * 3
+    assert tracker.most_at_once == MAX_CONCURRENT_MINERU_REQUESTS
+
+
+@pytest.mark.asyncio
+async def test_should_serve_a_parsed_upload_from_the_cache_when_every_slot_is_busy(batch_settings):
+    batch_settings(page_batch_size=20, concurrent_batch_requests=1)
+    tracker = MineruRequestTracker()
+    with patch.object(MineruLoader, "_execute_conversion", AsyncMock(side_effect=tracker.execute)):
         await upload(b"pdf", "known.pdf")
 
         slots = ParsingService.mineru_conversion_slots()
-        for _ in range(MAX_CONCURRENT_MINERU_CONVERSIONS):
+        for _ in range(ParsingService.concurrent_mineru_conversions()):
             await slots.acquire()
         try:
             content = await asyncio.wait_for(upload(b"pdf", "known.pdf"), timeout=1)
         finally:
-            for _ in range(MAX_CONCURRENT_MINERU_CONVERSIONS):
+            for _ in range(ParsingService.concurrent_mineru_conversions()):
                 slots.release()
 
     assert content == "known.pdf"
-    assert tracker.conversions == 1
+    assert tracker.requests == 1

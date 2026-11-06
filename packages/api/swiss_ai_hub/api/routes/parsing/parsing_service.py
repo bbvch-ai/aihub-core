@@ -28,9 +28,9 @@ _parsing_settings = ParsingSettings()
 
 # MinerU serves MINERU_API_MAX_CONCURRENT_REQUESTS (3) conversions at once and answers the rest with 503. OpenWebUI
 # parses every file of a message the moment it is uploaded, so ten PDFs ran out of their ~35s retry budget side by side
-# and the agent had to parse them again in the chat turn. Two at a time leaves a slot for agents and ingestion; the
-# others wait here, which OpenWebUI tolerates since it calls this endpoint without a timeout.
-MAX_CONCURRENT_MINERU_CONVERSIONS = 2
+# and the agent had to parse them again in the chat turn. Two requests at a time leave a slot for agents and
+# ingestion; the other uploads wait here, which OpenWebUI tolerates since it calls this endpoint without a timeout.
+MAX_CONCURRENT_MINERU_REQUESTS = 2
 
 
 def _get_extension(filename: str, content_type: str = "") -> str:
@@ -62,8 +62,14 @@ class ParsingService:
         waits on, and a second loop (a second test) would be refused it."""
         loop = asyncio.get_running_loop()
         if loop not in cls._mineru_slots:
-            cls._mineru_slots[loop] = asyncio.Semaphore(MAX_CONCURRENT_MINERU_CONVERSIONS)
+            cls._mineru_slots[loop] = asyncio.Semaphore(cls.concurrent_mineru_conversions())
         return cls._mineru_slots[loop]
+
+    @staticmethod
+    def concurrent_mineru_conversions() -> int:
+        """A long PDF sends up to MAX_CONCURRENT_BATCH_REQUESTS page batches at once, so the documents parsed side by
+        side share the request bound between them."""
+        return max(1, MAX_CONCURRENT_MINERU_REQUESTS // _mineru_settings.MAX_CONCURRENT_BATCH_REQUESTS)
 
     @staticmethod
     async def convert_from_bytes(
