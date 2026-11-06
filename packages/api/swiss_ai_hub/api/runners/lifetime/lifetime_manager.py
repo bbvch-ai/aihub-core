@@ -40,6 +40,7 @@ from swiss_ai_hub.api.routes.incident.github_issue_client import GitHubIssueClie
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
+    add_process_root_rule,
     carry_over_bucket_model_columns,
     carry_over_pre_pair_knowledge_collections,
     encrypt_plaintext_agent_secrets,
@@ -289,6 +290,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
         await initialize_startup_tenant()
+        add_process_root_rule()
         await finalize_role_setup(redis)
         await initialize_knowledge_buckets()
         await carry_over_bucket_model_columns()
