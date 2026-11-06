@@ -6,6 +6,8 @@ tenant, and the reason these assertions check the resolved ``AccessChecker`` ver
 the emitted strings.
 """
 
+from unittest.mock import AsyncMock
+
 import httpx
 import pytest
 from fastapi.routing import APIRoute
@@ -329,7 +331,7 @@ async def test_agent_rules_do_not_depend_on_the_class_roster(monkeypatch: pytest
     """The reason this is an allow list and not an exclusion: the startup tenant is seeded at API boot,
     before any agent has answered discovery, so nothing can be derived from what is running."""
     monkeypatch.setattr(
-        "swiss_ai_hub.core.persistence.agents.AgentClassEntity.get_all", staticmethod(lambda: []), raising=False
+        "swiss_ai_hub.core.persistence.agents.AgentClassEntity.get_all", AsyncMock(return_value=[]), raising=False
     )
     _stub_roster(monkeypatch, _CPU_ROSTER)
 

@@ -147,7 +147,8 @@ class AgentRunTracer:
 
     async def trace_step_stop(self, span: Span, output_events: list[BaseEvent] | None, topic: AgentInstanceTopic):
         """
-        Ends the step span with a success status and sets Langfuse trace-level display.
+        Records the step's output and sets Langfuse trace-level display. The status follows once the results are
+        published (`trace_step_ok` / `trace_step_error`).
         """
         eci = topic.execution_context_id
         user_input = await self.trace_store.get_user_input(eci)
@@ -199,6 +200,9 @@ class AgentRunTracer:
                 trace_attrs["langfuse.trace.output"] = await self.trace_store.get_output(eci)
         span.set_attributes(trace_attrs)
 
+    def trace_step_ok(self, span: Span):
+        """Marks the step span as succeeded once its results are published. OpenTelemetry keeps an OK status final, so
+        setting it before publishing would hide a result the broker refused."""
         span.set_status(StatusCode.OK)
 
     async def _set_semantic_attributes(self, span: Span, semantic_event: BaseEvent, topic: AgentInstanceTopic):

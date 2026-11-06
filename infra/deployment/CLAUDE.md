@@ -34,6 +34,7 @@ deployment/
 │       ├── s3-ttl-init.sh.j2          # Bucket expiry as filer TTL rules (never S3 lifecycle, see ADR 2026_10_27)
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
 │       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
+│       ├── ferretdb-init.sh.j2        # FerretDB PG init (read-only role of the knowledge content search)
 │       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)
 │           ├── bootstrap/             # First-start-only seeds: realm-settings, components, groups, users-superuser,
 │           │                          #   identity-providers
@@ -54,7 +55,8 @@ deployment/
 - `infra/docker-compose.{stage}{.gpu}.yml` — 10 compose files
 - `infra/configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~80 stage-variant config files
 - `infra/configs/litellm/litellm-config.{variant}.{stage}{.gpu}.yml` — 20 files, see "LiteLLM provider variants"
-- `infra/configs/{service}/{static-scripts}` — ~6 stage-independent scripts (etcd, seaweedfs, postgres, openwebui)
+- `infra/configs/{service}/{static-scripts}` — ~7 stage-independent scripts (etcd, seaweedfs, postgres, openwebui,
+  ferretdb)
 
 ### LiteLLM provider variants
 
@@ -111,6 +113,24 @@ on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. Li
 more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollback path are in ADR
 `docs/arc42/decisions/2026_10_22_litellm_follows_plain_release_tags.md`. See ADR
 `docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.
+
+Model pickers read three more curated keys from `/v1/model/info`:
+
+- **`aihub_display_name`** is the name a picker shows instead of the LiteLLM id. Set it on every model; it is not
+  validated, and the API falls back to the id without its prefix.
+- **`aihub_general_purpose`** is `false` only for a model built for one job (today MinerU, an OCR model).
+  `/models/mode/{mode}` and every model picker leave such a model out, and neither an agent or process profile nor a
+  knowledge database can be saved with it. It is ours rather than a LiteLLM `mode` on purpose: `mode` decides how
+  LiteLLM calls and health-probes a model, and MinerU is served over `/chat/completions`. A model without the key counts
+  as general-purpose, which covers models an operator adds through the LiteLLM UI.
+- **`supports_reasoning`** says whether the model can produce a thinking phase at all, not whether it does by default
+  (gemma only thinks when asked). LiteLLM forwards `reasoning_effort` to every model it does not know, whatever this
+  flag says, so a provider that rejects it needs `reasoning_effort` in `additional_drop_params` (Ministral does).
+
+`generate_compose.py` requires `supports_function_calling`, `supports_response_schema`, `supports_vision`,
+`supports_reasoning` and `aihub_general_purpose` as explicit `true`/`false` on every `mode: chat` model
+(`CHAT_FLAG_KEYS`): a picker that requires a capability treats a flag LiteLLM reports as `null` as unsupported. Keep
+`HOSTING_LOCATIONS` in sync with `HostingLocation` in `packages/core`, which pickers filter on.
 
 `aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
 `model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
@@ -230,8 +250,8 @@ continues to build locally so developers test Dockerfile edits without round-tri
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
 libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/xlsxwriter/python-docx/python-pptx/weasyprint/
 pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and headless LibreOffice with
-`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX
-and `pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
+`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX and
+`pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
 `make -C infra/deployment build-and-push-open-terminal-image` (requires `docker login ghcr.io`). Re-publish whenever:
 
 - The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
@@ -283,14 +303,14 @@ every call.
 
 ### Publishing the browser-proxy image
 
-The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages, built
-from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image` (requires
-`docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and `image_tags.browser_proxy`
-with every change to that folder. Three settings look optional and are not (each verified against Playwright 1.63):
-`CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://` with `CONNECT` too; the
-error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted` instead of a 403 with
-`X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that form and the range
-would refuse all of IPv4.
+The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages,
+built from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image`
+(requires `docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and
+`image_tags.browser_proxy` with every change to that folder. Three settings look optional and are not (each verified
+against Playwright 1.63): `CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://`
+with `CONNECT` too; the error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted`
+instead of a 403 with `X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that
+form and the range would refuse all of IPv4.
 
 Check the [Squid advisories](https://github.com/squid-cache/squid/security/advisories) when bumping the base, not an
 image scan. Alpine 3.22 froze Squid at 6.12, which upstream no longer fixes, and Alpine's secdb lists only the CVEs
@@ -331,7 +351,7 @@ The template conditionally includes services based on stage and GPU mode:
 Port exposure: direct localhost ports (`8080:8080`) only in `dev`, `local`, `build`. In `nightly`/`latest`, all traffic
 routes through Traefik.
 
-## Network Isolation (7 Zones)
+## Network Isolation (8 Zones + Control-Plane Networks)
 
 | Network         | Purpose                           | Internal | ICC | Key Services                                                                          |
 | --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------------------------------- |
@@ -372,6 +392,18 @@ stage proves the isolation.
 in `pii-detection` and only its callers (litellm, agents) join that network. With its models baked in it needs no
 outbound internet, which `internal: true` denies in non-dev stages. In dev it publishes port 5002 for agents running on
 the host.
+
+**Control-plane networks**: `docker-api` (traefik + docker-socket-proxy), `dagster-ui` / `backup-ui` (each Dagster
+webserver + its oauth2-proxy), `dagster` (pipeline webserver, daemon, pgbouncer, pipeline code servers), `backup`
+(backup webserver, daemon, backup-code), `backup-docker` (backup-code + `backup-docker-proxy`). The gRPC code servers
+also need `backend`/`data`/`storage`, so they bind gRPC to an alias that only exists on their control-plane network
+(`<container>-grpc`, `backup-grpc`) — the workspace files and healthchecks use that alias, never `localhost`. A new
+pipeline code server needs the same `entrypoint` override, alias and workspace entry. `backup-code` reaches Docker only
+through `backup-docker-proxy` (containers API + POST, no exec/images/volumes); a new Docker call outside
+`/containers/...` must be enabled there. Neither socket proxy runs `privileged`; both set `security_opt: label=disable`
+instead, which SELinux hosts need to open the socket and other hosts ignore. The webservers' localhost ports bind
+`127.0.0.1`, because the UI networks are not internal in `local`/`build` and a bare `3000:3000` would publish the
+unauthenticated UI on every interface.
 
 **Special**: `open-webui` uses `network_mode: "host"` in dev (to reach services running locally outside Docker).
 
@@ -497,8 +529,8 @@ logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symli
 - `security-headers@file` sends `X-Frame-Options: DENY`, except on the `web-auth` and `sysadmin-web-auth` routers
   (`/{locale}/auth/*`), which use `auth-route-security-headers@file` with `SAMEORIGIN`. The frontend loads
   `/{locale}/auth/renew` in a hidden same-origin iframe for its SSO session probe and silent renew; under `DENY` the
-  probe always times out, users with an expired Keycloak session keep a stale login, and the OpenWebUI iframe then
-  signs in through Entra inside the frame, where OpenWebUI loses its OAuth state (`mismatching_state`).
+  probe always times out, users with an expired Keycloak session keep a stale login, and the OpenWebUI iframe then signs
+  in through Entra inside the frame, where OpenWebUI loses its OAuth state (`mismatching_state`).
 
 ## Adding a New Service
 

@@ -16,8 +16,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.jira.jira_settings import JiraSettings
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner import LangfuseProvisioner
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings import LangfuseSettings
+    from swiss_ai_hub.core.infrastructure.litellm.hosting_location import HostingLocation
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
+    from swiss_ai_hub.core.infrastructure.litellm.model_capability import ModelCapability
+    from swiss_ai_hub.core.infrastructure.litellm.model_requirements import ModelRequirements
     from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
     from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
     from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
@@ -87,6 +90,9 @@ __all__ = [
     "LangfuseSettings",
     "LiteLLMProxySettings",
     "LiteLLMService",
+    "HostingLocation",
+    "ModelCapability",
+    "ModelRequirements",
     "MilvusSettings",
     "MineruSettings",
     "ConversationAttachments",
@@ -148,6 +154,9 @@ _LAZY_IMPORTS = {
     "LangfuseSettings": "swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings",
     "LiteLLMProxySettings": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings",
     "LiteLLMService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service",
+    "HostingLocation": "swiss_ai_hub.core.infrastructure.litellm.hosting_location",
+    "ModelCapability": "swiss_ai_hub.core.infrastructure.litellm.model_capability",
+    "ModelRequirements": "swiss_ai_hub.core.infrastructure.litellm.model_requirements",
     "MilvusSettings": "swiss_ai_hub.core.infrastructure.milvus.milvus_settings",
     "MineruSettings": "swiss_ai_hub.core.infrastructure.mineru.mineru_settings",
     "ConversationAttachments": "swiss_ai_hub.core.infrastructure.open_terminal.conversation_attachments",

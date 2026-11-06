@@ -615,6 +615,7 @@ services:
         max-file: 2
     networks:
       - data
+      - dagster  # Dagster webserver + daemon reach their storage only through this zone
 
   # ===================================================================
   # FerretDB Stack (MongoDB Compatibility)
@@ -666,6 +667,30 @@ services:
       healthcheck.protocol: http
       healthcheck.port: '8088'
       healthcheck.path: /debug/livez
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
+  ferretdb-init:
+    container_name: ferretdb-init
+    image: ghcr.io/bbvch-ai/aihub-core/postgres:17
+    restart: on-failure
+    depends_on:
+      postgres-ferretdb:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres-ferretdb
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${MONGO_USERNAME}
+      POSTGRES_PASSWORD: ${MONGO_PASSWORD}
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
+    volumes: [./configs/ferretdb/init-ferretdb.sh:/init-ferretdb.sh:ro]
+    entrypoint: [/bin/sh, /init-ferretdb.sh]
     logging:
       driver: json-file
       options:
@@ -1227,7 +1252,53 @@ services:
   # ===================================================================
   # Independent 3-container Dagster deployment: gRPC code server, daemon,
   # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
+  # The gRPC code server binds only to its `backup` network alias, so the
+  # webserver and daemon are its only callers; the webserver shares
+  # `backup-ui` with nothing but its oauth2-proxy. Docker access goes through
+  # a dedicated socket proxy limited to the container API.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  backup-docker-proxy:
+    container_name: backup-docker-proxy
+    image: ghcr.io/bbvch-ai/aihub-core/tecnativa/docker-socket-proxy:0.3
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, wget, --spider, -q, http://localhost:2375/_ping]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt: [label=disable]
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      EVENTS: 0
+      EXEC: 0
+      IMAGES: 0
+      NETWORKS: 0
+      VOLUMES: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels: [traefik.enable=false]
+    networks:
+      - backup-docker
 
   # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   backup-code:
@@ -1251,6 +1322,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_started
+      backup-docker-proxy:
+        condition: service_healthy
     entrypoint:
       - dagster
       - api
@@ -1258,12 +1331,13 @@ services:
       - -m
       - swiss_ai_hub.backup.dagster
       - -h
-      - 0.0.0.0
+      - backup-grpc
       - -p
       - '4266'
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      DOCKER_HOST: tcp://backup-docker-proxy:2375
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
       BACKUP_MINIMUM_KEEP: ${BACKUP_MINIMUM_KEEP}
       BACKUP_POSTGRES_HOST: postgres
@@ -1299,7 +1373,6 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
       - ./configs/backup/backup-dagster.latest.yml:/dagster_home/dagster.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test:
         - CMD
@@ -1307,7 +1380,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - backup-grpc
         - --port
         - '4266'
       interval: 30s
@@ -1320,8 +1393,12 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
-      - storage
+      data:
+      storage:
+      backup-docker:
+      backup:
+        aliases:
+          - backup-grpc
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-backup:
     container_name: oauth2proxy-backup
@@ -1367,6 +1444,7 @@ services:
     networks:
       - proxy
       - backend
+      - backup-ui
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-webserver:
@@ -1403,8 +1481,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - proxy
-      - data
+      - backup-ui
+      - backup
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-daemon:
@@ -1434,7 +1512,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
+      - backup
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -2206,6 +2284,7 @@ services:
     networks:
       - proxy
       - backend
+      - dagster-ui
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   dagster-webserver:
@@ -2245,8 +2324,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
-      - data
+      - dagster-ui
+      - dagster
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   dagster-daemon:
@@ -2279,8 +2358,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
-      - data
+      - dagster
 
   # ===================================================================
   # Docker Socket Proxy (Security Layer)
@@ -2295,15 +2373,17 @@ services:
     container_name: docker-socket-proxy
     image: ghcr.io/bbvch-ai/aihub-core/tecnativa/docker-socket-proxy:0.3
     restart: always
-    # Required for Docker socket access in SELinux/AppArmor environments
-    privileged: true
     healthcheck:
       test: [CMD, wget, --spider, -q, http://localhost:2375/_ping]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 5s
-    volumes: [/var/run/docker.sock:/var/run/docker.sock:ro]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt: [label=disable]
     environment:
       # Security: Only enable required Docker API sections
       CONTAINERS: 1  # Required for Traefik to discover services
@@ -2329,7 +2409,7 @@ services:
         max-file: 2
     labels: [traefik.enable=false]
     networks:
-      - backend  # Only Traefik needs to access this service
+      - docker-api  # shared with Traefik only
 
   # ===================================================================
   # Traefik (Reverse Proxy)
@@ -2377,6 +2457,7 @@ services:
     networks:
       - proxy
       - backend  # Traefik routes to backend services
+      - docker-api  # reaches the Docker socket proxy for service discovery
   # ===================================================================
   # API Stack (Backend Logic)
   # ===================================================================
@@ -2572,6 +2653,10 @@ services:
       INCIDENT_GITHUB_APP_ID: ${INCIDENT_GITHUB_APP_ID}
       INCIDENT_GITHUB_INSTALLATION_ID: ${INCIDENT_GITHUB_INSTALLATION_ID}
       INCIDENT_GITHUB_PRIVATE_KEY: ${INCIDENT_GITHUB_PRIVATE_KEY}
+      API_REQUEST_MAX_BODY_BYTES: ${API_REQUEST_MAX_BODY_BYTES}
+      AGENT_INLINE_FILE_MAX_FILE_BYTES: ${AGENT_INLINE_FILE_MAX_FILE_BYTES}
+      AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST: ${AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST}
+      AGENT_INLINE_IMAGE_MAX_BYTES: ${AGENT_INLINE_IMAGE_MAX_BYTES}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8000/api/v1/health]
       interval: 30s
@@ -2911,6 +2996,9 @@ services:
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3002,6 +3090,9 @@ services:
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3091,11 +3182,17 @@ services:
       OPEN_TERMINAL_BASE_URL: http://open-terminal:8000
       OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
 
+      # Knowledge content search: read-only access to its trigram indexes
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
+
       # Mem0
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3144,6 +3241,9 @@ services:
       # Mongo DB (agent configs and the knowledge documents it reads)
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
+      # Knowledge content search: read-only access to its trigram indexes
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
+
       # NATs
       NATS_ENDPOINT: nats://nats:4222
       NATS_TOKEN: ${NATS_TOKEN}
@@ -3163,6 +3263,9 @@ services:
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3422,6 +3525,16 @@ services:
       SLACK_CHANNEL_ID: ${SLACK_CHANNEL_ID}
       SLACK_SERVICE_URL: ${SLACK_SERVICE_URL}
 
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3569,6 +3682,9 @@ services:
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3623,6 +3739,16 @@ services:
 
       # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3777,6 +3903,9 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      # Decrypts the profile's secret fields (Password inputs) when a run validates its config. Every agent whose
+      # blueprint declares a Password field needs it, including mcp_react_agent once it gets a service here.
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
 
       # LiteLLM Access (draft-reply generation)
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -3840,6 +3969,8 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      # Decrypts the profile's secret fields (Password inputs) when a run validates its config.
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
 
       # LiteLLM Access (mail classification)
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -3915,6 +4046,8 @@ services:
       # AI-Hub Settings
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      # Decrypts the profile's secret fields (Password inputs) when a run validates its config.
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
 
       # LiteLLM Access (release notes, translations, titles and follow-ups)
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -3942,6 +4075,16 @@ services:
       # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
+      # S3 (only to sign the stored images in messages; signing needs no storage access)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3968,6 +4111,10 @@ services:
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h default-rag-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:v0.320.1
     environment:
       PYTHONUNBUFFERED: 1
@@ -4035,7 +4182,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - default-rag-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4043,13 +4190,20 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - default-rag-pipeline-grpc
   # License: Apache-2.0 — own image (see LICENSES.md)
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h shared-rag-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:v0.320.1
     environment:
       PYTHONUNBUFFERED: 1
@@ -4128,7 +4282,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - shared-rag-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4136,13 +4290,20 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - shared-rag-pipeline-grpc
   # License: Apache-2.0 — own image (see LICENSES.md)
   document_ingestion_pipeline:
     container_name: document-ingestion-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h document-ingestion-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/document_ingestion_pipeline:latest
     environment:
       PYTHONUNBUFFERED: 1
@@ -4216,7 +4377,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - document-ingestion-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4224,9 +4385,12 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - document-ingestion-pipeline-grpc
   # ===================================================================
   # Rclone Source Pipeline (Stage 1: cloud sources -> data lake, configured per knowledge database)
   # ===================================================================
@@ -4235,6 +4399,10 @@ services:
   rclone_pipeline:
     container_name: rclone-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h rclone-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/rclone_pipeline:latest
     depends_on:
       rclone:
@@ -4292,7 +4460,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - rclone-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4300,9 +4468,12 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - rclone-pipeline-grpc
   # ===================================================================
   # Structured Source Pipeline (Stage 1: API records such as Jira issues -> markdown in the data lake, via dlt,
   # configured per knowledge database)
@@ -4312,6 +4483,10 @@ services:
   structured_pipeline:
     container_name: structured-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h structured-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/structured_pipeline:latest
     environment:
       PYTHONUNBUFFERED: 1
@@ -4363,7 +4538,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - structured-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4371,10 +4546,13 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
-      - egress  # reaches the business applications it syncs from (Jira Cloud or an on-premise Data Center)
+      backend:
+      data:
+      storage:
+      egress:  # reaches the business applications it syncs from (Jira Cloud or an on-premise Data Center)
+      dagster:
+        aliases:
+          - structured-pipeline-grpc
   # ===================================================================
   # Bot Service (MS Teams Integration)
   # ===================================================================
@@ -4470,6 +4648,10 @@ services:
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
 # - browser:       The Playwright browser, browser-proxy (its only way out) and its callers (open-webui, the web-fetching agents)
+# - docker-api:    Traefik and the Docker socket proxy
+# - dagster-ui / backup-ui: each Dagster webserver plus only its oauth2-proxy
+# - dagster / backup:       each Dagster webserver + daemon plus the gRPC code servers they load
+# - backup-docker: The backup code server and its own Docker socket proxy
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -4511,6 +4693,36 @@ networks:
   # The Presidio analyzer receives the personal data the platform protects: alone with its callers, no egress
   pii-detection:
     name: pii-detection
+    driver: bridge
+    internal: true
+  # Traefik and the Docker socket proxy only: no other container can query the Docker API
+  docker-api:
+    name: docker-api
+    driver: bridge
+    internal: true
+  # The Dagster webserver and its oauth2-proxy only. Not internal where the webserver publishes a localhost port.
+  dagster-ui:
+    name: dagster-ui
+    driver: bridge
+    internal: true
+  # Dagster webserver, daemon, their storage (pgbouncer) and the pipeline code servers, whose gRPC binds only here
+  dagster:
+    name: dagster
+    driver: bridge
+    internal: true
+  # The backup webserver and its oauth2-proxy only. Not internal where the webserver publishes a localhost port.
+  backup-ui:
+    name: backup-ui
+    driver: bridge
+    internal: true
+  # Backup webserver, daemon and the backup code server, whose gRPC binds only here
+  backup:
+    name: backup
+    driver: bridge
+    internal: true
+  # The backup code server and its Docker socket proxy only
+  backup-docker:
+    name: backup-docker
     driver: bridge
     internal: true
 configs:

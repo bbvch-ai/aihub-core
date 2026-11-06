@@ -35,12 +35,18 @@ class SecretEncryptionService:
 
     def __init__(self, key: Annotated[str, "Fernet key, url-safe base64 of 32 bytes"]) -> None:
         self._fernet = Fernet(key.encode("utf-8"))
-        self._handle_key = hashlib.sha256(_HANDLE_DOMAIN + key.encode("utf-8")).digest()
+        self._key = key.encode("utf-8")
+        self._handle_key = self.derived_key(_HANDLE_DOMAIN)
+
+    def derived_key(self, domain: Annotated[bytes, "Names the one purpose the derived key serves"]) -> bytes:
+        """A key for a purpose other than encryption, so the instance needs no second secret for it."""
+        return hashlib.sha256(domain + self._key).digest()
 
     @classmethod
     def from_settings(cls, settings: ConfigEncryptionSettings | None = None) -> Self:
         settings = settings or ConfigEncryptionSettings()
-        if settings.ENCRYPTION_KEY is None:
+        # Compose passes an unset variable on as an empty string, which is the same mistake as leaving it out.
+        if settings.ENCRYPTION_KEY is None or not settings.ENCRYPTION_KEY.get_secret_value().strip():
             raise ValueError(_MISSING_KEY_MESSAGE)
         return cls(settings.ENCRYPTION_KEY.get_secret_value())
 

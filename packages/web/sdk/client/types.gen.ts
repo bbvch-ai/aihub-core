@@ -431,6 +431,12 @@ export type AgentClassDto = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Is Online
    *
    * Indicates whether the agent class is online and reachable.
@@ -3118,7 +3124,7 @@ export type ChatCompletionRequest = {
   /**
    * Service Tier
    */
-  service_tier?: "auto" | "default" | null;
+  service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
   /**
    * Stop
    */
@@ -6209,9 +6215,9 @@ export type Embeddings = {
   /**
    * Embedding
    *
-   * The list of embeddings.
+   * The embedding vector, or the vector's float32 bytes as base64 when requested so.
    */
-  embedding: Array<number>;
+  embedding: Array<number> | string;
   /**
    * Index
    *
@@ -6278,6 +6284,10 @@ export type EmbeddingsResponse = {
    * The list of embeddings.
    */
   data: Array<Embeddings>;
+  /**
+   * Tokens the request used.
+   */
+  usage?: OpenaiTypesCreateEmbeddingResponseUsage | null;
 };
 
 /**
@@ -6334,6 +6344,14 @@ export type EventSpecs = {
   event_schema: {
     [key: string]: unknown;
   };
+  /**
+   * Api Input Schema
+   *
+   * The schema of what an API caller sends for this event: the event without the fields the server fills in, and with the inputs the event converts itself, such as files sent inline. Absent for a specification stored before agents announced it.
+   */
+  api_input_schema?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * Event Parents
    *
@@ -7026,6 +7044,12 @@ export type FullAgentInstanceDto = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Start Events
    *
    * A list of `EventSpecs` representing events that can start this agent's workflow.
@@ -7062,7 +7086,7 @@ export type FullAgentInstanceDto = {
   /**
    * Configuration
    *
-   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.
+   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.
    */
   configuration?: {
     [key: string]: unknown;
@@ -7577,6 +7601,30 @@ export type HealthResponse = {
    */
   checks?: ApiHealthChecks | AgentHealthChecks | ProcessHealthChecks | null;
 };
+
+/**
+ * HostingLocation
+ *
+ * Where a model runs, as the LiteLLM config declares it in `aihub_hosting_location`.
+ *
+ * Keep in sync with `HOSTING_LOCATIONS` in `infra/deployment/generate_compose.py`, which rejects any other value.
+ */
+export const HostingLocation = {
+  LOCAL: "local",
+  SWISS_CLOUD: "swiss_cloud",
+  EU: "eu",
+  GLOBAL: "global",
+} as const;
+
+/**
+ * HostingLocation
+ *
+ * Where a model runs, as the LiteLLM config declares it in `aihub_hosting_location`.
+ *
+ * Keep in sync with `HOSTING_LOCATIONS` in `infra/deployment/generate_compose.py`, which rejects any other value.
+ */
+export type HostingLocation =
+  (typeof HostingLocation)[keyof typeof HostingLocation];
 
 /**
  * HtmlElement
@@ -8827,7 +8875,7 @@ export type ImageGenerationRequest = {
   /**
    * Quality
    */
-  quality?: "standard" | "hd" | null;
+  quality?: "standard" | "hd" | "low" | "medium" | "high" | "auto" | null;
   /**
    * Response Format
    */
@@ -8835,7 +8883,16 @@ export type ImageGenerationRequest = {
   /**
    * Size
    */
-  size?: "256x256" | "512x512" | "1024x1024" | "1792x1024" | "1024x1792" | null;
+  size?:
+    | "auto"
+    | "256x256"
+    | "512x512"
+    | "1024x1024"
+    | "1536x1024"
+    | "1024x1536"
+    | "1792x1024"
+    | "1024x1792"
+    | null;
   /**
    * Style
    */
@@ -11026,6 +11083,14 @@ export type LlmStopEvent = {
     [key: string]: unknown;
   }> | null;
   /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -12632,6 +12697,12 @@ export type MinimalAgentInstanceDto = {
    * Whether the agent can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
 };
 
 /**
@@ -12962,6 +13033,26 @@ export type ModelBoundInputNumber = {
 };
 
 /**
+ * ModelCapability
+ *
+ * Something a model picker may require of a chat model, read from the LiteLLM `supports_*` flag it names.
+ */
+export const ModelCapability = {
+  VISION: "vision",
+  TOOL_CALLING: "tool_calling",
+  STRUCTURED_OUTPUT: "structured_output",
+  REASONING: "reasoning",
+} as const;
+
+/**
+ * ModelCapability
+ *
+ * Something a model picker may require of a chat model, read from the LiteLLM `supports_*` flag it names.
+ */
+export type ModelCapability =
+  (typeof ModelCapability)[keyof typeof ModelCapability];
+
+/**
  * ModelDTO
  */
 export type ModelDto = {
@@ -12975,6 +13066,12 @@ export type ModelDto = {
    * Detailed information about the model
    */
   model_info: ModelInfoDto;
+  /**
+   * Display Name
+   *
+   * The curated display name, or the model name without its capability prefix
+   */
+  readonly display_name: string;
   /**
    * Icon
    */
@@ -13195,6 +13292,9 @@ export type ModelGatedCheckbox = {
 
 /**
  * ModelInfoDTO
+ *
+ * Fields carry their LiteLLM ``model_info`` key as name, without aliases, because the model-bound form elements
+ * and the frontend read limits and flags from this DTO by that key.
  */
 export type ModelInfoDto = {
   /**
@@ -13203,6 +13303,22 @@ export type ModelInfoDto = {
    * The mode of the model (e.g., 'chat', 'completion', 'embedding')
    */
   mode?: string | null;
+  /**
+   * Aihub Display Name
+   *
+   * Human-readable model name curated in the LiteLLM config
+   */
+  aihub_display_name?: string | null;
+  /**
+   * Where the model runs, curated per model
+   */
+  aihub_hosting_location?: HostingLocation | null;
+  /**
+   * Aihub General Purpose
+   *
+   * False for a model built for one job, such as OCR, which model pickers leave out; a model that does not set it counts as general-purpose
+   */
+  aihub_general_purpose?: boolean | null;
   /**
    * Max Input Tokens
    *
@@ -13444,6 +13560,31 @@ export type ModelInfoDto = {
 };
 
 /**
+ * ModelRequirements
+ *
+ * What a model must offer to be offered and saved in one model picker.
+ *
+ * Stricter than `ModelGatedCheckbox` on purpose: that gates a feature on a model already chosen, this decides what
+ * may be chosen. So a flag counts only when it is true (LiteLLM reports an unset one as null), and a model whose
+ * location is missing or unknown fails a location requirement. It reads a plain `model_info` mapping, not the
+ * API's DTO, so core does not depend on the API.
+ */
+export type ModelRequirements = {
+  /**
+   * Capabilities
+   *
+   * Capabilities the model must all support.
+   */
+  capabilities?: Array<ModelCapability>;
+  /**
+   * Hosting Locations
+   *
+   * Where the model may run; any location when unset.
+   */
+  hosting_locations?: Array<HostingLocation> | null;
+};
+
+/**
  * ModelResponse
  */
 export type ModelResponse = {
@@ -13470,7 +13611,9 @@ export type ModelResponse = {
  * available models from the API based on the specified mode.
  *
  * The frontend component handles fetching models from `/api/v1/models/mode/{mode}`
- * and populating the dropdown options.
+ * and populating the dropdown options. `requirements` narrows them to the models with
+ * every required capability and an allowed hosting location; the API enforces the same
+ * rule when a profile is saved, and never offers a model that is not general-purpose.
  *
  * ### Supported Modes
  * - `chat`: Chat/text generation models
@@ -13626,6 +13769,10 @@ export type ModelSelect = {
    * Whether to show clear button
    */
   showClear?: boolean;
+  /**
+   * Capabilities and hosting locations the chosen model must have.
+   */
+  requirements?: ModelRequirements;
   /**
    * Validation
    */
@@ -16186,6 +16333,14 @@ export type RefusalStopEvent = {
     [key: string]: unknown;
   }> | null;
   /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
+  /**
    * What about the input made the turn unanswerable.
    */
   reason: RefusalReason;
@@ -16528,6 +16683,43 @@ export type ResponseFormatText = {
    */
   type: "text";
   [key: string]: unknown;
+};
+
+/**
+ * ResponseSchema
+ *
+ * The JSON shape a caller wants the agent's answer in.
+ *
+ * One request whatever the caller's API calls it: the OpenAI endpoint maps both `response_format` and a forced
+ * function call onto it, and decides on its own how to hand the result back.
+ */
+export type ResponseSchema = {
+  /**
+   * Name
+   *
+   * A name for the shape, as OpenAI's `json_schema.name` or a function name.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * What the shape is for; the model reads it.
+   */
+  description?: string | null;
+  /**
+   * Json Schema
+   *
+   * The JSON schema the answer must match. Without one, any JSON object is accepted.
+   */
+  json_schema?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Strict
+   *
+   * Ask the model to follow the schema exactly, as OpenAI's structured outputs `strict`.
+   */
+  strict?: boolean;
 };
 
 /**
@@ -18896,13 +19088,17 @@ export type TextToSpeechRequest = {
   voice:
     | "alloy"
     | "ash"
+    | "ballad"
     | "coral"
     | "echo"
     | "fable"
     | "onyx"
     | "nova"
     | "sage"
-    | "shimmer";
+    | "shimmer"
+    | "verse"
+    | "marin"
+    | "cedar";
   /**
    * Response Format
    *
@@ -21259,6 +21455,10 @@ export type UserMessageEvent = {
    */
   web_references?: Array<string>;
   /**
+   * The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.
+   */
+  response_schema?: ResponseSchema | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -21861,6 +22061,23 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
 /**
  * Usage
  *
+ * The usage information for the request.
+ */
+export type OpenaiTypesCreateEmbeddingResponseUsage = {
+  /**
+   * Prompt Tokens
+   */
+  prompt_tokens: number;
+  /**
+   * Total Tokens
+   */
+  total_tokens: number;
+  [key: string]: unknown;
+};
+
+/**
+ * Usage
+ *
  * For `gpt-image-1` only, the token usage information for the image generation.
  */
 export type OpenaiTypesImagesResponseUsage = {
@@ -22116,6 +22333,12 @@ export type AgentClassDtoWritable = {
    * Whether the agent class can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
   /**
    * Is Online
    *
@@ -25113,6 +25336,12 @@ export type FullAgentInstanceDtoWritable = {
    */
   is_schedulable?: boolean;
   /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
+  /**
    * Start Events
    *
    * A list of `EventSpecs` representing events that can start this agent's workflow.
@@ -25149,7 +25378,7 @@ export type FullAgentInstanceDtoWritable = {
   /**
    * Configuration
    *
-   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.
+   * The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.
    */
   configuration?: {
     [key: string]: unknown;
@@ -28031,6 +28260,14 @@ export type LlmStopEventWritable = {
   tools?: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
   [key: string]: unknown;
 };
 
@@ -28878,6 +29115,12 @@ export type MinimalAgentInstanceDtoWritable = {
    * Whether the agent can be run automatically on a cron schedule
    */
   is_schedulable?: boolean;
+  /**
+   * Supports Response Schema
+   *
+   * Whether the agent answers in the JSON shape a message's `response_schema` asks for
+   */
+  supports_response_schema?: boolean;
 };
 
 /**
@@ -29322,7 +29565,9 @@ export type ModelGatedCheckboxWritable = {
  * available models from the API based on the specified mode.
  *
  * The frontend component handles fetching models from `/api/v1/models/mode/{mode}`
- * and populating the dropdown options.
+ * and populating the dropdown options. `requirements` narrows them to the models with
+ * every required capability and an allowed hosting location; the API enforces the same
+ * rule when a profile is saved, and never offers a model that is not general-purpose.
  *
  * ### Supported Modes
  * - `chat`: Chat/text generation models
@@ -29478,6 +29723,10 @@ export type ModelSelectWritable = {
    * Whether to show clear button
    */
   showClear?: boolean;
+  /**
+   * Capabilities and hosting locations the chosen model must have.
+   */
+  requirements?: ModelRequirements;
   [key: string]: unknown;
 };
 
@@ -30922,6 +31171,14 @@ export type RefusalStopEventWritable = {
   tools?: Array<{
     [key: string]: unknown;
   }> | null;
+  /**
+   * Structured Output
+   *
+   * The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.
+   */
+  structured_output?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * What about the input made the turn unanswerable.
    */
@@ -34289,6 +34546,10 @@ export type UserMessageEventWritable = {
    * Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.
    */
   web_references?: Array<string>;
+  /**
+   * The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.
+   */
+  response_schema?: ResponseSchema | null;
   [key: string]: unknown;
 };
 
@@ -35323,7 +35584,20 @@ export type GetLitellmModelsByModeData = {
      */
     mode: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Capability
+     */
+    capability?: Array<ModelCapability> | null;
+    /**
+     * Hosting Location
+     */
+    hosting_location?: Array<HostingLocation> | null;
+    /**
+     * Include Special Purpose
+     */
+    include_special_purpose?: boolean;
+  };
   url: "/{tenant_id}/models/mode/{mode}";
 };
 
@@ -36278,6 +36552,48 @@ export type ValidateFileUploadResponses = {
 
 export type ValidateFileUploadResponse =
   ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
+
+export type GetImageData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Agent Class
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     */
+    agent_id: string;
+    /**
+     * Name
+     */
+    name: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/images/{name}";
+};
+
+export type GetImageErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetImageError = GetImageErrors[keyof GetImageErrors];
+
+export type GetImageResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
 
 export type GetProcessClassesData = {
   body?: never;
@@ -37256,9 +37572,25 @@ export type GetModelsData = {
      */
     tenant_id: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Include Agents
+     *
+     * Also list the agents the user may call. Off by default: OpenWebUI lists this endpoint and shows agents through its own pipe, so listing them here would show each twice.
+     */
+    include_agents?: boolean;
+  };
   url: "/{tenant_id}/openai/models";
 };
+
+export type GetModelsErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetModelsError = GetModelsErrors[keyof GetModelsErrors];
 
 export type GetModelsResponses = {
   /**

@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import Annotated, Self
 
+from beanie.exceptions import DocumentNotFound
 from fastapi import Depends, HTTPException, Path, Query, Security
-from mongoengine import DoesNotExist
-from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -22,6 +21,7 @@ from swiss_ai_hub.api.routes.thread.dto.create_thread_request import CreateThrea
 from swiss_ai_hub.api.routes.thread.dto.open_chat_hitl_response import OpenChatHitlResponse
 from swiss_ai_hub.api.routes.thread.dto.paginated_threads_response import PaginatedThreadsResponse
 from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
+from swiss_ai_hub.api.routes.thread.thread_access import ThreadAccess
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 
 
@@ -52,17 +52,12 @@ class ThreadController(TenantScopedController):
     async def _get_thread_or_404(thread_id: str, t: LocaleHandler) -> ThreadDTO:
         try:
             return await ThreadService.get_thread_by_id(thread_id, t=t)
-        except DoesNotExist:
+        except DocumentNotFound:
             raise ThreadController.thread_not_found_exception
 
     @staticmethod
     def _check_view_access(thread: ThreadDTO, user: UserIdentity) -> None:
-        """Raise 403 if user is not a member of the thread and has no process access."""
-        user_in_thread = user.id in [u.id for u in thread.users]
-        has_process_access = AccessChecker.from_user(user).has_access_to_process(
-            thread.process_class, thread.process_id
-        )
-        if not (user_in_thread or has_process_access):
+        if not ThreadAccess.can_view(thread, user):
             raise ThreadController.not_authorized_to_view_exception
 
     def __init__(

@@ -5,6 +5,7 @@ from pydantic import Field
 from swiss_ai_hub.core.form.base.prime_vue_element import PrimeVueElement
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.infrastructure.litellm.model_requirements import ModelRequirements
 
 
 class ModelSelect(PrimeVueElement):
@@ -15,7 +16,9 @@ class ModelSelect(PrimeVueElement):
     available models from the API based on the specified mode.
 
     The frontend component handles fetching models from `/api/v1/models/mode/{mode}`
-    and populating the dropdown options.
+    and populating the dropdown options. `requirements` narrows them to the models with
+    every required capability and an allowed hosting location; the API enforces the same
+    rule when a profile is saved, and never offers a model that is not general-purpose.
 
     ### Supported Modes
     - `chat`: Chat/text generation models
@@ -58,6 +61,13 @@ class ModelSelect(PrimeVueElement):
     placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text")] = None
     filter: Annotated[bool, Field(description="Whether to enable filtering/search")] = True
     show_clear: Annotated[bool, Field(description="Whether to show clear button", alias="showClear")] = False
+    requirements: Annotated[
+        ModelRequirements,
+        Field(
+            default_factory=ModelRequirements,
+            description="Capabilities and hosting locations the chosen model must have.",
+        ),
+    ]
 
     def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)

@@ -187,6 +187,7 @@ thread:
 chat:
   assistant: Assistant
   document: Document
+  image: Image
 event:
   list:
     firstInteraction: 'First Interaction:'
@@ -450,6 +451,10 @@ agent:
         environment.
   export:
     button: Export
+  storedSecrets:
+    title: Secrets must be re-entered
+    detail: 'Stored secrets are never copied into a new profile. Enter them again
+      before saving: {fields}'
   configuration:
     title: Agent Configuration
     description: Configure the runtime behavior and settings for this agent
@@ -989,6 +994,14 @@ form:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  modelSelect:
+    contextWindow: 'Context window: {input} input · {output} output tokens'
+    contextWindowInputOnly: 'Context window: {input} input tokens'
+    notSelectable: '{model} does not meet what this field requires. Choose another model before saving.'
+    specialPurpose: '{model} is built for one job only and cannot be chosen here. Choose another model before saving.'
+    unavailable: '{model} is not available to you. Choose another model before saving.'
+    loadFailed: The models could not be loaded. Reload the page to try again.
+    empty: No model you can use meets what this field requires.
   modelBound:
     providerDefault: provider default
     overrideRequired: Enter a value, or untick the override to use the default.
@@ -1029,8 +1042,6 @@ lib:
       offered.
     empty: The selected agent is not configured to retrieve from any collection.
     unavailable: Saved, but not retrieved by the selected agent
-  knowledgeDatabases:
-    unavailable: '{name} (deleted or not visible to you)'
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search

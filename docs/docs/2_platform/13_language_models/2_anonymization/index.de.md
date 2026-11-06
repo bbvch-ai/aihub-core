@@ -40,18 +40,18 @@ Ist der Analyzer nicht erreichbar, wird die Anfrage mit einer Fehlermeldung abge
 
 Drei Schalter entscheiden, und jeder einzelne genügt:
 
-| Schalter | Wer setzt ihn | Was er anonymisiert |
-| --- | --- | --- |
-| `PII_ANONYMISE_EXTERNAL_MODELS=true` | Der Betreiber, pro Deployment (standardmässig aus) | Jeden Aufruf an ein ausserhalb des Deployments gehostetes Modell, für jeden Aufrufer: Chats, Agenten (inklusive Titel, Follow-ups und Memory-Extraktion) und Bots |
-| **Personendaten anonymisieren** in einem Agentenprofil | Der Admin des Profils | Jeden Aufruf der Läufe dieses Profils, unabhängig vom Modell |
-| Der [Anonymisierer](../../5_agents/14_anonymiser/)-Agent | Jeder Benutzer, von Hand | Den Text, den der Benutzer ihm sendet |
+| Schalter                                                 | Wer setzt ihn                                      | Was er anonymisiert                                                                                                                                               |
+| -------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PII_ANONYMISE_EXTERNAL_MODELS=true`                     | Der Betreiber, pro Deployment (standardmässig aus) | Jeden Aufruf an ein ausserhalb des Deployments gehostetes Modell, für jeden Aufrufer: Chats, Agenten (inklusive Titel, Follow-ups und Memory-Extraktion) und Bots |
+| **Personendaten anonymisieren** in einem Agentenprofil   | Der Admin des Profils                              | Jeden Aufruf der Läufe dieses Profils, unabhängig vom Modell                                                                                                      |
+| Der [Anonymisierer](../../5_agents/14_anonymiser/)-Agent | Jeder Benutzer, von Hand                           | Den Text, den der Benutzer ihm sendet                                                                                                                             |
 
 Jedes Modell in der Gateway-Konfiguration gibt an, wo es läuft (`model_info.aihub_hosting_location`); jedes Modell, das
 nicht `local` ist (die Schweizer Cloud-Anbieter und jeder andere externe Anbieter), gilt als ausserhalb des Deployments.
-Schalten Sie den Deployment-Schalter ein, wenn externe Modelle Personendaten erhalten könnten, die die Organisation nicht
-verlassen dürfen. Ist er aus, senden Chats mit einem externen Modell ihren Text unverändert, und nur Profile mit der
-Checkbox anonymisieren. Der Schalter wird beim Start des Gateways gelesen: Umgebungsvariable ändern und `litellm` neu
-starten. Ein anderer Wert als `true` oder `false` gilt als `true`, und das Gateway protokolliert einen Fehler.
+Schalten Sie den Deployment-Schalter ein, wenn externe Modelle Personendaten erhalten könnten, die die Organisation
+nicht verlassen dürfen. Ist er aus, senden Chats mit einem externen Modell ihren Text unverändert, und nur Profile mit
+der Checkbox anonymisieren. Der Schalter wird beim Start des Gateways gelesen: Umgebungsvariable ändern und `litellm`
+neu starten. Ein anderer Wert als `true` oder `false` gilt als `true`, und das Gateway protokolliert einen Fehler.
 
 Ein Aufruf kann den Guardrail auch selbst verlangen:
 
@@ -102,9 +102,8 @@ zusammen mit einer Firma), werden nicht maskiert.
 
 Pronomen, Rollen, Anreden, Feld- und Zimmerbezeichnungen («Sie», «vous», «Benutzer», «Patientin», «Grüezi», «Adresse»,
 «IBAN», «Zimmer») werden in Deutsch, Französisch, Italienisch und Englisch nie maskiert, auch mit einer kurzen Nummer
-(«Position 2», «Art. 5», «Zimmer 12»): Das Erkennungsmodell hält
-sie für Namen oder für den Typ, den sie benennen, und ihre Maskierung würde die Anfrage verfälschen. Die Liste ist
-`pii_allow_list` in der Gateway-Konfiguration.
+(«Position 2», «Art. 5», «Zimmer 12»): Das Erkennungsmodell hält sie für Namen oder für den Typ, den sie benennen, und
+ihre Maskierung würde die Anfrage verfälschen. Die Liste ist `pii_allow_list` in der Gateway-Konfiguration.
 
 ## Prüfen in Langfuse
 

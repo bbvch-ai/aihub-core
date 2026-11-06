@@ -187,6 +187,7 @@ thread:
 chat:
   assistant: Assistant
   document: Document
+  image: Image
 event:
   list:
     firstInteraction: 'Première interaction:'
@@ -453,6 +454,10 @@ agent:
         cet environnement.
   export:
     button: Exporter
+  storedSecrets:
+    title: Secrets à saisir à nouveau
+    detail: "Les secrets enregistrés ne sont jamais copiés dans un nouveau profil.\
+      \ Saisissez-les à nouveau avant d'enregistrer : {fields}"
   configuration:
     title: Configuration de l'agent
     description: Configurez le comportement d'exécution et les paramètres de cet agent
@@ -1004,6 +1009,14 @@ form:
       dans certains cas. Pour éviter tout comportement inattendu, veuillez la désactiver
       temporairement jusqu'à la publication d'un correctif.
 lib:
+  modelSelect:
+    contextWindow: 'Fenêtre de contexte : {input} jetons en entrée · {output} en sortie'
+    contextWindowInputOnly: 'Fenêtre de contexte : {input} jetons en entrée'
+    notSelectable: '{model} ne remplit pas les exigences de ce champ. Choisissez un autre modèle avant d’enregistrer.'
+    specialPurpose: '{model} est conçu pour une seule tâche et ne peut pas être choisi ici. Choisissez un autre modèle avant d’enregistrer.'
+    unavailable: '{model} ne vous est pas disponible. Choisissez un autre modèle avant d’enregistrer.'
+    loadFailed: Les modèles n’ont pas pu être chargés. Rechargez la page pour réessayer.
+    empty: Aucun des modèles que vous pouvez utiliser ne remplit les exigences de ce champ.
   modelBound:
     providerDefault: valeur par défaut du fournisseur
     overrideRequired: Saisissez une valeur, ou décochez le remplacement pour utiliser
@@ -1046,8 +1059,6 @@ lib:
       ne peut donc être proposée.
     empty: L'agent sélectionné n'est configuré pour interroger aucune collection.
     unavailable: Enregistrée, mais non interrogée par l'agent sélectionné
-  knowledgeDatabases:
-    unavailable: '{name} (supprimée ou non visible pour vous)'
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher
