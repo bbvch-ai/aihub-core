@@ -224,6 +224,10 @@ create_service_account() {
 # admin-panel edit of the prompt does not survive a restart.
 set_code_interpreter_prompt() {
     log "Setting Code Interpreter prompt..."
+    if [ ! -r "$CODE_INTERPRETER_PROMPT_FILE" ]; then
+        log "WARNING: Code Interpreter prompt file not readable: $CODE_INTERPRETER_PROMPT_FILE"
+        return 0
+    fi
     tmpfile=$(mktemp)
 
     cat > "$tmpfile" << 'SQLHEADER'
