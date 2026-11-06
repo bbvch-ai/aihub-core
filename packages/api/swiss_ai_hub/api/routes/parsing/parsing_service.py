@@ -62,14 +62,15 @@ class ParsingService:
         waits on, and a second loop (a second test) would be refused it."""
         loop = asyncio.get_running_loop()
         if loop not in cls._mineru_slots:
-            cls._mineru_slots[loop] = asyncio.Semaphore(cls.concurrent_mineru_conversions())
+            cls._mineru_slots[loop] = asyncio.Semaphore(MAX_CONCURRENT_MINERU_REQUESTS)
         return cls._mineru_slots[loop]
 
     @staticmethod
-    def concurrent_mineru_conversions() -> int:
-        """A long PDF sends up to MAX_CONCURRENT_BATCH_REQUESTS page batches at once, so the documents parsed side by
-        side share the request bound between them."""
-        return max(1, MAX_CONCURRENT_MINERU_REQUESTS // _mineru_settings.MAX_CONCURRENT_BATCH_REQUESTS)
+    def upload_mineru_settings() -> MineruSettings:
+        """An upload sends its page batches one after another, so each slot is one request whatever batch concurrency
+        is configured. Splitting the slots between batches instead left one of two idle for every short PDF, and a
+        message's attachments then parsed one at a time. Batch concurrency is not part of the parse-cache key."""
+        return _mineru_settings.model_copy(update={"MAX_CONCURRENT_BATCH_REQUESTS": 1})
 
     @staticmethod
     async def convert_from_bytes(
@@ -111,7 +112,10 @@ class ParsingService:
             loader = RawLoader()
             logger.debug(f"Using RawLoader for {filename}")
         elif extension in mineru_extensions:
-            loader = MineruLoader(conversion_slots=ParsingService.mineru_conversion_slots())
+            loader = MineruLoader(
+                config=ParsingService.upload_mineru_settings(),
+                conversion_slots=ParsingService.mineru_conversion_slots(),
+            )
             logger.debug(f"Using MineruLoader for {filename}")
         elif extension in markitdown_extensions:
             loader = MarkItDownLoader()

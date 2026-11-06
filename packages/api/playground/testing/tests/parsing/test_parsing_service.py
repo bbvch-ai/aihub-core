@@ -93,9 +93,12 @@ async def upload_all(tracker: MineruRequestTracker, pages: int) -> list[str]:
         )
 
 
+@pytest.mark.parametrize("concurrent_batch_requests", [1, 2])
 @pytest.mark.asyncio
-async def test_should_send_mineru_no_more_requests_than_the_bound_when_a_message_attaches_ten_pdfs(batch_settings):
-    batch_settings(page_batch_size=20, concurrent_batch_requests=1)
+async def test_should_use_every_request_slot_when_a_message_attaches_ten_short_pdfs(
+    batch_settings, concurrent_batch_requests: int
+):
+    batch_settings(page_batch_size=20, concurrent_batch_requests=concurrent_batch_requests)
     tracker = MineruRequestTracker()
 
     contents = await upload_all(tracker, pages=3)
@@ -105,15 +108,15 @@ async def test_should_send_mineru_no_more_requests_than_the_bound_when_a_message
 
 
 @pytest.mark.asyncio
-async def test_should_send_mineru_no_more_requests_than_the_bound_when_each_pdf_sends_batches_side_by_side(
+async def test_should_send_mineru_no_more_requests_than_the_bound_when_pdfs_are_configured_to_batch_side_by_side(
     batch_settings,
 ):
-    batch_settings(page_batch_size=2, concurrent_batch_requests=2)
+    batch_settings(page_batch_size=2, concurrent_batch_requests=4)
     tracker = MineruRequestTracker()
 
-    await upload_all(tracker, pages=6)
+    await upload_all(tracker, pages=8)
 
-    assert tracker.requests == UPLOADS_IN_ONE_MESSAGE * 3
+    assert tracker.requests == UPLOADS_IN_ONE_MESSAGE * 4
     assert tracker.most_at_once == MAX_CONCURRENT_MINERU_REQUESTS
 
 
@@ -125,12 +128,12 @@ async def test_should_serve_a_parsed_upload_from_the_cache_when_every_slot_is_bu
         await upload(b"pdf", "known.pdf")
 
         slots = ParsingService.mineru_conversion_slots()
-        for _ in range(ParsingService.concurrent_mineru_conversions()):
+        for _ in range(MAX_CONCURRENT_MINERU_REQUESTS):
             await slots.acquire()
         try:
             content = await asyncio.wait_for(upload(b"pdf", "known.pdf"), timeout=1)
         finally:
-            for _ in range(ParsingService.concurrent_mineru_conversions()):
+            for _ in range(MAX_CONCURRENT_MINERU_REQUESTS):
                 slots.release()
 
     assert content == "known.pdf"

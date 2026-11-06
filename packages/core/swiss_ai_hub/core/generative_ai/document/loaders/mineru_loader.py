@@ -84,6 +84,7 @@ class MineruLoader(BaseReader):
     def __init__(
         self,
         *args: Any,
+        config: Annotated[MineruSettings | None, "The deployment's settings when not given"] = None,
         conversion_slots: Annotated[
             asyncio.Semaphore | None,
             "Shared by a caller's loaders to bound its conversions at once; a cached document never waits for one",
@@ -91,7 +92,7 @@ class MineruLoader(BaseReader):
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.config = MineruSettings()
+        self.config = config or MineruSettings()
         self.parse_cache = MineruParseCache(self.config)
         self.conversion_slots = conversion_slots
 
