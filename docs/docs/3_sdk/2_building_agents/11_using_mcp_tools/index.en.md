@@ -15,13 +15,21 @@ a ticket, query a database, send a message.
 `McpClientConfig` describes a single MCP server connection. It is a `StepConfig`, so the dispatcher injects it into any
 step that declares it as a parameter — add it to your agent config and it becomes available in your workflow.
 
-| Field       | Purpose                                                  |
-| ----------- | -------------------------------------------------------- |
-| `name`      | A logical name for the connection.                       |
-| `url`       | The MCP server endpoint — FastMCP infers the transport.  |
-| `auth_mode` | How to authenticate: `none`, `api_key`, or `user_token`. |
-| `api_key`   | The static key, used only when `auth_mode` is `api_key`. |
-| `timeout`   | Client timeout in seconds.                               |
+| Field       | Purpose                                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------- |
+| `name`      | A logical name for the connection.                                                             |
+| `url`       | The MCP server's HTTP(S) endpoint; a URL ending in `/sse` uses SSE, any other Streamable HTTP. |
+| `auth_mode` | How to authenticate: `none`, `api_key`, or `user_token`.                                       |
+| `api_key`   | The static key, used only when `auth_mode` is `api_key`.                                       |
+| `timeout`   | Client timeout in seconds.                                                                     |
+
+## Which servers an agent may reach
+
+Whoever edits an agent profile sets the URL, and agents run next to the platform's own services. `McpClientFactory`
+therefore connects only to public hosts: a Docker service name, `localhost`, a private address, or a name that resolves
+to one is refused before the connection opens, and redirects are not followed. To reach an MCP server on an internal
+network, such as the platform's own API at `http://api:8000/mcp`, list its host name in `MCP_ALLOWED_PRIVATE_HOSTS`
+(comma-separated) in the agent's environment.
 
 ## Authentication modes
 
