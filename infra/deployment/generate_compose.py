@@ -195,6 +195,7 @@ OWN_IMAGE_LICENSES = {
     "knowledge_extraction_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
+    "mcp_react_agent": "Apache-2.0",
     "expert_rag_agent": "Apache-2.0",
     "expert_asking_agent": "Apache-2.0",
     "namespace_selection_agent": "Apache-2.0",

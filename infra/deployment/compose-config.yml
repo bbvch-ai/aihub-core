@@ -107,6 +107,11 @@ image_tags:
     local: rag_agent:latest
     nightly: rag_agent:nightly
     latest: rag_agent:latest
+  mcp_react_agent:
+    build: localbuild
+    local: mcp_react_agent:latest
+    nightly: mcp_react_agent:nightly
+    latest: mcp_react_agent:latest
   expert_rag_agent:
     build: localbuild
     local: expert_rag_agent:latest
