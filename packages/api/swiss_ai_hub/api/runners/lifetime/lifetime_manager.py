@@ -40,6 +40,7 @@ from swiss_ai_hub.api.routes.incident.github_issue_client import GitHubIssueClie
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
+    adopt_legacy_organization_memories,
     carry_over_bucket_model_columns,
     carry_over_pre_pair_knowledge_collections,
     encrypt_plaintext_agent_secrets,
@@ -47,6 +48,7 @@ from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     initialize_knowledge_buckets,
     initialize_startup_tenant,
     lower_llm_request_timeouts,
+    retarget_legacy_organization_memory_profiles,
     strip_retired_agent_config_keys,
     unset_oversized_input_limits,
     widen_empty_retriever_namespace_scopes,
@@ -298,6 +300,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await lower_llm_request_timeouts()
         await unset_oversized_input_limits()
         await encrypt_plaintext_agent_secrets()
+        await retarget_legacy_organization_memory_profiles()
+        await _provision_non_fatal("Legacy organization memory", adopt_legacy_organization_memories)
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.
         # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
