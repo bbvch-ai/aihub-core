@@ -2,12 +2,12 @@ import asyncio
 import json
 from io import BytesIO
 from pathlib import PurePath
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from pypdf import PdfWriter
 from swiss_ai_hub.core.generative_ai import MineruLoader, ParseCacheBucket
-from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruParseResponse
 from swiss_ai_hub.core.infrastructure import MineruSettings
 
 from swiss_ai_hub.api.routes.parsing import parsing_service
@@ -62,14 +62,15 @@ class MineruRequestTracker:
         include_images: bool,
         start_page_id: int | None = None,
         end_page_id: int | None = None,
-    ) -> MineruParseResponse:
+    ) -> SimpleNamespace:
+        """Shaped like MinerU's parse response, which is internal to the loader."""
         self.in_flight += 1
         self.requests += 1
         self.most_at_once = max(self.most_at_once, self.in_flight)
         await asyncio.sleep(0.01)
         self.in_flight -= 1
         pages = 1 if start_page_id is None or end_page_id is None else end_page_id - start_page_id + 1
-        return MineruParseResponse(
+        return SimpleNamespace(
             backend="b",
             version="v",
             results={
