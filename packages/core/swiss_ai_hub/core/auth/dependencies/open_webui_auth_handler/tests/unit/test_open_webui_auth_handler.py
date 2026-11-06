@@ -399,3 +399,88 @@ def test_openwebui_auth_succeeds_when_token_owner_has_no_tenant(
     assert user.id == end_user_oid
     assert user.acting_within_tenant is not None
     assert user.acting_within_tenant.id == str(default_tenant.id)
+
+
+# --- A sysadmin chatting through OpenWebUI ---
+# The signed headers carry no roles, so a sysadmin without any tenant role was refused every agent the chat offered.
+
+
+def _authenticate_end_user(
+    cleanup_document: list[Any], monkeypatch: pytest.MonkeyPatch, realm_roles: list[str]
+) -> UserIdentity:
+    import asyncio
+    import hashlib
+    import hmac
+
+    from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
+    from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+    from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
+
+    token_owner_oid = str(ObjectId())
+    register_fake_keycloak_user(user_id=token_owner_oid, name="Service Account", email="svc@example.com", attributes={})
+    token_doc = BearerToken.create_new_token(
+        name="svc-token", expiry_date=datetime.now(UTC) + timedelta(hours=1), user_oid=token_owner_oid
+    )
+    cleanup_document.append(token_doc)
+
+    end_user_oid = str(ObjectId())
+    end_user_name, end_user_email = "Sys Admin", "sys.admin@example.com"
+    register_fake_keycloak_user(user_id=end_user_oid, name=end_user_name, email=end_user_email)
+    # A member of the startup tenant who holds no role in it.
+    membership = UserTenantRoleEntity.create_or_update(
+        user_id=end_user_oid,
+        tenant_id=StartupTenantSettings().ID,
+        roles=[],
+        validate_roles=False,
+    )
+    cleanup_document.append(membership)
+
+    async def fake_realm_roles(user_id: str) -> list[str]:
+        return realm_roles if user_id == end_user_oid else []
+
+    monkeypatch.setattr(KeycloakAdminService, "get_user_realm_roles", staticmethod(fake_realm_roles))
+
+    secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET.get_secret_value().encode("utf-8")
+    signature = hmac.new(secret, f"name:{end_user_name},email:{end_user_email}".encode(), hashlib.sha256).hexdigest()
+    request = create_dummy_request(
+        {
+            "X-OpenWebUI-User-Name": end_user_name,
+            "X-OpenWebUI-User-Email": end_user_email,
+            "X-OpenWebUI-Signature": signature,
+            "Authorization": f"Bearer {token_doc.token}",
+        }
+    )
+    handler = OpenWebuiAuthHandler(base_auth_handler=TokenAuthHandler())
+
+    async def run() -> UserIdentity:
+        return await handler(request, await HTTPBearer()(request))
+
+    return asyncio.run(run())
+
+
+def test_openwebui_auth_gives_a_sysadmin_without_tenant_roles_user_access_only(
+    cleanup_document: list[Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Anyone holding the signing secret and any API token can name a sysadmin in the headers, so the chat's user
+    access is all they carry: never the sysadmin gate, never admin rights."""
+    from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+    from swiss_ai_hub.core.auth.access.access_level import AccessLevel
+
+    user = _authenticate_end_user(cleanup_document, monkeypatch, realm_roles=["AIHubSysAdmin", "AIHubAccess"])
+    access_checker = AccessChecker.from_user(user)
+
+    assert user.openwebui_sys_admin
+    assert not user.is_sys_admin
+    assert user.roles == []
+    assert access_checker.has_access_to_service("agent")
+    assert access_checker.access_level_for_agent("LLMWrappingAgent", "meeting-minutes") == AccessLevel.ACCESS_USER
+    assert access_checker.access_level("aihub.admin.service.tenant") == AccessLevel.ACCESS_DENIED
+
+
+def test_openwebui_auth_does_not_mark_other_users_as_sysadmin(
+    cleanup_document: list[Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = _authenticate_end_user(cleanup_document, monkeypatch, realm_roles=["AIHubAccess"])
+
+    assert not user.is_sys_admin
+    assert not user.openwebui_sys_admin

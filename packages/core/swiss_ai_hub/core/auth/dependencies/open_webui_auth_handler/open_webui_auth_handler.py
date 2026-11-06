@@ -10,6 +10,7 @@ from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +69,16 @@ class OpenWebuiAuthHandler(AuthHandler):
                 detail="User not found. Please login via OAuth2 before using OpenWebUI integration.",
             )
 
+        # A sysadmin holding no tenant role would be refused every agent the chat offers them. The signed headers only
+        # prove who the user is (this handler runs first on every route), so they get the chat's user access, never
+        # is_sys_admin and with it the sysadmin plane.
+        realm_roles = await KeycloakAdminService.get_user_realm_roles(keycloak_user.id)
         return await self.build_identity(
-            user_id=keycloak_user.id, name=keycloak_user.name, email=keycloak_user.email, request=request
+            user_id=keycloak_user.id,
+            name=keycloak_user.name,
+            email=keycloak_user.email,
+            request=request,
+            openwebui_sys_admin=SYS_ADMIN_ROLE in realm_roles,
         )
 
     async def authenticate_token(self, token: str) -> UserIdentity:

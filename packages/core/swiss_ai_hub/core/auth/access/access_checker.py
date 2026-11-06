@@ -2,6 +2,7 @@ import re
 
 from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_OPENWEBUI_ACCESS_RULES
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
 _ADMIN_PREFIX = "aihub.admin."
@@ -86,13 +87,16 @@ class AccessChecker:
         IMPORTANT: Enforces tenant-level restrictions - tenant access rules act as a ceiling.
         Sysadmins bypass both tiers — the ``AIHubSysAdmin`` realm role grants implicit
         admin access across every tenant and every resource. No ``UserTenantRoleEntity``
-        rows are required and no tenant context is needed.
+        rows are required and no tenant context is needed. A sysadmin arriving through
+        OpenWebUI (``openwebui_sys_admin``) gets no bypass, only user access under the ceiling.
         """
         if user.acting_within_tenant is None:
             return cls(user_access_rules=[], tenant_access_rules=[], is_sys_admin=user.is_sys_admin)
 
         # User roles are already resolved for the acting tenant
         user_access_rules = RoleEntity.get_access_rules_for_roles(user.roles, tenant_id=user.acting_within_tenant.id)
+        if user.openwebui_sys_admin:
+            user_access_rules = {*user_access_rules, *SYS_ADMIN_OPENWEBUI_ACCESS_RULES}
 
         # Tenant access rules come from the embedded TenantIdentity
         tenant_access_rules = user.acting_within_tenant.access_rules

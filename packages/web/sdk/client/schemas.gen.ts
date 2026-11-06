@@ -31987,6 +31987,13 @@ export const UserIdentitySchema = {
         "Whether the user has the AIHubSysAdmin realm role (from the JWT).",
       default: false,
     },
+    openwebui_sys_admin: {
+      type: "boolean",
+      title: "Openwebui Sys Admin",
+      description:
+        "Whether the user has the AIHubSysAdmin realm role but arrived through OpenWebUI's signed headers. Grants user access in the acting tenant instead of the sysadmin bypass.",
+      default: false,
+    },
   },
   type: "object",
   required: ["id", "name", "email", "roles"],
