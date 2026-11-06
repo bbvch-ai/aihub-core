@@ -4,8 +4,9 @@ import logging
 import math
 import os
 from collections.abc import Awaitable
+from contextlib import nullcontext
 from io import BytesIO
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 import httpx
 from llama_index.core.readers.base import BaseReader
@@ -80,10 +81,19 @@ class MineruLoader(BaseReader):
         ".jp2": "image/jp2",
     }
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        *args: Any,
+        conversion_slots: Annotated[
+            asyncio.Semaphore | None,
+            "Shared by a caller's loaders to bound its conversions at once; a cached document never waits for one",
+        ] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.config = MineruSettings()
         self.parse_cache = MineruParseCache(self.config)
+        self.conversion_slots = conversion_slots
 
     @trace_fn
     def load_data(
@@ -198,7 +208,8 @@ class MineruLoader(BaseReader):
         if cached is not None:
             logger.info(f"[MineruLoader] {filename}: served from the parse cache")
             return cached
-        result = await self._convert_uncached(file_bytes, filename, include_images)
+        async with self.conversion_slots or nullcontext():
+            result = await self._convert_uncached(file_bytes, filename, include_images)
         await self.parse_cache.put(file_bytes, filename, include_images, result)
         return result
 

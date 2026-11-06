@@ -2,6 +2,8 @@ import asyncio
 import logging
 import mimetypes
 import urllib.parse
+from typing import ClassVar
+from weakref import WeakKeyDictionary
 
 from fastapi import HTTPException
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
@@ -24,6 +26,12 @@ logger = logging.getLogger(__name__)
 _mineru_settings = MineruSettings()
 _parsing_settings = ParsingSettings()
 
+# MinerU serves MINERU_API_MAX_CONCURRENT_REQUESTS (3) conversions at once and answers the rest with 503. OpenWebUI
+# parses every file of a message the moment it is uploaded, so ten PDFs ran out of their ~35s retry budget side by side
+# and the agent had to parse them again in the chat turn. Two at a time leaves a slot for agents and ingestion; the
+# others wait here, which OpenWebUI tolerates since it calls this endpoint without a timeout.
+MAX_CONCURRENT_MINERU_CONVERSIONS = 2
+
 
 def _get_extension(filename: str, content_type: str = "") -> str:
     """Extract file extension from filename or infer from content type via mimetypes."""
@@ -45,6 +53,17 @@ def _get_extension(filename: str, content_type: str = "") -> str:
 
 class ParsingService:
     """Service for converting documents to markdown using MinerU, MarkItDown, or RawLoader."""
+
+    _mineru_slots: ClassVar[WeakKeyDictionary[asyncio.AbstractEventLoop, asyncio.Semaphore]] = WeakKeyDictionary()
+
+    @classmethod
+    def mineru_conversion_slots(cls) -> asyncio.Semaphore:
+        """Shared by every upload this process parses. One per event loop: a semaphore binds to the loop it first
+        waits on, and a second loop (a second test) would be refused it."""
+        loop = asyncio.get_running_loop()
+        if loop not in cls._mineru_slots:
+            cls._mineru_slots[loop] = asyncio.Semaphore(MAX_CONCURRENT_MINERU_CONVERSIONS)
+        return cls._mineru_slots[loop]
 
     @staticmethod
     async def convert_from_bytes(
@@ -86,7 +105,7 @@ class ParsingService:
             loader = RawLoader()
             logger.debug(f"Using RawLoader for {filename}")
         elif extension in mineru_extensions:
-            loader = MineruLoader()
+            loader = MineruLoader(conversion_slots=ParsingService.mineru_conversion_slots())
             logger.debug(f"Using MineruLoader for {filename}")
         elif extension in markitdown_extensions:
             loader = MarkItDownLoader()
