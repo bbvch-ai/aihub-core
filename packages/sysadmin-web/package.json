@@ -44,6 +44,6 @@
     "eslint-plugin-sonarjs": "^4.0.3",
     "nuxt": "3.21.10",
     "typescript": "^5.9.3",
-    "vue": "3.5.17"
+    "vue": "3.5.44"
   }
 }
