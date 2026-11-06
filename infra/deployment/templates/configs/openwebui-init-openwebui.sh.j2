@@ -2,7 +2,8 @@
 # =============================================================================
 # OpenWebUI Initialization Script (PostgreSQL Direct Insert)
 # =============================================================================
-# Registers functions from Python files and creates the AI-Hub service account.
+# Registers functions from Python files, creates the AI-Hub service account and
+# sets the Code Interpreter prompt.
 #
 # Generated from template. Do not edit directly.
 # =============================================================================
@@ -15,6 +16,7 @@ POSTGRES_DB="${POSTGRES_DB}"
 POSTGRES_USER="${POSTGRES_USER}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
 FUNCTIONS_DIR="${FUNCTIONS_DIR}"
+CODE_INTERPRETER_PROMPT_FILE="${CODE_INTERPRETER_PROMPT_FILE}"
 
 export PGPASSWORD="$POSTGRES_PASSWORD"
 
@@ -215,6 +217,35 @@ create_service_account() {
     " 2>&1 && log "Service account ready" || log "WARNING: Service account creation failed"
 }
 
+# Replace OpenWebUI's built-in Code Interpreter prompt. Its stock wording makes models link files saved
+# to the in-browser Pyodide folder /mnt/uploads, which has no URL and opens a 404 page. OpenWebUI reads the
+# CODE_INTERPRETER_PROMPT_TEMPLATE env var only to seed a config row that does not exist yet, so on a running
+# deployment the row holds "" and only a direct write reaches it. The row is rewritten on every start, so an
+# admin-panel edit of the prompt does not survive a restart.
+set_code_interpreter_prompt() {
+    log "Setting Code Interpreter prompt..."
+    tmpfile=$(mktemp)
+
+    cat > "$tmpfile" << 'SQLHEADER'
+INSERT INTO config (key, value, updated_at)
+VALUES ('code_interpreter.prompt_template', to_json($PROMPT$
+SQLHEADER
+
+    cat "$CODE_INTERPRETER_PROMPT_FILE" >> "$tmpfile"
+
+    cat >> "$tmpfile" << SQLFOOTER
+\$PROMPT\$::text), $(date +%s))
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at;
+SQLFOOTER
+
+    if run_sql -v ON_ERROR_STOP=1 -f "$tmpfile" 2>&1; then
+        log "Code Interpreter prompt set"
+    else
+        log "WARNING: Failed to set Code Interpreter prompt"
+    fi
+    rm -f "$tmpfile"
+}
+
 # Main execution
 main() {
     log "Starting OpenWebUI function registration (PostgreSQL direct insert)..."
@@ -250,6 +281,8 @@ main() {
 
     # Create AI-Hub service account admin for API access
     create_service_account
+
+    set_code_interpreter_prompt
 
     # Find and register all Python files
     registered=0

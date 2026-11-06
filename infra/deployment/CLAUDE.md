@@ -33,7 +33,8 @@ deployment/
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
 │       ├── s3-ttl-init.sh.j2          # Bucket expiry as filer TTL rules (never S3 lifecycle, see ADR 2026_10_27)
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
-│       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
+│       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account + Code Interpreter prompt)
+│       ├── openwebui-code-interpreter-prompt.txt  # Replaces OpenWebUI's Code Interpreter prompt (no /mnt/uploads links)
 │       ├── ferretdb-init.sh.j2        # FerretDB PG init (read-only role of the knowledge content search)
 │       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)
 │           ├── bootstrap/             # First-start-only seeds: realm-settings, components, groups, users-superuser,
