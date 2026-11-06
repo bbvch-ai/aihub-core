@@ -15,6 +15,21 @@ Dockerfile*                 @bbvch-ai/aihub-core-maintainers
 # Shared core package — changes ripple across all other packages
 packages/core/              @bbvch-ai/aihub-core-maintainers
 
+# Claude Code configuration — hooks and MCP launch scripts run on every developer machine
+/.claude/                   @bbvch-ai/aihub-core-maintainers
+/.mcp.json                  @bbvch-ai/aihub-core-maintainers
+CLAUDE.md                   @bbvch-ai/aihub-core-maintainers
+
+# Build tooling and dependency manifests
+Makefile                    @bbvch-ai/aihub-core-maintainers
+pyproject.toml              @bbvch-ai/aihub-core-maintainers
+/uv.lock                    @bbvch-ai/aihub-core-maintainers
+pnpm-lock.yaml              @bbvch-ai/aihub-core-maintainers
+package.json                @bbvch-ai/aihub-core-maintainers
+pnpm-workspace.yaml         @bbvch-ai/aihub-core-maintainers
+/.npmrc                     @bbvch-ai/aihub-core-maintainers
+/.pre-commit-config.yaml    @bbvch-ai/aihub-core-maintainers
+
 # Security policy and licensing
 SECURITY.md                 @bbvch-ai/aihub-core-maintainers
 LICENSE                     @bbvch-ai/aihub-core-maintainers
