@@ -1,9 +1,10 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
-from scim2_models import Group, User
+from scim2_client.errors import SCIMResponseError
+from scim2_models import Email, Group, User
 
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
@@ -26,6 +27,15 @@ def _group(display_name: str, group_id: str) -> Group:
     group = Group(display_name=display_name)
     group.id = group_id
     return group
+
+
+def _build_scim_email_of_a_local_address() -> None:
+    """Raises the ValidationError ``create_user`` hits for the k8s superuser's reserved-domain address."""
+    Email(value="aihub-superuser@ai-hub.local")
+
+
+def _refuse_over_scim() -> None:
+    raise SCIMResponseError("OpenWebUI refused the account")
 
 
 class TestProvisionMissingAccounts:
@@ -62,6 +72,29 @@ class TestProvisionMissingAccounts:
             await provisioner._provision_missing_accounts([user], {"kc-a"}, {})
 
         create.assert_not_called()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "refusal",
+        [_build_scim_email_of_a_local_address, _refuse_over_scim],
+        ids=["undeliverable-email", "scim-refusal"],
+    )
+    async def test_should_skip_a_user_whose_account_cannot_be_created_and_provision_the_rest(
+        self, provisioner: OpenWebuiProvisioner, refusal: Callable[[], object], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """The k8s superuser's `.local` address used to abort the whole group sync for every user."""
+
+        async def create_user(email: str, display_name: str, external_id: str, scim: object) -> User:
+            if external_id == "kc-superuser":
+                refusal()
+            return _owui_user(email, f"owui-{external_id}")
+
+        users = [_keycloak_user("kc-superuser", "aihub-superuser@ai-hub.local"), _keycloak_user("kc-a", "a@x")]
+        with patch.object(provisioner._openwebui, "create_user", side_effect=create_user):
+            provisioned = await provisioner._provision_missing_accounts(users, {"kc-superuser", "kc-a"}, {})
+
+        assert provisioned == {"kc-a": "owui-kc-a"}
+        assert "kc-superuser" in caplog.text
 
 
 class TestProvisioningDuringGroupSync:

@@ -60,10 +60,11 @@ context, AI-Hub pushes permission state into Open WebUI rather than filtering at
    has not opened the chat yet gets their Open WebUI account created over SCIM in the same sync, so their models are
    there on their first chat visit; the chat login then links to that account. Every tenant also has an
    `aihub:{tenant}:AIHubSysAdmin` group holding the system administrators whose active tenant it is, so a sysadmin sees
-   what a full admin of that tenant sees without holding any tenant role, and can chat with those agents. The role name
-   `AIHubSysAdmin` is reserved and cannot be used for a tenant role. Granting or revoking the `AIHubSysAdmin` realm role
-   happens in Keycloak, which does not notify AI-Hub, so it reaches the chat with the next access sync — switching
-   tenants triggers one
+   every agent and model that tenant offers without holding any tenant role, and can chat with them. In the chat a
+   sysadmin has the rights of a regular user of that tenant: requests that come through Open WebUI never carry
+   system-administration rights, such as deleting a tenant. The role name `AIHubSysAdmin` is reserved and cannot be used
+   for a tenant role. Granting or revoking the `AIHubSysAdmin` realm role happens in Keycloak, which does not notify
+   AI-Hub, so it reaches the chat with the next access sync — switching tenants triggers one
 2. **Workspace models**: For each online agent, AI-Hub creates a workspace model that delegates to the corresponding
    pipe function
 3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using the platform's permission

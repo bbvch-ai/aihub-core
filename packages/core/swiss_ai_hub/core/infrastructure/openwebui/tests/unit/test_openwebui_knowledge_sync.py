@@ -6,8 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from scim2_models import Group
 
-from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
-from swiss_ai_hub.core.infrastructure.openwebui.openwebui_group_access import SYS_ADMIN_GROUP_ACCESS_RULES
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_OPENWEBUI_ACCESS_RULES, SYS_ADMIN_ROLE
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_knowledge_sync import OpenWebuiKnowledgeSync
 
 MODULE = "swiss_ai_hub.core.infrastructure.openwebui.openwebui_knowledge_sync"
@@ -129,7 +128,7 @@ async def test_an_entry_we_created_but_never_recorded_is_removed():
 @pytest.mark.asyncio
 async def test_the_sys_admin_group_may_reference_every_collection_its_tenant_allows():
     sys_admin_group = Group(id="g-sys", display_name=f"aihub:acme:{SYS_ADMIN_ROLE}")
-    role_rules = ROLE_RULES | {("acme", SYS_ADMIN_ROLE): SYS_ADMIN_GROUP_ACCESS_RULES}
+    role_rules = ROLE_RULES | {("acme", SYS_ADMIN_ROLE): SYS_ADMIN_OPENWEBUI_ACCESS_RULES}
     client = _client([])
     with (
         patch.object(

@@ -31,9 +31,13 @@ following the same provisioner pattern used for Langfuse (`LangfuseProvisioner`)
    tenant — users only appear in groups matching their currently active tenant. Each tenant also gets an
    `aihub:{tenant}:AIHubSysAdmin` group for the system administrators acting in it: `AccessChecker` lets a sysadmin use
    every agent without a tenant role, so without this group a sysadmin holding no role saw no agent at all. The group
-   carries `aihub.admin.>` and `aihub.user.>` under the tenant ceiling — the picker offers what a full admin of that
-   tenant sees — and the role name `AIHubSysAdmin` is reserved for it. For the chat to then answer,
-   `OpenWebuiAuthHandler` reads the user's realm roles from Keycloak and sets `is_sys_admin`, as the token handler does.
+   carries `aihub.user.>` under the tenant ceiling (`SYS_ADMIN_OPENWEBUI_ACCESS_RULES`), so the picker offers whatever
+   the tenant offers, and the role name `AIHubSysAdmin` is reserved for it. For the chat to then answer,
+   `OpenWebuiAuthHandler` reads the user's realm roles from Keycloak and marks a sysadmin `openwebui_sys_admin`, which
+   `AccessChecker` turns into the same rule under the same ceiling. It never sets `is_sys_admin`: that handler runs
+   first on every route of the API and the sysadmin API, and its signed headers prove only who the user is, so anyone
+   holding the signing secret and any API token could otherwise reach the sysadmin plane (tenant deletion, every
+   tenant's data) in a sysadmin's name.
 2. **Workspace models** (via JWT-authenticated REST API): For each online agent, AI-Hub creates a workspace model that
    delegates to the pipe function (`base_model_id = "aihub-pipeline.{agent_class}.{agent_id}"`).
 3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using `AccessChecker` with

@@ -69,15 +69,16 @@ class OpenWebuiAuthHandler(AuthHandler):
                 detail="User not found. Please login via OAuth2 before using OpenWebUI integration.",
             )
 
-        # The signed headers carry no roles claim, so the realm roles are read from Keycloak. Without the sysadmin
-        # flag, a sysadmin holding no tenant role is refused every agent they can pick in the chat.
+        # A sysadmin holding no tenant role would be refused every agent the chat offers them. The signed headers only
+        # prove who the user is (this handler runs first on every route), so they get the chat's user access, never
+        # is_sys_admin and with it the sysadmin plane.
         realm_roles = await KeycloakAdminService.get_user_realm_roles(keycloak_user.id)
         return await self.build_identity(
             user_id=keycloak_user.id,
             name=keycloak_user.name,
             email=keycloak_user.email,
             request=request,
-            is_sys_admin=SYS_ADMIN_ROLE in realm_roles,
+            openwebui_sys_admin=SYS_ADMIN_ROLE in realm_roles,
         )
 
     async def authenticate_token(self, token: str) -> UserIdentity:

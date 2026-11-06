@@ -5,14 +5,16 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
+from pydantic import ValidationError
 from redis.asyncio import Redis
 from redis.exceptions import LockError
 from scim2_client.engines.httpx import AsyncSCIMClient
+from scim2_client.errors import SCIMResponseError
 from scim2_models import Group, User
 
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
-from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_OPENWEBUI_ACCESS_RULES, SYS_ADMIN_ROLE
 from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -23,7 +25,6 @@ from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_group_access import (
     AIHUB_GROUP_PREFIX,
-    SYS_ADMIN_GROUP_ACCESS_RULES,
     OpenWebuiGroupAccess,
     RoleAccessRules,
     TenantAccessRules,
@@ -345,11 +346,28 @@ class OpenWebuiProvisioner:
         for user in keycloak_users:
             if user.id in user_id_mapping or user.id not in group_member_ids or not user.email or not user.enabled:
                 continue
+            account_id = await self._create_account(user, scim)
+            if account_id:
+                provisioned[user.id] = account_id
+        return provisioned
+
+    async def _create_account(self, user: KeycloakUser, scim: AsyncSCIMClient | None) -> str | None:
+        """Returns None when OpenWebUI cannot hold this one user, so the sync still reaches everyone else.
+
+        SCIM only accepts deliverable addresses, and the seeded superuser of a k8s instance has a ``.local`` one.
+        Since every sysadmin joins a group, aborting here stopped the group sync for all users. The skipped user
+        stays out of the groups until their address or account is fixed; unreachable OpenWebUI still fails the sync.
+        """
+        try:
             account = await self._openwebui.create_user(
                 email=user.email, display_name=user.name, external_id=user.id, scim=scim
             )
-            provisioned[user.id] = account.id
-        return provisioned
+        except (ValidationError, SCIMResponseError) as error:
+            logger.warning(
+                "OpenWebUI account for Keycloak user %s not created, left out of the groups: %s", user.id, error
+            )
+            return None
+        return account.id
 
     async def _sync_group_memberships(
         self,
@@ -725,7 +743,7 @@ class OpenWebuiProvisioner:
             if role.tenant_id in tenant_name_by_id
         }
         for tenant_name in tenant_name_by_id.values():
-            role_rules[(tenant_name, SYS_ADMIN_ROLE)] = list(SYS_ADMIN_GROUP_ACCESS_RULES)
+            role_rules[(tenant_name, SYS_ADMIN_ROLE)] = list(SYS_ADMIN_OPENWEBUI_ACCESS_RULES)
         return role_rules
 
     async def _delete_legacy_preset_models(self, http: httpx.AsyncClient) -> None:

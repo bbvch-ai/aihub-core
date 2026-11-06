@@ -458,16 +458,23 @@ def _authenticate_end_user(
     return asyncio.run(run())
 
 
-def test_openwebui_auth_marks_a_sysadmin_without_tenant_roles(
+def test_openwebui_auth_gives_a_sysadmin_without_tenant_roles_user_access_only(
     cleanup_document: list[Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Anyone holding the signing secret and any API token can name a sysadmin in the headers, so the chat's user
+    access is all they carry: never the sysadmin gate, never admin rights."""
     from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+    from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 
     user = _authenticate_end_user(cleanup_document, monkeypatch, realm_roles=["AIHubSysAdmin", "AIHubAccess"])
+    access_checker = AccessChecker.from_user(user)
 
-    assert user.is_sys_admin
+    assert user.openwebui_sys_admin
+    assert not user.is_sys_admin
     assert user.roles == []
-    assert AccessChecker.from_user(user).has_access_to_agent("LLMWrappingAgent", "meeting-minutes")
+    assert access_checker.has_access_to_service("agent")
+    assert access_checker.access_level_for_agent("LLMWrappingAgent", "meeting-minutes") == AccessLevel.ACCESS_USER
+    assert access_checker.access_level("aihub.admin.service.tenant") == AccessLevel.ACCESS_DENIED
 
 
 def test_openwebui_auth_does_not_mark_other_users_as_sysadmin(
@@ -476,3 +483,4 @@ def test_openwebui_auth_does_not_mark_other_users_as_sysadmin(
     user = _authenticate_end_user(cleanup_document, monkeypatch, realm_roles=["AIHubAccess"])
 
     assert not user.is_sys_admin
+    assert not user.openwebui_sys_admin

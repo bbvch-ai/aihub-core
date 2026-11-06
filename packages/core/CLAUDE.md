@@ -476,7 +476,10 @@ parsing and returns a fixed identity built from the constants in `test_identity.
 Sysadmin-only endpoints (those requiring the `AIHubSysAdmin` Keycloak realm role) are NOT protected by a separate auth
 handler. They use `Security(self.sys_admin_user())` from the `Controller` base class, which wraps `authenticated_user()`
 and gates on `UserIdentity.is_sys_admin`. The flag itself is populated by the regular auth handlers from the JWT roles
-claim (or, for static tokens and OpenWebUI's signed headers, via `KeycloakAdminService.get_user_realm_roles`).
+claim (or, for static tokens, via `KeycloakAdminService.get_user_realm_roles`). `OpenWebuiAuthHandler` never sets it: it
+runs first on every route, and its signed headers prove only who the user is. A sysadmin arriving that way is marked
+`openwebui_sys_admin` instead, which `AccessChecker.from_user` turns into `SYS_ADMIN_OPENWEBUI_ACCESS_RULES`
+(`aihub.user.>`) under the tenant ceiling, the same rule the OpenWebUI sysadmin group carries.
 
 ### Permission System (AccessChecker)
 
@@ -517,7 +520,8 @@ wildcard, a dot). A `None` id would otherwise render as `process.None.None`, whi
 **Sysadmin short-circuit**: When `UserIdentity.is_sys_admin=True`, `access_level()` returns `ACCESS_ADMIN`
 unconditionally, bypassing both the tenant-ceiling and user-rule stages. Sysadmins may have `acting_within_tenant=None`.
 The auth pipeline (`AuthHandler._resolve_tenant_by_id` / `_resolve_active_tenant`) also skips the `UserTenantRoleEntity`
-membership check for sysadmins. See ADR `2026_04_15_sysadmin_implicit_admin_access.md`.
+membership check for sysadmins. See ADR `2026_04_15_sysadmin_implicit_admin_access.md`. `openwebui_sys_admin` identities
+get no short-circuit (see Auth Handlers above).
 
 ## Internationalization (i18n)
 
