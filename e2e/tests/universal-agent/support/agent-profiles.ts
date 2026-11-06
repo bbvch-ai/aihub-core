@@ -14,8 +14,19 @@ import type { OpenWebuiApi } from './openwebui-api'
 
 type Configuration = Record<string, unknown>
 
-/** The template's own restrictions would leak into every spec, so a profile starts from none of them. */
-const UNRESTRICTED_TOOL_LOOP: ToolLoopOverrides = { disable_tools: false, disabled_tools: [], approvals: [] }
+/**
+ * The template's own restrictions would leak into every spec, so a profile starts from none of them. The sandbox
+ * tools that ask by default are relaxed too; the approval spec sets its own rules.
+ */
+const UNRESTRICTED_TOOL_LOOP: ToolLoopOverrides = {
+  disable_tools: false,
+  disabled_tools: [],
+  approvals: [
+    { tool: 'run_command', policy: 'never' },
+    { tool: 'write_file', policy: 'never' },
+    { tool: 'replace_file_content', policy: 'never' },
+  ],
+}
 
 interface AgentInstance {
   agent_id: string

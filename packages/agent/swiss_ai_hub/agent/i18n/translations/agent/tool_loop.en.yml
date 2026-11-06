@@ -78,6 +78,9 @@ config:
     help: Tools this agent never offers.
   approval_tool:
     label: Tool
+    help: A tool without a rule here follows its own default, shown next to its name
+      when it asks.
+    with_default: '%{tool} (default: %{policy})'
   approval_policy:
     label: Approval
   policies:

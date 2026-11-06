@@ -72,6 +72,7 @@ class ExternalAgentEventDistributor:
             raise ValueError(f"Received event of unhandled type: {external_event.event.event_name}")
 
         if external_event.event.is_hitl_response_event:
+            external_event.event.responded_by = user.id if user else None
             await self._handle_human_in_the_loop_response(thread, external_event, aihub_headers)
 
         if external_event.event.is_bitl_response_event:
@@ -160,13 +161,15 @@ class ExternalAgentEventDistributor:
         """
         Handle a HumanInTheLoopResponseEvent.
 
-        Checks that the agent mentioned in the event's topic is part of the thread.
-        Then publishes the HITL response to the appropriate subject so the agent can process it.
+        The answered request names its run, so the response may only be routed into the thread the sender is a
+        member of. Whether the sender may answer that run's request is the
+        agent's to decide, from the `responded_by` stamped on the response.
         """
         logger.debug(f"Handling human in the loop response for thread {external_event.thread_id}")
         topic = external_event.event.request_event.topic
 
-        assert str(thread.id) == topic.thread_id, f"Thread ID mismatch: {thread.id} != {topic.thread_id}"
+        if str(thread.id) != topic.thread_id:
+            raise PermissionError(f"The answered request does not belong to thread {thread.id}")
 
         topic_manager = AgentThreadTopicManager(
             agent_class=topic.agent_class,
