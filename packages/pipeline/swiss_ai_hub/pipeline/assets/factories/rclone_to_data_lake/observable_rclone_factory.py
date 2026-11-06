@@ -11,8 +11,10 @@ from swiss_ai_hub.pipeline.ops.rclone.data_version_by_partition_for_rclone_files
 )
 from swiss_ai_hub.pipeline.util.async_utils import run_async
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
+from swiss_ai_hub.pipeline.util.observation_rclone_remote import ObservationRcloneRemote
+from swiss_ai_hub.pipeline.util.rclone_token_write_back import RcloneTokenWriteBack
 from swiss_ai_hub.pipeline.util.run_routing import bucket_from_run_tag
-from swiss_ai_hub.pipeline.util.source_builders import build_rclone_client, rclone_remote_for_bucket
+from swiss_ai_hub.pipeline.util.source_builders import build_rclone_client
 
 
 def observable_rclone_factory(
@@ -25,7 +27,9 @@ def observable_rclone_factory(
     """Observes one knowledge database's rclone remote, resolved from the run.
 
     The bucket travels in the ``aihub/bucket`` run tag; its remote is rebuilt from the stored source configuration
-    on every observation, so credential edits and a restarted daemon need no operator action.
+    on every observation, so credential edits and a restarted daemon need no operator action. The observation lists
+    through a remote private to its run and, once the data versions are computed, writes an OAuth token rclone
+    refreshed meanwhile back to the database.
     """
 
     @observable_source_asset(
@@ -37,19 +41,21 @@ def observable_rclone_factory(
     )
     def observable_rclone(context: OpExecutionContext) -> DataVersionsByPartition:
         bucket = bucket_from_run_tag(context)
-        remote = rclone_remote_for_bucket(bucket, source)
-        files = run_async(
-            build_rclone_client().list_files(
-                remote.fs, include=remote.include_patterns, exclude=remote.exclude_patterns
+        with ObservationRcloneRemote.opened(bucket, source, context.run_id) as remote:
+            files = run_async(
+                build_rclone_client().list_files(
+                    remote.fs, include=remote.include_patterns, exclude=remote.exclude_patterns
+                )
             )
-        )
-        return data_version_by_partition_for_rclone_files(
-            context=context,
-            asset_key=key,
-            partition=partitions,
-            bucket=bucket,
-            rclone_files=files,
-            max_partitions=max_partitions,
-        )
+            data_versions = data_version_by_partition_for_rclone_files(
+                context=context,
+                asset_key=key,
+                partition=partitions,
+                bucket=bucket,
+                rclone_files=files,
+                max_partitions=max_partitions,
+            )
+            RcloneTokenWriteBack.persist_refreshed_token(bucket, source, remote)
+        return data_versions
 
     return observable_rclone
