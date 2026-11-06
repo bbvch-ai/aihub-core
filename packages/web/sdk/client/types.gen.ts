@@ -15965,6 +15965,12 @@ export type ReadAttachedFilesEvent = {
    */
   kept_for_code?: Array<UserUploadedFile>;
   /**
+   * Code Sandbox Offered
+   *
+   * Whether the model can run code on the files in the sandbox, so a file cut down to fit is noted with the instruction to compute figures over the whole file there.
+   */
+  code_sandbox_offered?: boolean;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -30862,6 +30868,12 @@ export type ReadAttachedFilesEventWritable = {
    * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
    */
   kept_for_code?: Array<UserUploadedFile>;
+  /**
+   * Code Sandbox Offered
+   *
+   * Whether the model can run code on the files in the sandbox, so a file cut down to fit is noted with the instruction to compute figures over the whole file there.
+   */
+  code_sandbox_offered?: boolean;
   /**
    * History
    *
