@@ -24615,6 +24615,22 @@ export const RepeaterSchema = {
       title: "Label",
       description: "Label displayed as the section header",
     },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Explanation of what the list is for, shown under the header",
+    },
     addLabel: {
       anyOf: [
         {
@@ -47615,6 +47631,22 @@ export const RepeaterWritableSchema = {
       ],
       title: "Label",
       description: "Label displayed as the section header",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Explanation of what the list is for, shown under the header",
     },
     addLabel: {
       anyOf: [

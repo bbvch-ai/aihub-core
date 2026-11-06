@@ -1,5 +1,8 @@
 ---
 config:
+  list_help: The knowledge databases this agent searches for every question. Add one
+    entry per database; each has its own settings for how many documents to retrieve
+    and how to search.
   index_namespaces:
     label: Index namespaces
     help: Comma-separated list of namespaces to retrieve from. Leave empty to retrieve

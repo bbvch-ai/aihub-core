@@ -972,6 +972,8 @@ process:
       done: Done
       steps: Progress
 form:
+  repeater:
+    add_item: Add item
   secret_file_input:
     drop_hint: Drop the file here or click to choose it
     limits: '{accept}, up to {size}'
