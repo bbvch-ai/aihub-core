@@ -7,8 +7,10 @@ from fastapi import FastAPI, HTTPException
 from openai import APIStatusError
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
+from swiss_ai_hub.core.infrastructure import HostingLocation, ModelRequirements
 from swiss_ai_hub.core.testing.auth_utils.test_identity import fake_user
 
+from swiss_ai_hub.api.routes.model.dto.model_dto import ModelDTO, ModelInfoDTO
 from swiss_ai_hub.api.routes.model.model_service import ModelService
 
 _MODEL_SERVICE = "swiss_ai_hub.api.routes.model.model_service"
@@ -126,6 +128,86 @@ class TestModelServiceAccessFiltering:
             groups = await ModelService.get_grouped_model_list(fake_user())
         assert {group.name for group in groups} == {"chat"}
         assert _names(groups[0].models) == {"text-generation/gpt-4.1"}
+
+
+_CHAT_MODELS = [
+    {
+        "model_name": "text-generation/zeta",
+        "model_info": {"mode": "chat", "aihub_display_name": "Zeta 7B", "aihub_general_purpose": True},
+    },
+    {
+        "model_name": "text-generation/ocr",
+        "model_info": {"mode": "chat", "aihub_display_name": "OCR Model", "aihub_general_purpose": False},
+    },
+    {"model_name": "text-generation/alpha-undeclared", "model_info": {"mode": "chat"}},
+    {"model_name": "embedding/bge-m3", "model_info": {"mode": "embedding", "aihub_display_name": "BGE-M3"}},
+]
+
+
+class TestModelServiceModeListing:
+    @staticmethod
+    async def _chat_models(**kwargs) -> list:
+        response = httpx.Response(200, json={"data": _CHAT_MODELS})
+        with _patched_backend(["aihub.user.model.>"], response=response):
+            return await ModelService.get_models_by_mode(fake_user(), "chat", **kwargs)
+
+    @pytest.mark.asyncio
+    async def test_leaves_out_a_model_built_for_one_job(self):
+        assert _names(await self._chat_models()) == {"text-generation/zeta", "text-generation/alpha-undeclared"}
+
+    @pytest.mark.asyncio
+    async def test_include_special_purpose_brings_it_back(self):
+        models = await self._chat_models(include_special_purpose=True)
+        assert "text-generation/ocr" in _names(models)
+
+    @pytest.mark.asyncio
+    async def test_a_model_without_the_purpose_key_counts_as_general_purpose(self):
+        """Operators can add models through the LiteLLM UI, where nothing makes them set our keys."""
+        assert "text-generation/alpha-undeclared" in _names(await self._chat_models())
+
+    @pytest.mark.asyncio
+    async def test_sorted_by_the_name_the_picker_shows(self):
+        models = await self._chat_models(include_special_purpose=True)
+        assert [model.display_name for model in models] == ["alpha-undeclared", "OCR Model", "Zeta 7B"]
+
+
+class TestUnknownHostingLocation:
+    """LiteLLM's model info is an external feed, and models added through its UI skip the generator's checks."""
+
+    _RESPONSE = httpx.Response(
+        200,
+        json={
+            "data": [
+                {"model_name": "text-generation/typo", "model_info": {"mode": "chat", "aihub_hosting_location": "mars"}}
+            ]
+        },
+    )
+
+    @pytest.mark.asyncio
+    async def test_is_dropped_to_none_instead_of_failing_the_listing(self):
+        with _patched_backend(["aihub.user.model.>"], response=self._RESPONSE):
+            models = await ModelService.get_models_by_mode(fake_user(), "chat")
+        assert [model.model_info.aihub_hosting_location for model in models] == [None]
+
+    @pytest.mark.asyncio
+    async def test_such_a_model_fails_a_location_requirement(self):
+        requirements = ModelRequirements(hosting_locations={HostingLocation.SWISS_CLOUD, HostingLocation.EU})
+        with _patched_backend(["aihub.user.model.>"], response=self._RESPONSE):
+            models = await ModelService.get_models_by_mode(fake_user(), "chat", requirements)
+        assert models == []
+
+
+class TestModelDisplayName:
+    def test_curated_name_wins(self):
+        model = ModelDTO.model_validate(_CHAT_MODELS[0])
+        assert model.display_name == "Zeta 7B"
+        assert model.model_dump()["display_name"] == "Zeta 7B"
+
+    def test_falls_back_to_the_name_after_the_capability_prefix(self):
+        assert ModelDTO.model_validate(_CHAT_MODELS[2]).display_name == "alpha-undeclared"
+
+    def test_a_name_without_prefix_is_shown_whole(self):
+        assert ModelDTO(model_name="plain", model_info=ModelInfoDTO()).display_name == "plain"
 
 
 class TestModelServiceGatewayErrors:

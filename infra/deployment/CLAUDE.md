@@ -114,6 +114,24 @@ more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollbac
 `docs/arc42/decisions/2026_10_22_litellm_follows_plain_release_tags.md`. See ADR
 `docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.
 
+Model pickers read three more curated keys from `/v1/model/info`:
+
+- **`aihub_display_name`** is the name a picker shows instead of the LiteLLM id. Set it on every model; it is not
+  validated, and the API falls back to the id without its prefix.
+- **`aihub_general_purpose`** is `false` only for a model built for one job (today MinerU, an OCR model).
+  `/models/mode/{mode}` and every model picker leave such a model out, and neither an agent or process profile nor a
+  knowledge database can be saved with it. It is ours rather than a LiteLLM `mode` on purpose: `mode` decides how
+  LiteLLM calls and health-probes a model, and MinerU is served over `/chat/completions`. A model without the key counts
+  as general-purpose, which covers models an operator adds through the LiteLLM UI.
+- **`supports_reasoning`** says whether the model can produce a thinking phase at all, not whether it does by default
+  (gemma only thinks when asked). LiteLLM forwards `reasoning_effort` to every model it does not know, whatever this
+  flag says, so a provider that rejects it needs `reasoning_effort` in `additional_drop_params` (Ministral does).
+
+`generate_compose.py` requires `supports_function_calling`, `supports_response_schema`, `supports_vision`,
+`supports_reasoning` and `aihub_general_purpose` as explicit `true`/`false` on every `mode: chat` model
+(`CHAT_FLAG_KEYS`): a picker that requires a capability treats a flag LiteLLM reports as `null` as unsupported. Keep
+`HOSTING_LOCATIONS` in sync with `HostingLocation` in `packages/core`, which pickers filter on.
+
 `aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
 `model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
 Calling mode on every API start, reverting manual admin-panel edits. Only Kimi-K2.6 sets `native`, for Open Terminal's
