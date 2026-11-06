@@ -1,6 +1,9 @@
+import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 
 import { defineNuxtConfig } from 'nuxt/config'
+
+import { markdownSanitizeSchema } from './utils/markdownSanitizeSchema'
 
 export const wrappedPrimeInputs: string[] = [
   'AutoComplete',
@@ -74,6 +77,16 @@ export default defineNuxtConfig({
   ],
 
   mdc: {
+    rehypePlugins: {
+      'rehype-sanitize': {
+        // Resolved here because extenders of this layer do not depend on rehype-sanitize themselves.
+        src: createRequire(import.meta.url).resolve('rehype-sanitize'),
+        options: markdownSanitizeSchema,
+      },
+      'local-fragment-links': {
+        src: fileURLToPath(new URL('./utils/rehypeLocalFragmentLinks.ts', import.meta.url)),
+      },
+    },
     components: {
       prose: false,
       map: {
