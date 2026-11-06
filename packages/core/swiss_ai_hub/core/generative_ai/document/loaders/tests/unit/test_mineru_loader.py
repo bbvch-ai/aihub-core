@@ -547,7 +547,8 @@ class TestConversionSlots:
     async def test_failed_conversion_gives_its_slot_back(self):
         slots = asyncio.Semaphore(1)
         failing = AsyncMock(side_effect=MineruRequestError("rejected"))
+        loader = MineruLoader(conversion_slots=slots)
         with patch.object(MineruLoader, "_execute_conversion", failing), pytest.raises(MineruRequestError):
-            await MineruLoader(conversion_slots=slots).aload_data_from_bytes(b"bytes", FILENAME, embed_base64=True)
+            await loader.aload_data_from_bytes(b"bytes", FILENAME, embed_base64=True)
 
         assert not slots.locked()
