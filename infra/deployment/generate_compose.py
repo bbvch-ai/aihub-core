@@ -155,6 +155,35 @@ RELEASE_STATIC_FILES = [
 ]
 
 
+# Placeholders in .env.prod that setup-env.sh replaces with generated values, plus the domain.
+# A deployment still carrying one of them was started without running setup-env.sh (or without
+# editing .env), so the env-guard service refuses to let Traefik and Keycloak start.
+ENV_GUARD_PLACEHOLDERS = (
+    "REPLACE_WITH_RANDOM_STRING",
+    "REPLACE_WITH_64_HEX_CHARS",
+    "REPLACE_WITH_RANDOM_UUID",
+    "REPLACE_WITH_FERNET_KEY",
+    "REPLACE_WITH_LANGFUSE_PUBLIC_KEY",
+    "REPLACE_WITH_LANGFUSE_SECRET_KEY",
+    "REPLACE_WITH_YOUR_DOMAIN",
+)
+
+
+def env_guard_vars():
+    """Names of the .env.prod variables whose template value is one of ENV_GUARD_PLACEHOLDERS."""
+    names = []
+    for raw in (REPO_ROOT / ".env.prod").read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        if any(placeholder in value for placeholder in ENV_GUARD_PLACEHOLDERS):
+            names.append(name.strip())
+    if not names:
+        raise SystemExit("ERROR: no generated-secret placeholders found in .env.prod; env-guard would check nothing")
+    return sorted(names)
+
+
 def load_config():
     """Load compose-config.yml"""
     config_path = DEPLOYMENT_DIR / "compose-config.yml"
@@ -217,6 +246,8 @@ DOCKER_LICENSE_ALIASES = {
     "oauth2proxy-attu": "oauth2-proxy",
     "oauth2proxy-backup": "oauth2-proxy",
     "oauth2proxy-dagster": "oauth2-proxy",
+    "oauth2proxy-litellm": "oauth2-proxy",
+    "env-guard": "aws-cli-alpine",
     "backup-webserver": "dagster",
     "backup-daemon": "dagster",
     "backup-docker-proxy": "docker-socket-proxy",
@@ -631,6 +662,7 @@ def main():
     env.globals["service_license"] = _make_service_license_fn(_load_license_config())
     # Shared with the compose template so every rendered variant is also mounted.
     env.globals["litellm_variants"] = LITELLM_VARIANTS
+    env.globals["env_guard_vars"] = env_guard_vars()
 
     if args.check_env:
         from env_check import check_env_vs_compose

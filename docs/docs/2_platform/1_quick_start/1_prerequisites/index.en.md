@@ -287,7 +287,7 @@ Configure DNS records for your domain. The platform requires **seven subdomains*
 - `openwebui.swiss-ai-hub.example.com` - chat UI
 - `dagster.swiss-ai-hub.example.com` - pipeline orchestration
 - `datalake.swiss-ai-hub.example.com` - data lake console
-- `litellm.swiss-ai-hub.example.com` - litellm proxy
+- `litellm.swiss-ai-hub.example.com` - LiteLLM inference API (API keys) and admin UI (SSO, `AIHubSysAdmin` only)
 - `attu.swiss-ai-hub.example.com` - Milvus vector database UI
 - `traefik.swiss-ai-hub.example.com` - reverse proxy dashboard
 
