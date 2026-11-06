@@ -1007,6 +1007,14 @@ form:
       in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
       fino al rilascio di una correzione.
 lib:
+  modelSelect:
+    contextWindow: 'Finestra di contesto: {input} token in ingresso · {output} in uscita'
+    contextWindowInputOnly: 'Finestra di contesto: {input} token in ingresso'
+    notSelectable: '{model} non soddisfa i requisiti di questo campo. Scegli un altro modello prima di salvare.'
+    specialPurpose: '{model} è pensato per un solo compito e non può essere scelto qui. Scegli un altro modello prima di salvare.'
+    unavailable: '{model} non è disponibile per te. Scegli un altro modello prima di salvare.'
+    loadFailed: Non è stato possibile caricare i modelli. Ricarica la pagina per riprovare.
+    empty: Nessuno dei modelli che puoi usare soddisfa i requisiti di questo campo.
   modelBound:
     providerDefault: predefinito del fornitore
     overrideRequired: Inserisci un valore, oppure deseleziona la sostituzione per

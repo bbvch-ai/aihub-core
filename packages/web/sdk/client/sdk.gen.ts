@@ -1120,7 +1120,11 @@ export const getLitellmModels = <
 /**
  * Get Litellm Models By Mode
  *
- * Retrieve all models filtered by their mode (chat, embedding, rerank, etc.).
+ * Retrieve the models of one mode (chat, embedding, rerank, etc.) a model picker may offer.
+ *
+ * Repeat `capability` to require several capabilities, and `hosting_location` to allow several locations; a
+ * model whose flag or location is not set fails them. Models built for one job, such as the OCR model, are
+ * left out unless `include_special_purpose` is set.
  */
 export const getLitellmModelsByMode = <
   TComposable extends Composable = "$fetch",

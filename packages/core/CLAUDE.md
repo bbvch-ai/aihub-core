@@ -339,6 +339,16 @@ ModelBoundInputNumber and ModelGatedCheckbox.
   budget without a `default_from` (the input tokens) shows `fill_factor` of its `max_from` limit as what applies, and
   that share is also its bound (`maximum_for`), used by the form, the API and the startup migration alike.
 
+**Model requirements**: `ModelSelect.requirements` (`ModelRequirements` in `infrastructure/litellm/`) names the
+capabilities (`ModelCapability`, each mapped to a LiteLLM `supports_*` flag) and the hosting locations
+(`HostingLocation`) a picker's model must have. The picker sends them to `GET /models/mode/{mode}`, and
+`ModelLimitValidator` refuses a save on a model that fails them or sets `aihub_general_purpose: false`. Unlike
+`ModelGatedCheckbox`, a flag counts only when it is true, and a missing or unknown location fails. `unmet_by` and
+`admits` take a plain `model_info` mapping so core stays independent of the API. Configs pass them through
+`LLMConfig.as_form(requirements=...)` and, for conversational agents,
+`conversation_form_elements(llm_requirements=...)`, which applies them to `llm` only. See ADR
+`2026_11_04_capability_and_location_aware_model_selection`.
+
 ### Nested Forms
 
 - Nested `Form` fields → automatically wrapped in `Group` elements with conditional visibility
