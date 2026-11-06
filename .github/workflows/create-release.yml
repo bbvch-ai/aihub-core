@@ -170,6 +170,8 @@ jobs:
         if: steps.in.outputs.notes == 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          AIHUB_LLM_API_BASE: ${{ secrets.AIHUB_LLM_API_BASE }}
+          AIHUB_LLM_API_KEY: ${{ secrets.AIHUB_LLM_API_KEY }}
           GH_REPO: ${{ github.repository }}
           GH_SERVER_URL: ${{ github.server_url }}
           NOTES_FROM: ${{ inputs.notes_from }}
@@ -182,6 +184,16 @@ jobs:
             llm keys set gemini --value "$GEMINI_API_KEY"
           else
             echo "::warning::GEMINI_API_KEY not set; release notes will fall back to a placeholder."
+          fi
+          # Gemma through an AI Hub LiteLLM backs Gemini up, so one provider's outage does not cost the
+          # summary. A virtual key scoped to that model keeps the shared provider keys out of CI.
+          if [ -n "${AIHUB_LLM_API_BASE:-}" ] && [ -n "${AIHUB_LLM_API_KEY:-}" ]; then
+            printf -- '- model_id: aihub-gemma\n  model_name: text-generation/gemma-4-31B-it\n  api_base: %s\n  api_key_name: aihub\n' \
+              "$AIHUB_LLM_API_BASE" > "$(dirname "$(llm keys path)")/extra-openai-models.yaml"
+            llm keys set aihub --value "$AIHUB_LLM_API_KEY"
+            export RELEASE_NOTES_FALLBACK_MODEL=aihub-gemma
+          else
+            echo "::warning::AIHUB_LLM_API_BASE or AIHUB_LLM_API_KEY not set; no fallback model for release notes."
           fi
           chmod +x infra/release/generate-release-notes.sh
           infra/release/generate-release-notes.sh "$NOTES_FROM" "$VERSION" > release-notes.md
