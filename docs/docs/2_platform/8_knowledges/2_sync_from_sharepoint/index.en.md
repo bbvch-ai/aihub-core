@@ -123,6 +123,10 @@ set to the database name.
 **Changes in SharePoint** are picked up on the next sync. While a database has a source, its documents can only be
 changed in SharePoint; manual uploads and deletions are disabled.
 
+**A pasted OAuth token** (entered in **OAuth token** instead of a client secret, as for OneDrive) is renewed on each
+daily sync and the renewed token is stored encrypted, so it never has to be entered again while the daily syncs keep
+succeeding.
+
 ### Rotating the secret
 
 1. In Entra ID, create a new client secret (step 2).

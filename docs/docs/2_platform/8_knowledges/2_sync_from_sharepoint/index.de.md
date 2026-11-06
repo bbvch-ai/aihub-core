@@ -1,7 +1,7 @@
 ---
 title: Eine SharePoint-Bibliothek synchronisieren
 description: Step by step, from an Entra ID app registration to a knowledge database that keeps itself in sync with a SharePoint document library.
-source_sha: 6f6ceb5f8bf7fb74aa33ef4a07c8ae5d6b53c15727d7449cb75553da965755fd
+source_sha: 21b6198420f712f14f2742089aec64258ac300889afa60dba99a1e26b7cd9369
 ---
 
 # Eine SharePoint-Bibliothek synchronisieren
@@ -133,6 +133,10 @@ Run-Tag `aihub/bucket`, gesetzt auf den Datenbanknamen.
 
 **Änderungen in SharePoint** werden bei der nächsten Synchronisation übernommen. Solange eine Datenbank eine Quelle hat,
 lassen sich ihre Dokumente nur in SharePoint ändern; manuelle Uploads und Löschungen sind deaktiviert.
+
+**Ein eingefügtes OAuth-Token** (unter **OAuth-Token** statt eines Client Secrets eingetragen, wie bei OneDrive) wird
+bei jeder täglichen Synchronisation erneuert und verschlüsselt gespeichert. Es muss also nie neu eingegeben werden,
+solange die täglichen Synchronisationen erfolgreich sind.
 
 ### Das Secret erneuern
 
