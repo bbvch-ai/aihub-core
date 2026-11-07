@@ -205,10 +205,11 @@ notifications:
   title_prefix: Swiss AI Hub Pipeline
   min_interval_seconds: 30
 # -------------------------------------------------------------------
-# Keycloak realm token and session lifespans (seconds), shared by the
-# merged aihub-realm.{stage}.json (first-start import) and
-# keycloak-entrypoint.sh.j2 (kcadm update on every start, so existing
-# deployments converge without re-importing the realm).
+# Keycloak realm settings, shared by the merged aihub-realm.{stage}.json
+# (first-start import) and keycloak-entrypoint.sh.j2 (kcadm update on
+# every start, applied only while a setting still holds the Keycloak
+# default, so existing deployments converge and operator overrides
+# survive).
 # Keycloak defaults (30 min idle / 10 h max) force daily re-logins.
 # The 5 min access token default forces a silent renew every ~3 min.
 # -------------------------------------------------------------------
@@ -216,3 +217,22 @@ keycloak:
   sso_session_idle_timeout: 432000  # 5 days
   sso_session_max_lifespan: 2592000  # 30 days
   access_token_lifespan: 3600  # 1 hour
+  # Realm mail server (Keycloak smtpServer keys): sends invitation and
+  # password-reset mail from the Microsoft 365 mailbox with an OAuth 2.0
+  # client-credentials token (XOAUTH2). The client secret is resolved from
+  # Keycloak's file vault (file aihub_smtp-client-secret), never stored in the
+  # realm.
+  smtp_server:
+    host: smtp.office365.com
+    port: '587'
+    from: noreply.ai-hub@bbv.ch
+    fromDisplayName: Swiss AI-Hub
+    user: noreply.ai-hub@bbv.ch
+    auth: 'true'
+    authType: token
+    authTokenUrl: https://login.microsoftonline.com/$(env:KEYCLOAK_SMTP_TENANT_ID)/oauth2/v2.0/token
+    authTokenScope: https://outlook.office365.com/.default
+    authTokenClientId: $(env:KEYCLOAK_SMTP_CLIENT_ID)
+    authTokenClientSecret: ${vault.smtp-client-secret}
+    starttls: 'true'
+    ssl: 'false'

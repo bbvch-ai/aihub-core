@@ -28,10 +28,21 @@
 #   10 h max / 5 min access token) — the first-start-only realm import never
 #   propagates them to existing deployments, while operator overrides made in
 #   the admin console must survive.
+# - Realm mail server: same rule as the lifespans — written only while the
+#   realm still has no mail server (Keycloak's default is an empty smtpServer).
+# - SMTP client secret: written to Keycloak's file vault (tmpfs), which the
+#   realm references as ${vault.smtp-client-secret}, so it never enters the
+#   realm export or database.
 
 set -euo pipefail
 
 mkdir -p /opt/keycloak/data/import
+
+VAULT_DIR=/opt/keycloak/vault
+mkdir -p "$VAULT_DIR"
+if [[ -n "${KEYCLOAK_SMTP_CLIENT_SECRET:-}" ]]; then
+  printf '%s' "$KEYCLOAK_SMTP_CLIENT_SECRET" > "$VAULT_DIR/aihub_smtp-client-secret"
+fi
 
 bash_envsubst() {
   local content
@@ -49,6 +60,28 @@ bash_envsubst /opt/keycloak/data/import-templates/aihub-realm.json \
   > /opt/keycloak/data/import/aihub-realm.json
 
 KCADM=/opt/keycloak/bin/kcadm.sh
+
+# Writes the realm mail server only while the realm has none (Keycloak's
+# default is an empty smtpServer), so a mail server an operator configured in
+# the admin console is kept.
+apply_realm_mail_server_default() {
+  local current
+  current=$($KCADM get realms/aihub --fields smtpServer 2> /dev/null)
+  if [[ "$current" =~ \"host\" ]]; then
+    echo "Realm mail server already configured; leaving unchanged."
+    return
+  fi
+
+  local smtp_file=/tmp/aihub-smtp-server.json
+  cat > "$smtp_file.template" << 'SMTP_EOF'
+{ "smtpServer": {{ keycloak.smtp_server | tojson }} }
+SMTP_EOF
+  bash_envsubst "$smtp_file.template" > "$smtp_file"
+  $KCADM update realms/aihub -f "$smtp_file" \
+    && echo "Realm mail server applied." \
+    || echo "ERROR: Failed to apply realm mail server."
+  rm -f "$smtp_file" "$smtp_file.template"
+}
 
 # Post-startup configuration applied on every start: realm token and session
 # lifespans via kcadm (the realm import only runs on first start, so existing
@@ -85,6 +118,8 @@ KCADM=/opt/keycloak/bin/kcadm.sh
   else
     echo "Realm token and session lifespans differ from Keycloak defaults; leaving unchanged."
   fi
+
+  apply_realm_mail_server_default
 ) &
 
-exec /opt/keycloak/bin/kc.sh "$@" --import-realm
+exec /opt/keycloak/bin/kc.sh "$@" --import-realm --vault=file --vault-dir="$VAULT_DIR"
