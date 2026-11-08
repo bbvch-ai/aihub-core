@@ -165,17 +165,19 @@ class TestPersistRefreshedToken:
     def test_a_failing_database_write_raises_without_quoting_the_token(self, encryption, client, replace):
         client.get_token.return_value = SecretStr(_REFRESHED)
         replace.side_effect = RuntimeError("connection refused")
+        remote = _remote(encryption)
 
         with pytest.raises(RuntimeError) as exc_info:
-            RcloneTokenWriteBack.persist_refreshed_token("hrdocs", "rclone", _remote(encryption))
+            RcloneTokenWriteBack.persist_refreshed_token("hrdocs", "rclone", remote)
 
         _assert_no_secret_in(str(exc_info.value))
 
     def test_a_token_rclone_returns_that_is_not_json_raises_without_quoting_it(self, encryption, client, replace):
         client.get_token.return_value = SecretStr("NEWACCESS not json")
+        remote = _remote(encryption)
 
         with pytest.raises(ValueError) as exc_info:
-            RcloneTokenWriteBack.persist_refreshed_token("hrdocs", "rclone", _remote(encryption))
+            RcloneTokenWriteBack.persist_refreshed_token("hrdocs", "rclone", remote)
 
         _assert_no_secret_in(str(exc_info.value))
         replace.assert_not_called()

@@ -297,8 +297,10 @@ class TestOneDriveTokenUrl:
         )
 
     def test_an_unknown_region_is_refused(self):
+        config = _onedrive_token_mode(region="mars")
+
         with pytest.raises(ValueError, match="Unknown OneDrive region 'mars'"):
-            _onedrive_token_mode(region="mars").to_rclone_source_config("r")
+            config.to_rclone_source_config("r")
 
     def test_client_credentials_are_unchanged_and_get_no_token_url(self):
         config = RcloneSyncConfig.model_validate(

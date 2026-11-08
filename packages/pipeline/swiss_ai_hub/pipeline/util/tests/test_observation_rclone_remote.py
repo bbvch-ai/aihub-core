@@ -122,10 +122,12 @@ class TestOpened:
 
     def test_the_remote_is_deleted_when_the_listing_fails(self, encryption, row, client):
         row.source_configuration = _onedrive(encryption)
+        observation = ObservationRcloneRemote.opened("hrdocs", "rclone", _RUN_ID)
+        listing_failed = RuntimeError("listing failed")
 
         with pytest.raises(RuntimeError, match="listing failed"):
-            with ObservationRcloneRemote.opened("hrdocs", "rclone", _RUN_ID):
-                raise RuntimeError("listing failed")
+            with observation:
+                raise listing_failed
 
         client.delete_remote.assert_called_once_with(f"rclone_hrdocs_obs_{_RUN_HEX}")
 
@@ -134,30 +136,32 @@ class TestOpened:
         the token in the daemon."""
         row.source_configuration = _onedrive(encryption)
         client.upsert_remote.side_effect = ValueError("could not be configured")
+        observation = ObservationRcloneRemote.opened("hrdocs", "rclone", _RUN_ID)
 
-        with pytest.raises(ValueError, match="could not be configured"):
-            with ObservationRcloneRemote.opened("hrdocs", "rclone", _RUN_ID):
-                pytest.fail("the body must not run without a remote")
+        with pytest.raises(ValueError, match="could not be configured"), observation:
+            pass
 
         client.delete_remote.assert_called_once_with(f"rclone_hrdocs_obs_{_RUN_HEX}")
 
     def test_a_failed_cleanup_keeps_the_original_error_as_its_context(self, encryption, row, client):
         row.source_configuration = _onedrive(encryption)
         client.delete_remote.side_effect = RuntimeError("daemon gone")
+        observation = ObservationRcloneRemote.opened("hrdocs", "rclone", _RUN_ID)
+        listing_failed = ValueError("listing failed")
 
         with pytest.raises(RuntimeError, match="daemon gone") as exc_info:
-            with ObservationRcloneRemote.opened("hrdocs", "rclone", _RUN_ID):
-                raise ValueError("listing failed")
+            with observation:
+                raise listing_failed
 
         assert isinstance(exc_info.value.__context__, ValueError)
         assert str(exc_info.value.__context__) == "listing failed"
 
     def test_a_database_this_source_must_not_sync_creates_no_remote(self, encryption, row, client):
         row.deleting = True
+        observation = ObservationRcloneRemote.opened("hrdocs", "rclone", _RUN_ID)
 
-        with pytest.raises(ValueError, match="being deleted"):
-            with ObservationRcloneRemote.opened("hrdocs", "rclone", _RUN_ID):
-                pytest.fail("the body must not run")
+        with pytest.raises(ValueError, match="being deleted"), observation:
+            pass
 
         client.upsert_remote.assert_not_called()
         client.delete_remote.assert_not_called()
