@@ -23,6 +23,7 @@ _ONEDRIVE_LOGIN_HOSTS = {
     "de": "https://login.microsoftonline.de",
     "cn": "https://login.chinacloudapi.cn",
 }
+_ONEDRIVE_TOKEN_SHAPE = 'The OneDrive token must be the JSON object `rclone authorize "onedrive"` prints.'
 _REFRESHABLE_TOKEN_BACKENDS = (RcloneBackendType.ONEDRIVE, RcloneBackendType.DRIVE)
 
 
@@ -93,6 +94,21 @@ class OneDriveOptions(Form):
     token: Annotated[
         str | Password, Field(description="Pre-obtained OAuth token JSON, instead of client credentials.")
     ] = ""
+
+    @field_validator("token", mode="after")
+    @classmethod
+    def _token_is_a_json_object(cls, value: str | Password) -> str | Password:
+        """The observation reads the token's refresh_token before creating the remote, so a token that is not the JSON
+        object rclone printed is refused here with the field named, not later with a bare JSON parse error."""
+        if not isinstance(value, str) or not value.strip():
+            return value
+        try:
+            parsed = json.loads(value)
+        except ValueError as error:
+            raise ValueError(_ONEDRIVE_TOKEN_SHAPE) from error
+        if not isinstance(parsed, dict):
+            raise ValueError(_ONEDRIVE_TOKEN_SHAPE)
+        return value
 
     @classmethod
     def as_form(cls) -> Self:

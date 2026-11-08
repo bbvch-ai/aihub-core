@@ -86,7 +86,7 @@ class ObservationRcloneRemote:
         path = stored.config.refreshable_token_path()
         if path is None:
             return None
-        return RcloneTokenBaseline.of(
+        return RcloneTokenBaseline.from_token(
             path=path,
             backend_type=stored.config.backend.value,
             stored_value=SecretPathTransformer.values_at(stored.stored, path)[0],

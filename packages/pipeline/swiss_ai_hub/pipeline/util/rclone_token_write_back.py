@@ -55,7 +55,13 @@ class RcloneTokenWriteBack:
         return cls._replace(bucket, source, remote.name, baseline, refreshed)
 
     @staticmethod
-    def _replace(bucket: str, source: str, remote_name: str, baseline: RcloneTokenBaseline, refreshed: str) -> bool:
+    def _replace(
+        bucket: Annotated[str, "Bucket name of the knowledge database"],
+        source: Annotated[str, "Source pipeline id this code location runs as"],
+        remote_name: Annotated[str, "Name of the observation's rclone remote, the only thing logged"],
+        baseline: Annotated[RcloneTokenBaseline, "What the remote was created with"],
+        refreshed: Annotated[str, "The refreshed token JSON, plaintext"],
+    ) -> bool:
         ensure_main_db_connection()
         stored = BucketEntity.replace_source_secret(
             bucket_name=bucket,
@@ -69,7 +75,7 @@ class RcloneTokenWriteBack:
             logger.info(f"Stored the refreshed OAuth token of rclone remote '{remote_name}'")
         else:
             logger.info(
-                f"Kept the database's OAuth token for rclone remote '{remote_name}': the source was changed or "
-                "removed while this run observed it"
+                f"Kept the database's OAuth token for rclone remote '{remote_name}': the stored token, the backend "
+                "or the source changed since this run read it, or the database is being deleted"
             )
         return stored

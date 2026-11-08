@@ -24,7 +24,7 @@ class RcloneTokenBaseline(BaseModel):
     had_refresh_token: Annotated[bool, Field(description="Whether the token sent to rclone carried a refresh token.")]
 
     @classmethod
-    def of(
+    def from_token(
         cls,
         *,
         path: Annotated[str, "Dotted path of the token in source_configuration"],

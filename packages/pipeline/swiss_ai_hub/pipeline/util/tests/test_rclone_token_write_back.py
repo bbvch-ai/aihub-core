@@ -43,7 +43,7 @@ def replace() -> Iterator[MagicMock]:
 
 
 def _remote(encryption: SecretEncryptionService, sent: str = _SENT, *, path: str = "onedrive.token") -> RcloneRemote:
-    baseline = RcloneTokenBaseline.of(
+    baseline = RcloneTokenBaseline.from_token(
         path=path, backend_type=path.split(".")[0], stored_value=encryption.encrypt(sent), sent_token=sent
     )
     return RcloneRemote(name=_REMOTE, fs=f"{_REMOTE}:", token_baseline=baseline)
@@ -113,7 +113,7 @@ class TestPersistRefreshedToken:
 
     def test_a_token_stored_as_plaintext_is_not_written_back(self, encryption, client, replace, caplog):
         client.get_token.return_value = SecretStr(_REFRESHED)
-        baseline = RcloneTokenBaseline.of(
+        baseline = RcloneTokenBaseline.from_token(
             path="onedrive.token", backend_type="onedrive", stored_value=_SENT, sent_token=_SENT
         )
         remote = RcloneRemote(name=_REMOTE, fs=f"{_REMOTE}:", token_baseline=baseline)

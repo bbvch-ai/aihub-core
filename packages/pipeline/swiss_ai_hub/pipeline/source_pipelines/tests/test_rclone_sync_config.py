@@ -207,6 +207,25 @@ class TestMultiLineSecrets:
         with pytest.raises(ValueError, match="Google Drive credentials"):
             RcloneSyncConfig.model_validate({"backend_type": "drive", "drive": {"token": "not json"}})
 
+    @pytest.mark.parametrize("token", ["SECRET-not-json", '["SECRET"]', '"SECRET"'])
+    def test_a_onedrive_token_that_is_not_a_json_object_is_rejected_without_quoting_it(self, token: str):
+        with pytest.raises(ValidationError) as rejected:
+            RcloneSyncConfig.model_validate(
+                {"backend_type": "onedrive", "onedrive": {"drive_id": "b!a", "token": token}}
+            )
+
+        assert "onedrive.token" in str(rejected.value)
+        assert "OneDrive token must be the JSON object" in str(rejected.value)
+        assert "SECRET" not in str(rejected.value)
+
+    def test_a_onedrive_token_object_is_sent_to_rclone_as_pasted(self):
+        pasted = '{"access_token":"x","refresh_token":"y","expiry":"2026-11-08T19:20:00+07:00"}'
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "onedrive", "onedrive": {"drive_id": "b!a", "token": pasted}}
+        )
+
+        assert config.to_rclone_source_config("r").options["token"] == pasted
+
     def test_a_pasted_pem_key_reaches_rclone_with_escaped_line_breaks(self):
         pasted = "-----BEGIN OPENSSH PRIVATE KEY-----\r\nabc\r\ndef\r\n-----END OPENSSH PRIVATE KEY-----\r\n"
         config = RcloneSyncConfig.model_validate(
