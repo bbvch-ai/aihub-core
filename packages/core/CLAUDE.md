@@ -106,7 +106,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── s3/                          # S3StorageSettings (SeaweedFS)
 │   ├── neo4j/                       # Neo4jSettings (graph DB)
 │   ├── langfuse/                    # LangfuseSettings + LangfuseProvisioner
-│   ├── litellm/                     # LiteLLMProxySettings + LiteLLMService
+│   ├── litellm/                     # LiteLLMProxySettings + LiteLLMService (user key) + LiteLLMCustomerService (acting tenant as LiteLLM customer, ADR 2026_11_09)
 │   ├── opentelemetry/               # SmartTracer + trace_fn decorator
 │   ├── logging/                     # Logging setup (enable_logging())
 │   ├── mineru/                      # MineruSettings (document parsing)

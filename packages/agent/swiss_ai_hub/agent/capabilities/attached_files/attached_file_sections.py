@@ -21,6 +21,7 @@ from swiss_ai_hub.core.generative_ai import (
     ModelTokenBudget,
     rerank_nodes,
 )
+from swiss_ai_hub.core.infrastructure import LiteLLMCustomerService
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
 from swiss_ai_hub.core.persistence import (
     CREATED_AT,
@@ -241,7 +242,9 @@ class AttachedFileSections:
         """The query and the sections, a few batches at a time. One failure cancels the rest, which a bare gather
         left running against the provider for a minute after the turn had given up."""
         api_key = await LiteLLMService.api_key_for_user(self._user) if self._user else None
-        embed_model, _ = self._config.embedding_model.to_llama_index(api_key=api_key)
+        embed_model, _ = self._config.embedding_model.to_llama_index(
+            extra_headers=await LiteLLMCustomerService.header_for(self._user), api_key=api_key
+        )
         size = embed_model.embed_batch_size
         batches = [sections[start : start + size] for start in range(0, len(sections), size)]
         slots = self._slots()

@@ -465,7 +465,7 @@ general_settings:
 # LiteLLM Settings
 # ===================================================================
 litellm_settings:
-  callbacks: [ "detect_prompt_injection", "otel", "custom_callbacks.proxy_handler_instance" ]
+  callbacks: [ "detect_prompt_injection", "otel", "custom_callbacks.proxy_handler_instance", "tenant_attribution.tenant_attribution_instance" ]
   {%- if stage != "dev" %}
   default_fallbacks: [ "{{ default_model }}" ]
   {%- endif %}

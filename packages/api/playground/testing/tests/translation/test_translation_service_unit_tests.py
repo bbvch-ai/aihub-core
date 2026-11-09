@@ -85,6 +85,7 @@ async def _translate(source: LocaleString, apredict: AsyncMock, source_locale: s
     with (
         patch(f"{_SERVICE_MODULE}.PromptTemplate"),
         patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
+        patch(f"{_SERVICE_MODULE}.LiteLLMCustomerService.header_for", new_callable=AsyncMock, return_value={}),
     ):
         return await TranslationService.translate(
             locale_string=source,
@@ -104,6 +105,7 @@ class TestTranslate:
         with (
             patch(f"{_SERVICE_MODULE}.PromptTemplate"),
             patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
+            patch(f"{_SERVICE_MODULE}.LiteLLMCustomerService.header_for", new_callable=AsyncMock, return_value={}),
         ):
             await TranslationService.translate(
                 locale_string=LocaleString(en="Hello"),
@@ -264,6 +266,7 @@ class TestTranslateFromRequest:
         with (
             patch(f"{_SERVICE_MODULE}.PromptTemplate"),
             patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
+            patch(f"{_SERVICE_MODULE}.LiteLLMCustomerService.header_for", new_callable=AsyncMock, return_value={}),
             patch(f"{_SERVICE_MODULE}.LLMConfig.deterministic", return_value=llm_config) as deterministic_config,
         ):
             response = await TranslationService.translate_from_request(

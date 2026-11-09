@@ -7,6 +7,7 @@ from swiss_ai_hub.core.generative_ai.retrievers.base_retriever import BaseRetrie
 from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config import KnowledgeRetrieverConfig
 from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_customer_service import LiteLLMCustomerService
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -27,7 +28,9 @@ class KnowledgeRetriever(BaseRetriever):
     async def retrieve(self, query: str, t: LocaleHandler, user: UserIdentity | None = None) -> list[IngestedNode]:
         """Retrieve nodes from the vector store matching the query."""
         api_key = await LiteLLMService.api_key_for_user(user) if user else None
-        embed_model, _ = self.config.embed_model.to_llama_index(api_key=api_key)
+        embed_model, _ = self.config.embed_model.to_llama_index(
+            extra_headers=await LiteLLMCustomerService.header_for(user), api_key=api_key
+        )
         vector_store = self.config.vector_store.to_llama_index()
 
         nodes = retrieve_nodes(

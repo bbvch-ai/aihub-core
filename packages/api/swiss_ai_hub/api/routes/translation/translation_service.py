@@ -6,7 +6,7 @@ from llama_index.core.llms import LLM
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
-from swiss_ai_hub.core.infrastructure import LiteLLMService, trace_fn
+from swiss_ai_hub.core.infrastructure import LiteLLMCustomerService, LiteLLMService, trace_fn
 
 from swiss_ai_hub.api.routes.translation.dto.translation_outcome import TranslationOutcome
 from swiss_ai_hub.api.routes.translation.dto.translation_request import TranslationRequest
@@ -79,7 +79,7 @@ class TranslationService:
             return TranslationOutcome(translated=locale_string)
 
         api_key = await LiteLLMService.api_key_for_user(user)
-        llm, _ = llm_config.to_llama_index(api_key=api_key)
+        llm, _ = llm_config.to_llama_index(extra_headers=await LiteLLMCustomerService.header_for(user), api_key=api_key)
         try:
             results = await asyncio.gather(
                 *(cls._translate_into_locale(source_text, source_locale, locale, llm, t) for locale in target_locales),
