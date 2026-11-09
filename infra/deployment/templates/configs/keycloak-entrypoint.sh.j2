@@ -29,7 +29,9 @@
 #   propagates them to existing deployments, while operator overrides made in
 #   the admin console must survive.
 # - Realm mail server: same rule as the lifespans — written only while the
-#   realm still has no mail server (Keycloak's default is an empty smtpServer).
+#   realm still has no mail server (Keycloak's default is an empty smtpServer)
+#   or the platform's server without a client id, and only once
+#   KEYCLOAK_SMTP_TENANT_ID and KEYCLOAK_SMTP_CLIENT_ID are set.
 # - SMTP client secret: written to Keycloak's file vault (tmpfs), which the
 #   realm references as ${vault.smtp-client-secret}, so it never enters the
 #   realm export or database.
@@ -61,13 +63,26 @@ bash_envsubst /opt/keycloak/data/import-templates/aihub-realm.json \
 
 KCADM=/opt/keycloak/bin/kcadm.sh
 
-# Writes the realm mail server only while the realm has none (Keycloak's
-# default is an empty smtpServer), so a mail server an operator configured in
-# the admin console is kept.
+# Writes the realm mail server while the realm has none (Keycloak's default is
+# an empty smtpServer), or while it holds the platform's server with an empty
+# client id: tenant and client id are substituted once, so a realm first
+# started without them would otherwise never pick them up. Any other mail
+# server was set by an operator in the admin console and is kept.
 apply_realm_mail_server_default() {
+  if [[ -z "${KEYCLOAK_SMTP_TENANT_ID:-}" || -z "${KEYCLOAK_SMTP_CLIENT_ID:-}" ]]; then
+    echo "KEYCLOAK_SMTP_TENANT_ID or KEYCLOAK_SMTP_CLIENT_ID is empty; leaving realm mail server unchanged."
+    return
+  fi
+
   local current
-  current=$($KCADM get realms/aihub --fields smtpServer 2> /dev/null)
-  if [[ "$current" =~ \"host\" ]]; then
+  # kcadm returns nested objects empty unless their fields are listed.
+  if ! current=$($KCADM get realms/aihub --fields 'smtpServer(host,authTokenClientId)' 2> /dev/null); then
+    echo "ERROR: Failed to read realm mail server; leaving unchanged."
+    return
+  fi
+  local platform_host='"host"[[:space:]]*:[[:space:]]*"{{ keycloak.smtp_server.host | replace(".", "\\.") }}"'
+  local empty_client_id='"authTokenClientId"[[:space:]]*:[[:space:]]*""'
+  if [[ "$current" =~ \"host\" ]] && ! [[ "$current" =~ $platform_host && "$current" =~ $empty_client_id ]]; then
     echo "Realm mail server already configured; leaving unchanged."
     return
   fi

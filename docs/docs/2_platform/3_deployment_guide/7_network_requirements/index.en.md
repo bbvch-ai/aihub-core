@@ -56,10 +56,10 @@ Agents and pipelines can call your existing enterprise systems.
 User authentication requires connectivity to your configured OIDC provider. The example below shows Microsoft Entra ID
 endpoints; substitute with your provider's endpoints as needed.
 
-| Service            | Endpoint                    | Purpose                                                         |
-| ------------------ | --------------------------- | --------------------------------------------------------------- |
-| Microsoft Entra ID | `login.microsoftonline.com` | OAuth2/OIDC user authentication, token for realm mail           |
-| Microsoft Graph    | `graph.microsoft.com`       | Only needed for SharePoint/OneDrive pipeline sources (not auth) |
+| Service            | Endpoint                    | Purpose                                                                        |
+| ------------------ | --------------------------- | ------------------------------------------------------------------------------ |
+| Microsoft Entra ID | `login.microsoftonline.com` | OAuth2/OIDC user authentication, token for realm mail                          |
+| Microsoft Graph    | `graph.microsoft.com`       | Only needed for SharePoint/OneDrive pipeline sources (not auth)                |
 | Exchange Online    | `smtp.office365.com:587`    | Realm mail (invitations, password resets), see [Realm mail](../11_realm_mail/) |
 
 ### Inbound connections

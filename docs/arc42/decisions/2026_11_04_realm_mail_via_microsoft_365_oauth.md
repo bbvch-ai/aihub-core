@@ -9,9 +9,9 @@ with the actions *Update Password* and *Verify Email*); it only lacked a way to 
 
 Two constraints shaped the solution. The sending mailbox, `noreply.ai-hub@bbv.ch`, is in Microsoft 365, where basic SMTP
 authentication with a mailbox password is being retired in favour of OAuth. And realm settings are bootstrap-only per
-[`2026_06_12_declarative_keycloak_realm_reconciliation`](./2026_06_12_declarative_keycloak_realm_reconciliation.md):
-the realm import runs only on first start, while existing deployments must get mail too, without overwriting a mail
-server an operator set in the admin console.
+[`2026_06_12_declarative_keycloak_realm_reconciliation`](./2026_06_12_declarative_keycloak_realm_reconciliation.md): the
+realm import runs only on first start, while existing deployments must get mail too, without overwriting a mail server
+an operator set in the admin console.
 
 ## Decision Drivers
 
@@ -36,8 +36,10 @@ server an operator set in the admin console.
   entrypoint writes `KEYCLOAK_SMTP_CLIENT_SECRET` to a tmpfs at `/opt/keycloak/vault` and starts Keycloak with
   `--vault=file`. Keycloak 26.8.1's `TokenAuthEmailAuthenticator` resolves `authTokenClientSecret` through the vault.
   This is the one deliberate `${...}` placeholder in the realm.
-- **Converge by default migration.** The entrypoint's existing kcadm block also writes `smtpServer`, only while the
-  realm has none.
+- **Converge by default migration.** The entrypoint's existing kcadm block also writes `smtpServer` once
+  `KEYCLOAK_SMTP_TENANT_ID` and `KEYCLOAK_SMTP_CLIENT_ID` are set, only while the realm has no mail server or still has
+  the platform's server without a client id (tenant and client id are substituted once, so a realm first started without
+  them would otherwise keep the empty values).
 - **Invitations use Keycloak's admin-triggered mail.** Administrators create the user, add the tenant group and
   `AIHubAccess`, and send *Credential Reset* with *Update Password* and *Verify Email* from the admin console. The
   platform adds no invitation API or UI; the steps are documented in the operator guide.

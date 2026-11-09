@@ -457,11 +457,11 @@ Rules when editing:
 **Realm mail** (`keycloak.smtp_server` in `compose-config.yml`): every stage sends from `noreply.ai-hub@bbv.ch` through
 `smtp.office365.com` with an OAuth client-credentials token (`authType: token`); with empty `KEYCLOAK_SMTP_*` values
 (the dev default) Keycloak simply sends nothing. Invitations are Keycloak's own admin-triggered "Credential Reset" mail
-(no platform API or UI). The client secret is the one deliberate
-`${...}` placeholder in the realm: `${vault.smtp-client-secret}` is resolved by Keycloak's file vault, which the
-entrypoint fills from `KEYCLOAK_SMTP_CLIENT_SECRET` into a tmpfs at `/opt/keycloak/vault`. Operator setup:
-`docs/docs/2_platform/3_deployment_guide/11_realm_mail/`. Tests: `uv run pytest
-infra/deployment/tests/test_keycloak_realm_mail.py`.
+(no platform API or UI). The client secret is the one deliberate `${...}` placeholder in the realm:
+`${vault.smtp-client-secret}` is resolved by Keycloak's file vault, which the entrypoint fills from
+`KEYCLOAK_SMTP_CLIENT_SECRET` into a tmpfs at `/opt/keycloak/vault`. Operator setup:
+`docs/docs/2_platform/3_deployment_guide/11_realm_mail/`. Tests:
+`uv run pytest infra/deployment/tests/test_keycloak_realm_mail.py`.
 
 The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
 `realm-management` client roles. The current minimum required for the API to function correctly is:
