@@ -984,6 +984,8 @@ process:
       done: Completato
       steps: Progresso
 form:
+  repeater:
+    add_item: Aggiungi elemento
   secret_file_input:
     drop_hint: Trascina qui il file o fai clic per sceglierlo
     limits: '{accept}, fino a {size}'

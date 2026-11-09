@@ -986,6 +986,8 @@ process:
       done: Terminé
       steps: Progression
 form:
+  repeater:
+    add_item: Ajouter un élément
   secret_file_input:
     drop_hint: Déposez le fichier ici ou cliquez pour le choisir
     limits: "{accept}, jusqu'à {size}"
