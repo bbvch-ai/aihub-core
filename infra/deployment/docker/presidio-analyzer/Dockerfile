@@ -18,7 +18,7 @@ FROM python:3.12-slim
 # twice when all are busy. 2 x 4 let a third long text block everything; 4 x 1 doubled an idle request, and one torch
 # thread makes a long text 3 to 4 times slower. Deployments size these through compose for bigger hosts.
 ENV PIP_NO_CACHE_DIR=1 PORT=3000 ANALYZER_CONF_FILE=/app/analyzer.yaml HF_HOME=/app/hf OMP_NUM_THREADS=2 \
-    MKL_NUM_THREADS=2 GUNICORN_WORKERS=1 GUNICORN_THREADS=4 GUNICORN_TIMEOUT=300
+    MKL_NUM_THREADS=2 GUNICORN_WORKERS=1 GUNICORN_THREADS=4 GUNICORN_TIMEOUT=300 GLINER_BATCH_SIZE=8
 
 WORKDIR /app
 
@@ -38,7 +38,7 @@ RUN python -c "from gliner import GLiNER; GLiNER.from_pretrained('urchade/gliner
     && mkdir -p "${HF_HOME}/hub/models--urchade--gliner_multi_pii-v1/refs" \
     && printf '%s' "${GLINER_REVISION}" > "${HF_HOME}/hub/models--urchade--gliner_multi_pii-v1/refs/main"
 
-COPY --chown=1001:1001 app.py word_aligned_text_chunker.py logging.ini /app/
+COPY --chown=1001:1001 app.py batched_gliner_recognizer.py word_aligned_text_chunker.py logging.ini /app/
 
 ENV HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 
