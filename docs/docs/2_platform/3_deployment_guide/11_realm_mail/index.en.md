@@ -17,14 +17,16 @@ that mail arrives.
 The mail server is set in `infra/deployment/compose-config.yml` under `keycloak.smtp_server` and rendered into the realm
 on the first start:
 
-| Setting        | Value                                                                                           |
-| -------------- | ----------------------------------------------------------------------------------------------- |
-| Mail server    | `smtp.office365.com:587`, STARTTLS                                                              |
-| Sender         | `noreply.ai-hub@bbv.ch` (display name "Swiss AI-Hub")                                           |
+| Setting        | Value                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| Mail server    | `smtp.office365.com:587`, STARTTLS                                                               |
+| Sender         | `noreply.ai-hub@bbv.ch` (display name "Swiss AI-Hub")                                            |
 | Authentication | OAuth 2.0 token from `login.microsoftonline.com`, scope `https://outlook.office365.com/.default` |
 
-Existing deployments get the mail server on the next Keycloak start, as long as the realm has none yet. A mail server an
-administrator already configured in the Keycloak admin console is kept.
+Existing deployments get the mail server on the next Keycloak start once `KEYCLOAK_SMTP_TENANT_ID` and
+`KEYCLOAK_SMTP_CLIENT_ID` are set, as long as the realm has no mail server yet or still has the platform's server
+without a client id (a realm first started without the variables). A mail server an administrator configured in the
+Keycloak admin console is kept.
 
 The client secret never appears in the realm. Keycloak reads it at send time from its file vault: the entrypoint writes
 `KEYCLOAK_SMTP_CLIENT_SECRET` to `/opt/keycloak/vault/aihub_smtp-client-secret`, a memory-only mount, and the realm
@@ -35,9 +37,12 @@ refers to it as `${vault.smtp-client-secret}`.
 These steps need an Entra administrator and an Exchange Online administrator of the tenant that owns the mailbox.
 
 1. **Register an app** in Microsoft Entra ID (App registrations → New registration). No redirect URI is needed.
+
 2. **Add the permission** *Office 365 Exchange Online* → *Application permissions* → `SMTP.SendAsApp`, and grant admin
    consent.
+
 3. **Create a client secret** (Certificates & secrets) and note its value and expiry date.
+
 4. **Register the app with Exchange Online** and give it access to the mailbox, in Exchange Online PowerShell:
 
    ```powershell
@@ -69,8 +74,8 @@ Then restart Keycloak (`docker compose up -d keycloak`).
 Deployments that do not run the platform's Docker Compose files, for example on Kubernetes, need the same three values
 in the Keycloak container's environment and a writable directory at `/opt/keycloak/vault`, ideally memory-backed. The
 platform's entrypoint script (`infra/configs/keycloak/keycloak-entrypoint.sh`) does the rest; if you replace it, start
-Keycloak with `--vault=file --vault-dir=/opt/keycloak/vault` and write the secret to the file
-`aihub_smtp-client-secret` in that directory.
+Keycloak with `--vault=file --vault-dir=/opt/keycloak/vault` and write the secret to the file `aihub_smtp-client-secret`
+in that directory.
 
 Keycloak connects to `login.microsoftonline.com:443` and `smtp.office365.com:587`, so outbound traffic to both must be
 allowed (see [Network requirements](../7_network_requirements/)).
@@ -102,8 +107,9 @@ admin UI under the tenant's users, as for every other user.
    - `535 5.7.3 Authentication unsuccessful`: SMTP AUTH is disabled on the mailbox, or the service principal has no
      mailbox permission.
 
-In the Keycloak admin console, *Realm settings* → *Email* → *Test connection* sends a test mail to the address of the
-administrator who is signed in.
+The admin console's *Realm settings* → *Email* → *Test connection* button is not a reliable check: it stays disabled for
+administrators who sign in to the `master` realm, such as the bootstrap `admin`. Use "Forgot password" or an invitation
+instead.
 
 ## Secret rotation
 

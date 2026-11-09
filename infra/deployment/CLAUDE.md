@@ -230,8 +230,8 @@ continues to build locally so developers test Dockerfile edits without round-tri
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
 libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/xlsxwriter/python-docx/python-pptx/weasyprint/
 pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and headless LibreOffice with
-`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX
-and `pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
+`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX and
+`pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
 `make -C infra/deployment build-and-push-open-terminal-image` (requires `docker login ghcr.io`). Re-publish whenever:
 
 - The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
@@ -283,14 +283,14 @@ every call.
 
 ### Publishing the browser-proxy image
 
-The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages, built
-from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image` (requires
-`docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and `image_tags.browser_proxy`
-with every change to that folder. Three settings look optional and are not (each verified against Playwright 1.63):
-`CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://` with `CONNECT` too; the
-error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted` instead of a 403 with
-`X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that form and the range
-would refuse all of IPv4.
+The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages,
+built from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image`
+(requires `docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and
+`image_tags.browser_proxy` with every change to that folder. Three settings look optional and are not (each verified
+against Playwright 1.63): `CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://`
+with `CONNECT` too; the error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted`
+instead of a 403 with `X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that
+form and the range would refuse all of IPv4.
 
 Check the [Squid advisories](https://github.com/squid-cache/squid/security/advisories) when bumping the base, not an
 image scan. Alpine 3.22 froze Squid at 6.12, which upstream no longer fixes, and Alpine's secdb lists only the CVEs
@@ -415,11 +415,11 @@ Rules when editing:
 **Realm mail** (`keycloak.smtp_server` in `compose-config.yml`): every stage sends from `noreply.ai-hub@bbv.ch` through
 `smtp.office365.com` with an OAuth client-credentials token (`authType: token`); with empty `KEYCLOAK_SMTP_*` values
 (the dev default) Keycloak simply sends nothing. Invitations are Keycloak's own admin-triggered "Credential Reset" mail
-(no platform API or UI). The client secret is the one deliberate
-`${...}` placeholder in the realm: `${vault.smtp-client-secret}` is resolved by Keycloak's file vault, which the
-entrypoint fills from `KEYCLOAK_SMTP_CLIENT_SECRET` into a tmpfs at `/opt/keycloak/vault`. Operator setup:
-`docs/docs/2_platform/3_deployment_guide/11_realm_mail/`. Tests: `uv run pytest
-infra/deployment/tests/test_keycloak_realm_mail.py`.
+(no platform API or UI). The client secret is the one deliberate `${...}` placeholder in the realm:
+`${vault.smtp-client-secret}` is resolved by Keycloak's file vault, which the entrypoint fills from
+`KEYCLOAK_SMTP_CLIENT_SECRET` into a tmpfs at `/opt/keycloak/vault`. Operator setup:
+`docs/docs/2_platform/3_deployment_guide/11_realm_mail/`. Tests:
+`uv run pytest infra/deployment/tests/test_keycloak_realm_mail.py`.
 
 The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
 `realm-management` client roles. The current minimum required for the API to function correctly is:

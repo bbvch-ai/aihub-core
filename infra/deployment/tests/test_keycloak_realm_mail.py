@@ -9,14 +9,20 @@ import sys
 from pathlib import Path
 
 import pytest
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 DEPLOYMENT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(DEPLOYMENT_DIR))
 
 import generate_compose  # noqa: E402
 
-ENV = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR), keep_trailing_newline=True)
+# select_autoescape only escapes .html/.htm/.xml templates; the .j2 templates rendered here stay unescaped,
+# exactly as generate_compose.py renders them.
+ENV = Environment(
+    loader=FileSystemLoader(DEPLOYMENT_DIR),
+    keep_trailing_newline=True,
+    autoescape=select_autoescape(),
+)
 
 
 def _render_realm(stage: str, tmp_path: Path) -> dict:
