@@ -36,13 +36,16 @@ def remote_name_for_bucket(bucket: str, source: str) -> str:
 def rclone_remote_for_bucket(bucket: str, source: str) -> RcloneRemote:
     """Rebuilds the database's remote in the rclone daemon from the stored configuration and returns how to address it.
 
-    Rebuilding it in every process is what makes a credential edit apply on the next run and a restarted daemon
-    (which keeps no config file) need no operator action. Cached per process because every op of a partition run
-    loads its input through the IO manager and would otherwise re-upsert the same remote three times per file.
-    Write and removal runs share this remote and never write a refreshed token back; only the observation does,
-    through a remote of its own (``ObservationRcloneRemote``).
+    A host the configuration names must be public (or allowed by the deployment), because the daemon sits on the
+    platform's own networks (``RcloneSyncConfig.require_public_hosts``); an S3 remote with an endpoint is sent with a
+    path-style provider, so the endpoint host is the only one it contacts. Rebuilding it in every process is what makes
+    a credential edit apply on the next run and a restarted daemon (which keeps no config file) need no operator
+    action. Cached per process because every op of a partition run loads its input through the IO manager and would
+    otherwise re-upsert the same remote three times per file. Write and removal runs share this remote and never write
+    a refreshed token back; only the observation does, through a remote of its own (``ObservationRcloneRemote``).
     """
     config = source_config_for_bucket(bucket, source, RcloneSyncConfig)
+    config.require_public_hosts()
     name = remote_name_for_bucket(bucket, source)
     remote = RcloneRemote.from_config(config, name)
     build_rclone_client().upsert_remote(config.to_rclone_source_config(name))

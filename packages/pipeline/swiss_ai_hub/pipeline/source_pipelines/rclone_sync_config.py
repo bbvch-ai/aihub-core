@@ -4,17 +4,51 @@ from pathlib import PurePosixPath
 from typing import Annotated, Any, Self
 from urllib.parse import quote
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from swiss_ai_hub.core.form import ChipsInput, InputNumber, InputText, Password, SecretFileInput, Select
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure.rclone import RcloneBackendType, RcloneSettings, RcloneSourceConfig
+from swiss_ai_hub.core.infrastructure.rclone import (
+    RcloneBackendType,
+    RclonePipelineSettings,
+    RcloneSettings,
+    RcloneSourceConfig,
+)
+from swiss_ai_hub.core.network import PublicHostGuard
 from swiss_ai_hub.core.source_pipelines import SourcePipelineConfig
 
 _I18N = "lib.source_pipelines.rclone.config"
 _BACKEND_REF = "rclone_backend_type"
 _TESTED_BACKENDS = (RcloneBackendType.S3, RcloneBackendType.DRIVE, RcloneBackendType.ONEDRIVE)
 _KEY_FILE_MAX_BYTES = 65536
+_GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token"
+_GOOGLE_TOKEN_URIS = {_GOOGLE_TOKEN_URI, "https://accounts.google.com/o/oauth2/token"}
+# Providers rclone 1.71 addresses in path style on a custom endpoint, so every request goes to the endpoint host
+# (checked against the real image). AWS and many others put the bucket into the host name instead.
+_PATH_STYLE_S3_PROVIDERS = frozenset(
+    {
+        "ArvanCloud",
+        "Ceph",
+        "ChinaMobile",
+        "Cloudflare",
+        "Exaba",
+        "FlashBlade",
+        "IBMCOS",
+        "IDrive",
+        "IONOS",
+        "Liara",
+        "Magalu",
+        "Mega",
+        "Minio",
+        "Other",
+        "Outscale",
+        "Qiniu",
+        "Rclone",
+        "SeaweedFS",
+        "StackPath",
+    }
+)
+_LOCAL_DISABLED = "rclone backend 'local' is disabled on this deployment: RCLONE_LOCAL_SOURCE_ROOT is unset."
 # rclone's own OneDrive ``authEndpoint`` per region. The token endpoint is always one of these Microsoft hosts, so no
 # form field can send a stored token anywhere else.
 _ONEDRIVE_LOGIN_HOSTS = {
@@ -155,6 +189,22 @@ class GoogleDriveOptions(Form):
         except ValueError as error:
             raise ValueError("Google Drive credentials must be the JSON blob from the downloaded key file.") from error
 
+    @field_validator("service_account_credentials", mode="after")
+    @classmethod
+    def _google_token_endpoint(cls, value: str | SecretFileInput) -> str | SecretFileInput:
+        """rclone posts the signed assertion to the key file's own `token_uri`, so any other host is one the submitter
+        picked; checked without a name lookup. Go reads JSON keys ignoring case (the Kelvin sign included) and keeps
+        the last match, so every key that folds to `token_uri` must name Google."""
+        if not isinstance(value, str) or not value.strip():
+            return value
+        key = json.loads(value)
+        if not isinstance(key, dict):
+            return value
+        token_uris = [uri for name, uri in key.items() if name.casefold() == "token_uri"]
+        if any(not isinstance(uri, str) or uri not in _GOOGLE_TOKEN_URIS for uri in token_uris):
+            raise ValueError("The service account key file must use Google's token_uri.")
+        return value
+
     @classmethod
     def as_form(cls) -> Self:
         backend = RcloneBackendType.DRIVE
@@ -287,7 +337,7 @@ class RcloneSyncConfig(SourcePipelineConfig):
     @classmethod
     def offered_backends(cls) -> list[RcloneBackendType]:
         """Only the backends verified end to end, plus ``local`` where the deployment names a directory the daemon
-        may serve from. The other backends stay configurable so databases already set up with them keep syncing."""
+        may serve from. Nothing else is synced either, whatever a stored configuration names."""
         allowed_root = RcloneSettings().LOCAL_SOURCE_ROOT
         return [
             backend
@@ -335,6 +385,26 @@ class RcloneSyncConfig(SourcePipelineConfig):
             local=LocalOptions.as_form(),
         )
 
+    @model_validator(mode="after")
+    def _only_offered_backends(self) -> Self:
+        """The dialog's choice is not enforced by the API, which validates against the announced schema only."""
+        if not isinstance(self.backend_type, str) or self.backend in self.offered_backends():
+            return self
+        if self.backend is RcloneBackendType.LOCAL:
+            raise ValueError(_LOCAL_DISABLED)
+        offered = ", ".join(backend.value for backend in self.offered_backends())
+        raise ValueError(f"rclone backend '{self.backend_type}' is not offered on this deployment ({offered}).")
+
+    @model_validator(mode="after")
+    def _no_access_point_behind_an_endpoint(self) -> Self:
+        """An access point ARN as the bucket makes the S3 client derive its own host from the ARN instead of using the
+        checked endpoint; rclone fails on it in path style anyway, so the reason is given here."""
+        if not isinstance(self.backend_type, str) or self.backend is not RcloneBackendType.S3 or not self.s3.endpoint:
+            return self
+        if self.root_path.strip("/").split("/")[0].lower().startswith("arn:"):
+            raise ValueError("An S3 access point ARN cannot be the root path of a source with a custom endpoint.")
+        return self
+
     @field_validator("include_patterns", "exclude_patterns", mode="before")
     @classmethod
     def _blank_patterns_mean_none(cls, value: object) -> object:
@@ -362,7 +432,37 @@ class RcloneSyncConfig(SourcePipelineConfig):
                 options["client_credentials"] = "true"
         if self.backend is RcloneBackendType.DRIVE:
             options.setdefault("scope", "drive.readonly")
+        if self.backend is RcloneBackendType.S3 and "endpoint" in options:
+            options["provider"] = self._path_style_provider(options.get("provider"))
         return RcloneSourceConfig(name=remote_name, backend_type=self.backend, options=options)
+
+    @staticmethod
+    def _path_style_provider(provider: str | None) -> str:
+        """In virtual-hosted style rclone contacts ``<bucket>.<endpoint host>``, a name whoever owns the endpoint's
+        domain can point inside the platform, and only the endpoint host is checked. A provider that keeps the bucket
+        in the path is kept for its other quirks; any other is sent as ``Other``. The stored provider is untouched."""
+        return provider if provider in _PATH_STYLE_S3_PROVIDERS else "Other"
+
+    def outbound_urls(self) -> list[str]:
+        """Every host the selected backend was told to connect to, as a URL. OneDrive and Drive name none: rclone
+        reaches Microsoft Graph and Google on its own."""
+        match self.backend:
+            case RcloneBackendType.S3:
+                endpoints = [self.s3.endpoint]
+            case RcloneBackendType.AZUREBLOB:
+                endpoints = [self.azureblob.endpoint]
+            case RcloneBackendType.SFTP:
+                endpoints = [f"sftp://{self.sftp.host}:{self.sftp.port}"]
+            case _:
+                endpoints = []
+        return [endpoint if "://" in endpoint else f"https://{endpoint}" for endpoint in endpoints if endpoint]
+
+    def require_public_hosts(self) -> None:
+        """Run before any remote is created from this configuration: a knowledge administrator names these hosts and
+        the daemon sits on the platform's own networks."""
+        allowed_hosts = RclonePipelineSettings().private_host_allow_list()
+        for url in self.outbound_urls():
+            PublicHostGuard.require_public(url, allowed_hosts, "RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS")
 
     def refreshable_token_path(self) -> str | None:
         """Dotted path of the pasted OAuth token rclone refreshes for this source, or None when the source holds
@@ -382,9 +482,7 @@ class RcloneSyncConfig(SourcePipelineConfig):
         setting is absent."""
         allowed_root = RcloneSettings().LOCAL_SOURCE_ROOT
         if not allowed_root:
-            raise ValueError(
-                "rclone backend 'local' is disabled on this deployment: RCLONE_LOCAL_SOURCE_ROOT is unset."
-            )
+            raise ValueError(_LOCAL_DISABLED)
         allowed = PurePosixPath(posixpath.normpath(allowed_root))
         requested = PurePosixPath(posixpath.normpath(self.root_path)) if self.root_path.strip() else allowed
         if requested != allowed and allowed not in requested.parents:

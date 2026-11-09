@@ -105,7 +105,7 @@ class TestOpened:
     @pytest.mark.parametrize(
         "configuration",
         [
-            {"backend_type": "sftp", "sftp": {"host": "h", "user": "u", "password": "pw"}},
+            {"backend_type": "s3", "s3": {"access_key_id": "a", "secret_access_key": "pw"}},
             {
                 "backend_type": "onedrive",
                 "onedrive": {"client_id": "c", "client_secret": "s", "tenant": "t", "drive_id": "d"},
@@ -119,6 +119,17 @@ class TestOpened:
             pass
 
         assert remote.token_baseline is None
+
+    def test_an_internal_endpoint_never_reaches_the_daemon(self, encryption, row, client):
+        """The observation builds its own remote, so it runs the same host check as the shared one."""
+        row.source_configuration = {"backend_type": "s3", "s3": {"endpoint": "http://seaweedfs-s3:8333"}}
+
+        with pytest.raises(ValueError, match="RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS"):
+            with ObservationRcloneRemote.opened("hrdocs", "rclone", _RUN_ID):
+                pass
+
+        client.upsert_remote.assert_not_called()
+        client.delete_remote.assert_not_called()
 
     def test_the_remote_is_deleted_when_the_listing_fails(self, encryption, row, client):
         row.source_configuration = _onedrive(encryption)

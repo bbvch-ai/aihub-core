@@ -5261,6 +5261,7 @@ services:
       # Rclone Source Pipeline schedule
       RCLONE_PIPELINE_OBSERVE_JOB_HOUR: ${RCLONE_PIPELINE_OBSERVE_JOB_HOUR}
       RCLONE_PIPELINE_OBSERVE_JOB_MINUTE: ${RCLONE_PIPELINE_OBSERVE_JOB_MINUTE}
+      RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS: ${RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
@@ -5292,6 +5293,7 @@ services:
       dagster:
         aliases:
           - rclone-pipeline-grpc
+      egress:  # resolves the hosts a source names (public host check) before the rclone daemon connects to them
   {%- endif %}
 
   {%- if image_tags.structured_pipeline[stage] %}

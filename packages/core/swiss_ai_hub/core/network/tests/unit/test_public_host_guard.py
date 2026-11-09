@@ -2,7 +2,7 @@ import socket
 
 import pytest
 
-from swiss_ai_hub.core.network.source_host_guard import SourceHostGuard
+from swiss_ai_hub.core.network.public_host_guard import PublicHostGuard
 
 _PUBLIC = "93.184.216.34"
 
@@ -20,7 +20,7 @@ def dns(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[str]]:
             for ip in answers[host]
         ]
 
-    monkeypatch.setattr("swiss_ai_hub.core.network.source_host_guard.socket.getaddrinfo", getaddrinfo)
+    monkeypatch.setattr("swiss_ai_hub.core.network.public_host_guard.socket.getaddrinfo", getaddrinfo)
     return answers
 
 
@@ -28,7 +28,7 @@ _ALLOW_LIST_VARIABLE = "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"
 
 
 def _require(url: str, allowed: frozenset[str] = frozenset()) -> None:
-    SourceHostGuard.require_public(url, allowed, _ALLOW_LIST_VARIABLE)
+    PublicHostGuard.require_public(url, allowed, _ALLOW_LIST_VARIABLE)
 
 
 class TestRefused:
@@ -70,20 +70,20 @@ class TestRefused:
             _require("https://jira.acme.ch")
 
     def test_a_host_that_does_not_resolve_says_so(self, dns: dict[str, list[str]]):
-        with pytest.raises(ValueError, match="The source host jira.acme.invalid cannot be resolved"):
+        with pytest.raises(ValueError, match="The host jira.acme.invalid cannot be resolved"):
             _require("https://jira.acme.invalid")
 
     def test_the_message_names_the_setting_that_allows_it(self, dns: dict[str, list[str]]):
         """Each caller has its own setting, so the operator is told the one that applies."""
         with pytest.raises(ValueError, match="An operator can allow it with JIRA_ALLOWED_PRIVATE_HOSTS"):
-            SourceHostGuard.require_public("http://localhost:8094", frozenset(), "JIRA_ALLOWED_PRIVATE_HOSTS")
+            PublicHostGuard.require_public("http://localhost:8094", frozenset(), "JIRA_ALLOWED_PRIVATE_HOSTS")
 
     @pytest.mark.asyncio
     async def test_the_async_check_refuses_the_same_hosts(self, dns: dict[str, list[str]]):
         dns["jira.attacker.example"] = ["10.0.0.5"]
 
         with pytest.raises(ValueError, match="which resolves to the internal address 10.0.0.5"):
-            await SourceHostGuard.require_public_async(
+            await PublicHostGuard.require_public_async(
                 "https://jira.attacker.example", frozenset(), _ALLOW_LIST_VARIABLE
             )
 
@@ -107,4 +107,34 @@ class TestAllowed:
     async def test_the_async_check_passes_a_public_host(self, dns: dict[str, list[str]]):
         dns["acme.atlassian.net"] = [_PUBLIC]
 
-        await SourceHostGuard.require_public_async("https://acme.atlassian.net", frozenset(), _ALLOW_LIST_VARIABLE)
+        await PublicHostGuard.require_public_async("https://acme.atlassian.net", frozenset(), _ALLOW_LIST_VARIABLE)
+
+
+class TestUrlShapes:
+    @pytest.mark.parametrize("url", ["server.py", "file:///etc/passwd", ""])
+    def test_a_url_without_a_host_is_refused(self, url: str, dns: dict[str, list[str]]):
+        with pytest.raises(ValueError, match="points at no host"):
+            PublicHostGuard.require_public(url, frozenset(), _ALLOW_LIST_VARIABLE)
+
+    def test_an_sftp_host_is_resolved_on_its_port(self, dns: dict[str, list[str]]):
+        dns["files.acme.ch"] = ["192.168.4.4"]
+
+        with pytest.raises(ValueError, match="192.168.4.4"):
+            PublicHostGuard.require_public("sftp://files.acme.ch:2222", frozenset(), _ALLOW_LIST_VARIABLE)
+
+    def test_the_message_names_the_setting_the_caller_passed(self, dns: dict[str, list[str]]):
+        with pytest.raises(ValueError, match="MCP_ALLOWED_PRIVATE_HOSTS"):
+            PublicHostGuard.require_public("http://api:8000/mcp", frozenset(), "MCP_ALLOWED_PRIVATE_HOSTS")
+
+
+class TestMessage:
+    def test_credentials_path_and_query_are_not_quoted(self, dns: dict[str, list[str]]):
+        """The message reaches run logs, failure notifications and chats."""
+        with pytest.raises(ValueError) as refused:
+            _require("http://admin:s3cret@10.0.0.5:9000/bucket?X-Amz-Signature=abc")
+
+        message = str(refused.value)
+        assert "The URL http://10.0.0.5:9000 points at 10.0.0.5" in message
+        assert "s3cret" not in message
+        assert "admin" not in message
+        assert "X-Amz-Signature" not in message

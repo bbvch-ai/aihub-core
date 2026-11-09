@@ -44,7 +44,7 @@ class TestRead:
         bucket_lookup.return_value = MagicMock(
             source="rclone",
             deleting=False,
-            source_configuration={"backend_type": "sftp", "sftp": {"host": "h", "user": "u", "password": ciphertext}},
+            source_configuration={"backend_type": "s3", "s3": {"access_key_id": "a", "secret_access_key": ciphertext}},
         )
 
         stored = StoredSourceConfiguration[RcloneSyncConfig].read("hrdocs", "rclone", RcloneSyncConfig)

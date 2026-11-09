@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from pydantic import ValidationError
 from swiss_ai_hub.core.form import ConfigSpecs
@@ -12,6 +14,15 @@ from swiss_ai_hub.pipeline.source_pipelines.rclone_sync_config import RcloneSync
 
 def _offered(elements: dict) -> list[str]:
     return [option["value"] for option in elements["backend_type"].options]
+
+
+@pytest.fixture
+def sftp_offered(monkeypatch: pytest.MonkeyPatch) -> None:
+    """For the option mapping of a backend that is built but not yet offered."""
+    monkeypatch.setattr(
+        "swiss_ai_hub.pipeline.source_pipelines.rclone_sync_config._TESTED_BACKENDS",
+        (RcloneBackendType.S3, RcloneBackendType.DRIVE, RcloneBackendType.ONEDRIVE, RcloneBackendType.SFTP),
+    )
 
 
 class TestAnnouncedForm:
@@ -33,17 +44,19 @@ class TestAnnouncedForm:
 
         assert _offered(elements) == ["onedrive", "drive", "s3"]
 
-    def test_backends_not_yet_verified_end_to_end_are_not_offered_but_still_run(self, monkeypatch):
+    def test_backends_not_yet_verified_end_to_end_are_neither_offered_nor_run(self, monkeypatch):
         monkeypatch.setenv("RCLONE_LOCAL_SOURCE_ROOT", "/data")
         elements = {element.name: element for element in RcloneSyncConfig.as_form().to_formkit_form()}
         offered = _offered(elements)
 
         for untested in ("azureblob", "sftp"):
             assert untested not in offered
-        config = RcloneSyncConfig.model_validate(
-            {"backend_type": "sftp", "sftp": {"host": "files.acme", "user": "u", "password": "p"}}
-        )
-        assert config.to_rclone_source_config("r").backend_type is RcloneBackendType.SFTP
+            with pytest.raises(ValueError, match=f"rclone backend '{untested}' is not offered on this deployment"):
+                RcloneSyncConfig.model_validate({"backend_type": untested})
+
+    def test_an_unknown_backend_is_refused(self):
+        with pytest.raises(ValueError):
+            RcloneSyncConfig.model_validate({"backend_type": "http"})
 
     def test_backends_are_offered_by_name_while_their_value_drives_the_option_groups(self):
         """The stored value and every group's ``condition_if`` keep comparing the token; only the label changed."""
@@ -77,6 +90,7 @@ class TestAnnouncedForm:
             "sftp.key_pem",
         }
 
+    @pytest.mark.usefixtures("sftp_offered")
     def test_the_schema_accepts_a_submission_carrying_only_the_selected_backend(self):
         specs = ConfigSpecs.from_form(RcloneSyncConfig.as_form(), "RcloneSyncConfig")
 
@@ -94,6 +108,7 @@ class TestAnnouncedForm:
 
 
 class TestToRcloneSourceConfig:
+    @pytest.mark.usefixtures("sftp_offered")
     def test_the_selected_backend_is_emitted_without_empty_options_and_with_rclone_spelling(self):
         config = RcloneSyncConfig.model_validate(
             {"backend_type": "sftp", "sftp": {"host": "files.acme", "user": "u", "password": "p", "port": 2222}}
@@ -166,10 +181,9 @@ class TestToRcloneSourceConfig:
 class TestLocalBackendConfinement:
     def test_a_local_source_is_refused_per_run_where_the_deployment_allows_no_directory(self, monkeypatch):
         monkeypatch.delenv("RCLONE_LOCAL_SOURCE_ROOT", raising=False)
-        config = RcloneSyncConfig.model_validate({"backend_type": "local", "root_path": "/etc"})
 
-        with pytest.raises(ValueError, match="RCLONE_LOCAL_SOURCE_ROOT"):
-            config.remote_fs("r")
+        with pytest.raises(ValueError, match="RCLONE_LOCAL_SOURCE_ROOT is unset"):
+            RcloneSyncConfig.model_validate({"backend_type": "local", "root_path": "/etc"})
 
     @pytest.mark.parametrize("escape", ["/etc", "/data/../etc", "/data2", "/"])
     def test_a_root_outside_the_allowed_directory_is_refused(self, monkeypatch, escape):
@@ -226,6 +240,7 @@ class TestMultiLineSecrets:
 
         assert config.to_rclone_source_config("r").options["token"] == pasted
 
+    @pytest.mark.usefixtures("sftp_offered")
     def test_a_pasted_pem_key_reaches_rclone_with_escaped_line_breaks(self):
         pasted = "-----BEGIN OPENSSH PRIVATE KEY-----\r\nabc\r\ndef\r\n-----END OPENSSH PRIVATE KEY-----\r\n"
         config = RcloneSyncConfig.model_validate(
@@ -240,6 +255,86 @@ class TestMultiLineSecrets:
         assert RcloneSyncConfig.as_form() is not None
 
 
+class TestOutboundUrls:
+    @pytest.mark.parametrize(
+        ("endpoint", "expected"),
+        [
+            ("", []),
+            ("s3.eu-central-2.wasabisys.com", ["https://s3.eu-central-2.wasabisys.com"]),
+            ("http://minio.acme.ch:9000", ["http://minio.acme.ch:9000"]),
+        ],
+    )
+    def test_an_s3_endpoint_is_named_with_a_scheme(self, endpoint: str, expected: list[str]):
+        config = RcloneSyncConfig.model_validate({"backend_type": "s3", "s3": {"endpoint": endpoint}})
+
+        assert config.outbound_urls() == expected
+
+    @pytest.mark.usefixtures("sftp_offered")
+    def test_an_sftp_host_is_named_with_its_port(self):
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "sftp", "sftp": {"host": "files.acme.ch", "port": 2222, "user": "u"}}
+        )
+
+        assert config.outbound_urls() == ["sftp://files.acme.ch:2222"]
+
+    def test_onedrive_names_no_host(self):
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "onedrive", "s3": {"endpoint": "http://seaweedfs-s3:9000"}}
+        )
+
+        assert config.outbound_urls() == [], "a hidden group's values are never connected to"
+
+
+class TestPathStyleBehindAnEndpoint:
+    """In virtual-hosted style rclone contacts `<bucket>.<endpoint host>`, which the host check never sees."""
+
+    @staticmethod
+    def _sent_provider(provider: str, endpoint: str) -> str | None:
+        config = RcloneSyncConfig.model_validate(
+            {
+                "backend_type": "s3",
+                "root_path": "docs/hr",
+                "s3": {"provider": provider, "endpoint": endpoint, "access_key_id": "id", "secret_access_key": "pw"},
+            }
+        )
+        return config.to_rclone_source_config("r").options.get("provider")
+
+    @pytest.mark.parametrize("provider", ["AWS", "Wasabi", "Alibaba", "aws", "Bogus", ""])
+    def test_a_virtual_hosted_provider_is_sent_as_other(self, provider: str):
+        assert self._sent_provider(provider, "http://ep.example.com:9000") == "Other"
+
+    @pytest.mark.parametrize("provider", ["Minio", "Ceph", "Cloudflare", "SeaweedFS", "Other"])
+    def test_a_path_style_provider_is_kept(self, provider: str):
+        assert self._sent_provider(provider, "http://ep.example.com:9000") == provider
+
+    def test_without_an_endpoint_the_provider_is_unchanged(self):
+        assert self._sent_provider("AWS", "") == "AWS"
+
+    def test_the_stored_provider_stays_what_the_admin_entered(self):
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "s3", "s3": {"provider": "AWS", "endpoint": "http://ep.example.com"}}
+        )
+
+        assert config.s3.provider == "AWS"
+
+    @pytest.mark.parametrize(
+        "root_path", ["arn:aws:s3:us-east-1:123456789012:accesspoint:docs/hr", "/ARN:aws:s3:eu-west-1:1:accesspoint:x"]
+    )
+    def test_an_access_point_arn_is_refused_with_an_endpoint(self, root_path: str):
+        """The S3 client derives the host from the ARN, so the checked endpoint is not where the requests go."""
+        with pytest.raises(ValidationError, match="access point ARN"):
+            RcloneSyncConfig.model_validate(
+                {"backend_type": "s3", "root_path": root_path, "s3": {"endpoint": "http://ep.example.com"}}
+            )
+
+    def test_an_access_point_arn_is_accepted_without_an_endpoint(self):
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "s3", "root_path": "arn:aws:s3:us-east-1:123456789012:accesspoint:docs/hr"}
+        )
+
+        assert config.root_path.startswith("arn:")
+
+
 class TestValidationErrors:
     def test_a_rejected_secret_is_not_quoted_in_the_error(self):
         """The pipeline validates after decrypting, and the error lands in the run log and the failure notification."""
@@ -250,6 +345,42 @@ class TestValidationErrors:
 
         assert "s3.secret_access_key" in str(rejected.value)
         assert "AKIA-SECRET-VALUE" not in str(rejected.value)
+
+
+class TestServiceAccountTokenEndpoint:
+    def test_a_key_file_with_a_foreign_token_endpoint_is_refused(self):
+        key = '{"type":"service_account","token_uri":"http://seaweedfs-filer:8888/t"}'
+
+        with pytest.raises(ValidationError, match="token_uri"):
+            RcloneSyncConfig.model_validate({"backend_type": "drive", "drive": {"service_account_credentials": key}})
+
+    @pytest.mark.parametrize(
+        "key",
+        [
+            '{"type":"service_account","TOKEN_URI":"http://127.0.0.1:8000/t"}',
+            '{"token_uri":"https://oauth2.googleapis.com/token","Token_Uri":"http://127.0.0.1:8000/t"}',
+            '{"Token_Uri":"http://127.0.0.1:8000/t","token_uri":"https://oauth2.googleapis.com/token"}',
+            '{"token_uri":"https://oauth2.googleapis.com/token","to\\u212aen_uri":"http://127.0.0.1:8000/t"}',
+            '{"type":"service_account","token_uri":null}',
+        ],
+        ids=["upper case", "mixed case after", "mixed case before", "kelvin sign", "null"],
+    )
+    def test_a_foreign_endpoint_under_any_spelling_go_reads_is_refused(self, key: str):
+        """rclone decodes the key file with Go, which matches keys ignoring case and keeps the last match."""
+        with pytest.raises(ValidationError, match="token_uri"):
+            RcloneSyncConfig.model_validate({"backend_type": "drive", "drive": {"service_account_credentials": key}})
+
+    @pytest.mark.parametrize(
+        "token_uri", ["https://oauth2.googleapis.com/token", "https://accounts.google.com/o/oauth2/token", None]
+    )
+    def test_a_key_file_with_googles_or_no_token_endpoint_is_accepted(self, token_uri: str | None):
+        key = {"type": "service_account"} | ({"token_uri": token_uri} if token_uri else {})
+
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "drive", "drive": {"service_account_credentials": json.dumps(key)}}
+        )
+
+        assert config.drive.service_account_credentials
 
 
 def _onedrive_token_mode(**onedrive: str) -> RcloneSyncConfig:
@@ -335,7 +466,6 @@ class TestRefreshableTokenPath:
                 None,
             ),
             ({"backend_type": "drive", "drive": {"service_account_credentials": "{}"}}, None),
-            ({"backend_type": "sftp", "sftp": {"host": "h", "user": "u", "password": "p"}}, None),
             ({"backend_type": "s3", "s3": {"access_key_id": "a", "secret_access_key": "s"}}, None),
         ],
     )

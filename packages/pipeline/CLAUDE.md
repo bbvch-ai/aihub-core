@@ -361,13 +361,21 @@ SharePoint is `onedrive` with `drive_type=documentLibrary`. Credentials are `str
 mask keeps the stored value, and a submitted `enc:v1:` value is refused (a client is only ever shown masks).
 `SourcePipelineConfig` sets `hide_input_in_errors`, because the pipeline validates after decrypting. The dialog offers
 only `RcloneSyncConfig.offered_backends()` (`_TESTED_BACKENDS` = `s3`, `drive`, `onedrive`, plus `local` when
-`RCLONE_LOCAL_SOURCE_ROOT` is set), each under a translated label; the other backends stay in the form and runtime so
-existing databases keep syncing. rclone's setup still asks questions in non-interactive mode: `RcloneClient` answers the
-fixed ones (`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered with the stored `drive_id` through ephemeral
-`config_*` parameters (rclone then checks the drive against Microsoft Graph while creating the remote), and a step
-rclone fails raises its `Error` text. The Drive service-account key is a `SecretFileInput` (core form element, treated
-as a secret by `SecretFieldWalker`). Adding a backend = one `Form` subclass + one field on `RcloneSyncConfig` + labels
-in `packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
+`RCLONE_LOCAL_SOURCE_ROOT` is set), each under a translated label; a `model_validator` refuses any other backend when a
+stored configuration is read, because the API validates against the announced schema only. `outbound_urls()` names the
+hosts a backend connects to (S3/Azure `endpoint`, SFTP `host`), and `rclone_remote_for_bucket` passes each through
+`PublicHostGuard` before the remote is created (`RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts).
+With an S3 endpoint set, `to_rclone_source_config` sends a path-style provider (`_PATH_STYLE_S3_PROVIDERS`, checked
+against the rclone image; any other provider, `AWS` included, goes out as `Other`), because in virtual-hosted style
+rclone contacts `<bucket>.<endpoint host>`, a name the check never sees; the stored provider is untouched. An access
+point ARN as the root path is refused with an endpoint, since the client derives its host from the ARN. The Drive key file is refused when any key folding to `token_uri` (Go's JSON decoder
+ignores case, Kelvin sign included) names a host other than Google's. rclone's setup still asks questions in
+non-interactive mode: `RcloneClient` answers the fixed ones (`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered
+with the stored `drive_id` through ephemeral `config_*` parameters (rclone then checks the drive against Microsoft Graph
+while creating the remote), and a step rclone fails raises its `Error` text. The Drive service-account key is a
+`SecretFileInput` (core form element, treated as a secret by `SecretFieldWalker`). Adding a backend = one `Form`
+subclass + one field on `RcloneSyncConfig` + labels in
+`packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
 
 **Per-run resolution** (`util/source_builders.py`, the Stage-1 sibling of `model_builders` / `store_builders`):
 
@@ -425,12 +433,12 @@ monitoring ends it (up to ~2 h), and a run unknown to the instance may belong to
 **Emptied folders.** Removing files leaves their namespace behind, and a sourced database refuses manual namespace
 deletion. So after each removal, `ops/source/routed/delete_emptied_namespaces.py` deletes the row of every namespace of
 the run's database whose folder holds no ingestible file any more. Only the row: the folder's documents, figures and
-vectors are removed per file by the ingestion pipeline, which finds them by the namespace name each document carries.
-Do not route this through `knowledge_teardown_sensor`. A teardown deletes the whole folder prefix and every vector of
-the namespace, so a folder re-created at the source while it waited would lose its new files; with the row gone, the
-next observation simply registers a fresh one. Rows flagged `deleting` are manual deletions and stay with the teardown.
-A folder emptied at the source counts as gone, because rclone lists files only. A folder the source still lists keeps
-its row even while the data lake holds none of its files, because rclone writes each file in a run of its own. The
+vectors are removed per file by the ingestion pipeline, which finds them by the namespace name each document carries. Do
+not route this through `knowledge_teardown_sensor`. A teardown deletes the whole folder prefix and every vector of the
+namespace, so a folder re-created at the source while it waited would lose its new files; with the row gone, the next
+observation simply registers a fresh one. Rows flagged `deleting` are manual deletions and stay with the teardown. A
+folder emptied at the source counts as gone, because rclone lists files only. A folder the source still lists keeps its
+row even while the data lake holds none of its files, because rclone writes each file in a run of its own. The
 structured source pipeline runs the same op after its removal, without source files, because it writes within the same
 run.
 
@@ -587,7 +595,7 @@ silent:
   requests runs the hook before following one, so no answer can send a request on to a host nobody checked.
 - **Only public hosts.** A knowledge administrator sets the URL, and the pipeline sits on the networks of the platform's
   own services. The URL type refuses `?`, `#` and credentials (a `?` would turn the appended API path into a query), and
-  `SourceHostGuard` (core `network/`, shared with agents that read Jira) refuses, first thing in the preflight, a host
+  `PublicHostGuard` (core `network/`, shared with agents that read Jira) refuses, first thing in the preflight, a host
   without a dot (Docker service names, `localhost`) and one resolving to any non-global address.
   `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts (`localhost` in `.env.dev`). DNS rebinding between the
   check and the request is not covered.
@@ -632,7 +640,7 @@ Cloud and Confluence Data Center over REST v1 (`content/search` with CQL); v2 ha
 Data Center. It keeps the Jira adapter's rules on credentials (`auth=` only), the error hook (`ConfluenceRequestError`,
 an `HTTPError`, so 429 and 5xx are retried), type-level URL constraints and `problems()`. In addition:
 
-- **Only public hosts, as for Jira.** The URL type refuses `?`, `#` and credentials, and `SourceHostGuard` runs first in
+- **Only public hosts, as for Jira.** The URL type refuses `?`, `#` and credentials, and `PublicHostGuard` runs first in
   the preflight with the same `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` exemptions. A Confluence next to a developer's
   pipeline is reached through the dev default `localhost`; an on-premise Data Center on a private address needs an
   operator to allow its host.
@@ -677,7 +685,7 @@ an `HTTPError`, so 429 and 5xx are retried), type-level URL constraints and `pro
 crawls the HTML pages: the API gives namespace and category scope, revision ids and a complete listing for deletions,
 and `action=parse` returns the page with every template expanded but without the skin's navigation. It keeps the
 Confluence adapter's rules on the error hook (`MediaWikiRequestError`, an `HTTPError`, so 429 and 5xx are retried),
-type-level URL constraints, `problems()` and the `SourceHostGuard` check with
+type-level URL constraints, `problems()` and the `PublicHostGuard` check with
 `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`. In addition:
 
 - **API errors arrive with status 200.** The response hook raises on an `error` object (its `code`, such as
@@ -762,7 +770,7 @@ type-level URL constraints, `problems()` and the `SourceHostGuard` check with
 - **Downloads** (`MediaWikiClient.download`) use the sync's signed-in session (the adapter keeps the client of
   `dlt_source` for `read_file`), follow no redirect, stop reading at the size limit, and refuse an HTML answer: a single
   sign-on gateway answers an expired session with its login page and status 200, which would be stored as the document.
-  A file on another host than the wiki's (Wikimedia's upload host) passes `SourceHostGuard` first. 403, 404 and 410
+  A file on another host than the wiki's (Wikimedia's upload host) passes `PublicHostGuard` first. 403, 404 and 410
   become `StructuredFileUnavailableError`; a 401 or a server error fails the run.
 
 ## Markdown Frontmatter

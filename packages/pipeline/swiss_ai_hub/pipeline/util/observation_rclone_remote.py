@@ -38,6 +38,7 @@ class ObservationRcloneRemote:
         run_id: Annotated[str, "Dagster run id of the observation"],
     ) -> Iterator[RcloneRemote]:
         stored = StoredSourceConfiguration[RcloneSyncConfig].read(bucket, source, RcloneSyncConfig)
+        stored.config.require_public_hosts()
         name = cls.name_for(bucket, source, run_id)
         rclone_config = stored.config.to_rclone_source_config(name)
         remote = RcloneRemote.from_config(stored.config, name, cls._baseline(stored, rclone_config))

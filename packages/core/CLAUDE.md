@@ -95,8 +95,8 @@ packages/core/swiss_ai_hub/core/
 │   └── translations/                # YAML files: {scope}/{name}.{locale}.yml
 ├── imap/                            # Mail config + MIME parsing (MailParser, ParsedMessage, ImapClientConfig)
 ├── jira/                            # Read-only Jira for agents: JiraConnectionConfig, JiraTicketSearch, JiraHtml (shared with the pipeline)
-├── mcp/                             # MCP client configuration (McpClientConfig StepConfig)
-├── network/                         # SourceHostGuard: refuses admin-set URLs that point inside the platform (SSRF)
+├── mcp/                             # MCP client configuration (McpClientConfig StepConfig, McpSettings allow-list)
+├── network/                         # PublicHostGuard: refuses admin-set URLs that point inside the platform (SSRF)
 ├── infrastructure/                  # External service settings (Pydantic BaseSettings)
 │   ├── api/                         # AIHubSettings (buckets, CORS, OpenAI endpoint)
 │   ├── nats/                        # NatsSettings (broker connection)
@@ -801,7 +801,7 @@ Rules, each guarding a failure that would otherwise be silent:
   the search.
 - **Retries are bounded**: 429, 502, 503, 504 and refused connections, at most four attempts, honouring `Retry-After`
   (seconds or a date). A wait over 30 s fails at once instead of stalling the chat; read timeouts are not retried.
-- **No redirects, and only public hosts.** `SourceHostGuard` (`network/`) runs before the first request; an operator
+- **No redirects, and only public hosts.** `PublicHostGuard` (`network/`) runs before the first request; an operator
   allows an internal Jira with `JIRA_ALLOWED_PRIVATE_HOSTS` (`JiraSettings`), which the `release_notes_agent` container
   receives (`.env.dev`: `localhost`, `.env.prod`: empty).
 - **Classic API tokens only on Cloud.** Scoped tokens and service accounts answer only at
