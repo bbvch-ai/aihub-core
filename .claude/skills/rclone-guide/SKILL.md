@@ -70,7 +70,9 @@ class RcloneSyncConfig(SourcePipelineConfig):
   (hidden by `condition_if`), but a `model_validator` refuses a stored configuration naming them, so they never run.
 - `outbound_urls()` lists the hosts the selected backend connects to (S3/Azure `endpoint`, SFTP `host`);
   `rclone_remote_for_bucket` refuses an internal one with `PublicHostGuard` (core `network/`) unless
-  `RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` names it.
+  `RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` names it. With an S3 endpoint, `to_rclone_source_config` sends a path-style
+  provider (a virtual-hosted one such as `AWS` goes out as `Other`), so the endpoint host is the only one contacted;
+  an access point ARN root path is refused with an endpoint.
 - Credentials are `str | Password`, or `str | SecretFileInput` for the Drive service-account key file (the browser reads
   the file and submits its text; same encryption and masking). `RcloneSyncConfig.secret_field_paths()` derives their
   dotted paths from the form; the API encrypts them (`SecretEncryptionService`) and returns a mask, the pipeline

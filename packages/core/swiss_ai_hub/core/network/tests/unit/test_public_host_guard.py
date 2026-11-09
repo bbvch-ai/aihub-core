@@ -125,3 +125,16 @@ class TestUrlShapes:
     def test_the_message_names_the_setting_the_caller_passed(self, dns: dict[str, list[str]]):
         with pytest.raises(ValueError, match="MCP_ALLOWED_PRIVATE_HOSTS"):
             PublicHostGuard.require_public("http://api:8000/mcp", frozenset(), "MCP_ALLOWED_PRIVATE_HOSTS")
+
+
+class TestMessage:
+    def test_credentials_path_and_query_are_not_quoted(self, dns: dict[str, list[str]]):
+        """The message reaches run logs, failure notifications and chats."""
+        with pytest.raises(ValueError) as refused:
+            _require("http://admin:s3cret@10.0.0.5:9000/bucket?X-Amz-Signature=abc")
+
+        message = str(refused.value)
+        assert "The URL http://10.0.0.5:9000 points at 10.0.0.5" in message
+        assert "s3cret" not in message
+        assert "admin" not in message
+        assert "X-Amz-Signature" not in message

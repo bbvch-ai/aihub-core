@@ -50,7 +50,8 @@ def rclone_remote_for_bucket(bucket: str, source: str) -> RcloneRemote:
     """Rebuilds the database's remote in the rclone daemon from the stored configuration and returns how to address it.
 
     A host the configuration names must be public (or allowed by the deployment), because the daemon sits on the
-    platform's own networks. Rebuilding it in every process is what makes a credential edit apply on the next run
+    platform's own networks. An S3 remote with an endpoint is sent with a path-style provider, so the endpoint host is
+    the only one it contacts. Rebuilding it in every process is what makes a credential edit apply on the next run
     and a restarted daemon (which keeps no config file) need no operator action. Cached per process because every
     op of a partition run loads its input through the IO manager and would otherwise re-upsert the same remote three
     times per file.

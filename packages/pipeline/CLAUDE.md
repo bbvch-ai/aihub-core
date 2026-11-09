@@ -360,12 +360,17 @@ only `RcloneSyncConfig.offered_backends()` (`_TESTED_BACKENDS` = `s3`, `drive`, 
 `RCLONE_LOCAL_SOURCE_ROOT` is set), each under a translated label; a `model_validator` refuses any other backend when a
 stored configuration is read, because the API validates against the announced schema only. `outbound_urls()` names the
 hosts a backend connects to (S3/Azure `endpoint`, SFTP `host`), and `rclone_remote_for_bucket` passes each through
-`PublicHostGuard` before the remote is created (`RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts). rclone's
-setup still asks questions in non-interactive mode: `RcloneClient` answers the fixed ones (`_ANSWERED_QUESTIONS`),
-OneDrive's drive lookup is answered with the stored `drive_id` through ephemeral `config_*` parameters (rclone then
-checks the drive against Microsoft Graph while creating the remote), and a step rclone fails raises its `Error` text.
-The Drive service-account key is a `SecretFileInput` (core form element, treated as a secret by `SecretFieldWalker`).
-Adding a backend = one `Form` subclass + one field on `RcloneSyncConfig` + labels in
+`PublicHostGuard` before the remote is created (`RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts).
+With an S3 endpoint set, `to_rclone_source_config` sends a path-style provider (`_PATH_STYLE_S3_PROVIDERS`, checked
+against the rclone image; any other provider, `AWS` included, goes out as `Other`), because in virtual-hosted style
+rclone contacts `<bucket>.<endpoint host>`, a name the check never sees; the stored provider is untouched. An access
+point ARN as the root path is refused with an endpoint, since the client derives its host from the ARN. The Drive key file is refused when any key folding to `token_uri` (Go's JSON decoder
+ignores case, Kelvin sign included) names a host other than Google's. rclone's setup still asks questions in
+non-interactive mode: `RcloneClient` answers the fixed ones (`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered
+with the stored `drive_id` through ephemeral `config_*` parameters (rclone then checks the drive against Microsoft Graph
+while creating the remote), and a step rclone fails raises its `Error` text. The Drive service-account key is a
+`SecretFileInput` (core form element, treated as a secret by `SecretFieldWalker`). Adding a backend = one `Form`
+subclass + one field on `RcloneSyncConfig` + labels in
 `packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
 
 **Per-run resolution** (`util/source_builders.py`, the Stage-1 sibling of `model_builders` / `store_builders`):
@@ -405,12 +410,12 @@ teardown stays with the ingestion pipeline.
 **Emptied folders.** Removing files leaves their namespace behind, and a sourced database refuses manual namespace
 deletion. So after each removal, `ops/source/routed/delete_emptied_namespaces.py` deletes the row of every namespace of
 the run's database whose folder holds no ingestible file any more. Only the row: the folder's documents, figures and
-vectors are removed per file by the ingestion pipeline, which finds them by the namespace name each document carries.
-Do not route this through `knowledge_teardown_sensor`. A teardown deletes the whole folder prefix and every vector of
-the namespace, so a folder re-created at the source while it waited would lose its new files; with the row gone, the
-next observation simply registers a fresh one. Rows flagged `deleting` are manual deletions and stay with the teardown.
-A folder emptied at the source counts as gone, because rclone lists files only. A folder the source still lists keeps
-its row even while the data lake holds none of its files, because rclone writes each file in a run of its own. The
+vectors are removed per file by the ingestion pipeline, which finds them by the namespace name each document carries. Do
+not route this through `knowledge_teardown_sensor`. A teardown deletes the whole folder prefix and every vector of the
+namespace, so a folder re-created at the source while it waited would lose its new files; with the row gone, the next
+observation simply registers a fresh one. Rows flagged `deleting` are manual deletions and stay with the teardown. A
+folder emptied at the source counts as gone, because rclone lists files only. A folder the source still lists keeps its
+row even while the data lake holds none of its files, because rclone writes each file in a run of its own. The
 structured source pipeline runs the same op after its removal, without source files, because it writes within the same
 run.
 

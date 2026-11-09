@@ -1,3 +1,4 @@
+import socket
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -127,3 +128,76 @@ class TestOnlyPublicEndpoints:
             rclone_remote_for_bucket("hrdocs", "rclone")
 
         assert client.upsert_remote.call_args.args[0].options["endpoint"] == "http://minio.intra:9000"
+
+
+class TestOnlyTheEndpointHostIsContacted:
+    """In virtual-hosted style rclone would contact `<bucket>.<endpoint host>`, a name the endpoint's owner can point
+    anywhere, so a remote with an endpoint is sent with a path-style provider and only the endpoint host is checked."""
+
+    @pytest.fixture(autouse=True)
+    def _fresh_cache(self, monkeypatch: pytest.MonkeyPatch):
+        rclone_remote_for_bucket.cache_clear()
+        monkeypatch.setenv("RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS", "")
+        yield
+        rclone_remote_for_bucket.cache_clear()
+
+    @pytest.fixture
+    def looked_up(self) -> list[str]:
+        return []
+
+    @pytest.fixture
+    def dns(self, monkeypatch: pytest.MonkeyPatch, looked_up: list[str]) -> dict[str, list[str]]:
+        """What each host name resolves to; a name missing here does not resolve."""
+        answers: dict[str, list[str]] = {}
+
+        def getaddrinfo(host: str, port: int, **_: object) -> list[tuple]:
+            looked_up.append(host)
+            if host not in answers:
+                raise socket.gaierror(socket.EAI_NONAME, "Name or service not known")
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, port)) for ip in answers[host]]
+
+        monkeypatch.setattr(socket, "getaddrinfo", getaddrinfo)
+        return answers
+
+    def _s3_bucket(self, encryption: SecretEncryptionService, provider: str, endpoint: str) -> MagicMock:
+        return _bucket(
+            configuration={
+                "backend_type": "s3",
+                "root_path": "docs/hr",
+                "s3": {
+                    "provider": provider,
+                    "endpoint": endpoint,
+                    "access_key_id": "id",
+                    "secret_access_key": encryption.encrypt("pw"),
+                },
+            }
+        )
+
+    def test_a_virtual_hosted_provider_reaches_the_daemon_as_path_style(
+        self, encryption, bucket_lookup, dns, looked_up
+    ):
+        dns["ep.attacker.example"] = ["93.184.216.34"]
+        dns["docs.ep.attacker.example"] = ["10.0.0.5"]
+        bucket_lookup.return_value = self._s3_bucket(encryption, "AWS", "http://ep.attacker.example:9000")
+        client = MagicMock()
+
+        with patch(f"{_MODULE}.build_rclone_client", return_value=client):
+            rclone_remote_for_bucket("hrdocs", "rclone")
+
+        assert client.upsert_remote.call_args.args[0].options["provider"] == "Other"
+        assert looked_up == ["ep.attacker.example"]
+
+    def test_an_allowed_path_style_endpoint_behind_wildcard_dns_is_used(
+        self, encryption, bucket_lookup, dns, monkeypatch
+    ):
+        """rclone never contacts the bucket subdomain of a path-style store, so what it resolves to does not matter."""
+        monkeypatch.setenv("RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS", "minio.intra.acme.ch")
+        dns["minio.intra.acme.ch"] = ["10.1.2.2"]
+        dns["docs.minio.intra.acme.ch"] = ["10.1.2.3"]
+        bucket_lookup.return_value = self._s3_bucket(encryption, "Minio", "https://minio.intra.acme.ch")
+        client = MagicMock()
+
+        with patch(f"{_MODULE}.build_rclone_client", return_value=client):
+            rclone_remote_for_bucket("hrdocs", "rclone")
+
+        assert client.upsert_remote.call_args.args[0].options["provider"] == "Minio"

@@ -266,6 +266,56 @@ class TestOutboundUrls:
         assert config.outbound_urls() == [], "a hidden group's values are never connected to"
 
 
+class TestPathStyleBehindAnEndpoint:
+    """In virtual-hosted style rclone contacts `<bucket>.<endpoint host>`, which the host check never sees."""
+
+    @staticmethod
+    def _sent_provider(provider: str, endpoint: str) -> str | None:
+        config = RcloneSyncConfig.model_validate(
+            {
+                "backend_type": "s3",
+                "root_path": "docs/hr",
+                "s3": {"provider": provider, "endpoint": endpoint, "access_key_id": "id", "secret_access_key": "pw"},
+            }
+        )
+        return config.to_rclone_source_config("r").options.get("provider")
+
+    @pytest.mark.parametrize("provider", ["AWS", "Wasabi", "Alibaba", "aws", "Bogus", ""])
+    def test_a_virtual_hosted_provider_is_sent_as_other(self, provider: str):
+        assert self._sent_provider(provider, "http://ep.example.com:9000") == "Other"
+
+    @pytest.mark.parametrize("provider", ["Minio", "Ceph", "Cloudflare", "SeaweedFS", "Other"])
+    def test_a_path_style_provider_is_kept(self, provider: str):
+        assert self._sent_provider(provider, "http://ep.example.com:9000") == provider
+
+    def test_without_an_endpoint_the_provider_is_unchanged(self):
+        assert self._sent_provider("AWS", "") == "AWS"
+
+    def test_the_stored_provider_stays_what_the_admin_entered(self):
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "s3", "s3": {"provider": "AWS", "endpoint": "http://ep.example.com"}}
+        )
+
+        assert config.s3.provider == "AWS"
+
+    @pytest.mark.parametrize(
+        "root_path", ["arn:aws:s3:us-east-1:123456789012:accesspoint:docs/hr", "/ARN:aws:s3:eu-west-1:1:accesspoint:x"]
+    )
+    def test_an_access_point_arn_is_refused_with_an_endpoint(self, root_path: str):
+        """The S3 client derives the host from the ARN, so the checked endpoint is not where the requests go."""
+        with pytest.raises(ValidationError, match="access point ARN"):
+            RcloneSyncConfig.model_validate(
+                {"backend_type": "s3", "root_path": root_path, "s3": {"endpoint": "http://ep.example.com"}}
+            )
+
+    def test_an_access_point_arn_is_accepted_without_an_endpoint(self):
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "s3", "root_path": "arn:aws:s3:us-east-1:123456789012:accesspoint:docs/hr"}
+        )
+
+        assert config.root_path.startswith("arn:")
+
+
 class TestValidationErrors:
     def test_a_rejected_secret_is_not_quoted_in_the_error(self):
         """The pipeline validates after decrypting, and the error lands in the run log and the failure notification."""
@@ -285,7 +335,25 @@ class TestServiceAccountTokenEndpoint:
         with pytest.raises(ValidationError, match="token_uri"):
             RcloneSyncConfig.model_validate({"backend_type": "drive", "drive": {"service_account_credentials": key}})
 
-    @pytest.mark.parametrize("token_uri", ["https://oauth2.googleapis.com/token", None])
+    @pytest.mark.parametrize(
+        "key",
+        [
+            '{"type":"service_account","TOKEN_URI":"http://127.0.0.1:8000/t"}',
+            '{"token_uri":"https://oauth2.googleapis.com/token","Token_Uri":"http://127.0.0.1:8000/t"}',
+            '{"Token_Uri":"http://127.0.0.1:8000/t","token_uri":"https://oauth2.googleapis.com/token"}',
+            '{"token_uri":"https://oauth2.googleapis.com/token","to\\u212aen_uri":"http://127.0.0.1:8000/t"}',
+            '{"type":"service_account","token_uri":null}',
+        ],
+        ids=["upper case", "mixed case after", "mixed case before", "kelvin sign", "null"],
+    )
+    def test_a_foreign_endpoint_under_any_spelling_go_reads_is_refused(self, key: str):
+        """rclone decodes the key file with Go, which matches keys ignoring case and keeps the last match."""
+        with pytest.raises(ValidationError, match="token_uri"):
+            RcloneSyncConfig.model_validate({"backend_type": "drive", "drive": {"service_account_credentials": key}})
+
+    @pytest.mark.parametrize(
+        "token_uri", ["https://oauth2.googleapis.com/token", "https://accounts.google.com/o/oauth2/token", None]
+    )
     def test_a_key_file_with_googles_or_no_token_endpoint_is_accepted(self, token_uri: str | None):
         key = {"type": "service_account"} | ({"token_uri": token_uri} if token_uri else {})
 

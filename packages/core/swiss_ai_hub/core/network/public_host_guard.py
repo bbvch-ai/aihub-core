@@ -3,7 +3,7 @@ import ipaddress
 import socket
 from ipaddress import IPv4Address, IPv6Address
 from typing import Annotated
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 _DEFAULT_PORTS = {"http": 80, "https": 443, "sftp": 22}
 
@@ -31,8 +31,8 @@ class PublicHostGuard:
         internal = cls._why_internal(host, parts.port or _DEFAULT_PORTS.get(parts.scheme, 443))
         if internal:
             raise ValueError(
-                f"The URL {url} points at {host or 'no host'}, {internal}; only public hosts are allowed. An operator "
-                f"can allow it with {allow_list_setting}."
+                f"The URL {cls._shown(url)} points at {host or 'no host'}, {internal}; only public hosts "
+                f"are allowed. An operator can allow it with {allow_list_setting}."
             )
 
     @classmethod
@@ -44,6 +44,13 @@ class PublicHostGuard:
     ) -> None:
         """The name lookup blocks, so an agent's event loop hands it to a thread."""
         await asyncio.to_thread(cls.require_public, url, allowed_hosts, allow_list_setting)
+
+    @staticmethod
+    def _shown(url: str) -> str:
+        """Scheme, host and port only: the message reaches run logs and chats, and a URL may carry a password in its
+        user info or a token in its path or query."""
+        parts = urlsplit(url)
+        return urlunsplit((parts.scheme, parts.netloc.rpartition("@")[2], "", "", "")) or "given"
 
     @classmethod
     def _why_internal(cls, host: str, port: int) -> str | None:

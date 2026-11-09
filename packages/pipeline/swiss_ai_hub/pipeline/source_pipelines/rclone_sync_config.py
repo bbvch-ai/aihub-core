@@ -16,6 +16,31 @@ _TESTED_BACKENDS = (RcloneBackendType.S3, RcloneBackendType.DRIVE, RcloneBackend
 _KEY_FILE_MAX_BYTES = 65536
 _GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token"
 _GOOGLE_TOKEN_URIS = {_GOOGLE_TOKEN_URI, "https://accounts.google.com/o/oauth2/token"}
+# Providers rclone 1.71 addresses in path style on a custom endpoint, so every request goes to the endpoint host
+# (checked against the real image). AWS and many others put the bucket into the host name instead.
+_PATH_STYLE_S3_PROVIDERS = frozenset(
+    {
+        "ArvanCloud",
+        "Ceph",
+        "ChinaMobile",
+        "Cloudflare",
+        "Exaba",
+        "FlashBlade",
+        "IBMCOS",
+        "IDrive",
+        "IONOS",
+        "Liara",
+        "Magalu",
+        "Mega",
+        "Minio",
+        "Other",
+        "Outscale",
+        "Qiniu",
+        "Rclone",
+        "SeaweedFS",
+        "StackPath",
+    }
+)
 _LOCAL_DISABLED = "rclone backend 'local' is disabled on this deployment: RCLONE_LOCAL_SOURCE_ROOT is unset."
 
 
@@ -126,11 +151,15 @@ class GoogleDriveOptions(Form):
     @classmethod
     def _google_token_endpoint(cls, value: str | SecretFileInput) -> str | SecretFileInput:
         """rclone posts the signed assertion to the key file's own `token_uri`, so any other host is one the submitter
-        picked; checked without a name lookup."""
+        picked; checked without a name lookup. Go reads JSON keys ignoring case (the Kelvin sign included) and keeps
+        the last match, so every key that folds to `token_uri` must name Google."""
         if not isinstance(value, str) or not value.strip():
             return value
         key = json.loads(value)
-        if isinstance(key, dict) and key.get("token_uri", _GOOGLE_TOKEN_URI) not in _GOOGLE_TOKEN_URIS:
+        if not isinstance(key, dict):
+            return value
+        token_uris = [uri for name, uri in key.items() if name.casefold() == "token_uri"]
+        if any(not isinstance(uri, str) or uri not in _GOOGLE_TOKEN_URIS for uri in token_uris):
             raise ValueError("The service account key file must use Google's token_uri.")
         return value
 
@@ -324,6 +353,16 @@ class RcloneSyncConfig(SourcePipelineConfig):
         offered = ", ".join(backend.value for backend in self.offered_backends())
         raise ValueError(f"rclone backend '{self.backend_type}' is not offered on this deployment ({offered}).")
 
+    @model_validator(mode="after")
+    def _no_access_point_behind_an_endpoint(self) -> Self:
+        """An access point ARN as the bucket makes the S3 client derive its own host from the ARN instead of using the
+        checked endpoint; rclone fails on it in path style anyway, so the reason is given here."""
+        if not isinstance(self.backend_type, str) or self.backend is not RcloneBackendType.S3 or not self.s3.endpoint:
+            return self
+        if self.root_path.strip("/").split("/")[0].lower().startswith("arn:"):
+            raise ValueError("An S3 access point ARN cannot be the root path of a source with a custom endpoint.")
+        return self
+
     @field_validator("include_patterns", "exclude_patterns", mode="before")
     @classmethod
     def _blank_patterns_mean_none(cls, value: object) -> object:
@@ -349,7 +388,16 @@ class RcloneSyncConfig(SourcePipelineConfig):
                 options["client_credentials"] = "true"
         if self.backend is RcloneBackendType.DRIVE:
             options.setdefault("scope", "drive.readonly")
+        if self.backend is RcloneBackendType.S3 and "endpoint" in options:
+            options["provider"] = self._path_style_provider(options.get("provider"))
         return RcloneSourceConfig(name=remote_name, backend_type=self.backend, options=options)
+
+    @staticmethod
+    def _path_style_provider(provider: str | None) -> str:
+        """In virtual-hosted style rclone contacts ``<bucket>.<endpoint host>``, a name whoever owns the endpoint's
+        domain can point inside the platform, and only the endpoint host is checked. A provider that keeps the bucket
+        in the path is kept for its other quirks; any other is sent as ``Other``. The stored provider is untouched."""
+        return provider if provider in _PATH_STYLE_S3_PROVIDERS else "Other"
 
     def outbound_urls(self) -> list[str]:
         """Every host the selected backend was told to connect to, as a URL. OneDrive and Drive name none: rclone
