@@ -207,6 +207,25 @@ class TestMultiLineSecrets:
         with pytest.raises(ValueError, match="Google Drive credentials"):
             RcloneSyncConfig.model_validate({"backend_type": "drive", "drive": {"token": "not json"}})
 
+    @pytest.mark.parametrize("token", ["SECRET-not-json", '["SECRET"]', '"SECRET"'])
+    def test_a_onedrive_token_that_is_not_a_json_object_is_rejected_without_quoting_it(self, token: str):
+        with pytest.raises(ValidationError) as rejected:
+            RcloneSyncConfig.model_validate(
+                {"backend_type": "onedrive", "onedrive": {"drive_id": "b!a", "token": token}}
+            )
+
+        assert "onedrive.token" in str(rejected.value)
+        assert "OneDrive token must be the JSON object" in str(rejected.value)
+        assert "SECRET" not in str(rejected.value)
+
+    def test_a_onedrive_token_object_is_sent_to_rclone_as_pasted(self):
+        pasted = '{"access_token":"x","refresh_token":"y","expiry":"2026-11-08T19:20:00+07:00"}'
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "onedrive", "onedrive": {"drive_id": "b!a", "token": pasted}}
+        )
+
+        assert config.to_rclone_source_config("r").options["token"] == pasted
+
     def test_a_pasted_pem_key_reaches_rclone_with_escaped_line_breaks(self):
         pasted = "-----BEGIN OPENSSH PRIVATE KEY-----\r\nabc\r\ndef\r\n-----END OPENSSH PRIVATE KEY-----\r\n"
         config = RcloneSyncConfig.model_validate(
@@ -231,3 +250,105 @@ class TestValidationErrors:
 
         assert "s3.secret_access_key" in str(rejected.value)
         assert "AKIA-SECRET-VALUE" not in str(rejected.value)
+
+
+def _onedrive_token_mode(**onedrive: str) -> RcloneSyncConfig:
+    return RcloneSyncConfig.model_validate(
+        {"backend_type": "onedrive", "onedrive": {"drive_id": "b!abc", "token": '{"access_token":"x"}', **onedrive}}
+    )
+
+
+class TestOneDriveTokenUrl:
+    """rclone's OneDrive setup refreshes an expired pasted token with a client that has no token URL of its own;
+    without ``token_url`` the remote fails with ``Post "": unsupported protocol scheme`` about an hour after the
+    token was pasted."""
+
+    def test_a_token_from_rclones_own_app_is_refreshed_at_the_common_endpoint(self):
+        options = _onedrive_token_mode().to_rclone_source_config("r").options
+
+        assert options["token_url"] == "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+
+    def test_a_tenant_gets_its_own_endpoint(self):
+        tenant = "0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"
+
+        options = _onedrive_token_mode(tenant=tenant).to_rclone_source_config("r").options
+
+        assert options["token_url"] == f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+
+    @pytest.mark.parametrize(
+        ("region", "host"),
+        [
+            ("global", "login.microsoftonline.com"),
+            ("us", "login.microsoftonline.us"),
+            ("de", "login.microsoftonline.de"),
+            ("cn", "login.chinacloudapi.cn"),
+        ],
+    )
+    def test_the_region_selects_rclones_login_host(self, region: str, host: str):
+        options = _onedrive_token_mode(region=region).to_rclone_source_config("r").options
+
+        assert options["token_url"] == f"https://{host}/common/oauth2/v2.0/token"
+
+    def test_a_tenant_cannot_move_the_endpoint_off_the_login_host(self):
+        options = _onedrive_token_mode(tenant="evil.example/x@y?z#").to_rclone_source_config("r").options
+
+        assert options["token_url"] == (
+            "https://login.microsoftonline.com/evil.example%2Fx%40y%3Fz%23/oauth2/v2.0/token"
+        )
+
+    def test_an_unknown_region_is_refused(self):
+        config = _onedrive_token_mode(region="mars")
+
+        with pytest.raises(ValueError, match="Unknown OneDrive region 'mars'"):
+            config.to_rclone_source_config("r")
+
+    def test_client_credentials_are_unchanged_and_get_no_token_url(self):
+        config = RcloneSyncConfig.model_validate(
+            {
+                "backend_type": "onedrive",
+                "onedrive": {"client_id": "c", "client_secret": "s", "tenant": "t", "drive_id": "d"},
+            }
+        )
+
+        options = config.to_rclone_source_config("r").options
+
+        assert "token_url" not in options
+        assert options["client_credentials"] == "true"
+
+    def test_the_token_url_is_never_part_of_what_is_stored(self):
+        config = _onedrive_token_mode()
+
+        assert "token_url" not in config.model_dump()["onedrive"]
+
+
+class TestRefreshableTokenPath:
+    @pytest.mark.parametrize(
+        ("submission", "path"),
+        [
+            ({"backend_type": "onedrive", "onedrive": {"drive_id": "d", "token": "{}"}}, "onedrive.token"),
+            ({"backend_type": "drive", "drive": {"token": "{}"}}, "drive.token"),
+            (
+                {
+                    "backend_type": "onedrive",
+                    "onedrive": {"client_id": "c", "client_secret": "s", "tenant": "t", "drive_id": "d"},
+                },
+                None,
+            ),
+            ({"backend_type": "drive", "drive": {"service_account_credentials": "{}"}}, None),
+            ({"backend_type": "sftp", "sftp": {"host": "h", "user": "u", "password": "p"}}, None),
+            ({"backend_type": "s3", "s3": {"access_key_id": "a", "secret_access_key": "s"}}, None),
+        ],
+    )
+    def test_only_a_pasted_oauth_token_is_refreshable(self, submission: dict, path: str | None):
+        assert RcloneSyncConfig.model_validate(submission).refreshable_token_path() == path
+
+    def test_a_token_left_in_a_hidden_group_does_not_count(self):
+        config = RcloneSyncConfig.model_validate(
+            {
+                "backend_type": "s3",
+                "s3": {"access_key_id": "a", "secret_access_key": "s"},
+                "onedrive": {"token": "{}"},
+            }
+        )
+
+        assert config.refreshable_token_path() is None
