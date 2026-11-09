@@ -155,6 +155,7 @@ STATIC_COPY_DIRS = [
 STATIC_COPY_FILES = [
     ("templates/configs/keycloak-theme-logo.png", "configs/keycloak/themes/aihub/login/resources/img", "logo.png"),
     ("templates/configs/presidio-analyzer.yaml", "configs/presidio", "analyzer.yaml"),
+    ("templates/configs/openwebui-code-interpreter-prompt.txt", "configs/openwebui", "code-interpreter-prompt.txt"),
 ]
 
 # Additional static files included only in release bundles (non-config files).
