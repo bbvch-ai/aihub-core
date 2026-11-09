@@ -82,6 +82,7 @@
 import type { ThreadDto } from '@core/sdk/client'
 
 const router = useRouter()
+const route = useRoute()
 const tenantPath = useTenantPath()
 const { t } = useI18n()
 
@@ -111,7 +112,10 @@ const onSort = ({ field, order }: { field: string, order: 1 | -1 }) =>
   setSort(field as ThreadSortField, order)
 
 const toThread = (thread: ThreadDto) => {
-  router.push(tenantPath(`/service/threads/${thread.id}/overview`))
+  router.push({
+    path: tenantPath(`/service/threads/${thread.id}/overview`),
+    query: route.query,
+  })
 }
 
 const onPageChange = (event) => {
