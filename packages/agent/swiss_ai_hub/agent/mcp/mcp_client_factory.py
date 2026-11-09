@@ -26,8 +26,9 @@ class McpClientFactory:
         from RunContext via ``McpAuthResolver``) so external actions are attributed to the
         requesting user.
 
-        Only public hosts, or those named in ``MCP_ALLOWED_PRIVATE_HOSTS``, are connected to, and no redirect is
-        followed: a profile editor sets the URL, and the agent can reach the platform's own services.
+        Only public hosts, or those named in ``MCP_ALLOWED_PRIVATE_HOSTS``, are connected to, and redirects are
+        followed only within the same origin: a profile editor sets the URL, and the agent can reach the platform's own
+        services.
         """
         auth = McpClientFactory._resolve_auth(config, user_token)
         await asyncio.to_thread(
@@ -54,8 +55,10 @@ class McpClientFactory:
         auth: httpx.Auth | None = None,
         **_: object,
     ) -> httpx.AsyncClient:
-        """The MCP SDK's client defaults, minus the redirects it always follows: the guard checked the configured
-        host only."""
+        """The MCP SDK's client defaults, without following redirects: the guard checked the configured host only.
+
+        The SDK follows a redirect itself only within the endpoint's origin (so ``/mcp`` reaches ``/mcp/``); this keeps
+        any other request on the client from following one elsewhere."""
         return httpx.AsyncClient(
             headers=headers,
             timeout=timeout or _MCP_SDK_DEFAULT_TIMEOUT,

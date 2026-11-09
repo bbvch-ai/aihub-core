@@ -27,9 +27,9 @@ step that declares it as a parameter — add it to your agent config and it beco
 
 Whoever edits an agent profile sets the URL, and agents run next to the platform's own services. `McpClientFactory`
 therefore connects only to public hosts: a Docker service name, `localhost`, a private address, or a name that resolves
-to one is refused before the connection opens, and redirects are not followed. To reach an MCP server on an internal
-network, such as the platform's own API at `http://api:8000/mcp`, list its host name in `MCP_ALLOWED_PRIVATE_HOSTS`
-(comma-separated) in the agent's environment.
+to one is refused before the connection opens, and redirects are followed only within the same origin, which the MCP SDK
+enforces. To reach an MCP server on an internal network, such as the platform's own API at `http://api:8000/mcp`, list
+its host name in `MCP_ALLOWED_PRIVATE_HOSTS` (comma-separated) in the agent's environment.
 
 ## Authentication modes
 

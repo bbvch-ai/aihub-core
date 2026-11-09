@@ -1,9 +1,19 @@
+import asyncio
 import socket
+from collections.abc import AsyncIterator
 from unittest.mock import patch
 
+import httpx
 import pytest
+import pytest_asyncio
+import uvicorn
+from fastmcp import FastMCP
 from fastmcp.client.auth import BearerAuth
 from fastmcp.client.transports import SSETransport, StreamableHttpTransport
+from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
+from starlette.routing import Mount, Route
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
 from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
@@ -225,3 +235,64 @@ class TestHttpClient:
         assert client.follow_redirects is False
         assert client.headers["X"] == "1"
         assert client.timeout.read == 300.0
+
+
+@pytest_asyncio.fixture
+async def platform_api() -> AsyncIterator[str]:
+    """A FastMCP server mounted the way ``ApiRunner`` mounts it, so ``/mcp`` answers with a redirect to ``/mcp/``.
+
+    ``/elsewhere`` redirects to the same port under the name ``localhost``, another host to the client.
+    """
+    mcp = FastMCP("platform-api")
+
+    @mcp.tool
+    def echo(text: str) -> str:
+        return text
+
+    async def elsewhere(request: Request) -> RedirectResponse:
+        return RedirectResponse(str(request.url.replace(hostname="localhost", path="/mcp/")), status_code=307)
+
+    mcp_app = mcp.http_app(path="/")
+    app = Starlette(
+        routes=[Route("/elsewhere", elsewhere, methods=["POST"]), Mount("/mcp", app=mcp_app)],
+        lifespan=mcp_app.lifespan,
+    )
+    server = uvicorn.Server(uvicorn.Config(app, log_level="warning"))
+    with socket.socket() as listening:
+        listening.bind(("127.0.0.1", 0))
+        serving = asyncio.create_task(server.serve(sockets=[listening]))
+        async with asyncio.timeout(10):
+            while not server.started:
+                await asyncio.sleep(0.01)
+        yield f"http://127.0.0.1:{listening.getsockname()[1]}"
+        server.should_exit = True
+        await serving
+
+
+class TestPlatformApiConnection:
+    """Connects through the real FastMCP client and MCP SDK transport, nothing mocked: the SDK, not our client, decides
+    which redirects are followed, so a change in it shows here."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("path", ["/mcp", "/mcp/"])
+    async def test_a_tool_is_called_on_the_mounted_server(
+        self, platform_api: str, monkeypatch: pytest.MonkeyPatch, path: str
+    ):
+        monkeypatch.setenv("MCP_ALLOWED_PRIVATE_HOSTS", "127.0.0.1")
+        config = McpClientConfig(name="aihub", url=f"{platform_api}{path}", auth_mode="none")
+
+        async with McpClientFactory.create(config) as client:
+            result = await client.call_tool("echo", {"text": "hello"})
+
+        assert result.data == "hello"
+
+    @pytest.mark.asyncio
+    async def test_a_redirect_to_another_host_is_not_followed(self, platform_api: str, monkeypatch: pytest.MonkeyPatch):
+        """Both hosts are allowed here, so only the MCP SDK's same-origin redirect rule keeps the client off
+        ``localhost``."""
+        monkeypatch.setenv("MCP_ALLOWED_PRIVATE_HOSTS", "127.0.0.1,localhost")
+        config = McpClientConfig(name="aihub", url=f"{platform_api}/elsewhere", auth_mode="none")
+
+        with pytest.raises(httpx.HTTPStatusError, match=r"Redirect to http://localhost:\d+/mcp/ not followed"):
+            async with McpClientFactory.create(config):
+                pass
