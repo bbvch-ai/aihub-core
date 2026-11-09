@@ -2,6 +2,7 @@ import json
 import posixpath
 from pathlib import PurePosixPath
 from typing import Annotated, Any, Self
+from urllib.parse import quote
 
 from pydantic import Field, field_validator
 from swiss_ai_hub.core.form import ChipsInput, InputNumber, InputText, Password, SecretFileInput, Select
@@ -14,6 +15,16 @@ _I18N = "lib.source_pipelines.rclone.config"
 _BACKEND_REF = "rclone_backend_type"
 _TESTED_BACKENDS = (RcloneBackendType.S3, RcloneBackendType.DRIVE, RcloneBackendType.ONEDRIVE)
 _KEY_FILE_MAX_BYTES = 65536
+# rclone's own OneDrive ``authEndpoint`` per region. The token endpoint is always one of these Microsoft hosts, so no
+# form field can send a stored token anywhere else.
+_ONEDRIVE_LOGIN_HOSTS = {
+    "global": "https://login.microsoftonline.com",
+    "us": "https://login.microsoftonline.us",
+    "de": "https://login.microsoftonline.de",
+    "cn": "https://login.chinacloudapi.cn",
+}
+_ONEDRIVE_TOKEN_SHAPE = 'The OneDrive token must be the JSON object `rclone authorize "onedrive"` prints.'
+_REFRESHABLE_TOKEN_BACKENDS = (RcloneBackendType.ONEDRIVE, RcloneBackendType.DRIVE)
 
 
 def _when(backend: RcloneBackendType) -> str:
@@ -84,6 +95,21 @@ class OneDriveOptions(Form):
         str | Password, Field(description="Pre-obtained OAuth token JSON, instead of client credentials.")
     ] = ""
 
+    @field_validator("token", mode="after")
+    @classmethod
+    def _token_is_a_json_object(cls, value: str | Password) -> str | Password:
+        """The observation reads the token's refresh_token before creating the remote, so a token that is not the JSON
+        object rclone printed is refused here with the field named, not later with a bare JSON parse error."""
+        if not isinstance(value, str) or not value.strip():
+            return value
+        try:
+            parsed = json.loads(value)
+        except ValueError as error:
+            raise ValueError(_ONEDRIVE_TOKEN_SHAPE) from error
+        if not isinstance(parsed, dict):
+            raise ValueError(_ONEDRIVE_TOKEN_SHAPE)
+        return value
+
     @classmethod
     def as_form(cls) -> Self:
         backend = RcloneBackendType.ONEDRIVE
@@ -96,6 +122,16 @@ class OneDriveOptions(Form):
             region=_choice(backend, "region", ["global", "us", "de", "cn"]),
             token=_secret(backend, "token"),
         )
+
+    def token_url(self) -> str:
+        """Where rclone refreshes a pasted token. rclone's OneDrive setup checks the drive with a client that has no
+        token URL of its own (``onedrive.go:612``, v1.71.2), so without this an expired access token fails the
+        remote's creation with ``Post "": unsupported protocol scheme``. Built the way rclone's ``makeOauthConfig``
+        builds it: the region's login host, then the tenant (``common`` for a token from rclone's own app)."""
+        region = self.region or "global"
+        if region not in _ONEDRIVE_LOGIN_HOSTS:
+            raise ValueError(f"Unknown OneDrive region '{region}'.")
+        return f"{_ONEDRIVE_LOGIN_HOSTS[region]}/{quote(self.tenant or 'common', safe='')}/oauth2/v2.0/token"
 
 
 class GoogleDriveOptions(Form):
@@ -320,11 +356,20 @@ class RcloneSyncConfig(SourcePipelineConfig):
         self._require(options)
         if self.backend is RcloneBackendType.ONEDRIVE:
             options |= _onedrive_setup_answers(options["drive_id"])
-            if "token" not in options:
+            if "token" in options:
+                options["token_url"] = self.onedrive.token_url()
+            else:
                 options["client_credentials"] = "true"
         if self.backend is RcloneBackendType.DRIVE:
             options.setdefault("scope", "drive.readonly")
         return RcloneSourceConfig(name=remote_name, backend_type=self.backend, options=options)
+
+    def refreshable_token_path(self) -> str | None:
+        """Dotted path of the pasted OAuth token rclone refreshes for this source, or None when the source holds
+        none: client credentials and service accounts fetch a fresh token on every run and keep no refresh token."""
+        if self.backend not in _REFRESHABLE_TOKEN_BACKENDS or not getattr(self, self.backend.value).token:
+            return None
+        return f"{self.backend.value}.token"
 
     def remote_fs(self, remote_name: str) -> str:
         if self.backend is RcloneBackendType.LOCAL:

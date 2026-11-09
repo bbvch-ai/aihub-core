@@ -1,5 +1,8 @@
 ---
 config:
+  list_help: I database di conoscenza che questo agente consulta per ogni domanda.
+    Aggiungi una voce per database; ognuna ha le proprie impostazioni sul numero di
+    documenti da recuperare e sul modo di cercare.
   index_namespaces:
     label: Namespace degli indici
     help: Elenco di namespace separati da virgole. Lasciare vuoto per recuperare da

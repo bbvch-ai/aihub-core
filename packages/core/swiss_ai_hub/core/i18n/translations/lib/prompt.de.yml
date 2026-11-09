@@ -1674,3 +1674,7 @@ structured_extraction:
     {{ text }}
     </document>
     {% endchat %}
+few_shot_example:
+  list_help: Beispieldialoge, die dem Agenten zeigen, wie er antworten soll. Jeder
+    verbindet eine Benutzernachricht mit der erwarteten Antwort, und bei ähnlichen
+    Nachrichten folgt der Agent ihrem Stil und Inhalt.

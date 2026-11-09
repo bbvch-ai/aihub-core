@@ -7010,8 +7010,10 @@ export const CreateNamespaceRequestSchema = {
     folder_name: {
       type: "string",
       maxLength: 100,
+      pattern: "^[^/]+$",
       title: "Folder Name",
-      description: "The name of the folder to which the namespace belongs.",
+      description:
+        "The name of the folder to which the namespace belongs. A single path segment, because ingestion files every document under the first segment of its key.",
     },
     display_name: {
       anyOf: [
@@ -24713,6 +24715,22 @@ export const RepeaterSchema = {
       title: "Label",
       description: "Label displayed as the section header",
     },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Explanation of what the list is for, shown under the header",
+    },
     addLabel: {
       anyOf: [
         {
@@ -31985,6 +32003,13 @@ export const UserIdentitySchema = {
       title: "Is Sys Admin",
       description:
         "Whether the user has the AIHubSysAdmin realm role (from the JWT).",
+      default: false,
+    },
+    openwebui_sys_admin: {
+      type: "boolean",
+      title: "Openwebui Sys Admin",
+      description:
+        "Whether the user has the AIHubSysAdmin realm role but arrived through OpenWebUI's signed headers. Grants user access in the acting tenant instead of the sysadmin bypass.",
       default: false,
     },
   },
@@ -47718,6 +47743,22 @@ export const RepeaterWritableSchema = {
       ],
       title: "Label",
       description: "Label displayed as the section header",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Explanation of what the list is for, shown under the header",
     },
     addLabel: {
       anyOf: [

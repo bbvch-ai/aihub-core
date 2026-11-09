@@ -493,3 +493,62 @@ class TestParseCache:
         recorded = str(tracer.start_as_current_span.call_args_list) + str(span.mock_calls)
         assert "secret text" not in recorded
         span.set_attributes.assert_called_once()
+
+
+class TestConversionSlots:
+    @staticmethod
+    def tracking_conversion(in_flight: list[int]) -> AsyncMock:
+        async def execute(
+            file_bytes: bytes,
+            filename: str,
+            include_images: bool,
+            start_page_id: int | None = None,
+            end_page_id: int | None = None,
+        ) -> MineruParseResponse:
+            in_flight[0] += 1
+            in_flight[1] = max(in_flight[1], in_flight[0])
+            await asyncio.sleep(0.01)
+            in_flight[0] -= 1
+            return make_response("content", 1)
+
+        return AsyncMock(side_effect=execute)
+
+    @pytest.mark.asyncio
+    async def test_loaders_sharing_slots_convert_no_more_documents_at_once_than_there_are_slots(self):
+        slots = asyncio.Semaphore(2)
+        in_flight = [0, 0]
+        loaders = [MineruLoader(conversion_slots=slots) for _ in range(6)]
+
+        with patch.object(MineruLoader, "_execute_conversion", self.tracking_conversion(in_flight)):
+            await asyncio.gather(
+                *(
+                    loader.aload_data_from_bytes(f"document {index}".encode(), FILENAME, embed_base64=True)
+                    for index, loader in enumerate(loaders)
+                )
+            )
+
+        assert in_flight[1] == 2
+
+    @pytest.mark.asyncio
+    async def test_cached_document_does_not_wait_for_a_slot(self):
+        slots = asyncio.Semaphore(1)
+        with patch.object(MineruLoader, "_execute_conversion", AsyncMock(return_value=make_response("content", 1))):
+            await MineruLoader(conversion_slots=slots).aload_data_from_bytes(b"bytes", FILENAME, embed_base64=True)
+
+        async with slots:
+            documents = await asyncio.wait_for(
+                MineruLoader(conversion_slots=slots).aload_data_from_bytes(b"bytes", FILENAME, embed_base64=True),
+                timeout=1,
+            )
+
+        assert documents[0].text == "content"
+
+    @pytest.mark.asyncio
+    async def test_failed_conversion_gives_its_slot_back(self):
+        slots = asyncio.Semaphore(1)
+        failing = AsyncMock(side_effect=MineruRequestError("rejected"))
+        loader = MineruLoader(conversion_slots=slots)
+        with patch.object(MineruLoader, "_execute_conversion", failing), pytest.raises(MineruRequestError):
+            await loader.aload_data_from_bytes(b"bytes", FILENAME, embed_base64=True)
+
+        assert not slots.locked()

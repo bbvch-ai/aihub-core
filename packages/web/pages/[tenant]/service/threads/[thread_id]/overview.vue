@@ -2,6 +2,7 @@
   <StructuralColumn
     :title="thread?.name"
     close-route="/service/threads"
+    keep-query
     :loading="threadIsLoading"
     size="large"
   >

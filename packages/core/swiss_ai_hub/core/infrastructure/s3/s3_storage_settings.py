@@ -42,11 +42,11 @@ class S3StorageSettings(EnvironmentSettings):
         "us-east-1"
     )
 
-    # This secret key is used to sign our own internal URLs, not for Azure.
     URL_SIGNING_SECRET: Annotated[
         SecretStr,
         Field(
-            description="A secret key used for signing and verifying temporary anonymous access URLs.",
+            description="The HMAC key signing and verifying the platform's own anonymous file links. "
+            "Must be set and must differ from SECRET_KEY.",
         ),
     ]
 

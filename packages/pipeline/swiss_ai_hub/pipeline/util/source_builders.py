@@ -10,14 +10,12 @@ fall back to: a database without a valid source configuration must not sync from
 from functools import cache
 from typing import Annotated
 
-from swiss_ai_hub.core.persistence import BucketEntity
-from swiss_ai_hub.core.secrets import SecretEncryptionService
 from swiss_ai_hub.core.source_pipelines import SourcePipelineConfig
 
 from swiss_ai_hub.pipeline.resources.rclone.rclone_client import RcloneClient
 from swiss_ai_hub.pipeline.source_pipelines.rclone_sync_config import RcloneSyncConfig
 from swiss_ai_hub.pipeline.types.rclone_remote import RcloneRemote
-from swiss_ai_hub.pipeline.util.bucket_utils import ensure_main_db_connection
+from swiss_ai_hub.pipeline.util.stored_source_configuration import StoredSourceConfiguration
 
 
 def source_config_for_bucket[TConfig: SourcePipelineConfig](
@@ -26,16 +24,7 @@ def source_config_for_bucket[TConfig: SourcePipelineConfig](
     config_type: type[TConfig],
 ) -> TConfig:
     """The database's stored source configuration, secrets decrypted, validated into the pipeline's config class."""
-    ensure_main_db_connection()
-    entity = BucketEntity.get_bucket_by_bucket_name(bucket)
-    if entity.deleting:
-        raise ValueError(f"Knowledge database '{bucket}' is being deleted and must not be synced.")
-    if entity.source != source:
-        raise ValueError(f"Knowledge database '{bucket}' is filled by source '{entity.source}', not '{source}'.")
-    decrypted = SecretEncryptionService.from_settings().decrypt_paths(
-        entity.source_configuration, config_type.secret_field_paths()
-    )
-    return config_type.model_validate(decrypted)
+    return StoredSourceConfiguration.read(bucket, source, config_type).config
 
 
 def remote_name_for_bucket(bucket: str, source: str) -> str:
@@ -50,17 +39,14 @@ def rclone_remote_for_bucket(bucket: str, source: str) -> RcloneRemote:
     Rebuilding it in every process is what makes a credential edit apply on the next run and a restarted daemon
     (which keeps no config file) need no operator action. Cached per process because every op of a partition run
     loads its input through the IO manager and would otherwise re-upsert the same remote three times per file.
+    Write and removal runs share this remote and never write a refreshed token back; only the observation does,
+    through a remote of its own (``ObservationRcloneRemote``).
     """
     config = source_config_for_bucket(bucket, source, RcloneSyncConfig)
     name = remote_name_for_bucket(bucket, source)
-    fs = config.remote_fs(name)
+    remote = RcloneRemote.from_config(config, name)
     build_rclone_client().upsert_remote(config.to_rclone_source_config(name))
-    return RcloneRemote(
-        name=name,
-        fs=fs,
-        include_patterns=config.include_patterns or [],
-        exclude_patterns=config.exclude_patterns or [],
-    )
+    return remote
 
 
 @cache

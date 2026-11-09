@@ -1894,9 +1894,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
       FUNCTIONS_DIR: /functions
+      CODE_INTERPRETER_PROMPT_FILE: /code-interpreter-prompt.txt
     volumes:
       - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro,z
       - ./configs/openwebui/functions:/functions:ro,z
+      - ./configs/openwebui/code-interpreter-prompt.txt:/code-interpreter-prompt.txt:ro,z
     entrypoint: [/bin/sh, /init-openwebui.sh]
     logging:
       driver: json-file

@@ -1671,3 +1671,7 @@ structured_extraction:
     {{ text }}
     </document>
     {% endchat %}
+few_shot_example:
+  list_help: Example exchanges that show the agent how to answer. Each pairs a user
+    message with the response you expect, and the agent follows their style and content
+    when it answers similar messages.

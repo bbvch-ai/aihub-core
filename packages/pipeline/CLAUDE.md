@@ -98,6 +98,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── share_point_file.py            # SharePoint-specific file
 │   │   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
 │   │   ├── rclone_remote.py               # How a run addresses one database's remote (name, fs, patterns)
+│   │   ├── rclone_token_baseline.py       # What an observation's remote was created with (no plaintext token)
 │   │   ├── structured_record_file.py      # One API record as a markdown file: namespace, frontmatter, body
 │   │   ├── structured_file_reference.py   # A binary file a source offers: key, download URL, title and link
 │   │   ├── structured_source_state.py     # dlt state + scope fingerprint kept per database between syncs
@@ -115,6 +116,9 @@ packages/pipeline/                        # SDK framework
 │   │   ├── run_routing.py                 # BUCKET_RUN_TAG, bucket_from_run_tag/_partition_key, owned_by_ingestor/_source (CRITICAL)
 │   │   ├── store_builders.py              # build_vector_store/doc_store/s3_client for a bucket
 │   │   ├── source_builders.py             # source_config_for_bucket, rclone_remote_for_bucket — per-run source resolution
+│   │   ├── stored_source_configuration.py # One read of a database's source row: validated config + stored ciphertext
+│   │   ├── observation_rclone_remote.py   # The observation's private rclone remote + the sweep of leftover ones
+│   │   ├── rclone_token_write_back.py     # Stores an OAuth token rclone refreshed (compare-and-set)
 │   │   ├── source_updated_notifier.py     # notify_source_updated() — SourceUpdatedEvent per written/removed file
 │   │   ├── model_builders.py              # Per-database configuration: models, enrichment flags, vector width
 │   │   ├── bucket_utils.py                # get_db_name_from_bucket_name() — S3 bucket → MongoDB name
@@ -368,12 +372,29 @@ in `packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml
 **Per-run resolution** (`util/source_builders.py`, the Stage-1 sibling of `model_builders` / `store_builders`):
 
 - `source_config_for_bucket(bucket, source, RcloneSyncConfig)` — row → decrypt → validate; raises if the database is
-  `deleting` or its `source` is a different token.
-- `rclone_remote_for_bucket(bucket, source)` — upserts the remote `rclone_{bucket}` in the rclone daemon
-  (`config/create` with `obscure`, `nonInteractive`) **once per process** (`@cache`; every Dagster step is its own
-  process), so a credential edit applies on the next run and the daemon (`--config=/dev/null`, in-memory) needs no
-  operator action after a restart. Returns an `RcloneRemote` (name, `fs`, patterns). Secrets travel only in the
-  `config/create` body; URLs, logs and metadata carry the name.
+  `deleting` or its `source` is a different token. Delegates to `StoredSourceConfiguration.read`
+  (`util/stored_source_configuration.py`), which returns the validated config and the stored (encrypted) form from
+  **one** read of the row.
+- `rclone_remote_for_bucket(bucket, source)` — upserts the shared remote `{source}_{bucket}` in the rclone daemon
+  (`config/create` with `obscure`, `nonInteractive`) **once per process** (`@cache`; a run is one process, its steps
+  share it through `in_process_executor`), so a credential edit applies on the next run and the daemon
+  (`--config=/dev/null`, in-memory) needs no operator action after a restart. Returns an `RcloneRemote` (name, `fs`,
+  patterns). Secrets travel only in the `config/create` body; URLs, logs and metadata carry the name. Write and removal
+  runs use it.
+- `ObservationRcloneRemote.opened(bucket, source, run_id)` (`util/observation_rclone_remote.py`) — the observation's own
+  remote `{source}_{bucket}_obs_{run id hex}`, created from one read of the row, carrying an `RcloneTokenBaseline`
+  (token path, backend, the stored ciphertext, a digest of the token sent, whether it had a refresh token) and deleted
+  in `finally`. After the data versions, `RcloneTokenWriteBack.persist_refreshed_token` reads the token back
+  (`config/get`) and, if rclone refreshed it, stores it encrypted through `BucketEntity.replace_source_secret`, a
+  compare-and-set over that ciphertext: a user's edit in between wins, a token that lost its refresh token is refused,
+  neither fails the run. Only pasted OAuth tokens (`RcloneSyncConfig.refreshable_token_path()`: `onedrive.token`,
+  `drive.token`) are written back; logs name only the remote. Microsoft rotates refresh tokens, so without this a pasted
+  OneDrive/SharePoint token dies after 90 days. See the 2026-11-06 amendment of ADR
+  `2026_09_09_source_pipelines_as_a_second_axis_of_a_knowledge_database`.
+- OneDrive token mode sends `token_url` (`OneDriveOptions.token_url()`: rclone's login host for the region + tenant or
+  `common`, quoted; unknown region raises). rclone's OneDrive setup refreshes an expired token with a client that has no
+  token URL, so without it every `config/create` fails with `Post "": unsupported protocol scheme` once the access token
+  expired. Never stored.
 - `build_rclone_client()` — stateless `RcloneClient` (RC URL + basic auth), `@cache`d.
 
 The bucket travels in the `aihub/bucket` run tag on the observe/remove path and in the composite
@@ -397,7 +418,9 @@ announces each removal the same way.
 
 **Cleanup.** `SourceBucketCleanupSensorFor_{source}` (`sensors/source_bucket_cleanup_sensor.py`) drops the partitions
 and the daemon remote of every database that still has partitions but no live row pointing at this source. Storage
-teardown stays with the ingestion pipeline.
+teardown stays with the ingestion pipeline. It also sweeps observation remotes (`ObservationRcloneRemote.sweep`) a
+killed run left behind, deleting one only when Dagster reports its run finished: a SIGKILLed run stays started until run
+monitoring ends it (up to ~2 h), and a run unknown to the instance may belong to another one sharing the daemon.
 
 **Emptied folders.** Removing files leaves their namespace behind, and a sourced database refuses manual namespace
 deletion. So after each removal, `ops/source/routed/delete_emptied_namespaces.py` deletes the row of every namespace of

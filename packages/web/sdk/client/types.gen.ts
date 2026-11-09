@@ -4710,7 +4710,7 @@ export type CreateNamespaceRequest = {
   /**
    * Folder Name
    *
-   * The name of the folder to which the namespace belongs.
+   * The name of the folder to which the namespace belongs. A single path segment, because ingestion files every document under the first segment of its key.
    */
   folder_name: string;
   /**
@@ -16449,6 +16449,12 @@ export type Repeater = {
    */
   label?: LocaleString | string | null;
   /**
+   * Help
+   *
+   * Explanation of what the list is for, shown under the header
+   */
+  help?: LocaleString | string | null;
+  /**
    * Addlabel
    *
    * Text for the add button
@@ -21367,6 +21373,12 @@ export type UserIdentity = {
    * Whether the user has the AIHubSysAdmin realm role (from the JWT).
    */
   is_sys_admin?: boolean;
+  /**
+   * Openwebui Sys Admin
+   *
+   * Whether the user has the AIHubSysAdmin realm role but arrived through OpenWebUI's signed headers. Grants user access in the acting tenant instead of the sysadmin bypass.
+   */
+  openwebui_sys_admin?: boolean;
 };
 
 /**
@@ -31274,6 +31286,12 @@ export type RepeaterWritable = {
    * Label displayed as the section header
    */
   label?: LocaleString | string | null;
+  /**
+   * Help
+   *
+   * Explanation of what the list is for, shown under the header
+   */
+  help?: LocaleString | string | null;
   /**
    * Addlabel
    *
