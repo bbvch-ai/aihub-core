@@ -78,7 +78,7 @@ class S3AnonymousFileAccessService:
 
         S3BucketProvisioner.ensure_bucket_with_cors(self._s3_client, container)
 
-    @trace_fn
+    # Not decorated with `trace_fn`: it records every call's output, and a presigned URL grants access to its object.
     def generate_sas_url(
         self,
         container: str,
@@ -128,15 +128,20 @@ class S3AnonymousFileAccessService:
         logger.debug(f"Generated presigned URL for {container}/{file_path}, expires in {lifetime_hours}h")
         return presigned_url
 
-    @trace_fn
+    # Not decorated with `trace_fn`: it records every call's output, which here is the signing key itself.
     def get_url_signing_secret(self) -> str:
         """
-        Get the URL signing secret for S3/MinIO operations.
+        Get the HMAC key that signs the platform's own anonymous file links.
 
-        Returns the secret access key from S3StorageSettings, which is used as the
-        signing secret for generating secure URLs and request signatures.
+        It must be a key of its own: an empty key would let anyone forge links, and the S3 secret key must not
+        double as it, so that holding one never yields the other.
         """
-        return self._s3_config.URL_SIGNING_SECRET.get_secret_value()
+        secret = self._s3_config.URL_SIGNING_SECRET.get_secret_value()
+        if not secret:
+            raise ValueError("S3_STORAGE_URL_SIGNING_SECRET is not set")
+        if secret == self._s3_config.SECRET_KEY.get_secret_value():
+            raise ValueError("S3_STORAGE_URL_SIGNING_SECRET must differ from S3_STORAGE_SECRET_KEY")
+        return secret
 
     def generate_upload_url(self, container: str, file_path: str, content_type: str, lifetime_hours: int = 1) -> str:
         """
