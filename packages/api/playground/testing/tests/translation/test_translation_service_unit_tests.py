@@ -227,6 +227,27 @@ class TestTranslate:
         assert outcome.translated.model_dump(exclude_unset=True) == {"de": "Hallo"}
         assert outcome.failed_locales == []
 
+    @pytest.mark.asyncio
+    async def test_whitespace_only_source_text_skips_the_llm(self):
+        """Given only whitespace the model asks for text instead, so every locale failed (aihub-core-private#173)."""
+        apredict = AsyncMock()
+
+        outcome = await _translate(LocaleString(en="  \n "), apredict)
+
+        apredict.assert_not_awaited()
+        assert outcome.translated.model_dump(exclude_unset=True) == {"en": "  \n "}
+        assert outcome.failed_locales == []
+
+    @pytest.mark.asyncio
+    async def test_translates_a_locale_that_holds_only_whitespace(self):
+        apredict = _per_locale_responses({"de": "<translation>Hallo</translation>"})
+
+        outcome = await _translate(LocaleString(en="Hello", de="   ", fr="Salut", it="Ciao"), apredict)
+
+        assert apredict.await_count == 1
+        assert outcome.translated.de == "Hallo"
+        assert outcome.failed_locales == []
+
 
 class TestTranslateFromRequest:
     @pytest.mark.asyncio

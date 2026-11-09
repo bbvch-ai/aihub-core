@@ -10,10 +10,11 @@ from typing import Annotated, Any
 from unittest.mock import patch
 
 import pytest
-from pydantic import Field
+from pydantic import Field, TypeAdapter
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS, Form, ModelBoundInputNumber  # noqa: F401 — rebuilds Group
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import ModelCapability, ModelRequirements
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 
@@ -149,3 +150,22 @@ async def test_a_second_run_is_a_no_op():
     await OversizedInputLimitMigration.run()
 
     assert await OversizedInputLimitMigration.run() == []
+
+
+def test_a_model_picker_with_requirements_is_never_rewritten():
+    """`ModelLimitValidator.bound_elements` also yields model pickers now; the migration must only unset limits, never
+    the chosen model, even one its picker would no longer offer."""
+    form = _ChatForm(
+        llm=LLMConfig.as_form(
+            include_default_parameter=False,
+            requirements=ModelRequirements(capabilities={ModelCapability.TOOL_CALLING}),
+        )
+    )
+    elements = TypeAdapter(list[ALL_FORM_OPTIONS]).validate_python(
+        [element.model_dump() for element in form.to_formkit_form()]
+    )
+    config_data = {"llm": {"model_name": UNKNOWN_MODEL}}
+    model_limits: dict[tuple[str, str], float | None] = {}
+
+    assert OversizedInputLimitMigration.rewritten(config_data, elements, model_limits) == config_data
+    assert model_limits == {}

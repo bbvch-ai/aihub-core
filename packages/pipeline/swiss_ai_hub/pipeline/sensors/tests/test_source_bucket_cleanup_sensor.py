@@ -43,6 +43,7 @@ class TestCleanup:
             patch(f"{_MODULE}.ensure_main_db_connection"),
             patch(f"{_MODULE}.BucketEntity") as bucket_cls,
             patch(f"{_MODULE}.build_rclone_client", return_value=client),
+            patch(f"{_MODULE}.ObservationRcloneRemote.sweep", return_value=0) as sweep,
         ):
             bucket_cls.get_bucket_by_bucket_name.side_effect = _lookup(rows)
             result = sensor.evaluate_tick(build_sensor_context(instance=instance))
@@ -54,3 +55,16 @@ class TestCleanup:
             "rclone_switched",
         ]
         assert "3 stale" in str(result.skip_message)
+        sweep.assert_called_once_with(instance, "rclone")
+
+    def test_leftover_observation_remotes_are_swept_on_every_tick(self, instance):
+        sensor = source_bucket_cleanup_sensor(source="rclone", partition_registry_name=_REGISTRY)
+
+        with (
+            patch(f"{_MODULE}.ensure_main_db_connection"),
+            patch(f"{_MODULE}.ObservationRcloneRemote.sweep", return_value=2) as sweep,
+        ):
+            result = sensor.evaluate_tick(build_sensor_context(instance=instance))
+
+        sweep.assert_called_once_with(instance, "rclone")
+        assert "2 leftover observation remote(s) deleted" in str(result.skip_message)

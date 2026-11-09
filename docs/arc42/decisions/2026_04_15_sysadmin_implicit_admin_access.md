@@ -79,6 +79,12 @@ The bypass applies to authorization only. It does not exempt sysadmins from auth
 attribution, or per-request tracing — every sysadmin action remains attributable to a real Keycloak user with a real
 user id.
 
+**Amendment (2026-11-06): no bypass through OpenWebUI's signed headers.** `OpenWebuiAuthHandler` runs first on every
+route of the API and the sysadmin API, and its headers prove only who the user is: anyone holding the signing secret and
+any API token can name any user. A sysadmin identified that way is therefore never `is_sys_admin`. It is marked
+`openwebui_sys_admin`, which grants `aihub.user.>` under the acting tenant's ceiling: enough to chat with every agent
+the tenant offers, and nothing on the sysadmin plane (`sys_admin_user()` endpoints, cross-tenant reads, admin rights).
+
 ## Consequences
 
 ### Positive

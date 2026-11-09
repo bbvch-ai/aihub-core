@@ -78,15 +78,21 @@ class RcloneSyncConfig(SourcePipelineConfig):
   dotted paths from the form; the API encrypts them (`SecretEncryptionService`) and returns a mask, the pipeline
   decrypts per run.
 - `to_rclone_source_config(remote_name)` emits only the selected backend's non-empty options, renames `password` →
-  `pass`, adds `client_credentials=true` for OneDrive without a token, and rejects a backend missing its required set.
+  `pass`, adds `client_credentials=true` for OneDrive without a token and `token_url` for OneDrive with one, and rejects
+  a backend missing its required set.
+- **OneDrive token mode needs `token_url`.** rclone's OneDrive setup checks the drive with a client that has no token
+  URL (`onedrive.go:612`, v1.71.2, still on master), so without it an expired access token fails `config/create` with
+  `Post "": unsupported protocol scheme`. `OneDriveOptions.token_url()` builds rclone's own value: the region's login
+  host (`global`, `us`, `de`, `cn`; anything else raises), then the tenant or `common`, quoted. Never stored.
 - SharePoint is `onedrive` with `drive_type=documentLibrary`; the Entra app needs the Graph **application** permission
   `Sites.Read.All` with admin consent (Global Admin or Privileged Role Admin, not SharePoint Admin).
 - rclone 1.71 asks setup questions even with `nonInteractive`. Fixed answers live in `RcloneClient._ANSWERED_QUESTIONS`
-  (`config_change_team_drive`, `config_refresh_token` → `false`). OneDrive's "Type of connection" chain is answered by
-  ephemeral `config_*` parameters from `to_rclone_source_config` (`config_type=driveid`, `config_driveid_fixed`,
-  `config_driveid`, `config_drive_ok`): rclone uses a parameter named like the question as its answer and never stores
-  `config_*` keys. rclone then checks `/drives/{id}/root` and sets `drive_type` from Graph, so bad credentials or a
-  wrong drive ID fail at remote creation; such a failure comes back as `Error` with `Option: null` and is raised.
+  (`config_change_team_drive`, `config_refresh_token` → `false`; rclone still refreshes an expired token when it is
+  used, and the observation writes that refresh back). OneDrive's "Type of connection" chain is answered by ephemeral
+  `config_*` parameters from `to_rclone_source_config` (`config_type=driveid`, `config_driveid_fixed`, `config_driveid`,
+  `config_drive_ok`): rclone uses a parameter named like the question as its answer and never stores `config_*` keys.
+  rclone then checks `/drives/{id}/root` and sets `drive_type` from Graph, so bad credentials or a wrong drive ID fail
+  at remote creation; such a failure comes back as `Error` with `Option: null` and is raised.
 - Adding a backend = one `Form` subclass + one field + labels in
   `packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`, then `_TESTED_BACKENDS` once verified.
   No API or UI change.
@@ -95,7 +101,7 @@ class RcloneSyncConfig(SourcePipelineConfig):
 
 ```python
 config = source_config_for_bucket(bucket, "rclone", RcloneSyncConfig)   # row → decrypt → validate; raises on mismatch
-remote = rclone_remote_for_bucket(bucket, "rclone")                       # upserts remote "rclone_{bucket}" once per process
+remote = rclone_remote_for_bucket(bucket, "rclone")                       # write/remove: shared "rclone_{bucket}", once per process
 client = build_rclone_client()                                            # stateless, RC URL + basic auth
 files = run_async(client.list_files(remote.fs, include=remote.include_patterns, exclude=remote.exclude_patterns))
 ```
@@ -105,12 +111,39 @@ files = run_async(client.list_files(remote.fs, include=remote.include_patterns, 
   action after a restart.
 - There are **no deployment defaults** for a source; a database without a valid source configuration must not sync.
 
+## Refreshed OAuth tokens (observation only)
+
+```python
+with ObservationRcloneRemote.opened(bucket, source, context.run_id) as remote:   # "rclone_{bucket}_obs_{run hex}"
+    files = run_async(client.list_files(remote.fs, ...))
+    versions = data_version_by_partition_for_rclone_files(...)
+    RcloneTokenWriteBack.persist_refreshed_token(bucket, source, remote)          # True only when stored
+```
+
+- rclone refreshes an expired access token **in daemon memory only**, and Microsoft rotates the refresh token each time,
+  so a token that is never written back dies after 90 days. Only pasted tokens apply
+  (`RcloneSyncConfig.refreshable_token_path()`: `onedrive.token`, `drive.token`); Drive doesn't rotate, so there only
+  the access token and expiry change.
+- The observation's remote is **private to its run**, built from one read of the row (`StoredSourceConfiguration`), and
+  deleted in `finally` (the upsert is inside the `try`: a failed create still leaves the section). Its
+  `RcloneTokenBaseline` holds the stored ciphertext and a sha256 of the token sent, never the token.
+- Write-back: `config/get` → unchanged digest skips; no `refresh_token` though one was sent refuses; a stored value that
+  isn't `enc:v1:` skips; otherwise `BucketEntity.replace_source_secret`, a compare-and-set on bucket, source, backend,
+  `deleting != true` and the exact ciphertext. A miss (the user edited the source) returns False; none of these fails
+  the run. Logs name only the remote.
+- Write and removal runs use the shared remote and never write back; a refresh there is used and dropped.
+- `SourceBucketCleanupSensorFor_{source}` also runs `ObservationRcloneRemote.sweep`: deletes `{source}_*_obs_<32 hex>`
+  remotes whose Dagster run exists and is finished. A SIGKILLed run stays started until run monitoring ends it (~2 h).
+- rclone logs RC request and reply bodies, tokens included, at `DEBUG`: keep the daemon at `INFO`.
+
 ## RcloneClient (RC API)
 
 | Method                                     | Endpoint                                 | Notes                                                                                  |
 | ------------------------------------------ | ---------------------------------------- | -------------------------------------------------------------------------------------- |
 | `upsert_remote(config)`                    | `config/create`                          | replace semantics; raises if rclone asks an interactive question (OAuth without token) |
 | `get_remote(name)` / `delete_remote(name)` | `config/get` / `config/delete`           |                                                                                        |
+| `get_token(name)`                          | `config/get`                             | the remote's current token as `SecretStr`, None when gone or without one               |
+| `list_remotes()`                           | `config/listremotes`                     | names without colon; only sections with a `type`                                       |
 | `list_files(remote, include, exclude)`     | `operations/list`                        | filter rules: excludes, includes, then `- **` when includes exist                      |
 | `download_bytes(remote, path)`             | `operations/stat` + `GET /[remote]/path` | needs `--rc-serve`                                                                     |
 
@@ -145,6 +178,8 @@ removal to the ingestion pipeline.
 | Run fails "is filled by source 'x', not 'rclone'" / "being deleted" | the database's `source` changed or it is being torn down; the cleanup sensor forgets it                           |
 | "needs an interactive step"                                         | OAuth backend without a pre-obtained `token`; paste rclone's token JSON                                           |
 | "could not be configured: Failed to query root for drive"           | OneDrive/SharePoint: wrong drive ID, wrong secret, or `Sites.Read.All` lacks admin consent                        |
+| … `couldn't fetch token: Post "": unsupported protocol scheme`      | OneDrive token mode without `token_url` (fixed by #1862); the access token expired                                |
+| … `couldn't fetch token: invalid_grant`                             | the stored refresh token is expired or revoked: sign in again (`rclone authorize "onedrive"`) and paste the token |
 | Files listed but nothing ingested                                   | they sit directly in `root_path` (root-level files are skipped) — move them into a folder                         |
 | Nothing ingested after a sync                                       | `pipeline_document_ingestion_stream` receives `SourceUpdatedEvent`s; the database's `ingestor` is registered      |
 | SFTP password rejected                                              | must go through `config/create` with `obscure` (the client does this)                                             |

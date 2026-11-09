@@ -339,6 +339,16 @@ ModelBoundInputNumber and ModelGatedCheckbox.
   budget without a `default_from` (the input tokens) shows `fill_factor` of its `max_from` limit as what applies, and
   that share is also its bound (`maximum_for`), used by the form, the API and the startup migration alike.
 
+**Model requirements**: `ModelSelect.requirements` (`ModelRequirements` in `infrastructure/litellm/`) names the
+capabilities (`ModelCapability`, each mapped to a LiteLLM `supports_*` flag) and the hosting locations
+(`HostingLocation`) a picker's model must have. The picker sends them to `GET /models/mode/{mode}`, and
+`ModelLimitValidator` refuses a save on a model that fails them or sets `aihub_general_purpose: false`. Unlike
+`ModelGatedCheckbox`, a flag counts only when it is true, and a missing or unknown location fails. `unmet_by` and
+`admits` take a plain `model_info` mapping so core stays independent of the API. Configs pass them through
+`LLMConfig.as_form(requirements=...)` and, for conversational agents,
+`conversation_form_elements(llm_requirements=...)`, which applies them to `llm` only. See ADR
+`2026_11_04_capability_and_location_aware_model_selection`.
+
 ### Nested Forms
 
 - Nested `Form` fields → automatically wrapped in `Group` elements with conditional visibility
@@ -347,6 +357,9 @@ ModelBoundInputNumber and ModelGatedCheckbox.
   get `help`, and only when a `title` supplied the label — otherwise the label already is the description and it would
   render twice. Their generated "Enable X" checkbox is the sole place a group's help is rendered, so a non-nullable
   group is left without it rather than shipping data no surface reads.
+- A `Repeater`'s `help` comes from the item form's `repeater_help` `ClassVar` (a `LocaleString`, built with
+  `AgentLocaleString` for agent-scope translations), shown under the list's title. Not from the field's `description`,
+  which is English only and stays in the JSON schema.
 - A nested `Form` that renders no elements (i.e. it was instantiated in data mode) is skipped entirely, unless it is
   nullable — a nullable group is still worth emitting for its enable toggle, but a non-nullable one would render as an
   empty fieldset. This is how `LLMConfig.as_form(include_default_parameter=False)` drops the parameter group.
@@ -466,7 +479,10 @@ parsing and returns a fixed identity built from the constants in `test_identity.
 Sysadmin-only endpoints (those requiring the `AIHubSysAdmin` Keycloak realm role) are NOT protected by a separate auth
 handler. They use `Security(self.sys_admin_user())` from the `Controller` base class, which wraps `authenticated_user()`
 and gates on `UserIdentity.is_sys_admin`. The flag itself is populated by the regular auth handlers from the JWT roles
-claim (or, for static tokens, via `KeycloakAdminService.get_user_realm_roles`).
+claim (or, for static tokens, via `KeycloakAdminService.get_user_realm_roles`). `OpenWebuiAuthHandler` never sets it: it
+runs first on every route, and its signed headers prove only who the user is. A sysadmin arriving that way is marked
+`openwebui_sys_admin` instead, which `AccessChecker.from_user` turns into `SYS_ADMIN_OPENWEBUI_ACCESS_RULES`
+(`aihub.user.>`) under the tenant ceiling, the same rule the OpenWebUI sysadmin group carries.
 
 ### Permission System (AccessChecker)
 
@@ -507,7 +523,8 @@ wildcard, a dot). A `None` id would otherwise render as `process.None.None`, whi
 **Sysadmin short-circuit**: When `UserIdentity.is_sys_admin=True`, `access_level()` returns `ACCESS_ADMIN`
 unconditionally, bypassing both the tenant-ceiling and user-rule stages. Sysadmins may have `acting_within_tenant=None`.
 The auth pipeline (`AuthHandler._resolve_tenant_by_id` / `_resolve_active_tenant`) also skips the `UserTenantRoleEntity`
-membership check for sysadmins. See ADR `2026_04_15_sysadmin_implicit_admin_access.md`.
+membership check for sysadmins. See ADR `2026_04_15_sysadmin_implicit_admin_access.md`. `openwebui_sys_admin` identities
+get no short-circuit (see Auth Handlers above).
 
 ## Internationalization (i18n)
 

@@ -13,12 +13,13 @@ from swiss_ai_hub.pipeline.util.source_builders import (
 )
 
 _MODULE = "swiss_ai_hub.pipeline.util.source_builders"
+_STORED_MODULE = "swiss_ai_hub.pipeline.util.stored_source_configuration"
 
 
 @pytest.fixture
 def encryption() -> SecretEncryptionService:
     service = SecretEncryptionService(Fernet.generate_key().decode())
-    with patch(f"{_MODULE}.SecretEncryptionService.from_settings", return_value=service):
+    with patch(f"{_STORED_MODULE}.SecretEncryptionService.from_settings", return_value=service):
         yield service
 
 
@@ -28,7 +29,7 @@ def _bucket(source: str | None = "rclone", deleting: bool = False, configuration
 
 @pytest.fixture
 def bucket_lookup():
-    with patch(f"{_MODULE}.ensure_main_db_connection"), patch(f"{_MODULE}.BucketEntity") as bucket_cls:
+    with patch(f"{_STORED_MODULE}.ensure_main_db_connection"), patch(f"{_STORED_MODULE}.BucketEntity") as bucket_cls:
         yield bucket_cls.get_bucket_by_bucket_name
 
 

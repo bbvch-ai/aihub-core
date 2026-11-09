@@ -51,6 +51,7 @@
 const props = withDefaults(defineProps<{
   title: string
   closeRoute?: string
+  keepQuery?: boolean
   size?: 'small' | 'normal' | 'large'
   loading?: boolean
   childColumn?: boolean
@@ -58,6 +59,7 @@ const props = withDefaults(defineProps<{
   size: 'normal',
   loading: false,
   childColumn: false,
+  keepQuery: false,
 })
 
 const sizeClass = computed<string>(() => {
@@ -69,8 +71,12 @@ const sizeClass = computed<string>(() => {
 })
 
 const router = useRouter()
+const route = useRoute()
 const tenantPath = useTenantPath()
 const close = () => {
-  router.push(tenantPath(props.closeRoute))
+  router.push({
+    path: tenantPath(props.closeRoute!),
+    query: props.keepQuery ? route.query : undefined,
+  })
 }
 </script>
