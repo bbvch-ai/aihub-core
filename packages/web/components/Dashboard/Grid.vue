@@ -94,12 +94,22 @@ const itemRenderContexts = new Map<string, HTMLElement>()
 
 const nuxtApp = useNuxtApp()
 
+// GridStack re-checks its window breakpoints only when the grid element resizes, and the window can cross one without that.
+useEventListener('resize', () => grid?.checkDynamicColumn())
+
 onMounted(() => {
   grid = GridStack.init({
     cellHeight: '350px',
     minRow: 1,
     margin: '24px',
     column: 4,
+    columnOpts: {
+      columnMax: 4,
+      breakpointForWindow: true,
+      // 'list' keeps the widget order and restores the stored 4-column layout when the window grows again.
+      layout: 'list',
+      breakpoints: [{ w: 1279, c: 2 }, { w: 767, c: 1 }],
+    },
   }, gridStackElement.value)
 
   GridStack.addRemoveCB = (_: HTMLElement, w: DashboardWidget, add: boolean): GridStackElement | undefined => {
@@ -142,7 +152,8 @@ onMounted(() => {
     grid.load(myUser.value?.dashboard?.children ?? [])
   }
 
-  grid.on('change', () => {
+  // Not 'change': a breakpoint switch re-lays out the widgets and fires 'change', which would store that temporary layout.
+  grid.on('dragstop', () => {
     saveLayout()
   })
 
