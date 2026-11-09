@@ -2481,6 +2481,11 @@ services:
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: False
       ENABLE_COMMUNITY_SHARING: False
+      # Response rating is unused and stores a copy of the whole chat that survives deleting it (#1760). OpenWebUI
+      # only reads these on first boot; an existing deployment keeps its database value until an admin turns off
+      # Message Rating (Settings > General) and Arena Models (Settings > Evaluations).
+      ENABLE_MESSAGE_RATING: False
+      ENABLE_EVALUATION_ARENA_MODELS: False
       BYPASS_MODEL_ACCESS_CONTROL: "False"
       ENABLE_USER_WEBHOOKS: True
       WEBHOOK_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/webhook/openwebui?token=${OPENWEBUI_WEBHOOK_SECRET}
