@@ -35703,12 +35703,6 @@ export type GetUserThreadsData = {
      */
     agent_id?: string | null;
     /**
-     * User Id
-     *
-     * Filter by user id
-     */
-    user_id?: string | null;
-    /**
      * Status
      *
      * Filter by status: active, completed, failed
