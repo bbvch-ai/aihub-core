@@ -18,3 +18,10 @@ class UserIdentity(BaseModel):
     is_sys_admin: Annotated[
         bool, Field(description="Whether the user has the AIHubSysAdmin realm role (from the JWT).")
     ] = False
+    openwebui_sys_admin: Annotated[
+        bool,
+        Field(
+            description="Whether the user has the AIHubSysAdmin realm role but arrived through OpenWebUI's signed "
+            "headers. Grants user access in the acting tenant instead of the sysadmin bypass."
+        ),
+    ] = False

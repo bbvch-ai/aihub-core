@@ -21367,6 +21367,12 @@ export type UserIdentity = {
    * Whether the user has the AIHubSysAdmin realm role (from the JWT).
    */
   is_sys_admin?: boolean;
+  /**
+   * Openwebui Sys Admin
+   *
+   * Whether the user has the AIHubSysAdmin realm role but arrived through OpenWebUI's signed headers. Grants user access in the acting tenant instead of the sysadmin bypass.
+   */
+  openwebui_sys_admin?: boolean;
 };
 
 /**
