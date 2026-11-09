@@ -42,14 +42,22 @@ Using the "Run" button the code can be tested directly inside the chat.
 
 ![Code with Run Button](../../../../media/open_webui/code_with_run_button.jpeg)
 
-::: tip Two execution paths — only one of them can produce a file
+::: tip Two execution paths — only one of them writes files on the server
 **Model-driven execution**, where the model calls the sandbox's tools itself, runs server-side in **Open Terminal** with
-the libraries above, inside the user's own home directory. This is the only path that can produce a downloadable file.
+the libraries above, inside the user's own home directory. This is the only path that writes files on the server.
 
 The manual **"Run" button** on a code block — and OpenWebUI's built-in `execute_code` tool, whose
 `CODE_INTERPRETER_ENGINE` defaults to `pyodide` — both use the **Pyodide** engine instead: in-browser WebAssembly, which
 is lightweight, limited to its bundled packages, and **cannot write files to the server**. Charts come back as inline
 images on that path, not as files.
+
+A file the model saves on the Pyodide path lands in `/mnt/uploads`, a folder that exists only inside your browser. It
+has no web address, so download it from the **Files** tab of the chat's **Controls** panel (the sliders icon at the top
+right). AI-Hub replaces OpenWebUI's Code Interpreter prompt so the model names the file and points to that tab instead
+of writing a `/mnt/uploads/...` link, which would open a "404: Not Found" page. The replacement is
+`infra/configs/openwebui/code-interpreter-prompt.txt`, written by `openwebui-init` on every start, so an edit in Admin →
+Settings → Code Execution does not survive a restart. It applies when the model uses Legacy function calling; under
+Native, OpenWebUI adds only its own fixed Pyodide note.
 :::
 
 After running the code snippet prints the result below the cell.

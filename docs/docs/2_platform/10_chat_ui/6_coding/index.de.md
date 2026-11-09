@@ -47,15 +47,24 @@ Mit dem „Run"-Button kann der Code direkt im Chat getestet werden.
 
 ![Code with Run Button](../../../../media/open_webui/code_with_run_button.jpeg)
 
-::: tip Zwei Ausführungspfade — nur einer kann eine Datei erzeugen
+::: tip Zwei Ausführungspfade — nur einer schreibt Dateien auf den Server
 **Modellgesteuerte Ausführung**, bei der das Modell die Tools der Sandbox selbst aufruft, läuft serverseitig in **Open
 Terminal** mit den oben genannten Libraries, im Home-Verzeichnis des jeweiligen Benutzers. Dies ist der einzige Pfad,
-der eine herunterladbare Datei erzeugen kann.
+der Dateien auf den Server schreibt.
 
 Der manuelle **„Run"-Button** an einem Code-Block — und das eingebaute `execute_code`-Tool von OpenWebUI, dessen
 `CODE_INTERPRETER_ENGINE` standardmäßig auf `pyodide` steht — nutzen stattdessen die **Pyodide**-Engine:
 In-Browser-WebAssembly, leichtgewichtig, auf die mitgelieferten Packages beschränkt und **nicht in der Lage, Dateien auf
 dem Server zu schreiben**. Diagramme kommen auf diesem Pfad als Inline-Bilder zurück, nicht als Dateien.
+
+Eine Datei, die das Modell auf dem Pyodide-Pfad speichert, landet in `/mnt/uploads`, einem Ordner, der nur in Ihrem
+Browser existiert. Sie hat keine Webadresse; laden Sie sie über den Tab **Files** im **Controls**-Panel des Chats herunter
+(das Regler-Symbol oben rechts). AI-Hub ersetzt den Code-Interpreter-Prompt von OpenWebUI, damit das Modell den
+Dateinamen nennt und auf diesen Tab verweist, statt einen `/mnt/uploads/...`-Link zu schreiben, der eine Seite „404: Not
+Found" öffnen würde. Der Ersatz ist `infra/configs/openwebui/code-interpreter-prompt.txt` und wird von `openwebui-init`
+bei jedem Start geschrieben; eine Änderung unter Admin → Settings → Code Execution überlebt deshalb keinen Neustart. Er
+greift, wenn das Modell Legacy-Function-Calling nutzt; bei Native fügt OpenWebUI nur seinen eigenen, festen
+Pyodide-Hinweis hinzu.
 :::
 
 Nach der Ausführung gibt das Code-Snippet das Ergebnis unterhalb der Zelle aus.

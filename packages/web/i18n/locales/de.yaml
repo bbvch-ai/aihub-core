@@ -189,6 +189,7 @@ thread:
 chat:
   assistant: Assistent
   document: Dokument
+  image: Bild
 event:
   list:
     firstInteraction: 'Erste Interaktion:'
@@ -453,6 +454,10 @@ agent:
         nicht verfügbar.
   export:
     button: Exportieren
+  storedSecrets:
+    title: Geheimnisse erneut eingeben
+    detail: 'Gespeicherte Geheimnisse werden nie in ein neues Profil übernommen. Geben
+      Sie sie vor dem Speichern erneut ein: {fields}'
   configuration:
     title: Agentenkonfiguration
     description: Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für
@@ -980,6 +985,8 @@ process:
       done: Abgeschlossen
       steps: Fortschritt
 form:
+  repeater:
+    add_item: Eintrag hinzufügen
   secret_file_input:
     drop_hint: Datei hier ablegen oder zum Auswählen klicken
     limits: '{accept}, bis {size}'
@@ -1003,6 +1010,14 @@ form:
       nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie
       sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
+  modelSelect:
+    contextWindow: 'Kontextfenster: {input} Eingabe- · {output} Ausgabe-Tokens'
+    contextWindowInputOnly: 'Kontextfenster: {input} Eingabe-Tokens'
+    notSelectable: '{model} erfüllt nicht, was dieses Feld verlangt. Wählen Sie vor dem Speichern ein anderes Modell.'
+    specialPurpose: '{model} ist nur für eine bestimmte Aufgabe gebaut und kann hier nicht gewählt werden. Wählen Sie vor dem Speichern ein anderes Modell.'
+    unavailable: '{model} steht Ihnen nicht zur Verfügung. Wählen Sie vor dem Speichern ein anderes Modell.'
+    loadFailed: Die Modelle konnten nicht geladen werden. Laden Sie die Seite neu, um es erneut zu versuchen.
+    empty: Keines der Modelle, die Sie verwenden dürfen, erfüllt, was dieses Feld verlangt.
   modelBound:
     providerDefault: Anbieter-Standard
     overrideRequired: Geben Sie einen Wert ein, oder deaktivieren Sie die Überschreibung,
@@ -1044,8 +1059,6 @@ lib:
       angeboten werden.
     empty: Der gewählte Agent ist für keine Sammlung konfiguriert.
     unavailable: Gespeichert, wird aber vom gewählten Agenten nicht abgerufen
-  knowledgeDatabases:
-    unavailable: '{name} (gelöscht oder für Sie nicht sichtbar)'
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen

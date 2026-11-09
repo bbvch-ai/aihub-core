@@ -1,8 +1,9 @@
-from typing import Annotated, Self
+from typing import Annotated, ClassVar, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.form import VectorStoreInput
 from swiss_ai_hub.core.form.form import Form
+from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -10,6 +11,10 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 class KnowledgeToolSource(Form):
     """One knowledge database the knowledge tool may search, whole or narrowed to some of its collections."""
+
+    repeater_help: ClassVar[LocaleString | None] = AgentLocaleString.from_i18n_path(
+        "agent.knowledge.config.sources_help"
+    )
 
     vector_store: Annotated[
         MilvusVectorStoreConfig | VectorStoreInput,

@@ -8,6 +8,7 @@ from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from opentelemetry import context as otel_context
+from opentelemetry.trace import Span
 from pydantic import ValidationError
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, StepConfig
@@ -31,6 +32,7 @@ from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.generative_ai import AgentMemory, GatewayGuardrails
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.rpc import AgentConfigClient
+from swiss_ai_hub.core.secrets import SecretEncryptionService
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentClassTopicManager, AgentThreadTopicManager, AgentTopicManager
 from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic, Topic
@@ -103,6 +105,9 @@ class AgentDispatcher(BaseDispatcher):
 
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
+        # Filled by `_decrypted` on the first config holding ciphertext, never here: `secret_field_paths` builds the
+        # form, which a config not overriding `as_form()` cannot do.
+        self._secret_field_paths: set[str] | None = None
 
         # Strong references to the in-flight AITL deadline timers; see _schedule_agent_in_the_loop_timeout.
         self._aitl_timeout_tasks: set[asyncio.Task] = set()
@@ -140,7 +145,9 @@ class AgentDispatcher(BaseDispatcher):
             if agent_config_dict is None:
                 return
             # Transform FormKit-style arrays (dict with numeric keys) to Python lists
-            run_agent_config = self.agent_config_type.model_validate(transform_formkit_arrays(agent_config_dict))
+            run_agent_config = self.agent_config_type.model_validate(
+                self._decrypted(transform_formkit_arrays(agent_config_dict))
+            )
         except Exception as unusable_config_exception:
             await self._report_unusable_config(topic, unusable_config_exception)
             return
@@ -198,6 +205,25 @@ class AgentDispatcher(BaseDispatcher):
             return None
 
         raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
+
+    def _decrypted(
+        self, config: Annotated[dict[str, Any], "Runtime config as fetched, secrets encrypted"]
+    ) -> dict[str, Any]:
+        """Decrypted for validation only, so RunContext and the RPC reply keep the ciphertext. Only the secret paths are
+        decrypted; ciphertext anywhere else stays inert."""
+        if not self._holds_ciphertext(config):
+            return config
+        if self._secret_field_paths is None:
+            self._secret_field_paths = self.agent_config_type.secret_field_paths()
+        return SecretEncryptionService.from_settings().decrypt_paths(config, self._secret_field_paths)
+
+    @classmethod
+    def _holds_ciphertext(cls, value: Annotated[Any, "A config, or any value nested in one"]) -> bool:
+        if isinstance(value, dict):
+            return any(cls._holds_ciphertext(item) for item in value.values())
+        if isinstance(value, list):
+            return any(cls._holds_ciphertext(item) for item in value)
+        return SecretEncryptionService.is_encrypted(value)
 
     async def _report_unusable_config(
         self,
@@ -450,19 +476,7 @@ class AgentDispatcher(BaseDispatcher):
             try:
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
             except Exception as e:
-                self.agent_run_tracer.trace_step_error(step_span, e)
-                # The SDK wraps a gateway failure as "Error code: N - {…}", which is what both the
-                # log line and the chat UI used to show. Unwrapping it here is what makes an agent
-                # error say "Invalid model name passed in model=…" instead.
-                cause = ModelGatewayErrorHandler.cause_of(e)
-                if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
-                    event = ExceptionEvent(message=cause)
-                    await self.publish_event(event, topic)
-                # One record, not two: this used to log the exception twice — once bare, once with
-                # the step name — so every agent failure arrived in the backend as two identical
-                # tracebacks, doubling both the volume and any count taken from it. The run id is
-                # on the record because a traceback that cannot be tied to a run is not actionable.
-                logger.exception(f"Step '{step_method.__name__}' failed in run {topic.execution_context_id}: {cause}")
+                await self._report_step_failure(step_method, e, topic, step_span)
                 return
 
             # Always finalize the span so Langfuse receives trace metadata (name, session,
@@ -470,9 +484,35 @@ class AgentDispatcher(BaseDispatcher):
             result_events = self._normalize_step_result(result)
             await self.agent_run_tracer.trace_step_stop(step_span, result_events, topic)
 
-            if result_events:
-                for event in result_events:
+            # A result the broker refuses (one above its payload limit) fails the step like an exception
+            # inside it: otherwise nothing ends the run and the chat waits forever.
+            try:
+                for event in result_events or []:
                     await self._handle_step_result_event(event, topic)
+            except Exception as e:
+                await self._report_step_failure(step_method, e, topic, step_span)
+                return
+            self.agent_run_tracer.trace_step_ok(step_span)
+
+    async def _report_step_failure(
+        self,
+        step_method: Annotated[Callable, "The step that failed."],
+        error: Annotated[Exception, "What it failed with, raised by the step or by publishing its result."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
+        step_span: Annotated[Span, "The step's span, marked as failed."],
+    ) -> None:
+        self.agent_run_tracer.trace_step_error(step_span, error)
+        # The SDK wraps a gateway failure as "Error code: N - {…}", which is what both the
+        # log line and the chat UI used to show. Unwrapping it here is what makes an agent
+        # error say "Invalid model name passed in model=…" instead.
+        cause = ModelGatewayErrorHandler.cause_of(error)
+        if getattr(step_method, Agent.STOP_ON_ERROR_ANNOTATION, False):
+            await self.publish_event(ExceptionEvent(message=cause), topic)
+        # One record, not two: this used to log the exception twice — once bare, once with
+        # the step name — so every agent failure arrived in the backend as two identical
+        # tracebacks, doubling both the volume and any count taken from it. The run id is
+        # on the record because a traceback that cannot be tied to a run is not actionable.
+        logger.exception(f"Step '{step_method.__name__}' failed in run {topic.execution_context_id}: {cause}")
 
     @staticmethod
     def _normalize_step_result(result: Any) -> list[BaseEvent] | None:

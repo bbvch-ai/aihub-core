@@ -2,13 +2,16 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
+    from swiss_ai_hub.core.mcp.mcp_settings import McpSettings
 
 __all__ = [
     "McpClientConfig",
+    "McpSettings",
 ]
 
 _LAZY_IMPORTS = {
     "McpClientConfig": "swiss_ai_hub.core.mcp.mcp_client_config",
+    "McpSettings": "swiss_ai_hub.core.mcp.mcp_settings",
 }
 
 

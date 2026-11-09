@@ -33,11 +33,12 @@ packages/backup/swiss_ai_hub/backup/
 │   │   ├── maintenance_service_factory.py  # Per-handler: handler.run() — failures isolated
 │   │   └── maintenance_finalize_factory.py # Fan-in: aggregate results
 │   ├── resources/           # Dagster ConfigurableResource wrappers (incl. MaintenanceEngineResource)
-│   ├── jobs/factory.py      # backup, restore, cleanup, repack, ferretdb_lz4_rewrite asset jobs
-│   └── schedules/factory.py # daily_backup, weekly_cleanup, monthly_repack (all Europe/Zurich)
+│   ├── jobs/factory.py      # backup, restore, cleanup, repack, ferretdb_lz4_rewrite, ferretdb_text_index(_rebuild) asset jobs
+│   └── schedules/factory.py # daily_backup, weekly_cleanup, monthly_repack, daily_text_index (all Europe/Zurich)
 ├── services/                 # Backup handlers (one per stateful service)
 │   ├── base.py               # BackupHandler ABC (backup + restore methods)
 │   ├── postgres.py           # pg_dumpall/pg_dump + DocumentDB catalog COPY workaround
+│   ├── psql_script.py        # PsqlScript: restricted, stop-on-error psql input for SQL read from backups
 │   ├── milvus.py             # milvus-backup CLI (subprocess)
 │   ├── neo4j.py              # neo4j-admin via temp sibling container
 │   ├── clickhouse.py         # BACKUP/RESTORE TO Disk('backup_s3', ...) SQL
@@ -54,7 +55,8 @@ packages/backup/swiss_ai_hub/backup/
     ├── dagster_unimportant_events.py # DELETE ENGINE_EVENT/HANDLED_OUTPUT/LOADED_INPUT/MAT_PLANNED/STEP_OUTPUT
     ├── postgres_indexes.py           # CREATE INDEX CONCURRENTLY IF NOT EXISTS — idempotent
     ├── postgres_autovacuum_tune.py   # ALTER TABLE SET autovacuum_vacuum_scale_factor — idempotent
-    └── postgres_repack.py            # subprocess pg_repack -t event_logs/runs/job_ticks
+    ├── postgres_repack.py            # subprocess pg_repack -t event_logs/runs/job_ticks
+    └── ferretdb_text_index.py        # Trigram index per knowledge database for the content search (FerretDB's PG)
 ```
 
 ## Key Patterns
@@ -65,6 +67,10 @@ packages/backup/swiss_ai_hub/backup/
   `seaweedfs-`, `etcd`, `traefik`, `oauth2proxy` (Traefik + all oauth2proxy sidecars stay up so the backup Dagster UI
   remains reachable through OAuth during a backup run; note Keycloak still goes down with `postgres`, so existing
   sessions work but token refresh will fail mid-run)
+- **Docker access**: `DOCKER_HOST` points at `backup-docker-proxy`, which allows the `/containers/...` API (incl.
+  create, archive, wait, logs, delete) and nothing else. `DockerManager` must stay within that: no exec, no images API
+  (`get_container_image` reads the image ID from the container's inspect data). The proxy's `backup-` prefix keeps it
+  out of the stop/start set
 - **Parallel ops**: `ThreadPoolExecutor` for container stop/start
 - **Failure safety**: `restart_on_failure` hook restarts all containers if backup crashes mid-run
 - **Sync by design**: All handlers are synchronous. Dagster ops execute in a sync context, and all I/O is process-local
@@ -73,6 +79,11 @@ packages/backup/swiss_ai_hub/backup/
   `pg_restore` / `psql` invocation. Sized for >100GB dagster DBs; lower for small deployments. Wired through
   `infra/deployment/templates/docker-compose.yml.j2` and `.env.{dev,prod}` so operators can override it without
   rebuilding the container
+- **SQL from a backup goes through `PsqlScript`**: the globals file and the DocumentDB catalog file are piped into psql
+  with `ON_ERROR_STOP=1` behind a `\restrict` key generated per run, so meta-commands (`\!`, `\copy`, ...) in an
+  artifact are refused and the first failing statement fails the restore. Globals have their bare `CREATE ROLE` lines
+  wrapped to ignore only `duplicate_object` (roles survive the database drop). Needs psql ≥ 17.6 in the image (PGDG
+  `postgresql-client-17`). Never pipe backup content into psql without it
 - **NATS readiness**: `NatsHandler._wait_for_ready` probes `stream list` (not `rtt`) so it actually checks JetStream,
   and `_run_nats_subprocess` retries up to 3× on transient connect errors ("no servers available", "connection
   refused/reset") with a re-probe between attempts. Non-transient errors (e.g. stream-not-found) surface immediately
@@ -84,7 +95,7 @@ packages/backup/swiss_ai_hub/backup/
 
 The maintenance subsystem keeps the platform Postgres bounded over time so deployments don't accumulate `event_logs`
 indefinitely. It lives **inside the backup Dagster instance** because backup is already the platform's "operate on the
-storage layer" plane. Four jobs share one `maintenance_session` asset:
+storage layer" plane. The maintenance jobs share one `maintenance_session` asset:
 
 | Job                           | Schedule                   | Purpose                                                                                                           | Stops containers? |
 | ----------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------- |
@@ -92,6 +103,7 @@ storage layer" plane. Four jobs share one `maintenance_session` asset:
 | `postgres_repack_job`         | First Sunday of month 4 AM | `pg_repack` on `event_logs`, `runs`, `job_ticks` to return disk to OS                                             | No (online-safe)  |
 | `daily_backup_job` (existing) | Daily 1 AM                 | Full backup with container stop/restart                                                                           | Yes               |
 | `ferretdb_lz4_rewrite_job`    | None — launched by hand    | Recompress every FerretDB collection's existing pglz rows as lz4, once per deployment                             | No (online-safe)  |
+| `ferretdb_text_index_job`     | Daily 5 AM                 | Build missing knowledge-database trigram indexes on FerretDB's PostgreSQL; rebuild after a DocumentDB upgrade     | No (online-safe)  |
 
 **UI safety guarantees** (these are load-bearing — do not change without re-reviewing the docs):
 
@@ -143,6 +155,24 @@ Recovery"; the decision is ADR `2026_10_07_ferretdb_postgres_lz4_toast_compressi
 
 **Reference**: docs.dagster.io/deployment/troubleshooting/database-tuning is the canonical recipe this subsystem
 implements. The cleanup SQL targets exactly the event types the docs recommend; the indexes match exactly.
+
+## Content Search Text Index (FerretDB)
+
+`ferretdb_text_index_job` keeps one `pg_trgm` GIN index, `aihub_text_trgm_<collection_id>`, on every knowledge
+database's `documents-data` table in FerretDB's PostgreSQL, built over
+`documentdb_core.bson_get_value_text(document, '__data__.text')`. `KnowledgeTextIndex` in `packages/core` reads it
+through the `aihub_text_search` role that the `ferretdb-init` container creates. Each run:
+
+1. creates `pg_trgm` if missing;
+2. checks `bson_get_value_text` against a canary text and fails, touching nothing, if DocumentDB changed its output;
+3. drops an invalid index (an interrupted `CONCURRENTLY` build), creates missing ones with `CREATE INDEX CONCURRENTLY`,
+   and runs `REINDEX INDEX CONCURRENTLY` on any index stamped with another `documentdb_core` version;
+4. stamps each index `COMMENT 'documentdb_core <extversion>'` and grants the role `SELECT` on each indexed table only.
+
+The search ignores an index whose stamp is not the running version, so after a `postgres_ferretdb` image bump it scans
+until this job has run; launch it by hand to shorten that. `ferretdb_text_index_rebuild_job` (manual only) rebuilds
+every index to reclaim space. Index name, stamp format and role name are shared with `KnowledgeTextIndex` in
+`packages/core`; change both together. See ADR `2026_10_08_trigram_index_for_knowledge_content_search`.
 
 ## DocumentDB Catalog Maintenance
 

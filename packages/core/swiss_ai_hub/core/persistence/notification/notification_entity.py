@@ -1,15 +1,12 @@
 from datetime import UTC, datetime
+from typing import Literal, Self
 
-from mongoengine import (
-    BooleanField,
-    DateTimeField,
-    Document,
-    EmbeddedDocumentField,
-    StringField,
-)
+from beanie import Document, PydanticObjectId
+from pydantic import Field
+from pymongo import ASCENDING, DESCENDING, IndexModel
 
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 
 class NotificationEntity(Document):
@@ -17,28 +14,30 @@ class NotificationEntity(Document):
     Represents a notification for a user in the database.
     """
 
-    meta = {
-        "collection": "notifications",
-        "indexes": [
-            {"fields": ["user_id"]},
-            {"fields": ["user_id", "-created_at"]},
-        ],
-    }
+    user_id: str
+    notification_group_id: str | None = None
+    title: LocaleString | None = None
+    message: LocaleString | None = None
+    read: bool = False
+    done: bool = False
+    type: Literal["info", "warn", "success", "error"] = "info"
+    severity: Literal["low", "medium", "high", "critical"] = "medium"
+    link: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    user_id = StringField(required=True)
-    notification_group_id = StringField(default=None)
-    title = EmbeddedDocumentField(LocaleStringEntity)
-    message = EmbeddedDocumentField(LocaleStringEntity)
-    read = BooleanField(default=False)
-    done = BooleanField(default=False)
-    type = StringField(choices=("info", "warn", "success", "error"), default="info")
-    severity = StringField(choices=("low", "medium", "high", "critical"), default="medium")
-    link = StringField()
-    created_at = DateTimeField(default=lambda: datetime.now(UTC))
+    class Settings:
+        name = "notifications"
+        keep_nulls = False
+        use_state_management = True
+        state_management_replace_objects = True
+        indexes = [
+            IndexModel([("user_id", ASCENDING)]),
+            IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)]),
+        ]
 
     @classmethod
     @trace_fn
-    def get_for_user(
+    async def get_for_user(
         cls,
         user_id: str,
         page: int,
@@ -48,42 +47,48 @@ class NotificationEntity(Document):
         read: bool | None = None,
         done: bool | None = None,
         order_by: str = "-created_at",
-    ) -> tuple[list["NotificationEntity"], int]:
+    ) -> tuple[list[Self], int]:
         """Retrieves a paginated list of notifications, with optional filters."""
-        query = cls.objects(user_id=user_id)
-
+        criteria: dict = {"user_id": user_id}
         if types:
-            query = query.filter(type__in=types)
+            criteria["type"] = {"$in": types}
         if severities:
-            query = query.filter(severity__in=severities)
+            criteria["severity"] = {"$in": severities}
         if read is not None:
-            query = query.filter(read=read)
+            criteria["read"] = read
         if done is not None:
-            query = query.filter(done=done)
+            criteria["done"] = done
 
         offset = (page - 1) * page_size
-        notifications = query.order_by(order_by).skip(offset).limit(page_size).all()
-        total = query.count()
+        notifications = await cls.find(criteria).sort(order_by).skip(offset).limit(page_size).to_list()
+        total = await cls.find(criteria).count()
         return notifications, total
 
+    @classmethod
     @trace_fn
-    def mark_as_read(self):
+    async def find_for_user(cls, user_id: str, notification_ids: list[PydanticObjectId]) -> list[Self]:
+        return await cls.find({"_id": {"$in": notification_ids}, "user_id": user_id}).to_list()
+
+    @trace_fn
+    async def mark_as_read(self) -> Self:
         self.read = True
-        self.save()
+        await self.save_changes()
         return self
 
     @trace_fn
-    def mark_as_done(self):
+    async def mark_as_done(self) -> Self:
         self.done = True
-        self.save()
+        await self.save_changes()
         return self
 
     @classmethod
     @trace_fn
-    def mark_multiple_as_read(cls, user_id: str, notification_ids: list[str]) -> int:
-        return cls.objects(id__in=notification_ids, user_id=user_id).update(set__read=True)
+    async def mark_multiple_as_read(cls, user_id: str, notification_ids: list[PydanticObjectId]) -> int:
+        query = cls.find({"_id": {"$in": notification_ids}, "user_id": user_id})
+        return (await query.update({"$set": {"read": True}})).modified_count
 
     @classmethod
     @trace_fn
-    def mark_multiple_as_done(cls, user_id: str, notification_ids: list[str]) -> int:
-        return cls.objects(id__in=notification_ids, user_id=user_id).update(set__done=True)
+    async def mark_multiple_as_done(cls, user_id: str, notification_ids: list[PydanticObjectId]) -> int:
+        query = cls.find({"_id": {"$in": notification_ids}, "user_id": user_id})
+        return (await query.update({"$set": {"done": True}})).modified_count

@@ -1,5 +1,9 @@
 ---
 config:
+  categories_help: Les catégories dans lesquelles le courrier entrant est classé.
+    Pour chaque message non lu, le modèle choisit la catégorie dont la description
+    correspond le mieux et range le message dans son dossier ; décrivez donc chaque
+    catégorie clairement.
   host:
     label: Hôte IMAP
     help: Nom d'hôte du serveur IMAP (par ex. imap.example.com).

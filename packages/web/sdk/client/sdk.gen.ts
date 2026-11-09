@@ -175,6 +175,8 @@ import type {
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetImageData,
+  GetImageError,
   GetIncidentAvailabilityData,
   GetIncidentAvailabilityResponse,
   GetIncidentFormData,
@@ -198,6 +200,7 @@ import type {
   GetLocaleData,
   GetLocaleResponse,
   GetModelsData,
+  GetModelsError,
   GetModelsResponse,
   GetModelWithAssistantsData,
   GetModelWithAssistantsError,
@@ -1117,7 +1120,11 @@ export const getLitellmModels = <
 /**
  * Get Litellm Models By Mode
  *
- * Retrieve all models filtered by their mode (chat, embedding, rerank, etc.).
+ * Retrieve the models of one mode (chat, embedding, rerank, etc.) a model picker may offer.
+ *
+ * Repeat `capability` to require several capabilities, and `hosting_location` to allow several locations; a
+ * model whose flag or location is not set fails them. Models built for one job, such as the OCR model, are
+ * left out unless `include_special_purpose` is set.
  */
 export const getLitellmModelsByMode = <
   TComposable extends Composable = "$fetch",
@@ -1684,7 +1691,7 @@ export const updateAgentInstance = <
 /**
  * Get Agent Instance Threads
  *
- * Retrieve all threads that a specific agent instance is part of.
+ * Retrieve the caller's threads with a specific agent instance; agent admins see only their own too.
  */
 export const getAgentInstanceThreads = <
   TComposable extends Composable = "$fetch",
@@ -1813,6 +1820,33 @@ export const validateFileUpload = <
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Get Image
+ *
+ * An image sent in a message to the agent, which the message references instead of carrying it.
+ *
+ * Its name is the digest of its content, so it never changes and may be cached for as long as it is kept.
+ */
+export const getImage = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, GetImageData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    unknown | DefaultT,
+    GetImageError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/images/{name}",
+    ...options,
   });
 
 /**
@@ -2134,7 +2168,7 @@ export const getProcessStartForms = <
 /**
  * Get Process Open Forms
  *
- * Returns a list of formkit forms that the user can submit to continue the given process walkthrough
+ * Returns the forms the user can submit to continue the walkthrough: only tasks assigned to them.
  */
 export const getProcessOpenForms = <
   TComposable extends Composable = "$fetch",
@@ -2588,7 +2622,7 @@ export const getChatDisclaimer = <
 /**
  * List Models
  *
- * Lists the currently available models, and provides basic information about each one such as the owner and availability.
+ * Lists the currently available models, and provides basic information about each one such as the owner and availability. With `include_agents`, the agents the user may call are listed too, as models named `AgentClass/agent_id`.
  */
 export const getModels = <
   TComposable extends Composable = "$fetch",
@@ -2599,7 +2633,7 @@ export const getModels = <
   (options.client ?? client).get<
     TComposable,
     GetModelsResponse | DefaultT,
-    unknown,
+    GetModelsError,
     DefaultT
   >({
     security: [
@@ -3575,7 +3609,10 @@ export const getDocumentUrl = <
 /**
  * Get signed file URL
  *
- * Generates a short-lived secure link to the blob resource, and returns the URL.
+ * Generates a short-lived link to a knowledge document or figure, or to a file attached to an agent.
+ *
+ * The caller needs read access to the knowledge namespace or the agent owning the object; objects of any
+ * other bucket are never signed.
  */
 export const getFileUrl = <
   TComposable extends Composable = "$fetch",

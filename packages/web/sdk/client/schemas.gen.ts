@@ -139,10 +139,12 @@ export const AddAgentRequestSchema = {
   properties: {
     agent_id: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Id",
     },
     agent_class: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Class",
     },
   },
@@ -563,6 +565,13 @@ export const AgentClassDTOSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent class can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
     is_online: {
@@ -4468,7 +4477,7 @@ export const ChatCompletionRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["auto", "default"],
+          enum: ["auto", "default", "flex", "scale", "priority"],
         },
         {
           type: "null",
@@ -7001,8 +7010,10 @@ export const CreateNamespaceRequestSchema = {
     folder_name: {
       type: "string",
       maxLength: 100,
+      pattern: "^[^/]+$",
       title: "Folder Name",
-      description: "The name of the folder to which the namespace belongs.",
+      description:
+        "The name of the folder to which the namespace belongs. A single path segment, because ingestion files every document under the first segment of its key.",
     },
     display_name: {
       anyOf: [
@@ -9067,15 +9078,23 @@ export const EmbeddingsSchema = {
       type: "string",
       title: "Object",
       description: "The type of object.",
-      default: "embeddings",
+      default: "embedding",
     },
     embedding: {
-      items: {
-        type: "number",
-      },
-      type: "array",
+      anyOf: [
+        {
+          items: {
+            type: "number",
+          },
+          type: "array",
+        },
+        {
+          type: "string",
+        },
+      ],
       title: "Embedding",
-      description: "The list of embeddings.",
+      description:
+        "The embedding vector, or the vector's float32 bytes as base64 when requested so.",
     },
     index: {
       type: "integer",
@@ -9193,6 +9212,17 @@ export const EmbeddingsResponseSchema = {
       title: "Data",
       description: "The list of embeddings.",
     },
+    usage: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/openai__types__create_embedding_response__Usage",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Tokens the request used.",
+    },
   },
   type: "object",
   required: ["model", "data"],
@@ -9240,6 +9270,20 @@ export const EventSpecsSchema = {
       title: "Event Schema",
       description:
         "A dictionary describing the schema of this start event, providing details about expected fields and their types. This helps external consumers understand how to construct and validate events for initiating the agent's workflow.",
+    },
+    api_input_schema: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Api Input Schema",
+      description:
+        "The schema of what an API caller sends for this event: the event without the fields the server fills in, and with the inputs the event converts itself, such as files sent inline. Absent for a specification stored before agents announced it.",
     },
     event_parents: {
       items: {
@@ -10142,6 +10186,13 @@ export const FullAgentInstanceDTOSchema = {
         "Whether the agent can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -10200,7 +10251,7 @@ export const FullAgentInstanceDTOSchema = {
       type: "object",
       title: "Configuration",
       description:
-        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.",
+        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.",
       default: {},
     },
   },
@@ -11012,6 +11063,14 @@ export const HealthResponseSchema = {
   required: ["status", "code", "version"],
   title: "HealthResponse",
   description: "Standard health check response.",
+} as const;
+
+export const HostingLocationSchema = {
+  type: "string",
+  enum: ["local", "swiss_cloud", "eu", "global"],
+  title: "HostingLocation",
+  description:
+    "Where a model runs, as the LiteLLM config declares it in `aihub_hosting_location`.\n\nKeep in sync with `HOSTING_LOCATIONS` in `infra/deployment/generate_compose.py`, which rejects any other value.",
 } as const;
 
 export const HtmlElementSchema = {
@@ -13008,7 +13067,7 @@ export const ImageGenerationRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["standard", "hd"],
+          enum: ["standard", "hd", "low", "medium", "high", "auto"],
         },
         {
           type: "null",
@@ -13032,7 +13091,16 @@ export const ImageGenerationRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"],
+          enum: [
+            "auto",
+            "256x256",
+            "512x512",
+            "1024x1024",
+            "1536x1024",
+            "1024x1536",
+            "1792x1024",
+            "1024x1792",
+          ],
         },
         {
           type: "null",
@@ -16740,6 +16808,20 @@ export const LLMStopEventSchema = {
       description:
         "List of tools that are advertised to the LLM to be able to call.",
     },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -18944,6 +19026,13 @@ export const MinimalAgentInstanceDTOSchema = {
         "Whether the agent can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
   },
   type: "object",
   required: ["agent_class", "agent_id", "agent_config", "is_conversational"],
@@ -19495,6 +19584,14 @@ export const ModelBoundInputNumberSchema = {
     'A number input whose upper bound and default hint come from the model picked elsewhere on the same form.\n\nA static range cannot be right for every model: an input-token budget a small-context model cannot serve, or\na temperature hint that is only the default of some other model. The frontend reads the selected model\'s\nLiteLLM `model_info` and applies `max_from` as the maximum and `default_from` as the placeholder; the API\nrejects a save above the model\'s limit, since this bound is not part of the announced JSON schema.\n\nWith an `override_label`, a nullable field gets an override checkbox of its own instead of the form\'s generic\nenable toggle: the input stays in view, disabled and showing the model\'s default while unset, and is pre-filled\nwith that default when the admin starts overriding it, so the default is visible before deciding. A budget\nsuch as the input tokens has no curated default: unset, it fills `fill_factor` of the model\'s `max_from` limit,\nwhich is also the highest value it accepts (`maximum_for`).\n\n```python\nnumber_of_input_tokens=ModelBoundInputNumber(\n    label=LocaleString(en="Input tokens"), model_ref="llm.model_name", max_from="max_input_tokens", min=1024\n)\n```',
 } as const;
 
+export const ModelCapabilitySchema = {
+  type: "string",
+  enum: ["vision", "tool_calling", "structured_output", "reasoning"],
+  title: "ModelCapability",
+  description:
+    "Something a model picker may require of a chat model, read from the LiteLLM `supports_*` flag it names.",
+} as const;
+
 export const ModelDTOSchema = {
   properties: {
     model_name: {
@@ -19506,6 +19603,13 @@ export const ModelDTOSchema = {
       $ref: "#/components/schemas/ModelInfoDTO",
       description: "Detailed information about the model",
     },
+    display_name: {
+      type: "string",
+      title: "Display Name",
+      description:
+        "The curated display name, or the model name without its capability prefix",
+      readOnly: true,
+    },
     icon: {
       type: "string",
       title: "Icon",
@@ -19513,7 +19617,7 @@ export const ModelDTOSchema = {
     },
   },
   type: "object",
-  required: ["model_name", "model_info", "icon"],
+  required: ["model_name", "model_info", "display_name", "icon"],
   title: "ModelDTO",
 } as const;
 
@@ -19886,6 +19990,42 @@ export const ModelInfoDTOSchema = {
       title: "Mode",
       description:
         "The mode of the model (e.g., 'chat', 'completion', 'embedding')",
+    },
+    aihub_display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Aihub Display Name",
+      description: "Human-readable model name curated in the LiteLLM config",
+    },
+    aihub_hosting_location: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/HostingLocation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Where the model runs, curated per model",
+    },
+    aihub_general_purpose: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Aihub General Purpose",
+      description:
+        "False for a model built for one job, such as OCR, which model pickers leave out; a model that does not set it counts as general-purpose",
     },
     max_input_tokens: {
       anyOf: [
@@ -20376,6 +20516,40 @@ export const ModelInfoDTOSchema = {
   },
   type: "object",
   title: "ModelInfoDTO",
+  description:
+    "Fields carry their LiteLLM ``model_info`` key as name, without aliases, because the model-bound form elements\nand the frontend read limits and flags from this DTO by that key.",
+} as const;
+
+export const ModelRequirementsSchema = {
+  properties: {
+    capabilities: {
+      items: {
+        $ref: "#/components/schemas/ModelCapability",
+      },
+      type: "array",
+      title: "Capabilities",
+      description: "Capabilities the model must all support.",
+    },
+    hosting_locations: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/HostingLocation",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Hosting Locations",
+      description: "Where the model may run; any location when unset.",
+    },
+  },
+  type: "object",
+  title: "ModelRequirements",
+  description:
+    "What a model must offer to be offered and saved in one model picker.\n\nStricter than `ModelGatedCheckbox` on purpose: that gates a feature on a model already chosen, this decides what\nmay be chosen. So a flag counts only when it is true (LiteLLM reports an unset one as null), and a model whose\nlocation is missing or unknown fails a location requirement. It reads a plain `model_info` mapping, not the\nAPI's DTO, so core does not depend on the API.",
 } as const;
 
 export const ModelResponseSchema = {
@@ -20624,6 +20798,11 @@ export const ModelSelectSchema = {
       description: "Whether to show clear button",
       default: false,
     },
+    requirements: {
+      $ref: "#/components/schemas/ModelRequirements",
+      description:
+        "Capabilities and hosting locations the chosen model must have.",
+    },
     validation: {
       type: "string",
       title: "Validation",
@@ -20635,7 +20814,7 @@ export const ModelSelectSchema = {
   required: ["label", "validation"],
   title: "ModelSelect",
   description:
-    'A FormKit element for selecting LLM models from LiteLLM.\n\nThis element renders as a select dropdown that automatically fetches\navailable models from the API based on the specified mode.\n\nThe frontend component handles fetching models from `/api/v1/models/mode/{mode}`\nand populating the dropdown options.\n\n### Supported Modes\n- `chat`: Chat/text generation models\n- `embedding`: Embedding models\n- `rerank`: Reranking models\n- `image_generation`: Image generation models\n- `audio_transcription`: Audio transcription models\n- `audio_speech`: Text-to-speech models\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    llm_model: Annotated[\n        str | ModelSelect,\n        Field(description="The LLM model to use"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    llm_model=ModelSelect(\n        label=LocaleString(en="Model", de="Modell"),\n        mode="chat",\n    ),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    llm_model="text-generation/gpt-4",\n)\n```',
+    'A FormKit element for selecting LLM models from LiteLLM.\n\nThis element renders as a select dropdown that automatically fetches\navailable models from the API based on the specified mode.\n\nThe frontend component handles fetching models from `/api/v1/models/mode/{mode}`\nand populating the dropdown options. `requirements` narrows them to the models with\nevery required capability and an allowed hosting location; the API enforces the same\nrule when a profile is saved, and never offers a model that is not general-purpose.\n\n### Supported Modes\n- `chat`: Chat/text generation models\n- `embedding`: Embedding models\n- `rerank`: Reranking models\n- `image_generation`: Image generation models\n- `audio_transcription`: Audio transcription models\n- `audio_speech`: Text-to-speech models\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    llm_model: Annotated[\n        str | ModelSelect,\n        Field(description="The LLM model to use"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    llm_model=ModelSelect(\n        label=LocaleString(en="Model", de="Modell"),\n        mode="chat",\n    ),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    llm_model="text-generation/gpt-4",\n)\n```',
 } as const;
 
 export const ModelTypeGroupDTOSchema = {
@@ -24379,6 +24558,20 @@ export const RefusalStopEventSchema = {
       description:
         "List of tools that are advertised to the LLM to be able to call.",
     },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
+    },
     reason: {
       $ref: "#/components/schemas/RefusalReason",
       description: "What about the input made the turn unanswerable.",
@@ -24521,6 +24714,22 @@ export const RepeaterSchema = {
       ],
       title: "Label",
       description: "Label displayed as the section header",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Explanation of what the list is for, shown under the header",
     },
     addLabel: {
       anyOf: [
@@ -24947,6 +25156,56 @@ export const ResponseFormatTextSchema = {
   required: ["type"],
   title: "ResponseFormatText",
   description: "Default response format. Used to generate text responses.",
+} as const;
+
+export const ResponseSchemaSchema = {
+  properties: {
+    name: {
+      type: "string",
+      pattern: "^[a-zA-Z0-9_-]{1,64}$",
+      title: "Name",
+      description:
+        "A name for the shape, as OpenAI's `json_schema.name` or a function name.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "What the shape is for; the model reads it.",
+    },
+    json_schema: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Json Schema",
+      description:
+        "The JSON schema the answer must match. Without one, any JSON object is accepted.",
+    },
+    strict: {
+      type: "boolean",
+      title: "Strict",
+      description:
+        "Ask the model to follow the schema exactly, as OpenAI's structured outputs `strict`.",
+      default: false,
+    },
+  },
+  type: "object",
+  required: ["name"],
+  title: "ResponseSchema",
+  description:
+    "The JSON shape a caller wants the agent's answer in.\n\nOne request whatever the caller's API calls it: the OpenAI endpoint maps both `response_format` and a forced\nfunction call onto it, and decides on its own how to hand the result back.",
 } as const;
 
 export const RetrieveOrganizationMemoryEventSchema = {
@@ -28436,6 +28695,7 @@ export const TextToSpeechRequestSchema = {
       enum: [
         "alloy",
         "ash",
+        "ballad",
         "coral",
         "echo",
         "fable",
@@ -28443,6 +28703,9 @@ export const TextToSpeechRequestSchema = {
         "nova",
         "sage",
         "shimmer",
+        "verse",
+        "marin",
+        "cedar",
       ],
       title: "Voice",
       description: "The voice to use when generating audio.",
@@ -28861,10 +29124,12 @@ export const ThreadAgentDTOSchema = {
   properties: {
     agent_id: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Id",
     },
     agent_class: {
       type: "string",
+      pattern: "^[A-Za-z0-9_-]+$",
       title: "Agent Class",
     },
   },
@@ -31740,6 +32005,13 @@ export const UserIdentitySchema = {
         "Whether the user has the AIHubSysAdmin realm role (from the JWT).",
       default: false,
     },
+    openwebui_sys_admin: {
+      type: "boolean",
+      title: "Openwebui Sys Admin",
+      description:
+        "Whether the user has the AIHubSysAdmin realm role but arrived through OpenWebUI's signed headers. Grants user access in the acting tenant instead of the sysadmin bypass.",
+      default: false,
+    },
   },
   type: "object",
   required: ["id", "name", "email", "roles"],
@@ -31847,6 +32119,18 @@ export const UserMessageEventSchema = {
       description:
         "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
       default: [],
+    },
+    response_schema: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ResponseSchema",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.",
     },
     _event_name: {
       type: "string",
@@ -32667,6 +32951,24 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
   title: "Function",
 } as const;
 
+export const openai__types__create_embedding_response__UsageSchema = {
+  properties: {
+    prompt_tokens: {
+      type: "integer",
+      title: "Prompt Tokens",
+    },
+    total_tokens: {
+      type: "integer",
+      title: "Total Tokens",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["prompt_tokens", "total_tokens"],
+  title: "Usage",
+  description: "The usage information for the request.",
+} as const;
+
 export const openai__types__images_response__UsageSchema = {
   properties: {
     input_tokens: {
@@ -33057,6 +33359,13 @@ export const AgentClassDTOWritableSchema = {
       title: "Is Schedulable",
       description:
         "Whether the agent class can be run automatically on a cron schedule",
+      default: false,
+    },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
       default: false,
     },
     is_online: {
@@ -37638,6 +37947,13 @@ export const FullAgentInstanceDTOWritableSchema = {
         "Whether the agent can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
     start_events: {
       items: {
         $ref: "#/components/schemas/EventSpecs",
@@ -37696,7 +38012,7 @@ export const FullAgentInstanceDTOWritableSchema = {
       type: "object",
       title: "Configuration",
       description:
-        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form.",
+        "The saved configuration data for this agent instance. Contains the actual values that were submitted via the configuration form, except secret fields (password inputs), which carry a mask instead of their value. Resubmit the mask unchanged to keep the stored secret; a mask is bound to its field and profile and cannot be used anywhere else.",
       default: {},
     },
   },
@@ -42666,6 +42982,20 @@ export const LLMStopEventWritableSchema = {
       description:
         "List of tools that are advertised to the LLM to be able to call.",
     },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -43913,6 +44243,13 @@ export const MinimalAgentInstanceDTOWritableSchema = {
         "Whether the agent can be run automatically on a cron schedule",
       default: false,
     },
+    supports_response_schema: {
+      type: "boolean",
+      title: "Supports Response Schema",
+      description:
+        "Whether the agent answers in the JSON shape a message's `response_schema` asks for",
+      default: false,
+    },
   },
   type: "object",
   required: ["agent_class", "agent_id", "agent_config", "is_conversational"],
@@ -44893,13 +45230,18 @@ export const ModelSelectWritableSchema = {
       description: "Whether to show clear button",
       default: false,
     },
+    requirements: {
+      $ref: "#/components/schemas/ModelRequirements",
+      description:
+        "Capabilities and hosting locations the chosen model must have.",
+    },
   },
   additionalProperties: true,
   type: "object",
   required: ["label"],
   title: "ModelSelect",
   description:
-    'A FormKit element for selecting LLM models from LiteLLM.\n\nThis element renders as a select dropdown that automatically fetches\navailable models from the API based on the specified mode.\n\nThe frontend component handles fetching models from `/api/v1/models/mode/{mode}`\nand populating the dropdown options.\n\n### Supported Modes\n- `chat`: Chat/text generation models\n- `embedding`: Embedding models\n- `rerank`: Reranking models\n- `image_generation`: Image generation models\n- `audio_transcription`: Audio transcription models\n- `audio_speech`: Text-to-speech models\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    llm_model: Annotated[\n        str | ModelSelect,\n        Field(description="The LLM model to use"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    llm_model=ModelSelect(\n        label=LocaleString(en="Model", de="Modell"),\n        mode="chat",\n    ),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    llm_model="text-generation/gpt-4",\n)\n```',
+    'A FormKit element for selecting LLM models from LiteLLM.\n\nThis element renders as a select dropdown that automatically fetches\navailable models from the API based on the specified mode.\n\nThe frontend component handles fetching models from `/api/v1/models/mode/{mode}`\nand populating the dropdown options. `requirements` narrows them to the models with\nevery required capability and an allowed hosting location; the API enforces the same\nrule when a profile is saved, and never offers a model that is not general-purpose.\n\n### Supported Modes\n- `chat`: Chat/text generation models\n- `embedding`: Embedding models\n- `rerank`: Reranking models\n- `image_generation`: Image generation models\n- `audio_transcription`: Audio transcription models\n- `audio_speech`: Text-to-speech models\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    llm_model: Annotated[\n        str | ModelSelect,\n        Field(description="The LLM model to use"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    llm_model=ModelSelect(\n        label=LocaleString(en="Model", de="Modell"),\n        mode="chat",\n    ),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    llm_model="text-generation/gpt-4",\n)\n```',
 } as const;
 
 export const ModelTypeGroupDTOWritableSchema = {
@@ -47262,6 +47604,20 @@ export const RefusalStopEventWritableSchema = {
       description:
         "List of tools that are advertised to the LLM to be able to call.",
     },
+    structured_output: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Structured Output",
+      description:
+        "The answer parsed and validated against the `response_schema` the run was started with. The answer text holds the same JSON, so clients that read text only keep working.",
+    },
     reason: {
       $ref: "#/components/schemas/RefusalReason",
       description: "What about the input made the turn unanswerable.",
@@ -47387,6 +47743,22 @@ export const RepeaterWritableSchema = {
       ],
       title: "Label",
       description: "Label displayed as the section header",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Explanation of what the list is for, shown under the header",
     },
     addLabel: {
       anyOf: [
@@ -52522,6 +52894,18 @@ export const UserMessageEventWritableSchema = {
       description:
         "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
       default: [],
+    },
+    response_schema: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ResponseSchema",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The JSON shape the answer must come back in. An agent that supports it ends the run with the parsed answer in its stop event's `structured_output`; one that does not is refused this field by the API.",
     },
   },
   additionalProperties: true,

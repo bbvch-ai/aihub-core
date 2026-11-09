@@ -18,3 +18,11 @@ translation:
 model_limits:
   above_maximum: '%{field}: at most %{maximum} is allowed for the model %{model}.'
   capability_missing: '%{field}: the model %{model} does not support this.'
+  requirements_unmet: '%{field}: the model %{model} does not meet what this field requires (%{requirements}).'
+  special_purpose: '%{field}: the model %{model} is built for one job only and cannot be chosen here.'
+  requirements:
+    vision: image input
+    tool_calling: tool calling
+    structured_output: structured output
+    reasoning: reasoning
+    hosting_location: hosting location

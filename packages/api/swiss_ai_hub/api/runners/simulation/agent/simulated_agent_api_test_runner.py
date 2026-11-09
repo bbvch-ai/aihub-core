@@ -83,6 +83,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         stop_events: list[EventSpecs] | None = None,
         hitl_request_events: list[EventSpecs] | None = None,
         hitl_response_events: list[EventSpecs] | None = None,
+        supports_response_schema: bool = False,
     ):
         super().__init__()
         self.agent_class = agent_class
@@ -105,11 +106,13 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.discovery_subscriber: NCSubscriber[ClassDiscoveryRequestEvent] | None = None
 
         self.simulated_events: list[BaseEvent] = simulated_events or []
+        self.received_events: list[ControlEvent] = []
 
         self.start_events: list[EventSpecs] | None = start_events
         self.stop_events: list[EventSpecs] | None = stop_events
         self.hitl_request_events: list[EventSpecs] | None = hitl_request_events
         self.hitl_response_events: list[EventSpecs] | None = hitl_response_events
+        self.supports_response_schema = supports_response_schema
 
         self.agent_config: AgentConfig = AgentConfig(
             agent_id=self.agent_id,
@@ -125,6 +128,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         This simulates an agent run, where after receiving a start signal, the agent responds
         with chunks, cost events, etc., and finally a stop signal.
         """
+        self.received_events.append(event)
         if event.is_start_event:
             for sim_event in self.simulated_events:
                 await self.publish_event(sim_event, topic)
@@ -144,6 +148,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             description=self.agent_config.description,
             icon=self.agent_config.icon,
             is_conversational=True,
+            supports_response_schema=self.supports_response_schema,
             start_events=self.start_events,
             stop_events=self.stop_events,
             hitl_request_events=self.hitl_request_events or [],
@@ -313,7 +318,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         ]
         return self
 
-    def create_agent_config_in_db(self) -> None:
+    async def create_agent_config_in_db(self) -> None:
         """
         Create the agent class and config in the database.
 
@@ -324,7 +329,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         - AgentClassEntity: Class-level metadata (events, form schema, online status)
         - AgentConfigEntityDocument: Instance-level configuration
         """
-        AgentClassEntity.create_or_update(
+        await AgentClassEntity.create_or_update(
             AgentClassDiscoveryResponseEvent(
                 agent_class=self.agent_class,
                 name=self.agent_config.name,
@@ -333,6 +338,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 form=self.agent_config.to_formkit_form(),
                 agent_config_specs=ConfigSpecs.from_form(self.agent_config, self.agent_class),
                 is_conversational=True,
+                supports_response_schema=self.supports_response_schema,
                 is_schedulable=False,
                 start_events=self.start_events or [],
                 stop_events=self.stop_events or [],
@@ -342,11 +348,11 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             )
         )
 
-        existing = AgentConfigEntityDocument.find_for_class_and_id(self.agent_class, self.agent_id)
+        existing = await AgentConfigEntityDocument.find_for_class_and_id(self.agent_class, self.agent_id)
         if existing:
             existing.update_from_agent_config(self.agent_config, self.agent_class)
-            existing.save()
+            await existing.save_changes()
         else:
             config_entity = AgentConfigEntityDocument.from_agent_config(self.agent_config, self.agent_class)
-            config_entity.save()
+            await config_entity.insert()
         logger.info(f"Created agent class and config in database: {self.agent_class}/{self.agent_id}")

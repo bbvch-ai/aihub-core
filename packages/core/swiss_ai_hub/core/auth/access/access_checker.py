@@ -2,10 +2,12 @@ import re
 
 from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_OPENWEBUI_ACCESS_RULES
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
 _ADMIN_PREFIX = "aihub.admin."
 _USER_PREFIX = "aihub.user."
+_IDENTIFIER_SEGMENT = re.compile(r"[a-zA-Z0-9\-\_]+")
 
 
 class AccessChecker:
@@ -85,13 +87,16 @@ class AccessChecker:
         IMPORTANT: Enforces tenant-level restrictions - tenant access rules act as a ceiling.
         Sysadmins bypass both tiers — the ``AIHubSysAdmin`` realm role grants implicit
         admin access across every tenant and every resource. No ``UserTenantRoleEntity``
-        rows are required and no tenant context is needed.
+        rows are required and no tenant context is needed. A sysadmin arriving through
+        OpenWebUI (``openwebui_sys_admin``) gets no bypass, only user access under the ceiling.
         """
         if user.acting_within_tenant is None:
             return cls(user_access_rules=[], tenant_access_rules=[], is_sys_admin=user.is_sys_admin)
 
         # User roles are already resolved for the acting tenant
         user_access_rules = RoleEntity.get_access_rules_for_roles(user.roles, tenant_id=user.acting_within_tenant.id)
+        if user.openwebui_sys_admin:
+            user_access_rules = {*user_access_rules, *SYS_ADMIN_OPENWEBUI_ACCESS_RULES}
 
         # Tenant access rules come from the embedded TenantIdentity
         tenant_access_rules = user.acting_within_tenant.access_rules
@@ -185,14 +190,38 @@ class AccessChecker:
         return template_remainder in ([], ["?>"])
 
     @staticmethod
+    def is_concrete_identifier(value: str | None) -> bool:
+        """Whether an agent or process id can be checked at all. Callers holding an id from a request deny
+        one that cannot, because the instance rule builders raise on it."""
+        return value is not None and _IDENTIFIER_SEGMENT.fullmatch(value) is not None
+
+    @staticmethod
+    def _identifier_segment(value: str | None) -> str:
+        """A concrete resource identifier as one rule token.
+
+        A missing id must never become a token: ``None`` would render as the literal ``None`` and be matched
+        by every broad rule such as ``aihub.user.>``, and a wildcard would turn a concrete check into an
+        implicit one.
+        """
+        if not AccessChecker.is_concrete_identifier(value):
+            raise ValueError(f"Not a concrete resource identifier: {value!r}")
+        return value
+
+    @staticmethod
+    def _instance_rule(prefix: str, resource: str, resource_class: str | None, resource_id: str | None) -> str:
+        class_segment = AccessChecker._identifier_segment(resource_class)
+        id_segment = AccessChecker._identifier_segment(resource_id)
+        return f"{prefix}{resource}.{class_segment}.{id_segment}"
+
+    @staticmethod
     def agent_instance_admin_rule(agent_class: str, agent_id: str) -> str:
         """Canonical admin permission for a specific agent instance (not the agent class/blueprint)."""
-        return f"{_ADMIN_PREFIX}agent.{agent_class}.{agent_id}"
+        return AccessChecker._instance_rule(_ADMIN_PREFIX, "agent", agent_class, agent_id)
 
     @staticmethod
     def agent_instance_user_rule(agent_class: str, agent_id: str) -> str:
         """Canonical user permission for a specific agent instance (not the agent class/blueprint)."""
-        return f"{_USER_PREFIX}agent.{agent_class}.{agent_id}"
+        return AccessChecker._instance_rule(_USER_PREFIX, "agent", agent_class, agent_id)
 
     @staticmethod
     def knowledge_database_admin_rule(database: str) -> str:
@@ -368,12 +397,12 @@ class AccessChecker:
     @staticmethod
     def process_user_rule(process_class: str, process_id: str) -> str:
         """Canonical user-level permission rule for a specific process instance."""
-        return f"{_USER_PREFIX}process.{process_class}.{process_id}"
+        return AccessChecker._instance_rule(_USER_PREFIX, "process", process_class, process_id)
 
     @staticmethod
     def process_admin_rule(process_class: str, process_id: str) -> str:
         """Canonical admin-level permission rule for a specific process instance."""
-        return f"{_ADMIN_PREFIX}process.{process_class}.{process_id}"
+        return AccessChecker._instance_rule(_ADMIN_PREFIX, "process", process_class, process_id)
 
     @staticmethod
     def service_user_rule(service_name: str) -> str:

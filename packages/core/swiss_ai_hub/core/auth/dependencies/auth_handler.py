@@ -162,12 +162,14 @@ class AuthHandler(ABC):
         email: str,
         request: Request | None,
         is_sys_admin: bool = False,
+        openwebui_sys_admin: bool = False,
     ) -> UserIdentity:
         """Builds a UserIdentity with tenant context resolved from the request or active tenant fallback.
 
         ``is_sys_admin`` flows through to ``UserIdentity`` so the permission layer
         (``AccessChecker``) can grant admin-level access within tenants the user is
-        actually a member of. It is NOT used to decide membership.
+        actually a member of. It is NOT used to decide membership. ``openwebui_sys_admin``
+        marks a sysadmin whose identity rests on OpenWebUI's signed headers alone.
         """
         if request and self.has_tenant_in_request(request):
             tenant = await self.resolve_tenant_for_user(request, user_id)
@@ -181,4 +183,5 @@ class AuthHandler(ABC):
             roles=roles,
             acting_within_tenant=tenant,
             is_sys_admin=is_sys_admin,
+            openwebui_sys_admin=openwebui_sys_admin,
         )

@@ -5,14 +5,17 @@ import logging
 import uuid
 from collections.abc import AsyncGenerator, Callable
 from datetime import UTC, datetime
-from typing import Annotated, Any, Literal
+from functools import partial
+from typing import Annotated, Any, ClassVar, Literal
 
 from fastapi import HTTPException, UploadFile
+from llama_index.core.base.llms.types import ChatMessage, ImageBlock
+from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from openai import APIStatusError, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
-from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
+from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice as JsonChoice
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from opentelemetry.propagate import inject
@@ -23,25 +26,34 @@ from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.usage import ResourceType, UsageLimits
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.events import ApiPayloadContext
+from swiss_ai_hub.core.events.agent import InlineFile, StoredImage
 from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
 from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
 from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event import HumanInTheLoopRequestEvent
 from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
+from swiss_ai_hub.core.generative_ai import LLMCosts
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
-from swiss_ai_hub.core.persistence import TenantMetadataEntity
+from swiss_ai_hub.core.persistence import PersistedAgentEventEntity, TenantMetadataEntity
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes import ChatService, JsonResources, StreamingResources
 
 from swiss_ai_hub.api.audio.audio_chunking_service import AudioChunkingService, TranscriptionChunk
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
-from swiss_ai_hub.api.routes.openai.dto.chat_completion_request import ChatCompletionRequest, UserUploadedFile
+from swiss_ai_hub.api.routes.openai.dto.chat_completion_request import (
+    ChatCompletionRequest,
+    UserUploadedFile,
+    openai_message_to_llama_index,
+)
 from swiss_ai_hub.api.routes.openai.dto.embeddings import Embeddings
 from swiss_ai_hub.api.routes.openai.dto.embeddings_response import EmbeddingsResponse
 from swiss_ai_hub.api.routes.openai.dto.image_generation_request import ImageGenerationRequest
 from swiss_ai_hub.api.routes.openai.dto.model_details import ModelDetails
 from swiss_ai_hub.api.routes.openai.dto.model_response import ModelResponse
 from swiss_ai_hub.api.routes.openai.dto.text_to_speech_request import TextToSpeechRequest
+from swiss_ai_hub.api.routes.openai.openai_error_handler import OpenaiErrorHandler
+from swiss_ai_hub.api.routes.openai.openai_structured_request import OpenaiStructuredRequest
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 
 logger = logging.getLogger(__name__)
@@ -61,6 +73,8 @@ class OpenaiService:
     By abstracting these operations, the service ensures consistency with OpenAI's API semantics,
     allowing the underlying implementation to be used seamlessly by the OpenaiController.
     """
+
+    STREAM_END: ClassVar[str] = "data: [DONE]\n\n"
 
     @staticmethod
     @trace_fn
@@ -83,28 +97,18 @@ class OpenaiService:
 
     @staticmethod
     @trace_fn
-    async def get_models_with_assistants(
-        *,
-        t: LocaleHandler,
-    ) -> ModelResponse:
-        """
-        Retrieve the list of available chat models and assistants.
-        Returns a ModelResponse containing details of every configured chat model or assistant.
-        """
-        model_response = await OpenaiService.get_models()
-        chat_models = model_response.data
-        agent_instance_dtos = await AgentService.get_all_agent_instances(t, online=True)
-
-        assistants = [
+    async def agent_models(access_checker: AccessChecker, t: LocaleHandler) -> list[ModelDetails]:
+        """The online conversational agents the user may call, as the models the chat completions endpoint accepts."""
+        agent_instances = await AgentService.get_all_agent_instances(t, online=True)
+        return [
             ModelDetails(
-                id=f"{agent_instance_dto.agent_class}/{agent_instance_dto.agent_id}",
-                object="assistant",
-                agent_class=agent_instance_dto.agent_class,
-                agent_id=agent_instance_dto.agent_id,
+                id=f"{agent.agent_class}/{agent.agent_id}",
+                agent_class=agent.agent_class,
+                agent_id=agent.agent_id,
             )
-            for agent_instance_dto in agent_instance_dtos
+            for agent in agent_instances
+            if agent.is_conversational and access_checker.has_access_to_agent(agent.agent_class, agent.agent_id)
         ]
-        return ModelResponse(data=[*chat_models, *assistants])
 
     @staticmethod
     @trace_fn
@@ -137,7 +141,7 @@ class OpenaiService:
             # (e.g. a future 403) must propagate rather than be masked as an assistant lookup.
             if model_lookup_error.status_code != 404:
                 raise
-        agent_class, agent_id = model_name.split("/")
+        agent_class, agent_id = OpenaiService._agent_of(model_name)
         agent_dto = await AgentService.get_agent_instance(agent_class, agent_id, t)
 
         if not agent_dto.is_conversational:
@@ -145,10 +149,21 @@ class OpenaiService:
 
         return ModelDetails(
             id=f"{agent_dto.agent_class}/{agent_dto.agent_id}",
-            object="assistant",
             agent_class=agent_dto.agent_class,
             agent_id=agent_dto.agent_id,
         )
+
+    @staticmethod
+    def _agent_of(model_name: str) -> tuple[str, str]:
+        """An agent is addressed as `AgentClass/agent_id`; any other name that is no model is unknown."""
+        agent_class, separator, agent_id = model_name.partition("/")
+        if (
+            not separator
+            or not AccessChecker.is_concrete_identifier(agent_class)
+            or not AccessChecker.is_concrete_identifier(agent_id)
+        ):
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
+        return agent_class, agent_id
 
     @staticmethod
     def _has_model_access(access_checker: AccessChecker, model_name: str) -> bool:
@@ -233,6 +248,7 @@ class OpenaiService:
         return EmbeddingsResponse(
             model=model_name,
             data=[Embeddings(index=embedding.index, embedding=embedding.embedding) for embedding in embeddings.data],
+            usage=embeddings.usage,
         )
 
     @staticmethod
@@ -290,6 +306,7 @@ class OpenaiService:
                     async for chunk in response:
                         yield f"data: {chunk.model_dump_json()}\n\n"
                         await asyncio.sleep(0)
+                yield OpenaiService.STREAM_END
 
             return StreamingResponse(
                 stream_chat_completion(),
@@ -323,6 +340,7 @@ class OpenaiService:
         usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         t: LocaleHandler,
+        s3_client: S3Client,
         aihub_headers: dict[str, str] | None = None,
     ) -> ChatCompletion | StreamingResponse:
         """
@@ -340,7 +358,7 @@ class OpenaiService:
             if e.status_code != 404:
                 raise
 
-        agent_class, agent_id = model_name.split("/")
+        agent_class, agent_id = OpenaiService._agent_of(model_name)
         if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
             raise HTTPException(
                 status_code=403,
@@ -352,8 +370,13 @@ class OpenaiService:
         if not agent_dto.is_conversational:
             raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
 
+        structured = OpenaiStructuredRequest.from_request(chat_completion_request)
+        if structured is not None and not agent_dto.supports_response_schema:
+            raise structured.unsupported_by(model_name)
+
         if chat_completion_request.stream:
             return await OpenaiService.stream_assistant(
+                s3_client=s3_client,
                 agent_class=agent_class,
                 agent_id=agent_id,
                 chat_completion_request=chat_completion_request,
@@ -363,9 +386,11 @@ class OpenaiService:
                 external_agent_event_distributor=external_agent_event_distributor,
                 locale=t.locale,
                 aihub_headers=aihub_headers,
+                structured=structured,
             )
 
         return await OpenaiService.json_assistant(
+            s3_client=s3_client,
             agent_class=agent_class,
             agent_id=agent_id,
             chat_completion_request=chat_completion_request,
@@ -375,6 +400,7 @@ class OpenaiService:
             external_agent_event_distributor=external_agent_event_distributor,
             locale=t.locale,
             aihub_headers=aihub_headers,
+            structured=structured,
         )
 
     @staticmethod
@@ -388,33 +414,39 @@ class OpenaiService:
         nc: NATS,
         usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
+        s3_client: S3Client,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
+        structured: OpenaiStructuredRequest | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
-        if thread_id and chat_completion_request.metadata.reconstruct_history:
-            chat_completion_request.messages = await OpenaiService._reconstruct_history(
-                chat_completion_request,
-                thread_id,
-                primary_agent_class=agent_class,
-                primary_agent_id=agent_id,
-            )
-        files = OpenaiService._extract_files(chat_completion_request)
         requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
+        messages, files = await OpenaiService._agent_turn(
+            chat_completion_request,
+            ApiPayloadContext(
+                user=user,
+                locale=locale or LocaleHandler.DEFAULT_LOCALE,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                thread_id=thread_id,
+                s3_client=s3_client,
+            ),
+        )
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=chat_completion_request.llama_index_messages,
+            messages=messages,
             nc=nc,
             external_agent_event_distributor=external_agent_event_distributor,
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
             files=files,
             requested_features=requested_features,
+            response_schema=structured.response_schema if structured else None,
             locale=locale,
             aihub_headers=aihub_headers,
         )
@@ -424,28 +456,18 @@ class OpenaiService:
         if resources.stop_event.is_exception_event:
             raise HTTPException(resources.stop_event.http_status_code, resources.stop_event.message)
 
-        # Construct final JSON response
-        chat_content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
+        if structured is not None:
+            message, finish_reason = structured.message(resources.stop_event)
+        else:
+            chat_content = ChatService.build_json_response_content(resources.chunk_events, resources.stop_event)
+            message, finish_reason = ChatCompletionMessage(role="assistant", content=chat_content.content), "stop"
         return ChatCompletion(
             id=str(uuid.uuid4()),
             object="chat.completion",
             created=int(datetime.now(UTC).timestamp()),
-            model=resources.model_name,
-            choices=[
-                JsonChoice(
-                    index=0,
-                    message=ChatCompletionMessage(
-                        role="assistant",
-                        content=chat_content.content,
-                    ),
-                    finish_reason="stop",
-                )
-            ],
-            usage=CompletionUsage(
-                prompt_tokens=resources.costs.prompt_token_count,
-                completion_tokens=resources.costs.completion_token_count,
-                total_tokens=(resources.costs.prompt_token_count + resources.costs.completion_token_count),
-            ),
+            model=f"{agent_class}/{agent_id}",
+            choices=[JsonChoice(index=0, message=message, finish_reason=finish_reason)],
+            usage=OpenaiService._usage(resources.costs),
         )
 
     @staticmethod
@@ -459,39 +481,50 @@ class OpenaiService:
         nc: NATS,
         usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
+        s3_client: S3Client,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
+        structured: OpenaiStructuredRequest | None = None,
     ):
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
-        if thread_id and chat_completion_request.metadata.reconstruct_history:
-            chat_completion_request.messages = await OpenaiService._reconstruct_history(
-                chat_completion_request,
-                thread_id,
-                primary_agent_class=agent_class,
-                primary_agent_id=agent_id,
-            )
-        files = OpenaiService._extract_files(chat_completion_request)
         requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
+        messages, files = await OpenaiService._agent_turn(
+            chat_completion_request,
+            ApiPayloadContext(
+                user=user,
+                locale=locale or LocaleHandler.DEFAULT_LOCALE,
+                agent_class=agent_class,
+                agent_id=agent_id,
+                thread_id=thread_id,
+                s3_client=s3_client,
+            ),
+        )
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
             agent_class=agent_class,
             agent_id=agent_id,
-            messages=chat_completion_request.llama_index_messages,
+            messages=messages,
             nc=nc,
             external_agent_event_distributor=external_agent_event_distributor,
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
             files=files,
             requested_features=requested_features,
+            response_schema=structured.response_schema if structured else None,
             locale=locale,
             aihub_headers=aihub_headers,
         )
 
         return StreamingResponse(
-            OpenaiService._sse_event_generator(resources),
+            OpenaiService._sse_event_generator(
+                resources,
+                model=f"{agent_class}/{agent_id}",
+                include_usage=bool((chat_completion_request.stream_options or {}).get("include_usage")),
+                structured=structured,
+            ),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
@@ -502,7 +535,29 @@ class OpenaiService:
         )
 
     @staticmethod
-    async def _sse_event_generator(resources: StreamingResources) -> AsyncGenerator[str]:
+    async def _sse_event_generator(
+        resources: StreamingResources,
+        model: str,
+        include_usage: bool = False,
+        structured: OpenaiStructuredRequest | None = None,
+    ) -> AsyncGenerator[str]:
+        """Every chunk of the answer carries the same id, creation time and model, the role only the first, and the
+        stream ends with `[DONE]`, as OpenAI streams it. An agent that fails ends the stream with an error event, which
+        the OpenAI SDKs raise as an error instead of showing it as part of the answer.
+
+        A structured answer is sent whole once the agent validated it: what it streamed may be an attempt it then
+        corrected."""
+        chunk = partial(
+            OpenaiService._build_chunk_sse,
+            completion_id=f"chatcmpl-{uuid.uuid4().hex}",
+            created=int(datetime.now(UTC).timestamp()),
+            model=model,
+        )
+        if structured is not None:
+            async for chunk_line in OpenaiService._structured_sse(resources, structured, chunk, include_usage):
+                yield chunk_line
+            return
+        role: Literal["assistant"] | None = "assistant"
         streamed_parts: list[str] = []
         downloads: list[str] = []
         async for chunk_event in ChatService.iter_streamed_display_events(resources):
@@ -510,13 +565,54 @@ class OpenaiService:
                 downloads.append(chunk_event.content)
                 continue
             streamed_parts.append(chunk_event.content)
-            yield OpenaiService._build_chunk_sse(content=chunk_event.content, model=chunk_event.model_name)
+            yield chunk(content=chunk_event.content, role=role)
+            role = None
 
+        if resources.stop_event is not None and resources.stop_event.is_exception_event:
+            yield OpenaiService._error_sse(resources.stop_event)
+            yield OpenaiService.STREAM_END
+            return
         # Download links end the answer, also after the part of it an agent did not stream.
         final = OpenaiService._resolve_final_content(
             resources.stop_event, streamed=ChatService.answer_text(streamed_parts)
         )
-        yield OpenaiService._build_chunk_sse(content=final + "".join(downloads), model="", finish_reason="stop")
+        yield chunk(content=final + "".join(downloads), role=role, finish_reason="stop")
+        if include_usage:
+            yield chunk(content=None, role=None, usage=OpenaiService._usage(resources.costs))
+        yield OpenaiService.STREAM_END
+
+    @staticmethod
+    async def _structured_sse(
+        resources: StreamingResources,
+        structured: OpenaiStructuredRequest,
+        chunk: Callable[..., str],
+        include_usage: bool,
+    ) -> AsyncGenerator[str]:
+        async for _ in ChatService.iter_streamed_display_events(resources):
+            pass
+        if resources.stop_event is not None and resources.stop_event.is_exception_event:
+            yield OpenaiService._error_sse(resources.stop_event)
+            yield OpenaiService.STREAM_END
+            return
+        delta, finish_reason = structured.delta(resources.stop_event)
+        yield chunk(content=None, role=None, delta=delta)
+        yield chunk(content=None, role=None, finish_reason=finish_reason)
+        if include_usage:
+            yield chunk(content=None, role=None, usage=OpenaiService._usage(resources.costs))
+        yield OpenaiService.STREAM_END
+
+    @staticmethod
+    def _error_sse(exception_event: ExceptionEvent) -> str:
+        error = OpenaiErrorHandler.response(exception_event.http_status_code, exception_event.message).body
+        return f"data: {error.decode()}\n\n"
+
+    @staticmethod
+    def _usage(costs: LLMCosts) -> CompletionUsage:
+        return CompletionUsage(
+            prompt_tokens=costs.prompt_token_count,
+            completion_tokens=costs.completion_token_count,
+            total_tokens=costs.prompt_token_count + costs.completion_token_count,
+        )
 
     @staticmethod
     def _resolve_final_content(
@@ -525,26 +621,31 @@ class OpenaiService:
     ) -> str:
         if stop_event.is_hitl_request_event:
             return stop_event.question
-        if stop_event.is_exception_event:
-            return f"\n\n>[!CAUTION]\n>**Error:** {stop_event.message}\n"
         full_answer = ChatService.terminal_output_text(getattr(stop_event, "output_messages", None))
         return ChatService.missing_suffix(streamed, full_answer)
 
     @staticmethod
-    def _build_chunk_sse(*, content: str, model: str, finish_reason: str | None = None) -> str:
+    def _build_chunk_sse(
+        *,
+        content: str | None,
+        completion_id: str,
+        created: int,
+        model: str,
+        role: Literal["assistant"] | None,
+        finish_reason: Literal["stop", "tool_calls"] | None = None,
+        usage: CompletionUsage | None = None,
+        delta: ChoiceDelta | None = None,
+    ) -> str:
+        """A chunk carrying usage has no choices, the final chunk OpenAI sends when `include_usage` is set."""
+        delta = delta or ChoiceDelta(content=content, role=role)
+        choices = [] if usage is not None else [Choice(index=0, delta=delta, finish_reason=finish_reason)]
         chunk = ChatCompletionChunk(
-            id=str(uuid.uuid4()),
+            id=completion_id,
             object="chat.completion.chunk",
-            created=int(datetime.now(UTC).timestamp()),
+            created=created,
             model=model,
-            choices=[
-                Choice(
-                    index=0,
-                    delta=ChoiceDelta(content=content, role="assistant"),
-                    finish_reason=finish_reason,
-                ),
-            ],
-            usage=None,
+            choices=choices,
+            usage=usage,
         )
         return f"data: {chunk.model_dump_json()}\n\n"
 
@@ -743,31 +844,70 @@ class OpenaiService:
         return thread_id, display_id
 
     @staticmethod
-    def _extract_files(
-        chat_completion_request: ChatCompletionRequest,
-    ) -> list[UserUploadedFile] | None:
-        return chat_completion_request.metadata.files if chat_completion_request.metadata else None
+    async def _agent_turn(
+        chat_completion_request: ChatCompletionRequest, context: ApiPayloadContext
+    ) -> tuple[list[ChatMessage], list[UserUploadedFile] | None]:
+        """The messages and files the agent receives, with everything sent inline stored first.
+
+        Images inside the messages and files sent as `file` parts are all checked before any is stored, so a refused
+        request leaves nothing behind. Only what this request sent is checked and stored: with `reconstruct_history`
+        the earlier messages come from the thread, where their images were stored on their own turn. A message that
+        answers an open human-in-the-loop request becomes a response that carries text only, so its inline files and
+        images are refused there before anything is stored, rather than stored and silently left out.
+        """
+        OpenaiService._refuse_audio_parts(chat_completion_request)
+        messages = chat_completion_request.llama_index_messages
+        reconstruct = bool(context.thread_id and chat_completion_request.metadata.reconstruct_history)
+        if reconstruct and not messages:
+            raise HTTPException(
+                status_code=400, detail="At least one message is required when reconstruct_history is enabled."
+            )
+        sent = messages[-1:] if reconstruct else messages
+        thread = await ChatService.existing_thread_of(context.user, str_to_object_id(context.thread_id))
+        sent_files = chat_completion_request.inline_files()
+        sends_images = any(isinstance(block, ImageBlock) for message in messages[-1:] for block in message.blocks)
+        if (
+            (sent_files or sends_images)
+            and thread
+            and PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread(str(thread.id))
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="This message answers a question the agent is waiting on, and such an answer cannot carry "
+                "files or images. Answer it first, then send them with a new message.",
+            )
+        images = StoredImage.checked_all(sent, context)
+        inline_files = await InlineFile.store_all(sent_files, context)
+        await StoredImage.store_all(images, context)
+
+        uploaded = chat_completion_request.metadata.files if chat_completion_request.metadata else None
+        files = [*(uploaded or []), *inline_files] or None
+        if reconstruct:
+            return [*await OpenaiService._thread_history(context), *sent], files
+        return messages, files
 
     @staticmethod
-    async def _reconstruct_history(
-        chat_completion_request: ChatCompletionRequest,
-        thread_id: str,
-        *,
-        primary_agent_class: str,
-        primary_agent_id: str,
-    ) -> list[ChatCompletionMessageParam]:
-        if not chat_completion_request.messages:
-            raise HTTPException(
-                status_code=400,
-                detail="At least one message is required when reconstruct_history is enabled.",
-            )
-        normalized_thread_id = str(str_to_object_id(thread_id))
+    def _refuse_audio_parts(chat_completion_request: ChatCompletionRequest) -> None:
+        """Agents read text, images and files; an audio part would otherwise vanish without the caller noticing."""
+        for message in chat_completion_request.message_dicts():
+            content = message.get("content")
+            if not isinstance(content, str | None) and any(
+                isinstance(part, dict) and part.get("type") == "input_audio" for part in content
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Agents do not accept audio content parts. Transcribe the audio with "
+                    "/audio/transcriptions and send the text.",
+                )
+
+    @staticmethod
+    async def _thread_history(context: ApiPayloadContext) -> list[ChatMessage]:
         history = await ThreadService.thread_as_message_history(
-            normalized_thread_id,
-            primary_agent_class=primary_agent_class,
-            primary_agent_id=primary_agent_id,
+            str(str_to_object_id(context.thread_id)),
+            primary_agent_class=context.agent_class,
+            primary_agent_id=context.agent_id,
         )
-        return [*history.messages, chat_completion_request.messages[-1]]
+        return [openai_message_to_llama_index(dict(message)) for message in history.messages]
 
     @staticmethod
     def _filter_kwargs(

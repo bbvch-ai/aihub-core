@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = "==3.13.*"
 resolution-markers = [
     "sys_platform == 'win32'",
@@ -606,6 +606,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f0/92/0449c32e718c10e4af40a3e040c830a77cdaeec6e9066622ee60e4c93e6e/banks-2.5.1.tar.gz", hash = "sha256:a7ca5c250b605ae90cfd6e4ca5dd6ce2ee377d5d59021b6feba44e345910026d", size = 196398, upload-time = "2026-09-10T10:15:34.569Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/6f/06c0824ee2611de47a0fc731fa57f6042d3f573025d9f504adfd65e50d51/banks-2.5.1-py3-none-any.whl", hash = "sha256:b7c91365626bab4b46197d24ce04cd69540730ed669a50a399f240318ba3dcfb", size = 39462, upload-time = "2026-09-10T10:15:35.606Z" },
+]
+
+[[package]]
+name = "beanie"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "lazy-model" },
+    { name = "pydantic" },
+    { name = "pymongo" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6b/a1/4abc93d5437999c55465f68c3c81e4735cdfe22827072c0e9cab00f63d11/beanie-2.2.0.tar.gz", hash = "sha256:2dc116e7f4a6650f8066f95851d34d898983af6ffaf5366dcfef892993537a51", size = 70115, upload-time = "2026-08-07T17:15:24.494Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c5/ae/2584fb9871b58f3c5334110f8ce00bd1421fe5fbda28eeac9a8d01d10ba6/beanie-2.2.0-py3-none-any.whl", hash = "sha256:4074f893ef00c52b8538b814c9dfd55130eea4ed0579abfae72853657c9029e4", size = 93116, upload-time = "2026-08-07T17:15:22.777Z" },
 ]
 
 [[package]]
@@ -2280,14 +2296,14 @@ wheels = [
 
 [[package]]
 name = "joserfc"
-version = "1.7.5"
+version = "1.7.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/19/94/80fea1514b7c6d7d37804d3fe9ca81455f633347fc98731bd71ffe1faa17/joserfc-1.7.5.tar.gz", hash = "sha256:d5ff536e658e17664f8c1b1ab60dc4aa62aa973fcef1edd33cc44bda45d6f5ea", size = 234990, upload-time = "2026-08-29T13:05:42.057Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bd/15/48ff246732232d35ee234228def22b52455fcc55577f06146602399a29b0/joserfc-1.7.7.tar.gz", hash = "sha256:471d0fd12a5a0d1c0942de280f39efe6f597878315033270b504d4d006d25510", size = 237446, upload-time = "2026-10-19T00:30:29.974Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/67/c5/82addfd375e5ee6520644e0553e4aadde92d668c4fc99cc716d337fe7bb3/joserfc-1.7.5-py3-none-any.whl", hash = "sha256:add2c2c84e8373b084d526a8b53daba5d7a513a118cd2dcd9fc9f979d0922159", size = 71269, upload-time = "2026-08-29T13:05:40.718Z" },
+    { url = "https://files.pythonhosted.org/packages/df/9f/934db284aa22f37af59708e382903860d4b81329c137b1b0ed2745daeb65/joserfc-1.7.7-py3-none-any.whl", hash = "sha256:06979cfbab78bc802f14c0358f32969826cc26720e13cb38926ffdc86bc0cb2c", size = 71758, upload-time = "2026-10-19T00:30:28.498Z" },
 ]
 
 [[package]]
@@ -2640,6 +2656,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a2/f7/07a02241b6e6ed3df4e31a64ed09cb522c47227816da3d71097e7cf94657/langsmith-0.14.12.tar.gz", hash = "sha256:b4d6a24ed74333095da476803ad9d22ee35f9dae1052cebf1e366d3889a9b675", size = 5038994, upload-time = "2026-10-21T20:16:22.565Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c6/6c/33e2de8d8d809895263e4f24ef7619e5535e3ece7de863ffbe49c1b7a60d/langsmith-0.14.12-py3-none-any.whl", hash = "sha256:9dafba7f615afa77204dc8afbb9c803e4ba1b55e96249f12c8f9aafb23fae6d0", size = 883644, upload-time = "2026-10-21T20:16:20.039Z" },
+]
+
+[[package]]
+name = "lazy-model"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/72/85/e25dc36dee49cf0726c03a1558b5c311a17095bc9361bcbf47226cb3075a/lazy-model-0.4.0.tar.gz", hash = "sha256:a851d85d0b518b0b9c8e626bbee0feb0494c0e0cb5636550637f032dbbf9c55f", size = 8256, upload-time = "2025-08-07T20:05:34.737Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5c/54/653ea0d7c578741e9867ccf0cbf47b7eac09ff22e4238f311ac20671a911/lazy_model-0.4.0-py3-none-any.whl", hash = "sha256:95ea59551c1ac557a2c299f75803c56cc973923ef78c67ea4839a238142f7927", size = 13749, upload-time = "2025-08-07T20:05:36.303Z" },
 ]
 
 [[package]]
@@ -5006,11 +5034,11 @@ wheels = [
 
 [[package]]
 name = "pypdf"
-version = "6.21.2"
+version = "6.21.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/06/28/081f1cbcca7042441dafc8de00f48ba60853f89e5bff92c5f26477346d81/pypdf-6.21.2.tar.gz", hash = "sha256:0a3e1c5c886a1be03646c16a04827cc166c2a0575c971b26a4bf89686551c2d4", size = 7144571, upload-time = "2026-10-21T16:44:55.272Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/e1/ec8f4d155c997c45917153a5521e60d6ee6389d68abdcbc8e44e564caffc/pypdf-6.21.4.tar.gz", hash = "sha256:c8817e3f888d47a087872ded69812c1ef30cacb871d6e053e0c00bbaf0bc2163", size = 7109255, upload-time = "2026-10-28T17:00:54.81Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/4d/c9d2d67f204eff463237a1a8f5e25a6923b7b1043982b91fcaf104c8ef60/pypdf-6.21.2-py3-none-any.whl", hash = "sha256:1d44d1a3a200f25062adff0085b02040e4646431ac2ccac22e42679e91466084", size = 407766, upload-time = "2026-10-21T16:44:53.626Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/4b/77e8ad4ac42c9d93600f40541a50e9feb3a61d2bbee2d76f659346072051/pypdf-6.21.4-py3-none-any.whl", hash = "sha256:33e4fb41ca352810eb4e9838aa0d82d6888a5f8bf682f43e99cce5faa666255c", size = 410430, upload-time = "2026-10-28T17:00:53.146Z" },
 ]
 
 [[package]]
@@ -5931,6 +5959,7 @@ source = { editable = "packages/agent" }
 dependencies = [
     { name = "azure-identity" },
     { name = "fastmcp" },
+    { name = "httpx" },
     { name = "imapclient" },
     { name = "linkify-it-py" },
     { name = "llama-index-llms-azure-openai" },
@@ -5953,6 +5982,7 @@ dev = [
 requires-dist = [
     { name = "azure-identity", specifier = ">=1.19.0" },
     { name = "fastmcp", specifier = ">=3.0.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "imapclient", specifier = ">=3.0.1" },
     { name = "linkify-it-py", specifier = ">=2.0.3" },
     { name = "llama-index-llms-azure-openai", specifier = ">=0.4.2" },
@@ -6137,6 +6167,7 @@ dependencies = [
     { name = "apprise" },
     { name = "azure-ai-documentintelligence" },
     { name = "azure-storage-file-datalake" },
+    { name = "beanie" },
     { name = "beautifulsoup4" },
     { name = "blinker" },
     { name = "boto3" },
@@ -6149,6 +6180,7 @@ dependencies = [
     { name = "fsspec" },
     { name = "html5lib" },
     { name = "imagehash" },
+    { name = "jsonschema" },
     { name = "langchain-neo4j" },
     { name = "langfuse" },
     { name = "llama-index-core" },
@@ -6187,6 +6219,7 @@ dependencies = [
     { name = "opentelemetry-sdk" },
     { name = "opentelemetry-semantic-conventions" },
     { name = "pillow" },
+    { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyjwt" },
@@ -6196,6 +6229,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "rank-bm25" },
     { name = "redis" },
+    { name = "referencing" },
     { name = "regex" },
     { name = "s3fs" },
     { name = "scim2-client" },
@@ -6219,6 +6253,7 @@ requires-dist = [
     { name = "apprise", specifier = ">=1.9.9" },
     { name = "azure-ai-documentintelligence", specifier = ">=1.0.2" },
     { name = "azure-storage-file-datalake", specifier = ">=12.22.0" },
+    { name = "beanie", specifier = ">=2.2.0" },
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "blinker", specifier = ">=1.9.0" },
     { name = "boto3", specifier = ">=1.41.5" },
@@ -6231,6 +6266,7 @@ requires-dist = [
     { name = "fsspec", specifier = ">=2024.10.0" },
     { name = "html5lib", specifier = ">=1.1" },
     { name = "imagehash", specifier = ">=4.3.2" },
+    { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "langchain-neo4j", specifier = ">=0.4.0" },
     { name = "langfuse", specifier = ">=3.14.1" },
     { name = "llama-index-core", specifier = ">=0.14.12,<0.15" },
@@ -6269,6 +6305,7 @@ requires-dist = [
     { name = "opentelemetry-sdk", specifier = ">=1.39.1" },
     { name = "opentelemetry-semantic-conventions", specifier = ">=0.60b1" },
     { name = "pillow", specifier = ">=13.0.0" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "pydantic", specifier = ">=2.10.3" },
     { name = "pydantic-settings", specifier = ">=2.7.0" },
     { name = "pyjwt", specifier = ">=2.15.1" },
@@ -6278,6 +6315,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "rank-bm25", specifier = ">=0.2.2" },
     { name = "redis", specifier = ">=5.2.1" },
+    { name = "referencing", specifier = ">=0.37.0" },
     { name = "regex", specifier = ">=2026.5.9" },
     { name = "s3fs", specifier = ">=2026.9.0" },
     { name = "scim2-client", specifier = ">=0.7.5" },

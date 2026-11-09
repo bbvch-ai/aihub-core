@@ -45,6 +45,7 @@ image_tags:
   oauth2proxy: oauth2-proxy:v7.15.5
   open_webui: open-webui:v0.11.4-playwright1.63.0-1
   open_webui_init: postgres:17
+  ferretdb_init: postgres:17
   playwright: playwright:v1.63.0-jammy-1
   browser_proxy: browser-proxy:7.6-1
   vllm: vllm-openai:v0.15.1

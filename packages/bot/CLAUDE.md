@@ -3,7 +3,7 @@
 **Purpose**: Connects users to Swiss AI Hub agents via MS Teams, Slack, and web chat. Three parts: the SDK framework
 (`packages/bot/`), production entry point (`app/`), and playground (`playground/`). Agent logic lives in
 `packages/agent` — bots only handle conversation management, channel-specific formatting, and streaming. Built on the
-`microsoft-agents-*` SDK (v0.5.0).
+`microsoft-agents-*` SDK (v0.9).
 
 ## Folder Structure
 
@@ -29,13 +29,14 @@ packages/bot/                              # SDK framework
 │   │   ├── conversation_entity.py           # MongoDB: conversation history + TTL + ConversationTracker
 │   │   └── path_entity.py                   # MongoDB: per-endpoint credentials + system message + Slack token
 │   ├── routes/
-│   │   ├── routes_service.py                # CloudAdapter factory (cached), path resolution, credential lookup
+│   │   ├── routes_service.py                # process_activity (auth + adapter), CloudAdapter cache, credentials
+│   │   ├── bot_activity_authenticator.py    # Bot Service JWT validation (401 on missing/invalid tokens)
 │   │   ├── agent/agent_chat_controller.py    # POST /completions/{class}/{id}/{json|stream}
 │   │   ├── openai/openai_chat_controller.py  # POST /completions/{json|stream}?model_name=
 │   │   └── bot_in_the_loop/
 │   │       ├── bot_in_the_loop_controller.py   # POST /bot_in_the_loop/response
 │   │       ├── bot_in_the_loop_handler.py      # Outbound: sends agent questions to Slack/Teams channels
-│   │       └── slack_utils.py              # Slack auth.test API wrapper (cached 30d)
+│   │       └── slack_utils.py              # Slack API: auth.test (cached 30d), users.info
 │   ├── runners/
 │   │   ├── bot_runner.py                    # Production ASGI runner (Gunicorn/uvicorn)
 │   │   ├── bot_test_runner.py               # Test runner with /service catch-all for response capture
@@ -58,8 +59,9 @@ playground/
 
 Three-layer design:
 
-1. **Routes**: FastAPI controllers receive Bot Framework webhook calls. `RoutesService.get_adapter(path)` creates a
-   cached `CloudAdapter` per endpoint using `PathEntity` credentials. Controllers use fluent API:
+1. **Routes**: FastAPI controllers receive Bot Framework webhook calls and hand them to
+   `RoutesService.process_activity()`, which authenticates the token, then runs the cached `CloudAdapter` built from the
+   path's `PathEntity` credentials. Controllers use fluent API:
    `AgentChatController(auth=auth).completions_json().completions_stream()`
 
 2. **Bots**: `BaseChatBot(ActivityHandler)` handles the full message lifecycle. Specialized bots add channel/agent
@@ -85,6 +87,17 @@ Every bot endpoint is keyed by its URL path in MongoDB `bot_paths` collection. T
 
 Created via `setup_azure_bot.py` (full Azure AD registration) or `add_path_entity.py` (manual seed for dev).
 
+## Inbound Authentication and User Identity
+
+Every activity route goes through `RoutesService.process_activity()`, which validates the Azure Bot Service JWT against
+the path's credentials (signature via Microsoft's JWKS, audience = `APP_ID`, issuer, no agent-to-agent tokens,
+`serviceurl` claim = the activity's `serviceUrl`) and answers `401` otherwise. The bot then resolves the user from the
+channel itself — the Teams member roster or the Slack profile (`users.info`, needs `users:read` + `users:read.email`) —
+never from `from.name`. Only members of the path's own tenant (`APP_TENANTID`; a path without one refuses Teams users)
+or of the workspace its Slack token belongs to are accepted, because any other tenant or workspace vouches for its
+members' emails itself. Finally the bot checks that the user may use the endpoint's agent or model. Other channels (web
+chat, Direct Line, emulator) cannot be mapped to an account and get a "cannot verify who you are" reply.
+
 ## BaseChatBot Message Pipeline
 
 `on_message_activity()` → `_process_message(is_streaming)`:
@@ -105,7 +118,7 @@ Created via `setup_azure_bot.py` (full Azure AD registration) or `add_path_entit
 
 - Conversation reuse: Teams reuses conversation IDs. On `on_conversation_update_activity` (bot re-added), delete
   `ConversationEntity` + mark `ConversationTracker` as explicitly deleted.
-- User identity: `aad_object_id` as user ID, email/role via `TeamsConnectorClient.get_conversation_member`
+- User identity: email via `TeamsConnectorClient.get_conversation_member`, only for members of the path's `APP_TENANTID`
 
 **Slack**:
 
@@ -113,6 +126,8 @@ Created via `setup_azure_bot.py` (full Azure AD registration) or `add_path_entit
   storage (`_clean_conversation_id()`).
 - Thread detection: `conversation.conversation_type == "channel"` + `thread_ts` in conversation ID
 - Mention tracking: `is_mentioned` flag on `ConversationEntity`
+- User identity: email via Slack `users.info` for the `U…` part of `from.id`, using the path's `slack_token`, only for
+  members of that token's workspace (`auth.test`)
 - Markdown conversion: `**text**` → `*text*`, `[text](url)` → `<url|text>`
 
 **Web Chat**:
@@ -143,7 +158,8 @@ Human expert escalation flow — an agent pauses, asks a human via Slack/Teams, 
 6. `BotInTheLoopBot` (via `POST /bot_in_the_loop/response`) receives reply, matches to thread in registry
 7. Bot publishes `BotInTheLoopResponseEvent` via `ExternalAgentEventDistributor` → agent workflow resumes
 
-Slack IDs cached via `TTLCache(maxsize=100, ttl=30d)` from `SlackUtils.get_slack_ids()` (`auth.test` API).
+Slack IDs are cached per token for 30 days inside `SlackUtils.get_slack_ids()` (`auth.test` API), shared with the chat
+bots' workspace check.
 
 ## Conversation Management
 
@@ -197,7 +213,8 @@ Tests live in `playground/testing/tests/` (NOT a top-level `tests/` dir). Plain 
   `cd playground/development && python main.py`
 - `playground/testing/` — Simulated agent test server with `SimulatedAgentBotTestRunner` + static web UI. Run:
   `cd playground/testing && python main.py`
-- Bot Framework Emulator: Connect to `http://localhost:8001/api/v1/messages`, leave App ID/Password empty
+- Bot Framework Emulator: only via `playground/testing/main.py`, which skips the inbound token check and stubs the
+  sender's email from `BOT_DEV_FAKE_EMAIL`; the production app answers unsigned activities with `401`
 
 ## i18n
 

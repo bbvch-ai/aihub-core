@@ -9,6 +9,7 @@ from typing import override
 
 from swiss_ai_hub.backup.s3 import S3Manager
 from swiss_ai_hub.backup.services.base import BackupHandler
+from swiss_ai_hub.backup.services.psql_script import PsqlScript
 from swiss_ai_hub.backup.settings import BackupSettings
 
 logger = logging.getLogger(__name__)
@@ -157,7 +158,7 @@ class PostgresHandler(BackupHandler):
                     "--tuples-only",
                     "--no-align",
                     "-c",
-                    f"SELECT last_value, is_called FROM {seq}",
+                    f"SELECT last_value, is_called::text FROM {seq}",
                 ],
                 capture_output=True,
                 text=True,
@@ -199,12 +200,12 @@ class PostgresHandler(BackupHandler):
         self._s3.download_file(s3_key, catalog_file)
 
         with gzip.open(catalog_file, "rt") as f:
-            sql = f.read()
+            sql = PsqlScript.restricted(PsqlScript.with_boolean_setval_flags(f.read()))
         catalog_file.unlink()
 
         logger.info("[%s] Restoring DocumentDB extension catalog", label)
         result = subprocess.run(
-            ["psql", "-h", host, "-U", user, "-d", "postgres", "-X"],
+            ["psql", "-h", host, "-U", user, "-d", "postgres", *PsqlScript.PSQL_OPTIONS],
             input=sql,
             capture_output=True,
             text=True,
@@ -337,10 +338,10 @@ class PostgresHandler(BackupHandler):
 
     def _load_globals(self, host: str, user: str, env: dict[str, str], label: str, globals_file: Path) -> None:
         with gzip.open(globals_file, "rb") as f:
-            sql = f.read().decode()
+            sql = PsqlScript.restricted(PsqlScript.tolerating_existing_roles(f.read().decode()))
         logger.info("[%s] Globals SQL size: %d bytes", label, len(sql))
         result = subprocess.run(
-            ["psql", "-h", host, "-U", user, "-d", "postgres", "-X"],
+            ["psql", "-h", host, "-U", user, "-d", "postgres", *PsqlScript.PSQL_OPTIONS],
             input=sql,
             capture_output=True,
             text=True,
@@ -348,6 +349,8 @@ class PostgresHandler(BackupHandler):
             check=False,
             timeout=self._subprocess_timeout,
         )
+        if result.returncode != 0:
+            raise RuntimeError(f"Loading globals on {label} failed: {result.stderr.strip()}")
         if result.stderr:
             logger.info("[%s] Globals stderr: %s", label, result.stderr.strip()[:500])
 

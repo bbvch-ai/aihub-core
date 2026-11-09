@@ -2,7 +2,7 @@ import re
 from typing import Annotated, Any
 
 from swiss_ai_hub.core.infrastructure import StructuredPipelineSettings
-from swiss_ai_hub.core.network import SourceHostGuard
+from swiss_ai_hub.core.network import PublicHostGuard
 from swiss_ai_hub.core.persistence import NamespaceEntity
 
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_client import MediaWikiClient
@@ -42,7 +42,7 @@ class MediaWikiPreflight:
         options: Annotated[MediaWikiOptions, "The configuration, already checked for missing values"],
     ) -> MediaWikiCollections:
         """The namespaces to sync and the collections they and the files land in."""
-        SourceHostGuard.require_public(
+        PublicHostGuard.require_public(
             options.base_url,
             StructuredPipelineSettings().private_host_allow_list(),
             _ALLOW_LIST_VARIABLE,
