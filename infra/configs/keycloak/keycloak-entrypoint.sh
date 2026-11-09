@@ -28,10 +28,10 @@
 #   10 h max / 5 min access token) — the first-start-only realm import never
 #   propagates them to existing deployments, while operator overrides made in
 #   the admin console must survive.
-# - Realm mail server: same rule as the lifespans — written only while the
-#   realm still has no mail server (Keycloak's default is an empty smtpServer)
-#   or the platform's server without a client id, and only once
-#   KEYCLOAK_SMTP_TENANT_ID and KEYCLOAK_SMTP_CLIENT_ID are set.
+# - Realm mail server: once KEYCLOAK_SMTP_TENANT_ID and KEYCLOAK_SMTP_CLIENT_ID
+#   are set, written while the realm has none (Keycloak's default is an empty
+#   smtpServer) or while the platform's server holds another client id or
+#   tenant. A mail server on any other host is the operator's and is kept.
 # - SMTP client secret: written to Keycloak's file vault (tmpfs), which the
 #   realm references as ${vault.smtp-client-secret}, so it never enters the
 #   realm export or database.
@@ -63,11 +63,12 @@ bash_envsubst /opt/keycloak/data/import-templates/aihub-realm.json \
 
 KCADM=/opt/keycloak/bin/kcadm.sh
 
-# Writes the realm mail server while the realm has none (Keycloak's default is
-# an empty smtpServer), or while it holds the platform's server with an empty
-# client id: tenant and client id are substituted once, so a realm first
-# started without them would otherwise never pick them up. Any other mail
-# server was set by an operator in the admin console and is kept.
+# A mail server on the platform's host is managed by the platform: it is
+# rewritten whenever its client id or tenant differ from KEYCLOAK_SMTP_*, since
+# both are substituted once and would otherwise keep the values (empty, a
+# literal $(env:...) or a replaced Entra app) of the start that wrote them.
+# A realm without a mail server gets one; a mail server on any other host was
+# set by an operator in the admin console and is kept.
 apply_realm_mail_server_default() {
   if [[ -z "${KEYCLOAK_SMTP_TENANT_ID:-}" || -z "${KEYCLOAK_SMTP_CLIENT_ID:-}" ]]; then
     echo "KEYCLOAK_SMTP_TENANT_ID or KEYCLOAK_SMTP_CLIENT_ID is empty; leaving realm mail server unchanged."
@@ -76,14 +77,18 @@ apply_realm_mail_server_default() {
 
   local current
   # kcadm returns nested objects empty unless their fields are listed.
-  if ! current=$($KCADM get realms/aihub --fields 'smtpServer(host,authTokenClientId)' 2> /dev/null); then
+  if ! current=$($KCADM get realms/aihub --fields 'smtpServer(host,authTokenUrl,authTokenClientId)' 2> /dev/null); then
     echo "ERROR: Failed to read realm mail server; leaving unchanged."
     return
   fi
-  local platform_host='"host"[[:space:]]*:[[:space:]]*"smtp\.office365\.com"'
-  local empty_client_id='"authTokenClientId"[[:space:]]*:[[:space:]]*""'
-  if [[ "$current" =~ \"host\" ]] && ! [[ "$current" =~ $platform_host && "$current" =~ $empty_client_id ]]; then
-    echo "Realm mail server already configured; leaving unchanged."
+  current=${current//[[:space:]]/}
+  if [[ "$current" == *'"host":'* && "$current" != *'"host":"smtp.office365.com"'* ]]; then
+    echo "Realm mail server set by an operator; leaving unchanged."
+    return
+  fi
+  if [[ "$current" == *"\"authTokenClientId\":\"$KEYCLOAK_SMTP_CLIENT_ID\""* \
+    && "$current" == *"/$KEYCLOAK_SMTP_TENANT_ID/oauth2/"* ]]; then
+    echo "Realm mail server up to date; leaving unchanged."
     return
   fi
 

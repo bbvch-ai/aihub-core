@@ -24,9 +24,9 @@ on the first start:
 | Authentication | OAuth 2.0 token from `login.microsoftonline.com`, scope `https://outlook.office365.com/.default` |
 
 Existing deployments get the mail server on the next Keycloak start once `KEYCLOAK_SMTP_TENANT_ID` and
-`KEYCLOAK_SMTP_CLIENT_ID` are set, as long as the realm has no mail server yet or still has the platform's server
-without a client id (a realm first started without the variables). A mail server an administrator configured in the
-Keycloak admin console is kept.
+`KEYCLOAK_SMTP_CLIENT_ID` are set. A mail server on `smtp.office365.com` belongs to the platform: on every start,
+Keycloak's tenant and client id are set to the values of these variables, so edit the variables, not the admin console,
+to change them. A mail server an administrator configured in the admin console on any other host is kept.
 
 The client secret never appears in the realm. Keycloak reads it at send time from its file vault: the entrypoint writes
 `KEYCLOAK_SMTP_CLIENT_SECRET` to `/opt/keycloak/vault/aihub_smtp-client-secret`, a memory-only mount, and the realm
@@ -111,8 +111,11 @@ The admin console's *Realm settings* → *Email* → *Test connection* button is
 administrators who sign in to the `master` realm, such as the bootstrap `admin`. Use "Forgot password" or an invitation
 instead.
 
-## Secret rotation
+## Secret rotation and a new app
 
 Entra client secrets expire (at most 24 months). Before the expiry date, create a new secret on the app, update
 `KEYCLOAK_SMTP_CLIENT_SECRET` and restart Keycloak. Keycloak caches the access token per secret, so the new secret takes
 effect with the next mail.
+
+To switch to another Entra app or tenant, update `KEYCLOAK_SMTP_CLIENT_ID`, `KEYCLOAK_SMTP_TENANT_ID` and
+`KEYCLOAK_SMTP_CLIENT_SECRET` the same way and restart Keycloak; the realm picks up the new ids on start.
