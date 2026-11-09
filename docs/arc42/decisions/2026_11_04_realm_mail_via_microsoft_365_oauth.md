@@ -36,10 +36,12 @@ an operator set in the admin console.
   entrypoint writes `KEYCLOAK_SMTP_CLIENT_SECRET` to a tmpfs at `/opt/keycloak/vault` and starts Keycloak with
   `--vault=file`. Keycloak 26.8.1's `TokenAuthEmailAuthenticator` resolves `authTokenClientSecret` through the vault.
   This is the one deliberate `${...}` placeholder in the realm.
-- **Converge by default migration.** The entrypoint's existing kcadm block also writes `smtpServer` once
-  `KEYCLOAK_SMTP_TENANT_ID` and `KEYCLOAK_SMTP_CLIENT_ID` are set, only while the realm has no mail server or still has
-  the platform's server without a client id (tenant and client id are substituted once, so a realm first started without
-  them would otherwise keep the empty values).
+- **Converge by default migration; the platform's host is platform-managed.** Once `KEYCLOAK_SMTP_TENANT_ID` and
+  `KEYCLOAK_SMTP_CLIENT_ID` are set, the entrypoint's existing kcadm block writes `smtpServer` when the realm has none,
+  and rewrites a mail server on `smtp.office365.com` whenever its client id or tenant differ from the variables. Both
+  are substituted once, so the realm would otherwise keep whatever the writing start had: empty values, a literal
+  `$(env:...)` where the variable was missing, or the ids of a replaced Entra app. A mail server on any other host is
+  the operator's and is kept; changing only the client id or tenant in the admin console is reverted on the next start.
 - **Invitations use Keycloak's admin-triggered mail.** Administrators create the user, add the tenant group and
   `AIHubAccess`, and send *Credential Reset* with *Update Password* and *Verify Email* from the admin console. The
   platform adds no invitation API or UI; the steps are documented in the operator guide.

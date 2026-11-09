@@ -389,7 +389,8 @@ The realm config lives in standalone JSON templates under `templates/configs/key
   the admin console (or a fresh realm DB), since they do not reconcile automatically.
 - **Default migration in `keycloak-entrypoint.sh.j2`** — two bootstrap settings still reach existing realms: kcadm
   writes the token and session lifespans and `smtpServer` on every start, but **only while the realm still holds the
-  Keycloak default** (so admin-console overrides survive).
+  Keycloak default** (so admin-console overrides survive). Exception: a mail server on the platform's host
+  (`smtp.office365.com`) is platform-managed, and its client id and tenant follow `KEYCLOAK_SMTP_*` on every start.
 - **`managed/`** — reconciled on **every stack start** by the one-shot `keycloak-config` service
   (adorsys/keycloak-config-cli): realm roles, client scopes, clients, custom auth flows, and the `aihub-api-service`
   service account. **File wins**: admin-console edits to these objects are overwritten, and objects removed from config
