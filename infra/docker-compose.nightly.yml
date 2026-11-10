@@ -2055,6 +2055,10 @@ services:
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
+      # Without session sharing, a model lookup holds one pooled connection while it opens a second one for the
+      # model's access grants. Once as many chats arrive at once as the pool has connections, each holds one and waits
+      # for another, nothing moves until the 30 s pool timeout, and the requests fail as QueuePool / "Model not found".
+      DATABASE_ENABLE_SESSION_SHARING: true
       REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/10
       REDIS_KEY_PREFIX: open-webui
 
