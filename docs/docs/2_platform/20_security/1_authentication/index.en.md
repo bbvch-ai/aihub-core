@@ -295,9 +295,9 @@ in.
 
 Day-to-day permissions come from **platform roles** (`AIHubUser`, `AIHubAdmin`, `AIHubAgentUser`, …), which are
 tenant-scoped and managed inside the platform — not in Keycloak and not from the IdP. Which roles a new user receives is
-controlled by the `AIHUB_USER_SIGNUP_*` environment variables (`AIHUB_USER_SIGNUP_DEFAULT_ROLES`,
-`AIHUB_USER_SIGNUP_REGULAR_USER_ROLES`, `AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES`), and each tenant is seeded with its
-default role set at creation. See [Access Management](../../11_access_management/1_authentication_setup/) and
+controlled by `AIHUB_USER_SIGNUP_REGULAR_USER_ROLES` and `AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES`, and each tenant is
+seeded with its default role set at creation. See
+[Default Roles and New-User Role Assignment](../../11_access_management/3_default_roles/) and
 [Permissions](../../11_access_management/2_permissions/).
 
 ## Security Standards and Operational Capabilities
