@@ -17,6 +17,10 @@ class TenantResponse(BaseModel):
     description: Annotated[str, Field(description="Tenant description.")]
     access_rules: Annotated[list[str], Field(description="Access rules granted to this tenant.")]
     chat_disclaimer: Annotated[LocaleString, Field(description="Chat disclaimer in each supported language.")]
+    lcdm_tenant_id: Annotated[
+        int | None,
+        Field(description="Originating LCDM Hub tenant id (numeric), if this tenant was pushed in from the LCDM Hub."),
+    ] = None
     state: Annotated[
         TenantState, Field(description="Whether the tenant also exists in Keycloak (active) or not (orphaned).")
     ]
@@ -35,6 +39,7 @@ class TenantResponse(BaseModel):
                 if entity.chat_disclaimer is not None
                 else ApiLocaleString.from_i18n_path("api.common.default_chat_disclaimer")
             ),
+            lcdm_tenant_id=entity.lcdm_tenant_id,
             state=state,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
