@@ -162,7 +162,9 @@ class ToolSet(BaseModel):
             )
         return definitions
 
-    def _enabled_spec_tools(self, spec: type[BaseToolSpec], context: ToolContext, config: ToolLoopConfig) -> list:
+    def _enabled_spec_tools(
+        self, spec: type[BaseToolSpec], context: ToolContext, config: ToolLoopConfig
+    ) -> list[BaseTool]:
         """A spec may narrow its own functions when built, so the built instance's list is the one filtered."""
         built = spec(context)
         enabled = [entry for entry in built.spec_functions if not config.is_disabled(self._spec_function_name(entry))]

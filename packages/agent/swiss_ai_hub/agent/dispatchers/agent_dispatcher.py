@@ -181,7 +181,9 @@ class AgentDispatcher(BaseDispatcher):
         topic: Annotated[AgentClassTopic, "The parsed topic of the event."],
     ) -> bool:
         """A run's question is answered by the user who started it; another member of a shared thread cannot
-        answer for them. A response without a responder comes from the platform itself and is not checked here."""
+        answer for them. The API stamps every answer it forwards, so a response without a responder was published
+        by the platform itself, such as a process; it passes here, and a step that needs a person's answer, like the
+        tool loop's approval step, refuses it itself."""
         if not event.is_hitl_response_event:
             return True
         responded_by = cast(HumanInTheLoopResponseEvent, event).responded_by
