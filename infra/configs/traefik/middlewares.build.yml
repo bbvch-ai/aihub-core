@@ -24,5 +24,4 @@ http:
         stsIncludeSubdomains: true
         customFrameOptionsValue: SAMEORIGIN
         contentTypeNosniff: true
-        browserXssFilter: true
         referrerPolicy: strict-origin-when-cross-origin

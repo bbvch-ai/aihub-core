@@ -86,6 +86,9 @@ export default defineNuxtConfig({
       'local-fragment-links': {
         src: fileURLToPath(new URL('./utils/rehypeLocalFragmentLinks.ts', import.meta.url)),
       },
+      'drop-undecodable-urls': {
+        src: fileURLToPath(new URL('./utils/rehypeDropUndecodableUrls.ts', import.meta.url)),
+      },
     },
     components: {
       prose: false,
