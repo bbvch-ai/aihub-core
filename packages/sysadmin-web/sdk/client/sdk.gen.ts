@@ -12,6 +12,7 @@ import {
   getAccessCapabilitiesResponseTransformer,
   getTenantResponseTransformer,
   listTenantsResponseTransformer,
+  provisionTenantResponseTransformer,
   updateTenantMetadataResponseTransformer,
 } from "./transformers.gen";
 import type {
@@ -66,6 +67,9 @@ import type {
   ListTenantsResponse,
   ListUnconfiguredTenantsData,
   ListUnconfiguredTenantsResponse,
+  ProvisionTenantData,
+  ProvisionTenantError,
+  ProvisionTenantResponse,
   RevokeRoleData,
   RevokeRoleError,
   RevokeRoleResponse,
@@ -326,6 +330,43 @@ export const updateTenantMetadata = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/admin/tenants/{tenant_id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Provision Tenant
+ *
+ * Idempotently provision a tenant: create the Keycloak group if missing, then upsert its
+ * metadata. Built for an external source of truth (e.g. the LCDM Hub) to push its tenants in
+ * and re-run the sync repeatedly (flat — each tenant becomes its own group under /tenants/).
+ */
+export const provisionTenant = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends ProvisionTenantResponse = ProvisionTenantResponse,
+>(
+  options: Options<
+    TComposable,
+    ProvisionTenantData,
+    ProvisionTenantResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    ProvisionTenantResponse | DefaultT,
+    ProvisionTenantError,
+    DefaultT
+  >({
+    responseTransformer: provisionTenantResponseTransformer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/admin/tenants/provision",
     ...options,
     headers: {
       "Content-Type": "application/json",

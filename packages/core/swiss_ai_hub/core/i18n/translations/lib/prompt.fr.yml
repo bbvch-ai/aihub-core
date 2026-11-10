@@ -1671,3 +1671,7 @@ structured_extraction:
     {{ text }}
     </document>
     {% endchat %}
+few_shot_example:
+  list_help: Échanges d'exemple qui montrent à l'agent comment répondre. Chacun associe
+    un message utilisateur à la réponse attendue, et l'agent suit leur style et leur
+    contenu lorsqu'il répond à des messages similaires.

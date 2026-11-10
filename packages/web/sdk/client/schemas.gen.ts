@@ -7010,8 +7010,10 @@ export const CreateNamespaceRequestSchema = {
     folder_name: {
       type: "string",
       maxLength: 100,
+      pattern: "^[^/]+$",
       title: "Folder Name",
-      description: "The name of the folder to which the namespace belongs.",
+      description:
+        "The name of the folder to which the namespace belongs. A single path segment, because ingestion files every document under the first segment of its key.",
     },
     display_name: {
       anyOf: [
@@ -11061,6 +11063,14 @@ export const HealthResponseSchema = {
   required: ["status", "code", "version"],
   title: "HealthResponse",
   description: "Standard health check response.",
+} as const;
+
+export const HostingLocationSchema = {
+  type: "string",
+  enum: ["local", "swiss_cloud", "eu", "global"],
+  title: "HostingLocation",
+  description:
+    "Where a model runs, as the LiteLLM config declares it in `aihub_hosting_location`.\n\nKeep in sync with `HOSTING_LOCATIONS` in `infra/deployment/generate_compose.py`, which rejects any other value.",
 } as const;
 
 export const HtmlElementSchema = {
@@ -19626,6 +19636,14 @@ export const ModelBoundInputNumberSchema = {
     'A number input whose upper bound and default hint come from the model picked elsewhere on the same form.\n\nA static range cannot be right for every model: an input-token budget a small-context model cannot serve, or\na temperature hint that is only the default of some other model. The frontend reads the selected model\'s\nLiteLLM `model_info` and applies `max_from` as the maximum and `default_from` as the placeholder; the API\nrejects a save above the model\'s limit, since this bound is not part of the announced JSON schema.\n\nWith an `override_label`, a nullable field gets an override checkbox of its own instead of the form\'s generic\nenable toggle: the input stays in view, disabled and showing the model\'s default while unset, and is pre-filled\nwith that default when the admin starts overriding it, so the default is visible before deciding. A budget\nsuch as the input tokens has no curated default: unset, it fills `fill_factor` of the model\'s `max_from` limit,\nwhich is also the highest value it accepts (`maximum_for`).\n\n```python\nnumber_of_input_tokens=ModelBoundInputNumber(\n    label=LocaleString(en="Input tokens"), model_ref="llm.model_name", max_from="max_input_tokens", min=1024\n)\n```',
 } as const;
 
+export const ModelCapabilitySchema = {
+  type: "string",
+  enum: ["vision", "tool_calling", "structured_output", "reasoning"],
+  title: "ModelCapability",
+  description:
+    "Something a model picker may require of a chat model, read from the LiteLLM `supports_*` flag it names.",
+} as const;
+
 export const ModelDTOSchema = {
   properties: {
     model_name: {
@@ -19637,6 +19655,13 @@ export const ModelDTOSchema = {
       $ref: "#/components/schemas/ModelInfoDTO",
       description: "Detailed information about the model",
     },
+    display_name: {
+      type: "string",
+      title: "Display Name",
+      description:
+        "The curated display name, or the model name without its capability prefix",
+      readOnly: true,
+    },
     icon: {
       type: "string",
       title: "Icon",
@@ -19644,7 +19669,7 @@ export const ModelDTOSchema = {
     },
   },
   type: "object",
-  required: ["model_name", "model_info", "icon"],
+  required: ["model_name", "model_info", "display_name", "icon"],
   title: "ModelDTO",
 } as const;
 
@@ -20017,6 +20042,42 @@ export const ModelInfoDTOSchema = {
       title: "Mode",
       description:
         "The mode of the model (e.g., 'chat', 'completion', 'embedding')",
+    },
+    aihub_display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Aihub Display Name",
+      description: "Human-readable model name curated in the LiteLLM config",
+    },
+    aihub_hosting_location: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/HostingLocation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Where the model runs, curated per model",
+    },
+    aihub_general_purpose: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Aihub General Purpose",
+      description:
+        "False for a model built for one job, such as OCR, which model pickers leave out; a model that does not set it counts as general-purpose",
     },
     max_input_tokens: {
       anyOf: [
@@ -20507,6 +20568,40 @@ export const ModelInfoDTOSchema = {
   },
   type: "object",
   title: "ModelInfoDTO",
+  description:
+    "Fields carry their LiteLLM ``model_info`` key as name, without aliases, because the model-bound form elements\nand the frontend read limits and flags from this DTO by that key.",
+} as const;
+
+export const ModelRequirementsSchema = {
+  properties: {
+    capabilities: {
+      items: {
+        $ref: "#/components/schemas/ModelCapability",
+      },
+      type: "array",
+      title: "Capabilities",
+      description: "Capabilities the model must all support.",
+    },
+    hosting_locations: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/HostingLocation",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Hosting Locations",
+      description: "Where the model may run; any location when unset.",
+    },
+  },
+  type: "object",
+  title: "ModelRequirements",
+  description:
+    "What a model must offer to be offered and saved in one model picker.\n\nStricter than `ModelGatedCheckbox` on purpose: that gates a feature on a model already chosen, this decides what\nmay be chosen. So a flag counts only when it is true (LiteLLM reports an unset one as null), and a model whose\nlocation is missing or unknown fails a location requirement. It reads a plain `model_info` mapping, not the\nAPI's DTO, so core does not depend on the API.",
 } as const;
 
 export const ModelResponseSchema = {
@@ -20755,6 +20850,11 @@ export const ModelSelectSchema = {
       description: "Whether to show clear button",
       default: false,
     },
+    requirements: {
+      $ref: "#/components/schemas/ModelRequirements",
+      description:
+        "Capabilities and hosting locations the chosen model must have.",
+    },
     validation: {
       type: "string",
       title: "Validation",
@@ -20766,7 +20866,7 @@ export const ModelSelectSchema = {
   required: ["label", "validation"],
   title: "ModelSelect",
   description:
-    'A FormKit element for selecting LLM models from LiteLLM.\n\nThis element renders as a select dropdown that automatically fetches\navailable models from the API based on the specified mode.\n\nThe frontend component handles fetching models from `/api/v1/models/mode/{mode}`\nand populating the dropdown options.\n\n### Supported Modes\n- `chat`: Chat/text generation models\n- `embedding`: Embedding models\n- `rerank`: Reranking models\n- `image_generation`: Image generation models\n- `audio_transcription`: Audio transcription models\n- `audio_speech`: Text-to-speech models\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    llm_model: Annotated[\n        str | ModelSelect,\n        Field(description="The LLM model to use"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    llm_model=ModelSelect(\n        label=LocaleString(en="Model", de="Modell"),\n        mode="chat",\n    ),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    llm_model="text-generation/gpt-4",\n)\n```',
+    'A FormKit element for selecting LLM models from LiteLLM.\n\nThis element renders as a select dropdown that automatically fetches\navailable models from the API based on the specified mode.\n\nThe frontend component handles fetching models from `/api/v1/models/mode/{mode}`\nand populating the dropdown options. `requirements` narrows them to the models with\nevery required capability and an allowed hosting location; the API enforces the same\nrule when a profile is saved, and never offers a model that is not general-purpose.\n\n### Supported Modes\n- `chat`: Chat/text generation models\n- `embedding`: Embedding models\n- `rerank`: Reranking models\n- `image_generation`: Image generation models\n- `audio_transcription`: Audio transcription models\n- `audio_speech`: Text-to-speech models\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    llm_model: Annotated[\n        str | ModelSelect,\n        Field(description="The LLM model to use"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    llm_model=ModelSelect(\n        label=LocaleString(en="Model", de="Modell"),\n        mode="chat",\n    ),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    llm_model="text-generation/gpt-4",\n)\n```',
 } as const;
 
 export const ModelTypeGroupDTOSchema = {
@@ -24666,6 +24766,22 @@ export const RepeaterSchema = {
       ],
       title: "Label",
       description: "Label displayed as the section header",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Explanation of what the list is for, shown under the header",
     },
     addLabel: {
       anyOf: [
@@ -31965,6 +32081,13 @@ export const UserIdentitySchema = {
       title: "Is Sys Admin",
       description:
         "Whether the user has the AIHubSysAdmin realm role (from the JWT).",
+      default: false,
+    },
+    openwebui_sys_admin: {
+      type: "boolean",
+      title: "Openwebui Sys Admin",
+      description:
+        "Whether the user has the AIHubSysAdmin realm role but arrived through OpenWebUI's signed headers. Grants user access in the acting tenant instead of the sysadmin bypass.",
       default: false,
     },
   },
@@ -45237,13 +45360,18 @@ export const ModelSelectWritableSchema = {
       description: "Whether to show clear button",
       default: false,
     },
+    requirements: {
+      $ref: "#/components/schemas/ModelRequirements",
+      description:
+        "Capabilities and hosting locations the chosen model must have.",
+    },
   },
   additionalProperties: true,
   type: "object",
   required: ["label"],
   title: "ModelSelect",
   description:
-    'A FormKit element for selecting LLM models from LiteLLM.\n\nThis element renders as a select dropdown that automatically fetches\navailable models from the API based on the specified mode.\n\nThe frontend component handles fetching models from `/api/v1/models/mode/{mode}`\nand populating the dropdown options.\n\n### Supported Modes\n- `chat`: Chat/text generation models\n- `embedding`: Embedding models\n- `rerank`: Reranking models\n- `image_generation`: Image generation models\n- `audio_transcription`: Audio transcription models\n- `audio_speech`: Text-to-speech models\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    llm_model: Annotated[\n        str | ModelSelect,\n        Field(description="The LLM model to use"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    llm_model=ModelSelect(\n        label=LocaleString(en="Model", de="Modell"),\n        mode="chat",\n    ),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    llm_model="text-generation/gpt-4",\n)\n```',
+    'A FormKit element for selecting LLM models from LiteLLM.\n\nThis element renders as a select dropdown that automatically fetches\navailable models from the API based on the specified mode.\n\nThe frontend component handles fetching models from `/api/v1/models/mode/{mode}`\nand populating the dropdown options. `requirements` narrows them to the models with\nevery required capability and an allowed hosting location; the API enforces the same\nrule when a profile is saved, and never offers a model that is not general-purpose.\n\n### Supported Modes\n- `chat`: Chat/text generation models\n- `embedding`: Embedding models\n- `rerank`: Reranking models\n- `image_generation`: Image generation models\n- `audio_transcription`: Audio transcription models\n- `audio_speech`: Text-to-speech models\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    llm_model: Annotated[\n        str | ModelSelect,\n        Field(description="The LLM model to use"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    llm_model=ModelSelect(\n        label=LocaleString(en="Model", de="Modell"),\n        mode="chat",\n    ),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    llm_model="text-generation/gpt-4",\n)\n```',
 } as const;
 
 export const ModelTypeGroupDTOWritableSchema = {
@@ -47745,6 +47873,22 @@ export const RepeaterWritableSchema = {
       ],
       title: "Label",
       description: "Label displayed as the section header",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description:
+        "Explanation of what the list is for, shown under the header",
     },
     addLabel: {
       anyOf: [

@@ -143,7 +143,6 @@ class ThreadService:
         sort_order: SortOrder = SortOrder.DESCENDING,
         search: str | None = None,
         agent_id: str | None = None,
-        user_search_id: str | None = None,
         status: str | None = None,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
@@ -160,7 +159,6 @@ class ThreadService:
         filters = ThreadFilters(
             search=search,
             agent_id=agent_id,
-            user_search_id=user_search_id,
             status_thread_ids=status_thread_ids,
             from_date=from_date,
             to_date=to_date,

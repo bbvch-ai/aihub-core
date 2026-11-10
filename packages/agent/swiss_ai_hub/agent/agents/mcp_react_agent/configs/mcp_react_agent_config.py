@@ -4,6 +4,7 @@ from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import InputNumber, LocaleInput
 from swiss_ai_hub.core.form.constraints import Gt
+from swiss_ai_hub.core.infrastructure import ModelCapability, ModelRequirements
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
@@ -35,7 +36,9 @@ class McpReactAgentConfig(MemoryFields, AttachedFilesFields, KnowledgeFields, Co
             description=base.description,
             icon=base.icon,
             mcp=McpClientConfig.as_form(),
-            **cls.conversation_form_elements(),
+            **cls.conversation_form_elements(
+                llm_requirements=ModelRequirements(capabilities={ModelCapability.TOOL_CALLING})
+            ),
             **cls.memory_form_elements(),
             **cls.attached_files_form_elements(),
             **cls.knowledge_form_elements(),

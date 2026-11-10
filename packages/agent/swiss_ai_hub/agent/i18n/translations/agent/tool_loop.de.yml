@@ -71,6 +71,9 @@ approval:
   question: "Der Assistent möchte «%{tool}» verwenden: %{summary}\nErlauben?"
   question_plain: Der Assistent möchte «%{tool}» verwenden. Erlauben?
 config:
+  approvals_help: Werkzeuge, deren Aufrufe der Benutzer vor der Ausführung freigeben
+    muss; die Regel ersetzt die Voreinstellung des Werkzeugs. Nicht aufgeführte Werkzeuge
+    behalten ihre Voreinstellung.
   max_iterations:
     label: Maximale Entscheidungen
     help: Wie oft das Modell Werkzeuge wählen darf, bevor es antworten muss.
@@ -85,8 +88,6 @@ config:
     help: Werkzeuge, die dieser Agent nie anbietet.
   approval_tool:
     label: Werkzeug
-    help: Ein Werkzeug ohne Regel hier folgt seiner eigenen Vorgabe; fragt es nach,
-      steht diese neben seinem Namen.
     with_default: '%{tool} (Vorgabe: %{policy})'
   approval_policy:
     label: Freigabe

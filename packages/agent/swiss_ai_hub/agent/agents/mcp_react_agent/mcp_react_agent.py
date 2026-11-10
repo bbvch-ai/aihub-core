@@ -29,6 +29,7 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
 from swiss_ai_hub.agent.mcp.mcp_resource_schemas import fetch_static_resources, resource_read_tool_schema
+from swiss_ai_hub.agent.mcp.mcp_tenant_header_resolver import McpTenantHeaderResolver
 from swiss_ai_hub.agent.mcp.mcp_tool_schemas import execute_single_tool_call, to_openai_tool_schemas, to_tool_events
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -114,12 +115,14 @@ class McpReactAgent(Agent):
         mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
         run_context: RunContext,
+        user: UserIdentity | None = None,
     ) -> McpReasoningEvent:
         """Discover MCP tools and resources, seed the conversation with the system prompt and the recalled
         memories, trigger the first reasoning iteration.
 
         The history keeps the client's system messages. Merged so strict providers see one leading system message.
         """
+        mcp_config = await McpTenantHeaderResolver.apply(mcp_config, run_context, user)
         user_token = await McpAuthResolver.resolve_user_token(run_context)
         async with McpClientFactory.create(mcp_config, user_token=user_token) as mcp_client:
             tools = await mcp_client.list_tools()
@@ -245,6 +248,7 @@ class McpReactAgent(Agent):
         new_tool_events = tool_events[-new_count:]
 
         tool_messages: list[Message] = []
+        mcp_config = await McpTenantHeaderResolver.apply(mcp_config, run_context, None)
         user_token = await McpAuthResolver.resolve_user_token(run_context)
         async with McpClientFactory.create(mcp_config, user_token=user_token) as mcp_client:
             for tool_event in new_tool_events:

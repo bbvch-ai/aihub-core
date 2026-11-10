@@ -67,6 +67,9 @@ approval:
   question: "L'assistant souhaite utiliser « %{tool} » : %{summary}\nL'autoriser ?"
   question_plain: L'assistant souhaite utiliser « %{tool} ». L'autoriser ?
 config:
+  approvals_help: Outils dont l'utilisateur doit approuver les appels avant leur exécution,
+    en remplaçant le réglage par défaut de chaque outil. Les outils non listés gardent
+    leur réglage par défaut.
   max_iterations:
     label: Décisions maximales
     help: Combien de fois le modèle peut choisir des outils avant de devoir répondre.
@@ -81,8 +84,6 @@ config:
     help: Outils que cet agent ne propose jamais.
   approval_tool:
     label: Outil
-    help: Un outil sans règle ici suit son propre réglage par défaut, indiqué à côté
-      de son nom lorsqu'il demande une confirmation.
     with_default: '%{tool} (par défaut : %{policy})'
   approval_policy:
     label: Autorisation

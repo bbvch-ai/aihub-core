@@ -108,7 +108,61 @@ class TenantAdminService:
             name=data.name,
             description=data.description,
             access_rules=[AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules or []],
+            lcdm_tenant_id=data.lcdm_tenant_id,
         )
+        return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
+
+    @staticmethod
+    @trace_fn
+    def is_configured(tenant_id: str) -> bool:
+        return TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id) is not None
+
+    @staticmethod
+    @trace_fn
+    async def provision_tenant(data: CreateTenantMetadataRequest) -> TenantResponse:
+        """Idempotently provision a tenant end-to-end: create the Keycloak group if missing,
+        then create-or-update its metadata (upsert).
+
+        Unlike ``create_tenant_metadata`` (which requires a pre-existing group and rejects
+        duplicates), this is built for an external source of truth (e.g. the LCDM Hub) that
+        pushes its tenants in and re-runs the sync repeatedly: every side effect is idempotent
+        so the same call can be replayed safely. The tenant hierarchy is flattened — each pushed
+        tenant becomes its own flat group under ``/tenants/``. A new tenant without explicit rules
+        must already carry the instance default ceiling (resolved by the controller).
+        """
+        by_name = TenantMetadataEntity.get_metadata_by_tenant_name(data.name)
+        if by_name and by_name.id != data.tenant_id:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Tenant with name '{data.name}' already exists for a different tenant id.",
+            )
+
+        await KeycloakAdminService.create_tenant_group(data.tenant_id)
+        await initialize_default_roles_for_tenant(data.tenant_id)
+        await KeycloakAdminService.assign_superuser_to_tenant(data.tenant_id)
+
+        normalized_rules = (
+            [AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules]
+            if data.access_rules is not None
+            else None
+        )
+        if TenantMetadataEntity.get_metadata_by_tenant_id(data.tenant_id):
+            # Omitted rules leave the ceiling untouched, so a re-sync never overwrites one an admin has customized.
+            entity = TenantMetadataEntity.update_tenant_metadata(
+                tenant_id=data.tenant_id,
+                name=data.name,
+                description=data.description,
+                access_rules=normalized_rules,
+                lcdm_tenant_id=data.lcdm_tenant_id,
+            )
+        else:
+            entity = TenantMetadataEntity.create_tenant_metadata(
+                tenant_id=data.tenant_id,
+                name=data.name,
+                description=data.description,
+                access_rules=normalized_rules,
+                lcdm_tenant_id=data.lcdm_tenant_id,
+            )
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 
     @staticmethod
@@ -179,6 +233,7 @@ class TenantAdminService:
             "description": tenant.description,
             "access_rules": list(tenant.access_rules),
             "chat_disclaimer": tenant.chat_disclaimer.to_locale_string() if tenant.chat_disclaimer else None,
+            "lcdm_tenant_id": tenant.lcdm_tenant_id,
         }
 
         if not TenantMetadataEntity.delete_tenant_metadata(tenant_id):

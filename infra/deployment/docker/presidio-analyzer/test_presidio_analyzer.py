@@ -370,10 +370,10 @@ def test_should_detect_the_same_spans_under_concurrent_load_as_one_at_a_time() -
     assert concurrent == one_at_a_time * 3
 
 
-def compose_image() -> str:
-    tag = re.search(r"^  presidio_analyzer: (\S+)$", (repo_root() / "infra/deployment/compose-config.yml")
+def compose_image(key: str = "presidio_analyzer") -> str:
+    tag = re.search(rf"^  {key}: (\S+)$", (repo_root() / "infra/deployment/compose-config.yml")
                     .read_text(encoding="utf-8"), re.M)
-    assert tag, "image_tags.presidio_analyzer not found"
+    assert tag, f"image_tags.{key} not found"
     return f"ghcr.io/bbvch-ai/aihub-core/{tag.group(1)}"
 
 
@@ -382,12 +382,22 @@ def repo_root() -> Path:
 
 
 def test_should_pin_the_built_image_in_every_compose_file() -> None:
-    image = compose_image()
+    cpu_image, gpu_image = compose_image(), compose_image("presidio_analyzer_gpu")
     for compose in sorted((repo_root() / "infra").glob("docker-compose.*.yml")):
+        image = gpu_image if compose.name.endswith(".gpu.yml") else cpu_image
         assert f"image: {image}\n" in compose.read_text(encoding="utf-8"), compose.name
     workflow = (repo_root() / ".github/workflows/build-presidio-analyzer.yml").read_text(encoding="utf-8")
-    assert ".image_tags.presidio_analyzer" in workflow
+    assert "presidio_analyzer presidio_analyzer_gpu" in workflow
+    assert "TORCH_INDEX=https://download.pytorch.org/whl/cu" in workflow
     assert "context: infra/deployment/docker/presidio-analyzer" in workflow
+
+
+def test_should_reserve_the_gpu_for_the_analyzer_only_in_gpu_compose_files() -> None:
+    for compose in sorted((repo_root() / "infra").glob("docker-compose.*.yml")):
+        text = compose.read_text(encoding="utf-8")
+        analyzer = text[text.index("  presidio-analyzer:\n"):]
+        analyzer = analyzer[:analyzer.index("\n\n")]
+        assert ("driver: nvidia" in analyzer) == compose.name.endswith(".gpu.yml"), compose.name
 
 
 def docker(*args: str, check: bool = True) -> subprocess.CompletedProcess:
@@ -432,6 +442,48 @@ def test_should_keep_serving_other_callers_when_an_analysis_outlives_the_request
         assert analyze(SHORT_TEXT, url=url, api_key=key)
     finally:
         docker("rm", "-f", container, check=False)
+
+
+BATCHED_EQUIVALENCE = """
+import json, sys
+from presidio_analyzer import AnalyzerEngineProvider
+from presidio_analyzer.predefined_recognizers import GLiNERRecognizer
+from batched_gliner_recognizer import BatchedGLiNERRecognizer
+from word_aligned_text_chunker import WordAlignedTextChunker
+engine = AnalyzerEngineProvider(analyzer_engine_conf_file="/app/analyzer.yaml").create_engine()
+stock = next(r for r in engine.registry.recognizers if isinstance(r, GLiNERRecognizer))
+stock.text_chunker = WordAlignedTextChunker(chunk_size=stock.text_chunker.chunk_size,
+                                            chunk_overlap=stock.text_chunker.chunk_overlap)
+report = []
+for batch_size in (1, 8):
+    batched = BatchedGLiNERRecognizer.from_recognizer(stock, batch_size=batch_size)
+    for text in json.loads(sys.argv[1]):
+        expected = stock.analyze(text=text, entities=stock.supported_entities)
+        actual = batched.analyze(text=text, entities=stock.supported_entities)
+        report.append({"batch_size": batch_size, "chars": len(text),
+                       "expected": [(r.entity_type, r.start, r.end) for r in expected],
+                       "actual": [(r.entity_type, r.start, r.end) for r in actual],
+                       "score_diff": max((abs(a.score - e.score) for a, e in zip(actual, expected)), default=0.0)})
+print(json.dumps(report))
+"""
+
+
+def test_should_find_the_spans_of_presidios_gliner_recognizer_when_chunks_are_batched() -> None:
+    """Batching the chunks of one text must not change what GLiNER finds; padding may move scores by float noise."""
+    container, key = "presidio-analyzer-batching-test", "batching-test-key"
+    texts = [text for text, _ in SAMPLES.values()] + [CHUNKED_PROMPT, NAME_HEAVY_THREAD]
+    try:
+        start_analyzer(container, key, "--cpus", "4", "--memory", "4g")
+        result = docker("exec", "-w", "/app", container, "python", "-c", BATCHED_EQUIVALENCE, json.dumps(texts),
+                        check=False)
+        assert result.returncode == 0, result.stderr[-2000:]
+        report = json.loads(result.stdout.splitlines()[-1])
+    finally:
+        docker("rm", "-f", container, check=False)
+
+    assert [r["actual"] for r in report] == [r["expected"] for r in report]
+    assert all(r["score_diff"] == 0.0 for r in report if r["batch_size"] == 1)
+    assert all(r["score_diff"] < 1e-4 for r in report)
 
 
 def test_should_start_and_answer_when_egress_is_blocked() -> None:

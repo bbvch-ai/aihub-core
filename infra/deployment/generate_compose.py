@@ -40,8 +40,19 @@ OPENWEBUI_FUNCTION_CALLING_KEY = "aihub_openwebui_function_calling"
 OPENWEBUI_FUNCTION_CALLING_MODES = {"native", "legacy"}
 # Where a model runs. The pii-anonymisation guardrail anonymises every call to a model that is not `local`, and treats a
 # model without the key as external, so a typo would silently anonymise a local model; generation rejects it instead.
+# Keep in sync with HostingLocation in packages/core, which model pickers filter on.
 HOSTING_LOCATION_KEY = "aihub_hosting_location"
 HOSTING_LOCATIONS = {"local", "swiss_cloud", "eu", "global"}
+# Model pickers filter chat models on these, and LiteLLM reports a flag nobody set as null, which a picker requiring
+# that capability treats as unsupported; generation makes every chat model state each one.
+GENERAL_PURPOSE_KEY = "aihub_general_purpose"
+CHAT_FLAG_KEYS = (
+    "supports_function_calling",
+    "supports_response_schema",
+    "supports_vision",
+    "supports_reasoning",
+    GENERAL_PURPOSE_KEY,
+)
 
 # Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
@@ -144,6 +155,7 @@ STATIC_COPY_DIRS = [
 STATIC_COPY_FILES = [
     ("templates/configs/keycloak-theme-logo.png", "configs/keycloak/themes/aihub/login/resources/img", "logo.png"),
     ("templates/configs/presidio-analyzer.yaml", "configs/presidio", "analyzer.yaml"),
+    ("templates/configs/openwebui-code-interpreter-prompt.txt", "configs/openwebui", "code-interpreter-prompt.txt"),
 ]
 
 # Additional static files included only in release bundles (non-config files).
@@ -184,6 +196,7 @@ OWN_IMAGE_LICENSES = {
     "knowledge_extraction_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
+    "mcp_react_agent": "Apache-2.0",
     "expert_rag_agent": "Apache-2.0",
     "expert_asking_agent": "Apache-2.0",
     "namespace_selection_agent": "Apache-2.0",
@@ -277,6 +290,7 @@ def generate_config(template, context, output_path):
     if template.name == LITELLM_TEMPLATE:
         _validate_openwebui_function_calling(rendered, output_path)
         _validate_hosting_locations(rendered, output_path)
+        _validate_chat_model_flags(rendered, output_path)
     output_path.write_text(rendered, encoding="utf-8")
 
 
@@ -300,6 +314,20 @@ def _validate_hosting_locations(rendered, output_path):
                 f"{entry.get('model_name')}: {HOSTING_LOCATION_KEY} is {location!r} in {output_path.name}, "
                 f"expected one of {sorted(HOSTING_LOCATIONS)}"
             )
+
+
+def _validate_chat_model_flags(rendered, output_path):
+    """Every chat model states its capabilities and purpose, so pickers never guess from a missing flag."""
+    for entry in yaml.safe_load(rendered).get("model_list") or []:
+        model_info = entry.get("model_info") or {}
+        if model_info.get("mode") != "chat":
+            continue
+        for key in CHAT_FLAG_KEYS:
+            if not isinstance(model_info.get(key), bool):
+                raise TypeError(
+                    f"{entry.get('model_name')}: {key} is {model_info.get(key)!r} in {output_path.name}, "
+                    "expected true or false"
+                )
 
 
 def generate_keycloak_realm(env, context, output_path):

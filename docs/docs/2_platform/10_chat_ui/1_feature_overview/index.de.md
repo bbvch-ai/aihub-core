@@ -79,13 +79,6 @@ Benutzer können Konversationen mit Kollegen teilen, wodurch eine kollaborative 
 Konversationen behalten den vollständigen Kontext bei, sodass Empfänger den Verlauf überprüfen und Konversationen
 fortsetzen können.
 
-Benutzer können KI-Antworten mit Feedback versehen – Antworten als hilfreich oder problematisch markieren,
-Korrekturhinweise geben oder kontextbezogene Notizen hinzufügen.
-
-Bei Deployments, die Community-Interaktion ermöglichen, können Benutzer an Leaderboards teilnehmen, die eine produktive
-Nutzung anerkennen, effektive Prompts oder Interaktionsmuster teilen und von erfolgreichen Anwendungen der Kollegen
-lernen.
-
 Mehrere Benutzer können in gemeinsamen Arbeitsbereichsumgebungen arbeiten, auf gemeinsame Konversationshistorien,
 geteilte Wissensdatenbanken und kollaborative Interaktionen zugreifen, die teambasierte Arbeitsmuster unterstützen.
 

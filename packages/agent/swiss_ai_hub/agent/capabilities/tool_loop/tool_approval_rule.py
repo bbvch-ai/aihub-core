@@ -1,4 +1,4 @@
-from typing import Annotated, Self
+from typing import Annotated, ClassVar, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.form import Select
@@ -13,6 +13,10 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 class ToolApprovalRule(Form):
     """How one tool's calls are approved on this profile."""
 
+    repeater_help: ClassVar[LocaleString | None] = AgentLocaleString.from_i18n_path(
+        "agent.tool_loop.config.approvals_help"
+    )
+
     tool: Annotated[str | Select, Field(description="The tool's name, as the model calls it.")]
     policy: Annotated[ToolApprovalPolicy | Select, Field(description="When the user must approve a call of the tool.")]
 
@@ -22,7 +26,6 @@ class ToolApprovalRule(Form):
         return cls(
             tool=Select(
                 label=AgentLocaleString.from_i18n_path("agent.tool_loop.config.approval_tool.label"),
-                help=AgentLocaleString.from_i18n_path("agent.tool_loop.config.approval_tool.help"),
                 options=[{"label": cls._option_label(name, defaults), "value": name} for name in tool_names],
                 option_label="label",
                 option_value="value",

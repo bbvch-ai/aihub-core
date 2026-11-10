@@ -5931,7 +5931,7 @@ wheels = [
 
 [[package]]
 name = "swiss-ai-hub"
-version = "0.325.0"
+version = "0.326.0"
 source = { editable = "packages/meta" }
 dependencies = [
     { name = "swiss-ai-hub-agent" },
@@ -5954,11 +5954,12 @@ requires-dist = [
 
 [[package]]
 name = "swiss-ai-hub-agent"
-version = "0.325.0"
+version = "0.326.0"
 source = { editable = "packages/agent" }
 dependencies = [
     { name = "azure-identity" },
     { name = "fastmcp" },
+    { name = "httpx" },
     { name = "imapclient" },
     { name = "linkify-it-py" },
     { name = "llama-index-llms-azure-openai" },
@@ -5981,6 +5982,7 @@ dev = [
 requires-dist = [
     { name = "azure-identity", specifier = ">=1.19.0" },
     { name = "fastmcp", specifier = ">=3.0.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "imapclient", specifier = ">=3.0.1" },
     { name = "linkify-it-py", specifier = ">=2.0.3" },
     { name = "llama-index-llms-azure-openai", specifier = ">=0.4.2" },
@@ -6001,7 +6003,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-api"
-version = "0.325.0"
+version = "0.326.0"
 source = { editable = "packages/api" }
 dependencies = [
     { name = "audioop-lts" },
@@ -6056,7 +6058,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-backup"
-version = "0.325.0"
+version = "0.326.0"
 source = { editable = "packages/backup" }
 dependencies = [
     { name = "boto3" },
@@ -6113,7 +6115,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-bot"
-version = "0.325.0"
+version = "0.326.0"
 source = { editable = "packages/bot" }
 dependencies = [
     { name = "azure-identity" },
@@ -6158,7 +6160,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-core"
-version = "0.325.0"
+version = "0.326.0"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "adlfs" },
@@ -6347,7 +6349,7 @@ wheels = [
 
 [[package]]
 name = "swiss-ai-hub-pipeline"
-version = "0.325.0"
+version = "0.326.0"
 source = { editable = "packages/pipeline" }
 dependencies = [
     { name = "apprise" },
@@ -6385,7 +6387,7 @@ dev = []
 
 [[package]]
 name = "swiss-ai-hub-process"
-version = "0.325.0"
+version = "0.326.0"
 source = { editable = "packages/process" }
 dependencies = [
     { name = "httpx" },
@@ -6414,7 +6416,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-sysadmin-api"
-version = "0.325.0"
+version = "0.326.0"
 source = { editable = "packages/sysadmin-api" }
 dependencies = [
     { name = "gunicorn" },
@@ -6441,7 +6443,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-workspace"
-version = "0.325.0"
+version = "0.326.0"
 source = { virtual = "." }
 dependencies = [
     { name = "jinja2" },

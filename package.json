@@ -8,13 +8,13 @@
   },
   "pnpm": {
     "overrides": {
-      "vue": "3.5.17",
+      "vue": "3.5.44",
       "@vueuse/router>vue-router": "4.6.4",
       "tar": "^7.5.19"
     },
     "peerDependencyRules": {
       "allowedVersions": {
-        "@nuxt/cli>@nuxt/schema": "3.21.0",
+        "@nuxt/cli>@nuxt/schema": "3.21.10",
         "vue3-apexcharts>apexcharts": "4.7.0",
         "c12>magicast": "0.5.2",
         "unctx>oxc-parser": "0.112.0"

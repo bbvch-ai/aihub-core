@@ -40,13 +40,17 @@ class UserMemory:
         """Retrieves all memories for this user without filtering. Used for admin UI memory viewing."""
         return await self.mem0service.get_all(owner_id=self.owner_id)
 
-    async def delete_memory(self, memory_id: str):
-        """Deletes a specific memory by ID. Used when users want to remove incorrect or outdated facts."""
-        return await self.mem0service.delete_memory(memory_id=memory_id)
+    async def delete_memory(self, memory_id: str) -> None:
+        """Deletes one of this user's memories; raises `MemoryNotFoundError` for any memory the user does not own."""
+        await self.mem0service.delete_memory(
+            memory_id=memory_id, owner_id=self.owner_id, memory_type=MemoryType.USER_MEMORY
+        )
 
-    async def update_memory(self, memory_id: str, data: str):
-        """Updates the text content of a specific memory. Preserves metadata while changing the fact itself."""
-        return await self.mem0service.update_memory(memory_id=memory_id, data=data)
+    async def update_memory(self, memory_id: str, data: str) -> None:
+        """Rewrites one of this user's memories; raises `MemoryNotFoundError` for any memory the user does not own."""
+        await self.mem0service.update_memory(
+            memory_id=memory_id, owner_id=self.owner_id, memory_type=MemoryType.USER_MEMORY, data=data
+        )
 
     async def search_user_memory(
         self,

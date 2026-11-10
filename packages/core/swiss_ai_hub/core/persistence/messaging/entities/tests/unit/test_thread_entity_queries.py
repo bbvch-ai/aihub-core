@@ -16,14 +16,11 @@ pytestmark = pytest.mark.beanie
 async def _thread(
     name: str,
     user_id: str = "u1",
-    extra_user: str | None = None,
     agent_id: str = "a1",
     agent_class: str = "RAGAgent",
     created_at: datetime | None = None,
 ) -> ThreadEntity:
     users = [User(user_id=user_id)]
-    if extra_user:
-        users.append(User(user_id=extra_user))
     entity = ThreadEntity(
         name=name,
         users=users,
@@ -51,12 +48,6 @@ class TestThreadFilteringAndSorting:
         await _thread("y", user_id="u1", agent_id="chat-1")
         res = await ThreadEntity.get_paginated_threads_by_user("u1", filters=ThreadFilters(agent_id="rag-1"))
         assert [t.name for t in res] == ["x"]
-
-    async def test_user_search_id_requires_both_users_present(self):
-        await _thread("shared", user_id="u1", extra_user="u2")
-        await _thread("solo", user_id="u1")
-        res = await ThreadEntity.get_paginated_threads_by_user("u1", filters=ThreadFilters(user_search_id="u2"))
-        assert [t.name for t in res] == ["shared"]
 
     async def test_status_thread_ids_restrict_by_id(self):
         keep = await _thread("keep", user_id="u1")
