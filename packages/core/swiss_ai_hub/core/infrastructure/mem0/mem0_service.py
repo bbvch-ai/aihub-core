@@ -5,6 +5,7 @@ from mem0.configs.base import MemoryConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import EmbeddingQueryClamp
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.graph.patched_memory_graph import PatchedMemoryGraph
+from swiss_ai_hub.core.infrastructure.mem0.memory_not_found_error import MemoryNotFoundError
 from swiss_ai_hub.core.infrastructure.mem0.patched_async_memory import PatchedAsyncMemory
 from swiss_ai_hub.core.infrastructure.mem0.patched_milvus_db import PatchedMilvusDB
 from swiss_ai_hub.core.infrastructure.mem0.patched_open_ai_embedding import PatchedOpenAIEmbedding
@@ -13,6 +14,8 @@ from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_added import MemoryAdded
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import MemorySearchResult
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
+
+REASSIGN_BATCH_SIZE = 10_000
 
 # Memories are single facts, a sentence or two each; a reranked search leaves each this much room next to the query.
 MEMORY_ROOM_TOKENS = 512
@@ -126,15 +129,48 @@ class Mem0Service:
             }
         )
 
-    async def get_memory(self, memory_id: str) -> Memory:
+    async def get_memory(self, memory_id: str) -> Memory | None:
         memory = await self._memory.get(memory_id)
-        return Memory.model_validate(memory)
+        return Memory.model_validate(memory) if memory is not None else None
 
-    async def delete_memory(self, memory_id: str):
+    async def _require_owned(self, memory_id: str, owner_id: str, memory_type: MemoryType) -> None:
+        """Memory ids leak into thread event logs, so an id alone must never be enough to touch a memory."""
+        memory = await self._memory.get(memory_id)
+        if (
+            memory is None
+            or memory.get("user_id") != owner_id
+            or (memory.get("metadata") or {}).get("_type") != memory_type.value
+        ):
+            raise MemoryNotFoundError(memory_id)
+
+    async def delete_memory(self, memory_id: str, owner_id: str, memory_type: MemoryType) -> None:
+        await self._require_owned(memory_id, owner_id, memory_type)
         await self._memory.delete(memory_id)
 
-    async def update_memory(self, memory_id: str, data: str):
+    async def update_memory(self, memory_id: str, owner_id: str, memory_type: MemoryType, data: str) -> None:
+        await self._require_owned(memory_id, owner_id, memory_type)
         await self._memory.update(memory_id=memory_id, data=data)
+
+    async def reassign_organization_memories(self, from_tenant_id: str, to_tenant_id: str) -> int:
+        """Moves every organization memory owned by `from_tenant_id` to `to_tenant_id`, keeping ids and vectors.
+
+        Lists in batches until one comes back short, since one list call returns at most a batch; ids already moved
+        are skipped because Milvus may still return a row it has just updated."""
+        if from_tenant_id == to_tenant_id:
+            return 0
+        filters = {"user_id": from_tenant_id, "_type": MemoryType.ORGANIZATION_MEMORY.value}
+        moved: set[str] = set()
+        while True:
+            [memories] = await asyncio.to_thread(
+                self._memory.vector_store.list, filters=filters, limit=REASSIGN_BATCH_SIZE
+            )
+            fresh = [memory for memory in memories if memory.id not in moved]
+            for memory in fresh:
+                payload = {**memory.payload, "user_id": to_tenant_id, "_tenant_id": to_tenant_id}
+                await asyncio.to_thread(self._memory.vector_store.update, vector_id=memory.id, payload=payload)
+            moved.update(memory.id for memory in fresh)
+            if len(memories) < REASSIGN_BATCH_SIZE or not fresh:
+                return len(moved)
 
     async def search(
         self,

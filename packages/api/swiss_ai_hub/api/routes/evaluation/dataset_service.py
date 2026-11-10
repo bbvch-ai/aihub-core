@@ -4,7 +4,7 @@ from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException
 from langfuse import Langfuse
-from swiss_ai_hub.core.infrastructure import LangfuseSettings, trace_fn
+from swiss_ai_hub.core.infrastructure import LangfuseSettings, StartupTenantSettings, trace_fn
 
 from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset import Dataset
 from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset_create import DatasetCreate
@@ -14,6 +14,8 @@ from swiss_ai_hub.api.routes.evaluation.dto.dataset.minimal_dataset import Minim
 
 INPUT_KEY_QUESTION = "question"
 OUTPUT_KEY_ANSWER = "answer"
+TENANT_METADATA_KEY = "tenant_id"
+DATASETS_PAGE_SIZE = 100
 
 
 def get_langfuse_settings() -> LangfuseSettings:
@@ -27,15 +29,17 @@ def get_langfuse_client(settings: Annotated[LangfuseSettings, Depends(get_langfu
 
 
 class DatasetService:
-    """Handles business logic for Langfuse evaluation datasets.
+    """Handles business logic for Langfuse evaluation datasets, confined to the caller's tenant.
 
-    Experiments are now managed directly in the Langfuse UI.
+    All tenants share one Langfuse project, so each dataset records its tenant in its metadata and every read and
+    write is filtered by it. Datasets created before that carry no tenant and belong to the startup tenant, the only
+    tenant that existed when they were made. Experiments are managed directly in the Langfuse UI.
     """
 
-    def __init__(self, client: Langfuse, settings: LangfuseSettings) -> None:
-        """Initialize service with Langfuse client and settings dependencies."""
+    def __init__(self, client: Langfuse, settings: LangfuseSettings, tenant_id: str) -> None:
         self.client = client
         self._settings = settings
+        self._tenant_id = tenant_id
 
     def _build_dataset_url(self, dataset_id: str) -> str | None:
         """Build the public Langfuse URL for a dataset, or None if not configured."""
@@ -45,9 +49,30 @@ class DatasetService:
             return None
         return f"{public_url.rstrip('/')}/project/{project_id}/datasets/{dataset_id}"
 
+    def _fetch_all_datasets(self) -> list[Any]:
+        """Every dataset of the shared project; the tenant filter needs all pages, not the first one."""
+        datasets: list[Any] = []
+        page = 1
+        while True:
+            response = self.client.api.datasets.list(page=page, limit=DATASETS_PAGE_SIZE)
+            datasets.extend(response.data)
+            if page >= response.meta.total_pages:
+                return datasets
+            page += 1
+
+    @staticmethod
+    def _tenant_of(dataset: Any) -> str:
+        metadata = dataset.metadata if isinstance(dataset.metadata, dict) else {}
+        return metadata.get(TENANT_METADATA_KEY) or StartupTenantSettings().ID
+
     def _fetch_datasets(self) -> list[Any]:
-        response = self.client.api.datasets.list()
-        return getattr(response, "data", [])
+        return [dataset for dataset in self._fetch_all_datasets() if self._tenant_of(dataset) == self._tenant_id]
+
+    def _ensure_name_is_free_for_tenant(self, dataset_name: str) -> None:
+        """Langfuse upserts a dataset by name, so a name another tenant holds would hand its dataset over."""
+        for dataset in self._fetch_all_datasets():
+            if dataset.name == dataset_name and self._tenant_of(dataset) != self._tenant_id:
+                raise HTTPException(status_code=409, detail=f"Dataset name {dataset_name} is already taken")
 
     def _fetch_dataset_by_id(self, dataset_id: str) -> Any:
         """Langfuse requires dataset name for lookup, so we find it by ID first."""
@@ -69,10 +94,12 @@ class DatasetService:
 
     @trace_fn
     async def create_dataset(self, create_dto: DatasetCreate) -> Dataset:
+        await asyncio.to_thread(self._ensure_name_is_free_for_tenant, create_dto.dataset_name)
         langfuse_dataset = await asyncio.to_thread(
             self.client.create_dataset,
             name=create_dto.dataset_name,
             description=create_dto.description,
+            metadata={TENANT_METADATA_KEY: self._tenant_id},
         )
 
         items_dto: list[DatasetItem] = []

@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.litellm.model_requirements import ModelRequirements
     from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
     from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
+    from swiss_ai_hub.core.infrastructure.mem0.memory_not_found_error import MemoryNotFoundError
     from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
     from swiss_ai_hub.core.infrastructure.mem0.types.memory_relation import MemoryRelation
     from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
@@ -79,6 +80,7 @@ __all__ = [
     "MemoryRelation",
     "Memory",
     "Mem0Settings",
+    "MemoryNotFoundError",
     "AzureDocumentIntelligenceSettings",
     "AzureDataLakeSettings",
     "AccessGrant",
@@ -143,6 +145,7 @@ _LAZY_IMPORTS = {
     "MemoryRelation": "swiss_ai_hub.core.infrastructure.mem0.types.memory_relation",
     "Memory": "swiss_ai_hub.core.infrastructure.mem0.types.memory",
     "Mem0Settings": "swiss_ai_hub.core.infrastructure.mem0.mem0_settings",
+    "MemoryNotFoundError": "swiss_ai_hub.core.infrastructure.mem0.memory_not_found_error",
     "AzureDocumentIntelligenceSettings": "swiss_ai_hub.core.infrastructure.azure_cognitive_services.azure_document_intelligence_settings",
     "AzureDataLakeSettings": "swiss_ai_hub.core.infrastructure.azure_data_lake.azure_data_lake_settings",
     "AccessGrant": "swiss_ai_hub.core.infrastructure.openwebui.access_grant",
