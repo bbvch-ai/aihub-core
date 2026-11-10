@@ -150,7 +150,8 @@ test.describe('Content-Security-Policy', () => {
   test('E2: a knowledge figure loads from S3 under the policy', async ({ page }) => {
     test.skip(!FIGURE_DOCUMENT, 'E2E_CSP_FIGURE_DOCUMENT names no document with an s3:// figure')
     await page.goto(FIGURE_DOCUMENT!)
-    const figure = page.locator('img[src^="http"]').first()
+    // ResolveImageComponent swaps the s3:// path for a presigned URL.
+    const figure = page.locator('img[src*="X-Amz-Signature"]').first()
     await expect(figure).toBeVisible({ timeout: 30_000 })
     await expect.poll(() => figure.evaluate(img => (img as HTMLImageElement).naturalWidth), { timeout: 30_000 })
       .toBeGreaterThan(0)
