@@ -10,6 +10,7 @@ from swiss_ai_hub.core.distributor.external_agent_event_distributor import Exter
 from swiss_ai_hub.core.events.agent.tool_loop.tool_approval_request_event import ToolApprovalRequestEvent
 from swiss_ai_hub.core.events.agent.tool_loop.tool_approval_response_event import ToolApprovalResponseEvent
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
+from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity
 from swiss_ai_hub.core.testing.auth_utils.test_identity import fake_user
 from swiss_ai_hub.core.topics.agents.agent_instance_topic import AgentInstanceTopic
@@ -111,7 +112,10 @@ async def test_a_response_carries_its_authenticated_sender_not_the_one_the_clien
     thread = _thread_of(user.id)
     external_event = _approval(str(thread.id), responded_by="someone-else")
 
-    with patch.object(ThreadEntity, "get_thread_by_id", return_value=thread):
+    with (
+        patch.object(ThreadEntity, "get_thread_by_id", return_value=thread),
+        patch.object(PersistedAgentEventEntity, "user_id_of_run", return_value=user.id),
+    ):
         await distributor.distribute_event(external_event, user)
 
     assert external_event.event.responded_by == user.id
@@ -125,7 +129,67 @@ async def test_a_response_to_a_request_of_another_thread_is_refused():
     thread = _thread_of(user.id)
     external_event = _approval(str(ObjectId()))
 
-    with patch.object(ThreadEntity, "get_thread_by_id", return_value=thread), pytest.raises(PermissionError):
+    with (
+        patch.object(ThreadEntity, "get_thread_by_id", return_value=thread),
+        patch.object(PersistedAgentEventEntity, "user_id_of_run", return_value=user.id),
+        pytest.raises(PermissionError),
+    ):
         await distributor.distribute_event(external_event, user)
 
     assert publisher.subjects == []
+
+
+def _shared_thread(*user_ids: str) -> SimpleNamespace:
+    return SimpleNamespace(
+        id=ObjectId(), agents=[AGENT_X], users=[SimpleNamespace(user_id=user_id) for user_id in user_ids]
+    )
+
+
+@pytest.mark.asyncio
+async def test_an_answer_from_a_member_who_did_not_start_the_run_is_refused_before_it_is_published():
+    distributor, publisher = _capturing_distributor()
+    member = fake_user()
+    thread = _shared_thread("run-owner", member.id)
+    external_event = _approval(str(thread.id))
+
+    with (
+        patch.object(ThreadEntity, "get_thread_by_id", return_value=thread),
+        patch.object(PersistedAgentEventEntity, "user_id_of_run", return_value="run-owner"),
+        pytest.raises(PermissionError, match="started this run"),
+    ):
+        await distributor.distribute_event(external_event, member)
+
+    assert publisher.subjects == []
+    assert distributor.nc_publisher.subjects == []
+
+
+@pytest.mark.asyncio
+async def test_the_run_owner_answer_is_published():
+    distributor, publisher = _capturing_distributor()
+    owner = fake_user()
+    thread = _shared_thread(owner.id, "another-member")
+    external_event = _approval(str(thread.id))
+
+    with (
+        patch.object(ThreadEntity, "get_thread_by_id", return_value=thread),
+        patch.object(PersistedAgentEventEntity, "user_id_of_run", return_value=owner.id),
+    ):
+        await distributor.distribute_event(external_event, owner)
+
+    assert len(publisher.subjects) == 1
+
+
+@pytest.mark.asyncio
+async def test_a_run_without_a_known_user_accepts_any_member_answer():
+    distributor, publisher = _capturing_distributor()
+    member = fake_user()
+    thread = _shared_thread(member.id)
+    external_event = _approval(str(thread.id))
+
+    with (
+        patch.object(ThreadEntity, "get_thread_by_id", return_value=thread),
+        patch.object(PersistedAgentEventEntity, "user_id_of_run", return_value=None),
+    ):
+        await distributor.distribute_event(external_event, member)
+
+    assert len(publisher.subjects) == 1

@@ -62,6 +62,8 @@ class ExternalAgentEventDistributor:
                 logger.exception(f"User {user_id} is not in thread {external_event.thread_id}")
                 raise PermissionError(f"User {user_id} is not in thread {external_event.thread_id}")
 
+        self.refuse_answer_from_another_user(external_event, user)
+
         if external_event.event.is_start_event:
             run_id = str(ObjectId())
         elif external_event.event.is_hitl_response_event:
@@ -84,6 +86,17 @@ class ExternalAgentEventDistributor:
 
         if external_event.event.is_start_event:
             await self._handle_start_event(thread, external_event, run_id, aihub_headers, target_agent)
+
+    @staticmethod
+    def refuse_answer_from_another_user(external_event: ExternalAgentEvent, user: UserIdentity | None) -> None:
+        """Only the user who started a run may answer its questions, so another thread member's answer is refused
+        before it is stored or reaches the agent. A run without a known user, such as a scheduled one, accepts any
+        member's answer, and the agent still checks `responded_by` itself."""
+        if user is None or not external_event.event.is_hitl_response_event:
+            return
+        run_user_id = PersistedAgentEventEntity.user_id_of_run(external_event.event.request_event.topic.run_id)
+        if run_user_id is not None and run_user_id != user.id:
+            raise PermissionError("Only the user who started this run can answer its questions")
 
     async def _handle_start_event(
         self,
@@ -162,8 +175,8 @@ class ExternalAgentEventDistributor:
         Handle a HumanInTheLoopResponseEvent.
 
         The answered request names its run, so the response may only be routed into the thread the sender is a
-        member of. Whether the sender may answer that run's request is the
-        agent's to decide, from the `responded_by` stamped on the response.
+        member of. `refuse_answer_from_another_user` has already refused a sender who did not start the run; the
+        agent checks the stamped `responded_by` again, for runs whose StartEvent was never persisted.
         """
         logger.debug(f"Handling human in the loop response for thread {external_event.thread_id}")
         topic = external_event.event.request_event.topic

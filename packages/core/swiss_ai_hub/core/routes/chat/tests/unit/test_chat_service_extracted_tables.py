@@ -195,8 +195,10 @@ async def test_an_agents_preview_streamed_after_the_event_still_comes_before_the
     with patch.object(AgentNCSubscriber, "for_thread_display_events") as for_thread:
         for_thread.return_value.start = AsyncMock()
         for_thread.return_value.stop = AsyncMock()
+        start = MagicMock()
+        start.event.is_hitl_response_event = False
         resources = await ChatService.start_json_event_interaction(
-            MagicMock(), "UniversalAgent", "assistant", MagicMock(), MagicMock(), MagicMock(), AsyncMock()
+            MagicMock(), "UniversalAgent", "assistant", start, MagicMock(), MagicMock(), AsyncMock()
         )
         handler = for_thread.call_args.kwargs["handler"]
         await handler(_stored(), TOPIC)
