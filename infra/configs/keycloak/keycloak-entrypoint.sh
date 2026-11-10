@@ -28,13 +28,19 @@
 #   10 h max / 5 min access token) — the first-start-only realm import never
 #   propagates them to existing deployments, while operator overrides made in
 #   the admin console must survive.
-# - Realm mail server: once KEYCLOAK_SMTP_TENANT_ID and KEYCLOAK_SMTP_CLIENT_ID
-#   are set, written while the realm has none (Keycloak's default is an empty
-#   smtpServer) or while the platform's server holds another client id or
-#   tenant. A mail server on any other host is the operator's and is kept.
+# - Realm mail server: once KEYCLOAK_SMTP_TENANT_ID, KEYCLOAK_SMTP_CLIENT_ID and
+#   KEYCLOAK_SMTP_MAILBOX are set, written while the realm has none (the realm
+#   import leaves smtpServer empty) or while the platform's server holds
+#   another client id or tenant. Any other mail server is the operator's and
+#   is kept.
 # - SMTP client secret: written to Keycloak's file vault (tmpfs), which the
 #   realm references as ${vault.smtp-client-secret}, so it never enters the
 #   realm export or database.
+# - Federated users: every identity provider gets the Hardcoded Role mapper
+#   that grants AIHubFederatedUser, and users linked before it existed get the
+#   role, so the managed flows deny all of them the password form and password
+#   reset. Identity providers are bootstrap-only, so neither would otherwise
+#   reach existing realms or identity providers added in the admin console.
 
 set -euo pipefail
 
@@ -63,26 +69,30 @@ bash_envsubst /opt/keycloak/data/import-templates/aihub-realm.json \
 
 KCADM=/opt/keycloak/bin/kcadm.sh
 
-# A mail server on the platform's host is managed by the platform: it is
-# rewritten whenever its client id or tenant differ from KEYCLOAK_SMTP_*, since
-# both are substituted once and would otherwise keep the values (empty, a
-# literal $(env:...) or a replaced Entra app) of the start that wrote them.
-# A realm without a mail server gets one; a mail server on any other host was
-# set by an operator in the admin console and is kept.
+# The realm import leaves the mail server empty, so this writes it to new and
+# existing realms alike. The platform's mail server is the one on the platform's
+# host that logs in as KEYCLOAK_SMTP_MAILBOX; it is rewritten whenever its
+# client id or tenant differ from KEYCLOAK_SMTP_*, so replacing the Entra app
+# needs only the variables and a restart. Any other mail server, including an
+# operator's own Microsoft 365 mailbox on the same host, was set in the admin
+# console and is kept.
 apply_realm_mail_server_default() {
-  if [[ -z "${KEYCLOAK_SMTP_TENANT_ID:-}" || -z "${KEYCLOAK_SMTP_CLIENT_ID:-}" ]]; then
-    echo "KEYCLOAK_SMTP_TENANT_ID or KEYCLOAK_SMTP_CLIENT_ID is empty; leaving realm mail server unchanged."
+  if [[ -z "${KEYCLOAK_SMTP_TENANT_ID:-}" || -z "${KEYCLOAK_SMTP_CLIENT_ID:-}" \
+    || -z "${KEYCLOAK_SMTP_MAILBOX:-}" ]]; then
+    echo "KEYCLOAK_SMTP_TENANT_ID, KEYCLOAK_SMTP_CLIENT_ID or KEYCLOAK_SMTP_MAILBOX is empty; leaving realm mail server unchanged."
     return
   fi
 
   local current
   # kcadm returns nested objects empty unless their fields are listed.
-  if ! current=$($KCADM get realms/aihub --fields 'smtpServer(host,authTokenUrl,authTokenClientId)' 2> /dev/null); then
+  if ! current=$($KCADM get realms/aihub --fields 'smtpServer(host,user,authTokenUrl,authTokenClientId)' 2> /dev/null); then
     echo "ERROR: Failed to read realm mail server; leaving unchanged."
     return
   fi
   current=${current//[[:space:]]/}
-  if [[ "$current" == *'"host":'* && "$current" != *'"host":"smtp.office365.com"'* ]]; then
+  if [[ "$current" == *'"host":'* ]] \
+    && [[ "$current" != *'"host":"smtp.office365.com"'* \
+      || "$current" != *"\"user\":\"$KEYCLOAK_SMTP_MAILBOX\""* ]]; then
     echo "Realm mail server set by an operator; leaving unchanged."
     return
   fi
@@ -94,13 +104,60 @@ apply_realm_mail_server_default() {
 
   local smtp_file=/tmp/aihub-smtp-server.json
   cat > "$smtp_file.template" << 'SMTP_EOF'
-{ "smtpServer": {"auth": "true", "authTokenClientId": "$(env:KEYCLOAK_SMTP_CLIENT_ID)", "authTokenClientSecret": "${vault.smtp-client-secret}", "authTokenScope": "https://outlook.office365.com/.default", "authTokenUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_SMTP_TENANT_ID)/oauth2/v2.0/token", "authType": "token", "from": "noreply.ai-hub@bbv.ch", "fromDisplayName": "Swiss AI-Hub", "host": "smtp.office365.com", "port": "587", "ssl": "false", "starttls": "true", "user": "noreply.ai-hub@bbv.ch"} }
+{ "smtpServer": {"auth": "true", "authTokenClientId": "$(env:KEYCLOAK_SMTP_CLIENT_ID)", "authTokenClientSecret": "${vault.smtp-client-secret}", "authTokenScope": "https://outlook.office365.com/.default", "authTokenUrl": "https://login.microsoftonline.com/$(env:KEYCLOAK_SMTP_TENANT_ID)/oauth2/v2.0/token", "authType": "token", "from": "$(env:KEYCLOAK_SMTP_MAILBOX)", "fromDisplayName": "Swiss AI-Hub", "host": "smtp.office365.com", "port": "587", "ssl": "false", "starttls": "true", "user": "$(env:KEYCLOAK_SMTP_MAILBOX)"} }
 SMTP_EOF
   bash_envsubst "$smtp_file.template" > "$smtp_file"
   $KCADM update realms/aihub -f "$smtp_file" \
     && echo "Realm mail server applied." \
     || echo "ERROR: Failed to apply realm mail server."
   rm -f "$smtp_file" "$smtp_file.template"
+}
+
+FEDERATED_ROLE=AIHubFederatedUser
+FEDERATED_MAPPER=aihub-federated-user-role
+
+# The role is created here too because keycloak-config (which manages it) may
+# not have run yet when this upgrade start reaches this point; the mapper cannot
+# reference a missing role.
+mark_federated_users() {
+  if ! $KCADM get "roles/$FEDERATED_ROLE" -r aihub > /dev/null 2>&1; then
+    $KCADM create roles -r aihub -s "name=$FEDERATED_ROLE" > /dev/null \
+      || { echo "ERROR: Failed to create role $FEDERATED_ROLE; federated users not marked."; return; }
+  fi
+
+  local aliases members alias mappers linked user_id
+  if ! aliases=$($KCADM get identity-provider/instances -r aihub --fields alias --format csv --noquotes) \
+    || ! members=$($KCADM get "roles/$FEDERATED_ROLE/users" -r aihub --fields id --format csv --noquotes -l 1000000); then
+    echo "ERROR: Failed to read identity providers or role members; federated users not marked."
+    return
+  fi
+
+  for alias in $aliases; do
+    if ! mappers=$($KCADM get "identity-provider/instances/$alias/mappers" -r aihub --fields name --format csv --noquotes); then
+      echo "ERROR: Failed to read mappers of identity provider $alias."
+      continue
+    fi
+    if ! grep -qx "$FEDERATED_MAPPER" <<< "$mappers"; then
+      $KCADM create "identity-provider/instances/$alias/mappers" -r aihub \
+        -s "name=$FEDERATED_MAPPER" -s "identityProviderAlias=$alias" \
+        -s identityProviderMapper=oidc-hardcoded-role-idp-mapper \
+        -s config.syncMode=FORCE -s "config.role=$FEDERATED_ROLE" > /dev/null \
+        && echo "Added $FEDERATED_MAPPER mapper to identity provider $alias." \
+        || echo "ERROR: Failed to add $FEDERATED_MAPPER mapper to identity provider $alias."
+    fi
+
+    if ! linked=$($KCADM get users -r aihub -q "idpAlias=$alias" --fields id --format csv --noquotes -l 1000000); then
+      echo "ERROR: Failed to read users linked to identity provider $alias."
+      continue
+    fi
+    for user_id in $linked; do
+      if ! grep -qx "$user_id" <<< "$members"; then
+        $KCADM add-roles -r aihub --uid "$user_id" --rolename "$FEDERATED_ROLE" \
+          && echo "Granted $FEDERATED_ROLE to user $user_id linked to $alias." \
+          || echo "ERROR: Failed to grant $FEDERATED_ROLE to user $user_id."
+      fi
+    done
+  done
 }
 
 # Post-startup configuration applied on every start: realm token and session
@@ -140,6 +197,7 @@ SMTP_EOF
   fi
 
   apply_realm_mail_server_default
+  mark_federated_users
 ) &
 
 exec /opt/keycloak/bin/kc.sh "$@" --import-realm --vault=file --vault-dir="$VAULT_DIR"

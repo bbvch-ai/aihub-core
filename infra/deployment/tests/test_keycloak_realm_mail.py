@@ -1,5 +1,4 @@
-"""Realm mail server rendered by generate_compose.py into the realm import file and into the
-entrypoint's default migration for existing realms.
+"""Realm mail server: the realm import leaves it empty and the entrypoint writes it to every realm.
 
 Run with: uv run pytest infra/deployment/tests/test_keycloak_realm_mail.py
 """
@@ -41,15 +40,17 @@ def _entrypoint_smtp_document() -> dict:
 
 
 @pytest.mark.parametrize("stage", ["dev", "local", "build", "nightly", "latest"])
-def test_realm_sends_through_microsoft_365_with_a_vault_secret(stage: str, tmp_path: Path) -> None:
-    smtp_server = _render_realm(stage, tmp_path)["smtpServer"]
+def test_realm_import_leaves_the_mail_server_to_the_entrypoint(stage: str, tmp_path: Path) -> None:
+    """Keycloak rejects the whole import when the sender address is invalid, as it is with an unset variable."""
+    assert _render_realm(stage, tmp_path)["smtpServer"] == {}
+
+
+def test_entrypoint_sends_through_microsoft_365_from_the_configured_mailbox_with_a_vault_secret() -> None:
+    smtp_server = _entrypoint_smtp_document()["smtpServer"]
 
     assert smtp_server["host"] == "smtp.office365.com"
     assert smtp_server["authType"] == "token"
-    assert smtp_server["from"] == "noreply.ai-hub@bbv.ch"
+    assert smtp_server["from"] == "$(env:KEYCLOAK_SMTP_MAILBOX)"
+    assert smtp_server["user"] == "$(env:KEYCLOAK_SMTP_MAILBOX)"
     assert smtp_server["authTokenClientSecret"] == "${vault.smtp-client-secret}"
     assert "password" not in smtp_server
-
-
-def test_existing_realms_get_the_same_mail_server_as_new_ones(tmp_path: Path) -> None:
-    assert _entrypoint_smtp_document() == {"smtpServer": _render_realm("latest", tmp_path)["smtpServer"]}

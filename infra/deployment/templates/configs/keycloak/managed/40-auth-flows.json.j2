@@ -20,11 +20,20 @@
    browserFlow is bound here (not in the bootstrap realm settings) so that
    keycloak-config-cli rebinds the custom browser flow on every start — this
    activates the AIHubAccess and Langfuse sysadmin gates on already-initialized
-   deployments, not just on the first --import-realm.
+   deployments, not just on the first --import-realm. resetCredentialsFlow is
+   bound here for the same reason.
+
+   Federated-user gate: users with AIHubFederatedUser (granted by a Hardcoded
+   Role mapper on every identity provider, see keycloak-entrypoint.sh) are
+   denied the password form and password reset, so a password can never stand
+   in for the identity provider's MFA, conditional access or account disabling.
+   The reset flow denies them after the mail step, not at the address form:
+   denying there would tell anyone which addresses belong to federated users.
 -#}
 {
   "realm": "aihub",
   "browserFlow": "browser-aihub",
+  "resetCredentialsFlow": "reset-credentials-aihub",
   "authenticationFlows": [
     {
       "alias": "Post Broker Login - AIHubAccess Check",
@@ -156,11 +165,135 @@
           "autheticatorFlow": false
         },
         {
+          "flowAlias": "federated-user-gate-browser",
+          "requirement": "CONDITIONAL",
+          "priority": 15,
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        },
+        {
           "flowAlias": "browser-aihub-conditional-2fa",
           "requirement": "CONDITIONAL",
           "priority": 20,
           "userSetupAllowed": false,
           "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "federated-user-gate-browser",
+      "description": "Conditional sub-flow: deny the password form to users who sign in through an external identity provider",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "federated-user-gate-browser-role-condition",
+          "requirement": "REQUIRED",
+          "priority": 0,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "deny-access-authenticator",
+          "authenticatorConfig": "federated-user-gate-browser-deny-message",
+          "requirement": "REQUIRED",
+          "priority": 1,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
+    },
+    {
+      "alias": "reset-credentials-aihub",
+      "description": "Reset credentials flow with a deny gate for users who sign in through an external identity provider. Replicates the built-in reset credentials flow (choose user, mail, password, conditional OTP); review on Keycloak major upgrades.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "reset-credentials-choose-user",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "reset-credential-email",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "flowAlias": "federated-user-gate-reset",
+          "requirement": "CONDITIONAL",
+          "priority": 25,
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        },
+        {
+          "authenticator": "reset-password",
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "flowAlias": "reset-credentials-aihub-conditional-otp",
+          "requirement": "CONDITIONAL",
+          "priority": 40,
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "federated-user-gate-reset",
+      "description": "Conditional sub-flow: deny password reset to users who sign in through an external identity provider",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "federated-user-gate-reset-role-condition",
+          "requirement": "REQUIRED",
+          "priority": 0,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "deny-access-authenticator",
+          "authenticatorConfig": "federated-user-gate-reset-deny-message",
+          "requirement": "REQUIRED",
+          "priority": 1,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
+    },
+    {
+      "alias": "reset-credentials-aihub-conditional-otp",
+      "description": "Flow to determine if the OTP should be reset or not.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-configured",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "reset-otp",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
         }
       ]
     },
@@ -305,6 +438,32 @@
       "alias": "aihub-access-gate-browser-deny-message",
       "config": {
         "denyErrorMessage": "Access denied. You need the AIHubAccess role to use AI-Hub. Please contact your administrator."
+      }
+    },
+    {
+      "alias": "federated-user-gate-browser-role-condition",
+      "config": {
+        "condUserRole": "AIHubFederatedUser",
+        "negate": "false"
+      }
+    },
+    {
+      "alias": "federated-user-gate-browser-deny-message",
+      "config": {
+        "denyErrorMessage": "This account signs in through your organisation's identity provider. Use its sign-in button instead of a password."
+      }
+    },
+    {
+      "alias": "federated-user-gate-reset-role-condition",
+      "config": {
+        "condUserRole": "AIHubFederatedUser",
+        "negate": "false"
+      }
+    },
+    {
+      "alias": "federated-user-gate-reset-deny-message",
+      "config": {
+        "denyErrorMessage": "This account signs in through your organisation's identity provider and has no password to reset. Use its sign-in button instead."
       }
     },
     {
