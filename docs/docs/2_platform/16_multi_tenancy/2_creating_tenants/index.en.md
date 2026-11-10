@@ -231,16 +231,16 @@ Users can belong to multiple tenants. Someone might be:
 ## Startup tenant behavior
 
 When someone logs in for the first time, they automatically join the startup tenant (the one the platform seeded on
-first boot — see `AIHUB_STARTUP_TENANT_*`) with standard user roles. Configure this behavior with environment variables:
+first boot — see `AIHUB_STARTUP_TENANT_*`) with standard user roles. Configure the roles with environment variables:
 
 ```bash
-AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
-AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser"
-FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
+AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES='AIHubAdmin,AIHubUser'
+AIHUB_USER_SIGNUP_REGULAR_USER_ROLES='AIHubUser'
 ```
 
-The first person to sign in receives admin roles, ensuring someone can administer the platform immediately. Subsequent
-users receive standard roles.
+The first member of each tenant receives the admin roles, ensuring someone can administer it immediately. Later members
+receive the regular roles. See [Default Roles and New-User Role Assignment](../../11_access_management/3_default_roles/)
+for what each role grants and how to change them.
 
 This automatic assignment only happens once per user. After that, explicitly add them to other tenants as needed.
 
