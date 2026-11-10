@@ -46,25 +46,35 @@ class LiteLLMCustomerService:
 
     @staticmethod
     async def _ensure_customer(client: httpx.AsyncClient, tenant: TenantIdentity) -> None:
-        info_response = await client.get("/customer/info", params={"end_user_id": tenant.id})
-        if info_response.status_code == 404:
-            await LiteLLMCustomerService._create_customer(client, tenant)
-            return
-        info_response.raise_for_status()
+        customer = await LiteLLMCustomerService._customer_info(client, tenant)
+        if customer is None:
+            customer = await LiteLLMCustomerService._create_customer(client, tenant)
+            if customer is None:
+                return
 
-        if info_response.json().get("alias") != tenant.name:
+        if customer.get("alias") != tenant.name:
             update_response = await client.post("/customer/update", json={"user_id": tenant.id, "alias": tenant.name})
             update_response.raise_for_status()
 
     @staticmethod
-    async def _create_customer(client: httpx.AsyncClient, tenant: TenantIdentity) -> None:
+    async def _customer_info(client: httpx.AsyncClient, tenant: TenantIdentity) -> dict | None:
+        info_response = await client.get("/customer/info", params={"end_user_id": tenant.id})
+        if info_response.status_code == 404:
+            return None
+        info_response.raise_for_status()
+        return info_response.json()
+
+    @staticmethod
+    async def _create_customer(client: httpx.AsyncClient, tenant: TenantIdentity) -> dict | None:
         """
         A concurrent first call for the same tenant may create the customer first, and LiteLLM answers that with a
-        400, so a failure is accepted whenever the customer exists afterwards.
+        400, so a failure is accepted whenever the customer exists afterwards. That customer is returned, since the
+        other caller may have named it before a rename; None means this call created it with the current name.
         """
         new_response = await client.post("/customer/new", json={"user_id": tenant.id, "alias": tenant.name})
-        if new_response.is_error:
-            info_response = await client.get("/customer/info", params={"end_user_id": tenant.id})
-            if info_response.status_code == 404:
-                new_response.raise_for_status()
-            info_response.raise_for_status()
+        if not new_response.is_error:
+            return None
+        customer = await LiteLLMCustomerService._customer_info(client, tenant)
+        if customer is None:
+            new_response.raise_for_status()
+        return customer

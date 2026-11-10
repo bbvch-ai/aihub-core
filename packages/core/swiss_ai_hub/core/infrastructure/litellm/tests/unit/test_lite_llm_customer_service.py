@@ -145,6 +145,22 @@ async def test_a_customer_created_concurrently_is_accepted() -> None:
     header = await _header_for(_user_in(_tenant()), transport)
 
     assert header == {HEADER: "tenant-a"}
+    assert transport.requests[-1] == ("GET", "/customer/info", None)
+
+
+@pytest.mark.asyncio
+async def test_a_customer_created_concurrently_under_an_old_name_is_renamed() -> None:
+    transport = _RecordingTransport(
+        {
+            "/customer/info": [_absent(), _customer("Old Name")],
+            "/customer/new": [_already_exists()],
+            "/customer/update": [_customer("Tenant A")],
+        }
+    )
+
+    await _header_for(_user_in(_tenant()), transport)
+
+    assert transport.requests[-1] == ("POST", "/customer/update", {"user_id": "tenant-a", "alias": "Tenant A"})
 
 
 @pytest.mark.asyncio
