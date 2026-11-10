@@ -33,7 +33,8 @@ deployment/
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
 │       ├── s3-ttl-init.sh.j2          # Bucket expiry as filer TTL rules (never S3 lifecycle, see ADR 2026_10_27)
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
-│       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
+│       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account + Code Interpreter prompt)
+│       ├── openwebui-code-interpreter-prompt.txt  # Replaces OpenWebUI's Code Interpreter prompt (no /mnt/uploads links)
 │       ├── ferretdb-init.sh.j2        # FerretDB PG init (read-only role of the knowledge content search)
 │       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)
 │           ├── bootstrap/             # First-start-only seeds: realm-settings, components, groups, users-superuser,
@@ -113,6 +114,24 @@ on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. Li
 more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollback path are in ADR
 `docs/arc42/decisions/2026_10_22_litellm_follows_plain_release_tags.md`. See ADR
 `docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.
+
+Model pickers read three more curated keys from `/v1/model/info`:
+
+- **`aihub_display_name`** is the name a picker shows instead of the LiteLLM id. Set it on every model; it is not
+  validated, and the API falls back to the id without its prefix.
+- **`aihub_general_purpose`** is `false` only for a model built for one job (today MinerU, an OCR model).
+  `/models/mode/{mode}` and every model picker leave such a model out, and neither an agent or process profile nor a
+  knowledge database can be saved with it. It is ours rather than a LiteLLM `mode` on purpose: `mode` decides how
+  LiteLLM calls and health-probes a model, and MinerU is served over `/chat/completions`. A model without the key counts
+  as general-purpose, which covers models an operator adds through the LiteLLM UI.
+- **`supports_reasoning`** says whether the model can produce a thinking phase at all, not whether it does by default
+  (gemma only thinks when asked). LiteLLM forwards `reasoning_effort` to every model it does not know, whatever this
+  flag says, so a provider that rejects it needs `reasoning_effort` in `additional_drop_params` (Ministral does).
+
+`generate_compose.py` requires `supports_function_calling`, `supports_response_schema`, `supports_vision`,
+`supports_reasoning` and `aihub_general_purpose` as explicit `true`/`false` on every `mode: chat` model
+(`CHAT_FLAG_KEYS`): a picker that requires a capability treats a flag LiteLLM reports as `null` as unsupported. Keep
+`HOSTING_LOCATIONS` in sync with `HostingLocation` in `packages/core`, which pickers filter on.
 
 `aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
 `model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
@@ -254,23 +273,32 @@ After publishing, all stages pull the new image automatically via `docker compos
 
 The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's multilingual PII model
 (`urchade/gliner_multi_pii-v1`, pinned revision) and spaCy's `de_core_news_lg` baked in, the hub offline at run time,
-and Presidio's stock REST server with two changes: every route but `/health` needs
-`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
-(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
-recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
-mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
-analysed under the language code `de`; see the config header.
+and Presidio's stock REST server with three changes: every route but `/health` needs
+`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`; GLiNER reads long texts in chunks that start at a word
+(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names); and
+the chunks of one text go to GLiNER `GLINER_BATCH_SIZE` at a time (`batched_gliner_recognizer.py`, image default 8)
+instead of one model call per chunk. Batching keeps Presidio's chunks, offsets and deduplication, so the spans are the
+stock recognizer's; padding moves scores by at most about 1e-5. On a 4-CPU laptop it made a 20,000-character text 28%
+faster (29 s to 21 s) at the same peak memory; 16 was no faster than 8. The recognizer config
+(`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in,
+so pattern changes need only `make generate-compose` and a container restart. Every text is analysed under the language
+code `de`; see the config header.
 
-Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
-`make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
-`image_tags.presidio_analyzer`, so bump that tag with every change to `docker/presidio-analyzer/` and publish **before
-any stage pulls it**: CI's backend tests start `litellm`, which depends on the analyzer. Live acceptance tests:
-`docker/presidio-analyzer/test_presidio_analyzer.py` (manual, see its docstring).
+Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or `make
+-C infra/deployment build-and-push-presidio-analyzer-image`. Both build two images from the one Dockerfile and push the
+tags pinned in `image_tags.presidio_analyzer` (CPU torch) and `image_tags.presidio_analyzer_gpu` (CUDA torch via the
+`TORCH_INDEX` build argument: a 4.8 GB download and 7.8 GB on disk, against 2.0 GB and 3.3 GB). Each deployment pulls
+only the image its compose file names, so CPU deployments never download the GPU image. Bump both tags together with
+every change to `docker/presidio-analyzer/` and publish **before any stage pulls them**: CI's backend tests start
+`litellm`, which depends on the analyzer. The `.gpu` compose variants run the GPU image with an NVIDIA device
+reservation; the CPU variants are unchanged. Presidio puts GLiNER on CUDA only when torch sees a GPU, so the GPU image
+falls back to the CPU on a host without one. Live acceptance tests: `docker/presidio-analyzer/test_presidio_analyzer.py`
+(manual, see its docstring).
 
 Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
 character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
-The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
-for.
+The image is a 2.0 GB download and 3.3 GB on disk. Long prompts are what the gunicorn worker timeout (300 s) and the
+guardrail's timeout must allow for.
 
 Capacity is per deployment: `PRESIDIO_ANALYZER_{CPUS,MEMORY,WORKERS,THREADS,TORCH_THREADS}` size the container and
 `PRESIDIO_ANALYZER_TIMEOUT_SECONDS` the guardrail's wait. All six are optional, with `${VAR:-default}` in the template

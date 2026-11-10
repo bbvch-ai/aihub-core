@@ -31,8 +31,18 @@ server {
         try_files $uri =404;
     }
 
-    # Handle the aihub application routes (SPA: all non-file routes serve index.html)
+    # Handle the aihub application routes (SPA: all non-file routes serve index.html).
+    # index.html must NOT be cached: after a redeploy the shell references new hashed
+    # /_nuxt chunks, and a browser that cached the old shell requests dead chunk hashes
+    # (404) so the app half-loads (e.g. login provider buttons never render). This bites
+    # every browser after every deploy. Hashed assets under /_nuxt stay immutable-cached.
+    # A location-level add_header drops every server-level one, so the security headers are repeated here.
     location / {
+        add_header Cache-Control "no-store" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
         try_files $uri /index.html;
     }
 

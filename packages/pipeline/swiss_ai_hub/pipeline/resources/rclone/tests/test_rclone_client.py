@@ -183,3 +183,47 @@ class TestGetAndDeleteRemote:
         for client in _client(handler):
             with pytest.raises(ValueError, match="config_change_team_drive"):
                 client.upsert_remote(config)
+
+
+class TestGetToken:
+    def test_the_token_rclone_holds_is_returned_wrapped(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            assert json.loads(request.read()) == {"name": "rclone_hrdocs_obs_abc"}
+            return httpx.Response(200, json={"type": "onedrive", "token": '{"access_token":"TOPSECRET"}'})
+
+        for client in _client(handler):
+            token = client.get_token("rclone_hrdocs_obs_abc")
+
+        assert token is not None
+        assert token.get_secret_value() == '{"access_token":"TOPSECRET"}'
+        assert "TOPSECRET" not in str(token)
+        assert "TOPSECRET" not in repr(token)
+
+    @pytest.mark.parametrize("section", [{}, {"type": "sftp", "host": "h"}, {"type": "onedrive", "token": ""}])
+    def test_a_missing_remote_or_token_is_none(self, section: dict):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=section)
+
+        for client in _client(handler):
+            assert client.get_token("r") is None
+
+
+class TestListRemotes:
+    def test_the_daemons_remote_names_are_listed(self):
+        seen: dict = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen["url"] = str(request.url)
+            return httpx.Response(200, json={"remotes": ["rclone_a", "rclone_a_obs_0123"]})
+
+        for client in _client(handler):
+            assert client.list_remotes() == ["rclone_a", "rclone_a_obs_0123"]
+        assert seen["url"].endswith("/config/listremotes")
+
+    @pytest.mark.parametrize("body", [{}, {"remotes": None}, {"remotes": []}])
+    def test_a_daemon_without_remotes_lists_none(self, body: dict):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=body)
+
+        for client in _client(handler):
+            assert client.list_remotes() == []

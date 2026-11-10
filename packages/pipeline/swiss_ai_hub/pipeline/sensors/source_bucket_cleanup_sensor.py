@@ -6,6 +6,7 @@ from mongoengine import DoesNotExist
 from swiss_ai_hub.core.persistence import BucketEntity
 
 from swiss_ai_hub.pipeline.util.bucket_utils import ensure_main_db_connection
+from swiss_ai_hub.pipeline.util.observation_rclone_remote import ObservationRcloneRemote
 from swiss_ai_hub.pipeline.util.partition_utils import bucket_of_composite_partition_key
 from swiss_ai_hub.pipeline.util.source_builders import build_rclone_client, remote_name_for_bucket
 
@@ -23,7 +24,8 @@ def source_bucket_cleanup_sensor(
 
     Convergent rather than event-driven, like the knowledge teardown sensor: whatever still has partitions but no
     live row pointing at this source is still owed a cleanup. Storage teardown stays with the ingestion pipeline;
-    this only removes what the source pipeline itself created.
+    this only removes what the source pipeline itself created. It also deletes the private remote an observation
+    run left behind because it was killed before its own cleanup, since that remote holds the source's credentials.
     """
 
     @sensor(
@@ -46,7 +48,11 @@ def source_bucket_cleanup_sensor(
             build_rclone_client().delete_remote(remote_name_for_bucket(bucket, source))
             context.log.info(f"Forgot '{bucket}': partitions and rclone remote removed")
 
-        return SkipReason(f"{len(stale)} stale database(s) cleaned up.")
+        swept = ObservationRcloneRemote.sweep(context.instance, source)
+        if swept:
+            context.log.info(f"Deleted {swept} rclone remote(s) left behind by finished observation runs")
+
+        return SkipReason(f"{len(stale)} stale database(s) cleaned up, {swept} leftover observation remote(s) deleted.")
 
     return _sensor
 

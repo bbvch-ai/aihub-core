@@ -265,7 +265,6 @@ Diese Variablen haben sinnvolle Standardwerte (oder werden Containern von Docker
 | `LITE_LLM_PROXY_USER_TPM_LIMIT` | `LiteLLMProxySettings.USER_TPM_LIMIT` | `Keine` | | TPM-Limit für einen bestimmten Benutzer festlegen (Tokens pro Minute) |
 | `MEM0_SUPPORT_VISION` | `Mem0Settings.SUPPORT_VISION` | `Wahr` | | Ob Vision unterstützt werden soll |
 | `MEM0_VISION_DETAIL` | `Mem0Settings.VISION_DETAIL` | `'auto'` | | Visionsdetails |
-| `MEMORY_DEFAULT_TENANT_ID` | `MemorySettings.DEFAULT_TENANT_ID` | `'AIHub'` | | Standard-Mandanten-ID für die Speicherskoping |
 | `MEMORY_DEFAULT_TENANT_NAMESPACE` | `MemorySettings.DEFAULT_TENANT_NAMESPACE` | `Keine` | | Standard-Mandanten-Namespace für die Skoping auf Abteilungsebene |
 | `MILVUS_URL` | `MilvusSettings.URL` | _(von Compose bereitgestellt)_ | `api`, `attu`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` | Verbindungs-URL für Milvus DB-Server |
 | `MINERU_API_BASE_URL` | `MineruSettings.API_BASE_URL` | `'http://mineru-api:8000'` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `shared_rag_pipeline` | MinerU API-Endpunkt-URL |

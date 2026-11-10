@@ -1,11 +1,32 @@
-"""Unit tests for PatchedMilvusDB._create_filter.
+"""Unit tests for PatchedMilvusDB._create_filter and PatchedMilvusDB.get.
 
 mem0's MilvusDB renders any non-string filter value literally, so the
 `{"in": [...]}` namespace allow-list becomes `== {'in': [...]}` and Milvus
 rejects the query plan. These tests pin the corrected `in [...]` translation.
 """
 
+from unittest.mock import MagicMock
+
 from swiss_ai_hub.core.infrastructure.mem0.patched_milvus_db import PatchedMilvusDB
+
+
+def _db_returning(rows: list[dict]) -> PatchedMilvusDB:
+    database = PatchedMilvusDB.__new__(PatchedMilvusDB)
+    database.collection_name = "mem0"
+    database.client = MagicMock()
+    database.client.get.return_value = rows
+    return database
+
+
+def test_get_unknown_id_returns_none():
+    """Upstream raised IndexError here, so an unknown id surfaced as a 500 instead of "not found"."""
+    assert _db_returning([]).get("missing") is None
+
+
+def test_get_known_id_returns_payload():
+    result = _db_returning([{"id": "m1", "metadata": {"user_id": "u1"}}]).get("m1")
+    assert result.id == "m1"
+    assert result.payload == {"user_id": "u1"}
 
 
 def _filter(filters: dict) -> str:

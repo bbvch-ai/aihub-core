@@ -187,6 +187,28 @@ llm_model=ModelSelect(
 
 The `ModelSelect` element automatically populates from the LiteLLM model registry at runtime.
 
+The picker lists models by their display name, shows the selected model's context window, and never offers a model
+marked as not general-purpose, such as the OCR model. A field can also require capabilities and hosting locations
+through `requirements`. The picker then offers only the models that meet all of them, and saving a profile on any other
+model is refused. A flag the model does not set counts as unsupported. Profiles stored before a requirement was added
+keep running, but cannot be saved again until a qualifying model is chosen.
+
+```python
+from swiss_ai_hub.core.infrastructure import HostingLocation, ModelCapability, ModelRequirements
+
+llm_model=ModelSelect(
+    label=LocaleString(en="Language Model"),
+    requirements=ModelRequirements(
+        capabilities={ModelCapability.TOOL_CALLING},
+        hosting_locations={HostingLocation.SWISS_CLOUD, HostingLocation.LOCAL},
+    ),
+)
+```
+
+For a conversational agent, pass the requirements from the config's own `as_form()` to
+`conversation_form_elements(llm_requirements=...)`, which applies them to the main `llm` and not to `task_llm`. The MCP
+ReAct agent requires `tool_calling` this way.
+
 ## Form-Safe Constraints
 
 Standard Pydantic constraints (`Field(ge=0, le=1)`) don't work with the duality pattern because they can't validate

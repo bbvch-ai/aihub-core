@@ -41,7 +41,8 @@ image_tags:
   traefik: traefik:v3.7.16
   docker_socket_proxy: tecnativa/docker-socket-proxy:0.3
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
-  presidio_analyzer: presidio-analyzer:2.2.364-swiss-4
+  presidio_analyzer: presidio-analyzer:2.2.364-swiss-5
+  presidio_analyzer_gpu: presidio-analyzer:2.2.364-swiss-5-gpu
   oauth2proxy: oauth2-proxy:v7.15.5
   open_webui: open-webui:v0.11.4-playwright1.63.0-1
   open_webui_init: postgres:17
@@ -107,6 +108,11 @@ image_tags:
     local: rag_agent:latest
     nightly: rag_agent:nightly
     latest: rag_agent:latest
+  mcp_react_agent:
+    build: localbuild
+    local: mcp_react_agent:latest
+    nightly: mcp_react_agent:nightly
+    latest: mcp_react_agent:latest
   expert_rag_agent:
     build: localbuild
     local: expert_rag_agent:latest

@@ -44,6 +44,13 @@ class CreateTenantMetadataRequest(BaseModel):
             ),
         ),
     ] = None
+    lcdm_tenant_id: Annotated[
+        int | None,
+        Field(
+            description="Originating LCDM Hub tenant id (numeric). Set when the tenant is pushed in from the "
+            "LCDM Hub; it is the value the LCDM MCP expects in its X-LCDM-Tenant header.",
+        ),
+    ] = None
 
     @field_validator("access_rules")
     @classmethod

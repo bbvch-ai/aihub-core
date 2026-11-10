@@ -3,7 +3,7 @@
   "license": "AGPL-3.0-or-later",
   "author": "bbv Software Services AG (https://www.bbv.ch)",
   "type": "module",
-  "version": "0.325.0",
+  "version": "0.326.0",
   "description": "Swiss AI Hub - Admin & Management UI (Nuxt 3 layer)",
   "main": "./nuxt.config.ts",
   "repository": {
@@ -96,7 +96,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@hey-api/openapi-ts": "^0.97.1",
-    "@intlify/message-compiler": "^11.4.2",
+    "@intlify/message-compiler": "^11.4.16",
     "@nuxt/eslint": "^1.15.2",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^22.19.19",
@@ -111,6 +111,6 @@
   },
   "peerDependencies": {
     "primevue": "4.5.5",
-    "vue": "3.5.17"
+    "vue": "3.5.44"
   }
 }

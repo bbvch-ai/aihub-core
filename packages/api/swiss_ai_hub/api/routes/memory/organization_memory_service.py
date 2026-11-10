@@ -1,6 +1,7 @@
-from swiss_ai_hub.core.generative_ai.memory.organization_memory import OrganizationMemory
+from fastapi import HTTPException
+from swiss_ai_hub.core.generative_ai import OrganizationMemory
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.infrastructure import MemoryNotFoundError, trace_fn
 
 from swiss_ai_hub.api.routes.memory.dto.delete_memory_response import DeleteAllMemoriesResponse, DeleteMemoryResponse
 from swiss_ai_hub.api.routes.memory.dto.memories_response import MemoriesResponse
@@ -11,15 +12,16 @@ from swiss_ai_hub.api.routes.memory.dto.update_memory_response import UpdateMemo
 
 
 class OrganizationMemoryService:
-    """Service layer for organization/tenant memory operations."""
+    """Service layer for organization memory, always confined to the tenant the caller acts within."""
 
     @staticmethod
     @trace_fn
     async def get_memories(
+        tenant_id: str,
         limit: int,
         t: LocaleHandler,
     ) -> MemoriesResponse:
-        org_memory = OrganizationMemory(t=t)
+        org_memory = OrganizationMemory(tenant_id=tenant_id, t=t)
         all_result = await org_memory.get_all()
 
         memories = all_result.results
@@ -36,6 +38,7 @@ class OrganizationMemoryService:
     @staticmethod
     @trace_fn
     async def search_memories(
+        tenant_id: str,
         query: str,
         limit: int,
         agent_class: str | None,
@@ -49,7 +52,7 @@ class OrganizationMemoryService:
         if agent_class and agent_id:
             combined_agent_id = f"{agent_class}/{agent_id}"
 
-        org_memory = OrganizationMemory(t=t)
+        org_memory = OrganizationMemory(tenant_id=tenant_id, t=t)
         search_result = await org_memory.search_organization_memory(
             query=query,
             agent_id=combined_agent_id,
@@ -70,29 +73,38 @@ class OrganizationMemoryService:
     @staticmethod
     @trace_fn
     async def delete_memory(
+        tenant_id: str,
         memory_id: str,
         t: LocaleHandler,
     ) -> DeleteMemoryResponse:
-        org_memory = OrganizationMemory(t=t)
-        await org_memory.delete_memory(memory_id=memory_id)
+        org_memory = OrganizationMemory(tenant_id=tenant_id, t=t)
+        try:
+            await org_memory.delete_memory(memory_id=memory_id)
+        except MemoryNotFoundError as memory_not_found_error:
+            raise HTTPException(status_code=404, detail=str(memory_not_found_error)) from memory_not_found_error
         return DeleteMemoryResponse(status="deleted", memory_id=memory_id)
 
     @staticmethod
     @trace_fn
     async def delete_all_memories(
+        tenant_id: str,
         t: LocaleHandler,
     ) -> DeleteAllMemoriesResponse:
-        org_memory = OrganizationMemory(t=t)
+        org_memory = OrganizationMemory(tenant_id=tenant_id, t=t)
         await org_memory.delete_all()
         return DeleteAllMemoriesResponse(status="deleted")
 
     @staticmethod
     @trace_fn
     async def update_memory(
+        tenant_id: str,
         memory_id: str,
         data: str,
         t: LocaleHandler,
     ) -> UpdateMemoryResponse:
-        org_memory = OrganizationMemory(t=t)
-        await org_memory.update_memory(memory_id=memory_id, data=data)
+        org_memory = OrganizationMemory(tenant_id=tenant_id, t=t)
+        try:
+            await org_memory.update_memory(memory_id=memory_id, data=data)
+        except MemoryNotFoundError as memory_not_found_error:
+            raise HTTPException(status_code=404, detail=str(memory_not_found_error)) from memory_not_found_error
         return UpdateMemoryResponse(status="updated", memory_id=memory_id)
