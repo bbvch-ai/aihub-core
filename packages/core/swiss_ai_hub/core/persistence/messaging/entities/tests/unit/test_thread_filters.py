@@ -8,7 +8,6 @@ class TestThreadFilters:
         f = ThreadFilters()
         assert f.search is None
         assert f.agent_id is None
-        assert f.user_search_id is None
         assert f.status_thread_ids is None
         assert f.from_date is None
         assert f.to_date is None

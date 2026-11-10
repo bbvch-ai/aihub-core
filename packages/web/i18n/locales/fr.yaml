@@ -147,7 +147,6 @@ thread:
       completed: Terminé
       failed: Échoué
       agent_name_placeholder: Filtrer par agent
-      user_name_placeholder: Filtrer par utilisateur
       date_range_placeholder: Filtrer par date
   utils:
     pendingTypes:

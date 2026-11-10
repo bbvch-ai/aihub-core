@@ -148,7 +148,6 @@ thread:
       completed: Abgeschlossen
       failed: Fehlgeschlagen
       agent_name_placeholder: Nach Agent filtern
-      user_name_placeholder: Nach Benutzer filtern
       date_range_placeholder: Nach Datum filtern
   utils:
     pendingTypes:
