@@ -1007,6 +1007,13 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: 'true'
       KC_METRICS_ENABLED: 'true'
+      # Single-node deployments: use the local cache instead of the clustered ispn/jgroups default.
+      # Clustering makes Keycloak spend the first minutes after a (re)start retrying to reach the
+      # previous run's cluster member ("jgroups ... Connection refused"), during which the login
+      # redirect is dead — so a plain container restart locked users out for several minutes. The
+      # local cache removes that warm-up. NOTE: if Keycloak is ever run multi-node/HA, this must
+      # become conditional (local cache does not replicate sessions across nodes).
+      KC_CACHE: local
       DOMAIN: ${DOMAIN}
       # Superuser (interactive Keycloak-seeded admin) — passed to realm template
       SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
@@ -4478,8 +4485,7 @@ services:
       data:
       storage:
       dagster:
-        aliases:
-          - rclone-pipeline-grpc
+        aliases: [rclone-pipeline-grpc]
       egress:  # resolves the hosts a source names (public host check) before the rclone daemon connects to them
   # ===================================================================
   # Structured Source Pipeline (Stage 1: API records such as Jira issues -> markdown in the data lake, via dlt,
