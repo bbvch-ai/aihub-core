@@ -26,5 +26,11 @@ class ToolCallApprovedEvent(ControlAndDisplayEvent):
     ]
     cite_sources: Annotated[bool, Field(description="Whether the tool tells the model to cite what it returns.")] = True
     approved_by: Annotated[
-        str | None, Field(description="The id of the user who approved the call; none when it needed no approval.")
+        str | None,
+        Field(
+            description=(
+                "The id of the user who approved the call, or whose earlier approval carried over to it; none when it "
+                "needed no approval."
+            )
+        ),
     ] = None

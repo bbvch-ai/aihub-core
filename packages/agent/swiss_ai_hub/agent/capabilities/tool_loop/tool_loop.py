@@ -267,6 +267,7 @@ class ToolLoop(Capability):
         run_context: RunContext,
         thread_context: ThreadContext,
         t: LocaleHandler,
+        user: UserIdentity | None = None,
     ) -> ToolCallApprovedEvent | ToolApprovalRequestEvent | ToolResultEvent:
         """Let the call through, or ask the user first when the tool's approval policy says so.
 
@@ -280,7 +281,7 @@ class ToolLoop(Capability):
         options = tool_set.options(call.name)
         cite_sources = await run_context.get(CITE_SOURCES_KEY, True)
         arguments = call.parameters or {}
-        if await ToolApprovals.needs_approval(call.name, options, loop.tool_loop, run_context, thread_context):
+        if await ToolApprovals.needs_approval(call.name, options, loop.tool_loop, run_context, thread_context, user):
             summary = options.summary_in(arguments, t.locale)
             request = ToolApprovalRequestEvent(
                 question=t(
@@ -306,6 +307,7 @@ class ToolLoop(Capability):
             arguments=arguments,
             kind=tool_set.kind(call.name),
             cite_sources=cite_sources,
+            approved_by=ToolApprovals.remembered_approver(call.name, options, loop.tool_loop, user),
         )
 
     @staticmethod
@@ -347,7 +349,7 @@ class ToolLoop(Capability):
         if not await ToolAvailability.allows(request.name, tool_set, loop.tool_loop, run_context, type(agent)):
             return ToolLoop._unavailable(request.tool_call_id, request.name, t)
         await ToolApprovals.remember(
-            request.name, tool_set.options(request.name), loop.tool_loop, run_context, thread_context
+            request.name, tool_set.options(request.name), loop.tool_loop, run_context, thread_context, user
         )
         return ToolCallApprovedEvent(
             tool_call_id=request.tool_call_id,

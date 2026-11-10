@@ -30271,7 +30271,7 @@ export const ToolCallApprovedEventSchema = {
       ],
       title: "Approved By",
       description:
-        "The id of the user who approved the call; none when it needed no approval.",
+        "The id of the user who approved the call, or whose earlier approval carried over to it; none when it needed no approval.",
     },
     _event_name: {
       type: "string",
@@ -52263,7 +52263,7 @@ export const ToolCallApprovedEventWritableSchema = {
       ],
       title: "Approved By",
       description:
-        "The id of the user who approved the call; none when it needed no approval.",
+        "The id of the user who approved the call, or whose earlier approval carried over to it; none when it needed no approval.",
     },
   },
   additionalProperties: true,

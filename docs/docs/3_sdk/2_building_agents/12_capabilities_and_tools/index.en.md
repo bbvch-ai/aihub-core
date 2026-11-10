@@ -121,8 +121,9 @@ calls), a list of disabled tools, and per-tool approvals (never, every call, onc
 Approval is asked as a yes/no confirmation in the chat; a declined tool is withdrawn for the rest of the answer. The run
 keeps each pending request itself and answers it once, as it asked it: the copy a chat client sends back only names the
 request, an answer to a request the run is not waiting on runs nothing, and only the user who started the run can answer
-it. The approved call records who approved it (`ToolCallApprovedEvent.approved_by`). A tool without a rule on the
-profile follows its own default, which the approval picker shows next to its name: the sandbox's `run_command`,
+it. The approved call records who approved it (`ToolCallApprovedEvent.approved_by`), also when an earlier approval
+carried over. An approval for the whole conversation counts only for the member who gave it. A tool without a rule on
+the profile follows its own default, which the approval picker shows next to its name: the sandbox's `run_command`,
 `send_process_input`, `write_file` and `replace_file_content` ask on every call until an admin relaxes them. Only tools
 actually offered can run: a call to a disabled tool, a tool whose toggle is off, or a name the model made up goes back
 to it as an unknown tool, and the same check runs again when an approval arrives. A tool the profile disables is not

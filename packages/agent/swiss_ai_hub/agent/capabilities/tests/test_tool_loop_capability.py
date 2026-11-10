@@ -129,6 +129,7 @@ class _Config(KnowledgeToolFields, KnowledgeFields, ToolLoopFields, AgentConfig)
 
 
 ALICE = UserIdentity(id="alice", email="alice@example.com", name="Alice", roles=[])
+BOB = UserIdentity(id="bob", email="bob@example.com", name="Bob", roles=[])
 
 
 @pytest.fixture(autouse=True)
@@ -523,6 +524,8 @@ class TestApproval:
         run_context: _Context | None = None,
         parameters: dict[str, Any] | None = None,
         offered: bool = True,
+        thread_context: _Context | None = None,
+        user: UserIdentity | None = ALICE,
         **tool_loop: Any,
     ) -> Any:
         return await ToolLoop.gate_step(
@@ -535,8 +538,9 @@ class TestApproval:
             ),
             loop=_config(**tool_loop),
             run_context=run_context or _Context(),
-            thread_context=_Context(),
+            thread_context=thread_context or _Context(),
             t=T,
+            user=user,
         )
 
     @pytest.mark.asyncio
@@ -668,7 +672,25 @@ class TestApproval:
         result, _, thread_context = await self._answer(True, ToolApprovalPolicy.ONCE_PER_THREAD)
 
         assert isinstance(result, ToolCallApprovedEvent)
-        assert thread_context.values == {"tool_loop:approved:echo": True}
+        assert thread_context.values == {f"tool_loop:approved:echo:{ALICE.id}": True}
+
+    @pytest.mark.asyncio
+    async def test_a_conversation_wide_approval_does_not_carry_over_to_another_member(self):
+        rule = ToolApprovalRule(tool="echo", policy=ToolApprovalPolicy.ONCE_PER_THREAD)
+        _, _, thread_context = await self._answer(True, ToolApprovalPolicy.ONCE_PER_THREAD)
+
+        for_alice = await self._gate("echo", thread_context=thread_context, approvals=[rule])
+        for_bob = await self._gate("echo", thread_context=thread_context, user=BOB, approvals=[rule])
+
+        assert isinstance(for_alice, ToolCallApprovedEvent)
+        assert for_alice.approved_by == ALICE.id
+        assert isinstance(for_bob, ToolApprovalRequestEvent)
+
+    @pytest.mark.asyncio
+    async def test_a_tool_that_never_asks_records_no_approver(self):
+        approved = await self._gate("echo")
+
+        assert approved.approved_by is None
 
     @pytest.mark.asyncio
     async def test_an_approved_call_records_who_approved_it(self):
