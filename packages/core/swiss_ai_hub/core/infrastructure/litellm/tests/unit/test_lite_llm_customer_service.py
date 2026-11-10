@@ -168,9 +168,10 @@ async def test_a_failed_creation_propagates_without_caching() -> None:
     transport = _RecordingTransport(
         {"/customer/info": [_absent(), _absent()], "/customer/new": [httpx.Response(500, json={"error": "boom"})]}
     )
+    user = _user_in(_tenant())
 
     with pytest.raises(httpx.HTTPStatusError):
-        await _header_for(_user_in(_tenant()), transport)
+        await _header_for(user, transport)
 
     assert "tenant-a" not in LiteLLMCustomerService._aliases
 
