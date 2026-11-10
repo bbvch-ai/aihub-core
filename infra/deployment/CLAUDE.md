@@ -246,6 +246,15 @@ Dockerfile and published manually via `make -C infra/deployment build-and-push-p
 After publishing, non-build stages pick up the new image automatically via `docker compose pull`. The `build` stage
 continues to build locally so developers test Dockerfile edits without round-tripping through the registry.
 
+### env-guard: placeholder secrets refuse to start
+
+`generate_compose.py` collects every `.env.prod` variable whose value is a placeholder `setup-env.sh` generates (or
+`REPLACE_WITH_YOUR_DOMAIN`, see `ENV_GUARD_PLACEHOLDERS`) and renders them into the one-shot `env-guard` service. It
+exits 1 and names the variables if any still holds `REPLACE_WITH_`, and `traefik` and `keycloak` depend on it completing
+successfully, so `docker compose up` fails instead of serving with default secrets. Optional integrations (Teams,
+SharePoint, Azure, provider keys) keep their placeholders and are not checked. A new generated secret in `.env.prod` is
+picked up on the next `make generate-compose`.
+
 ### Publishing the open-terminal image
 
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
@@ -354,7 +363,8 @@ The template conditionally includes services based on stage and GPU mode:
 - **AI inference** (speaches, vLLM) — vLLM only when `gpu_enabled`, speaches in all stages
 - **1st-party services** (api, web, agents, bot, dagster, pipelines) — only when `image_tags.{service}[stage]` exists
 - **Traefik + docker-socket-proxy** — all stages except `dev`
-- **oauth2proxy sidecars** (for Attu, Dagster, SeaweedFS admin UIs) — all stages except `dev`
+- **oauth2proxy sidecars** (for Attu, Dagster, SeaweedFS, Backup and LiteLLM) — all stages except `dev`
+- **env-guard** — all stages except `dev`; Traefik and Keycloak wait for it to exit 0
 - **PgBouncer** — all stages except `dev` (dev connects directly to PostgreSQL)
 - **vLLM** — only when `gpu_enabled`
 
@@ -563,7 +573,17 @@ logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symli
 - Docker provider via `docker-socket-proxy` (never direct Docker socket access)
 - `local`/`build`: mkcert self-signed certs — generate with `make local-cert`
 - `nightly`/`latest`: Let's Encrypt ACME auto-renewal
-- Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth
+- Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth. LiteLLM splits its
+  host: the `litellm-api` router (priority 6000, on `litellm` itself) takes only the OpenAI-compatible inference paths
+  and the liveness probes, which LiteLLM guards with its own API keys; the `litellm-admin` catch-all (priority 1000, on
+  `oauth2proxy-litellm`) takes the UI and every management route. A new public LiteLLM endpoint goes into the
+  `litellm-api` rule, never a management route
+- The oauth2-proxy image is upstream `quay.io/oauth2-proxy/oauth2-proxy`, mirrored under the pinned tag in
+  `compose-config.yml`. Our only change, the sign-in button colour, is `templates/oauth2-proxy/sign_in.html`, mounted
+  via `OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR`: on a version bump, copy upstream's `pkg/app/pagewriter/sign_in.html` of the
+  new tag and re-apply the `is-custom` button class
+- `auth.${DOMAIN}/admin` and `/realms/master` go through the `keycloak-admin` router, which allows only
+  `KEYCLOAK_ADMIN_ALLOWED_SOURCE_RANGES`
 - `security-headers@file` sends `X-Frame-Options: DENY`, except on the `web-auth` and `sysadmin-web-auth` routers
   (`/{locale}/auth/*`), which use `auth-route-security-headers@file` with `SAMEORIGIN`. The frontend loads
   `/{locale}/auth/renew` in a hidden same-origin iframe for its SSO session probe and silent renew; under `DENY` the
