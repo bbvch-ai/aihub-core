@@ -33,4 +33,4 @@ temporäre Framework-Ereignisse; konfigurierbar pro Deployment über die Umgebun
 `DAGSTER_*_LOG_RETENTION_DAYS`. Asset Materialisierungen, Schritt-Erfolge/-Fehler und Ausführungsdatensätze werden von
 diesem Subsystem **niemals** bereinigt – sie bleiben für die Lebensdauer des Deployments verfügbar, es sei denn, sie
 werden explizit gelöscht. Weitere Details finden Sie unter
-[Backup und Wiederherstellung](../../3_deployment_guide/4_backup_and_recovery/#continuous-postgres-maintenance).
+[Backup und Wiederherstellung](../../3_deployment_guide/4_backup_and_recovery/#kontinuierliche-postgres-wartung).

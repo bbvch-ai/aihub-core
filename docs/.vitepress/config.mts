@@ -2,6 +2,26 @@ import { withMermaid } from "vitepress-plugin-mermaid";
 import { copyOrDownloadAsMarkdownButtons } from 'vitepress-plugin-llms'
 import { generateSidebar, formatSidebarForConfig } from './sidebar-logic.mjs';
 import lightbox from "vitepress-plugin-lightbox"
+import { fileURLToPath } from 'node:url'
+import type { PageData, SiteConfig } from 'vitepress'
+
+const localePrefix = (localeKey: string): string => (localeKey === 'root' ? '' : `${localeKey}/`)
+
+const isPublished = (relativePath: string, siteConfig: SiteConfig): boolean =>
+  relativePath in siteConfig.rewrites.inv || siteConfig.pages.includes(relativePath)
+
+// Several pages (arc42, whitepaper, untranslated docs) exist in English only. The language
+// switcher links to the same path in every other locale, so it needs to know which ones are missing.
+const findUntranslatedLocales = (pageData: PageData, siteConfig: SiteConfig): string[] => {
+  const localeKeys = Object.keys(siteConfig.site.locales)
+  const currentLocaleKey =
+    localeKeys.find((key) => key !== 'root' && pageData.relativePath.startsWith(localePrefix(key))) ?? 'root'
+  const pathWithinLocale = pageData.relativePath.slice(localePrefix(currentLocaleKey).length)
+
+  return localeKeys.filter(
+    (key) => key !== currentLocaleKey && !isPublished(localePrefix(key) + pathWithinLocale, siteConfig)
+  )
+}
 
 // https://vitepress.dev/reference/site-config
 export default withMermaid({
@@ -22,6 +42,23 @@ export default withMermaid({
 
   srcExclude: ['public/**/*.md', 'translate-prompt.md'],
   ignoreDeadLinks: true,
+
+  transformPageData(pageData, { siteConfig }) {
+    pageData.untranslatedLocales = findUntranslatedLocales(pageData, siteConfig)
+  },
+
+  vite: {
+    resolve: {
+      alias: [
+        {
+          // Replaces the default theme's internal useLangs, so the language switcher falls back to
+          // the locale's home page instead of a page that does not exist in that locale.
+          find: /^.*\/composables\/langs$/,
+          replacement: fileURLToPath(new URL('./theme/composables/translationAwareLangs.ts', import.meta.url))
+        }
+      ]
+    }
+  },
 
   vue: {
     template: {
@@ -45,7 +82,7 @@ export default withMermaid({
       label: 'English',
       lang: 'en',
       themeConfig: {
-        logo: './media/logo.png',
+        logo: '/logo.png',
         footer: {
           message: 'Built with ❤️ in Switzerland 🇨🇭',
           copyright: 'Copyright © 2025-bbv Software Services AG.'
@@ -70,7 +107,7 @@ export default withMermaid({
       lang: 'de',
       link: '/de/',
       themeConfig: {
-        logo: './media/logo.png',
+        logo: '/logo.png',
         footer: {
           message: 'Gebaut mit ❤️ in der Schweiz 🇨🇭',
           copyright: 'Copyright © 2025-bbv Software Services AG.'

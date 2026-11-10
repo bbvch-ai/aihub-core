@@ -106,8 +106,8 @@ ausgehenden Beschränkungen erforderlich.
 
 ## Verwandte Dokumentation
 
-- [Deployment-Optionen](/de/docs/1_deployment_options/) - Architektur und Hosting-Strategien
-- [Netzwerksicherheit](/de/docs/20_security/4_network_security/) - Sicherheitsarchitektur und Defense-in-Depth
-- [Authentifizierung](/de/docs/20_security/1_authentication/) - Details zur Identitätsprovider-Integration
+- [Deployment-Optionen](../1_deployment_options/) - Architektur und Hosting-Strategien
+- [Netzwerksicherheit](../../20_security/4_network_security/) - Sicherheitsarchitektur und Defense-in-Depth
+- [Authentifizierung](../../20_security/1_authentication/) - Details zur Identitätsprovider-Integration
 - [Infrastruktur-Ebenen](/de/docs/1_vision_and_positioning/4_infrastructure_layers/) - Überblick über
   Infrastrukturkomponenten
