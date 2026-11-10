@@ -492,3 +492,18 @@ class TestOpenHumanInTheLoopRequests:
     def test_requests_of_other_threads_are_not_open_here(self):
         _persist_request("t_other", "req1", 1)
         assert PersistedAgentEventEntity.open_human_in_the_loop_requests_for_thread("t_hitl") == []
+
+
+class TestUserIdOfRun:
+    def test_the_user_who_started_the_run(self):
+        _persist_event("t_run", ["UserMessageEvent", "StartEvent"], "e1", run_id="r1", data={"user": {"id": "u_a"}})
+        _persist_event("t_run", ["StartEvent"], "e2", run_id="r2", data={"user": {"id": "u_b"}})
+        assert PersistedAgentEventEntity.user_id_of_run("r1") == "u_a"
+
+    def test_none_without_a_persisted_start(self):
+        _persist_event("t_run", ["ToolApprovalRequestEvent"], "e1", run_id="r1", data={"user": {"id": "u_a"}})
+        assert PersistedAgentEventEntity.user_id_of_run("r1") is None
+
+    def test_none_for_a_start_without_a_user(self):
+        _persist_event("t_run", ["CronStartEvent", "StartEvent"], "e1", run_id="r1", data={"user": None})
+        assert PersistedAgentEventEntity.user_id_of_run("r1") is None

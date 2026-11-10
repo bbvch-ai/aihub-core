@@ -88,6 +88,7 @@ config:
     help: Werkzeuge, die dieser Agent nie anbietet.
   approval_tool:
     label: Werkzeug
+    with_default: '%{tool} (Vorgabe: %{policy})'
   approval_policy:
     label: Freigabe
   policies:

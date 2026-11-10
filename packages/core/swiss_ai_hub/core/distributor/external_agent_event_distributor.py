@@ -62,6 +62,8 @@ class ExternalAgentEventDistributor:
                 logger.exception(f"User {user_id} is not in thread {external_event.thread_id}")
                 raise PermissionError(f"User {user_id} is not in thread {external_event.thread_id}")
 
+        self.refuse_answer_from_another_user(external_event, user)
+
         if external_event.event.is_start_event:
             run_id = str(ObjectId())
         elif external_event.event.is_hitl_response_event:
@@ -72,6 +74,7 @@ class ExternalAgentEventDistributor:
             raise ValueError(f"Received event of unhandled type: {external_event.event.event_name}")
 
         if external_event.event.is_hitl_response_event:
+            external_event.event.responded_by = user.id if user else None
             await self._handle_human_in_the_loop_response(thread, external_event, aihub_headers)
 
         if external_event.event.is_bitl_response_event:
@@ -83,6 +86,17 @@ class ExternalAgentEventDistributor:
 
         if external_event.event.is_start_event:
             await self._handle_start_event(thread, external_event, run_id, aihub_headers, target_agent)
+
+    @staticmethod
+    def refuse_answer_from_another_user(external_event: ExternalAgentEvent, user: UserIdentity | None) -> None:
+        """Only the user who started a run may answer its questions, so another thread member's answer is refused
+        before it is stored or reaches the agent. A run without a known user, such as a scheduled one, accepts any
+        member's answer, and the agent still checks `responded_by` itself."""
+        if user is None or not external_event.event.is_hitl_response_event:
+            return
+        run_user_id = PersistedAgentEventEntity.user_id_of_run(external_event.event.request_event.topic.run_id)
+        if run_user_id is not None and run_user_id != user.id:
+            raise PermissionError("Only the user who started this run can answer its questions")
 
     async def _handle_start_event(
         self,
@@ -160,13 +174,15 @@ class ExternalAgentEventDistributor:
         """
         Handle a HumanInTheLoopResponseEvent.
 
-        Checks that the agent mentioned in the event's topic is part of the thread.
-        Then publishes the HITL response to the appropriate subject so the agent can process it.
+        The answered request names its run, so the response may only be routed into the thread the sender is a
+        member of. `refuse_answer_from_another_user` has already refused a sender who did not start the run; the
+        agent checks the stamped `responded_by` again, for runs whose StartEvent was never persisted.
         """
         logger.debug(f"Handling human in the loop response for thread {external_event.thread_id}")
         topic = external_event.event.request_event.topic
 
-        assert str(thread.id) == topic.thread_id, f"Thread ID mismatch: {thread.id} != {topic.thread_id}"
+        if str(thread.id) != topic.thread_id:
+            raise PermissionError(f"The answered request does not belong to thread {thread.id}")
 
         topic_manager = AgentThreadTopicManager(
             agent_class=topic.agent_class,
