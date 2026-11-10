@@ -217,16 +217,16 @@ keycloak:
   sso_session_max_lifespan: 2592000  # 30 days
   access_token_lifespan: 3600  # 1 hour
   # Realm mail server (Keycloak smtpServer keys): sends invitation and
-  # password-reset mail from the Microsoft 365 mailbox with an OAuth 2.0
-  # client-credentials token (XOAUTH2). The client secret is resolved from
-  # Keycloak's file vault (file aihub_smtp-client-secret), never stored in the
-  # realm.
+  # password-reset mail from the Microsoft 365 mailbox KEYCLOAK_SMTP_MAILBOX with
+  # an OAuth 2.0 client-credentials token (XOAUTH2). The client secret is
+  # resolved from Keycloak's file vault (file aihub_smtp-client-secret), never
+  # stored in the realm.
   smtp_server:
     host: smtp.office365.com
     port: '587'
-    from: noreply.ai-hub@bbv.ch
+    from: $(env:KEYCLOAK_SMTP_MAILBOX)
     fromDisplayName: Swiss AI-Hub
-    user: noreply.ai-hub@bbv.ch
+    user: $(env:KEYCLOAK_SMTP_MAILBOX)
     auth: 'true'
     authType: token
     authTokenUrl: https://login.microsoftonline.com/$(env:KEYCLOAK_SMTP_TENANT_ID)/oauth2/v2.0/token
