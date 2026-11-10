@@ -225,7 +225,10 @@ The production images serve `nginx.conf.template`; `docker/start.sh` builds the 
 hashes from `docker/csp-script-hashes.mjs` (computed at build). A `location` with its own `add_header` drops every
 server-level header, so each such block repeats the CSP and HSTS lines (`location /` serves every HTML route).
 `script-src` has no `'unsafe-inline'`/`'unsafe-eval'`: never add code that evaluates strings or injects inline scripts.
-Icons fall back to the Iconify API, so its hosts are in `connect-src`.
+Icons fall back to the Iconify API, so its hosts are in `connect-src`. `img-src` and `connect-src` name the S3 origin
+from `S3_STORAGE_PUBLIC_ENDPOINT` (presigned figure URLs, knowledge uploads), so markdown cannot load images from other
+hosts to leak data; without that variable they fall back to `https:`. A UI feature that shows external images needs a
+new origin in `start.sh`.
 
 ## Event Display System
 

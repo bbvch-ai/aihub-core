@@ -117,10 +117,12 @@ Traefik applies security-hardened HTTP headers to all responses:
 - **X-Content-Type-Options**: Prevents MIME type sniffing
 - **Referrer-Policy**: Limits referrer information leakage
 
-The Admin UI and the Sysadmin UI additionally send their own **Content-Security-Policy** from nginx. Scripts load only
-from the app itself, plugins and `<base>` rewrites are blocked, and frames, form targets and outgoing connections are
-limited to the app, Keycloak and OpenWebUI. The container fills in these origins from `OAUTH_AUTHORITY_URL`, `WEBUI_URL`
-and `WS_ENDPOINT` at start.
+The Admin UI and the Sysadmin UI additionally send their own **Content-Security-Policy** and HSTS header from nginx.
+Scripts load only from the app itself, plugins and `<base>` rewrites are blocked, and frames, form targets and outgoing
+connections are limited to the app, Keycloak and OpenWebUI. The Admin UI loads images only from the app and the S3
+storage, so a markdown image cannot send chat content to another server. The container fills in these origins from
+`OAUTH_AUTHORITY_URL`, `WEBUI_URL`, `WS_ENDPOINT` and `S3_STORAGE_PUBLIC_ENDPOINT` at start. Without
+`S3_STORAGE_PUBLIC_ENDPOINT`, images and uploads are allowed from any HTTPS origin.
 
 ## External Service Connections
 
