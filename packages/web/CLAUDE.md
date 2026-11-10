@@ -220,8 +220,10 @@ serialised into MDC's generated config, so it must stay plain JSON.
 
 ## Content-Security-Policy
 
-The production images serve `nginx.conf.template`; `docker/start.sh` fills in the Keycloak, OpenWebUI and WebSocket
-origins from the container env and the inline-script hashes from `docker/csp-script-hashes.mjs` (computed at build).
+The production images serve `nginx.conf.template`; `docker/start.sh` builds the whole policy into
+`CONTENT_SECURITY_POLICY` from the Keycloak, OpenWebUI and WebSocket origins in the container env and the inline-script
+hashes from `docker/csp-script-hashes.mjs` (computed at build). A `location` with its own `add_header` drops every
+server-level header, so each such block repeats the CSP and HSTS lines (`location /` serves every HTML route).
 `script-src` has no `'unsafe-inline'`/`'unsafe-eval'`: never add code that evaluates strings or injects inline scripts.
 Icons fall back to the Iconify API, so its hosts are in `connect-src`.
 
