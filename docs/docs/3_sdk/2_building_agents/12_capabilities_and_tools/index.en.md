@@ -123,11 +123,11 @@ keeps each pending request itself and answers it once, as it asked it: the copy 
 request, an answer to a request the run is not waiting on runs nothing, and only the user who started the run can answer
 it. The approved call records who approved it (`ToolCallApprovedEvent.approved_by`). A tool without a rule on the
 profile follows its own default, which the approval picker shows next to its name: the sandbox's `run_command`,
-`write_file` and `replace_file_content` ask on every call until an admin relaxes them. Only tools actually offered can run: a call to a disabled
-tool, a tool whose toggle is off, or a name the model made up goes back to it as an unknown tool, and the same check
-runs again when an approval arrives. A tool the profile disables is not even built. At a limit the model answers without
-tools and a notice says it stopped early. When the conversation and the tool schemas outgrow the input budget, earlier
-results and turns are condensed in place and the chat shows a status.
+`send_process_input`, `write_file` and `replace_file_content` ask on every call until an admin relaxes them. Only tools
+actually offered can run: a call to a disabled tool, a tool whose toggle is off, or a name the model made up goes back
+to it as an unknown tool, and the same check runs again when an approval arrives. A tool the profile disables is not
+even built. At a limit the model answers without tools and a notice says it stopped early. When the conversation and the
+tool schemas outgrow the input budget, earlier results and turns are condensed in place and the chat shows a status.
 
 ### Events
 

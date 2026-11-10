@@ -447,11 +447,11 @@ conversation (remembered per tool); `approve_every_call` never lets one carry ov
 the run context (`PendingToolApprovals`, by request id) and `approval_step` takes it back out, so only the stored
 request runs, once, never the copy the client returns; it also requires `responded_by` (stamped by the distributor) to
 be the run's user, and re-checks `ToolAvailability` (declared, not disabled, toggle on), as `gate_step` does. A tool the
-profile disables is never built (`ToolSet.function_tools(context, config)`). `run_command` and `write_file` default to
-`EVERY_CALL`; the approval picker labels tools by their non-`never` default. At the limits the model answers without
-tools and a fixed notice says it stopped early. The answering turn streams
-(`EventDisplayer.display_llm_stream(..., tools=...)`); text streamed before a tool call moves into a collapsed thought.
-Results are capped only by `max_result_tokens`. When the conversation and the tool schemas outgrow
+profile disables is never built (`ToolSet.function_tools(context, config)`). `run_command`, `send_process_input`,
+`write_file` and `replace_file_content` default to `EVERY_CALL`; the approval picker labels tools by their non-`never`
+default. At the limits the model answers without tools and a fixed notice says it stopped early. The answering turn
+streams (`EventDisplayer.display_llm_stream(..., tools=...)`); text streamed before a tool call moves into a collapsed
+thought. Results are capped only by `max_result_tokens`. When the conversation and the tool schemas outgrow
 `ConversationFields.input_budget`, `start_step`/`join_step` set `ToolLoopState.needs_condensing`, and `condense_step`
 (precondition `outgrew_the_prompt`; `decide_step` waits on `fits_the_prompt`) runs `ToolLoopCondenser` with the task
 model: earlier results summarised in place (every tool call keeps its answer), then the turns before the request as one

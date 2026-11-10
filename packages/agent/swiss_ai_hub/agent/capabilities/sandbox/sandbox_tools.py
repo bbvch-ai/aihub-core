@@ -26,9 +26,9 @@ class SandboxTools(BaseToolSpec):
     """The user's code sandbox as tools: the operations OpenWebUI's own terminal integration offers, run by the agent.
 
     Each runs in the asking user's sandbox home, in this conversation's folder, which holds the conversation's
-    attached files. Offered only while the user has Code Interpreter switched on. Running a command, writing a file
-    and editing one ask the user on every call unless the profile relaxes it, since a document the model read can ask
-    for them.
+    attached files. Offered only while the user has Code Interpreter switched on. Running a command, typing into one,
+    writing a file and editing one ask the user on every call unless the profile relaxes it, since a document the
+    model read can ask for them.
     """
 
     spec_functions = [
@@ -88,7 +88,7 @@ class SandboxTools(BaseToolSpec):
         workspace = await self._workspace()
         return self._process(await workspace.client.process_status(process_id, wait=min(max(wait, 0), 300)))
 
-    @ToolOptions.of(**_options("send_process_input"))
+    @ToolOptions.of(**_options("send_process_input", default_approval=ToolApprovalPolicy.EVERY_CALL))
     async def send_process_input(
         self,
         process_id: Annotated[str, "The id of the running command."],

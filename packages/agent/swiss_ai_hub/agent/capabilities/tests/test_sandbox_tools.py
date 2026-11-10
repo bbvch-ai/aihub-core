@@ -284,7 +284,7 @@ class TestOffer:
     def test_the_universal_agent_offers_the_code_interpreter_toggle(self) -> None:
         assert ChatFeature.CODE_INTERPRETER in UniversalAgent.supported_features()
 
-    def test_running_a_command_and_writing_a_file_ask_on_every_call_by_default(self) -> None:
+    def test_commands_their_input_and_file_writes_ask_on_every_call_by_default(self) -> None:
         tool_set = ToolSet.of((SandboxTools,))
 
         asking = {
@@ -293,7 +293,7 @@ class TestOffer:
             if ToolApprovals.policy(name, tool_set.options(name), ToolLoopConfig()) != ToolApprovalPolicy.NEVER
         }
 
-        assert asking == {"run_command", "write_file", "replace_file_content"}
+        assert asking == {"run_command", "send_process_input", "write_file", "replace_file_content"}
 
     def test_a_profile_can_relax_the_default(self) -> None:
         tool_set = ToolSet.of((SandboxTools,))

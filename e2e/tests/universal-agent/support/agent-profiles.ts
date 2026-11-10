@@ -23,6 +23,7 @@ const UNRESTRICTED_TOOL_LOOP: ToolLoopOverrides = {
   disabled_tools: [],
   approvals: [
     { tool: 'run_command', policy: 'never' },
+    { tool: 'send_process_input', policy: 'never' },
     { tool: 'write_file', policy: 'never' },
     { tool: 'replace_file_content', policy: 'never' },
   ],
