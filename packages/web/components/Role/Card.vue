@@ -31,9 +31,10 @@
           <Badge
             v-for="access_rule in role.access_rules"
             :key="access_rule"
+            v-tooltip.top="accessRuleTooltip(access_rule)"
             :value="access_rule"
             severity="secondary"
-            class="border border-surface-200 dark:border-surface-700"
+            class="!inline-block max-w-full truncate border border-surface-200 dark:border-surface-700"
           />
         </div>
       </div>
@@ -64,6 +65,16 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const route = useRoute()
+
+// autoHide off lets the pointer enter the tooltip to scroll a rule too long for its capped height.
+const accessRuleTooltip = (accessRule: string) => ({
+  value: accessRule,
+  autoHide: false,
+  pt: {
+    root: { class: '!max-w-[min(32rem,90vw)]' },
+    text: { class: 'max-h-[40vh] overflow-y-auto [overflow-wrap:anywhere]' },
+  },
+})
 
 const isActive = computed(() => {
   return route.params.role_id === props.role.id
