@@ -103,6 +103,7 @@
                       :model-value="getRepeaterData(rep.path)"
                       :name="rep.name"
                       :label="rep.label"
+                      :help="rep.help"
                       :add-label="rep.addLabel"
                       :children-schema="rep.childrenSchema"
                       :default-item="rep.defaultItem"

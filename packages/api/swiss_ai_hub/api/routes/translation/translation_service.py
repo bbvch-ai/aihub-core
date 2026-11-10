@@ -57,21 +57,23 @@ class TranslationService:
         source_locale: str = "en",
     ) -> TranslationOutcome:
         """
-        Fills in every supported locale that has no value yet by translating the source locale.
+        Fills in every supported locale that has no text yet by translating the source locale.
 
-        Locales that already have a value are left alone, so a retry after a partial failure fills in only the
+        Locales that already have text are left alone, so a retry after a partial failure fills in only the
         missing ones and never overwrites translations the user has corrected. A generation without a usable
-        <translation> block counts as a failed locale; gateway and configuration errors propagate.
+        <translation> block counts as a failed locale; gateway and configuration errors propagate. Whitespace
+        counts as no text, as in ``LocaleString.has_content``: given only whitespace, the model answers with prose
+        and every locale fails.
         """
-        source_text = locale_string.in_locale(source_locale, fallback=False)
-        if not source_text:
+        source_text = locale_string.in_locale(source_locale, fallback=False) or ""
+        if not source_text.strip():
             logger.warning(f"No source text found for locale {source_locale}")
             return TranslationOutcome(translated=locale_string)
 
         target_locales = [
             locale
             for locale in t.supported_locales
-            if locale != source_locale and not locale_string.in_locale(locale, fallback=False)
+            if locale != source_locale and not (locale_string.in_locale(locale, fallback=False) or "").strip()
         ]
         if not target_locales:
             return TranslationOutcome(translated=locale_string)

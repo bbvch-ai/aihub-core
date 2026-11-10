@@ -10,7 +10,8 @@
 # API-key check, because the stock server has no authentication.
 #
 # Re-publish via `make -C infra/deployment build-and-push-presidio-analyzer-image` or the
-# "Build Presidio analyzer image" workflow after editing this file, then bump image_tags.presidio_analyzer.
+# "Build Presidio analyzer image" workflow after editing this file, then bump image_tags.presidio_analyzer and
+# image_tags.presidio_analyzer_gpu together: both build from this file and must carry the same code.
 FROM python:3.12-slim
 
 # Torch's default thread count oversubscribes a shared host: a short request took seconds instead of ~250 ms. Every
@@ -18,14 +19,20 @@ FROM python:3.12-slim
 # twice when all are busy. 2 x 4 let a third long text block everything; 4 x 1 doubled an idle request, and one torch
 # thread makes a long text 3 to 4 times slower. Deployments size these through compose for bigger hosts.
 ENV PIP_NO_CACHE_DIR=1 PORT=3000 ANALYZER_CONF_FILE=/app/analyzer.yaml HF_HOME=/app/hf OMP_NUM_THREADS=2 \
-    MKL_NUM_THREADS=2 GUNICORN_WORKERS=1 GUNICORN_THREADS=4 GUNICORN_TIMEOUT=300
+    MKL_NUM_THREADS=2 GUNICORN_WORKERS=1 GUNICORN_THREADS=4 GUNICORN_TIMEOUT=300 GLINER_BATCH_SIZE=8
 
 WORKDIR /app
 
 RUN useradd -m -u 1001 presidio && chown presidio:presidio /app
 
-RUN pip install "torch==2.14.1" --index-url https://download.pytorch.org/whl/cpu \
-    && pip install "presidio-analyzer[server,gliner]==2.2.364" "gliner==0.2.29" \
+# The GPU image (image_tags.presidio_analyzer_gpu) is this file with the CUDA torch index; the wheels bundle the CUDA
+# runtime, so the host needs only the NVIDIA driver and container toolkit. Presidio puts GLiNER on CUDA when torch sees
+# a GPU and on the CPU otherwise, so the GPU image also runs on a host without one. Its CUDA wheels are about 4 GB, and
+# pip's default 15 s read timeout with 5 retries aborted two of three builds on a slow line; the flags change only how
+# pip downloads, not what it installs.
+ARG TORCH_INDEX=https://download.pytorch.org/whl/cpu
+RUN pip install --timeout 120 --retries 10 "torch==2.14.1" --index-url "${TORCH_INDEX}" \
+    && pip install --timeout 120 --retries 10 "presidio-analyzer[server,gliner]==2.2.364" "gliner==0.2.29" \
     https://github.com/explosion/spacy-models/releases/download/de_core_news_lg-3.8.0/de_core_news_lg-3.8.0-py3-none-any.whl
 
 USER 1001
@@ -38,7 +45,7 @@ RUN python -c "from gliner import GLiNER; GLiNER.from_pretrained('urchade/gliner
     && mkdir -p "${HF_HOME}/hub/models--urchade--gliner_multi_pii-v1/refs" \
     && printf '%s' "${GLINER_REVISION}" > "${HF_HOME}/hub/models--urchade--gliner_multi_pii-v1/refs/main"
 
-COPY --chown=1001:1001 app.py word_aligned_text_chunker.py logging.ini /app/
+COPY --chown=1001:1001 app.py batched_gliner_recognizer.py word_aligned_text_chunker.py logging.ini /app/
 
 ENV HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 

@@ -1,6 +1,6 @@
 ---
 title: Konfigurierbare Agentenformulare
-source_sha: dea97b0c7cdd335029ac01267a55446be0916c7917b4a9f4203f1d243a988883
+source_sha: bc17a285f4bfe6dfa6e9acc4b0380ed97d4a0dc7774fa6265e0c106fdf852124
 ---
 
 # Konfigurierbare Agentenformulare
@@ -188,6 +188,29 @@ llm_model=ModelSelect(
 ```
 
 Das `ModelSelect`-Element wird zur Laufzeit automatisch aus dem LiteLLM-Modellregister befüllt.
+
+Die Auswahl listet Modelle unter ihrem Anzeigenamen auf, zeigt das Kontextfenster des gewählten Modells und bietet nie
+ein Modell an, das als nicht allgemein einsetzbar markiert ist, etwa das OCR-Modell. Ein Feld kann über `requirements`
+zudem Fähigkeiten und Hosting-Standorte verlangen. Die Auswahl bietet dann nur die Modelle an, die alle erfüllen, und
+das Speichern eines Profils mit einem anderen Modell wird abgewiesen. Ein Flag, das das Modell nicht setzt, gilt als
+nicht unterstützt. Profile, die gespeichert wurden, bevor eine Anforderung hinzukam, laufen weiter, lassen sich aber
+erst wieder speichern, wenn ein passendes Modell gewählt ist.
+
+```python
+from swiss_ai_hub.core.infrastructure import HostingLocation, ModelCapability, ModelRequirements
+
+llm_model=ModelSelect(
+    label=LocaleString(en="Language Model"),
+    requirements=ModelRequirements(
+        capabilities={ModelCapability.TOOL_CALLING},
+        hosting_locations={HostingLocation.SWISS_CLOUD, HostingLocation.LOCAL},
+    ),
+)
+```
+
+Übergeben Sie die Anforderungen bei einem Konversationsagenten aus dem eigenen `as_form()` der Konfiguration an
+`conversation_form_elements(llm_requirements=...)`. Sie gelten dann für das Haupt-`llm`, nicht für `task_llm`. Der MCP
+ReAct Agent verlangt auf diese Weise `tool_calling`.
 
 ## Formularsichere Constraints
 

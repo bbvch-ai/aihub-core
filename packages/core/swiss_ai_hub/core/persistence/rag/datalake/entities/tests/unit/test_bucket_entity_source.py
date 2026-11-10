@@ -69,3 +69,103 @@ class TestSourceAxis:
         stored = BucketEntity.get_bucket_by_bucket_name("rotating")
         assert stored.source is None
         assert stored.source_configuration == {}
+
+
+_STORED = "enc:v1:stored"
+_REFRESHED = "enc:v1:refreshed"
+
+
+def _onedrive_source(**extra: str) -> dict:
+    return {"backend_type": "onedrive", "onedrive": {"drive_id": "b!abc", "token": _STORED, **extra}}
+
+
+def _replace(**overrides) -> bool:
+    arguments = {
+        "bucket_name": "tokendb",
+        "source": SourcePipelineType.RCLONE.value,
+        "backend_type": "onedrive",
+        "path": "onedrive.token",
+        "expected": _STORED,
+        "replacement": _REFRESHED,
+    } | overrides
+    return BucketEntity.replace_source_secret(**arguments)
+
+
+class TestReplaceSourceSecret:
+    """The pipeline writes a refreshed OAuth token back only over exactly the value its run read, so a user's edit
+    made in the meantime is never overwritten."""
+
+    def test_the_secret_is_replaced_and_nothing_else_changes(self):
+        BucketEntity.create_bucket(
+            "tokendb",
+            source=SourcePipelineType.RCLONE.value,
+            source_configuration=_onedrive_source(client_id="c") | {"root_path": "Docs"},
+        )
+
+        assert _replace() is True
+
+        stored = BucketEntity.get_bucket_by_bucket_name("tokendb").source_configuration
+        assert stored == {
+            "backend_type": "onedrive",
+            "root_path": "Docs",
+            "onedrive": {"drive_id": "b!abc", "token": _REFRESHED, "client_id": "c"},
+        }
+
+    def test_a_token_changed_since_the_run_read_it_is_kept(self):
+        BucketEntity.create_bucket(
+            "tokendb",
+            source=SourcePipelineType.RCLONE.value,
+            source_configuration=_onedrive_source() | {"onedrive": {"drive_id": "b!abc", "token": "enc:v1:user"}},
+        )
+
+        assert _replace() is False
+        assert BucketEntity.get_bucket_by_bucket_name("tokendb").source_configuration["onedrive"]["token"] == (
+            "enc:v1:user"
+        )
+
+    @pytest.mark.parametrize("source", ["acme_sync", None])
+    def test_a_database_that_left_the_source_is_not_written(self, source: str | None):
+        BucketEntity.create_bucket("tokendb", source=source, source_configuration=_onedrive_source())
+
+        assert _replace() is False
+        assert BucketEntity.get_bucket_by_bucket_name("tokendb").source_configuration["onedrive"]["token"] == _STORED
+
+    def test_a_database_being_deleted_is_not_written(self):
+        bucket = BucketEntity.create_bucket(
+            "tokendb", source=SourcePipelineType.RCLONE.value, source_configuration=_onedrive_source()
+        )
+        bucket.deleting = True
+        bucket.save()
+
+        assert _replace() is False
+        assert BucketEntity.get_bucket_by_bucket_name("tokendb").source_configuration["onedrive"]["token"] == _STORED
+
+    def test_a_source_switched_to_another_backend_is_not_written(self):
+        BucketEntity.create_bucket(
+            "tokendb",
+            source=SourcePipelineType.RCLONE.value,
+            source_configuration=_onedrive_source() | {"backend_type": "s3"},
+        )
+
+        assert _replace() is False
+        assert BucketEntity.get_bucket_by_bucket_name("tokendb").source_configuration["backend_type"] == "s3"
+
+    def test_a_deleted_database_is_not_recreated(self):
+        bucket = BucketEntity.create_bucket(
+            "tokendb", source=SourcePipelineType.RCLONE.value, source_configuration=_onedrive_source()
+        )
+        BucketEntity.delete_bucket(str(bucket.id))
+
+        assert _replace() is False
+        assert BucketEntity.objects(bucket_name="tokendb").count() == 0
+
+    def test_only_the_named_database_is_written(self):
+        BucketEntity.create_bucket(
+            "tokendb", source=SourcePipelineType.RCLONE.value, source_configuration=_onedrive_source()
+        )
+        BucketEntity.create_bucket(
+            "otherdb", source=SourcePipelineType.RCLONE.value, source_configuration=_onedrive_source()
+        )
+
+        assert _replace() is True
+        assert BucketEntity.get_bucket_by_bucket_name("otherdb").source_configuration["onedrive"]["token"] == _STORED

@@ -10,9 +10,17 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi import HTTPException
 from pydantic import Field, TypeAdapter
-from swiss_ai_hub.core.form import ALL_FORM_OPTIONS, Form, FormkitElement, ModelBoundInputNumber
+from swiss_ai_hub.core.form import (
+    ALL_FORM_OPTIONS,
+    Form,
+    FormkitElement,
+    ModelBoundInputNumber,
+    ModelSelect,
+    Repeater,
+)
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import HostingLocation, ModelCapability, ModelRequirements
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
@@ -124,3 +132,138 @@ async def test_a_form_without_model_bound_fields_never_asks_for_the_models():
         await ModelLimitValidator.reject_values_beyond_model_limits([], {"x": 1}, fake_user(), ApiLocaleHandler())
 
     get_model_list.assert_not_called()
+
+
+TOOL_CALLING = ModelRequirements(capabilities={ModelCapability.TOOL_CALLING})
+TOOLS_MODEL = "text-generation/tools"
+OCR_MODEL = "text-generation/ocr"
+_PICKER_MODELS = [
+    *_MODELS,
+    ModelDTO.model_validate(
+        {
+            "model_name": TOOLS_MODEL,
+            "model_info": {"mode": "chat", "supports_function_calling": True, "aihub_hosting_location": "eu"},
+        }
+    ),
+    ModelDTO.model_validate(
+        {"model_name": OCR_MODEL, "model_info": {"mode": "chat", "aihub_general_purpose": False}},
+    ),
+]
+
+
+def _picker_elements(requirements: ModelRequirements | None) -> list[FormkitElement]:
+    form = _ChatBlueprintConfig(llm=LLMConfig.as_form(requirements=requirements))
+    stored = [element.model_dump(by_alias=True) for element in form.to_formkit_form()]
+    return TypeAdapter(list[ALL_FORM_OPTIONS]).validate_python(stored)
+
+
+async def _reject_pick(model: str, requirements: ModelRequirements | None = None) -> None:
+    with patch(
+        "swiss_ai_hub.api.util.model_limit_validator.ModelService.get_model_list",
+        AsyncMock(return_value=_PICKER_MODELS),
+    ):
+        await ModelLimitValidator.reject_values_beyond_model_limits(
+            _picker_elements(requirements), {"llm": {"model_name": model}}, fake_user(), ApiLocaleHandler(locale="en")
+        )
+
+
+@pytest.mark.asyncio
+async def test_a_model_meeting_the_pickers_requirements_is_saved():
+    await _reject_pick(TOOLS_MODEL, TOOL_CALLING)
+
+
+@pytest.mark.asyncio
+async def test_a_model_failing_the_pickers_requirements_is_refused_naming_what_it_lacks():
+    """A stored profile from before the requirement keeps running, but its next save has to pick another model."""
+    with pytest.raises(HTTPException) as raised:
+        await _reject_pick(SMALL_MODEL, TOOL_CALLING)
+
+    assert raised.value.status_code == 400
+    assert "llm.model_name" in raised.value.detail
+    assert "(tool calling)" in raised.value.detail
+
+
+@pytest.mark.asyncio
+async def test_a_location_requirement_is_enforced():
+    with pytest.raises(HTTPException) as raised:
+        await _reject_pick(TOOLS_MODEL, ModelRequirements(hosting_locations={HostingLocation.SWISS_CLOUD}))
+
+    assert "(hosting location)" in raised.value.detail
+
+
+@pytest.mark.asyncio
+async def test_a_picker_without_requirements_accepts_any_general_purpose_model():
+    await _reject_pick(SMALL_MODEL)
+
+
+@pytest.mark.asyncio
+async def test_a_model_built_for_one_job_is_refused_even_without_requirements():
+    with pytest.raises(HTTPException) as raised:
+        await _reject_pick(OCR_MODEL)
+
+    assert "llm.model_name" in raised.value.detail
+    assert OCR_MODEL in raised.value.detail
+
+
+@pytest.mark.asyncio
+async def test_an_unknown_picked_model_is_not_held_against_the_save():
+    await _reject_pick("text-generation/not-listed", TOOL_CALLING)
+
+
+class _RetrieverConfig(Form):
+    embed_model: Annotated[str | ModelSelect, Field(description="Embedding model")]
+
+
+class _RepeatedPickerConfig(Form):
+    retrievers: Annotated[list[_RetrieverConfig], Field(description="Retrievers")]
+
+
+def _repeated_picker_elements() -> list[FormkitElement]:
+    form = _RepeatedPickerConfig(
+        retrievers=[_RetrieverConfig(embed_model=ModelSelect(label=LocaleString(en="Embedding"), mode="embedding"))]
+    )
+    stored = [element.model_dump(by_alias=True) for element in form.to_formkit_form()]
+    return TypeAdapter(list[ALL_FORM_OPTIONS]).validate_python(stored)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "retrievers",
+    [
+        [{"embed_model": SMALL_MODEL}, {"embed_model": OCR_MODEL}],
+        {"0": {"embed_model": SMALL_MODEL}, "1": {"embed_model": OCR_MODEL}},
+    ],
+    ids=["list", "formkit-numbered-dict"],
+)
+async def test_a_picker_in_a_repeater_is_checked_per_entry(retrievers):
+    with (
+        patch(
+            "swiss_ai_hub.api.util.model_limit_validator.ModelService.get_model_list",
+            AsyncMock(return_value=_PICKER_MODELS),
+        ),
+        pytest.raises(HTTPException) as raised,
+    ):
+        await ModelLimitValidator.reject_values_beyond_model_limits(
+            _repeated_picker_elements(), {"retrievers": retrievers}, fake_user(), ApiLocaleHandler(locale="en")
+        )
+
+    assert "retrievers.1.embed_model" in raised.value.detail
+    assert "retrievers.0" not in raised.value.detail
+
+
+def test_only_pickers_are_collected_from_repeater_entries():
+    """A field bound to another field's model names it without the entry's index, so it cannot be resolved there."""
+    tokens = ModelBoundInputNumber(
+        name="tokens", label=LocaleString(en="Tokens"), model_ref="model_name", max_from="max_input_tokens"
+    )
+    repeater = Repeater(
+        name="entries",
+        label=LocaleString(en="Entries"),
+        children=[tokens, ModelSelect(name="model_name", label=LocaleString(en="Model"))],
+    )
+
+    bound = ModelLimitValidator.bound_elements(
+        [repeater], {"entries": [{"tokens": 10_000_000, "model_name": SMALL_MODEL}]}, ""
+    )
+
+    assert [(path, type(element).__name__) for path, element, _ in bound] == [("entries.0.model_name", "ModelSelect")]

@@ -972,6 +972,8 @@ process:
       done: Done
       steps: Progress
 form:
+  repeater:
+    add_item: Add item
   secret_file_input:
     drop_hint: Drop the file here or click to choose it
     limits: '{accept}, up to {size}'
@@ -994,6 +996,14 @@ form:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  modelSelect:
+    contextWindow: 'Context window: {input} input · {output} output tokens'
+    contextWindowInputOnly: 'Context window: {input} input tokens'
+    notSelectable: '{model} does not meet what this field requires. Choose another model before saving.'
+    specialPurpose: '{model} is built for one job only and cannot be chosen here. Choose another model before saving.'
+    unavailable: '{model} is not available to you. Choose another model before saving.'
+    loadFailed: The models could not be loaded. Reload the page to try again.
+    empty: No model you can use meets what this field requires.
   modelBound:
     providerDefault: provider default
     overrideRequired: Enter a value, or untick the override to use the default.
