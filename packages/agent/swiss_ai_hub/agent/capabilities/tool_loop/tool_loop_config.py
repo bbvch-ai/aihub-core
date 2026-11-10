@@ -5,6 +5,7 @@ from swiss_ai_hub.core.form import Checkbox, InputNumber, MultiSelect
 from swiss_ai_hub.core.form.constraints import Ge
 from swiss_ai_hub.core.form.form import Form
 
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_rule import ToolApprovalRule
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
@@ -56,7 +57,7 @@ class ToolLoopConfig(Form):
         return next((rule for rule in self.approvals if rule.tool == tool), None)
 
     @classmethod
-    def as_form(cls, tool_names: list[str]) -> Self:
+    def as_form(cls, tool_names: list[str], default_approvals: dict[str, ToolApprovalPolicy]) -> Self:
         """The blueprint's tool names are the options, since which tools exist is the blueprint's to declare."""
         return cls(
             max_iterations=InputNumber(
@@ -87,5 +88,5 @@ class ToolLoopConfig(Form):
                 filter=True,
                 condition_if="$get(check_tool_loop_disable_tools).value",
             ),
-            approvals=[ToolApprovalRule.as_form(tool_names)],
+            approvals=[ToolApprovalRule.as_form(tool_names, default_approvals)],
         )

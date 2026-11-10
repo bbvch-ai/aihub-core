@@ -36,6 +36,9 @@ E2E_OPENWEBUI_EMAIL=<existing Keycloak user> E2E_OPENWEBUI_PASSWORD=<password> \
 pnpm exec playwright test --project=openwebui --no-deps --workers=1
 ```
 
+I1 needs a second member of the tenant with the `AIHubUser` role: an API bearer token (`POST /tokens` with their
+Keycloak access token) in `E2E_SECOND_USER_TOKEN` and their user id in `E2E_SECOND_USER_ID`.
+
 | Variable                                             | Default                            | Purpose                                                    |
 | ---------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------- |
 | `E2E_OPENWEBUI_URL`                                  | `https://openwebui.${E2E_DOMAIN}`  | OpenWebUI base URL                                         |
@@ -46,6 +49,7 @@ pnpm exec playwright test --project=openwebui --no-deps --workers=1
 | `E2E_UNIVERSAL_AGENT_TEMPLATE`                       | `workplace-assistant`              | Profile copied for throwaway profiles (else the first one) |
 | `E2E_MAIN_LLM` / `E2E_TASK_LLM`                      | Kimi-K2.6 / gemma-4-31B-it         | Models of the throwaway profiles                           |
 | `E2E_KNOWLEDGE_COLLECTION` / `_QUESTION` / `_ANSWER` | none; D1 skips without them        | Seeded collection, a question on it and the expected fact  |
+| `E2E_SECOND_USER_TOKEN` / `E2E_SECOND_USER_ID`       | none; I1 skips without them        | API bearer token and id of a second member of the tenant   |
 
 The UI locators assume OpenWebUI's English interface for the e2e user, and the fixed notice in H1 is the English one.
 
@@ -75,15 +79,18 @@ time rather than committed.
 
 ## Cases
 
-| Case  | Spec                        | Asserts                                                                                               |
-| ----- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
-| A1    | `integrations-menu.spec.ts` | Code Interpreter and My Files in the menu, Web Search and Image not; same in `info.meta.capabilities` |
-| A2    | `withheld-tools.spec.ts`    | Code Interpreter off: no `run_command`, no sum, the toggle is named; lookup outcome annotated         |
-| A3    | `withheld-tools.spec.ts`    | `read_attached_files` disabled: no read call, no source, no planted fact                              |
-| B1/B2 | `tool-approval.spec.ts`     | "Agent Question" dialog per call; Confirm runs and answers, Cancel runs nothing and the chat goes on  |
-| C1/C2 | `code-interpreter.spec.ts`  | `run_command` and the exact total; `display_file`, a PNG on the answer that downloads as `image/png`  |
-| D1    | `knowledge.spec.ts`         | `search_knowledge` call, a knowledge source, the expected fact                                        |
-| E1/E2 | `attached-files.spec.ts`    | `<name> (partial)` vs plain source names; `broken.pdf: <error>` status, the good file answers         |
-| G1/G2 | `conversation.spec.ts`      | Title, `universalagent` tag, follow-ups; an edited turn branches with only the kept file              |
-| G3    | `code-interpreter.spec.ts`  | Stop during `sleep 120`: no new content for 15 s, the next question is answered                       |
-| H1    | `tool-call-limit.spec.ts`   | `max_tool_calls: 1`: one tool call and the fixed "I stopped looking into this" notice                 |
+| Case  | Spec                             | Asserts                                                                                               |
+| ----- | -------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| A1    | `integrations-menu.spec.ts`      | Code Interpreter and My Files in the menu, Web Search and Image not; same in `info.meta.capabilities` |
+| A2    | `withheld-tools.spec.ts`         | Code Interpreter off: no `run_command`, no sum, the toggle is named; lookup outcome annotated         |
+| A3    | `withheld-tools.spec.ts`         | `read_attached_files` disabled: no read call, no source, no planted fact                              |
+| B1/B2 | `tool-approval.spec.ts`          | "Agent Question" dialog per call; Confirm runs and answers, Cancel runs nothing and the chat goes on  |
+| B3    | `tool-approval.spec.ts`          | `send_process_input` asks before every input; Confirm types `print(6*7)` and the answer says 42       |
+| B4    | `tool-approval.spec.ts`          | No approval rules: `run_command` still asks by default, Cancel runs nothing                           |
+| C1/C2 | `code-interpreter.spec.ts`       | `run_command` and the exact total; `display_file`, a PNG on the answer that downloads as `image/png`  |
+| D1    | `knowledge.spec.ts`              | `search_knowledge` call, a knowledge source, the expected fact                                        |
+| E1/E2 | `attached-files.spec.ts`         | `<name> (partial)` vs plain source names; `broken.pdf: <error>` status, the good file answers         |
+| G1/G2 | `conversation.spec.ts`           | Title, `universalagent` tag, follow-ups; an edited turn branches with only the kept file              |
+| G3    | `code-interpreter.spec.ts`       | Stop during `sleep 120`: no new content for 15 s, the next question is answered                       |
+| H1    | `tool-call-limit.spec.ts`        | `max_tool_calls: 1`: one tool call and the fixed "I stopped looking into this" notice                 |
+| I1    | `shared-thread-approval.spec.ts` | API only: another thread member's approval is a 403 and is not stored; the run's user approves        |
