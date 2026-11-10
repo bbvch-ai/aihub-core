@@ -131,7 +131,7 @@ onMounted(() => {
         },
       )
 
-      if (nuxtApp && nuxtApp.vueApp) {
+      if (nuxtApp?.vueApp) {
         vueComponentVNode.appContext = nuxtApp.vueApp._context
       }
 
