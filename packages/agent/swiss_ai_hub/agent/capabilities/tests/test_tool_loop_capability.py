@@ -742,7 +742,8 @@ class TestApproval:
         unsigned = await self._respond(request, True, run_context, responded_by=None)
         by_alice = await self._respond(request, True, run_context)
 
-        assert by_bob is None and unsigned is None
+        assert by_bob is None
+        assert unsigned is None
         assert isinstance(by_alice, ToolCallApprovedEvent)
 
     @pytest.mark.asyncio
@@ -842,7 +843,8 @@ class TestFunctionTools:
 
         assert "echo" not in LoopAgent.tools.function_tools(context, restricted)
         assert "echo" not in await LoopAgent.tools.definitions(context, restricted)
-        assert result.is_error and "HI" not in result.content
+        assert result.is_error
+        assert "HI" not in result.content
 
 
 class TestJoin:
