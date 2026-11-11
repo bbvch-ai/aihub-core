@@ -108,7 +108,8 @@ endpoints.
 **RoleEntity**
 
 - Every role belongs to exactly one tenant — `tenant_id` is required
-- The default role set (`AIHubUser`, `AIHubAdmin`, `AIHubAgentUser`, etc.) is seeded per tenant at creation time
+- The default role set (`AIHubUser`, `AIHubAdmin`, `AIHubAgentUser`, etc.) is seeded per tenant at creation time; see
+  [Default Roles](../3_default_roles/) for what each grants
 - System-wide roles no longer exist; see ADR `2026_04_14_tenant_scoped_roles.md`
 
 **User profile data**
@@ -212,8 +213,7 @@ AIHUB_STARTUP_TENANT_NAME="Swiss AI Hub"
 AIHUB_STARTUP_TENANT_DESCRIPTION="This tenant was auto-created on startup of the Swiss AI Hub."
 AIHUB_STARTUP_TENANT_ACCESS_RULES="aihub.admin.>"
 
-# User Signup Role Assignment
-AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser"
+# User Signup Role Assignment (see Default Roles and New-User Role Assignment)
 AIHUB_USER_SIGNUP_REGULAR_USER_ROLES="AIHubUser"
 AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES="AIHubAdmin,AIHubUser"
 
