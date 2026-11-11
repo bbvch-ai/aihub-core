@@ -27,7 +27,7 @@
 # Pinned to an explicit version (not `latest`) for reproducible builds — bump this tag
 # deliberately. Re-publish via `make -C infra/deployment build-and-push-open-terminal-image`
 # after editing this file. Non-build stages then pick it up via `docker compose pull`.
-FROM ghcr.io/open-webui/open-terminal:0.11.34
+FROM ghcr.io/open-webui/open-terminal:0.17.7
 
 USER root
 # The base image's pypdf 6.9.2 and Pillow 12.2.0 carry known advisories (pip-audit: 62 and 64), and the sandbox parses
