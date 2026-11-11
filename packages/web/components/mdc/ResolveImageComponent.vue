@@ -54,6 +54,6 @@ const fetchAndSetImageUrl = async () => {
 }
 
 onMounted(() => {
-  fetchAndSetImageUrl()
+  void fetchAndSetImageUrl()
 })
 </script>
