@@ -115,6 +115,11 @@ more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollbac
 `docs/arc42/decisions/2026_10_22_litellm_follows_plain_release_tags.md`. See ADR
 `docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.
 
+`tenant_attribution.py` (also mounted next to `custom_callbacks.py` and listed under `callbacks`) books every call that
+names no LiteLLM customer to `no-tenant`. The Hub names the acting tenant as the customer on the calls it makes for a
+user, and this hook catches the rest (pipelines, MinerU, the memory writer), so the customers add up to the instance
+total in LiteLLM's Customer Usage view. ADR `docs/arc42/decisions/2026_11_09_acting_tenant_as_litellm_customer.md`.
+
 Model pickers read three more curated keys from `/v1/model/info`:
 
 - **`aihub_display_name`** is the name a picker shows instead of the LiteLLM id. Set it on every model; it is not

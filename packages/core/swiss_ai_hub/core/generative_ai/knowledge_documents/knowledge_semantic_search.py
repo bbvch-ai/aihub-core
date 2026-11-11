@@ -28,7 +28,7 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import EmbeddingQueryClamp
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
 from swiss_ai_hub.core.generative_ai.retrievers.referenced_knowledge import ReferencedKnowledge
-from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_credentials import LiteLLMCredentials
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
 from swiss_ai_hub.core.persistence.rag.vectors.stores.document_passage_hit import DocumentPassageHit
@@ -125,7 +125,7 @@ class KnowledgeSemanticSearch:
         budget: KnowledgeSearchBudget | None,
     ) -> tuple[_ModelRankings, int]:
         """Each embedding model's documents best first, and how many documents in scope have passages at all."""
-        api_key = await LiteLLMService.api_key_for_user(user) if user else None
+        credentials = await LiteLLMCredentials.for_user(user)
         embeddings: dict[str, list[float]] = {}
         by_model: _ModelRankings = {}
         with_passages = 0
@@ -135,7 +135,7 @@ class KnowledgeSemanticSearch:
                 continue
             model_name = await asyncio.to_thread(ReferencedKnowledge.embedding_model_of, db_name)
             if model_name not in embeddings:
-                embeddings[model_name] = await KnowledgeSemanticSearch._embed(query, model_name, api_key)
+                embeddings[model_name] = await KnowledgeSemanticSearch._embed(query, model_name, credentials)
             hits, found = await KnowledgeSemanticSearch._rank_scope(
                 store, namespace, list(summaries), embeddings[model_name], passages_per_document, budget
             )
@@ -148,8 +148,10 @@ class KnowledgeSemanticSearch:
         return ordered, with_passages
 
     @staticmethod
-    async def _embed(query: str, model_name: str, api_key: str | None) -> list[float]:
-        embed_model, _ = EmbeddingModelConfig(model_name=model_name).to_llama_index(api_key=api_key)
+    async def _embed(query: str, model_name: str, credentials: LiteLLMCredentials) -> list[float]:
+        embed_model, _ = EmbeddingModelConfig(model_name=model_name).to_llama_index(
+            extra_headers=credentials.headers, api_key=credentials.api_key
+        )
         clamped = await asyncio.to_thread(EmbeddingQueryClamp.clamp, query, model_name=model_name)
         return await embed_model.aget_text_embedding(clamped)
 

@@ -499,6 +499,7 @@ litellm_settings:
     - detect_prompt_injection
     - otel
     - custom_callbacks.proxy_handler_instance
+    - tenant_attribution.tenant_attribution_instance
   default_fallbacks: [text-generation/gemma-4-31B-it]
   telemetry: true
   json_logs: true

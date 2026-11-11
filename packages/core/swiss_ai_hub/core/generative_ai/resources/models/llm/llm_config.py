@@ -18,8 +18,8 @@ from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLM
 from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base import LiteLLMBase
 from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_credentials import LiteLLMCredentials
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
-from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
 from swiss_ai_hub.core.infrastructure.litellm.model_requirements import ModelRequirements
 
 if TYPE_CHECKING:
@@ -224,13 +224,12 @@ class LLMConfig(LiteLLMBase[ResilientOpenAILike]):
         On exit, also when the block raised, it reports the costs to `displayer` — tokens spent before a failure
         are spent all the same — and closes the LLM's clients (see `ResilientOpenAILike.aclose`).
         """
-        # The per-user key is the only carrier that reaches LiteLLM: it sets `user` on every spend log row
-        # and activates USER_MAX_BUDGET. Tenant is NOT sent: tenant attribution lives on LLMCostEvent. The
-        # gateway keeps request tags since LiteLLM v1.106.2, so tags and teams are both candidates for a
-        # gateway-side carrier; see ADR 2026_08_06_per_user_litellm_key_as_cost_attribution_carrier.
-        api_key = await LiteLLMService.api_key_for_user(user) if user else None
+        # The per-user key sets `user` on every spend log row and activates USER_MAX_BUDGET; the customer header
+        # books the call to the acting tenant (ADR 2026_11_09_acting_tenant_as_litellm_customer).
+        credentials = await LiteLLMCredentials.for_user(user)
+        headers = {**(extra_headers or {}), **credentials.headers}
 
-        llm, cost_tracker = self.to_llama_index(extra_headers=extra_headers, api_key=api_key)
+        llm, cost_tracker = self.to_llama_index(extra_headers=headers, api_key=credentials.api_key)
         try:
             yield llm
         finally:
