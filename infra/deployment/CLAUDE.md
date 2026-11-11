@@ -425,10 +425,19 @@ The realm config lives in standalone JSON templates under `templates/configs/key
 `2026_06_12_declarative_keycloak_realm_reconciliation`):
 
 - **`bootstrap/`** — applied via `--import-realm` on **first start only**, never reconciled: realm-level settings
-  (themes, brute force, token and session lifespans, SMTP), the user-profile component, the startup tenant group seed,
-  the superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the
-  admin console survive restarts — and updating identity-provider config on an already-initialized deployment requires
-  the admin console (or a fresh realm DB), since they do not reconcile automatically.
+  (themes, brute force, token and session lifespans), the user-profile component, the startup tenant group seed, the
+  superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the admin
+  console survive restarts — and updating identity-provider config on an already-initialized deployment requires the
+  admin console (or a fresh realm DB), since they do not reconcile automatically.
+- **Default migration in `keycloak-entrypoint.sh.j2`** — kcadm writes the token and session lifespans and `smtpServer`
+  on every start, but **only while the realm still holds the Keycloak default** (so admin-console overrides survive).
+  The realm import leaves `smtpServer` empty, because Keycloak validates the sender on import and a sender from an unset
+  variable would fail the first start. Exception: the platform's mail server (on `smtp.office365.com`, signing in as
+  `KEYCLOAK_SMTP_MAILBOX`) is platform-managed, and its client id and tenant follow `KEYCLOAK_SMTP_*` on every start;
+  any other mail server, also an operator's own Microsoft 365 mailbox, is kept.
+- **Federated-user marker in `keycloak-entrypoint.sh.j2`** — identity providers are bootstrap-only, so on every start
+  the entrypoint adds the `aihub-federated-user-role` Hardcoded Role mapper to each identity provider lacking it and
+  grants `AIHubFederatedUser` to users linked before it existed (see "Federated-user gate" below).
 - **`managed/`** — reconciled on **every stack start** by the one-shot `keycloak-config` service
   (adorsys/keycloak-config-cli): realm roles, client scopes, clients, custom auth flows, and the `aihub-api-service`
   service account. **File wins**: admin-console edits to these objects are overwritten, and objects removed from config
@@ -450,6 +459,25 @@ Rules when editing:
   scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`). When upstream has no build for the new
   Keycloak version yet, keep the newest release and check on the dev stack that `keycloak-config` still exits 0 against
   an upgraded realm and a fresh `--import-realm` (Keycloak 26.8.1 currently runs with `6.5.1-26.5.5`).
+
+**Realm mail** (`keycloak.smtp_server` in `compose-config.yml`): every stage sends from `KEYCLOAK_SMTP_MAILBOX` (default
+`noreply.ai-hub@bbv.ch`) through `smtp.office365.com` with an OAuth client-credentials token (`authType: token`); with
+empty `KEYCLOAK_SMTP_*` values (the dev default) Keycloak simply sends nothing. Invitations are Keycloak's own
+admin-triggered "Credential Reset" mail (no platform API or UI). The client secret is the one deliberate `${...}`
+placeholder in the realm: `${vault.smtp-client-secret}` is resolved by Keycloak's file vault, which the entrypoint fills
+from `KEYCLOAK_SMTP_CLIENT_SECRET` into a tmpfs at `/opt/keycloak/vault`. Operator setup:
+`docs/docs/2_platform/3_deployment_guide/11_realm_mail/`. Tests:
+`uv run pytest infra/deployment/tests/test_keycloak_realm_mail.py`.
+
+**Federated-user gate**: users who sign in through an identity provider must never get a password, or "Forgot password"
+would let them skip Entra's MFA and conditional access and keep access after Entra disables them. A Hardcoded Role
+mapper on every identity provider grants `AIHubFederatedUser` (`managed/10-roles`) on each sign-in, sync mode `FORCE`.
+The managed `federated-user-gate-browser` sub-flow (in `browser-aihub-forms`, after the password form) and
+`federated-user-gate-reset` (in `reset-credentials-aihub`, bound as `resetCredentialsFlow` like `browserFlow`) deny that
+role. The reset gate sits **after** the mail step on purpose: denying at the address form would reveal which addresses
+belong to federated users. A new bootstrap identity provider needs the mapper in `identity-providers.json.j2`; the
+entrypoint adds it to existing ones. `reset-credentials-aihub` replicates the built-in reset flow and must be reviewed
+on Keycloak major upgrades. Tests: `uv run pytest infra/deployment/tests/test_keycloak_federated_user_gate.py`.
 
 The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
 `realm-management` client roles. The current minimum required for the API to function correctly is:
