@@ -298,12 +298,12 @@ faster (29 s to 21 s) at the same peak memory; 16 was no faster than 8. The reco
 so pattern changes need only `make generate-compose` and a container restart. Every text is analysed under the language
 code `de`; see the config header.
 
-Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or `make
--C infra/deployment build-and-push-presidio-analyzer-image`. Both build two images from the one Dockerfile and push the
-tags pinned in `image_tags.presidio_analyzer` (CPU torch) and `image_tags.presidio_analyzer_gpu` (CUDA torch via the
-`TORCH_INDEX` build argument: a 4.8 GB download and 7.8 GB on disk, against 2.0 GB and 3.3 GB). Each deployment pulls
-only the image its compose file names, so CPU deployments never download the GPU image. Bump both tags together with
-every change to `docker/presidio-analyzer/` and publish **before any stage pulls them**: CI's backend tests start
+Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
+`make -C infra/deployment build-and-push-presidio-analyzer-image`. Both build two images from the one Dockerfile and
+push the tags pinned in `image_tags.presidio_analyzer` (CPU torch) and `image_tags.presidio_analyzer_gpu` (CUDA torch
+via the `TORCH_INDEX` build argument: a 4.8 GB download and 7.8 GB on disk, against 2.0 GB and 3.3 GB). Each deployment
+pulls only the image its compose file names, so CPU deployments never download the GPU image. Bump both tags together
+with every change to `docker/presidio-analyzer/` and publish **before any stage pulls them**: CI's backend tests start
 `litellm`, which depends on the analyzer. The `.gpu` compose variants run the GPU image with an NVIDIA device
 reservation; the CPU variants are unchanged. Presidio puts GLiNER on CUDA only when torch sees a GPU, so the GPU image
 falls back to the CPU on a host without one. Live acceptance tests: `docker/presidio-analyzer/test_presidio_analyzer.py`
@@ -557,9 +557,11 @@ Two collectors run on a deployed VM and it matters which one you change:
 
 App services export to `http://otel-collector-backend:4317` (a `backend`-only alias on this collector; the bare
 container name also resolves on `egress`, where ICC is disabled), so the playbook's collector never sees their telemetry
-— that is why `resource/deployment` has to exist here too. Conversely, **do not add a `filelog` receiver for container
-logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symlinks, so records carry the container
-*name* and the VM's real `host.name`), and a second tailer would ingest every line twice into a paid backend.
+— that is why `resource/deployment` has to exist here too. `rclone` is dual-homed the same way and the rclone pipeline
+sits on `egress` too, so the pipeline targets `http://rclone-backend:5572`. Any service a caller on `egress` reaches
+must be called through such a `backend`-only alias. Conversely, **do not add a `filelog` receiver for container logs
+here**: the playbook already tails them (via `/var/log/docker-logs/*` symlinks, so records carry the container *name*
+and the VM's real `host.name`), and a second tailer would ingest every line twice into a paid backend.
 
 ## Traefik Configuration
 
