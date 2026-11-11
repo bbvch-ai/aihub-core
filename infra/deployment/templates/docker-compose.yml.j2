@@ -2558,11 +2558,9 @@ services:
     {%- endif %}
     volumes:
       - {{ global.volume_root }}/open-webui:/app/backend/data{{ selinux_rw }}
-      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro{{ selinux_ro }}
-      - ./configs/openwebui/style/custom.css:/app/build/static/custom.css:ro{{ selinux_ro }}
     configs:
-      - source: openwebui-disclaimer
-        target: /app/build/static/aihub-disclaimer.json
+      - source: openwebui-mods
+        target: /app/build/static/aihub-mods.json
     depends_on:
       otel-collector:
         condition: service_started
@@ -5877,6 +5875,6 @@ volumes:
 {%- endif %}
 
 configs:
-  openwebui-disclaimer:
+  openwebui-mods:
     content: |
       {"parentOrigin": "{{ 'http://localhost:3333' if stage == 'dev' else 'https://${DOMAIN}' }}"}

@@ -72,3 +72,6 @@ OPENWEBUI_MODS_URL=http://localhost:18081 pnpm -C e2e exec playwright test compo
 
 The component tests cover shared state, bindings, slots, events, cleanup and restoration. Also validate the actual
 package with the complete AI Hub login/publishing flow; fixture tests alone do not establish deployment acceptance.
+
+The [bundled customization suite](../../../../../e2e/openwebui-mods/customizations/README.md) checks startup locale repair,
+native voice recovery, PDF menus, streaming styles and disclaimer rendering against a disposable authenticated host.

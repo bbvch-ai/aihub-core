@@ -14,9 +14,8 @@ finishes successfully before opening chat to users; it can be rerun after a fail
 missing publications. Native Function registration remains in `openwebui-init` so API startup does not depend on mod
 publication.
 
-Compose mounts the generated loader at `/app/build/static/loader.js`, the stylesheet at
-`/app/build/static/custom.css`, and parent-origin configuration at `/app/build/static/aihub-disclaimer.json`.
-Custom deployments need those mounts and an exact AI Hub `parentOrigin`, without a path or trailing slash. Inline
+Compose mounts parent-origin configuration at `/app/build/static/aihub-mods.json`. The image installs the client
+startup hook; custom deployments need this configuration and an exact AI Hub `parentOrigin`, without a path or trailing slash. Inline
 Compose configs require Compose 2.23.1 or newer. Change files under `infra/deployment/templates/` and run
 `make generate-compose`; generated files under `infra/configs/` are not source files.
 
@@ -28,7 +27,8 @@ browser-visible and must not contain secrets.
 ## Deployment defaults
 
 `OPENWEBUI_MODS_DEFAULTS` is a JSON array of bundled mod IDs, passed identically to the main API and SysAdmin API.
-The shipped `.env.dev` and `.env.prod` set it to `["aihub-chat-disclaimer"]`. Unset or `[]` enables no defaults.
+The shipped `.env.dev` and `.env.prod` enable `aihub-chat-disclaimer`, `aihub-locale-recovery`,
+`aihub-speech-recovery`, `aihub-pdf-export-guard` and `aihub-streaming-indicator`. Unset or `[]` enables no defaults.
 Unknown or duplicate IDs are rejected. After changing it, update/restart both API services; no Open WebUI rebuild is
 needed.
 
@@ -50,7 +50,7 @@ Uploaded mods, their publication selections and settings are managed later throu
 available before pulling it.
 
 For a host upgrade, keep the upstream base image, pristine source commit and Svelte/Python versions aligned with
-`docker/open-webui/mods/compatibility.json`. Bump `host_protocol` for incompatible host/publication contract changes.
+`docker/open-webui/mods/compatibility.json`. Once the contract is released, bump `host_protocol` for incompatible host/publication contract changes.
 The Dockerfile runs compiler/component, native backend and authenticated entrypoint checks. Recheck private component
 contracts, callable signatures/decorators, request instrumentation and the startup entrypoint against the new source;
 source fingerprints detect drift but do not prove unchanged behavior.
@@ -85,18 +85,19 @@ Include the bucket and directory explicitly; the database backup handlers do not
 stopped and a compatible host image. Retain previous archives and known-good configuration for rollback. Boot markers
 and worker heartbeat files are derived state, not proof that the restored workers are ready.
 
-## Compatibility workarounds
+## Bundled customizations
 
-These customizations live outside runtime mod packages and need checking when Open WebUI changes:
+These packages live in Core's `infrastructure/openwebui/mods/bundled/` and use the same publishing and lifecycle as
+uploaded mods. Check their upstream dependencies when upgrading Open WebUI:
 
-| Customization | Source and upgrade check |
+| Package | Upgrade check |
 | --- | --- |
-| Locale correction | `templates/openwebui-disclaimer/loader.js` replaces unsupported saved locale codes with `en-US` before native startup, preserving French fallback. Check its locale list against upstream and run `e2e/disclaimer/locale.spec.ts`. |
-| Speech failure fallback | The loader substitutes a silent clip for failed speech requests and shows a status message so voice calls can resume listening. Check `/api/v1/audio/speech` and the overlay status selector with a failing TTS service. |
-| Multi-model PDF guard | The loader disables PDF download for chats with side-by-side model turns; text/JSON export remains available. Run `e2e/disclaimer/pdf-export.spec.ts`. Remove the guard once native PDF export retains all answers. |
-| Streaming indicator | `templates/openwebui-style/custom.css` replaces the pulsing bar with typing dots and hides it during other progress. Check its selectors and reduced-motion behavior. |
+| `locale-recovery` | Bootstrap repairs unsupported saved locales before native i18n. Compare `locales.json` with upstream `src/lib/i18n/locales/languages.json`; preserve shipped codes and French fallback. |
+| `speech-recovery` | A request handler supplies a silent clip only for failed voice-mode speech requests. The native CallOverlay wrapper displays the localized status. Check its props/events and that a failing TTS service returns the call to listening. |
+| `pdf-export-guard` | Native menu wrappers share the selected chat's export policy through Svelte context. Check toolbar and sidebar menus, including a sidebar chat different from the open one. Single-model PDF and text/JSON export must work. Remove the guard once upstream PDF retains all side-by-side answers. |
+| `streaming-indicator` | A lifecycle-owned stylesheet replaces the pulsing bar with dots. Check response selectors, competing progress, reduced motion and disposal. |
+| `chat-disclaimer` | A lifecycle-owned renderer adds text below the composer. Check both chat layouts, wrapping, populated native footers, locale changes and disposal. |
 
-The bundled disclaimer uses its own composer selectors in Core's `mods/bundled/chat-disclaimer/frontend.js`.
-After an upgrade, check both native chat layouts, wrapping and populated native footers with
-`e2e/disclaimer/openwebui.spec.ts`. Save translations through SysAdmin and verify locale changes, tenant isolation,
-disable/re-enable and a fresh chat load.
+The [customization browser suite](../../e2e/openwebui-mods/customizations/README.md) uses an authenticated disposable
+native host and the actual bundled archives. Also verify the real AI Hub login, publishing, tenant switching and
+settings flow before release.

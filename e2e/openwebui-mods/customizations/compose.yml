@@ -1,0 +1,28 @@
+name: aihub-mod-customizations
+services:
+  openwebui:
+    image: ${OPENWEBUI_MODS_TEST_IMAGE:?Set the locally built derived image}
+    ports: [127.0.0.1:18081:8080]
+    entrypoint: [python, -m, uvicorn, native_fixture:app, --host, 0.0.0.0, --port, '8080']
+    environment:
+      PYTHONPATH: /fixtures:/app/backend
+      DATA_DIR: /tmp/mod-customizations
+      OFFLINE_MODE: 'true'
+      HF_HUB_OFFLINE: '1'
+      WEBUI_SECRET_KEY: disposable-browser-test-secret-32-characters
+      AIHUB_BASE_URL: http://fixture
+      AIHUB_SUPERUSER_API_KEY: disposable-service-token
+      OPEN_WEBUI_SIGNING_SECRET: disposable-signing-secret
+      SCIM_TOKEN: disposable-control-token
+      TEST_PARENT_ORIGIN: http://127.0.0.1:18082
+      ENABLE_VERSION_UPDATE_CHECK: 'false'
+      ENABLE_OLLAMA_API: 'false'
+      ENABLE_OPENAI_API: 'false'
+    volumes:
+      - ./native_fixture.py:/fixtures/native_fixture.py:ro
+      - ../../../packages/core/swiss_ai_hub/core/infrastructure/openwebui/mods/bundled:/bundled:ro
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8080/health]
+      interval: 5s
+      timeout: 5s
+      retries: 60

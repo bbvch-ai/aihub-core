@@ -91,6 +91,18 @@ Der mitgelieferte Mod Chat disclaimer zeigt lokalisierten Text unter der Eingabe
 [Open WebUI-Modifikationen](../16_openwebui_mods/) finden Sie Konfiguration, Versionsauswahl und den Zeitpunkt,
 zu dem gespeicherte Änderungen für Benutzer sichtbar werden.
 
+## Streaming-Anzeige
+
+Während eine Antwort gestreamt wird, erscheinen drei pulsierende Punkte dahinter. Zeigt ein Denkprozess oder ein
+Tool-Aufruf seinen eigenen Fortschritt, werden die Punkte ausgeblendet. Die native Anzeige von Open WebUI ist ein
+schmaler pulsierender Balken, der unter der Denk-Anzeige wie ein einzelnes `|` wirkt. Der mitgelieferte Mod
+`aihub-streaming-indicator` lädt das Stylesheet und entfernt es beim Dispose.
+
+Bearbeiten Sie `infrastructure/openwebui/mods/bundled/streaming-indicator/style.css` in Core. Die Initialisierung
+veröffentlicht geänderte mitgelieferte Quellen. Administratoren können den Mod pro Mandant aktivieren oder deaktivieren.
+Die Regeln beziehen sich auf das Markup von Open WebUI v0.11.4. Ändert ein Upgrade dieses Markup, erscheint wieder der
+native Balken. Prüfen Sie daher nach jedem Open-WebUI-Upgrade die Anzeige und das Verhalten bei reduzierter Bewegung.
+
 ## Konfiguration und Deployment
 
 Open WebUI wird als unabhängiger Docker-Container innerhalb der Plattform deployed. Dies bietet Isolation und verwaltet

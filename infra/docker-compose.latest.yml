@@ -1989,15 +1989,12 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-2
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-3
     restart: always
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
-      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro
-      - ./configs/openwebui/style/custom.css:/app/build/static/custom.css:ro
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
     configs:
-      - source: openwebui-disclaimer
-        target: /app/build/static/aihub-disclaimer.json
+      - source: openwebui-mods
+        target: /app/build/static/aihub-mods.json
     depends_on:
       otel-collector:
         condition: service_started
@@ -2339,7 +2336,7 @@ services:
 
   # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
   openwebui-mods-init:
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-2
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-3
     restart: on-failure
     depends_on:
       open-webui:
@@ -5030,6 +5027,6 @@ networks:
     driver: bridge
     internal: true
 configs:
-  openwebui-disclaimer:
+  openwebui-mods:
     content: |-
       {"parentOrigin": "https://${DOMAIN}"}

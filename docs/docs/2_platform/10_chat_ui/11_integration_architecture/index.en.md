@@ -177,12 +177,12 @@ for configuration, version selection and when users see saved changes.
 While an answer is still streaming, the chat shows three pulsing dots after it. While a thought or tool call shows its
 own progress, the dots are hidden, so an agent that works for minutes before it answers shows only that progress row.
 Open WebUI's own marker is a thin pulsing bar that would sit under the "Thinking..." row for that whole time and read as
-a stray `|`. The platform restyles it through the stylesheet Open WebUI loads from `/static/custom.css`.
+a stray `|`. The bundled `aihub-streaming-indicator` mod supplies the stylesheet and removes it on disposal.
 
-Edit `infra/deployment/templates/openwebui-style/custom.css` and run `make generate-compose`. Compose mounts the
-generated copy at `/app/build/static/custom.css`; recreate `open-webui` to apply it. The rules target Open WebUI v0.11.4
-markup. When an upgrade changes that markup they stop matching and Open WebUI's own bar returns, so check the indicator
-after every Open WebUI upgrade.
+Edit Core's `infrastructure/openwebui/mods/bundled/streaming-indicator/style.css`; initialization publishes changed
+bundled sources. An administrator can enable or disable the mod per tenant. The rules target Open WebUI v0.11.4 markup;
+if an upgrade changes that markup, the native bar returns. Check the indicator and reduced-motion behavior after each
+Open WebUI upgrade.
 
 ## Configuration and deployment
 

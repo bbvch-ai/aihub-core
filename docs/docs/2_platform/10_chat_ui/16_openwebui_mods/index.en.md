@@ -51,7 +51,8 @@ and edit the Disclaimer field. Each translation accepts plain text of up to 100 
 The note follows the AI Hub language, falling back to German and then the first nonempty translation. Invalid text
 settings prevent this mod from activating. Disable the mod to hide the note.
 
-The shipped deployment defaults enable Chat disclaimer. Operators can change which bundled mods start enabled;
+The shipped deployment defaults enable Chat disclaimer, Saved language recovery, Voice reply recovery,
+Multi-model PDF export guard and Streaming indicator. Operators can change which bundled mods start enabled;
 once a tenant saves its own configuration, that saved configuration takes precedence. Bundled mods show Updated with
 AI Hub and follow the installed release while keeping saved settings and enablement. Custom versions remain selected
 until an administrator changes them.

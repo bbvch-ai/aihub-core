@@ -3,18 +3,20 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, test, type Frame, type Page } from '@playwright/test'
 
-const webui = process.env.OPENWEBUI_DISCLAIMER_URL ?? 'http://localhost:18081'
-const parentOrigin = 'http://localhost:3335'
+const webui = process.env.OPENWEBUI_MODS_URL ?? 'http://127.0.0.1:18081'
+const parentOrigin = 'http://127.0.0.1:3335'
 const defaultText = 'AI can make mistakes. Please verify answers.'
 const selector = '[data-aihub-chat-disclaimer]'
 const servers: Server[] = []
 
 // Isolate the renderer against native Open WebUI markup; catalog/auth/selection are tested with the full mod host.
 test.beforeEach(async ({ page }) => {
-  const source = readFileSync(resolve(__dirname, '../../packages/core/swiss_ai_hub/core/infrastructure/openwebui/mods/bundled/chat-disclaimer/frontend.js'), 'utf8')
-  await page.route('**/_aihub/mods/host.js', route => route.fulfill({
-    contentType: 'text/javascript',
-    body: `${source}
+  const source = readFileSync(resolve(__dirname, '../../../packages/core/swiss_ai_hub/core/infrastructure/openwebui/mods/bundled/chat-disclaimer/frontend.js'), 'utf8')
+  await page.route('**/static/aihub-mods.json', route => route.fulfill({ status: 404, body: '' }));
+  const response = await page.request.get(`${webui}/__test__/credentials`, { headers: { Authorization: `Bearer ${process.env.OPENWEBUI_MODS_CONTROL_TOKEN ?? 'disposable-control-token'}` } });
+  expect(response.ok()).toBe(true);
+  await page.context().addCookies([{ name: 'token', value: (await response.json()).token, url: webui }]);
+  await page.addInitScript({ content: `${source.replace('export function activate', 'function activate')}
       window.startDisclaimerFixture = async (settings = { text: { en: ${JSON.stringify(defaultText)}, de: 'KI kann Fehler machen.' } }) => {
         window.stopDisclaimerFixture?.();
         const cleanups = [], listeners = new Set();
@@ -25,14 +27,13 @@ test.beforeEach(async ({ page }) => {
         } });
       };
       window.addEventListener('pagehide', () => window.stopDisclaimerFixture?.());
-      await window.startDisclaimerFixture();`,
-  }))
+      window.addEventListener('DOMContentLoaded', () => window.startDisclaimerFixture());` });
 })
 
 test.beforeAll(async () => {
   const server = createServer((_request, response) => {
     response.setHeader('Content-Type', 'text/html')
-    response.end(`<!doctype html><iframe title="Chat" src="${webui}" style="width:100%;height:95vh"></iframe>`)
+    response.end(`<!doctype html><iframe title="Chat" src="${webui}/auth" style="width:100%;height:95vh"></iframe>`)
   })
   await new Promise<void>(resolve => server.listen(3335, '127.0.0.1', resolve))
   servers.push(server)
@@ -195,4 +196,23 @@ test('invalid translations fail activation instead of rendering unsafe or oversi
     }, text)).rejects.toThrow('Disclaimer settings.text')
     await expect(frame.locator(selector)).toHaveCount(0)
   }
+})
+
+
+test('a populated native footer takes precedence over the mod footer', async ({ page }) => {
+  await page.goto(parentOrigin)
+  const frame = page.frames().find(frame => frame.url().startsWith(webui))!
+  await expect(frame.locator(selector)).toHaveText(defaultText)
+  await frame.evaluate(async () => {
+    const native = document.createElement('div')
+    native.className = 'absolute bottom-1 text-xs text-center line-clamp-1'
+    native.dataset.nativeFooterFixture = 'true'
+    native.textContent = 'Native footer'
+    document.querySelector('#chat-input')!.closest('form')!.parentElement!.append(native)
+    await (window as unknown as { startDisclaimerFixture: () => Promise<void> }).startDisclaimerFixture()
+  })
+  await expect(frame.locator(selector)).toHaveCount(0)
+  await expect(frame.locator('[data-native-footer-fixture]')).toHaveText('Native footer')
+  await frame.locator('[data-native-footer-fixture]').evaluate(element => element.remove())
+  await expect(frame.locator(selector)).toHaveText(defaultText)
 })

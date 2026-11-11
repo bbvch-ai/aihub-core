@@ -7,7 +7,7 @@ const messageType = 'aihub:mods';
 let initialization;
 
 async function start(signal) {
-  const response = await fetch('/static/aihub-disclaimer.json', {
+  const response = await fetch('/static/aihub-mods.json', {
     cache: 'no-store', signal: AbortSignal.any([signal, AbortSignal.timeout(15000)])
   });
   if (!response.ok) throw new Error('Missing AI Hub bridge configuration');

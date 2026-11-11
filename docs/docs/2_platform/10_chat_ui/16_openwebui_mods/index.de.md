@@ -1,6 +1,6 @@
 ---
 title: Open WebUI-Modifikationen
-source_sha: 6d58a90ce8568853f1a3c2f18c68375f9554ccce7e65a73d13d186b21c12db20
+source_sha: f32ae38dcd20054a402708ac30b779ec78c504d44b73d44ac2f626a12f30ff33
 ---
 
 # Open WebUI-Modifikationen
@@ -59,7 +59,8 @@ zu 100 Zeichen. Der Hinweis folgt der Sprache von AI Hub und fällt auf Deutsch,
 Übersetzung zurück. Ungültige Texteinstellungen verhindern die Aktivierung dieses Mods. Deaktivieren Sie den Mod,
 um den Hinweis auszublenden.
 
-Die mitgelieferten Deployment-Vorgaben aktivieren Chat disclaimer. Betreiber können festlegen, welche mitgelieferten
+Die mitgelieferten Deployment-Vorgaben aktivieren Chat disclaimer, Saved language recovery, Voice reply recovery,
+Multi-model PDF export guard und Streaming indicator. Betreiber können festlegen, welche mitgelieferten
 Mods anfänglich aktiviert sind. Sobald ein Mandant seine eigene Konfiguration speichert, hat diese Vorrang.
 Mitgelieferte Mods sind mit Mit AI Hub aktualisiert gekennzeichnet und folgen dem installierten Release;
 gespeicherte Einstellungen und Aktivierung bleiben erhalten. Eigene Versionen bleiben ausgewählt, bis ein
