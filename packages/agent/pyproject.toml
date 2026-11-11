@@ -31,7 +31,7 @@ dependencies = [
     "imapclient>=3.0.1",
     "azure-identity>=1.19.0",
     "httpx>=0.28.1",
-    "playwright==1.63.*",
+    "playwright>=1.63,<1.65",
     "trafilatura>=2.2.0",
     "nh3>=0.3.7",
     "markdown-it-py>=4.2.0",
