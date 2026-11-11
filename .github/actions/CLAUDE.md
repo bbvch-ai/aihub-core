@@ -87,9 +87,10 @@ cache key. Runs `nuxi prepare` before linting to generate Nuxt type stubs.
   `timeout-minutes`, otherwise a hung test consumes the whole job and the forced stop discards `pytest.xml`,
   `coverage.xml` and the traceback — the run then reports only "The operation was canceled". `pytest-timeout` comes from
   the workspace root dev group, so every module has it.
-- Health check: `docker compose up --wait --wait-timeout 600` fails the job (with `ps` and logs) as soon as a service is
-  unhealthy instead of running tests against a broken stack. The runner is discarded afterwards, so there is no teardown
-  step.
+- Health check: polls `docker ps` for up to 600 s and fails the job (with statuses and logs) as soon as a container
+  is unhealthy or exits non-zero, instead of running tests against a broken stack. `compose up --wait` is not used:
+  the runner's Compose treats one-shot init containers that exit 0 (`seaweedfs-ttl-init`) as failures. The runner is
+  discarded afterwards, so there is no teardown step.
 - Pre-pull login is **best-effort**: the `docker login ghcr.io` in the pre-pull step must not fail the job
   (`|| echo "::warning::..."`). The mirrored images under `ghcr.io/bbvch-ai/aihub-core/*` are public, so an
   expired/absent `PAT_GITHUB_READ_PACKAGES` still lets anonymous pulls succeed. Do NOT make this login fatal again.

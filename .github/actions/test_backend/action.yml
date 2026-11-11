@@ -193,12 +193,27 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        # Re-running `up` on the already started services only waits; it fails as soon as a service
-        # turns unhealthy or the budget runs out, instead of letting the tests run against a broken stack.
-        docker compose -f infra/docker-compose.dev.yml --env-file .env.dev \
-          up -d --wait --wait-timeout 600 ${{ inputs.docker_compose_services }} \
-          || { docker compose -f infra/docker-compose.dev.yml ps -a; \
-               docker compose -f infra/docker-compose.dev.yml logs --tail=50; exit 1; }
+        # Fails as soon as a container turns unhealthy or exits with an error, or when the budget runs out,
+        # instead of letting the tests run against a broken stack. Not `compose up --wait`: the runner's
+        # Compose treats one-shot init containers that exit 0 (e.g. seaweedfs-ttl-init) as failures.
+        fail() {
+          echo "::error::$1"
+          docker ps -a --format "table {{.Names}}\t{{.Status}}"
+          docker compose -f infra/docker-compose.dev.yml logs --tail=50
+          exit 1
+        }
+        deadline=$((SECONDS + 600))
+        while true; do
+          statuses=$(docker ps -a --format "{{.Names}}: {{.Status}}")
+          broken=$(grep -E "\(unhealthy\)|Exited \([1-9][0-9]*\)" <<< "$statuses" || true)
+          [[ -z "$broken" ]] || fail "Docker services failed: $broken"
+          pending=$(grep -E "health: starting|Created|Restarting" <<< "$statuses" || true)
+          [[ -n "$pending" ]] || break
+          (( SECONDS < deadline )) || fail "Docker services not healthy after 600s: $pending"
+          sleep 5
+        done
+        echo "All Docker services are healthy."
+        docker ps --format "table {{.Names}}\t{{.Status}}"
     - name: Run Tests with Coverage and Generate Report
       shell: bash
       working-directory: ${{ inputs.working_directory }}
@@ -248,7 +263,8 @@ runs:
       if: inputs.shard_count != '1'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
-        name: ${{ steps.sanitize.outputs.artifact_prefix }}-shard-${{ inputs.shard_index }}
+        name: ${{ steps.sanitize.outputs.artifact_prefix }}-shard-${{ inputs.shard_index
+          }}
         include-hidden-files: true
         path: |
           ${{ inputs.working_directory }}/.coverage.shard-${{ inputs.shard_index }}
@@ -259,7 +275,9 @@ runs:
       with:
         files: |
           ${{ inputs.working_directory }}/pytest.xml
-        check_name: ${{ inputs.check_name || inputs.working_directory }}${{ inputs.shard_count != '1' && format(' (shard {0}/{1})', inputs.shard_index, inputs.shard_count) || '' }}
+        check_name: ${{ inputs.check_name || inputs.working_directory }}${{ inputs.shard_count
+          != '1' && format(' (shard {0}/{1})', inputs.shard_index, inputs.shard_count)
+          || '' }}
         comment_title: Test results for ${{ inputs.check_name || inputs.working_directory }}
     - name: Check if Tests Failed
       if: env.TEST_FAIL == 'true'

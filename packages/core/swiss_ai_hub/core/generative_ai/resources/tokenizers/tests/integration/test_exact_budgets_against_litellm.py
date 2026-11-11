@@ -17,6 +17,8 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config
 from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_tokenizer import ModelTokenizer
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE, NODE_CONTENT_TYPE_TEXT, SOURCE
 
+pytestmark = pytest.mark.external
+
 EMBEDDING_MODEL = "embedding/bge-m3"
 RERANKING_MODEL = "reranker/bge"
 WINDOW = 8192
