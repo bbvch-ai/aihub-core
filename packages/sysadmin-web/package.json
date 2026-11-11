@@ -37,7 +37,7 @@
     "@swiss-ai-hub/web": "workspace:*"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.97.1",
+    "@hey-api/openapi-ts": "^0.97.3",
     "@nuxt/eslint": "^1.15.2",
     "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",
