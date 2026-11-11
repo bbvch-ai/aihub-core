@@ -85,6 +85,7 @@ jobs:
         with:
           release_version: ${{ inputs.release_version || steps.get_tag.outputs.tag || format('testing-{0}', github.run_number) }}
           image_name: ${{ matrix.image }}
+          cache_scope: agent
           github_repository_owner: ${{ github.repository_owner }}
           github_event_repository_name: ${{ github.event.repository.name }}
           context: .

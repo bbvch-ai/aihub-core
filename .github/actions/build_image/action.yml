@@ -36,6 +36,11 @@ inputs:
       (without ssh_key only)
     default: ''
     required: false
+  cache_scope:
+    description: GitHub Actions build-cache scope to read and write (empty disables
+      the cache); images sharing a scope reuse each other's layers
+    default: ''
+    required: false
 runs:
   using: composite
   steps:
@@ -56,6 +61,8 @@ runs:
         push: true
         secrets: |
           "ssh_key=${{ inputs.ssh_key }}"
+        cache-from: ${{ inputs.cache_scope != '' && format('type=gha,scope={0}', inputs.cache_scope) || '' }}
+        cache-to: ${{ inputs.cache_scope != '' && format('type=gha,mode=max,scope={0}', inputs.cache_scope) || '' }}
         tags: ${{ inputs.secondary_tag != '' && format('ghcr.io/{0}/{1}/{2}:{3},ghcr.io/{0}/{1}/{2}:{4}',
           inputs.github_repository_owner, inputs.github_event_repository_name, inputs.image_name,
           inputs.release_version, inputs.secondary_tag) || format('ghcr.io/{0}/{1}/{2}:{3}',
@@ -73,6 +80,8 @@ runs:
           ${{ inputs.build_args }}
         secrets: |
           "ssh_key=${{ inputs.ssh_key }}"
+        cache-from: ${{ inputs.cache_scope != '' && format('type=gha,scope={0}', inputs.cache_scope) || '' }}
+        cache-to: ${{ inputs.cache_scope != '' && format('type=gha,mode=max,scope={0}', inputs.cache_scope) || '' }}
         tags: ${{ inputs.secondary_tag != '' && format('ghcr.io/{0}/{1}/{2}:{3},ghcr.io/{0}/{1}/{2}:{4}',
           inputs.github_repository_owner, inputs.github_event_repository_name, inputs.image_name,
           inputs.release_version, inputs.secondary_tag) || format('ghcr.io/{0}/{1}/{2}:{3}',
