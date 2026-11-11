@@ -71,6 +71,23 @@ inputs:
     description: Per-test timeout; must stay well below the caller's timeout-minutes
     required: false
     default: '300'
+  pytest_markers:
+    description: Marker expression passed to pytest -m
+    required: false
+    default: not flaky
+  shard_index:
+    description: 1-based index of the test shard this job runs (pytest-split group)
+    required: false
+    default: '1'
+  shard_count:
+    description: Number of shards the module's tests are split into; above 1 the job
+      uploads raw coverage data for a later merge instead of the final reports
+    required: false
+    default: '1'
+  check_name:
+    description: Name of the published test-results check (defaults to working_directory)
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -176,61 +193,36 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        echo "Waiting for Docker services to become healthy..."
-
-        # Check if Docker is running
-        if ! docker info > /dev/null 2>&1; then
-          echo "Error: Docker is not running or not accessible"
-          exit 1
-        fi
-
-        # Show initial state of containers
-        echo "Initial container status:"
-        docker ps
-
-        # Wait for at most 10 minutes for services to get healthy
-        MAX_WAIT=600
-        # Polling interval in seconds
-        INTERVAL=5
-        # Counter
-        ELAPSED=0
-        while [ $ELAPSED -lt $MAX_WAIT ]; do
-          # Check if any containers are unhealthy - approach with fewer assumptions about output format
-          UNHEALTHY_CONTAINERS=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "unhealthy" || true)
-          STARTING_CONTAINERS=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "starting" || true)
-          if [ -z "$UNHEALTHY_CONTAINERS" ] && [ -z "$STARTING_CONTAINERS" ]; then
-            echo "All Docker services are in a healthy state!"
-            docker ps
-            break
-          fi
-          echo "Some containers are still starting or unhealthy:"
-          [ -n "$UNHEALTHY_CONTAINERS" ] && echo "$UNHEALTHY_CONTAINERS"
-          [ -n "$STARTING_CONTAINERS" ] && echo "$STARTING_CONTAINERS"
-
-          # Sleep for the polling interval
-          sleep $INTERVAL
-          ELAPSED=$((ELAPSED + INTERVAL))
-          echo "Waited for $ELAPSED seconds out of $MAX_WAIT maximum..."
-        done
-        if [ $ELAPSED -ge $MAX_WAIT ]; then
-          echo "Timed out waiting for Docker services to become healthy after $MAX_WAIT seconds."
-          docker ps
-          echo "Continuing with tests anyway, but they may fail if services aren't ready."
-        fi
+        # Re-running `up` on the already started services only waits; it fails as soon as a service
+        # turns unhealthy or the budget runs out, instead of letting the tests run against a broken stack.
+        docker compose -f infra/docker-compose.dev.yml --env-file .env.dev \
+          up -d --wait --wait-timeout 600 ${{ inputs.docker_compose_services }} \
+          || { docker compose -f infra/docker-compose.dev.yml ps -a; \
+               docker compose -f infra/docker-compose.dev.yml logs --tail=50; exit 1; }
     - name: Run Tests with Coverage and Generate Report
       shell: bash
       working-directory: ${{ inputs.working_directory }}
       env:
         PYTEST_TIMEOUT_SECONDS: ${{ inputs.pytest_timeout_seconds }}
+        PYTEST_MARKERS: ${{ inputs.pytest_markers }}
+        SHARD_INDEX: ${{ inputs.shard_index }}
+        SHARD_COUNT: ${{ inputs.shard_count }}
       run: |
         pytest_exit_code=0
+        if [[ "$SHARD_COUNT" -gt 1 ]]; then
+          # Each shard keeps raw coverage data; the merge job combines them into the module's coverage.xml.
+          export COVERAGE_FILE=".coverage.shard-${SHARD_INDEX}"
+          report_args=(--cov-report=
+                       --splits "$SHARD_COUNT" --group "$SHARD_INDEX" --splitting-algorithm least_duration)
+        else
+          report_args=(--cov-report=xml:coverage.xml --cov-report=term-missing)
+        fi
         # A hung test must fail itself, not the job: without a per-test budget it consumes the
         # workflow's timeout-minutes, and the forced stop leaves no junit XML, no coverage and no
         # traceback — the run reports only "The operation was canceled".
-        uv run pytest -m "not flaky" --cov=. \
+        uv run pytest -m "$PYTEST_MARKERS" --cov=. \
                          --timeout="${PYTEST_TIMEOUT_SECONDS}" \
-                         --cov-report=xml:coverage.xml \
-                         --cov-report=term-missing \
+                         "${report_args[@]}" \
                          --junitxml=pytest.xml || pytest_exit_code=$?
         if [[ $pytest_exit_code -eq 5 ]]; then
           echo "No tests found! Creating an empty pytest.xml..."
@@ -240,29 +232,35 @@ runs:
           echo "Some tests failed!"
           echo "TEST_FAIL=true" >> $GITHUB_ENV
         fi
-    - name: Stop Docker services (if started)
-      if: inputs.docker_compose_services != ''
-      shell: bash
-      run: |
-        docker compose -f infra/docker-compose.dev.yml down --remove-orphans
     - name: Upload Coverage Report
+      if: inputs.shard_count == '1'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report
         path: ${{ inputs.working_directory }}/coverage.xml
     - name: Upload Pytest Report
+      if: inputs.shard_count == '1'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: ${{ steps.sanitize.outputs.artifact_prefix }}-pytest-report
         path: ${{ inputs.working_directory }}/pytest.xml
+    - name: Upload Shard Results
+      if: inputs.shard_count != '1'
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: ${{ steps.sanitize.outputs.artifact_prefix }}-shard-${{ inputs.shard_index }}
+        include-hidden-files: true
+        path: |
+          ${{ inputs.working_directory }}/.coverage.shard-${{ inputs.shard_index }}
+          ${{ inputs.working_directory }}/pytest.xml
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3  # v2.24.0
       if: always()
       with:
         files: |
           ${{ inputs.working_directory }}/pytest.xml
-        check_name: ${{ inputs.working_directory }}
-        comment_title: Test results for ${{ inputs.working_directory }}
+        check_name: ${{ inputs.check_name || inputs.working_directory }}${{ inputs.shard_count != '1' && format(' (shard {0}/{1})', inputs.shard_index, inputs.shard_count) || '' }}
+        comment_title: Test results for ${{ inputs.check_name || inputs.working_directory }}
     - name: Check if Tests Failed
       if: env.TEST_FAIL == 'true'
       shell: bash

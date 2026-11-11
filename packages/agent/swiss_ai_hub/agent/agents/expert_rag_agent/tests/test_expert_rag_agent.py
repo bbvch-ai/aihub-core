@@ -51,6 +51,8 @@ from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_suffi
     ContextSufficientGuardStepConfig,
 )
 
+pytestmark = pytest.mark.external
+
 enable_logging()
 
 scenarios("./features/expert_rag_agent.feature")
