@@ -27,7 +27,7 @@ class OpenWebuiModPublication(BaseModel):
             raise ValueError("Publication archive exceeds the 16 MiB upload limit")
         try:
             with ZipFile(BytesIO(content)) as archive:
-                files = OpenWebuiModPackage.read_files(archive, max_entries=2 * OpenWebuiModPackage.MAX_ENTRIES + 1)
+                files = OpenWebuiModPackage.read_files(archive, max_entries=4 * OpenWebuiModPackage.MAX_ENTRIES + 1)
         except (BadZipFile, CompressionError) as error:
             raise ValueError("Invalid publication ZIP archive") from error
         metadata = files.pop("publication.json", None)
@@ -52,14 +52,19 @@ class OpenWebuiModPublication(BaseModel):
             raise ValueError("Publication does not match the uploaded source revision")
         if self.manifest.compatibility != compatibility:
             raise ValueError("Publication was compiled for a different Open WebUI host; recompile its source")
-        expected_frontend = f"{source.manifest.frontend}.mjs" if source.manifest.frontend else None
-        expected_replacements = {target: f"{path}.mjs" for target, path in source.manifest.replacements.items()}
-        if self.manifest.frontend != expected_frontend or self.manifest.replacements != expected_replacements:
+        expected_frontend = f"frontend/{source.manifest.frontend}.mjs" if source.manifest.frontend else None
+        expected_bootstrap = f"bootstrap/{source.manifest.bootstrap}.mjs" if source.manifest.bootstrap else None
+        expected_replacements = {target: f"frontend/{path}.mjs" for target, path in source.manifest.replacements.items()}
+        if (
+            self.manifest.bootstrap != expected_bootstrap
+            or self.manifest.frontend != expected_frontend
+            or self.manifest.replacements != expected_replacements
+        ):
             raise ValueError("Published entry points do not match the source manifest")
         missing_targets = set(expected_replacements) - components
         if missing_targets:
             raise ValueError(f"Replacement targets are absent from this Open WebUI host: {sorted(missing_targets)}")
-        for entry in [expected_frontend, *expected_replacements.values()]:
+        for entry in [expected_bootstrap, expected_frontend, *expected_replacements.values()]:
             if entry is not None and entry not in self.files:
                 raise ValueError(f"Published entry file is missing: {entry}")
         self._validate_files(source)
@@ -82,7 +87,7 @@ class OpenWebuiModPublication(BaseModel):
             )
 
     def _validate_files(self, source: OpenWebuiModPackage) -> None:
-        if not (source.manifest.frontend or source.manifest.replacements) and self.files:
+        if not (source.manifest.bootstrap or source.manifest.frontend or source.manifest.replacements) and self.files:
             raise ValueError("A backend-only mod cannot publish browser files")
         for path, content in self.files.items():
             if path.endswith(".mjs"):
@@ -90,8 +95,15 @@ class OpenWebuiModPublication(BaseModel):
                     content.decode("utf-8")
                 except UnicodeDecodeError as error:
                     raise ValueError(f"Published module must be UTF-8: {path}") from error
-            elif path.endswith(".py") or path == "mod.json" or source.files.get(path) != content:
-                raise ValueError(f"Published asset must match a non-Python file from the source archive: {path}")
+            else:
+                entry, _, original = path.partition("/")
+                if (
+                    entry not in {"bootstrap", "frontend"}
+                    or original.endswith(".py")
+                    or original == "mod.json"
+                    or source.files.get(original) != content
+                ):
+                    raise ValueError(f"Published asset must match a non-Python file from the source archive: {path}")
 
     @staticmethod
     def _validate_backend(source: OpenWebuiModPackage, python_version: str) -> None:

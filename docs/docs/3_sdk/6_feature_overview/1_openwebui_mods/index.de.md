@@ -1,6 +1,6 @@
 ---
 title: Open WebUI-Mods schreiben
-source_sha: b336fa33e7f144c04893a000a6194ee7f0ac9723ee269628237b188a1b173122
+source_sha: 0e71abf66b0ef415636582e107ea8475572205f047d7a3c78c7d63c8a3fbd36c
 ---
 
 # Open WebUI-Mods schreiben
@@ -27,6 +27,7 @@ ist ein kleines Frontend-Beispiel mit Einstellungen, Sprachwechseln und Aufräum
 | --- | --- |
 | `format`, `id`, `name`, `version` | Erforderliche Metadaten. Das Format ist `1`; die stabile ID verwendet Kleinbuchstaben, Ziffern und Bindestriche. Version ist eine Bezeichnung des Autors, nicht die Identität des Archivs. |
 | `description` | Optionale Erläuterung im Katalog. |
+| `bootstrap` | Optionaler Einstiegspunkt mit `.js`, `.mjs` oder `.ts`, der `activate(context)` exportiert und vor der nativen Layout-Initialisierung abgewartet wird. |
 | `frontend` | Optionaler Einstiegspunkt mit `.js`, `.mjs` oder `.ts`, der `activate(context)` exportiert. |
 | `replacements` | Ordnet nativen Komponenten-IDs `src/.../*.svelte` die `.svelte`-Dateien des Pakets zu. |
 | `backend` | Optionaler `.py`-Einstiegspunkt, der Chat-Hooks, Override-Handler oder einen privaten HTTP-Handler exportiert. |
@@ -35,7 +36,7 @@ ist ein kleines Frontend-Beispiel mit Einstellungen, Sprachwechseln und Aufräum
 | `default_settings` | Anfängliche JSON-Einstellungen beim Hinzufügen eines Mods. Gespeicherte Einstellungen ersetzen dieses Objekt; Upgrades führen neue Vorgaben nicht mit gespeicherten Einstellungen zusammen. |
 | `settings_fields` | Optionale Felddefinitionen: Eingabefelder, übersetzte Beschriftungen/Hilfe, Auswahlwerte und Validierungseigenschaften. |
 
-Mindestens ein Frontend-Einstiegspunkt, eine Ersetzung oder ein Backend-Einstiegspunkt ist erforderlich. Pfade sind
+Mindestens ein Bootstrap-Einstiegspunkt, Frontend-Einstiegspunkt, eine Ersetzung oder ein Backend-Einstiegspunkt ist erforderlich. Pfade sind
 relativ zum Archivwurzelverzeichnis. Absolute Pfade, Traversierung, Symlinks und doppelte Einträge werden abgelehnt.
 Ein Quellcode-ZIP ist auf 16 MiB komprimiert, 32 MiB entpackt, 512 Einträge und ein 64-KiB-Manifest begrenzt.
 Einstellungen erlauben 16 KiB pro Mod; eine Mandantenauswahl erlaubt insgesamt 64 Mods und 64 KiB.
@@ -143,15 +144,31 @@ Backend-Abhängigkeiten müssen bereits auf dem Host installiert sein. Für eine
 
 ## Den Frontend-Lebenszyklus verwalten
 
-Der optionale Frontend-Einstiegspunkt exportiert `activate(context)` und darf eine Aufräumfunktion oder ein Promise
-darauf zurückgeben. Ersetzungen werden nach erfolgreicher Aktivierung installiert. Der Kontext enthält `id`
+Beide Skript-Einstiegspunkte sind optional und exportieren `activate(context)`. Jeder darf eine Aufräumfunktion oder
+ein Promise darauf zurückgeben. `bootstrap` läuft vor der nativen Root-Layout-Initialisierung einschliesslich i18n;
+`frontend` läuft, sobald der native Benutzer-Store gesetzt ist. Ersetzungen werden nach erfolgreicher
+Frontend-Aktivierung installiert. Beide Einstiegspunkte erhalten denselben Kontext. Er enthält `id`
 (View-Nonce), `tenantId`, `modId`, `publication`, tief eingefrorene `settings` und ein Abbruch-`signal`.
+
+Verwenden Sie Bootstrap für kleine Änderungen, die vor der nativen Initialisierung erfolgen müssen. Seine Imports
+müssen innerhalb des Pakets bleiben: JavaScript, TypeScript, JSON und Assets werden unterstützt; Svelte-Komponenten,
+Runen-Module und Imports aus der nativen Laufzeit nicht. Warten Sie nicht auf nativen Anwendungszustand oder die UI,
+da der Start Bootstrap abwartet. Für alle Bootstrap-Skripte zusammen gilt eine Frist von 15 Sekunden; ein Fehler
+deaktiviert den betroffenen Mod. Der Host kann beliebigen JavaScript-Code nicht unterbrechen oder nicht registrierte
+Seiteneffekte rückgängig machen. Bootstrap läuft vor dem nativen Layout, aber nicht vor Inline-Theme-Skripten oder
+sämtlichem Framework-Code.
+
+Bootstrap und Frontend haben getrennte kompilierte Abhängigkeitsgraphen. Modullokale Variablen werden deshalb nicht
+zwischen ihnen geteilt. Verwenden Sie den gemeinsamen Kontext für Identität und Einstellungen. Ein Paket nur mit
+Bootstrap benötigt keinen Frontend-Einstiegspunkt. Hat Bootstrap den Startzeitpunkt verpasst, ist ein Neuladen nötig;
+es wird niemals nachträglich gegen die bereits initialisierte Anwendung ausgeführt.
 
 | Kontext-Member | Verwendung |
 | --- | --- |
 | `onDispose(cleanup)` | Registrieren Sie die Bereinigung vor asynchroner Arbeit. Entfernen Sie eigene Listener, Observer und Mounts. |
-| `locale`, `onLocale(callback)` | AI Hub-Sprache lesen und abonnieren. Das Abonnement ruft sofort zurück und liefert eine Funktion zum Abmelden. |
+| `locale`, `onLocale(callback)` | AI-Hub-Sprache lesen und abonnieren. Das Abonnement ruft sofort zurück, gibt eine Abmeldefunktion zurück und wird beim Dispose der Mod entfernt. |
 | `onEvent(callback)` | Die zugeordneten Backend-Ereignisse dieses Mods empfangen; liefert eine Funktion zum Abmelden. |
+| `onRequest(handler)` | Native API-Anfragen über eine geordnete Request/Response-Kette verarbeiten; gibt eine Abmeldefunktion zurück. |
 | `api(path, options)` | Den privaten Backend-Endpunkt dieses Mods aufrufen. Liefert eine `Response` und bricht beim Beenden des Mods ab. |
 
 Exportieren Sie einen paketlokalen Store aus dem Frontend-Einstiegspunkt, wenn Ersatzkomponenten seine Einstellungen
@@ -163,6 +180,39 @@ aktiviert.
 Fehler beim Import, bei der Aktivierung und beim Rendern beenden den betroffenen Mod; native Komponenten werden
 wiederhergestellt. Die Rendering-Grenze fängt nicht jede Event-Handler- oder asynchrone Ausnahme ab. Die Auswertung
 von JavaScript-Modulen und beliebige globale Patches lassen sich nicht automatisch entladen.
+
+## Native Frontend-Anfragen verarbeiten
+
+Registrieren Sie bei der Aktivierung `context.onRequest(async (request, next) => response)`. Geben Sie eine `Response`
+zurück, um die Anfrage selbst zu beantworten, rufen Sie `next()` zur Weitergabe auf oder ändern Sie die Anfrage mit
+`next(new Request(...))`. Auch die zurückgegebene Antwort lässt sich prüfen oder ersetzen. Die erste konfigurierte Mod
+ist der äußerste Handler; innerhalb einer Mod gilt die Registrierungsreihenfolge. Die Registrierung gibt eine
+Abmeldefunktion zurück und wird beim Dispose der Mod automatisch entfernt.
+
+```js
+export function activate(context) {
+  context.onRequest((request, next) => {
+    const url = new URL(request.url);
+    if (url.origin === location.origin && url.pathname === '/api/example') {
+      return Response.json({ message: 'Handled by the mod' });
+    }
+    return next();
+  });
+}
+```
+
+Die Kette erfasst native Aufrufe über `src/lib/apis/` sowie aus `@aihub/mods` importiertes `fetch`. Globales `fetch`,
+Host-Konfiguration und Assets sowie `context.api` bleiben außerhalb. Verwenden Sie im Handler `next`, damit die Kette
+nicht rekursiv erneut beginnt. Native Completion-Aufrufe warten auf die Frontend-Aktivierung; andere Aufrufe verwenden
+die zum jeweiligen Zeitpunkt registrierten Handler. Bootstrap kann Handler vor der nativen Initialisierung
+registrieren, ohne die gemeinsame Runtime zu importieren.
+
+Anfragen behalten die Abbruchsignale des Aufrufers und der Ansicht, auch nach einer Änderung der Anfrage. Beachten Sie
+`request.signal` bei eigenen Aufgaben; der Host kann ein beliebig wartendes Promise nicht unterbrechen. Ein geworfener
+Fehler lässt diese Anfrage fehlschlagen; der Host wiederholt sie niemals stillschweigend. Handler-Fehler deaktivieren
+die Mod nicht automatisch. Die Auswahl der Anfragen, das Klonen von Bodies und bewusste Wiederholungen gehören in den
+Handler. Dies steuert Browserverhalten und ist keine Autorisierungsgrenze: Backend-Authentifizierung und
+-Autorisierung gelten weiterhin.
 
 ## Backend-Arbeit verarbeiten
 

@@ -111,12 +111,12 @@ def publication(archive: bytes, host: OpenWebuiModHost) -> bytes:
         "format": 1,
         "source_revision": hashlib.sha256(archive).hexdigest(),
         "compatibility": host.compatibility.model_dump(),
-        "replacements": {"src/lib/Menu.svelte": "frontend/Menu.svelte.mjs"},
+        "replacements": {"src/lib/Menu.svelte": "frontend/frontend/Menu.svelte.mjs"},
     }
     buffer = BytesIO()
     with ZipFile(buffer, "w") as zipped:
         zipped.writestr("publication.json", json.dumps(metadata))
-        zipped.writestr("files/frontend/Menu.svelte.mjs", "export default function Menu() {}")
+        zipped.writestr("files/frontend/frontend/Menu.svelte.mjs", "export default function Menu() {}")
     return buffer.getvalue()
 
 

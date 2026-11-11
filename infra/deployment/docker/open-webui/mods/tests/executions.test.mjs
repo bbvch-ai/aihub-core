@@ -21,7 +21,7 @@ function harness(t, options = {}) {
   const socket = { on: (name, listener) => listeners.add(listener), off: (name, listener) => listeners.delete(listener) };
   const stores = { chatId: writable(options.chatId ?? 'chat'), socket: writable(socket) };
   const view = { id: 'a'.repeat(32), tenantId: 'one', controller: new AbortController(),
-    snapshotReady: Promise.resolve(), loading: Promise.resolve() };
+    mods: [], snapshotReady: Promise.resolve(), loading: Promise.resolve() };
   const lifecycle = { view, dispatch: event => events.push(event) };
   const executions = new ModExecutions({ lifecycle, stores, origin: 'http://webui', fetch: async (url, init) => {
     calls.push({ url, init });
@@ -42,6 +42,103 @@ function harness(t, options = {}) {
   } });
   return { executions, lifecycle, stores, calls, events, listeners, send, event, requested: requested.promise };
 }
+
+test('request handlers can replace native responses and wrap other handlers in selection order', async t => {
+  const h = harness(t);
+  const order = [];
+  h.lifecycle.view.mods = [
+    { requestHandlers: new Set([async (request, next) => {
+      order.push('first:before');
+      const response = await next();
+      order.push('first:after');
+      return new Response((await response.text()) + ':wrapped');
+    }]) },
+    { requestHandlers: new Set([request => {
+      order.push('second');
+      assert.equal(request.url, 'http://webui/api/models');
+      return new Response('replacement');
+    }]) }
+  ];
+  assert.equal(await (await h.executions.fetch('/api/models')).text(), 'replacement:wrapped');
+  assert.deepEqual(order, ['first:before', 'second', 'first:after']);
+  assert.equal(h.calls.length, 0);
+});
+
+test('request rewrites are tracked using the final native completion body', async t => {
+  const h = harness(t);
+  h.lifecycle.view.mods = [{ requestHandlers: new Set([async (request, next) => {
+    const body = await request.json();
+    return next(new Request(request.url, { method: 'POST', headers: request.headers,
+      body: JSON.stringify({ ...body, id: 'rewritten' }) }));
+  }]) }];
+  await h.send();
+  assert.equal(h.calls[0].url.url, 'http://webui/api/chat/completions');
+  assert.equal(h.calls[0].init.headers.get('Authorization'), 'Bearer native-token');
+  assert.deepEqual([...h.executions.runs.values()][0].messages, ['rewritten']);
+  assert.equal(h.calls[0].init.headers.get('X-AIHub-Mod-Tenant'), 'one');
+});
+
+test('requests redirected by a handler do not leak native correlation headers', async t => {
+  const h = harness(t);
+  h.lifecycle.view.mods = [{ requestHandlers: new Set([(_request, next) =>
+    next(new Request('https://provider.test/custom'))]) }];
+  await h.send();
+  assert.equal(h.calls[0].url.url, 'https://provider.test/custom');
+  assert.equal(h.calls[0].url.headers.get('X-AIHub-Mod-Tenant'), null);
+  assert.equal(h.executions.runs.size, 0);
+});
+
+test('a handler failure never automatically replays a native request', async t => {
+  const h = harness(t);
+  const failure = new Error('Failed after the server accepted the request');
+  h.lifecycle.view.mods = [{ requestHandlers: new Set([async (_request, next) => {
+    await next();
+    throw failure;
+  }]) }];
+  await assert.rejects(h.send(), error => error === failure);
+  assert.equal(h.calls.length, 1);
+});
+
+test('completion dispatch sees handlers registered while activation is finishing', async t => {
+  const h = harness(t);
+  const activated = deferred();
+  h.lifecycle.view.loading = activated.promise;
+  const pending = h.send();
+  h.lifecycle.view.mods = [{ requestHandlers: new Set([() => new Response('ready')]) }];
+  activated.resolve();
+  assert.equal(await (await pending).text(), 'ready');
+  assert.equal(h.calls.length, 0);
+});
+
+for (const cancelBy of ['caller', 'view']) {
+  test(`${cancelBy} cancellation cannot be discarded by a request handler`, async t => {
+    const h = harness(t);
+    const caller = new AbortController();
+    const entered = deferred();
+    const proceed = deferred();
+    let signal;
+    h.lifecycle.view.mods = [{ requestHandlers: new Set([async (request, next) => {
+      signal = request.signal;
+      entered.resolve();
+      await proceed.promise;
+      return next(new Request(request.url));
+    }]) }];
+    const pending = h.executions.fetch('/api/models', { signal: caller.signal });
+    await entered.promise;
+    (cancelBy === 'caller' ? caller : h.lifecycle.view.controller).abort();
+    assert.equal(signal.aborted, true);
+    proceed.resolve();
+    await assert.rejects(pending, { name: 'AbortError' });
+    assert.equal(h.calls.length, 0);
+  });
+}
+
+test('invalid request handler results give an actionable error', async t => {
+  const h = harness(t);
+  h.lifecycle.view.mods = [{ requestHandlers: new Set([() => undefined]) }];
+  await assert.rejects(h.send(), /must return a Response\. Please contact your administrator/);
+  assert.equal(h.calls.length, 0);
+});
 
 test('same-origin native APIs receive view headers and only chat requests create executions', async t => {
   const h = harness(t);

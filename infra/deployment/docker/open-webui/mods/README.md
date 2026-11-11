@@ -12,7 +12,7 @@ operators use the [deployment guide](../../../openwebui.md).
 | Upload, publish and tenant configuration | [SysAdmin routes](../../../../../packages/sysadmin-api/swiss_ai_hub/sysadmin_api/routes/openwebui_mods/) |
 | Compilation and supported imports | [compiler.mjs](compiler.mjs) |
 | Native component replacements and shared state | [host_plugin.mjs](host_plugin.mjs), [component_plugin.mjs](component_plugin.mjs), [component_boundary.mjs](component_boundary.mjs) |
-| Browser activation, settings changes and execution events | [lifecycle.mjs](lifecycle.mjs), [executions.mjs](executions.mjs) |
+| Browser startup, activation and execution events | [host.mjs](host.mjs), [script_entries.mjs](script_entries.mjs), [lifecycle.mjs](lifecycle.mjs), [executions.mjs](executions.mjs) |
 | Tenant backend loading and chat hooks | [mod_runtime.py](backend/mod_runtime.py), [mod_run.py](backend/mod_run.py), [backend_package.py](backend/backend_package.py) |
 | Native callable overrides and lazy imports | [callable_registry.py](backend/callable_registry.py), [callable_imports.py](backend/callable_imports.py), [callable_transform.py](backend/callable_transform.py) |
 | Global activation, persistence and restart | [global_mod_runtime.py](backend/global_mod_runtime.py), [global_mod_store.py](backend/global_mod_store.py), [global_mod_control.py](backend/global_mod_control.py) |
@@ -22,6 +22,18 @@ operators use the [deployment guide](../../../openwebui.md).
 `host_plugin.mjs` instruments native component usages and emits the catalog/shared runtime. `request_plugin.mjs`
 adds request context and completion readiness to the pinned frontend. `component_boundary.mjs` uses Svelte internals
 to restore originals after rendering failures. These adapters require checks against each upstream/Svelte upgrade.
+
+`install_client_hook.mjs` installs the supported SvelteKit client `init` hook. It stops the build if an upstream hook
+already exists or moves, so an upgrade cannot silently discard upstream startup behavior. The hook authenticates
+tenant selection with the native cookie, runs `runScripts('bootstrap')`, then loads the shared runtime. Normal
+activation runs `runScripts('frontend')` after the native user store is populated. `script_entries.mjs` defines each
+entry's compiler capabilities, prerequisites and deadline. Adding an entry requires a manifest field, publication
+validation and an actual host invocation; choosing a new name alone does not establish an injection point.
+
+`context.onRequest(handler)` registers middleware on the existing native API bridge. Each handler receives a
+standard `Request` and `next`, and returns a `Response`. Registration order follows the tenant's mod list; disposal
+removes registrations. `@aihub/mods` exports `fetch` for components that need the same chain. Configuration, assets,
+private mod APIs and ordinary global `fetch` stay outside this bridge. No second fetch patch is installed.
 
 `backend/main.py` installs callable dispatch before upstream imports and retains native routes, dependencies,
 exception handlers and lifespan. `patch_startup.py` changes the checked ASGI entrypoint in upstream `start.sh`.

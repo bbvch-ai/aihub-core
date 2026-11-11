@@ -2,6 +2,7 @@ import { compile, compileModule, preprocess, VERSION } from 'svelte/compiler';
 import { parse } from 'acorn';
 import MagicString from 'magic-string';
 import compatibility from './compatibility.json' with { type: 'json' };
+import { scriptEntries } from './script_entries.mjs';
 
 const sharedModules = new Set([
   'svelte', 'svelte/internal/client', 'svelte/store', 'svelte/transition', 'svelte/motion',
@@ -9,7 +10,7 @@ const sharedModules = new Set([
 ]);
 const hostSideEffects = new Set(['svelte/internal/disclose-version', 'svelte/internal/flags/legacy']);
 
-function useHostRuntime(source) {
+function useHostRuntime(source, nativeRuntime) {
   const changes = new MagicString(source);
   const ast = parse(source, { ecmaVersion: 'latest', sourceType: 'module' });
   const dependencies = new Set();
@@ -35,6 +36,7 @@ function useHostRuntime(source) {
       }
       continue;
     }
+    if (!nativeRuntime) throw new Error(`Bootstrap imports must stay within the package: ${name}`);
     if (node.type !== 'ImportDeclaration') throw new Error(`Re-export shared modules through a local import: ${name}`);
     if (hostSideEffects.has(name) && !node.specifiers.length) {
       changes.remove(node.start, node.end);
@@ -63,8 +65,10 @@ function useHostRuntime(source) {
     dependencies.add(path.value);
     if (isModule(path.value)) changes.overwrite(path.start, path.end, JSON.stringify(`${path.value}.mjs`));
   });
-  changes.prepend(`const ${runtime}=await import(new URL('/_aihub/mods/runtime.js',location.origin).href);\n` +
-    `${runtime}.assertCompatible(${JSON.stringify(compatibility)});\n`);
+  if (nativeRuntime) {
+    changes.prepend(`const ${runtime}=await import(new URL('/_aihub/mods/runtime.js',location.origin).href);\n` +
+      `${runtime}.assertCompatible(${JSON.stringify(compatibility)});\n`);
+  }
   return { code: changes.toString(), dependencies: [...dependencies] };
 }
 
@@ -93,9 +97,12 @@ async function stripTypes(source, filename) {
   return result.outputText;
 }
 
-export async function compileModFile(source, filename) {
+export async function compileModFile(source, filename, { nativeRuntime = true } = {}) {
   if (VERSION !== compatibility.svelte) throw new Error('Open WebUI mod compiler version does not match the host');
   if (typeof source !== 'string') throw new Error(`Expected text source: ${filename}`);
+  if (!nativeRuntime && /\.svelte(?:\.[jt]s)?$/.test(filename)) {
+    throw new Error(`Bootstrap cannot initialize Svelte code: ${filename}`);
+  }
   let code = source;
   let warnings = [];
   if (filename.endsWith('.svelte')) {
@@ -126,7 +133,7 @@ export async function compileModFile(source, filename) {
   }
   return {
     filename: `${filename}.mjs`,
-    ...useHostRuntime(code),
+    ...useHostRuntime(code, nativeRuntime),
     compatibility,
     warnings: warnings.map(({ code, message, start, end }) => ({ code, message, start, end }))
   };
@@ -168,7 +175,9 @@ export async function compileModPackage(manifest, sourceFiles, componentIds) {
   for (const target of Object.keys(manifest.replacements ?? {})) {
     if (!targets.has(target)) throw new Error(`Replacement target is absent from this Open WebUI host: ${target}`);
   }
-  const pending = [...new Set([manifest.frontend, ...Object.values(manifest.replacements ?? {})].filter(Boolean))];
+  const pending = Object.entries(scriptEntries).filter(([name]) => manifest[name])
+    .map(([name, definition]) => ({ filename: manifest[name], definition }));
+  pending.push(...Object.values(manifest.replacements ?? {}).map(filename => ({ filename, definition: scriptEntries.frontend })));
   const visited = new Set();
   const files = new Map();
   const warnings = [];
@@ -177,21 +186,23 @@ export async function compileModPackage(manifest, sourceFiles, componentIds) {
     files.set(filename, content);
   }
   while (pending.length) {
-    const filename = pending.shift();
-    if (visited.has(filename)) continue;
-    visited.add(filename);
+    const { filename, definition } = pending.shift();
+    const { prefix, nativeRuntime } = definition;
+    const key = `${prefix}:${filename}`;
+    if (visited.has(key)) continue;
+    visited.add(key);
     if (!sources.has(filename)) throw new Error(`Missing package dependency: ${filename}`);
     const content = sources.get(filename);
     try {
       const compiled = isModule(filename)
-        ? await compileModFile(decodeSource(content, filename), filename)
+        ? await compileModFile(decodeSource(content, filename), filename, { nativeRuntime })
         : compileAsset(content, filename);
-      emit(compiled.filename, compiled.code);
-      if (!isModule(filename)) emit(filename, content);
+      emit(prefix + compiled.filename, compiled.code);
+      if (!isModule(filename)) emit(prefix + filename, content);
       for (const dependency of compiled.dependencies) {
         const resolved = resolveDependency(filename, dependency);
         if (!sources.has(resolved)) throw new Error(`Missing package dependency: ${resolved}`);
-        pending.push(resolved);
+        pending.push({ filename: resolved, definition });
       }
       warnings.push(...compiled.warnings.map(warning => ({ ...warning, filename })));
     } catch (error) {
@@ -202,8 +213,10 @@ export async function compileModPackage(manifest, sourceFiles, componentIds) {
   }
   return {
     compatibility,
-    frontend: manifest.frontend ? `${manifest.frontend}.mjs` : null,
-    replacements: Object.fromEntries(Object.entries(manifest.replacements ?? {}).map(([target, source]) => [target, `${source}.mjs`])),
+    ...Object.fromEntries(Object.entries(scriptEntries).map(([name, definition]) =>
+      [name, manifest[name] ? `${definition.prefix}${manifest[name]}.mjs` : null])),
+    replacements: Object.fromEntries(Object.entries(manifest.replacements ?? {}).map(([target, source]) =>
+      [target, `${scriptEntries.frontend.prefix}${source}.mjs`])),
     files: Object.fromEntries(files),
     warnings
   };
@@ -228,7 +241,8 @@ export async function prepareModPublication(sourceArchive, componentIds, callabl
   const options = { date: new Date('1980-01-01T00:00:00Z'), createFolders: false };
   publication.file('publication.json', JSON.stringify({
     format: 1, source_revision: sourceRevision, compatibility,
-    frontend: compiled.frontend, replacements: compiled.replacements, backend_targets: backendTargets,
+    bootstrap: compiled.bootstrap, frontend: compiled.frontend,
+    replacements: compiled.replacements, backend_targets: backendTargets,
     warnings: compiled.warnings.map(warning => warning.filename ? `${warning.filename}: ${warning.message}` : warning.message)
   }), options);
   for (const filename of Object.keys(compiled.files).sort()) {

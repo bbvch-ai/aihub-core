@@ -14,7 +14,7 @@ class FrontendArchive:
         try:
             with ZipFile(BytesIO(content)) as archive:
                 entries = archive.infolist()
-                if len(entries) > 1025 or sum(entry.file_size for entry in entries) > 32 * 1024 * 1024:
+                if len(entries) > 2049 or sum(entry.file_size for entry in entries) > 32 * 1024 * 1024:
                     raise HTTPException(
                         502, "Published mod archive exceeds the expansion limit. Please contact your administrator."
                     )

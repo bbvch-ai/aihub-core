@@ -11,12 +11,12 @@ import * as events from 'svelte/events';
 import * as animate from 'svelte/animate';
 import * as stores from '$lib/stores';
 import { getOriginalComponent } from './components.mjs';
-import contract from './compatibility.json' with { type: 'json' };
+import { modFetch } from './request_bridge.mjs';
 
 export { replaceComponents } from './components.mjs';
 export { guardComponent } from './component_boundary.mjs';
 
-export const compatibility = Object.freeze(contract);
+export { compatibility, assertCompatible } from './compatibility.mjs';
 
 const modules = {
   svelte,
@@ -29,14 +29,8 @@ const modules = {
   'svelte/events': events,
   'svelte/animate': animate,
   '@openwebui/stores': stores,
-  '@aihub/mods': { getOriginalComponent }
+  '@aihub/mods': { getOriginalComponent, fetch: modFetch }
 };
-
-export function assertCompatible(expected) {
-  for (const key of ['host_protocol', 'source_commit', 'svelte', 'python']) {
-    if (expected[key] !== compatibility[key]) throw new Error(`Open WebUI mod compatibility mismatch: ${key}`);
-  }
-}
 
 export function getModule(name) {
   if (!Object.hasOwn(modules, name)) throw new Error(`Unsupported Open WebUI mod import: ${name}`);

@@ -1,3 +1,5 @@
+import { runRequestHandlers } from './request_bridge.mjs';
+
 export class ModExecutions {
   constructor({ lifecycle, stores, origin = globalThis.location.origin, fetch: request = globalThis.fetch }) {
     this.lifecycle = lifecycle;
@@ -22,6 +24,21 @@ export class ModExecutions {
   }
 
   async fetch(input, init) {
+    const view = this.lifecycle.view;
+    if (!view) return this.request(input, init);
+    const original = input instanceof Request ? input : null;
+    const url = new URL(original?.url ?? input, this.origin);
+    const completion = url.origin === this.origin && url.pathname === '/api/chat/completions'
+      && (init?.method ?? original?.method ?? 'GET').toUpperCase() === 'POST';
+    await this.waitForView(view, completion, init?.signal === undefined ? original?.signal : init.signal);
+    if (this.lifecycle.view !== view) throw new Error('The mod view changed. Reload the chat.');
+    const handlers = view.mods.flatMap(mod => [...mod.requestHandlers]);
+    if (!handlers.length) return this.fetchNative(input, init);
+    const request = new Request(original ?? url, init);
+    return runRequestHandlers(handlers, request, request => this.fetchNative(request), view.controller.signal);
+  }
+
+  async fetchNative(input, init) {
     const original = input instanceof Request ? input : null;
     const url = new URL(original?.url ?? input, this.origin);
     const view = this.lifecycle.view;

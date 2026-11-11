@@ -12,6 +12,7 @@ class OpenWebuiModPublicationManifest(BaseModel):
     format: Literal[1]
     source_revision: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
     compatibility: OpenWebuiModCompatibility
+    bootstrap: str | None = None
     frontend: str | None = None
     replacements: dict[str, str] = Field(default_factory=dict)
     backend_targets: dict[str, dict[str, JsonValue]] = Field(default_factory=dict, max_length=128)
@@ -24,7 +25,7 @@ class OpenWebuiModPublicationManifest(BaseModel):
             raise ValueError("Publication format must be a version number")
         return value
 
-    @field_validator("frontend")
+    @field_validator("bootstrap", "frontend")
     @classmethod
     def validate_frontend(cls, value: str | None) -> str | None:
         if value is not None:

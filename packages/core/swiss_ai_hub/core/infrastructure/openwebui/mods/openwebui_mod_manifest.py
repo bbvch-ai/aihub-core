@@ -16,6 +16,7 @@ class OpenWebuiModManifest(BaseModel):
     name: Annotated[str, Field(min_length=1, max_length=100)]
     version: Annotated[str, Field(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9][a-zA-Z0-9.+_-]*$")]
     description: Annotated[str, Field(max_length=2000)] = ""
+    bootstrap: str | None = None
     frontend: str | None = None
     backend: str | None = None
     backend_overrides: dict[str, str] = Field(default_factory=dict, max_length=128)
@@ -78,7 +79,7 @@ class OpenWebuiModManifest(BaseModel):
             raise ValueError(f"Expected a normalized relative package path: {value!r}")
         return value
 
-    @field_validator("frontend", "backend")
+    @field_validator("bootstrap", "frontend", "backend")
     @classmethod
     def validate_entry_path(cls, value: str | None) -> str | None:
         return cls.validate_path(value) if value is not None else None
@@ -99,10 +100,12 @@ class OpenWebuiModManifest(BaseModel):
     def validate_entry_points(self) -> Self:
         if (self.backend_overrides or self.backend_restart_required) and self.backend is None:
             raise ValueError("Backend overrides and restart requirements need a backend entry")
-        if not (self.frontend or self.backend or self.replacements):
-            raise ValueError("A mod needs a frontend entry, component replacement or backend entry")
-        if self.frontend and not self.frontend.endswith((".js", ".mjs", ".ts")):
-            raise ValueError("The frontend entry must be a JavaScript or TypeScript file")
+        if not (self.bootstrap or self.frontend or self.backend or self.replacements):
+            raise ValueError("A mod needs a bootstrap entry, frontend entry, component replacement or backend entry")
+        for name in ("bootstrap", "frontend"):
+            entry = getattr(self, name)
+            if entry and not entry.endswith((".js", ".mjs", ".ts")):
+                raise ValueError(f"The {name} entry must be a JavaScript or TypeScript file")
         if self.backend and not self.backend.endswith(".py"):
             raise ValueError("The backend entry must be a Python file")
         if self.backend and any(not part.isidentifier() for part in PurePosixPath(self.backend).with_suffix("").parts):
@@ -111,4 +114,4 @@ class OpenWebuiModManifest(BaseModel):
 
     @property
     def entry_paths(self) -> set[str]:
-        return {path for path in [self.frontend, self.backend, *self.replacements.values()] if path is not None}
+        return {path for path in [self.bootstrap, self.frontend, self.backend, *self.replacements.values()] if path is not None}

@@ -716,6 +716,10 @@ export type OpenWebuiModManifest = {
    */
   description?: string;
   /**
+   * Bootstrap
+   */
+  bootstrap?: string | null;
+  /**
    * Frontend
    */
   frontend?: string | null;
@@ -768,6 +772,10 @@ export type OpenWebuiModPublicationManifest = {
    */
   source_revision: string;
   compatibility: OpenWebuiModCompatibility;
+  /**
+   * Bootstrap
+   */
+  bootstrap?: string | null;
   /**
    * Frontend
    */

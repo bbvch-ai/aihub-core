@@ -1,29 +1,37 @@
 import { ModLifecycle } from './lifecycle.mjs';
 import { ModExecutions } from './executions.mjs';
 import { setRequestHandler } from './request_bridge.mjs';
-import { assertCompatible, getModule, guardComponent, replaceComponents } from './runtime.mjs';
+import { assertCompatible } from './compatibility.mjs';
 
 const messageType = 'aihub:mods';
-let controller;
+let initialization;
 
 async function start(signal) {
-  if (window.parent === window) return;
-  const response = await fetch('/static/aihub-disclaimer.json', { cache: 'no-store', signal });
+  const response = await fetch('/static/aihub-disclaimer.json', {
+    cache: 'no-store', signal: AbortSignal.any([signal, AbortSignal.timeout(15000)])
+  });
   if (!response.ok) throw new Error('Missing AI Hub bridge configuration');
   const { parentOrigin } = await response.json();
-  if (signal.aborted) return;
+  signal.throwIfAborted();
   const origin = new URL(parentOrigin);
   if (!['https:', 'http:'].includes(origin.protocol) || origin.origin !== parentOrigin) {
     throw new Error('Invalid AI Hub bridge parent origin');
   }
   const report = ({ modId, stage, error }) => console.warn('[AI Hub mods]', modId ?? 'host', stage, error);
+  let runtime;
   let executions;
-  const lifecycle = new ModLifecycle({ replaceComponents, assertCompatible, guardComponent, report,
-    onUpdate: state => window.parent.postMessage({ type: `${messageType}:update`, version: 1, ...state }, parentOrigin),
-    resetExecutions: () => executions?.clear() });
-  executions = new ModExecutions({ lifecycle, stores: getModule('@openwebui/stores') });
-  setRequestHandler((input, init) => executions.fetch(input, init));
   let userId;
+  let desiredTenant;
+  let nativeStarted = false;
+  let receiveTenant;
+  const tenantReady = new Promise(resolve => { receiveTenant = resolve; });
+  const lifecycle = new ModLifecycle({
+    replaceComponents: entries => runtime?.replaceComponents(entries), assertCompatible,
+    guardComponent: (...args) => runtime.guardComponent(...args), report,
+    onUpdate: state => window.parent.postMessage({ type: `${messageType}:update`, version: 1, ...state }, parentOrigin),
+    resetExecutions: () => executions?.clear()
+  });
+  const ready = () => window.parent.postMessage({ type: `${messageType}:ready`, version: 1 }, parentOrigin);
   const receive = event => {
     if (event.source !== window.parent || event.origin !== parentOrigin) return;
     const data = event.data;
@@ -33,40 +41,86 @@ async function start(signal) {
       if (typeof data.locale !== 'string' || !/^[a-z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$/.test(data.locale)) return;
       lifecycle.setLocale(data.locale);
     }
-    if (userId) void lifecycle.setTenant(data.tenantId);
+    if (desiredTenant === data.tenantId) return;
+    desiredTenant = data.tenantId;
+    if (lifecycle.view && lifecycle.view.tenantId !== desiredTenant) lifecycle.dispose();
+    if (nativeStarted) {
+      if (desiredTenant !== null && lifecycle.view?.tenantId !== desiredTenant) location.reload();
+    } else if (desiredTenant !== null) {
+      receiveTenant(desiredTenant);
+    }
   };
-  window.addEventListener('message', receive);
-  const checkForUpdates = () => { void lifecycle.checkForUpdates(); };
-  const checkWhenVisible = () => { if (document.visibilityState === 'visible') checkForUpdates(); };
-  window.addEventListener('focus', checkForUpdates);
-  window.addEventListener('online', checkForUpdates);
-  document.addEventListener('visibilitychange', checkWhenVisible);
-  const unsubscribe = getModule('@openwebui/stores').user.subscribe(user => {
-    if (userId === user?.id) return;
-    userId = user?.id;
-    lifecycle.dispose();
-    window.parent.postMessage({ type: `${messageType}:update`, version: 1, tenantId: null, reason: null }, parentOrigin);
-    window.parent.postMessage({ type: `${messageType}:ready`, version: 1 }, parentOrigin);
-  });
-  window.parent.postMessage({ type: `${messageType}:ready`, version: 1 }, parentOrigin);
+  window.addEventListener('message', receive, { signal });
   signal.addEventListener('abort', () => {
-    window.removeEventListener('message', receive);
-    window.removeEventListener('focus', checkForUpdates);
-    window.removeEventListener('online', checkForUpdates);
-    document.removeEventListener('visibilitychange', checkWhenVisible);
-    unsubscribe();
     lifecycle.dispose();
-    executions.dispose();
+    executions?.dispose();
     setRequestHandler(null);
   }, { once: true });
+  ready();
+  try {
+    const tenantId = await waitForTenant(tenantReady, signal);
+    await lifecycle.prepare(tenantId);
+    if (desiredTenant !== tenantId) {
+      lifecycle.dispose();
+      if (desiredTenant !== null) location.reload();
+    } else {
+      await lifecycle.runScripts('bootstrap');
+      if (desiredTenant !== tenantId && desiredTenant !== null) location.reload();
+    }
+  } catch (error) {
+    if (!signal.aborted) report({ stage: 'bootstrap', error });
+  } finally {
+    lifecycle.closeScripts('bootstrap');
+  }
+  signal.throwIfAborted();
+  runtime = await import('./runtime.mjs');
+  signal.throwIfAborted();
+  nativeStarted = true;
+  if (typeof desiredTenant === 'string' && lifecycle.view?.tenantId !== desiredTenant) location.reload();
+  executions = new ModExecutions({ lifecycle, stores: runtime.getModule('@openwebui/stores') });
+  setRequestHandler((input, init) => executions.fetch(input, init));
+  const checkForUpdates = () => { void lifecycle.checkForUpdates(); };
+  window.addEventListener('focus', checkForUpdates, { signal });
+  window.addEventListener('online', checkForUpdates, { signal });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkForUpdates();
+  }, { signal });
+  const unsubscribe = runtime.getModule('@openwebui/stores').user.subscribe(user => {
+    if (userId === user?.id) return;
+    if (userId) {
+      lifecycle.dispose();
+      window.parent.postMessage({ type: `${messageType}:update`, version: 1, tenantId: null, reason: null }, parentOrigin);
+      if (user?.id) location.reload();
+    }
+    userId = user?.id;
+    if (userId) void lifecycle.activate();
+  });
+  signal.addEventListener('abort', unsubscribe, { once: true });
 }
 
-const begin = () => {
-  controller?.abort();
-  controller = new AbortController();
-  const { signal } = controller;
-  start(signal).catch(error => { if (!signal.aborted) console.warn('[AI Hub mods]', error); });
-};
-window.addEventListener('pagehide', () => controller?.abort());
-window.addEventListener('pageshow', event => { if (event.persisted) begin(); });
-begin();
+async function waitForTenant(ready, signal) {
+  const deadline = AbortSignal.any([signal, AbortSignal.timeout(15000)]);
+  let abort;
+  try {
+    deadline.throwIfAborted();
+    return await Promise.race([ready, new Promise((_, reject) => {
+      abort = () => reject(deadline.reason);
+      deadline.addEventListener('abort', abort, { once: true });
+    })]);
+  } finally {
+    if (abort) deadline.removeEventListener('abort', abort);
+  }
+}
+
+export function init() {
+  if (window.parent === window) return;
+  if (initialization) return initialization;
+  const controller = new AbortController();
+  window.addEventListener('pagehide', () => controller.abort(), { once: true });
+  window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
+  initialization = start(controller.signal).catch(error => {
+    if (!controller.signal.aborted) console.warn('[AI Hub mods]', error);
+    controller.abort();
+  });
+  return initialization;
+}

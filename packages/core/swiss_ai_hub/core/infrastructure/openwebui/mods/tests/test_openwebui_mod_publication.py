@@ -39,11 +39,11 @@ class TestOpenWebuiModPublication:
     @classmethod
     def publication(cls, source: OpenWebuiModPackage, **changes: Any) -> OpenWebuiModPublication:
         metadata = {"format": 1, "source_revision": source.revision, "compatibility": cls.HOST.model_dump(),
-                    "frontend": None, "replacements": {cls.TARGET: "Menu.svelte.mjs"}} | changes
+                    "frontend": None, "replacements": {cls.TARGET: "frontend/Menu.svelte.mjs"}} | changes
         return OpenWebuiModPublication.from_zip(cls.archive({
             "publication.json": json.dumps(metadata),
-            "files/Menu.svelte.mjs": "export default function Menu() {}",
-            "files/icon.png": b"\x89PNG",
+            "files/frontend/Menu.svelte.mjs": "export default function Menu() {}",
+            "files/frontend/icon.png": b"\x89PNG",
         }))
 
     def test_full_stack_publication_keeps_backend_private_and_does_not_execute_source(self) -> None:
@@ -51,7 +51,7 @@ class TestOpenWebuiModPublication:
         publication = self.publication(source)
         publication.validate_for_host(source, self.HOST, {self.TARGET})
         assert publication.manifest.source_revision == source.revision
-        assert set(publication.files) == {"Menu.svelte.mjs", "icon.png"}
+        assert set(publication.files) == {"frontend/Menu.svelte.mjs", "frontend/icon.png"}
         assert len(publication.revision) == 64
 
     def test_callable_targets_and_changed_source_require_recompilation(self) -> None:
@@ -87,7 +87,7 @@ class TestOpenWebuiModPublication:
         publication = self.publication(source)
         with pytest.raises(ValueError, match="targets are absent"):
             publication.validate_for_host(source, self.HOST, set())
-        del publication.files["Menu.svelte.mjs"]
+        del publication.files["frontend/Menu.svelte.mjs"]
         with pytest.raises(ValueError, match="entry file is missing"):
             publication.validate_for_host(source, self.HOST, {self.TARGET})
 
@@ -101,7 +101,7 @@ class TestOpenWebuiModPublication:
     def test_frontend_output_cannot_smuggle_python_or_change_source_assets(self, path: str, content: bytes) -> None:
         source = self.source()
         publication = self.publication(source)
-        publication.files[path] = content
+        publication.files[path if path.startswith("bootstrap/") else f"frontend/{path}"] = content
         with pytest.raises(ValueError, match="asset must match|module must be UTF-8"):
             publication.validate_for_host(source, self.HOST, {self.TARGET})
 
@@ -133,3 +133,35 @@ class TestOpenWebuiModPublication:
             publication.validate_for_host(source, self.HOST, set())
         publication.files.clear()
         publication.validate_for_host(source, self.HOST, set())
+
+    def test_bootstrap_only_publication_binds_entry_and_assets_to_source(self) -> None:
+        source = OpenWebuiModPackage.from_zip(self.archive({
+            "mod.json": json.dumps({"format": 1, "id": "startup", "name": "Startup", "version": "1",
+                                    "bootstrap": "start.ts"}),
+            "start.ts": "export function activate() {}",
+            "locales.json": '["en-US"]',
+        }))
+        publication = self.publication(source, replacements={}, bootstrap="bootstrap/start.ts.mjs")
+        publication.files = {"bootstrap/start.ts.mjs": b"export function activate() {}",
+                             "bootstrap/locales.json": b'["en-US"]'}
+        publication.validate_for_host(source, self.HOST, set())
+        publication.manifest.bootstrap = "bootstrap/other.ts.mjs"
+        with pytest.raises(ValueError, match="entry points"):
+            publication.validate_for_host(source, self.HOST, set())
+        publication.manifest.bootstrap = "bootstrap/start.ts.mjs"
+        del publication.files["bootstrap/start.ts.mjs"]
+        with pytest.raises(ValueError, match="entry file is missing"):
+            publication.validate_for_host(source, self.HOST, set())
+
+    @pytest.mark.parametrize("path, content", [
+        ("bootstrap/backend/mod.py", b"raise RuntimeError()"),
+        ("bootstrap/mod.json", b"{}"),
+        ("bootstrap/icon.png", b"changed"),
+        ("bootstrap/unknown.png", b"\x89PNG"),
+    ])
+    def test_bootstrap_asset_prefix_cannot_expose_backend_or_unbound_assets(self, path: str, content: bytes) -> None:
+        source = self.source()
+        publication = self.publication(source)
+        publication.files[path if path.startswith("bootstrap/") else f"frontend/{path}"] = content
+        with pytest.raises(ValueError, match="asset must match"):
+            publication.validate_for_host(source, self.HOST, {self.TARGET})

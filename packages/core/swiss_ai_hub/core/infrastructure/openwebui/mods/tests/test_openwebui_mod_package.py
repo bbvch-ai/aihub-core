@@ -76,10 +76,17 @@ class TestOpenWebuiModPackage:
             {"backend": None},
             {"replacements": {}},
             {"backend": None, "replacements": {}, "frontend": "frontend/label.js"},
+            {"backend": None, "replacements": {}, "bootstrap": "frontend/label.js"},
+            {"backend": None, "replacements": {}, "bootstrap": "frontend/label.js", "frontend": "frontend/label.js"},
         ],
     )
     def test_a_package_can_have_only_one_side(self, changes: dict[str, Any]) -> None:
         assert OpenWebuiModPackage.from_zip(self.package(**changes)).manifest.id == "chat-tools"
+
+    @pytest.mark.parametrize("entry", ["missing.ts", "backend/mod.py", "../start.js", "frontend/Menu.svelte"])
+    def test_bootstrap_requires_an_existing_javascript_or_typescript_entry(self, entry: str) -> None:
+        with pytest.raises(ValueError):
+            OpenWebuiModPackage.from_zip(self.package(bootstrap=entry))
 
     def test_changing_backend_or_frontend_changes_the_package_revision(self) -> None:
         original = OpenWebuiModPackage.from_zip(self.package())

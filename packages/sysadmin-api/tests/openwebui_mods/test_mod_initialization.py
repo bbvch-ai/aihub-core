@@ -26,14 +26,16 @@ def publish_builtins(client: TestClient, host: OpenWebuiModHost) -> tuple[dict[s
         host.components.update(manifest["replacements"])
         metadata = {
             "format": 1, "source_revision": source["revision"], "compatibility": host.compatibility.model_dump(),
-            "frontend": manifest["frontend"] + ".mjs" if manifest["frontend"] else None,
-            "replacements": {target: path + ".mjs" for target, path in manifest["replacements"].items()},
+            "bootstrap": "bootstrap/" + manifest["bootstrap"] + ".mjs" if manifest["bootstrap"] else None,
+            "frontend": "frontend/" + manifest["frontend"] + ".mjs" if manifest["frontend"] else None,
+            "replacements": {target: "frontend/" + path + ".mjs" for target, path in manifest["replacements"].items()},
         }
         buffer = BytesIO()
         with ZipFile(buffer, "w") as zipped:
             zipped.writestr("publication.json", json.dumps(metadata))
-            if metadata["frontend"]:
-                zipped.writestr("files/" + metadata["frontend"], "export function activate() {}")
+            for entry in (metadata["bootstrap"], metadata["frontend"]):
+                if entry:
+                    zipped.writestr("files/" + entry, "export function activate() {}")
             for filename in metadata["replacements"].values():
                 zipped.writestr("files/" + filename, "export default function Component() {}")
         with patch.object(OpenWebuiModService, "_compile", AsyncMock(return_value=buffer.getvalue())):

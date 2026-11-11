@@ -6,6 +6,58 @@ const target = 'src/lib/Menu.svelte';
 const manifest = { replacements: { [target]: 'frontend/Menu.svelte' } };
 const compile = (files, overrides = {}, targets = [target]) => compileModPackage({ ...manifest, ...overrides }, files, targets);
 
+test('bootstrap-only TypeScript compiles its local dependencies without loading the native runtime', async () => {
+  const result = await compileModPackage({ bootstrap: 'start.ts' }, {
+    'start.ts': 'import { locale } from "./locale.ts"; export function activate(): void { localStorage.locale = locale; }',
+    'locale.ts': 'export const locale: string = "en-US";'
+  }, []);
+  assert.equal(result.bootstrap, 'bootstrap/start.ts.mjs');
+  assert.equal(result.frontend, null);
+  assert.deepEqual(Object.keys(result.files).sort(), ['bootstrap/locale.ts.mjs', 'bootstrap/start.ts.mjs']);
+  assert.match(result.files[result.bootstrap], /\.\/locale\.ts\.mjs/);
+  for (const code of Object.values(result.files)) assert.doesNotMatch(code, /runtime\.js|__aihubModRuntime/);
+});
+
+test('bootstrap and frontend compile a shared helper independently with assets preserved', async () => {
+  const result = await compileModPackage({ bootstrap: 'start.js', frontend: 'main.js' }, {
+    'start.js': 'import { value } from "./shared.js"; import asset from "./icon.svg"; export function activate() {}',
+    'main.js': 'import { value } from "./shared.js"; export function activate() {}',
+    'shared.js': 'export const value = 1;',
+    'icon.svg': '<svg/>'
+  }, []);
+  assert.doesNotMatch(result.files['bootstrap/shared.js.mjs'], /runtime\.js/);
+  assert.match(result.files['frontend/shared.js.mjs'], /runtime\.js/);
+  assert.equal(result.files['bootstrap/icon.svg'], '<svg/>');
+  assert.match(result.files['bootstrap/icon.svg.mjs'], /new URL\("\.\/icon.svg",import.meta.url\)/);
+});
+
+test('entry output namespaces cannot collide with package directory names', async () => {
+  const result = await compileModPackage({ bootstrap: 'start.js', frontend: 'bootstrap/start.js' }, {
+    'start.js': 'export function activate() {}',
+    'bootstrap/start.js': 'import { user } from "@openwebui/stores"; export function activate() {}'
+  }, []);
+  assert.equal(result.bootstrap, 'bootstrap/start.js.mjs');
+  assert.equal(result.frontend, 'frontend/bootstrap/start.js.mjs');
+  assert.doesNotMatch(result.files[result.bootstrap], /runtime\.js/);
+  assert.match(result.files[result.frontend], /runtime\.js/);
+});
+
+for (const specifier of ['svelte', '@openwebui/stores', '@aihub/mods', 'svelte/internal/disclose-version']) {
+  test(`bootstrap rejects native dependency ${specifier} transitively`, async () => {
+    await assert.rejects(compileModPackage({ bootstrap: 'start.js' }, {
+      'start.js': 'export { activate } from "./helper.js";',
+      'helper.js': `import "${specifier}"; export function activate() {}`
+    }, []), /helper\.js: Bootstrap imports must stay within the package/);
+  });
+}
+
+test('bootstrap cannot load a Svelte component through a dynamic import', async () => {
+  await assert.rejects(compileModPackage({ bootstrap: 'start.js' }, {
+    'start.js': 'export async function activate() { await import("./Menu.svelte"); }',
+    'Menu.svelte': '<p>Menu</p>'
+  }, []), /Bootstrap cannot initialize Svelte code/);
+});
+
 test('backend publication captures native source fingerprints without executing source', async () => {
   const { default: JSZip } = await import('jszip');
   const callable = 'open_webui.routers.users:get_user_info_by_session_user';
@@ -33,7 +85,7 @@ test('Svelte TypeScript scripts and template expressions compile to the shared r
     </script><button onclick={() => count++}>{count as number}</button><Child value={count}/>` ,
     'frontend/Child.svelte': '<script lang="ts">let { value }: { value: number } = $props();</script><span>{value}</span>'
   });
-  const code = result.files['frontend/Menu.svelte.mjs'];
+  const code = result.files['frontend/frontend/Menu.svelte.mjs'];
   assert.match(code, /getModule\("svelte\/internal\/client"\)/);
   assert.match(code, /Child\.svelte\.mjs/);
   assert.doesNotMatch(code, /interface Props|import type|\$state<number>|as number/);
@@ -47,8 +99,8 @@ test('TypeScript enums and constructor properties work inside Svelte scripts', a
       const label = new Label(Mode.Compact);
     </script><span>{label.value}</span>`
   });
-  assert.match(result.files['frontend/Menu.svelte.mjs'], /compact/);
-  assert.doesNotMatch(result.files['frontend/Menu.svelte.mjs'], /enum Mode|public value/);
+  assert.match(result.files['frontend/frontend/Menu.svelte.mjs'], /compact/);
+  assert.doesNotMatch(result.files['frontend/frontend/Menu.svelte.mjs'], /enum Mode|public value/);
 });
 
 test('compilation accepts type mismatches but rejects invalid TypeScript syntax', async () => {
@@ -68,12 +120,12 @@ test('a package follows Svelte, TypeScript, runes, re-exports and literal dynami
     'backend/private.json': '{"private":true}'
   });
   assert.equal(Object.keys(result.files).length, 6);
-  assert.match(result.files['frontend/state.svelte.ts.mjs'], /getModule\("svelte\/internal\/client"\)/);
-  assert.match(result.files['frontend/reexport.js.mjs'], /import\("\.\/Lazy.svelte.mjs"\)/);
-  assert.equal(result.replacements[target], 'frontend/Menu.svelte.mjs');
+  assert.match(result.files['frontend/frontend/state.svelte.ts.mjs'], /getModule\("svelte\/internal\/client"\)/);
+  assert.match(result.files['frontend/frontend/reexport.js.mjs'], /import\("\.\/Lazy.svelte.mjs"\)/);
+  assert.equal(result.replacements[target], 'frontend/frontend/Menu.svelte.mjs');
   assert.equal(result.frontend, null);
   assert.deepEqual(result.warnings, []);
-  assert.ok(!Object.keys(result.files).some(path => path.startsWith('backend/')));
+  assert.ok(!Object.keys(result.files).some(path => path.startsWith('frontend/backend/')));
 });
 
 test('frontend entries can use cycles and shared dependencies without duplicate output', async () => {
@@ -82,8 +134,8 @@ test('frontend entries can use cycles and shared dependencies without duplicate 
     'shared.js': 'export const value = 1;',
     'cycle.js': 'import "./main.js";import "./shared.js";'
   }, { frontend: 'main.js', replacements: {} });
-  assert.deepEqual(Object.keys(result.files).sort(), ['cycle.js.mjs', 'main.js.mjs', 'shared.js.mjs']);
-  assert.equal(result.frontend, 'main.js.mjs');
+  assert.deepEqual(Object.keys(result.files).sort(), ['frontend/cycle.js.mjs', 'frontend/main.js.mjs', 'frontend/shared.js.mjs']);
+  assert.equal(result.frontend, 'frontend/main.js.mjs');
 });
 
 test('missing imports identify the importing file', async () => {
@@ -105,13 +157,13 @@ test('assets are explicit and resolve relative to published modules', async () =
     'assets/labels.json': '{"title":"Tools","__proto__":{"safe":true}}',
     'assets/unused.png': new Uint8Array([0])
   });
-  assert.deepEqual(result.files['assets/icon.png'], icon);
-  assert.match(result.files['assets/icon.png.mjs'], /new URL\("\.\/icon.png",import.meta.url\)/);
-  const labels = await import('data:text/javascript,' + encodeURIComponent(result.files['assets/labels.json.mjs']));
+  assert.deepEqual(result.files['frontend/assets/icon.png'], icon);
+  assert.match(result.files['frontend/assets/icon.png.mjs'], /new URL\("\.\/icon.png",import.meta.url\)/);
+  const labels = await import('data:text/javascript,' + encodeURIComponent(result.files['frontend/assets/labels.json.mjs']));
   assert.equal(labels.default.title, 'Tools');
   assert.equal(Object.getPrototypeOf(labels.default), Object.prototype);
   assert.ok(Object.hasOwn(labels.default, '__proto__'));
-  assert.ok(!Object.hasOwn(result.files, 'assets/unused.png'));
+  assert.ok(!Object.hasOwn(result.files, 'frontend/assets/unused.png'));
 });
 
 test('new URL includes assets and rewrites module URLs', async () => {
@@ -120,10 +172,10 @@ test('new URL includes assets and rewrites module URLs', async () => {
     'icon.svg': '<svg/>',
     'worker.ts': 'export const value: number = 1;'
   }, { frontend: 'main.js', replacements: {} });
-  assert.match(result.files['main.js.mjs'], /new URL\("\.\/icon.svg",import.meta.url\)/);
-  assert.match(result.files['main.js.mjs'], /new URL\("\.\/worker.ts.mjs",import.meta.url\)/);
-  assert.ok(Object.hasOwn(result.files, 'icon.svg'));
-  assert.ok(Object.hasOwn(result.files, 'worker.ts.mjs'));
+  assert.match(result.files['frontend/main.js.mjs'], /new URL\("\.\/icon.svg",import.meta.url\)/);
+  assert.match(result.files['frontend/main.js.mjs'], /new URL\("\.\/worker.ts.mjs",import.meta.url\)/);
+  assert.ok(Object.hasOwn(result.files, 'frontend/icon.svg'));
+  assert.ok(Object.hasOwn(result.files, 'frontend/worker.ts.mjs'));
 });
 
 for (const [source, error] of [
@@ -172,9 +224,9 @@ test('publication ZIPs bind source and host and separate metadata from frontend 
   const second = await prepareModPublication(archive, [target]);
   assert.deepEqual(first.archive, second.archive);
   const publication = await JSZip.loadAsync(first.archive);
-  assert.deepEqual(Object.keys(publication.files).sort(), ['files/frontend/Menu.svelte.mjs', 'publication.json']);
+  assert.deepEqual(Object.keys(publication.files).sort(), ['files/frontend/frontend/Menu.svelte.mjs', 'publication.json']);
   const metadata = JSON.parse(await publication.file('publication.json').async('string'));
   assert.equal(metadata.source_revision, first.source_revision);
   assert.equal(metadata.compatibility.python, '3.11');
-  assert.equal(metadata.replacements[target], 'frontend/Menu.svelte.mjs');
+  assert.equal(metadata.replacements[target], 'frontend/frontend/Menu.svelte.mjs');
 });

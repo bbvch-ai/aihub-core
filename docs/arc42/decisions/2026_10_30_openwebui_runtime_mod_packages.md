@@ -20,6 +20,15 @@ native Svelte component usages, exposes the shared runtime/stores, dispatches na
 Python callable dispatchers before upstream imports. Mods declare targets through generated catalogs; they do not
 require an individual image build or a maintained Python registry.
 
+Use the supported SvelteKit client initialization hook for authenticated embedded startup. Optional bootstrap and
+frontend entries share lifecycle context but compile separately; a named script runner defines their capabilities,
+ordering and deadlines. Bootstrap runs before native layout/i18n without importing the native runtime. Normal frontend
+activation follows native user initialization. A bootstrap that missed startup requires a reload.
+
+Route native API calls through the existing request bridge. Mods register lifecycle-owned Request/Response middleware
+to handle, rewrite or wrap requests; components can import the same fetch function. Keep host control and asset traffic
+outside the chain. Request middleware does not replace backend authorization, replay failures or patch global fetch.
+
 Use immutable source ZIPs and host-compatible publications. SysAdmin sends stored source to the running host's
 compiler, which validates and compiles without executing uploaded code. Source/publication archives stay in private
 S3 storage, with catalog metadata in MongoDB. Tenant metadata holds versioned selections and settings. Bundled mods

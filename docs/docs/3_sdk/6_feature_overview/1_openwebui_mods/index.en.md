@@ -26,6 +26,7 @@ is a small frontend example with settings, locale changes and cleanup.
 | --- | --- |
 | `format`, `id`, `name`, `version` | Required metadata. Format is `1`; the stable ID uses lowercase letters, digits and hyphens. Version is an author label, not the archive identity. |
 | `description` | Optional explanation shown in the catalog. |
+| `bootstrap` | Optional `.js`, `.mjs` or `.ts` entry exporting `activate(context)`, awaited before native layout initialization. |
 | `frontend` | Optional `.js`, `.mjs` or `.ts` entry exporting `activate(context)`. |
 | `replacements` | Maps native `src/.../*.svelte` component IDs to package `.svelte` files. |
 | `backend` | Optional `.py` entry exporting chat hooks, override handlers or a private HTTP handler. |
@@ -34,7 +35,7 @@ is a small frontend example with settings, locale changes and cleanup.
 | `default_settings` | Initial JSON settings offered when a mod is added. Saving settings replaces this object; upgrades do not merge new defaults into saved settings. |
 | `settings_fields` | Optional field definitions: controls, translated labels/help, choices and validation properties. |
 
-At least one frontend entry, replacement or backend entry is required. Paths are relative to the archive root;
+At least one bootstrap entry, frontend entry, replacement or backend entry is required. Paths are relative to the archive root;
 absolute paths, traversal, symlinks and duplicate entries are rejected. A source ZIP is limited to 16 MiB compressed,
 32 MiB expanded, 512 entries and a 64 KiB manifest. Settings allow 16 KiB per mod; a tenant selection allows 64 mods
 and 64 KiB in total.
@@ -133,15 +134,28 @@ installed in the host. No npm or pip installation runs for a mod.
 
 ## Own the frontend lifecycle
 
-The optional frontend entry exports `activate(context)` and may return a cleanup function or a promise of one.
-Replacements are installed after activation succeeds. The context supplies `id` (view nonce), `tenantId`, `modId`,
+Both script entries are optional and export `activate(context)`. Each may return a cleanup function or a promise of one.
+`bootstrap` runs before native root-layout initialization, including i18n; `frontend` runs after the native user store
+is populated. Replacements are installed after frontend activation succeeds. Both entries receive the same context,
+which supplies `id` (view nonce), `tenantId`, `modId`,
 `publication`, deeply frozen `settings` and an abort `signal`.
+
+Use bootstrap for small changes that must precede native initialization. Its imports must remain within the package:
+JavaScript, TypeScript, JSON and assets are supported; Svelte components, rune modules and native-runtime imports are
+not. Do not wait for native application state or UI, since startup awaits bootstrap. The bootstrap script batch has
+a 15-second deadline; a failure disables the affected mod. The host cannot interrupt arbitrary JavaScript or undo
+unregistered side effects. Bootstrap precedes the native layout, but not inline theme scripts or all framework code.
+
+Bootstrap and frontend have separate compiled dependency graphs, so module-local variables are not shared between
+them. Use the common context for identity and settings. A bootstrap-only package needs no frontend entry. A bootstrap
+that missed startup requires a reload; it is never run late against the initialized application.
 
 | Context member | Use |
 | --- | --- |
 | `onDispose(cleanup)` | Register cleanup before awaiting work; remove listeners, observers and mounts you own. |
-| `locale`, `onLocale(callback)` | Read the AI Hub locale and subscribe to it. Subscription calls back immediately and returns an unsubscribe function. |
+| `locale`, `onLocale(callback)` | Read the AI Hub locale and subscribe to it. Subscription calls back immediately, returns an unsubscribe function and is removed on mod disposal. |
 | `onEvent(callback)` | Receive this mod's scoped backend events; returns an unsubscribe function. |
+| `onRequest(handler)` | Handle native API requests through an ordered Request/Response chain; returns an unsubscribe function. |
 | `api(path, options)` | Fetch this mod's private backend endpoint. Returns a `Response` and aborts on disposal. |
 
 Export a package-local store from the frontend entry when replacement components need its settings. Keep side effects
@@ -152,6 +166,36 @@ only inside the trusted AI Hub embed.
 Import, activation and component-rendering failures dispose the affected mod; native components are restored.
 The rendering boundary does not catch every event-handler or asynchronous exception. JavaScript module evaluation and
 arbitrary global patches cannot be unloaded automatically.
+
+## Handle native frontend requests
+
+Register `context.onRequest(async (request, next) => response)` during activation. Return a `Response` to handle a
+request yourself, call `next()` to pass it on, or call `next(new Request(...))` to rewrite it. You can also inspect or
+replace the returned response. The first configured mod is the outermost handler; registrations within a mod run in
+registration order. Registration returns an unsubscribe function and is removed automatically on mod disposal.
+
+```js
+export function activate(context) {
+  context.onRequest((request, next) => {
+    const url = new URL(request.url);
+    if (url.origin === location.origin && url.pathname === '/api/example') {
+      return Response.json({ message: 'Handled by the mod' });
+    }
+    return next();
+  });
+}
+```
+
+The chain covers native calls through `src/lib/apis/` and `fetch` imported from `@aihub/mods`. It does not intercept
+ordinary global `fetch`, host configuration/assets, or `context.api`. Use `next` inside a handler to avoid recursively
+entering the chain. Native completion calls wait for frontend activation; other calls use handlers registered at that
+moment. Bootstrap can register handlers before native initialization without importing the shared runtime.
+
+Requests retain caller/view cancellation, including rewritten requests. Respect `request.signal` in your own work;
+the host cannot interrupt an arbitrary pending promise. A thrown error fails that request; the host never silently
+retries or replays it. Handler failures do not automatically disable the mod. Matching, body cloning and any deliberate
+retry policy belong to the handler. This is browser behavior, not an authorization boundary: backend authentication
+and authorization still apply.
 
 ## Handle backend work
 

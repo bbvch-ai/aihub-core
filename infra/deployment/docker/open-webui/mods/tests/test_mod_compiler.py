@@ -47,10 +47,10 @@ class ModCompilerTests(unittest.IsolatedAsyncioTestCase):
             manifest = json.loads(archive.read("publication.json"))
             self.assertEqual(manifest["source_revision"], hashlib.sha256(source).hexdigest())
             self.assertTrue(any("alt" in warning for warning in manifest["warnings"]))
-            compiled = archive.read("files/Menu.svelte.mjs").decode()
+            compiled = archive.read("files/frontend/Menu.svelte.mjs").decode()
             self.assertIn('getModule("svelte/internal/client")', compiled)
             self.assertIn("@openwebui/stores", compiled)
-            self.assertNotIn("files/private.py", archive.namelist())
+            self.assertNotIn("files/frontend/private.py", archive.namelist())
 
     def test_control_requires_service_authentication(self) -> None:
         app = FastAPI()

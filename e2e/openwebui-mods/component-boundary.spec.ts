@@ -37,8 +37,8 @@ test('replacement boundaries preserve the native component contract and contain 
   expect(response.status(), response.ok() ? '' : await response.text()).toBe(200)
   const archive = await JSZip.loadAsync(await response.body())
   const fixtures = {
-    child: await archive.file('files/Child.svelte.mjs')!.async('string'),
-    parent: await archive.file('files/Parent.svelte.mjs')!.async('string'),
+    child: await archive.file('files/frontend/Child.svelte.mjs')!.async('string'),
+    parent: await archive.file('files/frontend/Parent.svelte.mjs')!.async('string'),
   }
   await page.goto('/auth')
   const result = await page.evaluate(async (fixtures) => {

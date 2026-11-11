@@ -76,8 +76,8 @@ def client(monkeypatch: pytest.MonkeyPatch, storage: MagicMock, compatibility: d
         package = OpenWebuiModPackage.from_zip(content)
         metadata = {
             "format": 1, "source_revision": package.revision, "compatibility": compatibility,
-            "frontend": package.manifest.frontend + ".mjs" if package.manifest.frontend else None,
-            "replacements": {target: source + ".mjs" for target, source in package.manifest.replacements.items()},
+            "frontend": "frontend/" + package.manifest.frontend + ".mjs" if package.manifest.frontend else None,
+            "replacements": {target: "frontend/" + source + ".mjs" for target, source in package.manifest.replacements.items()},
         }
         files = {"publication.json": json.dumps(metadata).encode()}
         if metadata["frontend"]:
@@ -127,8 +127,8 @@ def publish_mod(compatibility: dict, storage: MagicMock, *, version: str = "1", 
     OpenWebuiModRevisionEntity.record_upload(package, len(source.getvalue()), "sysadmin")
     compiled = BytesIO()
     with ZipFile(compiled, "w") as zipped:
-        zipped.writestr("publication.json", json.dumps({"format": 1, "source_revision": package.revision, "compatibility": compatibility, "frontend": "main.js.mjs"}))
-        zipped.writestr("files/main.js.mjs", "export function activate() {}")
+        zipped.writestr("publication.json", json.dumps({"format": 1, "source_revision": package.revision, "compatibility": compatibility, "frontend": "frontend/main.js.mjs"}))
+        zipped.writestr("files/frontend/main.js.mjs", "export function activate() {}")
     publication = OpenWebuiModPublication.from_zip(compiled.getvalue())
     OpenWebuiModPublicationEntity.record_publication(publication, mod_id, len(compiled.getvalue()), "sysadmin")
     storage.put_object(Key=f"sources/{package.revision}.zip", Body=source.getvalue())
@@ -269,7 +269,7 @@ def test_initialized_defaults_need_no_admin_visit_or_runtime_publication(
     source = OpenWebuiModPackage.from_zip(client.get(route + "/source", headers=headers()).content)
     frontend = OpenWebuiModPublication.from_zip(client.get(route + "/frontend", headers=headers()).content)
     assert source.manifest.id == mod["mod_id"]
-    assert frontend.files["frontend.js.mjs"] == source.files["frontend.js"]
+    assert frontend.files["frontend/frontend.js.mjs"] == source.files["frontend.js"]
 
 
 def test_unverified_default_adapter_does_not_publish(

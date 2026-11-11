@@ -39,6 +39,177 @@ function harness(t, overrides = {}) {
   return { lifecycle, state };
 }
 
+test('named entries share one context and execute only at their injection points', async t => {
+  const calls = [];
+  const contexts = [];
+  const requests = [];
+  const { lifecycle, state } = harness(t, {
+    fetch: async url => {
+      requests.push(url);
+      return response(url.endsWith('/configuration') ? snapshot() :
+        { ...manifest({}, 'main.mjs'), bootstrap: 'bootstrap/start.mjs' });
+    },
+    importModule: async url => {
+      calls.push(`import:${url.split('/files/')[1]}`);
+      return { activate: context => {
+        contexts.push(context);
+        calls.push(`activate:${url.split('/files/')[1]}`);
+        return () => calls.push(`dispose:${url.split('/files/')[1]}`);
+      } };
+    }
+  });
+  await lifecycle.prepare('one');
+  assert.deepEqual(calls, []);
+  await lifecycle.runScripts('bootstrap');
+  await lifecycle.runScripts('bootstrap');
+  assert.deepEqual(calls, ['import:bootstrap/start.mjs', 'activate:bootstrap/start.mjs']);
+  lifecycle.closeScripts('bootstrap');
+  await lifecycle.activate();
+  await lifecycle.activate();
+  assert.equal(contexts.length, 2);
+  assert.equal(contexts[0], contexts[1]);
+  assert.equal(requests.filter(url => url.endsWith('/configuration')).length, 1);
+  assert.equal(requests.filter(url => url.endsWith('/publication.json')).length, 1);
+  assert.deepEqual(state.errors, []);
+  lifecycle.dispose();
+  assert.deepEqual(calls.slice(-2), ['dispose:main.mjs', 'dispose:bootstrap/start.mjs']);
+});
+
+test('bootstrap-only packages activate without a normal frontend entry', async t => {
+  let calls = 0;
+  const { lifecycle, state } = harness(t, {
+    fetch: async url => response(url.endsWith('/configuration') ? snapshot() :
+      { ...manifest({}), bootstrap: 'bootstrap/start.mjs' }),
+    importModule: async () => ({ activate: () => { calls++; } })
+  });
+  await lifecycle.prepare('one');
+  await lifecycle.runScripts('bootstrap');
+  lifecycle.closeScripts('bootstrap');
+  await lifecycle.activate();
+  assert.equal(calls, 1);
+  assert.deepEqual(state.errors, []);
+});
+
+test('a failed bootstrap prevents its normal entry while independent mods still activate', async t => {
+  const calls = [];
+  const { lifecycle, state } = harness(t, {
+    fetch: async url => response(url.endsWith('/configuration') ? snapshot('one', [selection('a'), selection('b')]) :
+      { ...manifest({}, 'main.mjs'), bootstrap: 'bootstrap/start.mjs' }),
+    importModule: async url => ({ activate: context => {
+      calls.push([context.modId, url.split('/files/')[1]]);
+      if (context.modId === 'a') throw new Error('Invalid bootstrap setting');
+    } })
+  });
+  await lifecycle.prepare('one');
+  await lifecycle.runScripts('bootstrap');
+  lifecycle.closeScripts('bootstrap');
+  await lifecycle.activate();
+  assert.deepEqual(calls, [['a', 'bootstrap/start.mjs'], ['b', 'bootstrap/start.mjs'], ['b', 'main.mjs']]);
+  assert.equal(state.errors[0].stage, 'bootstrap');
+  assert.equal(state.updates.at(-1).reason, 'failed');
+});
+
+test('a late bootstrap selection requests a reload without executing either entry', async t => {
+  let calls = 0;
+  const { lifecycle, state } = harness(t, {
+    fetch: async url => response(url.endsWith('/configuration') ? snapshot() :
+      { ...manifest({}, 'main.mjs'), bootstrap: 'bootstrap/start.mjs' }),
+    importModule: async () => { calls++; return { activate() {} }; }
+  });
+  lifecycle.closeScripts('bootstrap');
+  await lifecycle.setTenant('one');
+  await lifecycle.runScripts('bootstrap');
+  await lifecycle.checkForUpdates();
+  assert.equal(calls, 0);
+  assert.equal(state.updates.at(-1).reason, 'changed');
+  assert.deepEqual(state.errors, []);
+});
+
+test('cancelled bootstrap releases startup and cleans up a late result', async t => {
+  const controller = new AbortController();
+  t.mock.method(AbortSignal, 'timeout', () => controller.signal);
+  const entered = deferred();
+  const finished = deferred();
+  let context;
+  let cleaned = false;
+  const { lifecycle, state } = harness(t, {
+    fetch: async url => response(url.endsWith('/configuration') ? snapshot() :
+      { ...manifest({}), bootstrap: 'bootstrap/start.mjs' }),
+    importModule: async () => ({ activate: value => { context = value; entered.resolve(); return finished.promise; } })
+  });
+  await lifecycle.prepare('one');
+  const pending = lifecycle.runScripts('bootstrap');
+  await entered.promise;
+  controller.abort(new DOMException('Startup deadline exceeded', 'TimeoutError'));
+  await pending;
+  assert.equal(context.signal.aborted, true);
+  assert.equal(state.errors[0].stage, 'bootstrap');
+  finished.resolve(() => { cleaned = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(cleaned, true);
+  await lifecycle.activate();
+});
+
+test('unregistered script names are rejected', async t => {
+  const { lifecycle } = harness(t);
+  await assert.rejects(lifecycle.runScripts('toString'), /Unknown mod script entry/);
+});
+
+test('request registrations can be replaced and are removed when their mod is disposed', async t => {
+  const { lifecycle } = harness(t);
+  await lifecycle.setTenant('one');
+  const mod = lifecycle.view.mods[0];
+  const first = () => new Response('first');
+  const second = () => new Response('second');
+  const unregister = mod.context.onRequest(first);
+  assert.deepEqual([...mod.requestHandlers], [first]);
+  unregister();
+  mod.context.onRequest(second);
+  assert.deepEqual([...mod.requestHandlers], [second]);
+  lifecycle.dispose();
+  assert.equal(mod.requestHandlers.size, 0);
+  mod.context.onRequest(first);
+  assert.equal(mod.requestHandlers.size, 0);
+  assert.throws(() => mod.context.onRequest(null), /must be a function/);
+});
+
+test('configuration recovery during preparation does not activate frontend scripts', async t => {
+  let available = false;
+  let activated = false;
+  const { lifecycle } = harness(t, {
+    fetch: async url => {
+      if (!available) throw new Error('Temporarily unavailable');
+      return response(url.endsWith('/configuration') ? snapshot() : manifest({}, 'main.mjs'));
+    },
+    importModule: async () => ({ activate() { activated = true; } })
+  });
+  await lifecycle.prepare('one');
+  available = true;
+  await lifecycle.checkForUpdates();
+  assert.equal(activated, false);
+  await lifecycle.activate();
+  assert.equal(activated, true);
+});
+
+test('a bootstrap import that finishes after cancellation cannot activate', async t => {
+  const imported = deferred();
+  const entered = deferred();
+  let activated = false;
+  const { lifecycle } = harness(t, {
+    fetch: async url => response(url.endsWith('/configuration') ? snapshot() :
+      { ...manifest({}), bootstrap: 'bootstrap/start.mjs' }),
+    importModule: async () => { entered.resolve(); return imported.promise; }
+  });
+  await lifecycle.prepare('one');
+  const pending = lifecycle.runScripts('bootstrap');
+  await entered.promise;
+  lifecycle.dispose();
+  await pending;
+  imported.resolve({ activate() { activated = true; } });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(activated, false);
+});
+
 test('mod API requests stay on their private endpoint and stop when disposed', async t => {
   const { lifecycle, state } = harness(t);
   await lifecycle.setTenant('one');

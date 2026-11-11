@@ -16,6 +16,7 @@ COPY mods /upstream/aihub-mods
 COPY vite.aihub.config.ts /upstream/vite.aihub.config.ts
 RUN node --conditions=browser --test aihub-mods/tests/*.test.mjs
 RUN node aihub-mods/build_compiler.mjs /opt/aihub/compiler-cli.mjs
+RUN node aihub-mods/install_client_hook.mjs /upstream
 RUN npm run pyodide:fetch && \
     APP_BUILD_HASH="$(git rev-parse --short HEAD)-aihub-$(find aihub-mods -type f -exec sha256sum {} \; | sort | sha256sum | cut -c1-12)" \
     ./node_modules/.bin/vite build --config vite.aihub.config.ts

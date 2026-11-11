@@ -901,6 +901,17 @@ export const OpenWebuiModManifestSchema = {
       title: "Description",
       default: "",
     },
+    bootstrap: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Bootstrap",
+    },
     frontend: {
       anyOf: [
         {
@@ -983,6 +994,17 @@ export const OpenWebuiModPublicationManifestSchema = {
     },
     compatibility: {
       $ref: "#/components/schemas/OpenWebuiModCompatibility",
+    },
+    bootstrap: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Bootstrap",
     },
     frontend: {
       anyOf: [
