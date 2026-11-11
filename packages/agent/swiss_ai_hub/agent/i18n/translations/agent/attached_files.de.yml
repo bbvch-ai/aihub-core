@@ -25,14 +25,20 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </attached_files>
     {% endchat %}
-  excerpted: Nur die für die Frage relevantesten Teile von "%{filename}" passen in
-    deinen Kontext. Beruht deine Antwort auf diesem Text, teile dem Benutzer mit,
-    dass sie auf Auszügen dieser Datei beruht; was du mit Code aus der ganzen Datei
-    berechnest, ist nicht unvollständig.
-  truncated: Nur der Anfang von "%{filename}" hat in deinen Kontext gepasst. Beruht
-    deine Antwort auf diesem Text, teile dem Benutzer mit, dass sie auf einem Teil
-    dieser Datei beruht; was du mit Code aus der ganzen Datei berechnest, ist nicht
-    unvollständig.
+  excerpted: Nur %{kept} der %{total} Abschnitte von "%{filename}", die für die Frage
+    relevantesten, passen in deinen Kontext. Beruht deine Antwort auf diesem Text,
+    teile dem Benutzer mit, dass sie auf Auszügen dieser Datei beruht; was du mit
+    Code aus der ganzen Datei berechnest, ist nicht unvollständig.
+  truncated: Nur der Anfang von "%{filename}", seine ersten %{kept} von %{total} Abschnitten,
+    hat in deinen Kontext gepasst. Beruht deine Antwort auf diesem Text, teile dem
+    Benutzer mit, dass sie auf einem Teil dieser Datei beruht; was du mit Code aus
+    der ganzen Datei berechnest, ist nicht unvollständig.
+  page_count: Die Datei hat %{pages} Seiten.
+  whole_file_in_code: Eine Summe, eine Anzahl oder eine andere Zahl über die ganze
+    Datei "%{filename}" kann nicht aus diesen Abschnitten stammen, weder durch Addieren
+    noch durch Abtippen in Code. Berechne sie jetzt mit Code über die ganze Datei
+    in run_command, ohne den Benutzer vorher zu fragen; die Datei liegt unverändert
+    im Gesprächsordner der Code-Sandbox.
   unreadable: Der Benutzer hat "%{filename}" angehängt, die Datei konnte aber nicht
     gelesen werden (%{error}). Teile dem Benutzer mit, dass diese Datei nicht gelesen
     werden konnte, und schlage vor, sie in einem anderen Format anzuhängen oder ihren

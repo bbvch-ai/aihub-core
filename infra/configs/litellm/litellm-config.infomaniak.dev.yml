@@ -27,7 +27,9 @@ model_list:
       aihub_hosting_location: swiss_cloud
       aihub_general_purpose: true
       mode: chat
-      max_input_tokens: 65536
+      # Infomaniak serves a 100016-token window, input + output combined (measured 2026-11-11), so these two must
+      # sum to it.
+      max_input_tokens: 67248
       max_output_tokens: 32768
       supports_function_calling: true
       supports_response_schema: true
@@ -82,7 +84,9 @@ model_list:
       aihub_hosting_location: swiss_cloud
       aihub_general_purpose: true
       mode: chat
-      max_input_tokens: 131072
+      # Infomaniak's window, input + output combined, measured 256000 on 2026-11-11 but 249984 on 2026-10-08 (#2077);
+      # these two sum to the smaller until a re-measurement settles it.
+      max_input_tokens: 184448
       max_output_tokens: 65536
       supports_function_calling: true
       supports_response_schema: true
@@ -139,8 +143,11 @@ model_list:
       aihub_hosting_location: swiss_cloud
       aihub_general_purpose: true
       mode: chat
-      max_input_tokens: 131072
-      max_output_tokens: 8192
+      # Infomaniak serves a 204800-token window, input + output combined (measured 2026-11-11), so these two must
+      # sum to it. 32768 output is the model card's recommendation for most queries: with 8192 its reasoning used up
+      # the budget and answered nothing (aihub-incidents#72).
+      max_input_tokens: 172032
+      max_output_tokens: 32768
       supports_function_calling: true
       supports_response_schema: true
       # Probed 2026-10-21: images are read (colours named correctly) and Infomaniak's upstream 400 names the limit,
@@ -501,6 +508,7 @@ litellm_settings:
     - detect_prompt_injection
     - otel
     - custom_callbacks.proxy_handler_instance
+    - tenant_attribution.tenant_attribution_instance
   telemetry: true
   json_logs: true
   drop_params: true

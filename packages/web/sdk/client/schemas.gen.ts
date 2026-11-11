@@ -11668,6 +11668,19 @@ export const HumanInTheLoopChatResponseEventSchema = {
       description:
         "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
     },
+    responded_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Responded By",
+      description:
+        "The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -11891,6 +11904,19 @@ export const HumanInTheLoopConfirmationResponseEventSchema = {
       description:
         "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
     },
+    responded_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Responded By",
+      description:
+        "The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -12042,6 +12068,19 @@ export const HumanInTheLoopInputResponseEventSchema = {
       $ref: "#/components/schemas/HumanInTheLoopInputRequestEvent",
       description:
         "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
+    },
+    responded_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Responded By",
+      description:
+        "The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.",
     },
     _event_name: {
       type: "string",
@@ -12310,6 +12349,19 @@ export const HumanInTheLoopResponseEventSchema = {
       $ref: "#/components/schemas/HumanInTheLoopRequestEvent",
       description:
         "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
+    },
+    responded_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Responded By",
+      description:
+        "The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.",
     },
     _event_name: {
       type: "string",
@@ -23998,6 +24050,13 @@ export const ReadAttachedFilesEventSchema = {
         "Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.",
       default: [],
     },
+    code_sandbox_offered: {
+      type: "boolean",
+      title: "Code Sandbox Offered",
+      description:
+        "Whether the model can run code on the files in the sandbox, so a file cut down to fit is noted with the instruction to compute figures over the whole file there.",
+      default: false,
+    },
     history: {
       items: {
         $ref: "#/components/schemas/ChatMessage",
@@ -30106,6 +30165,19 @@ export const ToolApprovalResponseEventSchema = {
       description:
         "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
     },
+    responded_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Responded By",
+      description:
+        "The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -30194,6 +30266,19 @@ export const ToolCallApprovedEventSchema = {
       title: "Cite Sources",
       description: "Whether the tool tells the model to cite what it returns.",
       default: true,
+    },
+    approved_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Approved By",
+      description:
+        "The id of the user who approved the call, or whose earlier approval carried over to it; none when it needed no approval.",
     },
     _event_name: {
       type: "string",
@@ -39085,6 +39170,19 @@ export const HumanInTheLoopChatResponseEventWritableSchema = {
       description:
         "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
     },
+    responded_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Responded By",
+      description:
+        "The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -39204,6 +39302,19 @@ export const HumanInTheLoopConfirmationResponseEventWritableSchema = {
       description:
         "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
     },
+    responded_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Responded By",
+      description:
+        "The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -39321,6 +39432,19 @@ export const HumanInTheLoopInputResponseEventWritableSchema = {
       $ref: "#/components/schemas/HumanInTheLoopInputRequestEventWritable",
       description:
         "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
+    },
+    responded_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Responded By",
+      description:
+        "The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.",
     },
   },
   additionalProperties: true,
@@ -39526,6 +39650,19 @@ export const HumanInTheLoopResponseEventWritableSchema = {
       $ref: "#/components/schemas/HumanInTheLoopRequestEventWritable",
       description:
         "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
+    },
+    responded_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Responded By",
+      description:
+        "The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.",
     },
   },
   additionalProperties: true,
@@ -47110,6 +47247,13 @@ export const ReadAttachedFilesEventWritableSchema = {
         "Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.",
       default: [],
     },
+    code_sandbox_offered: {
+      type: "boolean",
+      title: "Code Sandbox Offered",
+      description:
+        "Whether the model can run code on the files in the sandbox, so a file cut down to fit is noted with the instruction to compute figures over the whole file there.",
+      default: false,
+    },
     history: {
       items: {
         $ref: "#/components/schemas/ChatMessage",
@@ -52037,6 +52181,19 @@ export const ToolApprovalResponseEventWritableSchema = {
       description:
         "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
     },
+    responded_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Responded By",
+      description:
+        "The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -52108,6 +52265,19 @@ export const ToolCallApprovedEventWritableSchema = {
       title: "Cite Sources",
       description: "Whether the tool tells the model to cite what it returns.",
       default: true,
+    },
+    approved_by: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Approved By",
+      description:
+        "The id of the user who approved the call, or whose earlier approval carried over to it; none when it needed no approval.",
     },
   },
   additionalProperties: true,

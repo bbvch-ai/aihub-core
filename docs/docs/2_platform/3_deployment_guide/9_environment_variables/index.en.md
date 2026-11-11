@@ -29,7 +29,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `AGENT_INLINE_FILE_MAX_FILES_PER_REQUEST` | `InlineFileSettings.MAX_FILES_PER_REQUEST` | `api` | How many inline files one request may carry. |
 | `AGENT_INLINE_FILE_MAX_FILE_BYTES` | `InlineFileSettings.MAX_FILE_BYTES` | `api` | Largest decoded file accepted, in bytes. |
 | `AGENT_INLINE_IMAGE_MAX_BYTES` | `InlineImageSettings.MAX_BYTES` | `api` | Largest image accepted, in bytes. Keep it at or below the gateway's RAG_IMAGE_INLINE_MAX_BYTES: the gateway hands a larger image to the model as a text marker instead. |
-| `AIHUB_CONFIG_ENCRYPTION_KEY` | `ConfigEncryptionSettings.ENCRYPTION_KEY` | `api`, `document_ingestion_pipeline`, `email_classification_agent`, `imap_agent`, `rclone_pipeline`, `release_notes_agent`, `structured_pipeline` | Fernet key (url-safe base64, 32 bytes) encrypting secret configuration fields at rest. The API also derives the ids of scheduled-run threads from it, so changing it moves every scheduled profile to a new thread. |
+| `AIHUB_CONFIG_ENCRYPTION_KEY` | `ConfigEncryptionSettings.ENCRYPTION_KEY` | `api`, `document_ingestion_pipeline`, `email_classification_agent`, `env-guard`, `imap_agent`, `rclone_pipeline`, `release_notes_agent`, `structured_pipeline` | Fernet key (url-safe base64, 32 bytes) encrypting secret configuration fields at rest. The API also derives the ids of scheduled-run threads from it, so changing it moves every scheduled profile to a new thread. |
 | `AIHUB_CREATE_DEFAULT_BUCKETS` | `AIHubSettings.CREATE_DEFAULT_BUCKETS` | `api`, `seaweedfs-init` | Creates default knowledge buckets and namespaces |
 | `AIHUB_DEFAULT_BUCKET_NAME` | `AIHubSettings.DEFAULT_BUCKET_NAME` | `api`, `default_rag_pipeline`, `seaweedfs-init` | Name of the default knowledge bucket |
 | `AIHUB_DEFAULT_NAMESPACE_NAME` | `AIHubSettings.DEFAULT_NAMESPACE_NAME` | `api` | Name of the default namespace |
@@ -46,7 +46,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `AIHUB_USER_SIGNUP_REGULAR_USER_ROLES` | `UserSignupSettings.REGULAR_USER_ROLES` | `api` | Comma-separated list of roles assigned to regular users (not the first user). These users typically have standard platform access. |
 | `AIHUB_VERSION` | `AIHubSettings.VERSION` | `anonymiser_agent`, `api`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `structured_pipeline`, `sysadmin-api`, `universal_agent`, `web_fetch_agent` | Version of the app |
 | `API_REQUEST_MAX_BODY_BYTES` | `ApiRequestLimitSettings.MAX_BODY_BYTES` | `api` | Largest request body accepted, in bytes, except multipart uploads and the document parsing upload, which bound their own. It bounds base64 files sent inline too, which grow by a third when encoded. |
-| `AUTH_OPEN_WEBUI_SIGNING_SECRET` | `AuthSettings.OPEN_WEBUI_SIGNING_SECRET` | `api`, `open-webui`, `sysadmin-api` | OpenWebUI signing secret |
+| `AUTH_OPEN_WEBUI_SIGNING_SECRET` | `AuthSettings.OPEN_WEBUI_SIGNING_SECRET` | `api`, `env-guard`, `open-webui`, `sysadmin-api` | OpenWebUI signing secret |
 | `BACKUP_MINIMUM_KEEP` | `BackupSettings.MINIMUM_KEEP` | `backup-code` |  |
 | `BACKUP_POSTGRES_SUBPROCESS_TIMEOUT_SECONDS` | `BackupSettings.POSTGRES_SUBPROCESS_TIMEOUT_SECONDS` | `backup-code` |  |
 | `BACKUP_RETENTION_DAYS` | `BackupSettings.RETENTION_DAYS` | `backup-code` |  |
@@ -71,10 +71,10 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS` | `DocumentIngestionPipelineSettings.WITH_FIGURE_DESCRIPTIONS` | `document_ingestion_pipeline` | Generate figure descriptions with a vision LLM. |
 | `DOCUMENT_INGESTION_WITH_SUMMARY_NODES` | `DocumentIngestionPipelineSettings.WITH_SUMMARY_NODES` | `document_ingestion_pipeline` | Generate recursive summaries for hierarchical RAG. |
 | `DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT` | `DocumentIngestionPipelineSettings.WITH_TABLE_REFINEMENT` | `document_ingestion_pipeline` | Refine tables with the LLM to detect structure and split them. |
-| `DOMAIN` | `30-clients.json`, `realm-settings.json` | `anonymiser_agent`, `api`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `keycloak`, `keycloak-config`, `knowledge_extraction_agent`, `langfuse-web`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-seaweed`, `open-webui`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `seaweedfs-s3`, `shared_rag_pipeline`, `structured_pipeline`, `sysadmin-api`, `sysadmin-web`, `traefik`, `universal_agent`, `web`, `web_fetch_agent` |  |
+| `DOMAIN` | `30-clients.json`, `realm-settings.json` | `anonymiser_agent`, `api`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `env-guard`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `keycloak`, `keycloak-config`, `knowledge_extraction_agent`, `langfuse-web`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-litellm`, `oauth2proxy-seaweed`, `open-webui`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `seaweedfs-s3`, `shared_rag_pipeline`, `structured_pipeline`, `sysadmin-api`, `sysadmin-web`, `traefik`, `universal_agent`, `web`, `web_fetch_agent` |  |
 | `ENABLE_OTEL_METRICS` |  | `open-webui` |  |
 | `ENV` |  | `api`, `open-webui`, `sysadmin-api` |  |
-| `ETCD_TOKEN` |  | `etcd`, `etcd-init`, `milvus-standalone`, `seaweedfs-filer` |  |
+| `ETCD_TOKEN` |  | `env-guard`, `etcd`, `etcd-init`, `milvus-standalone`, `seaweedfs-filer` |  |
 | `EXPERT_ASKING_CHANNEL_TYPE` |  | `expert_asking_agent` |  |
 | `GEMINI_API_KEY` |  | `litellm` |  |
 | `HUGGINGFACE_API_KEY` |  | `litellm`, `vllm`, `vllm-bge-m3`, `vllm-bge-reranker` |  |
@@ -83,36 +83,42 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `INCIDENT_GITHUB_PRIVATE_KEY` | `IncidentSettings.GITHUB_PRIVATE_KEY` | `api` | PEM private key of the GitHub App, used to sign the JWT that buys an installation token. Supply it as a Docker secret mounted at /run/secrets/incident_github_private_key (a compose override adding a `secrets:` entry to the api service) or from a vault, never in a committed env file. An empty INCIDENT_GITHUB_PRIVATE_KEY in the environment does not shadow the secret. |
 | `INCIDENT_GITHUB_REPOSITORY` | `IncidentSettings.GITHUB_REPOSITORY` | `api` | Repository issues are filed in, as 'owner/name'. Must be private — reports carry customer data, and a public repository would publish it irreversibly. |
 | `JIRA_ALLOWED_PRIVATE_HOSTS` | `JiraSettings.ALLOWED_PRIVATE_HOSTS` | `release_notes_agent` | Comma-separated host names an agent's Jira URL may name although they are internal, such as a Jira Data Center reachable only on the company network. Every other internal host is refused. |
-| `KEYCLOAK_ADMIN_PASSWORD` |  | `keycloak`, `keycloak-config` |  |
+| `KEYCLOAK_ADMIN_ALLOWED_SOURCE_RANGES` |  | `keycloak` |  |
+| `KEYCLOAK_ADMIN_PASSWORD` |  | `env-guard`, `keycloak`, `keycloak-config` |  |
 | `KEYCLOAK_ADMIN_USER` |  | `keycloak`, `keycloak-config` |  |
-| `KEYCLOAK_API_SERVICE_CLIENT_SECRET` | `KeycloakSettings.API_SERVICE_CLIENT_SECRET` | `api`, `bot`, `keycloak`, `keycloak-config`, `sysadmin-api` | Client secret for the API service account |
+| `KEYCLOAK_API_SERVICE_CLIENT_SECRET` | `KeycloakSettings.API_SERVICE_CLIENT_SECRET` | `api`, `bot`, `env-guard`, `keycloak`, `keycloak-config`, `sysadmin-api` | Client secret for the API service account |
 | `KEYCLOAK_AZURE_CLIENT_ID` | `identity-providers.json` | `keycloak` |  |
 | `KEYCLOAK_AZURE_CLIENT_SECRET` | `identity-providers.json` | `keycloak` |  |
 | `KEYCLOAK_AZURE_TENANT_ID` | `identity-providers.json` | `keycloak` |  |
 | `KEYCLOAK_LOGIN_WELCOME_PAGE` | `KeycloakSettings.LOGIN_WELCOME_PAGE` | `api`, `sysadmin-api` | Show a welcome page instead of the identity provider list on the generic login page, and stop publishing federated IDPs to anonymous callers. For shared instances whose tenants each log in through their own per-tenant login link. |
-| `KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-attu` |  |
-| `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-backup` |  |
-| `KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-dagster` |  |
-| `KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-seaweed` |  |
-| `KEYCLOAK_OPENWEBUI_CLIENT_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `open-webui` |  |
+| `KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET` | `30-clients.json` | `env-guard`, `keycloak`, `keycloak-config`, `oauth2proxy-attu` |  |
+| `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` | `30-clients.json` | `env-guard`, `keycloak`, `keycloak-config`, `oauth2proxy-backup` |  |
+| `KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET` | `30-clients.json` | `env-guard`, `keycloak`, `keycloak-config`, `oauth2proxy-dagster` |  |
+| `KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET` | `30-clients.json` | `env-guard`, `keycloak`, `keycloak-config`, `oauth2proxy-seaweed` |  |
+| `KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET` | `30-clients.json` | `env-guard`, `keycloak`, `keycloak-config`, `oauth2proxy-litellm` |  |
+| `KEYCLOAK_OPENWEBUI_CLIENT_SECRET` | `30-clients.json` | `env-guard`, `keycloak`, `keycloak-config`, `open-webui` |  |
 | `KEYCLOAK_SHOW_KEYCLOAK_LOGIN` | `KeycloakSettings.SHOW_KEYCLOAK_LOGIN` | `api`, `sysadmin-api` | Show a direct Keycloak login button alongside federated IDPs |
+| `KEYCLOAK_SMTP_CLIENT_ID` | `keycloak-entrypoint.sh` | `keycloak` |  |
+| `KEYCLOAK_SMTP_CLIENT_SECRET` | `keycloak-entrypoint.sh` | `keycloak` |  |
+| `KEYCLOAK_SMTP_MAILBOX` | `keycloak-entrypoint.sh` | `keycloak` |  |
+| `KEYCLOAK_SMTP_TENANT_ID` | `keycloak-entrypoint.sh` | `keycloak` |  |
 | `KEYCLOAK_TENANT_IDP_ALIASES` | `KeycloakSettings.TENANT_IDP_ALIASES` | `api` | Tenant login links as comma-separated tenant_id=idp_alias pairs (e.g. 'acme=acme-entra,beta=shared-idp'). A logged-out visit to /<tenant_id> goes straight to that identity provider. Empty turns tenant login links off. |
-| `KNOWLEDGE_TEXT_INDEX_PASSWORD` | `KnowledgeTextIndexSettings.PASSWORD` | `ferretdb-init`, `knowledge_extraction_agent`, `universal_agent` | Password of the read-only role aihub_text_search; empty turns the index off. |
+| `KNOWLEDGE_TEXT_INDEX_PASSWORD` | `KnowledgeTextIndexSettings.PASSWORD` | `env-guard`, `ferretdb-init`, `knowledge_extraction_agent`, `universal_agent` | Password of the read-only role aihub_text_search; empty turns the index off. |
 | `LANGFUSE_ALLOWED_ORGANIZATION_CREATORS` |  | `langfuse-web` |  |
-| `LANGFUSE_CLICKHOUSE_PASSWORD` |  | `backup-code`, `clickhouse`, `langfuse-web`, `langfuse-worker` |  |
-| `LANGFUSE_ENCRYPTION_KEY` |  | `langfuse-web`, `langfuse-worker` |  |
+| `LANGFUSE_CLICKHOUSE_PASSWORD` |  | `backup-code`, `clickhouse`, `env-guard`, `langfuse-web`, `langfuse-worker` |  |
+| `LANGFUSE_ENCRYPTION_KEY` |  | `env-guard`, `langfuse-web`, `langfuse-worker` |  |
 | `LANGFUSE_INIT_USER_EMAIL` |  | `langfuse-web` |  |
-| `LANGFUSE_INIT_USER_PASSWORD` |  | `langfuse-web` |  |
-| `LANGFUSE_KEYCLOAK_CLIENT_SECRET` |  | `keycloak`, `keycloak-config`, `langfuse-web` |  |
-| `LANGFUSE_NEXTAUTH_SECRET` |  | `langfuse-web` |  |
-| `LANGFUSE_PUBLIC_KEY` | `LangfuseSettings.PUBLIC_KEY` | `api`, `langfuse-web`, `otel-collector` | Langfuse public API key |
-| `LANGFUSE_SALT` |  | `langfuse-web`, `langfuse-worker` |  |
-| `LANGFUSE_SECRET_KEY` | `LangfuseSettings.SECRET_KEY` | `api`, `langfuse-web`, `otel-collector` | Langfuse secret API key |
+| `LANGFUSE_INIT_USER_PASSWORD` |  | `env-guard`, `langfuse-web` |  |
+| `LANGFUSE_KEYCLOAK_CLIENT_SECRET` |  | `env-guard`, `keycloak`, `keycloak-config`, `langfuse-web` |  |
+| `LANGFUSE_NEXTAUTH_SECRET` |  | `env-guard`, `langfuse-web` |  |
+| `LANGFUSE_PUBLIC_KEY` | `LangfuseSettings.PUBLIC_KEY` | `api`, `env-guard`, `langfuse-web`, `otel-collector` | Langfuse public API key |
+| `LANGFUSE_SALT` |  | `env-guard`, `langfuse-web`, `langfuse-worker` |  |
+| `LANGFUSE_SECRET_KEY` | `LangfuseSettings.SECRET_KEY` | `api`, `env-guard`, `langfuse-web`, `otel-collector` | Langfuse secret API key |
 | `LITELLM_CONFIG_VARIANT` |  | `litellm` |  |
-| `LITELLM_MASTER_KEY` | `litellm-config.yml` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `mineru-api`, `namespace_selection_agent`, `rag_agent`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` |  |
-| `LITELLM_UI_PASSWORD` |  | `litellm` |  |
+| `LITELLM_MASTER_KEY` | `litellm-config.yml` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `env-guard`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `mineru-api`, `namespace_selection_agent`, `rag_agent`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` |  |
+| `LITELLM_UI_PASSWORD` |  | `env-guard`, `litellm` |  |
 | `LITELLM_UI_USERNAME` |  | `litellm` |  |
-| `LOCAL_LLM_TOKEN` | `litellm-config.yml` | `litellm`, `vllm`, `vllm-bge-m3`, `vllm-bge-reranker` |  |
+| `LOCAL_LLM_TOKEN` | `litellm-config.yml` | `env-guard`, `litellm`, `vllm`, `vllm-bge-m3`, `vllm-bge-reranker` |  |
 | `LOG_LEVEL` | `LogSettings.LEVEL` | `anonymiser_agent`, `api`, `bot`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `structured_pipeline`, `sysadmin-api`, `traefik`, `universal_agent`, `web_fetch_agent` | Logging level |
 | `MAINTENANCE_DISABLED` |  | `backup-code` |  |
 | `MEM0_EMBEDDING_MODEL_NAME` | `Mem0Settings.EMBEDDING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Name of the embedding model to use |
@@ -120,7 +126,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `MEM0_RERANKING_MODEL_NAME` | `Mem0Settings.RERANKING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Name of the reranking model to use |
 | `MEM0_TELEMETRY` |  | `api`, `bot`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` |  |
 | `MILVUS_DIMENSION` | `MilvusSettings.DIMENSION` | `anonymiser_agent`, `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Dimension of the embedding vector |
-| `MILVUS_ROOT_PASSWORD` | `MilvusSettings.ROOT_PASSWORD` | `anonymiser_agent`, `api`, `attu`, `backup-code`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `milvus-standalone`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Root password for Milvus authentication. If not set, no auth is used. Username is always 'root'. |
+| `MILVUS_ROOT_PASSWORD` | `MilvusSettings.ROOT_PASSWORD` | `anonymiser_agent`, `api`, `attu`, `backup-code`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `env-guard`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `milvus-standalone`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Root password for Milvus authentication. If not set, no auth is used. Username is always 'root'. |
 | `MINERU_API_MAX_CONCURRENT_REQUESTS` |  | `mineru-api` |  |
 | `MINERU_API_TIMEOUT` | `MineruSettings.API_TIMEOUT` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `rag_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Timeout for MinerU API calls in seconds |
 | `MINERU_FORMULA_ENABLE` | `MineruSettings.FORMULA_ENABLE` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `rag_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Enable formula/equation parsing |
@@ -128,42 +134,44 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `MINERU_PAGE_BATCH_SIZE` | `MineruSettings.PAGE_BATCH_SIZE` | `api`, `default_rag_pipeline`, `email_classification_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `rag_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Pages per MinerU request for PDFs; keeps server memory constant. 0 disables batching |
 | `MINERU_TABLE_ENABLE` | `MineruSettings.TABLE_ENABLE` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `rag_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Enable table detection and parsing |
 | `MINERU_VLM_NAME` | `MineruSettings.VLM_NAME` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `mineru-api`, `rag_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | LiteLLM model alias for MinerU VLM |
-| `MONGO_PASSWORD` |  | `anonymiser_agent`, `api`, `backup-code`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `ferretdb`, `ferretdb-init`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `postgres-ferretdb`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `structured_pipeline`, `sysadmin-api`, `universal_agent`, `web_fetch_agent` |  |
+| `MONGO_PASSWORD` |  | `anonymiser_agent`, `api`, `backup-code`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `env-guard`, `expert_asking_agent`, `expert_rag_agent`, `ferretdb`, `ferretdb-init`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `postgres-ferretdb`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `structured_pipeline`, `sysadmin-api`, `universal_agent`, `web_fetch_agent` |  |
 | `MONGO_USERNAME` |  | `anonymiser_agent`, `api`, `backup-code`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `ferretdb`, `ferretdb-init`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `postgres-ferretdb`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `structured_pipeline`, `sysadmin-api`, `universal_agent`, `web_fetch_agent` |  |
-| `NATS_TOKEN` | `NatsSettings.TOKEN` | `anonymiser_agent`, `api`, `backup-code`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `nats`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `structured_pipeline`, `sysadmin-api`, `universal_agent`, `web_fetch_agent` | Authentication token for NATS server. If not set, no auth is used. |
-| `NEO4J_PASSWORD` | `Neo4jSettings.PASSWORD` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `neo4j`, `rag_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Password for Neo4j DB Server |
+| `NATS_TOKEN` | `NatsSettings.TOKEN` | `anonymiser_agent`, `api`, `backup-code`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `env-guard`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `nats`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `structured_pipeline`, `sysadmin-api`, `universal_agent`, `web_fetch_agent` | Authentication token for NATS server. If not set, no auth is used. |
+| `NEO4J_PASSWORD` | `Neo4jSettings.PASSWORD` | `api`, `bot`, `env-guard`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `neo4j`, `rag_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Password for Neo4j DB Server |
 | `NEO4J_USERNAME` | `Neo4jSettings.USERNAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `neo4j`, `rag_agent`, `shared_rag_pipeline`, `universal_agent`, `web_fetch_agent` | Username for Neo4j DB Server |
 | `NOTIFICATION_URLS` | `NotificationSettings.URLS` | `default_rag_pipeline`, `document_ingestion_pipeline`, `rclone_pipeline`, `shared_rag_pipeline`, `structured_pipeline` | Apprise notification URIs (comma-separated). Examples: 'slack://TokenA/TokenB/TokenC/#alerts', 'mailto://user:pw@smtp.example.com', 'discord://webhook_id/webhook_token'. See https://github.com/caronc/apprise for the full list. |
 | `OAUTH_ADMIN_ROLES_OPENWEBUI` |  | `open-webui` |  |
 | `OAUTH_ALLOWED_GROUPS_ATTU` |  | `oauth2proxy-attu` |  |
 | `OAUTH_ALLOWED_GROUPS_BACKUP` |  | `oauth2proxy-backup` |  |
 | `OAUTH_ALLOWED_GROUPS_DAGSTER` |  | `oauth2proxy-dagster` |  |
+| `OAUTH_ALLOWED_GROUPS_LITELLM` |  | `oauth2proxy-litellm` |  |
 | `OAUTH_ALLOWED_GROUPS_SEAWEEDFS` |  | `oauth2proxy-seaweed` |  |
 | `OAUTH_CLIENT_ID` |  | `api`, `bot`, `open-webui`, `sysadmin-api`, `sysadmin-web`, `web` |  |
 | `OAUTH_CLIENT_SECRET` |  | `api`, `bot`, `open-webui`, `sysadmin-api` |  |
-| `OAUTH_COOKIE_SECRET_ATTU` |  | `oauth2proxy-attu` |  |
-| `OAUTH_COOKIE_SECRET_BACKUP` |  | `oauth2proxy-backup` |  |
-| `OAUTH_COOKIE_SECRET_DAGSTER` |  | `oauth2proxy-dagster` |  |
-| `OAUTH_COOKIE_SECRET_SEAWEEDFS` |  | `oauth2proxy-seaweed` |  |
-| `OAUTH_CUSTOM_SIGN_IN_LOGO` |  | `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-seaweed` |  |
+| `OAUTH_COOKIE_SECRET_ATTU` |  | `env-guard`, `oauth2proxy-attu` |  |
+| `OAUTH_COOKIE_SECRET_BACKUP` |  | `env-guard`, `oauth2proxy-backup` |  |
+| `OAUTH_COOKIE_SECRET_DAGSTER` |  | `env-guard`, `oauth2proxy-dagster` |  |
+| `OAUTH_COOKIE_SECRET_LITELLM` |  | `env-guard`, `oauth2proxy-litellm` |  |
+| `OAUTH_COOKIE_SECRET_SEAWEEDFS` |  | `env-guard`, `oauth2proxy-seaweed` |  |
+| `OAUTH_CUSTOM_SIGN_IN_LOGO` |  | `oauth2proxy-attu`, `oauth2proxy-backup`, `oauth2proxy-dagster`, `oauth2proxy-litellm`, `oauth2proxy-seaweed` |  |
 | `OAUTH_TENANT_ID` |  | `api`, `sysadmin-api` |  |
 | `OPENWEBUI_BYPASS_ADMIN_ACCESS_CONTROL` |  | `open-webui` |  |
 | `OPENWEBUI_ENABLE_ADMIN_EXPORT` |  | `open-webui` |  |
 | `OPENWEBUI_MODEL_NAME_LOCALE` | `OpenWebuiSettings.MODEL_NAME_LOCALE` | `open-webui` | Locale used to render agent workspace-model names in OpenWebUI, which only stores a single name per model. Falls back to the platform default locale and then any available translation. |
-| `OPENWEBUI_SCIM_TOKEN` | `OpenWebuiSettings.SCIM_TOKEN` | `api`, `open-webui`, `sysadmin-api` | SCIM 2.0 bearer token for group and user provisioning |
-| `OPENWEBUI_SECRET_KEY` | `OpenWebuiSettings.SECRET_KEY` | `api`, `open-webui`, `sysadmin-api` | OpenWebUI WEBUI_SECRET_KEY for JWT signing |
-| `OPENWEBUI_SERVICE_ACCOUNT_ID` | `OpenWebuiSettings.SERVICE_ACCOUNT_ID` | `api`, `openwebui-init`, `sysadmin-api` | UUID of the AI-Hub service account in OpenWebUI's database |
-| `OPENWEBUI_WEBHOOK_SECRET` | `OpenWebuiSettings.WEBHOOK_SECRET` | `api`, `open-webui`, `sysadmin-api` | Shared secret for authenticating OpenWebUI webhook calls |
-| `OPEN_TERMINAL_API_KEY` | `OpenTerminalSettings.API_KEY` | `api`, `open-terminal`, `open-webui`, `universal_agent` | The bearer key every sandbox caller sends. |
+| `OPENWEBUI_SCIM_TOKEN` | `OpenWebuiSettings.SCIM_TOKEN` | `api`, `env-guard`, `open-webui`, `sysadmin-api` | SCIM 2.0 bearer token for group and user provisioning |
+| `OPENWEBUI_SECRET_KEY` | `OpenWebuiSettings.SECRET_KEY` | `api`, `env-guard`, `open-webui`, `sysadmin-api` | OpenWebUI WEBUI_SECRET_KEY for JWT signing |
+| `OPENWEBUI_SERVICE_ACCOUNT_ID` | `OpenWebuiSettings.SERVICE_ACCOUNT_ID` | `api`, `env-guard`, `openwebui-init`, `sysadmin-api` | UUID of the AI-Hub service account in OpenWebUI's database |
+| `OPENWEBUI_WEBHOOK_SECRET` | `OpenWebuiSettings.WEBHOOK_SECRET` | `api`, `env-guard`, `open-webui`, `sysadmin-api` | Shared secret for authenticating OpenWebUI webhook calls |
+| `OPEN_TERMINAL_API_KEY` | `OpenTerminalSettings.API_KEY` | `api`, `env-guard`, `open-terminal`, `open-webui`, `universal_agent` | The bearer key every sandbox caller sends. |
 | `OTEL_CLOUD_ENDPOINT` | `otel-config.yml` | `otel-collector` |  |
 | `OTEL_CLOUD_HEADERS` | `otel-config.yml` | `otel-collector` |  |
 | `OTEL_ENABLED` | `OpenTelemetrySettings.ENABLED` | `anonymiser_agent`, `api`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `release_notes_agent`, `retrieval_agent`, `sysadmin-api`, `universal_agent`, `web_fetch_agent` | Enable/disable OpenTelemetry tracing entirely |
 | `OTEL_METRICS_ENABLED` | `OpenTelemetrySettings.METRICS_ENABLED` | `api` | Enable/disable OpenTelemetry request metrics (separate from tracing) |
 | `PII_ANONYMISE_EXTERNAL_MODELS` |  | `litellm` |  |
-| `POSTGRES_PASSWORD` | `ferretdb-init.sh`, `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `ferretdb-init`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `rclone_pipeline`, `shared_rag_pipeline`, `structured_pipeline` |  |
+| `POSTGRES_PASSWORD` | `ferretdb-init.sh`, `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `env-guard`, `ferretdb-init`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `rclone_pipeline`, `shared_rag_pipeline`, `structured_pipeline` |  |
 | `POSTGRES_PORT` | `ferretdb-init.sh`, `openwebui-init-openwebui.sh` | `backup-code`, `ferretdb-init`, `openwebui-init` |  |
 | `POSTGRES_USER` | `ferretdb-init.sh`, `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `ferretdb-init`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `rclone_pipeline`, `shared_rag_pipeline`, `structured_pipeline` |  |
-| `PRESIDIO_ANALYZER_API_KEY` | `PresidioAnalyzerSettings.API_KEY` | `anonymiser_agent`, `litellm`, `presidio-analyzer` | The bearer key every analyzer caller sends. |
+| `PRESIDIO_ANALYZER_API_KEY` | `PresidioAnalyzerSettings.API_KEY` | `anonymiser_agent`, `env-guard`, `litellm`, `presidio-analyzer` | The bearer key every analyzer caller sends. |
 | `RAG_FILE_MAX_COUNT` |  | `open-webui` |  |
 | `RAG_FILE_MAX_SIZE` |  | `open-webui` |  |
 | `RAG_IMAGE_INLINE_ENABLED` | `RagImageInlineSettings.ENABLED` | `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `knowledge_extraction_agent`, `litellm`, `llm_wrapping_agent`, `namespace_selection_agent`, `rag_agent`, `release_notes_agent`, `retrieval_agent`, `universal_agent`, `web_fetch_agent` | Whether RAG figures and images in messages are inlined as base64 at the LiteLLM gateway. |
@@ -171,15 +179,15 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` | `RclonePipelineSettings.ALLOWED_PRIVATE_HOSTS` | `rclone_pipeline` | Comma-separated host names an S3 endpoint, Azure endpoint or SFTP host may name although they are internal, such as an object store reachable only on the company network. Every other internal host is refused, because a knowledge administrator sets it and the rclone daemon can reach the platform's own services. |
 | `RCLONE_PIPELINE_OBSERVE_JOB_HOUR` | `RclonePipelineSettings.OBSERVE_JOB_HOUR` | `rclone_pipeline` | Hour of the daily per-database sync. Before the ingestion pipeline's midnight observation, so a day's sync is vectorised by the same night's backstop run. |
 | `RCLONE_PIPELINE_OBSERVE_JOB_MINUTE` | `RclonePipelineSettings.OBSERVE_JOB_MINUTE` | `rclone_pipeline` | Minute of the daily per-database sync. |
-| `RCLONE_RC_PASS` | `RcloneSettings.RC_PASS` | `rclone`, `rclone_pipeline` | RC API password for authentication. |
-| `RCLONE_RC_USER` | `RcloneSettings.RC_USER` | `rclone`, `rclone_pipeline` | RC API username for authentication. |
-| `REDIS_TOKEN` | `RedisSettings.TOKEN` | `anonymiser_agent`, `api`, `backup-code`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `langfuse-web`, `langfuse-worker`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `release_notes_agent`, `retrieval_agent`, `sysadmin-api`, `universal_agent`, `valkey`, `web_fetch_agent` | Authentication token for Redis server. If not set, no auth is used. |
+| `RCLONE_RC_PASS` | `RcloneSettings.RC_PASS` | `env-guard`, `rclone`, `rclone_pipeline` | RC API password for authentication. |
+| `RCLONE_RC_USER` | `RcloneSettings.RC_USER` | `env-guard`, `rclone`, `rclone_pipeline` | RC API username for authentication. |
+| `REDIS_TOKEN` | `RedisSettings.TOKEN` | `anonymiser_agent`, `api`, `backup-code`, `email_classification_agent`, `env-guard`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `langfuse-web`, `langfuse-worker`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `release_notes_agent`, `retrieval_agent`, `sysadmin-api`, `universal_agent`, `valkey`, `web_fetch_agent` | Authentication token for Redis server. If not set, no auth is used. |
 | `S3_STORAGE_ACCESS_KEY` | `S3StorageSettings.ACCESS_KEY` | `api`, `backup-code`, `bot`, `clickhouse`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `langfuse-web`, `langfuse-worker`, `llm_wrapping_agent`, `milvus-standalone`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `seaweedfs-init`, `seaweedfs-s3`, `shared_rag_pipeline`, `structured_pipeline`, `universal_agent`, `web_fetch_agent` | The access key for the s3 endpoint. |
-| `S3_STORAGE_SECRET_KEY` | `S3StorageSettings.SECRET_KEY` | `api`, `backup-code`, `bot`, `clickhouse`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `langfuse-web`, `langfuse-worker`, `llm_wrapping_agent`, `milvus-standalone`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `seaweedfs-init`, `seaweedfs-s3`, `shared_rag_pipeline`, `structured_pipeline`, `universal_agent`, `web_fetch_agent` | The secret key for the s3 endpoint. |
-| `S3_STORAGE_URL_SIGNING_SECRET` | `S3StorageSettings.URL_SIGNING_SECRET` | `api`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `namespace_selection_agent`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `structured_pipeline`, `universal_agent`, `web_fetch_agent` | The HMAC key signing and verifying the platform's own anonymous file links. Must be set and must differ from SECRET_KEY. |
+| `S3_STORAGE_SECRET_KEY` | `S3StorageSettings.SECRET_KEY` | `api`, `backup-code`, `bot`, `clickhouse`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `env-guard`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `langfuse-web`, `langfuse-worker`, `llm_wrapping_agent`, `milvus-standalone`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `seaweedfs-init`, `seaweedfs-s3`, `shared_rag_pipeline`, `structured_pipeline`, `universal_agent`, `web_fetch_agent` | The secret key for the s3 endpoint. |
+| `S3_STORAGE_URL_SIGNING_SECRET` | `S3StorageSettings.URL_SIGNING_SECRET` | `api`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `env-guard`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `namespace_selection_agent`, `rag_agent`, `rclone_pipeline`, `release_notes_agent`, `retrieval_agent`, `shared_rag_pipeline`, `structured_pipeline`, `universal_agent`, `web_fetch_agent` | The HMAC key signing and verifying the platform's own anonymous file links. Must be set and must differ from SECRET_KEY. |
 | `SANDBOX_MIRROR_INTERVAL_SECONDS` |  | `sandbox-mirror` |  |
 | `SANDBOX_MIRROR_S3_ACCESS_KEY` | `s3-entrypoint.sh` | `sandbox-mirror`, `seaweedfs-s3` |  |
-| `SANDBOX_MIRROR_S3_SECRET_KEY` | `s3-entrypoint.sh` | `sandbox-mirror`, `seaweedfs-s3` |  |
+| `SANDBOX_MIRROR_S3_SECRET_KEY` | `s3-entrypoint.sh` | `env-guard`, `sandbox-mirror`, `seaweedfs-s3` |  |
 | `SCHEDULER_EVENT_RETENTION_DAYS` | `SchedulerSettings.EVENT_RETENTION_DAYS` | `api` | Age beyond which events in a scheduled thread are pruned. Zero disables pruning entirely, which is the default: deleting a tenant's history must be something an operator turned on, never something a deploy started doing. |
 | `SCHEDULER_LEASE_TTL_SECONDS` | `SchedulerSettings.LEASE_TTL_SECONDS` | `api` | Leader-lease lifetime. Must exceed the worst-case tick runtime, or the lease expires mid-tick and a second replica starts one concurrently. |
 | `SCHEDULER_MAX_CATCHUP_MINUTES` | `SchedulerSettings.MAX_CATCHUP_MINUTES` | `api` | How far back a tick replays after downtime. Occurrences older than this are logged and dropped rather than fired as a burst of stale runs. |
@@ -188,8 +196,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `SCHEDULER_REDIS_KEY_PREFIX` | `SchedulerSettings.REDIS_KEY_PREFIX` | `api` | Namespace for all scheduler keys in Redis. Change it to run an isolated scheduler. |
 | `SCHEDULER_RETENTION_INTERVAL_SECONDS` | `SchedulerSettings.RETENTION_INTERVAL_SECONDS` | `api` | Minimum seconds between prunes, enforced cluster-wide. Keeps bulk deletes off the tick. |
 | `SCHEDULER_TICK_INTERVAL_SECONDS` | `SchedulerSettings.TICK_INTERVAL_SECONDS` | `api` | Seconds between scheduler ticks. Bounds how late an occurrence can fire. |
-| `SEARXNG_SECRET_KEY` |  | `searxng` |  |
-| `SEAWEEDFS_TOKEN` |  | `seaweedfs-filer`, `seaweedfs-master`, `seaweedfs-s3`, `seaweedfs-volume` |  |
+| `SEARXNG_SECRET_KEY` |  | `env-guard`, `searxng` |  |
+| `SEAWEEDFS_TOKEN` |  | `env-guard`, `seaweedfs-filer`, `seaweedfs-master`, `seaweedfs-s3`, `seaweedfs-volume` |  |
 | `SLACK_CHANNEL_ID` |  | `expert_asking_agent` |  |
 | `SLACK_SERVICE_URL` |  | `expert_asking_agent` |  |
 | `STONEY_CLOUD_API_BASE_URL` | `litellm-config.yml` | `litellm` |  |
@@ -200,9 +208,9 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `SUPERUSER_EMAIL` | `SuperuserSettings.EMAIL` | `api`, `keycloak`, `sysadmin-api` | Keycloak email used to look up the superuser. |
 | `SUPERUSER_FIRSTNAME` | `users-superuser.json` | `keycloak` |  |
 | `SUPERUSER_LASTNAME` | `users-superuser.json` | `keycloak` |  |
-| `SUPERUSER_PASSWORD` | `users-superuser.json` | `keycloak` |  |
+| `SUPERUSER_PASSWORD` | `users-superuser.json` | `env-guard`, `keycloak` |  |
 | `SUPERUSER_ROLES_JSON` | `SuperuserSettings.ROLES_JSON` | `api`, `keycloak`, `sysadmin-api` | JSON array of realm roles assigned to the superuser, shared verbatim with the Keycloak realm import via the same environment variable. Must include AIHubSysAdmin. |
-| `SUPERUSER_TOKEN` | `SuperuserSettings.TOKEN` | `api`, `open-webui`, `sysadmin-api` | Static bearer token for machine-to-machine API calls. Must start with 'sk-'. |
+| `SUPERUSER_TOKEN` | `SuperuserSettings.TOKEN` | `api`, `env-guard`, `open-webui`, `sysadmin-api` | Static bearer token for machine-to-machine API calls. Must start with 'sk-'. |
 | `SUPERUSER_USERNAME` | `SuperuserSettings.USERNAME` | `api`, `keycloak`, `sysadmin-api` | Log-only label for the seeded superuser in API startup logs. Not persisted in Keycloak — the Keycloak username is SUPERUSER_EMAIL (registrationEmailAsUsername), so login is by email. |
 | `SWISS_LLM_CLOUD_API_BASE_URL` | `litellm-config.yml` | `litellm` |  |
 | `SWISS_LLM_CLOUD_API_KEY` | `litellm-config.yml` | `litellm` |  |

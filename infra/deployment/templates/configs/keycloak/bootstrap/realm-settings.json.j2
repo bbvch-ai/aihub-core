@@ -6,8 +6,13 @@
    BOOTSTRAP-ONLY: applied via --import-realm on first start, never reconciled.
    Realm-level settings stay bootstrap-only so operator overrides made in the
    admin console (e.g. session lifespans per ADR 2026_06_11, SMTP) survive.
-   Token and session lifespan changes still reach existing deployments via the
-   kcadm default-migration in keycloak-entrypoint.sh.
+   Token and session lifespans still reach existing deployments via the kcadm
+   default-migration in keycloak-entrypoint.sh.
+
+   smtpServer stays empty here: the entrypoint writes the mail server to new and
+   existing realms alike once KEYCLOAK_SMTP_* are set. Keycloak validates the
+   sender address on import, so a sender taken from an unset variable would
+   fail the whole first-start import.
 -#}
 {
   "realm": "aihub",

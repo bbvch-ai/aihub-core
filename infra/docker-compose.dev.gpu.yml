@@ -770,6 +770,13 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: 'true'
       KC_METRICS_ENABLED: 'true'
+      # Single-node deployments: use the local cache instead of the clustered ispn/jgroups default.
+      # Clustering makes Keycloak spend the first minutes after a (re)start retrying to reach the
+      # previous run's cluster member ("jgroups ... Connection refused"), during which the login
+      # redirect is dead — so a plain container restart locked users out for several minutes. The
+      # local cache removes that warm-up. NOTE: if Keycloak is ever run multi-node/HA, this must
+      # become conditional (local cache does not replicate sessions across nodes).
+      KC_CACHE: local
       # Superuser (interactive Keycloak-seeded admin) — passed to realm template
       SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
@@ -784,12 +791,20 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       # Azure Entra ID configuration (for identity provider federation)
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
       KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
       KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      # Realm mail via Microsoft 365 (XOAUTH2 client credentials). The secret is
+      # written to the tmpfs vault by the entrypoint, never into the realm.
+      KEYCLOAK_SMTP_TENANT_ID: ${KEYCLOAK_SMTP_TENANT_ID}
+      KEYCLOAK_SMTP_CLIENT_ID: ${KEYCLOAK_SMTP_CLIENT_ID}
+      KEYCLOAK_SMTP_CLIENT_SECRET: ${KEYCLOAK_SMTP_CLIENT_SECRET}
+      KEYCLOAK_SMTP_MAILBOX: ${KEYCLOAK_SMTP_MAILBOX}
+    tmpfs: ['/opt/keycloak/vault:mode=0700,uid=1000,gid=0']
     volumes:
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro,z
       - ./configs/keycloak/aihub-realm.dev.gpu.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro,z
@@ -849,6 +864,7 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
       # Azure Entra ID vars are NOT needed here — identity providers are
@@ -950,10 +966,14 @@ services:
       - --rc-no-auth  # Only in dev!
       - --log-level=INFO
       - --config=/dev/null  # No config file: the rclone pipeline re-creates every remote from the database per run
-    ports: [127.0.0.1:5572:5572]
+    ports:
+      - 127.0.0.1:5572:5572
+    # Dual-homed like otel-collector: the container name also resolves to the egress address, which egress's
+    # enable_icc=false drops, and rclone_pipeline sits on egress too. The pipeline targets the backend-only alias.
     networks:
-      - backend  # reached by the rclone pipeline
-      - egress  # reaches the cloud providers it syncs from
+      backend:  # reached by the rclone pipeline
+        aliases: [rclone-backend]
+      egress: {}  # reaches the cloud providers it syncs from
     healthcheck:
       test: [CMD, rclone, rc, --rc-addr=localhost:5572, core/version]
       interval: 30s
@@ -1527,6 +1547,7 @@ services:
       - ./configs/litellm/litellm-config.infomaniak.dev.gpu.yml:/app/config.infomaniak.yml:z
       - ./configs/litellm/litellm-config.stoney.dev.gpu.yml:/app/config.stoney.yml:z
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro,z
+      - ./configs/litellm/tenant_attribution.py:/app/tenant_attribution.py:ro,z
       - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro,z
       - ./configs/litellm/pii_anonymisation_audit.py:/app/pii_anonymisation_audit.py:ro,z
     command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
@@ -1699,12 +1720,7 @@ services:
     restart: always
     ports: [8002:8000]
     environment:
-      # VLM routing through LiteLLM (OpenAI-compatible)
-      # Various API keys for OpenAI client compatibility
-      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
-      OPENAI_BASE_URL: http://litellm:4000/v1
-      LITELLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
-      # MinerU-specific configuration (used by mineru_vl_utils HttpVlmClient)
+      # VLM routing through LiteLLM: mineru_vl_utils' HTTP client reads only these MINERU_VL_* variables
       MINERU_VL_SERVER: http://litellm:4000/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
       MINERU_VL_MODEL_NAME: ${MINERU_VLM_NAME}
@@ -1995,6 +2011,10 @@ services:
       DATABASE_HOST: localhost
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
+      # Without session sharing, a model lookup holds one pooled connection while it opens a second one for the
+      # model's access grants. Once as many chats arrive at once as the pool has connections, each holds one and waits
+      # for another, nothing moves until the 30 s pool timeout, and the requests fail as QueuePool / "Model not found".
+      DATABASE_ENABLE_SESSION_SHARING: true
       REDIS_URL: redis://default:${REDIS_TOKEN}@localhost:6379/10
       REDIS_KEY_PREFIX: open-webui
 

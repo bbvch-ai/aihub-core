@@ -208,6 +208,7 @@ class TestAttachedFilesAsATool:
         assert isinstance(read, ReadAttachedFilesEvent)
         assert [file.file_id for file in read.files] == [F1]
         assert [file.file_id for file in read.kept_for_code] == [F4]
+        assert read.code_sandbox_offered
 
     @pytest.mark.asyncio
     async def test_with_code_off_a_spreadsheet_is_read_like_any_file(self):
@@ -227,6 +228,7 @@ class TestAttachedFilesAsATool:
         assert isinstance(read, ReadAttachedFilesEvent)
         assert [file.file_id for file in read.files] == [F4]
         assert read.kept_for_code == []
+        assert not read.code_sandbox_offered
 
     @pytest.mark.asyncio
     async def test_what_was_read_goes_back_to_the_loop(self):

@@ -7,4 +7,4 @@ set -e
 # The web frontend uses PrimeVue 4.x as its primary UI component library.
 # This gives much richer context than generic documentation lookups.
 cd "$(dirname "$0")/../.."
-exec npx -y @primevue/mcp
+exec npx -y @primevue/mcp@5.0.4

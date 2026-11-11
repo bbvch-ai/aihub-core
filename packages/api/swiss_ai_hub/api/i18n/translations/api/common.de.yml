@@ -1,6 +1,7 @@
 ---
 test: Das ist ein deutscher Test
 default_chat_disclaimer: KI kann Fehler machen. Bitte überprüfen Sie die Antworten.
+output_budget_exhausted: Das Modell hat sein gesamtes Ausgabebudget für das Nachdenken verbraucht und keine Antwort erzeugt. Versuchen Sie eine kürzere Eingabe oder ein Modell ohne Reasoning.
 translation:
   prompt: |
     Sie sind ein professioneller Übersetzer. Übersetzen Sie den folgenden Text von {source_language} in {target_language} und bewahren Sie dabei Bedeutung, Ton und Formalitätsgrad.

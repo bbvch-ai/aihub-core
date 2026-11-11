@@ -52,6 +52,60 @@ models, you can assign a cost value to track spending consistently.
 You can view cost information per conversation to see which questions are most expensive. This helps with agent design
 decisions, model selection, and budget planning.
 
+## Usage per tenant
+
+Every model call the Swiss AI Hub makes for a user is booked to the tenant the user is acting in. This covers chat
+through OpenWebUI, the OpenAI-compatible API, agent runs (chat, embeddings and reranking), translation and
+speech-to-text. The LiteLLM proxy records the tenant as its *customer*, named after the tenant. A user who belongs to two
+tenants has each call counted only in the tenant they were acting in.
+
+Calls made outside any tenant are booked to the customer `no-tenant`: sysadmins acting outside a tenant, scheduled agent
+runs, data pipelines, the memory writer and document parsing. They appear as their own line, never inside a tenant.
+
+Costs are computed from the prices configured for each model in LiteLLM.
+
+### Reading last month's usage of a tenant
+
+On a shared instance that serves several tenants:
+
+1. Open the LiteLLM UI at `https://litellm.<your domain>/ui` and sign in as a proxy administrator.
+2. Open **Usage** and switch the view from **Global Usage** to **Customer Usage**.
+3. Set **Select Time Range** to the first and last day of the month.
+4. In **Select customer to filter**, pick the tenant by its name.
+5. Read the figures:
+   - **Cost** tab: total spend, requests and tokens of the tenant, and spend per model.
+   - **Model Activity** tab: requests, tokens and spend per model, with prompt (input) and completion (output) tokens
+     shown separately in **Total Tokens Over Time**.
+   - **Export Data** downloads the same figures as a file.
+
+Without a customer filter, the **Cost** tab lists every tenant and `no-tenant` under **Spend Per Customer**. Their sum
+equals the instance total shown under **Global Usage** for the same period.
+
+::: details Reading the figures through the API
+The UI reads them from LiteLLM's admin API, which you can query with the LiteLLM master key. The response lists each day
+with its prompt tokens, completion tokens and spend, in total and per model:
+
+```bash
+curl -s "https://litellm.<your domain>/customer/daily/activity?end_user_ids=<tenant id>&start_date=2026-10-01&end_date=2026-10-31&page_size=1000" \
+  -H "Authorization: Bearer $LITELLM_MASTER_KEY"
+```
+
+`/customer/list` lists the customers with their tenant names, and `/user/daily/activity` with the same dates returns the
+instance total.
+:::
+
+### Reading last month's usage of a dedicated instance
+
+On an instance that serves one customer, the whole instance is that customer's usage. Open **Usage** → **Global Usage**,
+set the time range to the month, and read the totals and the **Model Activity** tab as above.
+
+::: warning Calls made before tenants were recorded
+Only calls made since the Swiss AI Hub started recording tenants are booked to one. Earlier calls through the
+OpenAI-compatible API appear under customers named after a user id, and earlier calls without a user under no customer
+at all. Deployments that maintain their own LiteLLM configuration must register the `tenant_attribution` callback
+shipped next to `custom_callbacks.py`, or calls without a tenant are missing from the customer view.
+:::
+
 ## Budgets and rate limits
 
 LiteLLM provides per-user budget and rate limiting capabilities through its user management system. These controls are
