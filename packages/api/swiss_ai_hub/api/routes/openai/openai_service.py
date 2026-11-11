@@ -12,7 +12,7 @@ from fastapi import HTTPException, UploadFile
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock
 from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
-from openai import APIStatusError, AsyncOpenAI, HttpxBinaryResponseContent
+from openai import APIStatusError, AsyncOpenAI, AsyncStream, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage
@@ -270,6 +270,7 @@ class OpenaiService:
         # agent branch, and agents own their identity (ADR 2026_06_04). Injecting before it would hand every
         # agent a contradicting persona.
         OpenaiService._apply_model_identity(chat_completion_request, model_name, t)
+        OpenaiService._apply_output_limit(chat_completion_request, await OpenaiService._max_output_tokens(model_name))
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
 
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
@@ -289,27 +290,8 @@ class OpenaiService:
             # StreamingResponse has begun, the caller can only observe a truncated stream.
             response = await client.chat.completions.create(**kwargs)
 
-            async def stream_chat_completion() -> AsyncGenerator[str]:
-                """``async with`` so the upstream stream is closed when the consumer stops early.
-
-                A browser tab closed mid-answer makes Starlette call ``aclose()`` on this generator,
-                which raises ``GeneratorExit`` at the ``yield`` — without the context manager nothing
-                releases the httpx connection, and ``with_options()`` hands every user a copy over
-                one shared pool, so the leaks accumulate against everyone.
-
-                It does not cover a generator that is never started at all: ``aclose()`` on one runs
-                no code, so no ``__aexit__`` fires. A ``BackgroundTask`` would not close that gap
-                either — Starlette 1.1.0 raises ``ClientDisconnect`` out of ``stream_response`` on
-                ASGI spec >= 2.4 and never reaches its ``background`` call.
-                """
-                async with response:
-                    async for chunk in response:
-                        yield f"data: {chunk.model_dump_json()}\n\n"
-                        await asyncio.sleep(0)
-                yield OpenaiService.STREAM_END
-
             return StreamingResponse(
-                stream_chat_completion(),
+                OpenaiService._relay_chat_stream(response, t),
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
@@ -327,7 +309,86 @@ class OpenaiService:
                 thread_id=thread_id,
                 display_id=display_id,
             )
-            return await client.chat.completions.create(**kwargs)
+            completion = await client.chat.completions.create(**kwargs)
+            OpenaiService._explain_empty_answer(completion, t)
+            return completion
+
+    @staticmethod
+    async def _max_output_tokens(model_name: str) -> int:
+        """The model's own output ceiling from LiteLLM, the same number agents request on every call."""
+        models = await LiteLLMProxySettings().httpx_aclient.get("/v1/model/info")
+        model_info = [model["model_info"] for model in models.json()["data"] if model["model_name"] == model_name][0]
+        return model_info["max_output_tokens"]
+
+    @staticmethod
+    def _apply_output_limit(chat_completion_request: ChatCompletionRequest, max_output_tokens: int) -> None:
+        """Caps a plain-model call at the model's output ceiling, and defaults it there when the caller set none.
+        Without a cap a reasoning model keeps thinking until the provider's window is full: on aihub-be one call
+        to Qwen3.5 reasoned for eleven minutes and answered nothing (aihub-incidents#72). Agents already request
+        this ceiling on every call (`LLMConfig.to_llama_index`), so a direct call can now go no further than an
+        agent's on the same model."""
+        requested_fields = [
+            field
+            for field in ("max_tokens", "max_completion_tokens")
+            if getattr(chat_completion_request, field) is not None
+        ]
+        if not requested_fields:
+            chat_completion_request.max_tokens = max_output_tokens
+        for field in requested_fields:
+            setattr(chat_completion_request, field, min(getattr(chat_completion_request, field), max_output_tokens))
+
+    @staticmethod
+    async def _relay_chat_stream(response: AsyncStream[ChatCompletionChunk], t: LocaleHandler) -> AsyncGenerator[str]:
+        """``async with`` so the upstream stream is closed when the consumer stops early.
+
+        A browser tab closed mid-answer makes Starlette call ``aclose()`` on this generator,
+        which raises ``GeneratorExit`` at the ``yield`` — without the context manager nothing
+        releases the httpx connection, and ``with_options()`` hands every user a copy over
+        one shared pool, so the leaks accumulate against everyone.
+
+        It does not cover a generator that is never started at all: ``aclose()`` on one runs
+        no code, so no ``__aexit__`` fires. A ``BackgroundTask`` would not close that gap
+        either — Starlette 1.1.0 raises ``ClientDisconnect`` out of ``stream_response`` on
+        ASGI spec >= 2.4 and never reaches its ``background`` call.
+        """
+        last_chunk: ChatCompletionChunk | None = None
+        answered = False
+        finish_reason: str | None = None
+        async with response:
+            async for chunk in response:
+                last_chunk = chunk
+                answered = answered or any(choice.delta.content or choice.delta.tool_calls for choice in chunk.choices)
+                finish_reason = next((c.finish_reason for c in chunk.choices if c.finish_reason), finish_reason)
+                yield f"data: {chunk.model_dump_json()}\n\n"
+                await asyncio.sleep(0)
+        if last_chunk is not None and finish_reason == "length" and not answered:
+            yield f"data: {OpenaiService._empty_answer_chunk(last_chunk, t).model_dump_json()}\n\n"
+        yield OpenaiService.STREAM_END
+
+    @staticmethod
+    def _empty_answer_chunk(last_chunk: ChatCompletionChunk, t: LocaleHandler) -> ChatCompletionChunk:
+        """A closing chunk that says why the answer is blank, since a stream ending on `length` with no content
+        reaches the user as an empty reply and nothing else."""
+        return ChatCompletionChunk(
+            id=last_chunk.id,
+            object="chat.completion.chunk",
+            created=last_chunk.created,
+            model=last_chunk.model,
+            choices=[
+                Choice(
+                    index=0,
+                    delta=ChoiceDelta(content=t("api.common.output_budget_exhausted")),
+                    finish_reason="length",
+                )
+            ],
+        )
+
+    @staticmethod
+    def _explain_empty_answer(completion: ChatCompletion, t: LocaleHandler) -> None:
+        """The non-streamed counterpart of `_empty_answer_chunk`: fills the blank answer with the reason."""
+        for choice in completion.choices:
+            if choice.finish_reason == "length" and not choice.message.content and not choice.message.tool_calls:
+                choice.message.content = t("api.common.output_budget_exhausted")
 
     @staticmethod
     @trace_fn

@@ -171,6 +171,18 @@ transcript.
 `contains_speech` stays as a pre-filter rather than the whole answer: it detects sound at -40 dB, where the provider
 detects speech, so tone and noise pass it and are rejected upstream.
 
+## Plain-Model Output Limit
+
+`OpenaiService.chat_completion` (direct calls to a model, not an agent: OpenWebUI's own OpenAI connection, add-ins,
+API tokens) caps `max_tokens` / `max_completion_tokens` at the model's `max_output_tokens` from LiteLLM's
+`/v1/model/info`, and sets `max_tokens` to it when the caller sent neither. Agents already request that ceiling on every
+call (`LLMConfig.to_llama_index`). Without it a reasoning model thinks until the provider's window is full: one call to
+Qwen3.5 on aihub-be reasoned for eleven minutes and answered nothing (aihub-incidents#72).
+
+A call that still ends on `finish_reason: "length"` with no content or tool call gets `api.common.output_budget_exhausted`
+as its answer: one extra chunk before `[DONE]` when streamed, the message content otherwise. A partial answer cut off by
+the limit is left as it is.
+
 ## i18n System
 
 **Hierarchy**: `LocaleString`/`LocaleHandler` (packages/core) → `ApiLocaleString`/`ApiLocaleHandler` (packages/api
