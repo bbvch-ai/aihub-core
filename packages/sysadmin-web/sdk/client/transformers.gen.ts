@@ -3,11 +3,85 @@
 import type {
   CreateTenantMetadataResponse,
   GetAccessCapabilitiesResponse,
+  GetOpenwebuiModBuiltinsResponse,
+  GetOpenwebuiModPublicationResponse,
+  GetOpenwebuiModRevisionResponse,
   GetTenantResponse,
+  ListOpenwebuiModPublicationsResponse,
+  ListOpenwebuiModRevisionsResponse,
   ListTenantsResponse,
   ProvisionTenantResponse,
+  PublishOpenwebuiModResponse,
   UpdateTenantMetadataResponse,
+  UploadOpenwebuiModResponse,
 } from "./types.gen";
+
+const openWebuiModRevisionResponseSchemaResponseTransformer = (data: any) => {
+  data.uploaded_at = new Date(data.uploaded_at);
+  return data;
+};
+
+export const getOpenwebuiModBuiltinsResponseTransformer = async (
+  data: any,
+): Promise<GetOpenwebuiModBuiltinsResponse> => {
+  data = data.map((item: any) =>
+    openWebuiModRevisionResponseSchemaResponseTransformer(item),
+  );
+  return data;
+};
+
+export const listOpenwebuiModRevisionsResponseTransformer = async (
+  data: any,
+): Promise<ListOpenwebuiModRevisionsResponse> => {
+  data = data.map((item: any) =>
+    openWebuiModRevisionResponseSchemaResponseTransformer(item),
+  );
+  return data;
+};
+
+export const uploadOpenwebuiModResponseTransformer = async (
+  data: any,
+): Promise<UploadOpenwebuiModResponse> => {
+  data = openWebuiModRevisionResponseSchemaResponseTransformer(data);
+  return data;
+};
+
+export const getOpenwebuiModRevisionResponseTransformer = async (
+  data: any,
+): Promise<GetOpenwebuiModRevisionResponse> => {
+  data = openWebuiModRevisionResponseSchemaResponseTransformer(data);
+  return data;
+};
+
+const openWebuiModPublicationResponseSchemaResponseTransformer = (
+  data: any,
+) => {
+  data.published_at = new Date(data.published_at);
+  return data;
+};
+
+export const listOpenwebuiModPublicationsResponseTransformer = async (
+  data: any,
+): Promise<ListOpenwebuiModPublicationsResponse> => {
+  data = data.map((item: any) =>
+    openWebuiModPublicationResponseSchemaResponseTransformer(item),
+  );
+  return data;
+};
+
+export const publishOpenwebuiModResponseTransformer = async (
+  data: any,
+): Promise<PublishOpenwebuiModResponse> => {
+  data = openWebuiModPublicationResponseSchemaResponseTransformer(data);
+  return data;
+};
+
+export const getOpenwebuiModPublicationResponseTransformer = async (
+  data: any,
+): Promise<GetOpenwebuiModPublicationResponse> => {
+  data = openWebuiModPublicationResponseSchemaResponseTransformer(data);
+  return data;
+};
 
 const tenantResponseSchemaResponseTransformer = (data: any) => {
   data.created_at = new Date(data.created_at);

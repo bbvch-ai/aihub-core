@@ -44,7 +44,7 @@ image_tags:
   presidio_analyzer: presidio-analyzer:2.2.364-swiss-5
   presidio_analyzer_gpu: presidio-analyzer:2.2.364-swiss-5-gpu
   oauth2proxy: oauth2-proxy:v7.15.5
-  open_webui: open-webui:v0.11.4-playwright1.63.0-1
+  open_webui: open-webui:v0.11.4-playwright1.63.0-2
   open_webui_init: postgres:17
   ferretdb_init: postgres:17
   playwright: playwright:v1.63.0-jammy-1

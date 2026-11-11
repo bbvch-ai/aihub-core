@@ -8,6 +8,7 @@
         </h1>
       </div>
       <div class="flex items-center gap-2">
+        <Button :label="t('openwebui_mods.global.navigation')" icon="pi pi-cog" severity="secondary" size="small" @click="navigateTo(localePath('/openwebui'))" />
         <Button
           v-tooltip.bottom="{ value: t('bar.toggle_dark_mode'), showDelay: 0 }"
           :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
@@ -34,6 +35,7 @@
 
 <script setup lang="ts">
 const { t } = useI18n()
+const localePath = useLocalePath()
 const { exitToMainApp } = useMainAppNavigation()
 
 const isDark = useDarkMode()

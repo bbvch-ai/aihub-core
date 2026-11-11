@@ -10092,6 +10092,8 @@ export type JsonSchema = {
   [key: string]: unknown;
 };
 
+export type JsonValue = unknown;
+
 /**
  * Knob
  *
@@ -14500,6 +14502,86 @@ export type OpenChatHitlResponse = {
    * The HITL request event if there is an open chat HITL, None otherwise.
    */
   hitl_request?: HumanInTheLoopRequestEvent | null;
+};
+
+/**
+ * OpenWebuiModCompatibility
+ */
+export type OpenWebuiModCompatibility = {
+  /**
+   * Openwebui
+   */
+  openwebui: string;
+  /**
+   * Source Commit
+   */
+  source_commit: string;
+  /**
+   * Svelte
+   */
+  svelte: string;
+  /**
+   * Host Protocol
+   */
+  host_protocol: number;
+  /**
+   * Python
+   */
+  python: string;
+};
+
+/**
+ * OpenWebuiModConfiguration
+ */
+export type OpenWebuiModConfiguration = {
+  /**
+   * Version
+   */
+  version?: number;
+  /**
+   * Mods
+   */
+  mods?: Array<OpenWebuiModSelection>;
+};
+
+/**
+ * OpenWebuiModRuntimeConfiguration
+ */
+export type OpenWebuiModRuntimeConfiguration = {
+  /**
+   * Tenant Id
+   */
+  tenant_id: string;
+  compatibility: OpenWebuiModCompatibility;
+  configuration: OpenWebuiModConfiguration;
+  /**
+   * Revision
+   */
+  revision: string;
+};
+
+/**
+ * OpenWebuiModSelection
+ */
+export type OpenWebuiModSelection = {
+  /**
+   * Mod Id
+   */
+  mod_id: string;
+  /**
+   * Publication
+   */
+  publication?: string | null;
+  /**
+   * Enabled
+   */
+  enabled?: boolean;
+  /**
+   * Settings
+   */
+  settings?: {
+    [key: string]: JsonValue;
+  };
 };
 
 /**
@@ -37657,6 +37739,129 @@ export type GetChatDisclaimerResponses = {
 
 export type GetChatDisclaimerResponse =
   GetChatDisclaimerResponses[keyof GetChatDisclaimerResponses];
+
+export type ResolveOpenwebuiModConfigurationData = {
+  body: OpenWebuiModCompatibility;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/openai/mods/configuration";
+};
+
+export type ResolveOpenwebuiModConfigurationErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ResolveOpenwebuiModConfigurationError =
+  ResolveOpenwebuiModConfigurationErrors[keyof ResolveOpenwebuiModConfigurationErrors];
+
+export type ResolveOpenwebuiModConfigurationResponses = {
+  /**
+   * Successful Response
+   */
+  200: OpenWebuiModRuntimeConfiguration;
+};
+
+export type ResolveOpenwebuiModConfigurationResponse =
+  ResolveOpenwebuiModConfigurationResponses[keyof ResolveOpenwebuiModConfigurationResponses];
+
+export type DownloadOpenwebuiModArchiveData = {
+  body?: never;
+  headers: {
+    /**
+     * X-Aihub-Mod-Compatibility
+     */
+    "X-AIHub-Mod-Compatibility": string;
+  };
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Revision
+     */
+    revision: string;
+    /**
+     * Kind
+     */
+    kind: "frontend" | "source";
+  };
+  query?: never;
+  url: "/{tenant_id}/openai/mods/publications/{revision}/{kind}";
+};
+
+export type DownloadOpenwebuiModArchiveErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DownloadOpenwebuiModArchiveError =
+  DownloadOpenwebuiModArchiveErrors[keyof DownloadOpenwebuiModArchiveErrors];
+
+export type DownloadOpenwebuiModArchiveResponses = {
+  /**
+   * Successful Response
+   */
+  200: Blob | File;
+};
+
+export type DownloadOpenwebuiModArchiveResponse =
+  DownloadOpenwebuiModArchiveResponses[keyof DownloadOpenwebuiModArchiveResponses];
+
+export type CheckOpenwebuiModPublicationData = {
+  body?: never;
+  headers: {
+    /**
+     * X-Aihub-Mod-Compatibility
+     */
+    "X-AIHub-Mod-Compatibility": string;
+  };
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Revision
+     */
+    revision: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/openai/mods/publications/{revision}/frontend";
+};
+
+export type CheckOpenwebuiModPublicationErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CheckOpenwebuiModPublicationError =
+  CheckOpenwebuiModPublicationErrors[keyof CheckOpenwebuiModPublicationErrors];
+
+export type CheckOpenwebuiModPublicationResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
 
 export type GetModelsData = {
   body?: never;

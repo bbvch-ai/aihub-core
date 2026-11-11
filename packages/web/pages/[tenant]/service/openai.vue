@@ -14,6 +14,16 @@
     </div>
     <NuxtPage />
 
+    <Toast group="openwebui-mods-update" position="bottom-right">
+      <template #message="{ message }">
+        <div class="flex flex-col gap-2">
+          <span class="font-semibold">{{ message.summary }}</span>
+          <p>{{ message.detail }}</p>
+          <Button :label="t('openwebui.mods.reload')" icon="pi pi-refresh" size="small" class="self-start" @click="reloadChat" />
+        </div>
+      </template>
+    </Toast>
+
     <Dialog
       v-model:visible="mismatchDetected"
       :header="t('tenant.mismatch_warning')"
@@ -69,6 +79,10 @@ const visibleDisclaimer = computed(() => {
   return backendTenantId.value === tenantId.value ? disclaimer.value : t('openwebui.default_disclaimer')
 })
 const { sendDisclaimer } = useOpenWebuiDisclaimer(chatIframe, visibleDisclaimer)
+const confirmedModTenant = computed(() =>
+  backendTenantId.value === tenantId.value && !mismatchDetected.value ? tenantId.value ?? null : null,
+)
+const { sendModContext, clearModNotice } = useOpenWebuiMods(chatIframe, confirmedModTenant, runtimeConfig.public.webui.url)
 
 async function onSwitchToBackendTenant() {
   if (!backendTenantId.value) return
@@ -78,6 +92,12 @@ async function onSwitchToBackendTenant() {
 let initialLoadDone = false
 const iframeKey = ref(0)
 
+function reloadChat() {
+  clearModNotice()
+  initialLoadDone = false
+  iframeKey.value++
+}
+
 // The URL already names this tenant, so only the backend switches. OpenWebUI
 // loaded the other tenant's models, so the iframe is recreated, and its first
 // load must not count as a navigation away.
@@ -85,12 +105,12 @@ async function onUseUrlTenant() {
   if (!tenantId.value) return
   await activateTenant(tenantId.value)
   await refreshActiveTenant()
-  initialLoadDone = false
-  iframeKey.value++
+  reloadChat()
 }
 
 const handleIframeLoad = () => {
   sendDisclaimer()
+  sendModContext()
   // Skip the initial load when iframe first renders OpenWebUI
   if (!initialLoadDone) {
     initialLoadDone = true

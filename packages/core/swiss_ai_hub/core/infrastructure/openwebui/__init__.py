@@ -2,6 +2,20 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_bundles import OpenWebuiModBundles
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_compatibility import OpenWebuiModCompatibility
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_configuration import OpenWebuiModConfiguration
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_selection import OpenWebuiModSelection
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_defaults import OpenWebuiModDefaults
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_host import OpenWebuiModHost
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_manifest import OpenWebuiModManifest
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_package import OpenWebuiModPackage
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_publication import OpenWebuiModPublication
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_publication_manifest import (
+        OpenWebuiModPublicationManifest,
+    )
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_store import OpenWebuiModStore
+    from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_resolver import OpenWebuiModResolver
     from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
@@ -12,6 +26,18 @@ __all__ = [
     "AccessGrant",
     "OnlineAgent",
     "OpenWebuiClient",
+    "OpenWebuiModBundles",
+    "OpenWebuiModCompatibility",
+    "OpenWebuiModConfiguration",
+    "OpenWebuiModSelection",
+    "OpenWebuiModDefaults",
+    "OpenWebuiModHost",
+    "OpenWebuiModManifest",
+    "OpenWebuiModPackage",
+    "OpenWebuiModPublication",
+    "OpenWebuiModPublicationManifest",
+    "OpenWebuiModStore",
+    "OpenWebuiModResolver",
     "OpenWebuiProvisioner",
     "OpenWebuiSettings",
     "OpenWebuiTokenService",
@@ -21,6 +47,18 @@ _LAZY_IMPORTS: dict[str, str] = {
     "AccessGrant": "swiss_ai_hub.core.infrastructure.openwebui.access_grant",
     "OnlineAgent": "swiss_ai_hub.core.infrastructure.openwebui.online_agent",
     "OpenWebuiClient": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_client",
+    "OpenWebuiModBundles": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_bundles",
+    "OpenWebuiModCompatibility": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_compatibility",
+    "OpenWebuiModConfiguration": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_configuration",
+    "OpenWebuiModSelection": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_selection",
+    "OpenWebuiModDefaults": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_defaults",
+    "OpenWebuiModHost": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_host",
+    "OpenWebuiModManifest": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_manifest",
+    "OpenWebuiModPackage": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_package",
+    "OpenWebuiModPublication": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_publication",
+    "OpenWebuiModPublicationManifest": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_publication_manifest",
+    "OpenWebuiModStore": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_store",
+    "OpenWebuiModResolver": "swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_resolver",
     "OpenWebuiProvisioner": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner",
     "OpenWebuiSettings": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings",
     "OpenWebuiTokenService": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service",

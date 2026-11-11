@@ -1,0 +1,98 @@
+import json
+import re
+from pathlib import PurePosixPath
+from typing import Annotated, Literal, Self
+
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator, model_validator
+
+
+class OpenWebuiModManifest(BaseModel):
+    """Source entry points shared by package validation, publication and the two runtimes."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    format: Literal[1]
+    id: Annotated[str, Field(min_length=1, max_length=64, pattern=r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")]
+    name: Annotated[str, Field(min_length=1, max_length=100)]
+    version: Annotated[str, Field(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9][a-zA-Z0-9.+_-]*$")]
+    description: Annotated[str, Field(max_length=2000)] = ""
+    frontend: str | None = None
+    backend: str | None = None
+    backend_overrides: dict[str, str] = Field(default_factory=dict, max_length=128)
+    backend_restart_required: bool = Field(default=False, strict=True)
+    replacements: dict[str, str] = Field(default_factory=dict)
+    default_settings: dict[str, JsonValue] = Field(default_factory=dict)
+
+    @field_validator("backend_overrides")
+    @classmethod
+    def validate_backend_overrides(cls, value: dict[str, str]) -> dict[str, str]:
+        for target, handler in value.items():
+            if len(target) > 300 or not re.fullmatch(r"open_webui(?:\.[A-Za-z_]\w*)+:[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*", target):
+                raise ValueError(f"Expected a native Open WebUI callable target: {target}")
+            if not handler.isidentifier() or len(handler) > 128:
+                raise ValueError(f"Expected an exported Python handler name: {handler}")
+        return value
+
+    @field_validator("default_settings")
+    @classmethod
+    def validate_default_settings(cls, value: dict[str, JsonValue]) -> dict[str, JsonValue]:
+        if len(json.dumps(value, allow_nan=False).encode()) > 16 * 1024:
+            raise ValueError("Default mod settings exceed the 16 KiB limit")
+        return value
+
+    @field_validator("format", mode="before")
+    @classmethod
+    def validate_format_type(cls, value: object) -> object:
+        if isinstance(value, bool):
+            raise ValueError("The mod format must be a version number")
+        return value
+
+    @staticmethod
+    def validate_path(value: str) -> str:
+        path = PurePosixPath(value)
+        if (
+            value in {"", "."}
+            or len(value) > 240
+            or path.is_absolute()
+            or path.as_posix() != value
+            or any(part in {".", ".."} for part in path.parts)
+            or any(character in value for character in "\\:%?#")
+            or any(ord(character) < 32 or ord(character) == 127 for character in value)
+        ):
+            raise ValueError(f"Expected a normalized relative package path: {value!r}")
+        return value
+
+    @field_validator("frontend", "backend")
+    @classmethod
+    def validate_entry_path(cls, value: str | None) -> str | None:
+        return cls.validate_path(value) if value is not None else None
+
+    @field_validator("replacements")
+    @classmethod
+    def validate_replacement_paths(cls, value: dict[str, str]) -> dict[str, str]:
+        for target, source in value.items():
+            cls.validate_path(target)
+            cls.validate_path(source)
+            if not target.startswith("src/") or not target.endswith(".svelte"):
+                raise ValueError(f"Expected an Open WebUI source component path: {target}")
+            if not source.endswith(".svelte"):
+                raise ValueError(f"Expected a Svelte replacement source file: {source}")
+        return value
+
+    @model_validator(mode="after")
+    def validate_entry_points(self) -> Self:
+        if (self.backend_overrides or self.backend_restart_required) and self.backend is None:
+            raise ValueError("Backend overrides and restart requirements need a backend entry")
+        if not (self.frontend or self.backend or self.replacements):
+            raise ValueError("A mod needs a frontend entry, component replacement or backend entry")
+        if self.frontend and not self.frontend.endswith((".js", ".mjs", ".ts")):
+            raise ValueError("The frontend entry must be a JavaScript or TypeScript file")
+        if self.backend and not self.backend.endswith(".py"):
+            raise ValueError("The backend entry must be a Python file")
+        if self.backend and any(not part.isidentifier() for part in PurePosixPath(self.backend).with_suffix("").parts):
+            raise ValueError("The backend entry must be an importable Python module path")
+        return self
+
+    @property
+    def entry_paths(self) -> set[str]:
+        return {path for path in [self.frontend, self.backend, *self.replacements.values()] if path is not None}

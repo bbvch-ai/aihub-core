@@ -1134,6 +1134,12 @@ memory:
       title: Suppression échouée
       message: Échec de la suppression de tous les souvenirs. Veuillez réessayer.
 openwebui:
+  mods:
+    changed_title: Les personnalisations du chat ont changé
+    changed_detail: Rechargez le chat quand vous souhaitez utiliser la nouvelle interface. Les saisies non envoyées ou les modifications non enregistrées peuvent être perdues.
+    failed_title: Certaines personnalisations du chat n’ont pas pu être chargées
+    failed_detail: Rechargez le chat pour réessayer. Les saisies non envoyées ou les modifications non enregistrées peuvent être perdues.
+    reload: Recharger le chat
   default_disclaimer: L’IA peut faire des erreurs. Veuillez vérifier les réponses.
   memories:
     title: Souvenirs de l'Agent

@@ -22,6 +22,10 @@
   }
 })();
 
+if (window.parent !== window) {
+  import('/_aihub/mods/host.js').catch(error => console.warn('[AI Hub mods]', error));
+}
+
 // The voice call overlay requests a sentence's speech again until it succeeds, so a failing TTS keeps it from ever
 // returning to listening. A failed speech request is answered with a silent clip instead, and the overlay says so.
 (() => {

@@ -19,7 +19,7 @@ class TenantAdminService:
 
     Tenants live in two places: Keycloak (group under ``/tenants/``) owns existence
     and user membership; MongoDB ``TenantMetadataEntity`` owns display metadata
-    (name, description, access rules, chat disclaimer). A tenant is only accessible to end users
+    (name, description, access rules, chat disclaimer, Open WebUI mods). A tenant is only accessible to end users
     when it exists in both. Sysadmins can see orphaned metadata (MongoDB only)
     and delete it, but cannot edit it.
     """
@@ -217,8 +217,8 @@ class TenantAdminService:
         otherwise be impossible. The invariant ``count >= 1`` holds after all
         concurrent deletes resolve.
         """
-        tenant = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
-        if not tenant:
+        snapshot = TenantMetadataEntity.snapshot_tenant_metadata(tenant_id)
+        if snapshot is None:
             raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
 
         if TenantMetadataEntity.count_tenants() <= 1:
@@ -227,20 +227,11 @@ class TenantAdminService:
                 detail="Cannot delete the last remaining tenant; the platform must always have at least one.",
             )
 
-        snapshot = {
-            "tenant_id": tenant.id,
-            "name": tenant.name,
-            "description": tenant.description,
-            "access_rules": list(tenant.access_rules),
-            "chat_disclaimer": tenant.chat_disclaimer.to_locale_string() if tenant.chat_disclaimer else None,
-            "lcdm_tenant_id": tenant.lcdm_tenant_id,
-        }
-
         if not TenantMetadataEntity.delete_tenant_metadata(tenant_id):
             raise HTTPException(status_code=404, detail=_TENANT_NOT_FOUND)
 
         if TenantMetadataEntity.count_tenants() == 0:
-            TenantMetadataEntity.create_tenant_metadata(**snapshot)
+            TenantMetadataEntity.restore_tenant_metadata(snapshot)
             raise HTTPException(
                 status_code=409,
                 detail="Cannot delete the last remaining tenant; a concurrent delete already removed the other.",

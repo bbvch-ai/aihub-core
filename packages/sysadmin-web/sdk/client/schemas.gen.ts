@@ -658,6 +658,8 @@ export const HealthResponseSchema = {
   description: "Standard health check response.",
 } as const;
 
+export const JsonValueSchema = {} as const;
+
 export const LocaleStringSchema = {
   properties: {
     de: {
@@ -762,6 +764,450 @@ export const MyTenantsResponseSchema = {
   title: "MyTenantsResponse",
   description:
     "Response for the GET /my-tenants endpoint, including sysadmin status.",
+} as const;
+
+export const OpenWebuiModCatalogEntrySchema = {
+  properties: {
+    source_revision: {
+      type: "string",
+      title: "Source Revision",
+    },
+    manifest: {
+      $ref: "#/components/schemas/OpenWebuiModManifest",
+    },
+    builtin: {
+      type: "boolean",
+      title: "Builtin",
+    },
+  },
+  type: "object",
+  required: ["source_revision", "manifest", "builtin"],
+  title: "OpenWebuiModCatalogEntry",
+} as const;
+
+export const OpenWebuiModCompatibilitySchema = {
+  properties: {
+    openwebui: {
+      type: "string",
+      maxLength: 64,
+      minLength: 1,
+      title: "Openwebui",
+    },
+    source_commit: {
+      type: "string",
+      pattern: "^[a-f0-9]{40}$",
+      title: "Source Commit",
+    },
+    svelte: {
+      type: "string",
+      maxLength: 64,
+      minLength: 1,
+      title: "Svelte",
+    },
+    host_protocol: {
+      type: "integer",
+      minimum: 1,
+      title: "Host Protocol",
+    },
+    python: {
+      type: "string",
+      pattern: "^3\\.\\d+$",
+      title: "Python",
+    },
+  },
+  additionalProperties: false,
+  type: "object",
+  required: ["openwebui", "source_commit", "svelte", "host_protocol", "python"],
+  title: "OpenWebuiModCompatibility",
+} as const;
+
+export const OpenWebuiModConfigurationSchema = {
+  properties: {
+    version: {
+      type: "integer",
+      minimum: 0,
+      title: "Version",
+      default: 0,
+    },
+    mods: {
+      items: {
+        $ref: "#/components/schemas/OpenWebuiModSelection",
+      },
+      type: "array",
+      maxItems: 64,
+      title: "Mods",
+    },
+  },
+  additionalProperties: false,
+  type: "object",
+  title: "OpenWebuiModConfiguration",
+} as const;
+
+export const OpenWebuiModGlobalStateSchema = {
+  properties: {
+    configuration: {
+      $ref: "#/components/schemas/OpenWebuiModConfiguration",
+    },
+    active_version: {
+      type: "integer",
+      title: "Active Version",
+    },
+    boot_id: {
+      type: "string",
+      title: "Boot Id",
+    },
+    expected_workers: {
+      type: "integer",
+      title: "Expected Workers",
+    },
+    restart_required: {
+      type: "boolean",
+      title: "Restart Required",
+    },
+    workers: {
+      items: {
+        $ref: "#/components/schemas/OpenWebuiModWorkerState",
+      },
+      type: "array",
+      title: "Workers",
+    },
+  },
+  type: "object",
+  required: [
+    "configuration",
+    "active_version",
+    "boot_id",
+    "expected_workers",
+    "restart_required",
+    "workers",
+  ],
+  title: "OpenWebuiModGlobalState",
+} as const;
+
+export const OpenWebuiModHostSchema = {
+  properties: {
+    compatibility: {
+      $ref: "#/components/schemas/OpenWebuiModCompatibility",
+    },
+    components: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      uniqueItems: true,
+      title: "Components",
+    },
+    callables: {
+      additionalProperties: {
+        additionalProperties: {
+          $ref: "#/components/schemas/JsonValue",
+        },
+        type: "object",
+      },
+      type: "object",
+      title: "Callables",
+    },
+  },
+  additionalProperties: false,
+  type: "object",
+  required: ["compatibility", "components"],
+  title: "OpenWebuiModHost",
+} as const;
+
+export const OpenWebuiModManifestSchema = {
+  properties: {
+    format: {
+      type: "integer",
+      const: 1,
+      title: "Format",
+    },
+    id: {
+      type: "string",
+      maxLength: 64,
+      minLength: 1,
+      pattern: "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      title: "Id",
+    },
+    name: {
+      type: "string",
+      maxLength: 100,
+      minLength: 1,
+      title: "Name",
+    },
+    version: {
+      type: "string",
+      maxLength: 64,
+      minLength: 1,
+      pattern: "^[a-zA-Z0-9][a-zA-Z0-9.+_-]*$",
+      title: "Version",
+    },
+    description: {
+      type: "string",
+      maxLength: 2000,
+      title: "Description",
+      default: "",
+    },
+    frontend: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Frontend",
+    },
+    backend: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Backend",
+    },
+    backend_overrides: {
+      additionalProperties: {
+        type: "string",
+      },
+      type: "object",
+      maxProperties: 128,
+      title: "Backend Overrides",
+    },
+    backend_restart_required: {
+      type: "boolean",
+      title: "Backend Restart Required",
+      default: false,
+    },
+    replacements: {
+      additionalProperties: {
+        type: "string",
+      },
+      type: "object",
+      title: "Replacements",
+    },
+    default_settings: {
+      additionalProperties: {
+        $ref: "#/components/schemas/JsonValue",
+      },
+      type: "object",
+      title: "Default Settings",
+    },
+  },
+  additionalProperties: false,
+  type: "object",
+  required: ["format", "id", "name", "version"],
+  title: "OpenWebuiModManifest",
+  description:
+    "Source entry points shared by package validation, publication and the two runtimes.",
+} as const;
+
+export const OpenWebuiModPublicationManifestSchema = {
+  properties: {
+    format: {
+      type: "integer",
+      const: 1,
+      title: "Format",
+    },
+    source_revision: {
+      type: "string",
+      pattern: "^[a-f0-9]{64}$",
+      title: "Source Revision",
+    },
+    compatibility: {
+      $ref: "#/components/schemas/OpenWebuiModCompatibility",
+    },
+    frontend: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Frontend",
+    },
+    replacements: {
+      additionalProperties: {
+        type: "string",
+      },
+      type: "object",
+      title: "Replacements",
+    },
+    backend_targets: {
+      additionalProperties: {
+        additionalProperties: {
+          $ref: "#/components/schemas/JsonValue",
+        },
+        type: "object",
+      },
+      type: "object",
+      maxProperties: 128,
+      title: "Backend Targets",
+    },
+    warnings: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Warnings",
+    },
+  },
+  additionalProperties: false,
+  type: "object",
+  required: ["format", "source_revision", "compatibility"],
+  title: "OpenWebuiModPublicationManifest",
+} as const;
+
+export const OpenWebuiModPublicationResponseSchema = {
+  properties: {
+    revision: {
+      type: "string",
+      title: "Revision",
+    },
+    mod_id: {
+      type: "string",
+      title: "Mod Id",
+    },
+    manifest: {
+      $ref: "#/components/schemas/OpenWebuiModPublicationManifest",
+    },
+    archive_bytes: {
+      type: "integer",
+      title: "Archive Bytes",
+    },
+    published_at: {
+      type: "string",
+      format: "date-time",
+      title: "Published At",
+    },
+    published_by: {
+      type: "string",
+      title: "Published By",
+    },
+  },
+  type: "object",
+  required: [
+    "revision",
+    "mod_id",
+    "manifest",
+    "archive_bytes",
+    "published_at",
+    "published_by",
+  ],
+  title: "OpenWebuiModPublicationResponse",
+} as const;
+
+export const OpenWebuiModRevisionResponseSchema = {
+  properties: {
+    revision: {
+      type: "string",
+      title: "Revision",
+    },
+    manifest: {
+      $ref: "#/components/schemas/OpenWebuiModManifest",
+    },
+    archive_bytes: {
+      type: "integer",
+      title: "Archive Bytes",
+    },
+    uploaded_at: {
+      type: "string",
+      format: "date-time",
+      title: "Uploaded At",
+    },
+    uploaded_by: {
+      type: "string",
+      title: "Uploaded By",
+    },
+  },
+  type: "object",
+  required: [
+    "revision",
+    "manifest",
+    "archive_bytes",
+    "uploaded_at",
+    "uploaded_by",
+  ],
+  title: "OpenWebuiModRevisionResponse",
+} as const;
+
+export const OpenWebuiModSelectionSchema = {
+  properties: {
+    mod_id: {
+      type: "string",
+      maxLength: 64,
+      pattern: "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      title: "Mod Id",
+    },
+    publication: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^[a-f0-9]{64}$",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Publication",
+    },
+    enabled: {
+      type: "boolean",
+      title: "Enabled",
+      default: true,
+    },
+    settings: {
+      additionalProperties: {
+        $ref: "#/components/schemas/JsonValue",
+      },
+      type: "object",
+      title: "Settings",
+    },
+  },
+  additionalProperties: false,
+  type: "object",
+  required: ["mod_id"],
+  title: "OpenWebuiModSelection",
+} as const;
+
+export const OpenWebuiModWorkerStateSchema = {
+  properties: {
+    pid: {
+      type: "integer",
+      title: "Pid",
+    },
+    version: {
+      type: "integer",
+      title: "Version",
+    },
+    error: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Error",
+    },
+    ready: {
+      type: "boolean",
+      title: "Ready",
+    },
+    updated_at: {
+      type: "number",
+      title: "Updated At",
+    },
+  },
+  type: "object",
+  required: ["pid", "version", "error", "ready", "updated_at"],
+  title: "OpenWebuiModWorkerState",
 } as const;
 
 export const PaginatedUsersResponseSchema = {

@@ -1,4 +1,82 @@
 ---
+http_error:
+  code:
+    409: Modifiche in conflitto. Controlla le impostazioni attuali prima di salvare.
+    413: Questo file è troppo grande.
+    415: Questo tipo di file non è supportato.
+    422: Alcuni valori inviati non sono validi.
+openwebui_mods:
+  global:
+    settings_help: Usa un oggetto JSON. Questi valori sono disponibili al codice backend
+      attivato globalmente.
+    navigation: Open WebUI globale
+    title: Modifiche globali di Open WebUI
+    description: Gestisci le modifiche del backend per tutti i tenant, comprese le
+      attività senza un utente connesso. Le modifiche del frontend restano specifiche
+      del tenant.
+    catalog_help: Sono elencati tutti i pacchetti personalizzati. Per l’uso globale,
+      scegli una versione che sostituisce funzioni o modifica l’avvio.
+    version_ineligible: Questa versione non sostituisce funzioni e non modifica l’avvio,
+      quindi non può essere selezionata globalmente.
+    select_before_save: 'Seleziona una versione pubblicata prima di salvare le impostazioni
+      globali per: {names}.'
+    mod_restart: Le modifiche a questo pacchetto richiedono un riavvio di Open WebUI.
+    global_only: Questa versione può essere selezionata solo nelle impostazioni globali
+      di Open WebUI.
+    pending: Le modifiche di avvio salvate attendono un riavvio di Open WebUI. La
+      configurazione precedente rimane attiva.
+    ready: Attivo su tutti i {total} processi.
+    applying: 'Applicazione delle modifiche salvate: {ready} processi pronti su {total}.'
+    restart: Riavvia per applicare le modifiche salvate
+    restarting: In attesa del riavvio di Open WebUI…
+    restart_confirm: Riavviare Open WebUI per tutti i tenant? Le chat e le attività
+      in corso potrebbero essere interrotte. Verranno applicate solo le modifiche
+      salvate.
+    restart_error: Non è stato possibile confermare il riavvio. Controlla lo stato
+      attuale prima di riprovare.
+    restart_timeout: Il ripristino non è stato confermato dopo due minuti. Controlla
+      i log di Open WebUI e ricarica lo stato.
+  catalog_help: I pacchetti sono disponibili per tutti gli amministratori di sistema.
+    Attivali separatamente per ogni tenant.
+  versions: Versioni
+  versions_help: I caricamenti più recenti appaiono per primi. La scelta di una versione
+    mantiene lo stato di attivazione; salva le impostazioni per applicarla.
+  selected: Selezionata
+  automatic_version: Aggiornata con AI Hub
+  select_before_enable: Seleziona una versione pubblicata prima di attivare questa
+    modifica.
+  title: Impostazioni Open WebUI
+  description: Scegli le modifiche per questo tenant. I cambiamenti salvati si applicano
+    al prossimo ricaricamento della chat.
+  enable: Abilita {name}
+  settings: Impostazioni (JSON)
+  settings_help: Usa un oggetto JSON. Questi valori sono accessibili alla modifica
+    nel browser; non includere segreti.
+  settings_invalid: Inserisci un oggetto JSON valido.
+  disable_all: Disabilita tutte
+  reload: Ricarica le impostazioni salvate
+  saved: Impostazioni Open WebUI salvate
+  save_error: Salvataggio non riuscito. Le tue modifiche sono conservate.
+  load_error: Impossibile caricare le modifiche. Riprova.
+  metadata_error: I dettagli del pacchetto non sono disponibili. Puoi comunque disabilitare
+    o rimuovere questa modifica.
+  upload: Carica ZIP
+  upload_error: Impossibile caricare questo pacchetto.
+  publishing: Pubblicazione in corso…
+  publish: Pubblica per questo Open WebUI
+  publish_help: La pubblicazione prepara questa versione per l’Open WebUI in esecuzione.
+    Non cambia le impostazioni salvate.
+  publish_error: Impossibile pubblicare questo pacchetto.
+  use_version: Usa questa versione
+  host_error: Open WebUI non è disponibile. La pubblicazione e la selezione di una
+    versione richiedono una connessione.
+  library_empty: Nessun pacchetto caricato.
+  previous: Precedente
+  next: Successivo
+  backend_notice: Questo pacchetto include codice Python eseguito in Open WebUI. Abilita
+    solo codice attendibile.
+  frontend_notice: Questo pacchetto esegue codice nelle chat degli utenti. Abilita
+    solo codice attendibile.
 tenant_admin:
   title: Amministrazione tenant
   exit: Esci

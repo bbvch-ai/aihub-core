@@ -1117,6 +1117,12 @@ memory:
       title: Delete Failed
       message: Failed to delete all memories. Please try again.
 openwebui:
+  mods:
+    changed_title: Chat customizations have changed
+    changed_detail: Reload when you are ready to use the updated interface. Reloading may discard unsent input or unsaved changes.
+    failed_title: Some chat customizations could not load
+    failed_detail: You can reload chat to try again. Reloading may discard unsent input or unsaved changes.
+    reload: Reload chat
   default_disclaimer: AI can make mistakes. Please verify answers.
   memories:
     title: Agent Memories

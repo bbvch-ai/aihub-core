@@ -2256,7 +2256,7 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-2
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
@@ -2552,7 +2552,7 @@ services:
       - traefik.http.middlewares.openwebui-strip-prefix.stripprefix.prefixes=/openwebui
       - traefik.http.middlewares.openwebui-default-middleware.chain.middlewares=security-headers@file,openwebui-iframe,openwebui-forwarded-headers
       - traefik.http.middlewares.openwebui-iframe.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors
-        'self' https://${DOMAIN}
+        'self' https://${DOMAIN} https://sysadmin.${DOMAIN}
       - traefik.http.middlewares.openwebui-iframe.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN
       - traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Proto=https
       - traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}
@@ -2595,6 +2595,31 @@ services:
         max-file: 2
     networks:
       - data
+
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
+  openwebui-mods-init:
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-2
+    restart: on-failure
+    depends_on:
+      open-webui:
+        condition: service_healthy
+      openwebui-init:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
+      sysadmin-api:
+        condition: service_started
+    environment:
+      AIHUB_SYSADMIN_API_URL: http://sysadmin-api:8000/api/v1
+      AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
+    entrypoint: [python, -m, aihub_mods.initialize]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
   # ===================================================================
   # Dagster Stack (Data Pipeline Orchestration)
   # ===================================================================
@@ -3255,6 +3280,12 @@ services:
       # Mongo DB — durable storage for tenant metadata, roles, dashboards
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
+      # Private Open WebUI mod source archives
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
       # NATS + Redis — required by the medium lifespan in
       # sysadmin_runner.py (ADR 2026_05_26_sysadmin_api_full_self_contained_lifespan).
       # FastAPI eagerly resolves `use_nats` / `use_redis` for mounted endpoints
@@ -3324,6 +3355,7 @@ services:
       # The main app's UI origin for the cross-origin browser redirect when a
       # non-sysadmin lands on sysadmin-web (`useMainAppNavigation.exitToMainApp`).
       MAIN_APP_URL: https://${DOMAIN}
+      WEBUI_URL: https://openwebui.${DOMAIN}
     healthcheck:
       test: [CMD, wget, --spider, -q, http://127.0.0.1:8080/]
       interval: 30s

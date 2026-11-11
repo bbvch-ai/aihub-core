@@ -30,6 +30,7 @@ from swiss_ai_hub.api.routes.openai.dto.model_details import ModelDetails
 from swiss_ai_hub.api.routes.openai.dto.model_response import ModelResponse
 from swiss_ai_hub.api.routes.openai.dto.text_to_speech_request import TextToSpeechRequest
 from swiss_ai_hub.api.routes.openai.openai_service import OpenaiService
+from swiss_ai_hub.api.routes.openai.mods.openwebui_mod_controller import OpenWebuiModController
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,12 @@ class OpenaiController(TenantScopedController):
             """Read the current tenant's chat disclaimer in the user's requested language."""
             return await OpenaiService.get_chat_disclaimer(user.acting_within_tenant.id, t)
 
+        return self
+
+    def with_openwebui_mods(self) -> Self:
+        controller = OpenWebuiModController(additionally_required_permission=self.additionally_required_permission)
+        controller.resolve_mod_configuration().download_mod_archive().check_mod_publication()
+        self.router.include_router(controller.router, prefix=controller.base_route, tags=self.tags)
         return self
 
     def get_models(self, route: str = "/models") -> Self:
