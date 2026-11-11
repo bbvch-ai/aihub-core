@@ -1,3 +1,4 @@
+import logging
 from typing import ClassVar
 
 import httpx
@@ -6,6 +7,8 @@ from cachetools import TTLCache
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
+
+logger = logging.getLogger(__name__)
 
 
 class LiteLLMCustomerService:
@@ -34,14 +37,26 @@ class LiteLLMCustomerService:
         LiteLLM creates a customer it has not seen on its first spend, but without an alias, and its usage view would
         then list the tenant by its id. The alias is cached per process like the user's key, and set again when the
         tenant is renamed.
+
+        Naming the customer is the one LiteLLM failure a call survives: the call books its spend to the tenant either
+        way, so failing it would trade the user's answer for a display name. The alias is then not cached, and the
+        next call for the tenant tries again.
         """
         tenant = user.acting_within_tenant if user else None
         if tenant is None:
             return {LiteLLMCustomerService.CUSTOMER_HEADER: LiteLLMCustomerService.NO_TENANT_CUSTOMER_ID}
 
         if LiteLLMCustomerService._aliases.get(tenant.id) != tenant.name:
-            await LiteLLMCustomerService._ensure_customer(LiteLLMProxySettings().httpx_aclient, tenant)
-            LiteLLMCustomerService._aliases[tenant.id] = tenant.name
+            try:
+                await LiteLLMCustomerService._ensure_customer(LiteLLMProxySettings().httpx_aclient, tenant)
+                LiteLLMCustomerService._aliases[tenant.id] = tenant.name
+            except httpx.HTTPError:
+                logger.warning(
+                    "Could not name LiteLLM customer %s after tenant %r; the call is booked to it unnamed",
+                    tenant.id,
+                    tenant.name,
+                    exc_info=True,
+                )
         return {LiteLLMCustomerService.CUSTOMER_HEADER: tenant.id}
 
     @staticmethod

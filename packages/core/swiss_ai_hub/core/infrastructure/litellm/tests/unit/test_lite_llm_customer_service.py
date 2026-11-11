@@ -57,7 +57,7 @@ def _clear_cache() -> Iterator[None]:
     LiteLLMCustomerService._aliases.clear()
 
 
-async def _header_for(user: UserIdentity | None, transport: _RecordingTransport) -> dict[str, str]:
+async def _header_for(user: UserIdentity | None, transport: httpx.MockTransport) -> dict[str, str]:
     settings = MagicMock()
     settings.httpx_aclient = httpx.AsyncClient(base_url="http://litellm:4000", transport=transport)
     with patch(
@@ -164,15 +164,26 @@ async def test_a_customer_created_concurrently_under_an_old_name_is_renamed() ->
 
 
 @pytest.mark.asyncio
-async def test_a_failed_creation_propagates_without_caching() -> None:
+async def test_a_failed_creation_still_books_the_call_and_retries_next_time() -> None:
+    """LiteLLM creates the customer itself on the call's spend; only the alias is missing until a later call."""
     transport = _RecordingTransport(
         {"/customer/info": [_absent(), _absent()], "/customer/new": [httpx.Response(500, json={"error": "boom"})]}
     )
-    user = _user_in(_tenant())
 
-    with pytest.raises(httpx.HTTPStatusError):
-        await _header_for(user, transport)
+    header = await _header_for(_user_in(_tenant()), transport)
 
+    assert header == {HEADER: "tenant-a"}
+    assert "tenant-a" not in LiteLLMCustomerService._aliases
+
+
+@pytest.mark.asyncio
+async def test_an_unreachable_litellm_admin_api_still_books_the_call() -> None:
+    def refuse(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    header = await _header_for(_user_in(_tenant()), httpx.MockTransport(refuse))
+
+    assert header == {HEADER: "tenant-a"}
     assert "tenant-a" not in LiteLLMCustomerService._aliases
 
 
