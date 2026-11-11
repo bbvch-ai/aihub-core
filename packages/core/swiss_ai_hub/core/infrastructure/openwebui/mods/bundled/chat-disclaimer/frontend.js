@@ -66,5 +66,5 @@ export function activate({ settings, onLocale, onDispose }) {
     clearFooter();
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
-  onDispose(onLocale(localize));
+  onLocale(localize);
 }
