@@ -8,6 +8,7 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   use: {
     browserName: 'chromium',
+    launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH },
     viewport: { width: 1440, height: 1000 },
     screenshot: 'only-on-failure',
   },

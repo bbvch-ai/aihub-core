@@ -16,8 +16,8 @@ from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_revision_entity impor
 class OpenWebuiModBundles:
     """Offer supplied source packages through the same catalog as SysAdmin uploads."""
 
-    NAMES: ClassVar[tuple[str, ...]] = ()
-    DEFAULT_ENABLED: ClassVar[frozenset[str]] = frozenset()
+    NAMES: ClassVar[tuple[str, ...]] = ("chat-disclaimer",)
+    DEFAULT_ENABLED: ClassVar[frozenset[str]] = frozenset({"aihub-chat-disclaimer"})
 
     @classmethod
     def packages(cls) -> dict[str, OpenWebuiModPackage]:
