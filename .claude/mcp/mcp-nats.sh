@@ -40,7 +40,7 @@ else
 fi
 
 # --- nats CLI workaround ---
-# Download correct nats CLI if not cached. Pinned version for reproducibility.
+# Download correct nats CLI if not cached. Pinned version and SHA256SUMS checksums for reproducibility.
 NATS_CLI_VERSION="0.3.1"
 NATS_CLI_CACHE="$SCRIPT_DIR/bin"
 NATS_CLI_BIN="$NATS_CLI_CACHE/nats"
@@ -48,14 +48,18 @@ NATS_CLI_BIN="$NATS_CLI_CACHE/nats"
 if [[ ! -x "$NATS_CLI_BIN" ]]; then
   ARCH=$(uname -m)
   case "$ARCH" in
-    x86_64)  NATS_ARCH="amd64" ;;
-    aarch64) NATS_ARCH="arm64" ;;
+    x86_64)  NATS_ARCH="amd64"; NATS_SHA256="f48374be6fc903b954b90b729321772bdd5bc745234edf3d31cd17ab79e85629" ;;
+    aarch64) NATS_ARCH="arm64"; NATS_SHA256="ae8f6a743c7f787ec0c72d8c48b0b1045a350ca290a3a36e09509f2500ae12ad" ;;
     *)       echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
   esac
   mkdir -p "$NATS_CLI_CACHE"
   NATS_URL_DL="https://github.com/nats-io/natscli/releases/download/v${NATS_CLI_VERSION}/nats-${NATS_CLI_VERSION}-linux-${NATS_ARCH}.zip"
   echo "Downloading nats CLI v${NATS_CLI_VERSION} (${NATS_ARCH})..." >&2
-  curl -sL "$NATS_URL_DL" -o "$NATS_CLI_CACHE/nats-cli.zip"
+  curl -fsSL "$NATS_URL_DL" -o "$NATS_CLI_CACHE/nats-cli.zip"
+  if ! echo "$NATS_SHA256  $NATS_CLI_CACHE/nats-cli.zip" | sha256sum -c - >&2; then
+    rm -f "$NATS_CLI_CACHE/nats-cli.zip"
+    exit 1
+  fi
   unzip -oq "$NATS_CLI_CACHE/nats-cli.zip" -d "$NATS_CLI_CACHE/tmp"
   mv "$NATS_CLI_CACHE/tmp"/*/nats "$NATS_CLI_BIN"
   chmod +x "$NATS_CLI_BIN"
