@@ -852,7 +852,7 @@ role:
   pattern_help_wildcard: All instances of MyAgent
   pattern_help_specific: Only a specific instance
   create_dialog:
-    description: Create a new role with access rules. To assigne the new role to users,
+    description: Create a new role with access rules. To assign the new role to users,
       please use your AD.
     cancel: Cancel
     save: Save
