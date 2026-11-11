@@ -1079,7 +1079,6 @@ services:
       - traefik.http.middlewares.keycloak-security-headers.headers.stsSeconds=31536000
       - traefik.http.middlewares.keycloak-security-headers.headers.stsIncludeSubdomains=true
       - traefik.http.middlewares.keycloak-security-headers.headers.contentTypeNosniff=true
-      - traefik.http.middlewares.keycloak-security-headers.headers.browserXssFilter=true
       - traefik.http.middlewares.keycloak-security-headers.headers.referrerPolicy=strict-origin-when-cross-origin
     networks:
       - data  # PostgreSQL access for Keycloak database
@@ -2754,6 +2753,8 @@ services:
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
       SYSADMIN_URL: https://sysadmin.${DOMAIN}
+      # The Content-Security-Policy allows images and uploads only from this S3 origin.
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
     healthcheck:
       test: [CMD, wget, --spider, -q, http://127.0.0.1:8080/]
       interval: 30s

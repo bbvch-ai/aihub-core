@@ -26,7 +26,8 @@ const props = defineProps<{
 }>()
 
 const { tenantId } = useTenant()
-const imageUrl = ref<string | null>(props.src)
+// An s3:// path is only rendered once it is presigned: the browser cannot load it, and the CSP reports the attempt.
+const imageUrl = ref<string | undefined>(props.src.startsWith('s3://') ? undefined : props.src)
 
 const fetchAndSetImageUrl = async () => {
   if (props.src.startsWith('http')) {
@@ -53,6 +54,6 @@ const fetchAndSetImageUrl = async () => {
 }
 
 onMounted(() => {
-  fetchAndSetImageUrl()
+  void fetchAndSetImageUrl()
 })
 </script>
