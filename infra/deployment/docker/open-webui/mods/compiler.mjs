@@ -188,7 +188,11 @@ export async function compileModPackage(manifest, sourceFiles, componentIds) {
         : compileAsset(content, filename);
       emit(compiled.filename, compiled.code);
       if (!isModule(filename)) emit(filename, content);
-      for (const dependency of compiled.dependencies) pending.push(resolveDependency(filename, dependency));
+      for (const dependency of compiled.dependencies) {
+        const resolved = resolveDependency(filename, dependency);
+        if (!sources.has(resolved)) throw new Error(`Missing package dependency: ${resolved}`);
+        pending.push(resolved);
+      }
       warnings.push(...compiled.warnings.map(warning => ({ ...warning, filename })));
     } catch (error) {
       error.message = `${filename}: ${error.message}`;

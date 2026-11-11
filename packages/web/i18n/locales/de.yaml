@@ -1138,7 +1138,7 @@ openwebui:
     changed_title: Chat-Anpassungen wurden geändert
     changed_detail: Laden Sie den Chat neu, wenn Sie die aktualisierte Oberfläche verwenden möchten. Dabei können ungesendete Eingaben oder nicht gespeicherte Änderungen verloren gehen.
     failed_title: Einige Chat-Anpassungen konnten nicht geladen werden
-    failed_detail: Laden Sie den Chat neu, um es erneut zu versuchen. Dabei können ungesendete Eingaben oder nicht gespeicherte Änderungen verloren gehen.
+    failed_detail: Laden Sie den Chat neu, um es erneut zu versuchen. Falls das Problem weiterhin besteht, wenden Sie sich bitte an Ihren Administrator. Dabei können ungesendete Eingaben oder nicht gespeicherte Änderungen verloren gehen.
     reload: Chat neu laden
   memories:
     title: Agent-Erinnerungen

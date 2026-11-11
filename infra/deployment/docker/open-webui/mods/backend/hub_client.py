@@ -35,7 +35,7 @@ class HubClient:
         *, name: str, email: str, content: bytes | None = None, compatibility: bytes | None = None,
     ) -> bytes:
         if not self.configured:
-            raise HTTPException(503, "AI Hub mod delivery is not configured.")
+            raise HTTPException(503, "AI Hub mod delivery is not configured. Please contact your administrator.")
         tenant = quote(tenant_id, safe="")
         if tenant in {".", ".."}:
             tenant = tenant.replace(".", "%2E")
@@ -51,12 +51,14 @@ class HubClient:
                     raise HTTPException(response.status_code if response.is_client_error else 502, "AI Hub refused mod access.")
                 expected = "application/zip" if suffix.endswith(("/frontend", "/source")) else "application/json"
                 if method != "HEAD" and response.headers.get("content-type", "").split(";", 1)[0] != expected:
-                    raise HTTPException(502, "Unexpected AI Hub mod response.")
+                    raise HTTPException(502, "Unexpected AI Hub mod response. Please contact your administrator.")
                 result = bytearray()
                 async for chunk in response.aiter_bytes():
                     result.extend(chunk)
                     if len(result) > self.MAX_RESPONSE_BYTES:
-                        raise HTTPException(502, "AI Hub mod response exceeds the size limit.")
+                        raise HTTPException(
+                            502, "AI Hub mod response exceeds the size limit. Please contact your administrator."
+                        )
                 return bytes(result)
         except httpx.RequestError as error:
             raise HTTPException(503, "AI Hub mod delivery is unavailable.") from error

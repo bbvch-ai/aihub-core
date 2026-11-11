@@ -4,6 +4,19 @@ This directory supplies the compiler, Svelte component adapter and native Python
 Open WebUI image. Mod authors use the [package guide](../../../../../docs/docs/3_sdk/6_feature_overview/1_openwebui_mods/index.en.md);
 operators use the [deployment guide](../../../openwebui.md).
 
+## Where to make changes
+
+| Area | Entry points |
+| --- | --- |
+| Archive format, publication validation and built-in discovery | [Core mods](../../../../../packages/core/swiss_ai_hub/core/infrastructure/openwebui/mods/) |
+| Upload, publish and tenant configuration | [SysAdmin routes](../../../../../packages/sysadmin-api/swiss_ai_hub/sysadmin_api/routes/openwebui_mods/) |
+| Compilation and supported imports | [compiler.mjs](compiler.mjs) |
+| Native component replacements and shared state | [host_plugin.mjs](host_plugin.mjs), [component_plugin.mjs](component_plugin.mjs), [component_boundary.mjs](component_boundary.mjs) |
+| Browser activation, settings changes and execution events | [lifecycle.mjs](lifecycle.mjs), [executions.mjs](executions.mjs) |
+| Tenant backend loading and chat hooks | [mod_runtime.py](backend/mod_runtime.py), [mod_run.py](backend/mod_run.py), [backend_package.py](backend/backend_package.py) |
+| Native callable overrides and lazy imports | [callable_registry.py](backend/callable_registry.py), [callable_imports.py](backend/callable_imports.py), [callable_transform.py](backend/callable_transform.py) |
+| Global activation, persistence and restart | [global_mod_runtime.py](backend/global_mod_runtime.py), [global_mod_store.py](backend/global_mod_store.py), [global_mod_control.py](backend/global_mod_control.py) |
+
 ## Integration boundaries
 
 `host_plugin.mjs` instruments native component usages and emits the catalog/shared runtime. `request_plugin.mjs`
@@ -22,7 +35,8 @@ service-token/signed-identity checks distinct from ordinary browser authenticati
 
 `compiler_cli.mjs` is bundled into the image and runs through Playwright's Node runtime. Compilation has a shared
 worker lock, a 256 MiB JavaScript heap limit and a 60-second timeout; cancellation reaps the subprocess. Uploaded code
-is not executed during compilation. `backend/initialize.py` prepares bundled publications through SysAdmin without
+is not executed during compilation. TypeScript is transpiled with syntax diagnostics; semantic type checking is not
+included. `backend/initialize.py` prepares bundled publications through SysAdmin without
 rewriting tenant settings, and reconciles global built-ins.
 
 ## Verification

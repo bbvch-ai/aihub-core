@@ -20,7 +20,10 @@ class ModSnapshot(BaseModel):
         try:
             snapshot = cls.model_validate_json(content)
         except ValidationError as error:
-            raise HTTPException(502, "Invalid AI Hub mod configuration.") from error
+            raise HTTPException(502, "Invalid AI Hub mod configuration. Please contact your administrator.") from error
         if snapshot.compatibility != json.loads(compatibility):
-            raise HTTPException(409, "Mod configuration belongs to another host version. Reload the chat.")
+            raise HTTPException(
+                409, "Mod configuration belongs to another host version. Reload the chat. "
+                "If the problem persists, please contact your administrator."
+            )
         return snapshot

@@ -86,6 +86,17 @@ test('frontend entries can use cycles and shared dependencies without duplicate 
   assert.equal(result.frontend, 'main.js.mjs');
 });
 
+test('missing imports identify the importing file', async () => {
+  await assert.rejects(compile({
+    'main.js': 'import "./helpers/start.js";',
+    'helpers/start.js': 'import "./missing.js";'
+  }, { frontend: 'main.js', replacements: {} }), error => {
+    assert.equal(error.filename, 'helpers/start.js');
+    assert.equal(error.message, 'helpers/start.js: Missing package dependency: helpers/missing.js');
+    return true;
+  });
+});
+
 test('assets are explicit and resolve relative to published modules', async () => {
   const icon = new Uint8Array([137, 80, 78, 71]);
   const result = await compile({

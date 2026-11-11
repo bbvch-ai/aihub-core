@@ -72,8 +72,14 @@ class OpenWebuiModPublication(BaseModel):
         if missing:
             raise ValueError(f"Backend callable targets are absent from this Open WebUI host: {sorted(missing)}")
         expected = {target: callables[target] for target in targets}
-        if self.manifest.backend_targets != expected:
-            raise ValueError("Backend callable source does not match the running host; recompile the mod")
+        published = self.manifest.backend_targets
+        if published != expected:
+            changed = sorted(
+                target for target in published.keys() | expected.keys() if published.get(target) != expected.get(target)
+            )
+            raise ValueError(
+                f"Backend callable source does not match the running host: {', '.join(changed)}. Recompile the mod."
+            )
 
     def _validate_files(self, source: OpenWebuiModPackage) -> None:
         if not (source.manifest.frontend or source.manifest.replacements) and self.files:

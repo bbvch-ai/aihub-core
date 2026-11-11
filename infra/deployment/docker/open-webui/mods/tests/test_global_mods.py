@@ -185,8 +185,9 @@ class GlobalModTests(unittest.IsolatedAsyncioTestCase):
             self.store.stage("sources", "a" * 64, b"tampered")
         selection = self.stage()
         with patch.dict(CallableRegistry.catalog, {self.TARGET: {"source_sha256": "b" * 64}}):
-            with self.assertRaisesRegex(ValueError, "source changed"):
+            with self.assertRaisesRegex(ValueError, "source changed") as caught:
                 self.store.replace(GlobalModConfiguration(mods=[selection]))
+            self.assertIn(self.TARGET, str(caught.exception))
 
     def test_control_uses_provisioning_credential_and_restart_checks_version(self) -> None:
         app, router = FastAPI(), APIRouter()

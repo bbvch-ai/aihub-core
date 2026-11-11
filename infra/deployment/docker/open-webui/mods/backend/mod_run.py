@@ -45,10 +45,10 @@ class ModRun(BaseModel):
             if handler is None:
                 continue
             if not inspect.iscoroutinefunction(handler):
-                raise TypeError(f"Mod {context.mod_id} {hook} must be async")
+                raise TypeError(f"Mod {context.mod_id} {hook} must be async. Please contact your administrator.")
             value = await handler(value, context)
             if hook == "stream" and value is None:
                 return None
             if not isinstance(value, dict):
-                raise TypeError(f"Mod {context.mod_id} {hook} must return a dictionary")
+                raise TypeError(f"Mod {context.mod_id} {hook} must return a dictionary. Please contact your administrator.")
         return value

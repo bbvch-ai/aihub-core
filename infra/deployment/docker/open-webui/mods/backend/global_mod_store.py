@@ -84,7 +84,7 @@ class GlobalModStore:
         if len(content) > 16 * 1024 * 1024 or hashlib.sha256(content).hexdigest() != revision:
             raise HTTPException(422, "Global mod archive size or hash is invalid")
         if kind == "sources":
-            json.loads(BackendPackage._files(content)["mod.json"])
+            json.loads(BackendPackage.read_files(content)["mod.json"])
         else:
             FrontendArchive(revision, content)
         self._write(self.directory / kind / f"{revision}.zip", content)
@@ -101,7 +101,7 @@ class GlobalModStore:
         source = (self.directory / "sources" / f"{revision}.zip").read_bytes()
         if hashlib.sha256(source).hexdigest() != revision:
             raise ValueError("Global source failed its integrity check")
-        declared = json.loads(BackendPackage._files(source)["mod.json"])
+        declared = json.loads(BackendPackage.read_files(source)["mod.json"])
         if declared["id"] != mod.mod_id or not declared.get("backend"):
             raise ValueError("Global activation requires the selected mod's backend entry")
         if not validate:
@@ -111,8 +111,12 @@ class GlobalModStore:
             if target not in CallableRegistry.catalog:
                 raise ValueError(f"Native backend target is absent: {target}")
             expected[target] = CallableRegistry.catalog[target]
-        if manifest.get("backend_targets", {}) != expected:
-            raise ValueError(f"Native callable source changed for '{mod.mod_id}'; republish it")
+        published = manifest.get("backend_targets", {})
+        if published != expected:
+            changed = sorted(
+                target for target in published.keys() | expected.keys() if published.get(target) != expected.get(target)
+            )
+            raise ValueError(f"Native callable source changed for '{mod.mod_id}': {', '.join(changed)}. Republish it.")
         return revision, source, declared
 
     def _startup(self, configuration: GlobalModConfiguration) -> list[dict[str, Any]]:

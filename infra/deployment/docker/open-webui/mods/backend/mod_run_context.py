@@ -27,7 +27,7 @@ class ModRunContext(BaseModel):
             return
         envelope = {**self.scope(), "modId": self.mod_id, "publication": self.publication, "type": event_type, "data": data}
         if not event_type or len(event_type) > 128 or len(json.dumps(envelope).encode()) > 64 * 1024:
-            raise ValueError("Mod event exceeds its type or payload limit")
+            raise ValueError("Mod event exceeds its type or payload limit. Please contact your administrator.")
         await self.event_emitter({"type": "aihub:mod", "data": envelope})
 
     def scope(self) -> dict[str, Any]:

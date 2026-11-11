@@ -146,7 +146,10 @@ class ModHost:
                 content = await self.client.request("GET", tenant_id, suffix, name=user.name, email=user.email, compatibility=self.compatibility)
                 archive = FrontendArchive(revision, content)
                 if json.loads(archive.read("publication.json", manifest=True))["compatibility"] != json.loads(self.compatibility):
-                    raise HTTPException(409, "Mod publication belongs to another host version. Reload the chat.")
+                    raise HTTPException(
+                        409, "Mod publication belongs to another host version. Reload the chat. "
+                        "If the problem persists, please contact your administrator."
+                    )
                 self.archives[revision] = archive
             self.archives.move_to_end(revision)
             while sum(len(archive.content) for archive in self.archives.values()) > self.CACHE_BYTES:

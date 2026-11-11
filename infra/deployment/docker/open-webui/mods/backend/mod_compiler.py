@@ -34,7 +34,7 @@ class ModCompiler:
             with TemporaryDirectory(prefix="aihub-mod-compile-") as temporary:
                 root = Path(temporary)
                 try:
-                    await asyncio.to_thread(BackendPackage._files, content)
+                    await asyncio.to_thread(BackendPackage.read_files, content)
                 except (BadZipFile, ValueError) as error:
                     raise HTTPException(422, str(error)) from error
                 catalog = {"components": json.loads(self.COMPONENTS.read_bytes()), "callables": CallableRegistry.catalog}

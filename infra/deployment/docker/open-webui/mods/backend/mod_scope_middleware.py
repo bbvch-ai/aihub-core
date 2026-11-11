@@ -18,7 +18,9 @@ class ModScopeMiddleware:
         host = getattr(scope["app"].state, "aihub_mods", None)
         runtime = host.global_runtime if host is not None else None
         if runtime is not None and runtime.error and not management:
-            await JSONResponse({"detail": runtime.error}, status_code=503)(scope, receive, send)
+            await JSONResponse({
+                "detail": "Chat customizations could not be loaded. Please contact your administrator."
+            }, status_code=503)(scope, receive, send)
             return
         global_handlers = {} if management else runtime.handlers(Request(scope)) if runtime else dict(CallableRegistry.global_handlers)
         scope.setdefault("state", {})["aihub_global_handlers"] = global_handlers

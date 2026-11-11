@@ -63,8 +63,9 @@ class TestOpenWebuiModPublication:
         publication.validate_for_host(source, self.HOST, {self.TARGET}, {target: fingerprint})
         with pytest.raises(ValueError, match='targets are absent'):
             publication.validate_for_host(source, self.HOST, {self.TARGET}, {})
-        with pytest.raises(ValueError, match='source does not match'):
+        with pytest.raises(ValueError, match='source does not match') as caught:
             publication.validate_for_host(source, self.HOST, {self.TARGET}, {target: {'source_sha256': 'b' * 64}})
+        assert target in str(caught.value)
         source.manifest.backend_overrides = {}
         with pytest.raises(ValueError, match='source does not match'):
             publication.validate_for_host(source, self.HOST, {self.TARGET}, {target: fingerprint})

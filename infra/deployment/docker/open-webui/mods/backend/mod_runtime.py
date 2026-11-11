@@ -141,24 +141,33 @@ class ModRuntime:
         declared = manifest.get("backend_targets", {})
         for target, fingerprint in declared.items():
             if CallableRegistry.catalog.get(target) != fingerprint:
-                raise HTTPException(409, f"Backend callable changed or is absent: {target}. Republish the mod.")
+                raise HTTPException(
+                    409, f"Backend callable changed or is absent: {target}. "
+                    "Please contact your administrator to republish the mod."
+                )
         async def read_source() -> bytes:
             content = await self.host.client.request(
                 "GET", snapshot.tenant_id, f"/publications/{publication}/source", name=identity.name, email=identity.email,
                 compatibility=self.host.compatibility,
             )
-            manifest = json.loads(BackendPackage._files(content)["mod.json"])
+            manifest = json.loads(BackendPackage.read_files(content)["mod.json"])
             if manifest.get("backend_restart_required") or "open_webui.main:lifespan" in manifest.get("backend_overrides", {}):
-                raise HTTPException(409, "This backend mod requires global activation and an Open WebUI restart")
+                raise HTTPException(
+                    409, "This backend mod requires global activation and an Open WebUI restart. "
+                    "Please contact your administrator."
+                )
             return content
 
         package = await self.load_package(revision, mod_id, read_source)
         if package.restart_required:
-            raise HTTPException(409, "This backend mod requires global activation and an Open WebUI restart")
+            raise HTTPException(
+                409, "This backend mod requires global activation and an Open WebUI restart. "
+                "Please contact your administrator."
+            )
         try:
             package.check_targets(declared)
         except ValueError as error:
-            raise HTTPException(409, str(error)) from error
+            raise HTTPException(409, f"{error} Please contact your administrator.") from error
         return package
 
     async def load_package(

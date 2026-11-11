@@ -1121,7 +1121,7 @@ openwebui:
     changed_title: Chat customizations have changed
     changed_detail: Reload when you are ready to use the updated interface. Reloading may discard unsent input or unsaved changes.
     failed_title: Some chat customizations could not load
-    failed_detail: You can reload chat to try again. Reloading may discard unsent input or unsaved changes.
+    failed_detail: You can reload chat to try again. If the problem persists, please contact your administrator. Reloading may discard unsent input or unsaved changes.
     reload: Reload chat
   memories:
     title: Agent Memories

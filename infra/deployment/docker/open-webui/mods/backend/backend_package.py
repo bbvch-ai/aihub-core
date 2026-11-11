@@ -28,7 +28,7 @@ class BackendPackage:
         self.overrides: dict[str, str] = {}
         self.restart_required = False
         try:
-            files = self._files(content)
+            files = self.read_files(content)
             manifest = json.loads(files["mod.json"])
             if manifest["id"] != mod_id:
                 raise ValueError("Backend source belongs to another mod")
@@ -45,7 +45,7 @@ class BackendPackage:
             raise
 
     @staticmethod
-    def _files(content: bytes) -> dict[str, bytes]:
+    def read_files(content: bytes) -> dict[str, bytes]:
         with ZipFile(BytesIO(content)) as archive:
             entries = archive.infolist()
             if len(entries) > 512 or sum(entry.file_size for entry in entries) > 32 * 1024 * 1024:
@@ -89,9 +89,11 @@ class BackendPackage:
         if factory is None:
             if self.overrides or callable(getattr(self.entry, "handle", None)):
                 return None
-            raise ValueError("Backend entry must export Filter, handle or declared callable handlers")
+            raise ValueError(
+                "Backend entry must export Filter, handle or declared callable handlers. Please contact your administrator."
+            )
         if not isinstance(factory, type):
-            raise ValueError("Backend entry must export a Filter class")
+            raise ValueError("Backend entry must export a Filter class. Please contact your administrator.")
         return factory()
 
     def check_targets(self, declared: dict[str, Any]) -> None:
@@ -101,7 +103,10 @@ class BackendPackage:
                 raise ValueError(f"Backend callable target is absent: {target}")
             expected[target] = CallableRegistry.catalog[target]
         if declared != expected:
-            raise ValueError("Backend callable source changed; republish the mod for this host")
+            changed = sorted(
+                target for target in declared.keys() | expected.keys() if declared.get(target) != expected.get(target)
+            )
+            raise ValueError(f"Backend callable source changed: {', '.join(changed)}. Republish the mod for this host.")
 
     def bind_overrides(self, context: ModRequestContext | GlobalModContext) -> dict[str, tuple[Callable[..., Any], ...]]:
         return {target: (self._bind(getattr(self.entry, handler), context),) for target, handler in self.overrides.items()}

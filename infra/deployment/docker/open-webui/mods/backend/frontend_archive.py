@@ -9,17 +9,19 @@ from fastapi import HTTPException
 class FrontendArchive:
     def __init__(self, revision: str, content: bytes) -> None:
         if hashlib.sha256(content).hexdigest() != revision:
-            raise HTTPException(502, "Published mod archive failed its integrity check.")
+            raise HTTPException(502, "Published mod archive failed its integrity check. Please contact your administrator.")
         # The publishing API validates the archive format. Keep expansion bounded here too.
         try:
             with ZipFile(BytesIO(content)) as archive:
                 entries = archive.infolist()
                 if len(entries) > 1025 or sum(entry.file_size for entry in entries) > 32 * 1024 * 1024:
-                    raise HTTPException(502, "Published mod archive exceeds the expansion limit.")
+                    raise HTTPException(
+                        502, "Published mod archive exceeds the expansion limit. Please contact your administrator."
+                    )
                 if "publication.json" not in archive.namelist():
-                    raise HTTPException(502, "Published mod archive has no manifest.")
+                    raise HTTPException(502, "Published mod archive has no manifest. Please contact your administrator.")
         except BadZipFile as error:
-            raise HTTPException(502, "Invalid published mod archive.") from error
+            raise HTTPException(502, "Invalid published mod archive. Please contact your administrator.") from error
         self.content = content
 
     def read(self, filename: str, *, manifest: bool = False) -> bytes:

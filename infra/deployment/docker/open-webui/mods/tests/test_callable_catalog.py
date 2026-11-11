@@ -103,8 +103,9 @@ def resource(): yield 'native'
             package.check_targets(declared)
         native.write_text(native.read_text().replace("return 1", "return 2"))
         with patch.object(CallableRegistry, "catalog", CallableTransform.catalog(self.root)):
-            with self.assertRaisesRegex(ValueError, "changed"):
+            with self.assertRaisesRegex(ValueError, "changed") as caught:
                 package.check_targets(declared)
+            self.assertIn(target, str(caught.exception))
         native.unlink()
         with patch.object(CallableRegistry, "catalog", CallableTransform.catalog(self.root)):
             with self.assertRaisesRegex(ValueError, "absent"):
