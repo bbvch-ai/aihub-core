@@ -1,0 +1,8 @@
+{
+  "format": 1,
+  "id": "aihub-streaming-indicator",
+  "name": "Streaming indicator",
+  "version": "1.0.0",
+  "description": "Shows typing dots while an answer is streaming, without duplicating thought or tool progress.",
+  "frontend": "frontend.js"
+}
