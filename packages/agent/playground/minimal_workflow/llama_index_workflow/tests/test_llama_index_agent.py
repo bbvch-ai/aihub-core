@@ -1,3 +1,4 @@
+import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.events.agent import ChunkEvent, LLMEvent, UserMessageEvent
@@ -9,6 +10,8 @@ from swiss_ai_hub.core.testing.auth_utils import fake_user
 from playground.minimal_workflow.llama_index_workflow.llama_index_agent import LlamaIndexAgent
 from playground.minimal_workflow.llama_index_workflow.llama_index_agent_config import LlamaIndexAgentConfig
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+
+pytestmark = pytest.mark.external
 
 scenarios("./features/llama_index_agent.feature")
 
