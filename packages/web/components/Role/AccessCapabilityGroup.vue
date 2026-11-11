@@ -79,8 +79,8 @@
         <code
           v-if="cap.rule"
           v-tooltip.top="ruleTooltip(cap)"
-          class="mt-0.5 shrink-0 font-mono text-[11px] text-surface-300 transition-colors group-hover/cap:text-surface-500 dark:text-surface-600 dark:group-hover/cap:text-surface-400"
-        >{{ cap.companion_rules?.length ? `${cap.rule} +${cap.companion_rules.length}` : cap.rule }}</code>
+          class="mt-0.5 min-w-0 max-w-[45%] truncate font-mono text-[11px] text-surface-300 transition-colors group-hover/cap:text-surface-500 dark:text-surface-600 dark:group-hover/cap:text-surface-400"
+        >{{ ruleLabel(cap) }}</code>
       </label>
     </div>
 
@@ -130,12 +130,17 @@ const emit = defineEmits<{
 // so ticking must never write `<class>.>`, while unticking still takes an old ceiling's copy of it. Each
 // direction emits one payload because the parent writes them through a single `v-model`, which cannot
 // absorb two writes in the same tick — the second would read a model value the first had not yet updated.
-// The badge counts only what ticking grants; what unticking additionally takes is left to the tooltip.
+// The badge counts only what ticking grants; what unticking additionally takes is left to the tooltip,
+// which also restates the badge in full because a long rule is truncated there.
+const ruleLabel = (cap: Capability) =>
+  cap.companion_rules?.length ? `${cap.rule} +${cap.companion_rules.length}` : cap.rule
+
 const ruleTooltip = (cap: Capability) =>
-  [
+  longTextTooltip([
+    cap.rule,
     cap.companion_rules?.length ? t('role.capability_also_granted', { rules: cap.companion_rules.join(', ') }) : null,
     cap.revoked_rules?.length ? t('role.capability_also_cleared', { rules: cap.revoked_rules.join(', ') }) : null,
-  ].filter(Boolean).join('\n') || undefined
+  ].filter(Boolean).join('\n'))
 
 const onToggle = (cap: Capability, value: boolean) => {
   if (props.readonly || !cap.rule) return
