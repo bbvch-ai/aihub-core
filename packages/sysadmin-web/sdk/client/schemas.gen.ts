@@ -722,9 +722,20 @@ export const OpenWebuiModCatalogEntrySchema = {
       type: "boolean",
       title: "Builtin",
     },
+    settings_form: {
+      items: {
+        additionalProperties: {
+          $ref: "#/components/schemas/JsonValue",
+        },
+        type: "object",
+      },
+      type: "array",
+      title: "Settings Form",
+      readOnly: true,
+    },
   },
   type: "object",
-  required: ["source_revision", "manifest", "builtin"],
+  required: ["source_revision", "manifest", "builtin", "settings_form"],
   title: "OpenWebuiModCatalogEntry",
 } as const;
 
@@ -939,6 +950,16 @@ export const OpenWebuiModManifestSchema = {
       type: "object",
       title: "Default Settings",
     },
+    settings_fields: {
+      additionalProperties: {
+        additionalProperties: {
+          $ref: "#/components/schemas/JsonValue",
+        },
+        type: "object",
+      },
+      type: "object",
+      title: "Settings Fields",
+    },
   },
   additionalProperties: false,
   type: "object",
@@ -1067,6 +1088,17 @@ export const OpenWebuiModRevisionResponseSchema = {
       type: "string",
       title: "Uploaded By",
     },
+    settings_form: {
+      items: {
+        additionalProperties: {
+          $ref: "#/components/schemas/JsonValue",
+        },
+        type: "object",
+      },
+      type: "array",
+      title: "Settings Form",
+      readOnly: true,
+    },
   },
   type: "object",
   required: [
@@ -1075,6 +1107,7 @@ export const OpenWebuiModRevisionResponseSchema = {
     "archive_bytes",
     "uploaded_at",
     "uploaded_by",
+    "settings_form",
   ],
   title: "OpenWebuiModRevisionResponse",
 } as const;
@@ -1726,4 +1759,57 @@ export const ValidationErrorSchema = {
   type: "object",
   required: ["loc", "msg", "type"],
   title: "ValidationError",
+} as const;
+
+export const OpenWebuiModCatalogEntryWritableSchema = {
+  properties: {
+    source_revision: {
+      type: "string",
+      title: "Source Revision",
+    },
+    manifest: {
+      $ref: "#/components/schemas/OpenWebuiModManifest",
+    },
+    builtin: {
+      type: "boolean",
+      title: "Builtin",
+    },
+  },
+  type: "object",
+  required: ["source_revision", "manifest", "builtin"],
+  title: "OpenWebuiModCatalogEntry",
+} as const;
+
+export const OpenWebuiModRevisionResponseWritableSchema = {
+  properties: {
+    revision: {
+      type: "string",
+      title: "Revision",
+    },
+    manifest: {
+      $ref: "#/components/schemas/OpenWebuiModManifest",
+    },
+    archive_bytes: {
+      type: "integer",
+      title: "Archive Bytes",
+    },
+    uploaded_at: {
+      type: "string",
+      format: "date-time",
+      title: "Uploaded At",
+    },
+    uploaded_by: {
+      type: "string",
+      title: "Uploaded By",
+    },
+  },
+  type: "object",
+  required: [
+    "revision",
+    "manifest",
+    "archive_bytes",
+    "uploaded_at",
+    "uploaded_by",
+  ],
+  title: "OpenWebuiModRevisionResponse",
 } as const;

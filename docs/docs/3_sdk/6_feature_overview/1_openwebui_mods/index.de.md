@@ -1,6 +1,6 @@
 ---
 title: Open WebUI-Mods schreiben
-source_sha: fda728f0d60d572578aba69fdef77e5c30efff43eeb20c6b29e5427a50178ba3
+source_sha: b336fa33e7f144c04893a000a6194ee7f0ac9723ee269628237b188a1b173122
 ---
 
 # Open WebUI-Mods schreiben
@@ -33,6 +33,7 @@ ist ein kleines Frontend-Beispiel mit Einstellungen, Sprachwechseln und Aufräum
 | `backend_overrides` | Ordnet nativen Zielen `open_webui.module:Class.method` oder `open_webui.module:function` die vom Backend-Einstiegspunkt exportierten Handler-Namen zu. |
 | `backend_restart_required` | Kennzeichnet Import-/Starteffekte, die globale Aktivierung und einen Neustart erfordern. Benötigt einen Backend-Einstiegspunkt. |
 | `default_settings` | Anfängliche JSON-Einstellungen beim Hinzufügen eines Mods. Gespeicherte Einstellungen ersetzen dieses Objekt; Upgrades führen neue Vorgaben nicht mit gespeicherten Einstellungen zusammen. |
+| `settings_fields` | Optionale Felddefinitionen: Eingabefelder, übersetzte Beschriftungen/Hilfe, Auswahlwerte und Validierungseigenschaften. |
 
 Mindestens ein Frontend-Einstiegspunkt, eine Ersetzung oder ein Backend-Einstiegspunkt ist erforderlich. Pfade sind
 relativ zum Archivwurzelverzeichnis. Absolute Pfade, Traversierung, Symlinks und doppelte Einträge werden abgelehnt.
@@ -44,6 +45,66 @@ identischen Quellcodes kann eine neue Revision erzeugen. Bei der Veröffentlichu
 Host-Kompatibilität und Fingerabdrücke nativer Ziele erfasst. Hochladen und Veröffentlichen aktiviert keinen Code;
 ein Administrator wählt und speichert die Veröffentlichung separat. Es gibt keine Oberfläche zum Löschen von
 Archiven. Bewahren Sie frühere Revisionen für Rollbacks auf.
+
+## Eingabefelder für Einstellungen
+
+Legen Sie Anfangswerte in `default_settings` fest. SysAdmin leitet daraus folgende Felder ab:
+
+| Vorgabewert | FormKit-Feld |
+| --- | --- |
+| Zeichenfolge | `primeInputText` |
+| Zahl | `primeInputNumber` |
+| Boolescher Wert | `primeToggleSwitch` |
+| Sprachobjekt wie `{"en": "Hello", "de": "Hallo"}` | `localeInput` |
+| Liste von Zeichenfolgen, einschliesslich `[]` | `chipsInput` |
+| Objekt | `group` |
+| Nicht leere Objektliste | `repeater`, mit den Feldern der ersten Zeile |
+| `null` | `primeInputText` mit einem Aktivierungsschalter |
+
+Ergänzen Sie `settings_fields`, wenn Sie ein anderes Feld oder zusätzliche Eigenschaften benötigen. Diese Einträge
+in `mod.json` ergänzen eine Auswahlliste und ein mehrzeiliges Textfeld. Die Übersetzungen von `notice` verwenden das
+automatisch gewählte Sprachfeld:
+
+```json
+{
+  "default_settings": {
+    "style": "concise",
+    "message": "",
+    "notice": { "en": "Check the answer.", "de": "Prüfen Sie die Antwort." }
+  },
+  "settings_fields": {
+    "style": { "options": ["concise", "detailed"] },
+    "message": {
+      "control": "primeTextarea",
+      "label": { "en": "Message", "de": "Nachricht" },
+      "rows": 4
+    }
+  }
+}
+```
+
+`options` ergibt eine Auswahlliste; `control` wählt ein anderes bestehendes Eingabefeld. Beschriftungen und Hilfetexte
+folgen der Oberflächensprache des Administrators. Eine mehrsprachige Einstellung wie `notice` speichert die
+Übersetzungen, die der Mod verwendet.
+
+Verwenden Sie die Eigenschaften der bestehenden [Formularfelder](https://github.com/bbvch-ai/aihub-core/tree/main/packages/core/swiss_ai_hub/core/form/elements),
+etwa `required`, Grenzwerte und `help`. Für übersetzte Auswahlmöglichkeiten verwenden Sie Objekte mit einem übersetzten
+`label` und einem stabilen `value`. Setzen Sie dazu `optionLabel` auf `label` und `optionValue` auf `value`.
+
+`children` von Gruppen und Repeatern enthält Felddefinitionen mit einem `name`. Für eine leere Objektliste geben Sie
+`control: "repeater"` und dessen `children` an. Repeater können keine weiteren Repeater enthalten. Vorgaben bleiben in
+`default_settings`. Feldnamen entsprechen `[A-Za-z][A-Za-z0-9_]*`; `slots`, `constructor` und `prototype` sind reserviert.
+Felddefinitionen sind auf 16 KiB begrenzt. Ungültige Definitionen führen beim Hochladen zu einem Feldfehler; bei dieser
+Prüfung wird kein Mod-Code ausgeführt.
+
+Wählen Sie bei hochgeladenen Mods vor dem Bearbeiten der Einstellungen eine veröffentlichte Version; deren
+Quellrevision liefert das Formular. Mandanten- und globale Einstellungen unterstützen dieselben Felder. Geheimnisfelder,
+Mandanten-/Modell-/Agenten-/Wissensauswahl und automatische Übersetzung sind hier nicht verfügbar. Auswahlwerte müssen
+im Paket enthalten sein. Mods müssen verwendete Einstellungen selbst prüfen; Formularvalidierung unterstützt lediglich
+die Eingabe.
+
+Gespeicherte Werte ohne passendes Eingabefeld bleiben erhalten. Neu hinzugekommene Vorgaben erscheinen im Formular
+und werden beim Speichern wirksam. Öffnen der Einstellungen oder ein Upgrade allein ändert die Laufzeitkonfiguration nicht.
 
 ## Komponenten hinzufügen oder ersetzen
 

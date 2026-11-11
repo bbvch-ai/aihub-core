@@ -209,12 +209,20 @@ function createGroupNode(
 
 function resolveElementOptions(
   element: FormElement,
-  optionsResolver?: (element: FormElement) => unknown[] | undefined,
+  optionsResolver: ((element: FormElement) => unknown[] | undefined) | undefined,
+  locale: string,
 ): unknown[] | undefined {
   if (optionsResolver) {
     return optionsResolver(element)
   }
-  return element.options as unknown[] | undefined
+  const labelKey = (element.optionLabel as string | undefined) ?? 'label'
+  return (element.options as unknown[] | undefined)?.map(option => {
+    if (!option || typeof option !== 'object' || Array.isArray(option)) return option
+    const entry = option as Record<string, unknown>
+    return entry[labelKey] && typeof entry[labelKey] === 'object'
+      ? { ...entry, [labelKey]: getLocalizedString(entry[labelKey], locale) }
+      : option
+  })
 }
 
 function buildLocaleInputProperties(
@@ -252,6 +260,7 @@ function buildLocaleInputProperties(
   if (inputType) cleanNode.inputType = inputType
   if (element.rows !== undefined) cleanNode.rows = element.rows
   if (element.maxLength) cleanNode.maxLength = element.maxLength
+  if (element.allowTranslation !== undefined) cleanNode.allowTranslation = element.allowTranslation
 
   if (element.validation) cleanNode.validation = element.validation
 
@@ -307,11 +316,12 @@ function buildNodeProperties(
   for (const [key, value] of Object.entries(element)) {
     if (EXCLUDED_FIELDS.has(key)) continue
     if (value === undefined || value === null) continue
-    cleanNode[key] = value
+    cleanNode[key] = isLocaleStringObject(value) ? getLocalizedString(value, locale) : value
   }
 
   // Apply transformations for localized fields
   if (label) cleanNode.label = label
+  if (formkitType === 'primeCheckbox' && label) cleanNode.ariaLabel = label
 
   const help = getLocalizedString(element.help, locale)
   if (help) cleanNode.help = help
@@ -320,7 +330,7 @@ function buildNodeProperties(
   if (placeholder) cleanNode.placeholder = placeholder
 
   // Resolve options if resolver provided
-  const options = resolveElementOptions(element, optionsResolver)
+  const options = resolveElementOptions(element, optionsResolver, locale)
   if (options) cleanNode.options = options
 
   // Stable key prevents Vue from reusing this DOM node across sibling schema entries
@@ -395,6 +405,7 @@ function buildNullableToggleNode(
     ...(toggleId ? { id: toggleId } : {}),
     key: toggleId ?? nullableToggleName(fieldName),
     label: toggleLabel,
+    ariaLabel: toggleLabel,
     ...(toggleHelp ? { help: toggleHelp } : {}),
     ...(gatingCondition ? { if: gatingCondition } : {}),
     binary: true,
@@ -505,31 +516,6 @@ export function transformElementToSchema(
   return withFieldWarning(cleanNode as FormKitSchemaNode, warningNode, false)
 }
 
-function buildLeafNodeForRepeater(
-  element: FormElement,
-  formkitType: unknown,
-  label: string | undefined,
-  locale: string,
-  children: FormKitSchemaNode[],
-): Record<string, unknown> {
-  if (formkitType === 'localeInput') {
-    return buildLocaleInputProperties(element, label, locale)
-  }
-
-  const cleanNode: Record<string, unknown> = { $formkit: formkitType, preserve: true }
-  for (const [key, value] of Object.entries(element)) {
-    if (EXCLUDED_FIELDS.has(key)) continue
-    if (value === undefined || value === null) continue
-    cleanNode[key] = value
-  }
-  if (label) cleanNode.label = label
-  const help = getLocalizedString(element.help, locale)
-  if (help) cleanNode.help = help
-  if (children.length > 0) cleanNode.children = children
-  cleanNode.key = (element.id as string | undefined) ?? (element.name as string)
-  return cleanNode
-}
-
 /**
  * Transforms a form element for use inside a repeater's children schema.
  *
@@ -569,7 +555,8 @@ export function transformElementForRepeater(
     return applyNullableToggle(element, groupNode, label, undefined, locale, getLocalizedString(element.help, locale))
   }
 
-  const cleanNode = buildLeafNodeForRepeater(element, formkitType, label, locale, children)
+  const cleanNode = buildNodeProperties(element, formkitType, label, locale)
+  if (children.length > 0) cleanNode.children = children
   if (isNullable) {
     cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
     return applyNullableToggle(element, cleanNode as FormKitSchemaNode, label, undefined, locale)
@@ -672,6 +659,7 @@ function isLocaleStringObject(value: unknown): value is Record<string, unknown> 
   }
   const keys = Object.keys(value as object)
   return keys.length > 0 && keys.every(key => LOCALE_KEYS.has(key))
+    && Object.values(value).every(text => text === null || typeof text === 'string')
 }
 
 /**
@@ -696,6 +684,7 @@ function normalizeLocaleString(localeObj: Record<string, unknown>): Record<strin
  * - Other values are recursively processed
  */
 export function normalizeFormLocaleStrings<T>(data: T): T {
+  if (data instanceof Date) return data.toISOString() as T
   if (data === null || data === undefined) {
     return data
   }
@@ -928,15 +917,20 @@ export function pickDeclaredFields(
 
 /**
  * Strips FormKit submission artifacts: the `slots` helper key and the repeater validation
- * mirror keys (`__validate__*`) registered by Repeater.vue. Recurses into nested group objects.
+ * mirror keys (`__validate__*`) registered by Repeater.vue, including repeater rows and nested groups.
  */
+function cleanFormValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(cleanFormValue)
+  return value !== null && typeof value === 'object'
+    ? cleanFormData(value as Record<string, unknown>)
+    : value
+}
+
 export function cleanFormData(data: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(data)) {
     if (key === 'slots' || key.startsWith('__validate__')) continue
-    result[key] = value !== null && typeof value === 'object' && !Array.isArray(value)
-      ? cleanFormData(value as Record<string, unknown>)
-      : value
+    result[key] = cleanFormValue(value)
   }
   return result
 }

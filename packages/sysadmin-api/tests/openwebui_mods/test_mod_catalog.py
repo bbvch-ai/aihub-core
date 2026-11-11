@@ -17,6 +17,8 @@ def test_catalog_contains_current_builtins_without_seeding(client: TestClient, s
         mod_id: package.revision for mod_id, package in packages.items()
     }
     assert all(item['builtin'] for item in response.json())
+    assert all(item['settings_form'][0]['formkit'] == 'localeInput' for item in response.json())
+    assert all(item['settings_form'][0]['name'] == 'text' for item in response.json())
     assert OpenWebuiModRevisionEntity.objects.count() == 0
     assert storage.mock_calls == []
 

@@ -57,6 +57,14 @@ class TestOpenWebuiModPackage:
         assert "backend/helper.py" in package.files
         assert package.revision == hashlib.sha256(content).hexdigest()
 
+    def test_invalid_settings_control_reports_the_field_during_upload(self) -> None:
+        content = self.package(settings_fields={"message": {"control": "primeTextare"}})
+        with pytest.raises(ValueError) as caught:
+            OpenWebuiModPackage.from_zip(content)
+        message = str(caught.value)
+        assert "Field 'message': unknown control 'primeTextare'" in message
+        assert "tagged-union" not in message
+
     @pytest.mark.parametrize("changes", [{"backend_restart_required": "false"}, {"backend_restart_required": True, "backend": None}])
     def test_restart_declaration_requires_a_boolean_and_backend_entry(self, changes: dict[str, Any]) -> None:
         with pytest.raises(ValueError):

@@ -7,8 +7,7 @@ http_error:
     422: Some submitted values are invalid.
 openwebui_mods:
   global:
-    settings_help: Use a JSON object. These values are available to the globally activated
-      backend code.
+    settings_help: These values are available to the globally activated backend code. Do not include secrets.
     navigation: Global Open WebUI
     title: Global Open WebUI modifications
     description: Manage backend changes across all tenants, including work without
@@ -40,15 +39,13 @@ openwebui_mods:
     save the settings to apply it.
   selected: Selected
   automatic_version: Updated with AI Hub
-  select_before_enable: Select a published version before enabling this modification.
+  select_before_enable: Select a published version before configuring or enabling this modification.
   title: Open WebUI settings
   description: Choose modifications for this tenant. Saved changes apply when users
     next reload chat.
   enable: Enable {name}
-  settings: Settings (JSON)
-  settings_help: Use a JSON object. These values are available to the mod in the browser;
-    do not include secrets.
-  settings_invalid: Enter a valid JSON object.
+  settings: Settings
+  settings_help: These values are available to the mod in the browser; do not include secrets.
   disable_all: Disable all
   reload: Reload saved settings
   saved: Open WebUI settings saved

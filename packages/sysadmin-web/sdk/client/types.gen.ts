@@ -595,6 +595,12 @@ export type OpenWebuiModCatalogEntry = {
    * Builtin
    */
   builtin: boolean;
+  /**
+   * Settings Form
+   */
+  readonly settings_form: Array<{
+    [key: string]: JsonValue;
+  }>;
 };
 
 /**
@@ -739,6 +745,14 @@ export type OpenWebuiModManifest = {
   default_settings?: {
     [key: string]: JsonValue;
   };
+  /**
+   * Settings Fields
+   */
+  settings_fields?: {
+    [key: string]: {
+      [key: string]: JsonValue;
+    };
+  };
 };
 
 /**
@@ -826,6 +840,12 @@ export type OpenWebuiModRevisionResponse = {
    * Uploaded By
    */
   uploaded_by: string;
+  /**
+   * Settings Form
+   */
+  readonly settings_form: Array<{
+    [key: string]: JsonValue;
+  }>;
 };
 
 /**
@@ -1359,6 +1379,44 @@ export type ValidationError = {
   ctx?: {
     [key: string]: unknown;
   };
+};
+
+/**
+ * OpenWebuiModCatalogEntry
+ */
+export type OpenWebuiModCatalogEntryWritable = {
+  /**
+   * Source Revision
+   */
+  source_revision: string;
+  manifest: OpenWebuiModManifest;
+  /**
+   * Builtin
+   */
+  builtin: boolean;
+};
+
+/**
+ * OpenWebuiModRevisionResponse
+ */
+export type OpenWebuiModRevisionResponseWritable = {
+  /**
+   * Revision
+   */
+  revision: string;
+  manifest: OpenWebuiModManifest;
+  /**
+   * Archive Bytes
+   */
+  archive_bytes: number;
+  /**
+   * Uploaded At
+   */
+  uploaded_at: Date;
+  /**
+   * Uploaded By
+   */
+  uploaded_by: string;
 };
 
 export type GetHealthData = {

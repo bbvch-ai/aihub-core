@@ -32,6 +32,7 @@ is a small frontend example with settings, locale changes and cleanup.
 | `backend_overrides` | Maps native `open_webui.module:Class.method` or `open_webui.module:function` targets to handler names exported by the backend entry. |
 | `backend_restart_required` | Marks import/startup effects that require global activation and a restart. Requires a backend entry. |
 | `default_settings` | Initial JSON settings offered when a mod is added. Saving settings replaces this object; upgrades do not merge new defaults into saved settings. |
+| `settings_fields` | Optional field definitions: controls, translated labels/help, choices and validation properties. |
 
 At least one frontend entry, replacement or backend entry is required. Paths are relative to the archive root;
 absolute paths, traversal, symlinks and duplicate entries are rejected. A source ZIP is limited to 16 MiB compressed,
@@ -42,6 +43,62 @@ Source and publication revisions identify exact archive bytes by SHA-256. Repack
 revision. Publishing records the source revision, host compatibility and native target fingerprints. Uploading and
 publishing do not activate code; an administrator selects and saves the publication separately. There is no archive
 deletion interface; keep prior revisions for rollback.
+
+## Settings controls
+
+Put initial values in `default_settings`. SysAdmin infers these controls:
+
+| Default value | FormKit control |
+| --- | --- |
+| String | `primeInputText` |
+| Number | `primeInputNumber` |
+| Boolean | `primeToggleSwitch` |
+| Language object such as `{"en": "Hello", "de": "Hallo"}` | `localeInput` |
+| List of strings, including `[]` | `chipsInput` |
+| Object | `group` |
+| Nonempty list of objects | `repeater`, using the first row's fields |
+| `null` | `primeInputText` with an enable toggle |
+
+Add `settings_fields` where you need a different control or extra properties. For example, these entries in `mod.json`
+add a dropdown and a multiline text field. The `notice` translations use the inferred language editor:
+
+```json
+{
+  "default_settings": {
+    "style": "concise",
+    "message": "",
+    "notice": { "en": "Check the answer.", "de": "Prüfen Sie die Antwort." }
+  },
+  "settings_fields": {
+    "style": { "options": ["concise", "detailed"] },
+    "message": {
+      "control": "primeTextarea",
+      "label": { "en": "Message", "de": "Nachricht" },
+      "rows": 4
+    }
+  }
+}
+```
+
+`options` implies a dropdown; `control` selects another existing input. Labels and help text follow the administrator's
+UI language. A multilingual setting such as `notice` stores the translations that the mod uses.
+
+Use the properties of the existing [form elements](https://github.com/bbvch-ai/aihub-core/tree/main/packages/core/swiss_ai_hub/core/form/elements),
+including `required`, bounds and `help`. For translated dropdown choices, supply objects with a translated `label` and
+a stable `value`, and set `optionLabel` to `label` and `optionValue` to `value`.
+
+Group/repeater `children` are field definitions with a `name`. For an empty object list, specify `control: "repeater"`
+and its `children`; repeaters cannot contain other repeaters. Keep defaults in `default_settings`. Field names match
+`[A-Za-z][A-Za-z0-9_]*`; `slots`, `constructor` and `prototype` are reserved. Field definitions are limited to 16 KiB.
+Invalid definitions fail upload with a field error; mod code does not run during this check.
+
+For uploaded mods, select a published version before editing settings; its source revision supplies the form.
+Tenant and global settings support the same controls. Secret inputs, tenant/model/agent/knowledge pickers and automatic
+translation are unavailable here. Supply choices in the package. Mods must validate the settings they consume;
+form validation only assists editing.
+
+Saved values without a matching editor are retained. Newly introduced defaults appear in the form and take effect
+when the administrator saves. Opening settings or upgrading alone does not change the runtime configuration.
 
 ## Add or replace components
 

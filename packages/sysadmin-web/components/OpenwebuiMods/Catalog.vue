@@ -13,7 +13,7 @@
     <ProgressBar v-if="loading || loadingCatalog" mode="indeterminate" style="height: 2px" />
     <OpenwebuiModsGlobalStatus v-if="globalScope && data?.globalState" :state="data.globalState" @refresh="configuration.refetch()" />
     <fieldset v-if="draft" :disabled="saving" class="flex min-w-0 flex-col gap-4">
-      <OpenwebuiModsCatalogEntry v-for="row in draft" :key="row.selection.mod_id" v-model="row.selection" v-model:settings="row.settings" :global-scope="globalScope" :entry="entries?.find(entry => entry.manifest.id === row.selection.mod_id)" :invalid="parseSettings(row.settings) === null" @versions="source => showVersions(row.selection.mod_id, source)" />
+      <OpenwebuiModsCatalogEntry v-for="row in draft" :key="`${draftKey}:${row.selection.mod_id}`" v-model="row.selection" v-model:valid="row.valid" :global-scope="globalScope" :entry="entries?.find(entry => entry.manifest.id === row.selection.mod_id)" @versions="source => showVersions(row.selection.mod_id, source)" />
       <Button v-if="draft.some(row => row.selection.enabled)" :label="t('openwebui_mods.disable_all')" severity="secondary" text class="self-start" @click="draft.forEach(row => { row.selection.enabled = false })" />
       <Message v-if="unpublishedGlobalMods.length" severity="warn" :closable="false">{{ t('openwebui_mods.global.select_before_save', { names: unpublishedGlobalMods.join(', ') }) }}</Message>
       <div class="flex flex-wrap justify-end gap-2">
@@ -28,8 +28,9 @@
 </template>
 
 <script setup lang="ts">
-import type { OpenWebuiModConfiguration, OpenWebuiModSelection, OpenWebuiModRevisionResponse, OpenWebuiModPublicationResponse } from '~/sdk/client'
+import type { OpenWebuiModCatalogEntry, OpenWebuiModConfiguration, OpenWebuiModSelection, OpenWebuiModRevisionResponse, OpenWebuiModPublicationResponse } from '~/sdk/client'
 import { useDocumentVisibility, useIntervalFn } from '@vueuse/core'
+import { cloneDeep } from 'lodash-es'
 
 const props = defineProps<{ tenantId: string, globalScope?: boolean }>()
 const { t } = useI18n()
@@ -39,14 +40,15 @@ const { configuration, save } = useOpenwebuiModSettings(toRef(props, 'tenantId')
 const { catalog, upload } = useOpenwebuiModCatalog()
 const { data, error: loadError, isPending: loading } = configuration
 const { data: catalogEntries, error: catalogError, isPending: loadingCatalog } = catalog
-const entries = computed(() => catalogEntries.value?.filter(entry => !props.globalScope || !entry.builtin || (entry.manifest.backend
+const entries = computed<OpenWebuiModCatalogEntry[] | undefined>(() => catalogEntries.value?.filter((entry: OpenWebuiModCatalogEntry) => !props.globalScope || !entry.builtin || (entry.manifest.backend
   && (entry.manifest.backend_restart_required || Object.keys(entry.manifest.backend_overrides ?? {}).length))))
 const visibility = useDocumentVisibility()
 useIntervalFn(() => { if (props.globalScope && visibility.value === 'visible') void configuration.refetch() }, 2000)
 const { isLoading: saving } = save
 const { isLoading: uploading } = upload
-const draft = ref<{ selection: OpenWebuiModSelection, settings: string }[] | null>(null)
+const draft = ref<{ selection: OpenWebuiModSelection, valid: boolean }[] | null>(null)
 const version = ref(0)
+const draftKey = ref(0)
 const failure = ref('')
 const fileInput = ref<HTMLInputElement>()
 const versionMod = ref('')
@@ -57,9 +59,9 @@ const modsToSave = computed<OpenWebuiModSelection[] | null>(() => {
   if (!draft.value) return null
   const mods: OpenWebuiModSelection[] = []
   for (const row of draft.value) {
-    const settings = parseSettings(row.settings)
-    if (settings === null) return null
-    const selection = { ...row.selection, settings }
+    const selection = row.selection
+    if (selection.enabled && !row.valid) return null
+    const settings = selection.settings ?? {}
     const entry = entries.value?.find(item => item.manifest.id === selection.mod_id)
     if (selection.publication || selection.enabled || entry?.builtin
       || JSON.stringify(settings) !== JSON.stringify(entry?.manifest.default_settings ?? {})) mods.push(selection)
@@ -72,27 +74,20 @@ const unpublishedGlobalMods = computed(() => props.globalScope
 const valid = computed(() => modsToSave.value !== null && !unpublishedGlobalMods.value.length
   && modsToSave.value.every(selection => !selection.enabled || selection.publication || entries.value?.some(entry => entry.builtin && entry.manifest.id === selection.mod_id)))
 
-function parseSettings(text: string): OpenWebuiModSelection['settings'] | null {
-  try {
-    const value = JSON.parse(text)
-    return value && typeof value === 'object' && !Array.isArray(value) ? value : null
-  }
-  catch { return null }
-}
-
 function includeAvailableMods() {
   if (!draft.value) return
   for (const entry of entries.value ?? []) {
     if (draft.value.some(row => row.selection.mod_id === entry.manifest.id)) continue
-    draft.value.push({ selection: { mod_id: entry.manifest.id, enabled: false, publication: null }, settings: JSON.stringify(entry.manifest.default_settings ?? {}, null, 2) })
+    draft.value.push({ selection: { mod_id: entry.manifest.id, enabled: false, publication: null, settings: cloneDeep(entry.manifest.default_settings ?? {}) }, valid: true })
   }
 }
 
 function reset(value: OpenWebuiModConfiguration) {
   version.value = value.version ?? 0
+  draftKey.value += 1
   draft.value = (value.mods ?? []).map(selection => ({
     selection: { ...selection, enabled: selection.enabled ?? true, publication: entries.value?.some(entry => entry.builtin && entry.manifest.id === selection.mod_id) ? null : selection.publication },
-    settings: JSON.stringify(selection.settings ?? {}, null, 2),
+    valid: true,
   }))
   includeAvailableMods()
   failure.value = ''

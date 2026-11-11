@@ -22,6 +22,22 @@ class OpenWebuiModManifest(BaseModel):
     backend_restart_required: bool = Field(default=False, strict=True)
     replacements: dict[str, str] = Field(default_factory=dict)
     default_settings: dict[str, JsonValue] = Field(default_factory=dict)
+    settings_fields: dict[str, dict[str, JsonValue]] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_settings_fields(self) -> Self:
+        if len(json.dumps(self.settings_fields, allow_nan=False).encode()) > 16 * 1024:
+            raise ValueError("Mod setting field definitions exceed the 16 KiB limit")
+        self.settings_form()
+        return self
+
+    def settings_form(self) -> list[dict[str, JsonValue]]:
+        from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_form import OpenWebuiModForm
+
+        return [
+            element.model_dump(mode="json", by_alias=True, exclude_none=True)
+            for element in OpenWebuiModForm.build(self.default_settings, self.settings_fields)
+        ]
 
     @field_validator("backend_overrides")
     @classmethod

@@ -1,6 +1,6 @@
 ---
 title: Open WebUI-Modifikationen
-source_sha: 1f89ba0a7948c098731264ef5c145f1e0624f664682a7526a592f5a23ddf738b
+source_sha: 6d58a90ce8568853f1a3c2f18c68375f9554ccce7e65a73d13d186b21c12db20
 ---
 
 # Open WebUI-Modifikationen
@@ -20,8 +20,7 @@ Für einen eigenen Mod:
 1. Wählen Sie ZIP hochladen und laden Sie das Paket des Autors hoch.
 2. Öffnen Sie Versionen, wählen Sie die Quellversion und dann Für dieses Open WebUI veröffentlichen. Dabei wird das
    Paket geprüft und kompiliert, aber noch nicht aktiviert.
-3. Wählen Sie Diese Version verwenden, aktivieren Sie den Mod und bearbeiten Sie Einstellungen (JSON) gemäss den
-   Anweisungen des Autors.
+3. Wählen Sie Diese Version verwenden, aktivieren Sie den Mod und bearbeiten Sie die Felder unter Einstellungen.
 4. Speichern Sie die Einstellungen des Mandanten.
 
 Die Veröffentlichung erfordert einen erreichbaren, kompatiblen Open WebUI-Mod-Host. Kompilierungsfehler erscheinen im
@@ -55,7 +54,7 @@ Fehlerbehandlung von Open WebUI.
 ## Den Chat-Hinweis konfigurieren
 
 Der mitgelieferte Mod Chat disclaimer zeigt einen kurzen Hinweis unterhalb der Chat-Eingabe. Bearbeiten Sie in dessen
-Einstellungen (JSON) die Werte `de`, `en`, `fr` und `it` im Objekt `text`. Jede Übersetzung erlaubt reinen Text mit bis
+Einstellungen das Feld Hinweis und wählen Sie dazu DE, EN, FR oder IT. Jede Übersetzung erlaubt reinen Text mit bis
 zu 100 Zeichen. Der Hinweis folgt der Sprache von AI Hub und fällt auf Deutsch, danach auf die erste nicht leere
 Übersetzung zurück. Ungültige Texteinstellungen verhindern die Aktivierung dieses Mods. Deaktivieren Sie den Mod,
 um den Hinweis auszublenden.

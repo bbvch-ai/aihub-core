@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, JsonValue, computed_field
 from swiss_ai_hub.core.infrastructure.openwebui import OpenWebuiModManifest
 from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModRevisionEntity
 
@@ -22,3 +22,8 @@ class OpenWebuiModRevisionResponse(BaseModel):
             uploaded_at=entity.uploaded_at.replace(tzinfo=UTC),
             uploaded_by=entity.uploaded_by,
         )
+
+    @computed_field
+    @property
+    def settings_form(self) -> list[dict[str, JsonValue]]:
+        return self.manifest.settings_form()

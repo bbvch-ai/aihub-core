@@ -18,7 +18,7 @@ For a custom mod:
 1. Choose Upload ZIP and upload the package supplied by its author.
 2. Open Versions, select the source version, and choose Publish for this Open WebUI. Publishing checks and compiles
    the package; it does not activate it.
-3. Choose Use this version, enable the mod, and edit Settings (JSON) as instructed by the author.
+3. Choose Use this version, enable the mod, and edit the controls under Settings.
 4. Save the tenant's settings.
 
 Publishing requires a reachable, compatible Open WebUI mod host. Compilation errors appear in the version dialog.
@@ -46,8 +46,8 @@ Other mods can continue. Backend errors follow Open WebUI's normal error handlin
 
 ## Configure the chat disclaimer
 
-The supplied Chat disclaimer mod displays a short note below the chat input. In its Settings (JSON), edit the
-`text` object's `de`, `en`, `fr` and `it` values. Each translation accepts plain text of up to 100 characters.
+The supplied Chat disclaimer mod displays a short note below the chat input. Open Settings, choose DE, EN, FR or IT
+and edit the Disclaimer field. Each translation accepts plain text of up to 100 characters.
 The note follows the AI Hub language, falling back to German and then the first nonempty translation. Invalid text
 settings prevent this mod from activating. Disable the mod to hide the note.
 

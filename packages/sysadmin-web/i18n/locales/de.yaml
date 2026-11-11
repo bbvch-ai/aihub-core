@@ -7,8 +7,7 @@ http_error:
     422: Einige übermittelte Werte sind ungültig.
 openwebui_mods:
   global:
-    settings_help: Verwenden Sie ein JSON-Objekt. Diese Werte stehen dem global aktivierten
-      Backend-Code zur Verfügung.
+    settings_help: Diese Werte stehen dem global aktivierten Backend-Code zur Verfügung. Keine Geheimnisse eintragen.
     navigation: Open WebUI global
     title: Globale Open-WebUI-Anpassungen
     description: Backend-Anpassungen für alle Mandanten verwalten, auch für Abläufe
@@ -43,16 +42,14 @@ openwebui_mods:
     Aktivierungsstatus nicht; speichern Sie die Einstellungen, um sie anzuwenden.
   selected: Ausgewählt
   automatic_version: Mit AI Hub aktualisiert
-  select_before_enable: Wählen Sie vor dem Aktivieren dieser Anpassung eine veröffentlichte
-    Version.
+  select_before_enable: Wählen Sie vor dem Konfigurieren oder Aktivieren dieser Anpassung eine
+    veröffentlichte Version.
   title: Open-WebUI-Einstellungen
   description: Wählen Sie Anpassungen für diesen Mandanten. Gespeicherte Änderungen
     gelten beim nächsten Neuladen des Chats.
   enable: '{name} aktivieren'
-  settings: Einstellungen (JSON)
-  settings_help: Verwenden Sie ein JSON-Objekt. Diese Werte stehen der Anpassung im
-    Browser zur Verfügung; geben Sie keine Geheimnisse ein.
-  settings_invalid: Geben Sie ein gültiges JSON-Objekt ein.
+  settings: Einstellungen
+  settings_help: Diese Werte sind für den Mod im Browser sichtbar. Keine Geheimnisse eintragen.
   disable_all: Alle deaktivieren
   reload: Gespeicherte Einstellungen neu laden
   saved: Open-WebUI-Einstellungen gespeichert

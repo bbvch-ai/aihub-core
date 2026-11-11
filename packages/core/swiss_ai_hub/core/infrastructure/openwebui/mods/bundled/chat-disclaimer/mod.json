@@ -12,5 +12,16 @@
       "fr": "L’IA peut faire des erreurs. Veuillez vérifier les réponses.",
       "it": "L’IA può commettere errori. Verifica le risposte."
     }
+  },
+  "settings_fields": {
+    "text": {
+      "label": {
+        "en": "Disclaimer",
+        "de": "Hinweis",
+        "fr": "Avertissement",
+        "it": "Avvertenza"
+      },
+      "maxLength": 100
+    }
   }
 }
