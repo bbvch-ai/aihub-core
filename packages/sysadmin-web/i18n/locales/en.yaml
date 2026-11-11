@@ -112,8 +112,6 @@ tenant_admin:
       now would create a tenant with no access — check that the platform API and model
       gateway are reachable.
   form:
-    chat_disclaimer: Chat disclaimer
-    chat_disclaimer_help: Shown below the chat input. Up to 100 characters per language.
     name: Tenant Name
     description: Description
   table:

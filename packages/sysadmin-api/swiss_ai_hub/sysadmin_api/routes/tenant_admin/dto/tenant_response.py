@@ -2,8 +2,6 @@ from datetime import datetime
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.api import ApiLocaleString
-from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.tenant_state import TenantState
@@ -16,7 +14,6 @@ class TenantResponse(BaseModel):
     name: Annotated[str, Field(description="Tenant display name.")]
     description: Annotated[str, Field(description="Tenant description.")]
     access_rules: Annotated[list[str], Field(description="Access rules granted to this tenant.")]
-    chat_disclaimer: Annotated[LocaleString, Field(description="Chat disclaimer in each supported language.")]
     lcdm_tenant_id: Annotated[
         int | None,
         Field(description="Originating LCDM Hub tenant id (numeric), if this tenant was pushed in from the LCDM Hub."),
@@ -34,11 +31,6 @@ class TenantResponse(BaseModel):
             name=entity.name,
             description=entity.description or "",
             access_rules=entity.access_rules or [],
-            chat_disclaimer=(
-                entity.chat_disclaimer.to_locale_string()
-                if entity.chat_disclaimer is not None
-                else ApiLocaleString.from_i18n_path("api.common.default_chat_disclaimer")
-            ),
             lcdm_tenant_id=entity.lcdm_tenant_id,
             state=state,
             created_at=entity.created_at,

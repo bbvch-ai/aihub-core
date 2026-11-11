@@ -119,9 +119,6 @@ tenant_admin:
       instance. Enregistrer maintenant créerait un locataire sans aucun accès — vérifiez
       que l'API de la plateforme et la passerelle de modèles sont accessibles.
   form:
-    chat_disclaimer: Avertissement du chat
-    chat_disclaimer_help: Affiché sous le champ de saisie du chat. Maximum 100 caractères
-      par langue.
     name: Nom du tenant
     description: Description
   table:

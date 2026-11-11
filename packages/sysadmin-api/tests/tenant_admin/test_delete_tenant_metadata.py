@@ -16,7 +16,6 @@ def _fake_tenant(tenant_id: str = "my-tenant") -> dict[str, Any]:
         "name": "My Tenant",
         "description": "desc",
         "access_rules": ["aihub.admin.>"],
-        "chat_disclaimer": {"en": "Verify answers."},
         "lcdm_tenant_id": 5,
         "openwebui_mods_json": '{"version":3,"mods":[]}',
         "created_at": datetime(2024, 1, 2, tzinfo=UTC),
@@ -164,7 +163,6 @@ async def test_delete_tenant_snapshots_before_delete_so_restore_survives_entity_
 
     def mutate_access_rules_on_delete(tenant_id: str) -> bool:
         tenant["access_rules"].clear()
-        tenant["chat_disclaimer"]["en"] = "Changed after deletion"
         tenant["openwebui_mods_json"] = '{"version":4,"mods":[]}'
         tenant["lcdm_tenant_id"] = 6
         return True
@@ -180,4 +178,3 @@ async def test_delete_tenant_snapshots_before_delete_so_restore_survives_entity_
     assert restored_rules == ["aihub.admin.>", "aihub.user.>"]
     assert restored["openwebui_mods_json"] == '{"version":3,"mods":[]}'
     assert restored["lcdm_tenant_id"] == 5
-    assert restored["chat_disclaimer"] == {"en": "Verify answers."}

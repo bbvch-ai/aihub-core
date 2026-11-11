@@ -1138,7 +1138,6 @@ openwebui:
     failed_title: Alcune personalizzazioni della chat non sono state caricate
     failed_detail: Ricarica la chat per riprovare. Il testo non inviato o le modifiche non salvate potrebbero andare persi.
     reload: Ricarica la chat
-  default_disclaimer: L’IA può commettere errori. Verifica le risposte.
   memories:
     title: Ricordi dell'Agente
     select_agent: Seleziona Agente

@@ -107,7 +107,6 @@ runner.mount(
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
     AccessController(auth=auth).get_access_capabilities().get_access_presets().get_default_tenant_rules(),
     OpenaiController(auth=auth)
-    .get_chat_disclaimer()
     .with_openwebui_mods()
     .get_models()
     .get_model_with_assistants()

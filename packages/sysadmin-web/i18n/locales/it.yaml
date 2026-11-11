@@ -119,9 +119,6 @@ tenant_admin:
       istanza. Salvare ora creerebbe un tenant senza alcun accesso — verificare che
       l'API della piattaforma e il gateway dei modelli siano raggiungibili.
   form:
-    chat_disclaimer: Avvertenza della chat
-    chat_disclaimer_help: Visualizzata sotto il campo di input della chat. Massimo
-      100 caratteri per lingua.
     name: Nome del tenant
     description: Descrizione
   table:

@@ -19,7 +19,7 @@ class TenantAdminService:
 
     Tenants live in two places: Keycloak (group under ``/tenants/``) owns existence
     and user membership; MongoDB ``TenantMetadataEntity`` owns display metadata
-    (name, description, access rules, chat disclaimer, Open WebUI mods). A tenant is only accessible to end users
+    (name, description, access rules, Open WebUI mods). A tenant is only accessible to end users
     when it exists in both. Sysadmins can see orphaned metadata (MongoDB only)
     and delete it, but cannot edit it.
     """
@@ -188,7 +188,6 @@ class TenantAdminService:
             tenant_id=tenant_id,
             name=data.name,
             description=data.description,
-            chat_disclaimer=data.chat_disclaimer,
             access_rules=(
                 [AccessChecker.normalize_model_access_rule(rule) for rule in data.access_rules]
                 if data.access_rules is not None

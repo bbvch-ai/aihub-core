@@ -17,7 +17,6 @@ def persisted_metadata() -> dict[str, Any]:
         "name": "Existing Tenant",
         "description": "Existing metadata",
         "access_rules": ["aihub.admin.>"],
-        "chat_disclaimer": {"en": "Verify answers."},
         "lcdm_tenant_id": 5,
         "openwebui_mods_json": '{"version":3,"mods":[]}',
         "created_at": datetime(2024, 1, 2, tzinfo=UTC),
@@ -37,7 +36,6 @@ def test_snapshot_preserves_raw_fields_without_sharing_mutable_values(
     snapshot = TenantMetadataEntity.snapshot_tenant_metadata("existing-tenant")
     persisted_metadata["openwebui_mods_json"] = '{"version":4,"mods":[]}'
     persisted_metadata["access_rules"].clear()
-    persisted_metadata["chat_disclaimer"]["en"] = "Changed later"
     persisted_metadata["unmodeled_settings"]["nested"].clear()
 
     assert snapshot == original
@@ -60,7 +58,6 @@ def test_restore_preserves_raw_document_and_emits_save_notification_after_insert
     assert restored.updated_at == persisted_metadata["updated_at"]
     assert restored.openwebui_mods_json == persisted_metadata["openwebui_mods_json"]
     assert restored.lcdm_tenant_id == persisted_metadata["lcdm_tenant_id"]
-    assert restored.chat_disclaimer.en == "Verify answers."
     assert restored._data["unmodeled_settings"] == persisted_metadata["unmodeled_settings"]
 
 

@@ -202,7 +202,6 @@ export {
   type ListUnconfiguredTenantsData,
   type ListUnconfiguredTenantsResponse,
   type ListUnconfiguredTenantsResponses,
-  type LocaleString,
   type LoginOptionsResponse,
   type MyTenantsResponse,
   type OpenWebuiModCatalogEntry,

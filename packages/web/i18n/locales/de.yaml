@@ -1140,7 +1140,6 @@ openwebui:
     failed_title: Einige Chat-Anpassungen konnten nicht geladen werden
     failed_detail: Laden Sie den Chat neu, um es erneut zu versuchen. Dabei können ungesendete Eingaben oder nicht gespeicherte Änderungen verloren gehen.
     reload: Chat neu laden
-  default_disclaimer: KI kann Fehler machen. Bitte überprüfen Sie die Antworten.
   memories:
     title: Agent-Erinnerungen
     select_agent: Agent auswählen

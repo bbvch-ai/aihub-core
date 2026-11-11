@@ -40,7 +40,6 @@ def captured_rules(monkeypatch: pytest.MonkeyPatch) -> list[list[str] | None]:
             name=data.name,
             description=data.description,
             access_rules=data.access_rules or [],
-            chat_disclaimer={"en": "Verify answers."},
             lcdm_tenant_id=data.lcdm_tenant_id,
             state=TenantState.ACTIVE,
             created_at=now,
@@ -80,6 +79,7 @@ def test_new_tenant_without_rules_gets_the_derived_default(client, captured_rule
     response = client.post(f"{BASE}/provision", json=_PAYLOAD)
 
     assert response.status_code == 200, response.text
+    assert response.json()["lcdm_tenant_id"] == 5
     assert captured_rules == [DERIVED]
     assert "aihub.admin.>" not in captured_rules[0]
 

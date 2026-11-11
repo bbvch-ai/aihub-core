@@ -72,13 +72,6 @@ const { tenants } = useTenantMemberships()
 const urlTenant = computed(() => tenants.value?.find((tenant: TenantMembershipDto) => tenant.id === tenantId.value))
 const { setOpenWebUIContext, updateOpenWebUIContext, clearOpenWebUIContext } = useOpenWebUIContext()
 const chatIframe = ref<HTMLIFrameElement | null>(null)
-const { disclaimer } = useChatDisclaimer()
-const visibleDisclaimer = computed(() => {
-  if (backendTenantId.value && backendTenantId.value !== tenantId.value) return ''
-  // Use generic text until OpenWebUI's active tenant has been confirmed.
-  return backendTenantId.value === tenantId.value ? disclaimer.value : t('openwebui.default_disclaimer')
-})
-const { sendDisclaimer } = useOpenWebuiDisclaimer(chatIframe, visibleDisclaimer)
 const confirmedModTenant = computed(() =>
   backendTenantId.value === tenantId.value && !mismatchDetected.value ? tenantId.value ?? null : null,
 )
@@ -109,7 +102,6 @@ async function onUseUrlTenant() {
 }
 
 const handleIframeLoad = () => {
-  sendDisclaimer()
   sendModContext()
   // Skip the initial load when iframe first renders OpenWebUI
   if (!initialLoadDone) {
