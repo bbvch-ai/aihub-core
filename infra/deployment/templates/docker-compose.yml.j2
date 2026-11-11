@@ -3411,6 +3411,7 @@ services:
       {#- Same value as open-webui's TASK_MODEL above (both name the raw LiteLLM id directly now); kept
           as its own setting since the access catalog reads it independently as a `capability/name` pair. #}
       OPENWEBUI_CONVERSATION_METADATA_MODEL: {{ default_model }}
+      OPENWEBUI_MODS_DEFAULTS: ${OPENWEBUI_MODS_DEFAULTS:-[]}
 
 
       # NATs
@@ -3686,6 +3687,8 @@ services:
       OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
       OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+
+      OPENWEBUI_MODS_DEFAULTS: ${OPENWEBUI_MODS_DEFAULTS:-[]}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}

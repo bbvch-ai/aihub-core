@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -6,18 +7,16 @@ from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_bundles impor
 
 
 @pytest.fixture
-def bundled_packages(monkeypatch: pytest.MonkeyPatch) -> None:
-    names = ("default-example", "optional-example")
-    sources = {}
-    for name, mod_id in zip(names, ("builtin-default", "builtin-optional"), strict=True):
+def bundled_packages(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    directory = tmp_path / "bundled"
+    for name, mod_id in (("default-example", "builtin-default"), ("optional-example", "builtin-optional")):
         manifest = {
             "format": 1, "id": mod_id, "name": name, "version": "1", "frontend": "frontend.js",
             "default_settings": {"text": {"en": "Default fixture text"}},
         }
-        sources[name] = OpenWebuiModBundles.zip({
-            "mod.json": json.dumps(manifest).encode(),
-            "frontend.js": b"export function activate() {}",
-        })
-    monkeypatch.setattr(OpenWebuiModBundles, "NAMES", names)
-    monkeypatch.setattr(OpenWebuiModBundles, "DEFAULT_ENABLED", frozenset({"builtin-default"}))
-    monkeypatch.setattr(OpenWebuiModBundles, "source", staticmethod(lambda name: sources[name]))
+        package = directory / name
+        package.mkdir(parents=True)
+        (package / "mod.json").write_text(json.dumps(manifest))
+        (package / "frontend.js").write_text("export function activate() {}")
+    monkeypatch.setattr(OpenWebuiModBundles, "directory", staticmethod(lambda: directory))
+    monkeypatch.setenv("OPENWEBUI_MODS_DEFAULTS", '["builtin-default"]')

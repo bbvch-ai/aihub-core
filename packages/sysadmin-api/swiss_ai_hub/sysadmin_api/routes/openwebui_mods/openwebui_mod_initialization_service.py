@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from mypy_boto3_s3 import S3Client
 from swiss_ai_hub.core.infrastructure.openwebui import (
-    OpenWebuiModBundles, OpenWebuiModDefaults, OpenWebuiModResolver,
+    OpenWebuiModBundles, OpenWebuiModConfiguration, OpenWebuiModResolver, OpenWebuiModSelection,
 )
 
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_revision_response import OpenWebuiModRevisionResponse
@@ -20,9 +20,7 @@ class OpenWebuiModInitializationService:
         if revisions != expected:
             raise HTTPException(409, "AI Hub's built-in sources changed during initialization. Retry with the current release.")
         host = await OpenWebuiModService.get_host()
-        configuration = OpenWebuiModDefaults.configuration()
-        for mod in configuration.mods:
-            mod.enabled = True
+        configuration = OpenWebuiModConfiguration(mods=[OpenWebuiModSelection(mod_id=mod_id) for mod_id in expected])
         try:
             await OpenWebuiModResolver.resolve(configuration, host.compatibility)
         except ValueError as error:

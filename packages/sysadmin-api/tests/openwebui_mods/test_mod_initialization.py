@@ -74,6 +74,15 @@ def test_initializer_waits_for_all_publications_and_rejects_stale_sources(client
     assert all(tenant.openwebui_mods_json is None for tenant in TenantMetadataEntity.objects)
 
 
+def test_initializer_checks_all_bundles_even_without_enabled_defaults(
+    client: TestClient, host: OpenWebuiModHost, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    revisions, _ = publish_builtins(client, host)
+    monkeypatch.setenv("OPENWEBUI_MODS_DEFAULTS", "[]")
+    assert client.post(BASE + "/initialize", json=revisions).status_code == 204
+    assert all(tenant.openwebui_mods_json is None for tenant in TenantMetadataEntity.objects)
+
+
 def test_builtins_cannot_be_pinned_even_when_disabled(client: TestClient, host: OpenWebuiModHost) -> None:
     _, publications = publish_builtins(client, host)
     for enabled in (True, False):

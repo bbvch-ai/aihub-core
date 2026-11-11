@@ -51,21 +51,19 @@ def storage() -> MagicMock:
 
 
 @pytest.fixture(autouse=True)
-def bundled_packages(monkeypatch: pytest.MonkeyPatch) -> None:
-    names = ("default-example", "optional-example")
-    sources = {}
-    for name, mod_id in zip(names, ("builtin-default", "builtin-optional"), strict=True):
+def bundled_packages(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    directory = tmp_path / "bundled"
+    for name, mod_id in (("default-example", "builtin-default"), ("optional-example", "builtin-optional")):
         manifest = {
             "format": 1, "id": mod_id, "name": name, "version": "1", "frontend": "frontend.js",
             "default_settings": {"text": {"en": "Default fixture text"}},
         }
-        sources[name] = OpenWebuiModBundles.zip({
-            "mod.json": json.dumps(manifest).encode(),
-            "frontend.js": b"export function activate() {}",
-        })
-    monkeypatch.setattr(OpenWebuiModBundles, "NAMES", names)
-    monkeypatch.setattr(OpenWebuiModBundles, "DEFAULT_ENABLED", frozenset({"builtin-default"}))
-    monkeypatch.setattr(OpenWebuiModBundles, "source", staticmethod(lambda name: sources[name]))
+        package = directory / name
+        package.mkdir(parents=True)
+        (package / "mod.json").write_text(json.dumps(manifest))
+        (package / "frontend.js").write_text("export function activate() {}")
+    monkeypatch.setattr(OpenWebuiModBundles, "directory", staticmethod(lambda: directory))
+    monkeypatch.setenv("OPENWEBUI_MODS_DEFAULTS", '["builtin-default"]')
 
 
 @pytest.fixture
@@ -73,7 +71,7 @@ def client(monkeypatch: pytest.MonkeyPatch, storage: MagicMock, compatibility: d
     connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
     for entity in [TenantMetadataEntity, OpenWebuiModPublicationEntity, OpenWebuiModRevisionEntity]:
         entity.drop_collection()
-    for name in OpenWebuiModBundles.NAMES:
+    for name in OpenWebuiModBundles.names():
         content = OpenWebuiModBundles.source(name)
         package = OpenWebuiModPackage.from_zip(content)
         metadata = {
@@ -175,6 +173,20 @@ def test_runtime_resolves_current_configuration_without_user_contexts(
     assert updated["revision"] != current["revision"]
     assert client.get(f'{BASE}/publications/{published["revision"]}/source', headers=headers()).status_code == 403
     assert all("/contexts" not in path for path in client.app.openapi()["paths"])
+
+
+def test_runtime_applies_bundled_defaults_only_to_unconfigured_tenants(
+    client: TestClient, compatibility: dict,
+) -> None:
+    current = resolve_configuration(client, compatibility)
+    mods = current["configuration"]["mods"]
+    assert [mod["mod_id"] for mod in mods] == ["builtin-default"]
+    assert mods[0]["settings"] == {"text": {"en": "Default fixture text"}}
+    publication = mods[0]["publication"]
+    assert client.get(f'{BASE}/publications/{publication}/frontend', headers=headers()).status_code == 200
+    TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json='{"mods":[]}')
+    assert resolve_configuration(client, compatibility)["configuration"]["mods"] == []
+    assert client.get(f'{BASE}/publications/{publication}/frontend', headers=headers()).status_code == 403
 
 
 def test_revision_is_shared_between_users_and_ignores_save_version_and_json_key_order(

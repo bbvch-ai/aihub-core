@@ -92,6 +92,21 @@ def test_removing_the_default_is_persistent(client: TestClient) -> None:
     assert client.get(TENANT).json() == {"version": 1, "mods": []}
 
 
+def test_uploaded_mod_is_configured_in_database_independently_of_deployment_defaults(
+    client: TestClient, selection: dict[str, Any], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    defaults = client.get(TENANT).json()
+    assert [mod["mod_id"] for mod in defaults["mods"] if mod["enabled"]] == ["builtin-default"]
+    catalog = client.get(BASE + "/catalog").json()
+    assert next(mod for mod in catalog if mod["manifest"]["id"] == selection["mod_id"])["builtin"] is False
+    saved = client.put(TENANT, json={"version": defaults["version"], "mods": [selection]})
+    assert saved.status_code == 200, saved.text
+    assert json.loads(TenantMetadataEntity.objects.get(id="one").openwebui_mods_json)["mods"] == [selection]
+    monkeypatch.setenv("OPENWEBUI_MODS_DEFAULTS", "[]")
+    assert client.get(TENANT).json() == saved.json()
+    assert all(not mod["enabled"] for mod in client.get(BASE + "/tenants/two").json()["mods"])
+
+
 def test_default_configuration_reads_never_compile_or_publish(client: TestClient, storage: MagicMock) -> None:
     first = client.get(TENANT).json()
     writes = storage.put_object.call_count
