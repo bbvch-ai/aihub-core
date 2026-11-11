@@ -3,12 +3,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import LiteLLMCredentials
 
 from swiss_ai_hub.api.routes.translation.dto.translation_request import TranslationRequest
 from swiss_ai_hub.api.routes.translation.missing_translation_error import MissingTranslationError
 from swiss_ai_hub.api.routes.translation.translation_service import TranslationService
 
 _SERVICE_MODULE = "swiss_ai_hub.api.routes.translation.translation_service"
+_CREDENTIALS = LiteLLMCredentials(api_key="sk-user", headers={})
 
 
 class TestExtractTranslation:
@@ -84,8 +86,7 @@ def _per_locale_responses(responses: dict[str, str | Exception]) -> AsyncMock:
 async def _translate(source: LocaleString, apredict: AsyncMock, source_locale: str = "en"):
     with (
         patch(f"{_SERVICE_MODULE}.PromptTemplate"),
-        patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
-        patch(f"{_SERVICE_MODULE}.LiteLLMCustomerService.header_for", new_callable=AsyncMock, return_value={}),
+        patch(f"{_SERVICE_MODULE}.LiteLLMCredentials.for_user", new=AsyncMock(return_value=_CREDENTIALS)),
     ):
         return await TranslationService.translate(
             locale_string=source,
@@ -104,8 +105,7 @@ class TestTranslate:
 
         with (
             patch(f"{_SERVICE_MODULE}.PromptTemplate"),
-            patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
-            patch(f"{_SERVICE_MODULE}.LiteLLMCustomerService.header_for", new_callable=AsyncMock, return_value={}),
+            patch(f"{_SERVICE_MODULE}.LiteLLMCredentials.for_user", new=AsyncMock(return_value=_CREDENTIALS)),
         ):
             await TranslationService.translate(
                 locale_string=LocaleString(en="Hello"),
@@ -265,8 +265,7 @@ class TestTranslateFromRequest:
 
         with (
             patch(f"{_SERVICE_MODULE}.PromptTemplate"),
-            patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
-            patch(f"{_SERVICE_MODULE}.LiteLLMCustomerService.header_for", new_callable=AsyncMock, return_value={}),
+            patch(f"{_SERVICE_MODULE}.LiteLLMCredentials.for_user", new=AsyncMock(return_value=_CREDENTIALS)),
             patch(f"{_SERVICE_MODULE}.LLMConfig.deterministic", return_value=llm_config) as deterministic_config,
         ):
             response = await TranslationService.translate_from_request(
