@@ -35,7 +35,7 @@ jobs:
           fetch-depth: 0
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@9171db3e57d6a3140a37ddc2ba92788584e0ead6  # v1.0.234
+        uses: anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c  # v1.0.268
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
