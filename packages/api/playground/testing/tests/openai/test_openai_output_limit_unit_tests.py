@@ -29,6 +29,13 @@ _WINDOW_REJECTION = {
         "However, you requested 32768 output tokens and your prompt contains at least 180000 input tokens"
     }
 }
+# The same rejection once LiteLLM has mapped it, worded without the provider's phrase.
+_MAPPED_WINDOW_REJECTION = {
+    "error": {
+        "message": "litellm.ContextWindowExceededError: Input + max_tokens exceed the window of "
+        "text-generation/Qwen3.5-122B-A10B-FP8"
+    }
+}
 _JSON_SCHEMA = {"type": "json_schema", "json_schema": {"name": "title", "schema": {"type": "object"}}}
 
 
@@ -122,13 +129,13 @@ class TestMaxOutputTokens:
             assert await OpenaiService._max_output_tokens(_QWEN) is None
 
 
-def _chunk(delta: dict, finish_reason: str | None = None) -> dict:
+def _chunk(delta: dict, finish_reason: str | None = None, index: int = 0) -> dict:
     return {
         "id": "chatcmpl-1",
         "object": "chat.completion.chunk",
         "created": 0,
         "model": _QWEN,
-        "choices": [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
+        "choices": [{"index": index, "delta": delta, "finish_reason": finish_reason}],
     }
 
 
@@ -208,13 +215,16 @@ class TestLongChatsStillFitTheWindow:
     """Input and output share one window, and a chat past `max_input_tokens` leaves less room than the ceiling.
     Before the default limit existed such a chat worked with whatever room was left, so it must keep working."""
 
+    @pytest.mark.parametrize(
+        "rejection", [_WINDOW_REJECTION, _MAPPED_WINDOW_REJECTION], ids=["provider-wording", "litellm-mapped"]
+    )
     @pytest.mark.parametrize("stream", [False, True])
     @pytest.mark.asyncio
-    async def test_a_window_rejection_is_retried_without_the_default_limit(self, stream: bool):
+    async def test_a_window_rejection_is_retried_without_the_default_limit(self, stream: bool, rejection: dict):
         captured: list[dict] = []
         answer = _sse([_chunk({"content": "Done."}, "stop")]) if stream else _completion("Done.", "stop")
 
-        await _call(_request(stream=stream), _gateway(captured, httpx.Response(400, json=_WINDOW_REJECTION), answer))
+        await _call(_request(stream=stream), _gateway(captured, httpx.Response(400, json=rejection), answer))
 
         assert captured[0]["max_tokens"] == _CEILING
         assert "max_tokens" not in captured[1]
@@ -294,6 +304,38 @@ class TestBlankAnswersAreExplained:
         completion = await _call(_request(**fields), _gateway(captured, _completion("", "length")))
 
         assert completion.choices[0].message.content == ""
+
+    @pytest.mark.asyncio
+    async def test_a_caller_asking_for_plain_text_still_gets_the_notice(self):
+        """`{"type": "text"}` is the default format, not structured output, as `OpenaiStructuredRequest` reads it."""
+        captured: list[dict] = []
+
+        completion = await _call(
+            _request(response_format={"type": "text"}), _gateway(captured, _completion("", "length"))
+        )
+
+        assert completion.choices[0].message.content == _en()(_NOTICE_KEY)
+
+    @pytest.mark.asyncio
+    async def test_with_several_choices_only_the_blank_one_gets_the_notice(self):
+        captured: list[dict] = []
+        two_choices = [
+            _chunk({"role": "assistant", "content": "Done."}, index=0),
+            _chunk({"role": "assistant", "content": None, "reasoning_content": "hmm"}, index=1),
+            _chunk({}, "stop", index=0),
+            _chunk({"reasoning_content": " more"}, "length", index=1),
+        ]
+
+        response = await _call(_request(stream=True, n=2), _gateway(captured, _sse(two_choices)))
+        *chunks, _ = [line async for line in response.body_iterator]
+        notices = [
+            choice
+            for line in chunks
+            for choice in json.loads(line.removeprefix("data: "))["choices"]
+            if choice["delta"].get("content") == _en()(_NOTICE_KEY)
+        ]
+
+        assert [choice["index"] for choice in notices] == [1]
 
     @pytest.mark.asyncio
     async def test_a_stream_with_tools_gets_no_notice(self):

@@ -342,7 +342,8 @@ class OpenaiService:
     def _expects_prose(chat_completion_request: ChatCompletionRequest) -> bool:
         """A caller asking for JSON or a tool call would read an explanation in the answer as a malformed reply."""
         request = chat_completion_request
-        return not (request.response_format or request.tools or request.functions)
+        asks_for_structure = (request.response_format or {}).get("type", "text") != "text"
+        return not (asks_for_structure or request.tools or request.functions)
 
     @staticmethod
     async def _create_completion(
@@ -382,21 +383,32 @@ class OpenaiService:
         ASGI spec >= 2.4 and never reaches its ``background`` call.
         """
         last_chunk: ChatCompletionChunk | None = None
-        answered = False
-        finish_reason: str | None = None
+        answered_choices: set[int] = set()
+        finish_reasons: dict[int, str] = {}
         async with response:
             async for chunk in response:
                 last_chunk = chunk
-                answered = answered or any(choice.delta.content or choice.delta.tool_calls for choice in chunk.choices)
-                finish_reason = next((c.finish_reason for c in chunk.choices if c.finish_reason), finish_reason)
+                for choice in chunk.choices:
+                    if choice.delta.content or choice.delta.tool_calls:
+                        answered_choices.add(choice.index)
+                    if choice.finish_reason:
+                        finish_reasons[choice.index] = choice.finish_reason
                 yield f"data: {chunk.model_dump_json()}\n\n"
                 await asyncio.sleep(0)
-        if explain_blank_answer and last_chunk is not None and finish_reason == "length" and not answered:
-            yield f"data: {OpenaiService._empty_answer_chunk(last_chunk, t).model_dump_json()}\n\n"
+        if explain_blank_answer and last_chunk is not None:
+            for index in OpenaiService._blank_choices(finish_reasons, answered_choices):
+                yield f"data: {OpenaiService._empty_answer_chunk(last_chunk, index, t).model_dump_json()}\n\n"
         yield OpenaiService.STREAM_END
 
     @staticmethod
-    def _empty_answer_chunk(last_chunk: ChatCompletionChunk, t: LocaleHandler) -> ChatCompletionChunk:
+    def _blank_choices(finish_reasons: dict[int, str], answered_choices: set[int]) -> list[int]:
+        """The choices the output limit stopped before they produced anything, each needing its own notice."""
+        return sorted(
+            index for index, reason in finish_reasons.items() if reason == "length" and index not in answered_choices
+        )
+
+    @staticmethod
+    def _empty_answer_chunk(last_chunk: ChatCompletionChunk, index: int, t: LocaleHandler) -> ChatCompletionChunk:
         """A closing chunk that says why the answer is blank, since a stream ending on `length` with no content
         reaches the user as an empty reply and nothing else."""
         return ChatCompletionChunk(
@@ -406,7 +418,7 @@ class OpenaiService:
             model=last_chunk.model,
             choices=[
                 Choice(
-                    index=0,
+                    index=index,
                     delta=ChoiceDelta(content=t("api.common.output_budget_exhausted")),
                     finish_reason="length",
                 )
