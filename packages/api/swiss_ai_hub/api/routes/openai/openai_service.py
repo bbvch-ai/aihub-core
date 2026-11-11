@@ -12,7 +12,7 @@ from fastapi import HTTPException, UploadFile
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock
 from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
-from openai import APIStatusError, AsyncOpenAI, AsyncStream, HttpxBinaryResponseContent
+from openai import APIStatusError, AsyncOpenAI, AsyncStream, BadRequestError, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage
@@ -270,28 +270,32 @@ class OpenaiService:
         # agent branch, and agents own their identity (ADR 2026_06_04). Injecting before it would hand every
         # agent a contradicting persona.
         OpenaiService._apply_model_identity(chat_completion_request, model_name, t)
-        OpenaiService._apply_output_limit(chat_completion_request, await OpenaiService._max_output_tokens(model_name))
+        max_output_tokens = await OpenaiService._max_output_tokens(model_name)
+        caller_limits_output = bool(OpenaiService._caller_output_limits(chat_completion_request))
+        OpenaiService._apply_output_limit(chat_completion_request, max_output_tokens)
+        explain_blank_answer = not caller_limits_output and OpenaiService._expects_prose(chat_completion_request)
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
 
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
+        kwargs = OpenaiService._filter_kwargs(
+            client.chat.completions.create,
+            chat_completion_request,
+            user=user,
+            locale=t.locale,
+            thread_id=thread_id,
+            display_id=display_id,
+        )
+        # A stream is opened here rather than inside the generator so that an upstream rejection (unknown
+        # model, exhausted quota) is still raised in the endpoint's scope, where ModelGatewayErrorHandler can
+        # turn it into a response that names the cause. Once StreamingResponse has begun, the caller can only
+        # observe a truncated stream.
+        response = await OpenaiService._create_completion(
+            client, kwargs, retry_without_limit=not caller_limits_output and max_output_tokens is not None
+        )
 
         if chat_completion_request.stream:
-            kwargs = OpenaiService._filter_kwargs(
-                client.chat.completions.create,
-                chat_completion_request,
-                user=user,
-                locale=t.locale,
-                thread_id=thread_id,
-                display_id=display_id,
-            )
-            # Opened here rather than inside the generator so that an upstream rejection (unknown
-            # model, exhausted quota) is still raised in the endpoint's scope, where
-            # ModelGatewayErrorHandler can turn it into a response that names the cause. Once
-            # StreamingResponse has begun, the caller can only observe a truncated stream.
-            response = await client.chat.completions.create(**kwargs)
-
             return StreamingResponse(
-                OpenaiService._relay_chat_stream(response, t),
+                OpenaiService._relay_chat_stream(response, explain_blank_answer, t),
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
@@ -300,45 +304,71 @@ class OpenaiService:
                     "Content-Encoding": "identity",
                 },
             )
-        else:
-            kwargs = OpenaiService._filter_kwargs(
-                client.chat.completions.create,
-                chat_completion_request,
-                user=user,
-                locale=t.locale,
-                thread_id=thread_id,
-                display_id=display_id,
-            )
-            completion = await client.chat.completions.create(**kwargs)
-            OpenaiService._explain_empty_answer(completion, t)
-            return completion
+        if explain_blank_answer:
+            OpenaiService._explain_empty_answer(response, t)
+        return response
 
     @staticmethod
-    async def _max_output_tokens(model_name: str) -> int:
-        """The model's own output ceiling from LiteLLM, the same number agents request on every call."""
+    async def _max_output_tokens(model_name: str) -> int | None:
+        """The model's own output ceiling from LiteLLM, the same number agents request; None when it declares
+        none, which a model added through LiteLLM's UI may do."""
         models = await LiteLLMProxySettings().httpx_aclient.get("/v1/model/info")
-        model_info = [model["model_info"] for model in models.json()["data"] if model["model_name"] == model_name][0]
-        return model_info["max_output_tokens"]
+        model_info = next(
+            (model["model_info"] for model in models.json()["data"] if model["model_name"] == model_name), {}
+        )
+        return model_info.get("max_output_tokens")
 
     @staticmethod
-    def _apply_output_limit(chat_completion_request: ChatCompletionRequest, max_output_tokens: int) -> None:
-        """Caps a plain-model call at the model's output ceiling, and defaults it there when the caller set none.
-        Without a cap a reasoning model keeps thinking until the provider's window is full: on aihub-be one call
-        to Qwen3.5 reasoned for eleven minutes and answered nothing (aihub-incidents#72). Agents already request
-        this ceiling on every call (`LLMConfig.to_llama_index`), so a direct call can now go no further than an
-        agent's on the same model."""
-        requested_fields = [
+    def _caller_output_limits(chat_completion_request: ChatCompletionRequest) -> list[str]:
+        return [
             field
             for field in ("max_tokens", "max_completion_tokens")
             if getattr(chat_completion_request, field) is not None
         ]
+
+    @staticmethod
+    def _apply_output_limit(chat_completion_request: ChatCompletionRequest, max_output_tokens: int | None) -> None:
+        """Defaults and caps a plain-model call at the model's output ceiling, because without one a reasoning model
+        thinks until the provider's window is full and may answer nothing (aihub-incidents#72)."""
+        if max_output_tokens is None:
+            return
+        requested_fields = OpenaiService._caller_output_limits(chat_completion_request)
         if not requested_fields:
             chat_completion_request.max_tokens = max_output_tokens
         for field in requested_fields:
             setattr(chat_completion_request, field, min(getattr(chat_completion_request, field), max_output_tokens))
 
     @staticmethod
-    async def _relay_chat_stream(response: AsyncStream[ChatCompletionChunk], t: LocaleHandler) -> AsyncGenerator[str]:
+    def _expects_prose(chat_completion_request: ChatCompletionRequest) -> bool:
+        """A caller asking for JSON or a tool call would read an explanation in the answer as a malformed reply."""
+        request = chat_completion_request
+        return not (request.response_format or request.tools or request.functions)
+
+    @staticmethod
+    async def _create_completion(
+        client: AsyncOpenAI, kwargs: dict[str, Any], *, retry_without_limit: bool
+    ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
+        """Retries once without the default limit when the provider rejects it for the window. Input and output
+        share one window, so a long chat leaves less room than the limit; sending none lets the provider use what
+        is left, as it did before the limit existed."""
+        try:
+            return await client.chat.completions.create(**kwargs)
+        except BadRequestError as rejection:
+            if not (retry_without_limit and OpenaiService._exceeds_context_window(rejection)):
+                raise
+        uncapped_kwargs = {key: value for key, value in kwargs.items() if key != "max_tokens"}
+        return await client.chat.completions.create(**uncapped_kwargs)
+
+    @staticmethod
+    def _exceeds_context_window(rejection: BadRequestError) -> bool:
+        """vLLM names the window ("maximum context length"); LiteLLM maps it to ContextWindowExceededError."""
+        message = str(rejection).lower()
+        return "maximum context length" in message or "contextwindowexceeded" in message
+
+    @staticmethod
+    async def _relay_chat_stream(
+        response: AsyncStream[ChatCompletionChunk], explain_blank_answer: bool, t: LocaleHandler
+    ) -> AsyncGenerator[str]:
         """``async with`` so the upstream stream is closed when the consumer stops early.
 
         A browser tab closed mid-answer makes Starlette call ``aclose()`` on this generator,
@@ -361,7 +391,7 @@ class OpenaiService:
                 finish_reason = next((c.finish_reason for c in chunk.choices if c.finish_reason), finish_reason)
                 yield f"data: {chunk.model_dump_json()}\n\n"
                 await asyncio.sleep(0)
-        if last_chunk is not None and finish_reason == "length" and not answered:
+        if explain_blank_answer and last_chunk is not None and finish_reason == "length" and not answered:
             yield f"data: {OpenaiService._empty_answer_chunk(last_chunk, t).model_dump_json()}\n\n"
         yield OpenaiService.STREAM_END
 
