@@ -573,6 +573,12 @@ sends the dialog's answers as JSON in the response event itself, and a typed rep
 cancelled dialog) takes the path above. Its `HumanInTheLoopChoiceQuestion` (1–3 `HumanInTheLoopChoiceOption`, the
 recommended one first) and option lengths are capped as OpenWebUI's `request:user_input` caps them.
 
+**Only the run's user answers**: `ExternalAgentEventDistributor.refuse_answer_from_another_user` refuses a HITL response
+from a thread member who did not start the run (`PersistedAgentEventEntity.user_id_of_run`, read from the persisted
+control StartEvent) before anything is published, so a refused answer is never stored and never closes a request.
+`ChatService.ensure_answered_by_run_user` turns that into a 403 before a subscriber starts. A run without a known user
+(scheduled, or its StartEvent never persisted) accepts any member, and the agent checks `responded_by` again.
+
 **Vector store — children are not persisted**: `PartitionAwareMilvusVectorStore.add` strips `NodeRelationship.CHILD`
 before serializing. LlamaIndex packs every relationship into `_node_content` inside Milvus' dynamic field, which is
 capped at 65536 bytes, and a hierarchical summary node carries one entry per descendant — so a wide summary tree fails

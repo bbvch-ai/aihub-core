@@ -80,6 +80,7 @@ config:
     help: Tools this agent never offers.
   approval_tool:
     label: Tool
+    with_default: '%{tool} (default: %{policy})'
   approval_policy:
     label: Approval
   policies:
