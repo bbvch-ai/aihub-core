@@ -966,10 +966,14 @@ services:
       - --rc-no-auth  # Only in dev!
       - --log-level=INFO
       - --config=/dev/null  # No config file: the rclone pipeline re-creates every remote from the database per run
-    ports: [127.0.0.1:5572:5572]
+    ports:
+      - 127.0.0.1:5572:5572
+    # Dual-homed like otel-collector: the container name also resolves to the egress address, which egress's
+    # enable_icc=false drops, and rclone_pipeline sits on egress too. The pipeline targets the backend-only alias.
     networks:
-      - backend  # reached by the rclone pipeline
-      - egress  # reaches the cloud providers it syncs from
+      backend:  # reached by the rclone pipeline
+        aliases: [rclone-backend]
+      egress: {}  # reaches the cloud providers it syncs from
     healthcheck:
       test: [CMD, rclone, rc, --rc-addr=localhost:5572, core/version]
       interval: 30s
