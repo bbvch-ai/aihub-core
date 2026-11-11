@@ -18,8 +18,9 @@ runner's lifespan if those controllers need more infra.
 Code that lives in this package (must require sysadmin role + be sysadmin-only):
 
 - Tenant lifecycle management (`TenantAdminController` — list / get / create / update / delete tenant metadata).
-  Metadata includes the localized `chat_disclaimer` (max 100 chars per language; shown under the OpenWebUI chat input,
-  see `infra/deployment/openwebui-disclaimer.md`); the update validates before writing any field.
+- Open WebUI mod source/publication revisions (`OpenWebuiModController` — bounded ZIP upload, list, metadata,
+  download and host compatibility). Publication validates without execution. The catalog is global; versioned
+  tenant selections are stored with tenant metadata and reject conflicting replacements. Runtime activation is separate.
 
 Code that does NOT live here (lives in `packages/api`):
 
@@ -98,11 +99,12 @@ generated SDK would type tenant-scoped paths as `path?: never` even though the U
 
 - build an MCP server (sysadmin-api has no MCP need)
 
-**Lifespan:** MongoDB + NATS + Redis + AccessChangeHook (with an OpenWebuiProvisioner instance). The closure in
-`create_app()` captures the inner FastAPI app and stores `app.state.nc` + `app.state.redis` so the standard FastAPI deps
-(`use_nats`, `use_redis`) resolve at request time. This is intentionally a *medium* lifespan — enough to satisfy every
+**Lifespan:** MongoDB + NATS + Redis + S3 + AccessChangeHook (with an OpenWebuiProvisioner instance). The closure in
+`create_app()` captures the inner FastAPI app and stores `app.state.nc`, `app.state.redis` and `app.state.s3_client`
+so the standard FastAPI dependencies resolve at request time. S3 stores private Open WebUI mod archives, using the
+existing deployment credentials. This is intentionally a *medium* lifespan — enough to satisfy every
 controller currently mounted (some declare `use_nats` / `use_redis` even if their hot path doesn't touch the clients,
-since FastAPI resolves dependencies eagerly), but it deliberately omits Milvus / S3 / Neo4j / WebSocket / discovery
+since FastAPI resolves dependencies eagerly), but it deliberately omits Milvus / Neo4j / WebSocket / discovery
 services / RPC responders / event subscribers. Extend it if a future mounted controller needs one of those — match the
 source pattern in `packages/api/.../lifetime_manager.py`.
 

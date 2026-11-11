@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test'
 
-// Independent of the authenticated deployment E2E suite. See infra/deployment/openwebui-disclaimer.md.
+// Independent of the authenticated deployment E2E suite. See infra/deployment/openwebui.md.
 export default defineConfig({
   testDir: './disclaimer',
   workers: 1,

@@ -15,8 +15,11 @@ onto any Apache-2.0 dependency.
 
 ## What's in it
 
-Owned by this package: `TenantAdminController` (six endpoints under `/admin/tenants/*`) — tenant lifecycle management,
-sysadmin-gated.
+Owned by this package: `TenantAdminController` under `/admin/tenants/*` and `OpenWebuiModController` under
+`/admin/openwebui-mods/*`, both gated by the SysAdmin role. Mod routes manage source/publication archives, host
+compatibility, versioned tenant configuration, bundled initialization and global backend activation/restarts.
+Publishing delegates compilation to the authenticated Open WebUI host; service credentials stay on the backend.
+See the [mod contract](https://docs.ai-hub.bbv.ch/docs/3_sdk/6_feature_overview/1_openwebui_mods/).
 
 Re-mounted from `packages/api` (Apache-2.0) so sysadmin-web's inherited composables resolve same-origin against
 sysadmin-api: `MyAccountController.get_my_identity()`, `MyTenantController.get_my_tenants()`, `UserController` (get/list
@@ -32,9 +35,10 @@ sysadmin operations beyond tenant lifecycle).
   sysadmin subdomain.
 - Auth: Same Keycloak realm + same `aihub-frontend` client as the main `api`. The `AIHubSysAdmin` realm role gate
   applies to every endpoint.
-- Runtime infra: MongoDB + NATS + Redis + `AccessChangeHook` (medium lifespan). `SysadminApiRunner` in
+- Runtime infra: MongoDB + NATS + Redis + S3 + `AccessChangeHook` (medium lifespan). `SysadminApiRunner` in
   `swiss_ai_hub/sysadmin_api/sysadmin_runner.py` wires the subset of dependencies needed by the controllers it mounts —
-  deliberately omits Milvus / S3 / Neo4j / WebSocket / discovery / provisioners / RPC responders. See ADR
+  deliberately omits Milvus / Neo4j / WebSocket / discovery / provisioners / RPC responders. S3 uses the existing
+  deployment credentials; the private `openwebui-mods` bucket is created on first upload. See ADR
   `2026_05_26_sysadmin_api_full_self_contained_lifespan.md`.
 - Local dev: `make run-dev` runs the API on port `8001` (so the main `api` on `8000` is unaffected).
 

@@ -84,6 +84,13 @@ oder Benutzer-Rollen-Zuordnungen geändert werden. Alle Zugriffsänderungen werd
 
 `BYPASS_MODEL_ACCESS_CONTROL=False` muss in Open WebUI gesetzt werden, um diese Zugriffssteuerungen durchzusetzen.
 
+## Chat-Modifikationen
+
+Systemadministratoren verwalten mandantenspezifische Frontend- und Backend-Mods über die Open-WebUI-Einstellungen.
+Der mitgelieferte Mod Chat disclaimer zeigt lokalisierten Text unter der Eingabe. Unter
+[Open WebUI-Modifikationen](../16_openwebui_mods/) finden Sie Konfiguration, Versionsauswahl und den Zeitpunkt,
+zu dem gespeicherte Änderungen für Benutzer sichtbar werden.
+
 ## Konfiguration und Deployment
 
 Open WebUI wird als unabhängiger Docker-Container innerhalb der Plattform deployed. Dies bietet Isolation und verwaltet
@@ -102,19 +109,9 @@ Breaking Changes und ermöglicht gleichzeitig den Zugang zu Verbesserungen.
 
 ## Erweiterungspunkte
 
-Die Integration bewahrt die Kernfunktionalität von Open WebUI, fügt aber plattformspezifische Erweiterungen hinzu.
-
-Das PostMessage-Protokoll erweitert die Chat-Funktionen über native Features hinaus. Benutzerdefinierte Nachrichtentypen
-lösen Plattform-Workflows oder Datenanzeigen aus, ohne die Open-Source-Codebasis zu modifizieren.
-
-Die Plattform kann UI-Elemente wie Benachrichtigungsabzeichen oder Schnellaktions-Buttons überlagern, ohne Open WebUI zu
-modifizieren. Dies verbessert die Funktionalität und vereinfacht gleichzeitig Updates.
-
-API-Aufrufe zwischen der Chat-Oberfläche und Backend-Services können abgefangen werden, um Kontext hinzuzufügen,
-Antworten anzureichern oder Governance durchzusetzen.
-
-Plattform-Theme-Einstellungen werden durch CSS-Anpassung und nicht durch Quellcode-Modifikation angewendet. Dies
-gewährleistet die visuelle Konsistenz mit dem Design der Suite.
+Native Open WebUI Functions verbinden Agents, Funktionsschalter und Chat-Aktionen mit AI Hub. Runtime-Mods erweitern
+die Oberfläche und das Backend über Komponenten- und Callable-Adapter des abgeleiteten Hosts. Die
+[Anleitung für Autoren](../../../3_sdk/6_feature_overview/1_openwebui_mods/) beschreibt die unterstützten Grenzen.
 
 ## Monitoring
 
@@ -132,8 +129,9 @@ Benutzerpopulationen und Konversationsvolumen wachsen.
 
 ## Vorteile dieses Ansatzes
 
-Open WebUI und die Plattform entwickeln sich unabhängig voneinander. Neue Releases werden durch Standardprozesse ohne
-Änderungen am Plattformcode integriert. Plattformverbesserungen erfordern keine Modifikationen an der Chat-Oberfläche.
+Open WebUI-Updates verwenden unveränderten Upstream-Quellcode mit den versionierten Host-Adaptern von AI Hub.
+Upgrades erfordern Kompatibilitäts- und Verhaltenstests; private Upstream-Schnittstellen können Adapteränderungen
+nötig machen. Gewöhnliche Mod-Veröffentlichungen verwenden den installierten Host weiter.
 
 Verantwortlichkeiten bleiben klar. Open WebUI verwaltet Chat-Interaktionen. Die Plattform bietet Authentifizierung,
 Autorisierung, Wissensmanagement und Agenten-Orchestrierung. Diese Trennung vereinfacht Tests und Wartung.

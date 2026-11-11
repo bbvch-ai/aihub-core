@@ -1,6 +1,6 @@
 ---
 title: Funktionen
-source_sha: 8a568acb5a51ebb327f22b8298f3412cf7b92f4aa35f8d71f6e47240f10f97c7
+source_sha: eba1a0dd50ee9af4208a413d05b1e69447f11f2704f1c0e9778716039f857051
 ---
 
 # :sparkles: Funktionen
@@ -13,3 +13,5 @@ Funktionen für Enterprise AI bereitzustellen.
 Diese Funktionsliste wird regelmäßig aktualisiert. Schauen Sie öfter vorbei, um neue Funktionen zu entdecken, während
 wir die Funktionalität der Plattform erweitern.
 :::
+
+[Open WebUI-Mods schreiben](1_openwebui_mods/) beschreibt eigene Chat-Komponenten, Backend-Hooks und Veröffentlichung zur Laufzeit.

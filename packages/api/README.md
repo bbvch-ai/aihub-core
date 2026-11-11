@@ -44,6 +44,11 @@ What you get out of the box:
 
 It builds on [`swiss-ai-hub-core`](https://pypi.org/project/swiss-ai-hub-core/) (installed automatically).
 
+The Open WebUI mod runtime endpoints authorize current tenant selections and private archive delivery through the
+existing service token and signed user identity. Browser tokens cannot access backend source. Runtime resolution
+uses compatible published artifacts; initialization prepares missing bundled publications. See the
+[mod contract](https://docs.ai-hub.bbv.ch/docs/3_sdk/6_feature_overview/1_openwebui_mods/).
+
 ## Should you use this package?
 
 **Probably not directly — most deployments use the pre-built Docker image,** which ships the full API ready to go:

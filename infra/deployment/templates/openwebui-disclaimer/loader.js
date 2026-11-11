@@ -1,4 +1,4 @@
-// Early adapters and bootstrap for the pinned Open WebUI host. See infra/deployment/openwebui-disclaimer.md.
+// Early adapters and bootstrap for the pinned Open WebUI host. See infra/deployment/openwebui.md.
 
 // OpenWebUI falls back from a saved language only to that same language, so a code it ships no translation for, such
 // as "de" from an earlier DEFAULT_LOCALE or a browser's "de-CH", loads none and settings show their raw keys. Such a

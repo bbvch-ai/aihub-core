@@ -77,6 +77,14 @@ tenant prefix. Three auth dependency patterns are available on the `Controller` 
 - `sys_admin_user()` — for sysadmin-only endpoints; gates on `UserIdentity.is_sys_admin` (the `AIHubSysAdmin` Keycloak
   realm role) and returns 403 otherwise. Used by `TenantAdminController`.
 
+`OpenaiController`'s `/mods` endpoints require `OpenWebuiAuthHandler` (service token plus signed user headers) and the
+OpenAI service permission. `POST /configuration` resolves current tenant selections and returns a deterministic
+revision of tenant, host compatibility and ordered enabled mods/settings; the administrator save counter is excluded.
+Publication GET/HEAD routes require JSON `X-AIHub-Mod-Compatibility` and
+authorize only an exact current selection. HEAD checks the selected publication without reading S3. The normal browser
+auth dependency must not be substituted here: source archives are for the native backend, with no browser source route.
+Backend execution captures current selections per operation; browser view nonces correlate events, not authorization.
+
 **Tenant states**: Tenants now have three observable states surfaced by `TenantAdminController` — **Active** (Keycloak
 group + metadata), **Orphaned** (metadata-only, group missing), **Unconfigured** (group exists, no metadata). The
 `TenantState` enum lives at `routes/tenant_admin/dto/tenant_state.py`. Attaching metadata to an Unconfigured group

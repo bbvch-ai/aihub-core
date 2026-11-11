@@ -166,13 +166,11 @@ including when a long conversation is being condensed to fit the model.
   with what it has and says it stopped early.
 - **Sources**: a knowledge search the model chose produces the same citation chips as a `#` reference.
 
-## Chat disclaimer
+## Chat modifications
 
-A short note below the chat input, such as "AI can make mistakes. Please verify answers.", is managed per tenant by
-system administrators in the SysAdmin UI under **Tenants → Overview**. It can be set in German, English, French and
-Italian, up to 100 characters each, and follows the user's language; a tenant without custom text shows the translated
-default. Open WebUI has no setting for this, so the platform shows the text through a small script Open WebUI loads. The
-deployment details are in `infra/deployment/openwebui-disclaimer.md`.
+System administrators manage tenant-specific frontend and backend mods through Open WebUI settings. The supplied
+Chat disclaimer mod displays localized text below the input. See [Open WebUI modifications](../16_openwebui_mods/)
+for configuration, version selection and when users see saved changes.
 
 ## Streaming indicator
 
@@ -202,19 +200,9 @@ breaking changes while providing access to improvements.
 
 ## Extension points
 
-The integration preserves Open WebUI's core functionality but adds platform-specific enhancements.
-
-The PostMessage protocol extends chat capabilities beyond native features. Custom message types trigger platform
-workflows or data displays without modifying the open-source codebase.
-
-The platform can overlay UI elements like notification badges or quick-action buttons without modifying Open WebUI.
-These enhance functionality while keeping updates simple.
-
-API calls between the chat interface and backend services can be intercepted to add context, enrich responses, or
-enforce governance.
-
-Platform theme settings apply through CSS customization rather than source code modification. This maintains visual
-consistency with the suite's design.
+Native Open WebUI Functions connect agents, feature toggles and chat actions to AI Hub. Runtime mods extend the
+interface and backend through the derived host's component and callable adapters. The
+[author guide](../../../3_sdk/6_feature_overview/1_openwebui_mods/) describes the supported boundaries.
 
 ## Monitoring
 
@@ -232,8 +220,9 @@ volumes grow.
 
 ## What this approach provides
 
-Open WebUI and the platform evolve independently. New releases integrate through standard processes without platform
-code changes. Platform enhancements don't require chat interface modifications.
+Open WebUI updates use pristine upstream source with AI Hub's versioned host adapters. Upgrades require compatibility
+and behavior checks; private upstream interfaces can require adapter changes. Ordinary mod publication reuses the
+installed host.
 
 Responsibilities stay clear. Open WebUI handles chat interactions. The platform provides authentication, authorization,
 knowledge management, and agent orchestration. This separation simplifies testing and maintenance.
