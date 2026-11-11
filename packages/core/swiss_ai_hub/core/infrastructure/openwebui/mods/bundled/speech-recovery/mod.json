@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "aihub-speech-recovery",
+  "name": "Voice reply recovery",
+  "version": "1.0.0",
+  "description": "Keeps voice mode listening when speech generation fails and indicates that the answer is available as text.",
+  "frontend": "frontend.js",
+  "replacements": {
+    "src/lib/components/chat/MessageInput/CallOverlay.svelte": "CallOverlay.svelte"
+  }
+}
