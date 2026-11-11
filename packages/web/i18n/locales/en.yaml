@@ -254,7 +254,6 @@ event:
   retrieveMemory:
     title: Memory Retrieved
     memories: Memories
-    relations: Knowledge Graph
     score: Relevance
     noMemories: No memories retrieved
   storeMemory:
@@ -262,9 +261,6 @@ event:
     added: Added
     updated: Updated
     deleted: Deleted
-    addedRelations: added relations
-    deletedRelations: deleted relations
-    relationChanges: Relation Changes
     noChanges: No changes
     documentsSpanning: Spanning {count} documents
     avgScore: 'Avg relevance: {score}%'
@@ -1065,9 +1061,6 @@ lib:
         key is never allowed.
 memory:
   title: Memories
-  graph:
-    title: Knowledge Graph
-    no_results: No memories found
   list:
     title: Memory List
     no_results: No memories found
@@ -1128,8 +1121,6 @@ openwebui:
   memories:
     title: Agent Memories
     select_agent: Select Agent
-    list: List
-    graph: Graph
     user_memories: User Memories
     org_memories: Organization Memories
 tenant:
