@@ -253,6 +253,7 @@ def _kept_and_total(note: str) -> tuple[int, int]:
     return int(kept), int(total)
 
 
+@pytest.mark.external
 @pytest.mark.asyncio
 async def test_a_cut_file_is_noted_with_how_many_of_its_sections_the_model_got():
     """Told only that the relevant parts fit, models summed the sections shown and called it the file's total."""
