@@ -1,6 +1,6 @@
 ---
 title: Open WebUI-Mods schreiben
-source_sha: 0e71abf66b0ef415636582e107ea8475572205f047d7a3c78c7d63c8a3fbd36c
+source_sha: 2c39d7ffed06bda0a16b05e680b394f96c1221926690ae3f495a5a12d73dfe7a
 ---
 
 # Open WebUI-Mods schreiben
@@ -122,7 +122,9 @@ Kontext nicht automatisch.
 
 Importieren Sie Open WebUI-Stores aus `@openwebui/stores` (`$lib/stores` wird ebenfalls akzeptiert). Gemeinsame Module
 sind `svelte`, `svelte/store`, `svelte/transition`, `svelte/motion`, `svelte/easing`, `svelte/reactivity`, `svelte/events`
-und `svelte/animate`. Verwenden Sie die Versionen des Hosts statt einer zusätzlich gebündelten Svelte-Laufzeit.
+und `svelte/animate`. `@openwebui/shortcuts` stellt die native Erkennung von Tastenkürzeln und den Keybinding-Store
+einschließlich benutzerdefinierter Belegungen bereit. Verwenden Sie die Versionen des Hosts statt einer zusätzlich
+gebündelten Svelte-Laufzeit.
 Native Store-Namen und Komponentenverträge können sich mit Open WebUI-Upgrades ändern.
 
 Ersetzungen erfassen instrumentierte Verwendungen von Quellkomponenten. Sie legen keine privaten lexikalischen

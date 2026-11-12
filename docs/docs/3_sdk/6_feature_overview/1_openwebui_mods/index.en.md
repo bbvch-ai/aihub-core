@@ -114,7 +114,8 @@ reactivity and context. A separately mounted component does not automatically in
 
 Import Open WebUI stores from `@openwebui/stores` (`$lib/stores` is also accepted). Shared modules include `svelte`,
 `svelte/store`, `svelte/transition`, `svelte/motion`, `svelte/easing`, `svelte/reactivity`, `svelte/events` and
-`svelte/animate`. Use the host's versions, not another bundled Svelte runtime. Native store names and component
+`svelte/animate`. `@openwebui/shortcuts` exposes the native shortcut matcher and keybinding store, including user
+remappings. Use the host's versions, not another bundled Svelte runtime. Native store names and component
 contracts can change with Open WebUI upgrades.
 
 Replacement covers instrumented source component usages. It does not expose private lexical state, turn inline markup

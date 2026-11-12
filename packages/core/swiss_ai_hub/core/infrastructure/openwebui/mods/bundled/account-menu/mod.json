@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "id": "aihub-account-menu",
+  "name": "Admin Panel shortcut",
+  "version": "1.0.0",
+  "description": "Replaces the duplicate account display with an Admin Panel link. Admins retain admin settings and About; other users have no Settings access.",
+  "replacements": {
+    "src/lib/components/layout/Sidebar/UserMenu.svelte": "Menu.svelte",
+    "src/lib/components/chat/SettingsModal.svelte": "Settings.svelte",
+    "src/lib/components/chat/MessageInput/Commands/SlashCommands.svelte": "Commands.svelte",
+    "src/lib/components/chat/MessageInput/TerminalMenu.svelte": "TerminalMenu.svelte"
+  },
+  "frontend": "frontend.js"
+}

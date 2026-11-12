@@ -13,6 +13,7 @@ from fastapi.encoders import jsonable_encoder
 from starlette.responses import JSONResponse
 
 from aihub_mods.frontend_archive import FrontendArchive
+from aihub_mods.frontend_cache import FrontendCache
 from aihub_mods.callable_registry import CallableRegistry
 from aihub_mods.hub_client import HubClient
 from aihub_mods.mod_runtime import ModRuntime
@@ -38,6 +39,7 @@ class ModHost:
         self.global_runtime = GlobalModRuntime(GlobalModStore(global_directory, compatibility), self.runtime) if global_directory else None
 
     def install(self, app: FastAPI, verified_user: Callable[..., Any]) -> None:
+        app.add_middleware(FrontendCache)
         router = APIRouter(prefix="/_aihub/mods", dependencies=[Depends(self._same_origin)])
         if self.global_runtime is not None:
             GlobalModControl(self.global_runtime.store, os.environ.get("SCIM_TOKEN", "")).install(router)

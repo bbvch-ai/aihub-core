@@ -2,6 +2,7 @@ import { readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { parse as parseJavaScript } from 'acorn';
 import MagicString from 'magic-string';
+import { adaptComponentProps } from './component_adapters.mjs';
 import { parse as parseSvelte, VERSION } from 'svelte/compiler';
 
 const compatibility = JSON.parse(readFileSync(new URL('./compatibility.json', import.meta.url), 'utf8'));
@@ -37,6 +38,7 @@ function replaceTag(source, changes, node, expression) {
 export function instrumentComponents(source, id, registry) {
   const ast = parseSvelte(source, { modern: true });
   const changes = new MagicString(source);
+  adaptComponentProps(source, id, changes);
   const resolve = unusedName(source, '__aihubResolve');
   const active = unusedName(source, '__aihubReplacements');
   const original = unusedName(source, '__aihubOriginal');

@@ -1,3 +1,4 @@
+import type { ToastMessageOptions } from 'primevue/toast'
 import type { Ref } from 'vue'
 
 export function useOpenWebuiMods(iframe: Ref<HTMLIFrameElement | null>, tenantId: Ref<string | null>, webuiUrl: string) {
@@ -5,23 +6,23 @@ export function useOpenWebuiMods(iframe: Ref<HTMLIFrameElement | null>, tenantId
   const { locale, t } = useI18n()
   const toast = useToast()
   const type = 'aihub:mods'
-  const group = 'openwebui-mods-update'
+  let message: ToastMessageOptions | undefined
   const notice = ref<'changed' | 'failed' | null>(null)
 
   function clearModNotice() {
     notice.value = null
-    toast.removeGroup(group)
   }
 
   function showNotice() {
-    toast.removeGroup(group)
+    if (message) toast.remove(message)
+    message = undefined
     if (!notice.value) return
-    toast.add({
-      group,
+    message = {
       severity: notice.value === 'changed' ? 'info' : 'warn',
       summary: t(`openwebui.mods.${notice.value}_title`),
       detail: t(`openwebui.mods.${notice.value}_detail`),
-    })
+    }
+    toast.add(message)
   }
 
   function sendModContext() {
@@ -44,14 +45,12 @@ export function useOpenWebuiMods(iframe: Ref<HTMLIFrameElement | null>, tenantId
     }
     if (data.tenantId !== tenantId.value || !/^[a-f0-9]{32}$/.test(data.viewId)) return
     if (data.reason !== null && data.reason !== 'changed' && data.reason !== 'failed') return
-    if (notice.value === data.reason) return
     notice.value = data.reason
-    showNotice()
   }
 
   watch([tenantId, locale], sendModContext, { flush: 'sync' })
   watch(tenantId, clearModNotice, { flush: 'sync' })
-  watch(locale, showNotice)
+  watch([notice, locale], showNotice, { flush: 'sync' })
   onMounted(() => window.addEventListener('message', onMessage))
   onBeforeUnmount(() => {
     iframe.value?.contentWindow?.postMessage({ type, version: 1, tenantId: null }, origin)

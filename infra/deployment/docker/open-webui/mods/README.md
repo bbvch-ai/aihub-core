@@ -23,6 +23,12 @@ operators use the [deployment guide](../../../openwebui.md).
 adds request context and completion readiness to the pinned frontend. `component_boundary.mjs` uses Svelte internals
 to restore originals after rendering failures. These adapters require checks against each upstream/Svelte upgrade.
 
+`component_adapters.mjs` adds optional props to three pinned native components: `filterTabs` on SettingsModal,
+`canSettings` on SlashCommands and `canConfigureDirect` on TerminalMenu. Defaults preserve native behavior. The
+account-menu mod supplies the policy through wrappers; native search, forms and save callbacks remain intact.
+The build checks each edited source location and fails on drift. Review these small edits when upgrading Open WebUI.
+Changes to these hooks require a host rebuild; changing the mod policy only requires publishing the mod.
+
 `install_client_hook.mjs` installs the supported SvelteKit client `init` hook. It stops the build if an upstream hook
 already exists or moves, so an upgrade cannot silently discard upstream startup behavior. The hook authenticates
 tenant selection with the native cookie, runs `runScripts('bootstrap')`, then loads the shared runtime. Normal
@@ -44,6 +50,10 @@ Native verified-user authentication and AI Hub authorization determine tenant se
 reauthorizes the currently selected publication, including cache hits. Browser view nonces correlate modules/events;
 they do not grant access or select backend code. Backend source has no browser delivery route. Keep the main API's
 service-token/signed-identity checks distinct from ordinary browser authentication.
+
+`backend/frontend_cache.py` makes HTML and the stable host/runtime entry URLs revalidate after image updates.
+Loading/update notices use AI Hub's standard notification stack and ask users to refresh in their browser.
+Per-message cleanup preserves unrelated notifications.
 
 `compiler_cli.mjs` is bundled into the image and runs through Playwright's Node runtime. Compilation has a shared
 worker lock, a 256 MiB JavaScript heap limit and a 60-second timeout; cancellation reaps the subprocess. Uploaded code

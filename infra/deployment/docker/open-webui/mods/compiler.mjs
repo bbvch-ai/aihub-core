@@ -6,7 +6,8 @@ import { scriptEntries } from './script_entries.mjs';
 
 const sharedModules = new Set([
   'svelte', 'svelte/internal/client', 'svelte/store', 'svelte/transition', 'svelte/motion',
-  'svelte/easing', 'svelte/reactivity', 'svelte/events', 'svelte/animate', '@openwebui/stores', '@aihub/mods'
+  'svelte/easing', 'svelte/reactivity', 'svelte/events', 'svelte/animate', '@openwebui/stores',
+  '@openwebui/shortcuts', '@aihub/mods'
 ]);
 const hostSideEffects = new Set(['svelte/internal/disclose-version', 'svelte/internal/flags/legacy']);
 

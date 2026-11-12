@@ -1136,10 +1136,9 @@ memory:
 openwebui:
   mods:
     changed_title: Les personnalisations du chat ont changé
-    changed_detail: Rechargez le chat quand vous souhaitez utiliser la nouvelle interface. Les saisies non envoyées ou les modifications non enregistrées peuvent être perdues.
+    changed_detail: Actualisez la page dans votre navigateur quand vous souhaitez utiliser la nouvelle interface. Les saisies non envoyées ou les modifications non enregistrées peuvent être perdues.
     failed_title: Certaines personnalisations du chat n’ont pas pu être chargées
-    failed_detail: Rechargez le chat pour réessayer. Si le problème persiste, veuillez contacter votre administrateur. Les saisies non envoyées ou les modifications non enregistrées peuvent être perdues.
-    reload: Recharger le chat
+    failed_detail: Actualisez la page dans votre navigateur pour réessayer. Si le problème persiste, veuillez contacter votre administrateur. Les saisies non envoyées ou les modifications non enregistrées peuvent être perdues.
   memories:
     title: Souvenirs de l'Agent
     select_agent: Sélectionner l'Agent

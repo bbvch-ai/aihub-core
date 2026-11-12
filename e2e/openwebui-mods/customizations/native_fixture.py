@@ -20,7 +20,7 @@ from open_webui.utils.auth import create_token
 compatibility = json.loads(host.compatibility)
 publications = {}
 sources = {}
-token = None
+tokens = {}
 
 
 def source_archive(files):
@@ -37,7 +37,7 @@ async def respond(request):
     name = request.headers['x-openwebui-user-name']
     signature = hmac.new(host.client.signing_secret, f'name:{name},email:{email}'.encode(), hashlib.sha256).hexdigest()
     assert hmac.compare_digest(request.headers['x-openwebui-signature'], signature)
-    assert email == 'mods@example.test'
+    assert email in {'mods@example.test', 'mods-user@example.test'}
     parts = request.url.path.split('/')
     tenant = parts[3]
     if tenant not in ('one', 'active'):
@@ -62,11 +62,10 @@ previous = app.router.lifespan_context
 
 @asynccontextmanager
 async def lifespan(application):
-    global token
     await host.client.http.aclose()
     host.client.http = httpx.AsyncClient(base_url='http://hub', transport=httpx.MockTransport(respond))
     compiler = ModCompiler(Path('/tmp/customizations-compiler'))
-    for name in ['chat-disclaimer', 'locale-recovery', 'speech-recovery', 'pdf-export-guard', 'streaming-indicator']:
+    for name in ['account-menu', 'chat-disclaimer', 'locale-recovery', 'speech-recovery', 'pdf-export-guard', 'streaming-indicator']:
         root = Path('/bundled') / name
         files = {str(path.relative_to(root)): path.read_bytes() for path in root.rglob('*') if path.is_file()}
         mod_id = json.loads(files['mod.json'])['id']
@@ -77,7 +76,10 @@ async def lifespan(application):
         sources[revision] = source
     if not await Users.get_user_by_id('mods-user'):
         await Users.insert_new_user(id='mods-user', name='Mods test', email='mods@example.test', role='admin')
-    token = create_token({'id': 'mods-user'})
+    if not await Users.get_user_by_id('mods-regular-user'):
+        await Users.insert_new_user(id='mods-regular-user', name='Regular user', email='mods-user@example.test', role='user')
+    tokens['admin'] = create_token({'id': 'mods-user'})
+    tokens['user'] = create_token({'id': 'mods-regular-user'})
     async with previous(application) as state:
         yield state
 
@@ -92,7 +94,10 @@ async def bridge(request):
 async def credentials(request):
     if request.headers.get('authorization') != f"Bearer {os.environ['SCIM_TOKEN']}":
         return JSONResponse({}, status_code=403)
-    return JSONResponse({'token': token})
+    role = request.query_params.get('role', 'admin')
+    if role not in tokens:
+        return JSONResponse({}, status_code=400)
+    return JSONResponse({'token': tokens[role]})
 
 
 app.router.routes.insert(0, Route('/static/aihub-mods.json', bridge))

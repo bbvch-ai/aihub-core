@@ -10,6 +10,7 @@ import * as reactivity from 'svelte/reactivity';
 import * as events from 'svelte/events';
 import * as animate from 'svelte/animate';
 import * as stores from '$lib/stores';
+import * as shortcuts from '$lib/shortcuts';
 import { getOriginalComponent } from './components.mjs';
 import { modFetch } from './request_bridge.mjs';
 
@@ -29,6 +30,7 @@ const modules = {
   'svelte/events': events,
   'svelte/animate': animate,
   '@openwebui/stores': stores,
+  '@openwebui/shortcuts': shortcuts,
   '@aihub/mods': { getOriginalComponent, fetch: modFetch }
 };
 

@@ -16,7 +16,14 @@ No persistent volume is used. The test-only credentials endpoint requires the di
 part of the deployment image. Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` if using an existing Chromium installation.
 
 The suite checks locale correction before native settings, real toolbar/sidebar PDF entries and a single-model
-PDF download, failed voice playback returning to listening, streaming styles and lifecycle cleanup. Renderer checks
+PDF download, failed voice playback returning to listening, streaming styles and lifecycle cleanup. Admin shortcut checks
+use separate native admin and regular-user sessions: only admins see the direct Admin Panel link, and account details
+are absent. They verify native search and saving with the allowed admin tabs and About. Authentication, Connections
+and Database are excluded; empty section headings disappear while populated headings remain. Regular users cannot
+open Settings through shortcuts, commands or direct links. Tests retain
+unrelated shortcuts, slash commands and terminal selection while hiding personal-terminal configuration. They also
+cover native sidebar styling, role changes, mobile navigation and restoring native behavior on disposal or in standalone
+Open WebUI. Renderer checks
 also exercise disclaimer wrapping, navigation, translations, invalid settings and disposal against native markup.
 The renderer checks deliberately bypass the host to isolate that DOM contract; the other tests use actual publications.
 

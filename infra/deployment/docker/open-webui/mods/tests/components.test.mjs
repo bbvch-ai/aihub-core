@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
+import { readFileSync } from 'node:fs';
 import { get } from 'svelte/store';
 import { compile } from 'svelte/compiler';
 import { getOriginalComponent, registerComponent, replacements, replaceComponents, resolveComponent } from '../components.mjs';
@@ -63,3 +64,23 @@ test('runes components retain callbacks and snippets without new deprecation war
 test('an unexpected upstream compiled component shape fails the build', () => {
   assert.throws(() => identifyComponent('export default () => {}', 'src/Changed.svelte', './registry.mjs'), /Cannot identify/);
 });
+
+test('native settings accept a tab filter and fall back to an available tab', () => {
+  const id = 'src/lib/components/chat/SettingsModal.svelte';
+  const source = readFileSync(new URL(`../../${id}`, import.meta.url), 'utf8');
+  const transformed = instrumentComponents(source, id, './registry.mjs');
+  assert.ok(transformed.code.includes('filterTabs(getAvailableSettings(allSettings, adminSettings))'));
+  assert.ok(transformed.code.includes('selectedTab = availableSettings[0].id'));
+  compile(transformed.code, { filename: id, generate: 'client' });
+  assert.throws(() => instrumentComponents(source.replace('availableSettings = getAvailableSettings', 'availableSettings = changed'), id, './registry.mjs'), /review its component adapter/);
+});
+
+for (const name of ['MessageInput/Commands/SlashCommands', 'MessageInput/TerminalMenu']) {
+  test(`native ${name} retains its existing API with optional settings controls`, () => {
+    const id = `src/lib/components/chat/${name}.svelte`;
+    const source = readFileSync(new URL(`../../${id}`, import.meta.url), 'utf8');
+    const transformed = instrumentComponents(source, id, './registry.mjs');
+    compile(transformed.code, { filename: id, generate: 'client' });
+    assert.throws(() => instrumentComponents(source.replaceAll('export let', 'export const'), id, './registry.mjs'), /review its component adapter/);
+  });
+}

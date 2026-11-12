@@ -9,7 +9,7 @@ services:
       DATA_DIR: /tmp/mod-customizations
       OFFLINE_MODE: 'true'
       HF_HUB_OFFLINE: '1'
-      WEBUI_SECRET_KEY: disposable-browser-test-secret-32-characters
+      WEBUI_SECRET_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
       AIHUB_BASE_URL: http://fixture
       AIHUB_SUPERUSER_API_KEY: disposable-service-token
       OPEN_WEBUI_SIGNING_SECRET: disposable-signing-secret

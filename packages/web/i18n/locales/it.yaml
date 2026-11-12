@@ -1134,10 +1134,9 @@ memory:
 openwebui:
   mods:
     changed_title: Le personalizzazioni della chat sono cambiate
-    changed_detail: Ricarica la chat quando vuoi usare l’interfaccia aggiornata. Il testo non inviato o le modifiche non salvate potrebbero andare persi.
+    changed_detail: Ricarica la pagina nel browser quando vuoi usare l’interfaccia aggiornata. Il testo non inviato o le modifiche non salvate potrebbero andare persi.
     failed_title: Alcune personalizzazioni della chat non sono state caricate
-    failed_detail: Ricarica la chat per riprovare. Se il problema persiste, contatta il tuo amministratore. Il testo non inviato o le modifiche non salvate potrebbero andare persi.
-    reload: Ricarica la chat
+    failed_detail: Ricarica la pagina nel browser per riprovare. Se il problema persiste, contatta il tuo amministratore. Il testo non inviato o le modifiche non salvate potrebbero andare persi.
   memories:
     title: Ricordi dell'Agente
     select_agent: Seleziona Agente

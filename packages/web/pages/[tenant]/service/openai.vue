@@ -14,16 +14,6 @@
     </div>
     <NuxtPage />
 
-    <Toast group="openwebui-mods-update" position="bottom-right">
-      <template #message="{ message }">
-        <div class="flex flex-col gap-2">
-          <span class="font-semibold">{{ message.summary }}</span>
-          <p>{{ message.detail }}</p>
-          <Button :label="t('openwebui.mods.reload')" icon="pi pi-refresh" size="small" class="self-start" @click="reloadChat" />
-        </div>
-      </template>
-    </Toast>
-
     <Dialog
       v-model:visible="mismatchDetected"
       :header="t('tenant.mismatch_warning')"
