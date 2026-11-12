@@ -191,9 +191,7 @@ class TestCreateGrantsTheInstance:
         config_doc = stack.enter_context(patch(f"{_MODULE}.ProcessConfigEntityDocument"))
         config_doc.find_for_class_and_id.return_value = None
         config_doc.return_value = config_entity
-        stack.enter_context(
-            patch(f"{_MODULE}.PersistedProcessEventEntity.has_events_for_instance", return_value=False)
-        )
+        stack.enter_context(patch(f"{_MODULE}.PersistedProcessEventEntity.has_events_for_instance", return_value=False))
         return grant, config_entity
 
     @pytest.mark.asyncio
