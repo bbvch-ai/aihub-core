@@ -3,8 +3,10 @@ from collections.abc import Callable
 from functools import lru_cache
 from typing import Annotated, Any
 
+import httpx
 from llama_index.core.utils import get_tokenizer
 from pydantic import Field
+from tenacity import Retrying, retry_if_exception, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.select import Select
@@ -13,10 +15,29 @@ from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLM
 from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_token_budget import ModelTokenBudget
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 
+# A burst of MinerU VLM calls can keep LiteLLM's single worker from answering for minutes; with httpx's 5 s
+# default every pipeline run that started meanwhile failed on this one read-only call.
+MODEL_INFO_TIMEOUT = httpx.Timeout(30.0, connect=5.0)
+MODEL_INFO_ATTEMPTS = 5
+
 
 @lru_cache(maxsize=1)
 def _fetch_all_model_info_cached() -> dict[str, Any]:
-    return LiteLLMProxySettings().httpx_client.get("/v1/model/info").json()
+    """Retries only what can heal on its own (network failures, 5xx); a 4xx such as a bad key fails at once."""
+    for attempt in Retrying(
+        retry=retry_if_exception_type(httpx.TransportError)
+        | retry_if_exception(
+            lambda error: isinstance(error, httpx.HTTPStatusError) and error.response.status_code >= 500
+        ),
+        stop=stop_after_attempt(MODEL_INFO_ATTEMPTS),
+        wait=wait_exponential(multiplier=2, max=30),
+        reraise=True,
+    ):
+        with attempt:
+            response = LiteLLMProxySettings().httpx_client.get("/v1/model/info", timeout=MODEL_INFO_TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+    raise RuntimeError("Retry loop exited unexpectedly")
 
 
 class LiteLLMBase[OpenAILike](Form, abc.ABC):
