@@ -1,7 +1,7 @@
 ---
 title: MCP Tool Agent
 description: Verbindet sich mit einem externen Tool-Server (MCP) und nutzt dessen Tools, um Schritt für Schritt Aktionen auszuführen, bis die Aufgabe erledigt ist.
-source_sha: 7760f63d6133dccd38b5edde1fc4de9517846f61ca9d155aaf18053cbd6519d7
+source_sha: ecfac94443331608104e167e183d1b4f5b1b1ac2d3804c385befa6b169c0862e
 ---
 
 # MCP Tool Agent
@@ -79,11 +79,16 @@ Universal Agent.
 
 1. **Ein erreichbarer MCP-Server.** Dies ist die zentrale Abhängigkeit. Ein MCP-Server muss bereits laufen und von der
    Plattform aus erreichbar sein, um die Tools bereitzustellen, die der Agent verwenden soll. Der Agent stellt selbst
-   keine Tools bereit – er verbindet sich mit einem Server, der dies tut.
+   keine Tools bereit – er verbindet sich mit einem Server, der dies tut. Ein Server auf einem internen Host (die
+   plattformeigene `api` oder ein Server, den nur das Firmennetzwerk erreicht) muss in `MCP_ALLOWED_PRIVATE_HOSTS`
+   aufgeführt sein, siehe [Umgebungsvariablen](../../3_deployment_guide/9_environment_variables/); jeden anderen
+   internen Host lehnt der Agent ab.
 2. **Die URL des Servers** und, falls der Server dies erfordert, **Anmeldeinformationen** (ein statischer API-Schlüssel
    oder eine Authentifizierung pro Benutzer – siehe die untenstehenden Authentifizierungsmodi).
 3. **Ein Chat-Modell**, das zur Tool-Nutzung fähig ist und über Ihre LiteLLM-Konfiguration verfügbar ist. Die Qualität
    der Tool-Aufrufe hängt stark vom Modell ab, daher ist ein leistungsfähiges Modell vorzuziehen.
+4. **Ein Docker-Compose-Deployment.** Der Agent wird nur mit dem Docker-Compose-Deployment ausgeliefert; auf Kubernetes
+   wird er nicht bereitgestellt.
 
 ::: warning Aktionen sind real
 Im Gegensatz zu den Nur-Lese-Agents kann dieser Agent Dinge in anderen Systemen ändern. Stellen Sie sicher, dass der
