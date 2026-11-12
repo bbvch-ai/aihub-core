@@ -32,7 +32,7 @@ const navigationItems = [
   {
     title: 'Customization',
     description: 'Customize the platform to meet your needs.',
-    href: '../../4_customization/'
+    href: '../../../3_sdk/'
   }
 ]
 </script>

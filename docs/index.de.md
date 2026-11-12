@@ -13,7 +13,7 @@ hero:
       link: /de/docs/1_vision_and_positioning/1_introduction/
     - theme: alt
       text: Warum Swiss AI Hub
-      link: /de/docs/1_vision_and_positioning/1_introduction
+      link: /de/docs/1_vision_and_positioning/1_introduction/
     - theme: brand
       text: Plattformübersicht
       link: /de/docs/2_platform/2_architecture/

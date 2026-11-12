@@ -269,6 +269,6 @@ Verwenden Sie diese Checkliste beim Erstellen oder Überprüfen von Agents:
 
 - [ ] Langfuse/Phoenix-Trace zeigt die erwartete Ausführungsreihenfolge
 - [ ] Keine doppelten Schrittausführungen (überprüfen Sie die
-  [Falle optionaler Parameter](../9_execution_model/#the-optional-parameter-trap))
+  [Falle optionaler Parameter](../9_execution_model/#die-falle-der-optionalen-parameter))
 - [ ] Keine Ereignisse nach `StopEvent`
 - [ ] Tests decken alle Konfigurationsflag-Kombinationen ab

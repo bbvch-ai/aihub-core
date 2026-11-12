@@ -40,7 +40,7 @@ Three switches decide, and any one of them is enough:
 | ----------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PII_ANONYMISE_EXTERNAL_MODELS=true`                  | The operator, per deployment (off by default) | Every call to a model hosted outside the deployment, for every caller: plain chats, agents (including titles, follow-ups and memory extraction) and bots |
 | **Anonymise personal data** on an agent profile       | The profile's admin                           | Every call of that profile's runs, whatever the model                                                                                                    |
-| The [Anonymiser](../../5_agents/14_anonymiser/) agent | Each user, by hand                            | The text the user sends it                                                                                                                               |
+| The [Anonymiser](../../5_agents/16_anonymiser/) agent | Each user, by hand                            | The text the user sends it                                                                                                                               |
 
 Every model in the gateway configuration declares where it runs (`model_info.aihub_hosting_location`); every model that
 is not `local` (the Swiss cloud providers and any other external provider) counts as outside the deployment. Turn the
