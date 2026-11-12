@@ -3,33 +3,25 @@ import re
 from datetime import UTC, datetime
 from typing import Self
 
-from mongoengine import (
-    BooleanField,
-    DateTimeField,
-    Document,
-    EmbeddedDocument,
-    EmbeddedDocumentField,
-    ListField,
-    StringField,
-)
+from beanie import Document
+from pydantic import BaseModel, Field
+from pymongo import ASCENDING, IndexModel
 
 logger = logging.getLogger(__name__)
 
-
-class User(EmbeddedDocument):
-    user_id = StringField(required=True)
+TTL_INDEX_NAME = "last_activity_1"
 
 
-class Content(EmbeddedDocument):
-    text = StringField(required=True)
-    type = StringField(required=True)
+class Content(BaseModel):
+    text: str
+    type: str
 
 
-class Message(EmbeddedDocument):
-    user_id = StringField(required=True)
-    content = ListField(EmbeddedDocumentField(Content), required=True)
-    role = StringField(required=True)
-    name = StringField(required=True)
+class Message(BaseModel):
+    user_id: str
+    content: list[Content]
+    role: str
+    name: str
 
 
 def _clean_conversation_id(conversation_id: str, bot_id: str) -> str:
@@ -78,65 +70,51 @@ class ConversationTracker(Document):
     expired due to inactivity, not when they were deliberately reset in Teams.
     """
 
-    meta = {
-        "collection": "bot_conversation_trackers",
-        "strict": True,
-        "indexes": [
-            {"fields": ["conversation_id", "bot_id"], "unique": True},
-        ],
-    }
-    conversation_id = StringField(required=True)
-    bot_id = StringField(required=True)
-    created_at = DateTimeField(default=lambda: datetime.now(UTC))
-    explicitly_deleted = BooleanField(default=False)
+    conversation_id: str
+    bot_id: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    explicitly_deleted: bool = False
+
+    class Settings:
+        name = "bot_conversation_trackers"
+        keep_nulls = False
+        indexes = [IndexModel([("conversation_id", ASCENDING), ("bot_id", ASCENDING)], unique=True)]
 
     @classmethod
-    def track_conversation(
-        cls,
-        conversation_id: str,
-        bot_id: str,
-    ):
+    async def track_conversation(cls, conversation_id: str, bot_id: str) -> None:
         conversation_id = _clean_conversation_id(conversation_id, bot_id)
-        cls.objects(
-            conversation_id=conversation_id,
-            bot_id=bot_id,
-        ).update_one(
+        await cls.get_pymongo_collection().update_one(
+            {"conversation_id": conversation_id, "bot_id": bot_id},
+            {
+                "$set": {"conversation_id": conversation_id, "bot_id": bot_id, "explicitly_deleted": False},
+                "$setOnInsert": {"created_at": datetime.now(UTC)},
+            },
             upsert=True,
-            set__conversation_id=conversation_id,
-            set__bot_id=bot_id,
-            set__explicitly_deleted=False,
-            set_on_insert__created_at=datetime.now(UTC),
         )
 
     @classmethod
-    def mark_explicitly_deleted(
-        cls,
-        conversation_id: str,
-        bot_id: str,
-    ):
+    async def mark_explicitly_deleted(cls, conversation_id: str, bot_id: str) -> None:
         conversation_id = _clean_conversation_id(conversation_id, bot_id)
-        cls.objects(
-            conversation_id=conversation_id,
-            bot_id=bot_id,
-        ).update_one(
+        await cls.get_pymongo_collection().update_one(
+            {"conversation_id": conversation_id, "bot_id": bot_id},
+            {"$set": {"conversation_id": conversation_id, "bot_id": bot_id, "explicitly_deleted": True}},
             upsert=True,
-            set__conversation_id=conversation_id,
-            set__bot_id=bot_id,
-            set__explicitly_deleted=True,
         )
 
     @classmethod
-    def should_show_expiration_message(
-        cls,
-        conversation_id: str,
-        bot_id: str,
-    ) -> bool:
+    async def get_tracker(cls, conversation_id: str, bot_id: str) -> Self | None:
         conversation_id = _clean_conversation_id(conversation_id, bot_id)
-        tracker = cls.objects(
-            conversation_id=conversation_id,
-            bot_id=bot_id,
-        ).first()
-        exists_now = ConversationEntity.get_conversation_by_conversation_id(conversation_id, bot_id) is not None
+        return await cls.find_one({"conversation_id": conversation_id, "bot_id": bot_id})
+
+    @classmethod
+    async def delete_tracker(cls, conversation_id: str, bot_id: str) -> None:
+        conversation_id = _clean_conversation_id(conversation_id, bot_id)
+        await cls.find({"conversation_id": conversation_id, "bot_id": bot_id}).delete()
+
+    @classmethod
+    async def should_show_expiration_message(cls, conversation_id: str, bot_id: str) -> bool:
+        tracker = await cls.get_tracker(conversation_id, bot_id)
+        exists_now = await ConversationEntity.get_conversation_by_conversation_id(conversation_id, bot_id) is not None
 
         return tracker is not None and not tracker.explicitly_deleted and not exists_now
 
@@ -155,96 +133,73 @@ class ConversationEntity(Document):
     ensuring better response generation and user experience.
     """
 
-    meta = {
-        "collection": "bot_conversations",
-        "strict": True,
-        "indexes": [
-            {"fields": ["conversation_id", "bot_id"], "unique": True},
-        ],
-    }
-    is_mentioned = BooleanField(default=False)
-    conversation_id = StringField(required=True)
-    bot_id = StringField(required=True)
-    messages = ListField(EmbeddedDocumentField(Message), required=False)
-    last_activity = DateTimeField(default=lambda: datetime.now(UTC))
+    is_mentioned: bool = False
+    conversation_id: str
+    bot_id: str
+    messages: list[Message] = Field(default_factory=list)
+    last_activity: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    class Settings:
+        name = "bot_conversations"
+        keep_nulls = False
+        use_state_management = True
+        state_management_replace_objects = True
+        indexes = [IndexModel([("conversation_id", ASCENDING), ("bot_id", ASCENDING)], unique=True)]
 
     @classmethod
-    def update_ttl_index(cls, conversation_ttl_days: float):
-        collection = cls._get_collection()
+    async def update_ttl_index(cls, conversation_ttl_days: float) -> None:
+        """Recreates the TTL index, since MongoDB cannot change the expiry of an existing one in place."""
+        collection = cls.get_pymongo_collection()
+        if TTL_INDEX_NAME in await collection.index_information():
+            await collection.drop_index(TTL_INDEX_NAME)
 
         ttl_seconds = int(conversation_ttl_days * 24 * 60 * 60)
-
-        # Drop existing TTL index if it exists
-        try:
-            collection.drop_index("last_activity_1")
-        except Exception:
-            # Index might not exist, that's ok
-            pass
-
-        collection.create_index([("last_activity", 1)], expireAfterSeconds=ttl_seconds)
+        await collection.create_index([("last_activity", ASCENDING)], expireAfterSeconds=ttl_seconds)
 
     @classmethod
-    def create_conversation(
-        cls,
-        conversation_id: str,
-        bot_id: str,
-        messages: list[Message],
-    ) -> Self:
+    async def create_conversation(cls, conversation_id: str, bot_id: str, messages: list[Message]) -> Self:
         conversation_id = _clean_conversation_id(conversation_id, bot_id)
         conversation = cls(
             conversation_id=conversation_id, bot_id=bot_id, messages=messages, last_activity=datetime.now(UTC)
         )
-        return conversation.save()
+        return await conversation.insert()
 
     @classmethod
-    def delete_conversation_if_exists(cls, conversation_id: str, bot_id: str) -> None:
-        conversation_id = _clean_conversation_id(conversation_id, bot_id)
-        conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
+    async def delete_conversation_if_exists(cls, conversation_id: str, bot_id: str) -> None:
+        conversation = await cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         if conversation is None:
             logger.debug(f"Conversation {conversation_id} for bot {bot_id} does not exist.")
             return
-        conversation.delete()
+        await conversation.delete()
 
     @classmethod
-    def add_messages_to_conversation(
-        cls,
-        conversation_id: str,
-        bot_id: str,
-        messages: list[Message],
-    ) -> Self:
-        conversation_id = _clean_conversation_id(conversation_id, bot_id)
-        conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
+    async def add_messages_to_conversation(cls, conversation_id: str, bot_id: str, messages: list[Message]) -> Self:
+        conversation = await cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         if conversation is None:
-            conversation = cls.create_conversation(conversation_id, bot_id, [])
-        conversation.messages.extend(messages)
+            conversation = await cls.create_conversation(conversation_id, bot_id, [])
+        conversation.messages = [*conversation.messages, *messages]
         conversation.last_activity = datetime.now(UTC)
-        return conversation.save()
+        await conversation.save_changes()
+        return conversation
 
     @classmethod
-    def get_conversation_by_conversation_id(cls, conversation_id: str, bot_id: str) -> Self:
+    async def get_conversation_by_conversation_id(cls, conversation_id: str, bot_id: str) -> Self | None:
         conversation_id = _clean_conversation_id(conversation_id, bot_id)
-        return cls.objects().filter(conversation_id=conversation_id, bot_id=bot_id).first()
+        return await cls.find_one({"conversation_id": conversation_id, "bot_id": bot_id})
 
     @classmethod
-    def get_messages_by_conversation_id(cls, conversation_id: str, bot_id: str) -> ListField:
-        conversation_id = _clean_conversation_id(conversation_id, bot_id)
-        conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
+    async def get_messages_by_conversation_id(cls, conversation_id: str, bot_id: str) -> list[Message]:
+        conversation = await cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         return conversation.messages
 
     @classmethod
-    def get_conversation_is_mentioned(cls, conversation_id: str, bot_id: str) -> bool:
-        conversation_id = _clean_conversation_id(conversation_id, bot_id)
-        conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
+    async def get_conversation_is_mentioned(cls, conversation_id: str, bot_id: str) -> bool:
+        conversation = await cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         return conversation.is_mentioned
 
     @classmethod
-    def set_conversation_is_mentioned(cls, conversation_id: str, bot_id: str, is_mentioned: bool) -> Self:
-        conversation_id = _clean_conversation_id(conversation_id, bot_id)
-        conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
+    async def set_conversation_is_mentioned(cls, conversation_id: str, bot_id: str, is_mentioned: bool) -> Self:
+        conversation = await cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         conversation.is_mentioned = is_mentioned
-        return conversation.save()
-
-    @classmethod
-    def is_new_conversation(cls, conversation_id: str, bot_id: str) -> bool:
-        conversation_id = _clean_conversation_id(conversation_id, bot_id)
-        return cls.get_conversation_by_conversation_id(conversation_id, bot_id) is None
+        await conversation.save_changes()
+        return conversation

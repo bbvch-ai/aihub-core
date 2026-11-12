@@ -58,7 +58,7 @@ class BotInTheLoopHandler:
     @staticmethod
     async def _get_slack_ids(path: str) -> SlackIds:
         """Get bot_id and team_id using the Slack auth.test API."""
-        slack_token = PathEntity.get_slack_token_by_path(path)
+        slack_token = await PathEntity.get_slack_token_by_path(path)
         if not slack_token:
             raise ValueError(f"No Slack token found for path {path}")
         return await SlackUtils.get_slack_ids(slack_token)
@@ -109,8 +109,8 @@ class BotInTheLoopHandler:
         question: str,
         thread: BotInTheLoopThread,
     ):
-        adapter = RoutesService.get_adapter(self.path)
-        credentials = RoutesService.get_credentials(self.path)
+        adapter = await RoutesService.get_adapter(self.path)
+        credentials = await RoutesService.get_credentials(self.path)
         if credentials is None:
             raise ValueError(f"No credentials found for path: {self.path}")
 

@@ -44,23 +44,24 @@ class RoutesService(ChatService):
         """
         path = RoutesService.get_path(request)
         await RoutesService.authenticate_activity(request, path)
-        return await RoutesService.get_adapter(path).process(request, agent)
+        adapter = await RoutesService.get_adapter(path)
+        return await adapter.process(request, agent)
 
     @staticmethod
     async def authenticate_activity(request: Request, path: str) -> None:
         """Stores the verified claims where the adapter reads them, instead of letting it fall back to anonymous."""
-        auth_configuration = RoutesService.get_auth_configuration(path)
+        auth_configuration = await RoutesService.get_auth_configuration(path)
         request.scope["claims_identity"] = await BotActivityAuthenticator.authenticate(request, auth_configuration)
 
     @staticmethod
-    def get_auth_configuration(path: str) -> AgentAuthConfiguration:
-        credentials = RoutesService.get_credentials(path)
+    async def get_auth_configuration(path: str) -> AgentAuthConfiguration:
+        credentials = await RoutesService.get_credentials(path)
         if credentials is None:
             raise HTTPException(status_code=404, detail=f"No bot configured for path: {path}")
         return AgentAuthConfiguration(**RoutesService._create_auth_configuration_dict(credentials))
 
     @staticmethod
-    def get_adapter(path: str) -> CloudAdapter:
+    async def get_adapter(path: str) -> CloudAdapter:
         """
         ### What
         - Returns a cached CloudAdapter for the given path, or creates a new one if not cached.
@@ -74,7 +75,7 @@ class RoutesService(ChatService):
             return RoutesService._adapter_cache[path]
 
         logger.debug(f"Creating new CloudAdapter for path: {path}")
-        auth_config = RoutesService.get_auth_configuration(path)
+        auth_config = await RoutesService.get_auth_configuration(path)
         connection_manager = MsalConnectionManager(connections_configurations={"SERVICE_CONNECTION": auth_config})
 
         adapter = CloudAdapter(connection_manager=connection_manager)
@@ -105,5 +106,5 @@ class RoutesService(ChatService):
         return config_params
 
     @staticmethod
-    def get_credentials(path: str) -> Credentials | None:
-        return PathEntity.get_credentials_by_path(path)
+    async def get_credentials(path: str) -> Credentials | None:
+        return await PathEntity.get_credentials_by_path(path)
