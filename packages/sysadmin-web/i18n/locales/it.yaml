@@ -8,7 +8,7 @@ http_error:
 openwebui_mods:
   global:
     settings_help: Questi valori sono accessibili al codice backend attivato globalmente. Non inserire segreti.
-    navigation: Open WebUI globale
+    navigation: Mod globali Open WebUI
     title: Modifiche globali di Open WebUI
     description: Gestisci le modifiche del backend per tutti i tenant, comprese le
       attività senza un utente connesso. Le modifiche del frontend restano specifiche
@@ -50,8 +50,7 @@ openwebui_mods:
   enable: Abilita {name}
   settings: Impostazioni
   settings_help: Questi valori sono accessibili alla mod nel browser. Non inserire segreti.
-  disable_all: Disabilita tutte
-  reload: Ricarica le impostazioni salvate
+  retry: Riprova
   saved: Impostazioni Open WebUI salvate
   save_error: Salvataggio non riuscito. Le tue modifiche sono conservate.
   load_error: Impossibile caricare le modifiche. Riprova.
@@ -75,7 +74,7 @@ openwebui_mods:
   frontend_notice: Questo pacchetto esegue codice nelle chat degli utenti. Abilita
     solo codice attendibile.
 tenant_admin:
-  title: Amministrazione tenant
+  title: Amministrazione di sistema
   exit: Esci
   tenants_title: Tenant
   select_description: Gestisci tenant, regole di accesso e impostazioni di sistema.

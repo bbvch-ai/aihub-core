@@ -11,7 +11,7 @@
           <li v-for="source in revisions" :key="source.revision">
             <button type="button" class="w-full rounded-lg border p-3 text-left" :class="selected?.revision === source.revision ? 'border-primary bg-primary-50 dark:bg-surface-800' : 'border-transparent hover:bg-surface-100 dark:hover:bg-surface-800'" :disabled="publishing" :aria-pressed="selected?.revision === source.revision" @click="select(source)">
               <span class="block font-medium">{{ source.manifest.version }}</span>
-              <time class="block text-sm text-surface-500" :datetime="source.uploaded_at.toISOString()">{{ source.uploaded_at.toLocaleString(locale) }}</time>
+              <time class="block text-sm text-surface-500" :datetime="source.uploaded_at.toISOString()">{{ useDateFormat(source.uploaded_at, 'DD.MM.YYYY HH:mm:ss') }}</time>
               <span class="text-xs text-surface-500">{{ source.revision.slice(0, 8) }}</span>
               <span v-if="source.revision === currentSource?.revision" class="ml-2 text-xs">{{ t('openwebui_mods.selected') }}</span>
             </button>
@@ -43,7 +43,7 @@ import type { OpenWebuiModCompatibility, OpenWebuiModPublicationResponse, OpenWe
 const visible = defineModel<boolean>({ required: true })
 const props = defineProps<{ modId: string, currentSource?: OpenWebuiModRevisionResponse, initialSource?: OpenWebuiModRevisionResponse, globalScope?: boolean }>()
 const emit = defineEmits<{ select: [OpenWebuiModRevisionResponse, OpenWebuiModPublicationResponse] }>()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const errorMessage = useOpenwebuiModError()
 const versions = useOpenwebuiModVersions(toRef(props, 'modId'), props.initialSource ?? props.currentSource)
 const { offset, selected } = versions

@@ -14,14 +14,12 @@
     <OpenwebuiModsGlobalStatus v-if="globalScope && data?.globalState" :state="data.globalState" @refresh="configuration.refetch()" />
     <fieldset v-if="draft" :disabled="saving" class="flex min-w-0 flex-col gap-4">
       <OpenwebuiModsCatalogEntry v-for="row in draft" :key="`${draftKey}:${row.selection.mod_id}`" v-model="row.selection" v-model:valid="row.valid" :global-scope="globalScope" :entry="entries?.find(entry => entry.manifest.id === row.selection.mod_id)" @versions="source => showVersions(row.selection.mod_id, source)" />
-      <Button v-if="draft.some(row => row.selection.enabled)" :label="t('openwebui_mods.disable_all')" severity="secondary" text class="self-start" @click="draft.forEach(row => { row.selection.enabled = false })" />
       <Message v-if="unpublishedGlobalMods.length" severity="warn" :closable="false">{{ t('openwebui_mods.global.select_before_save', { names: unpublishedGlobalMods.join(', ') }) }}</Message>
       <div class="flex flex-wrap justify-end gap-2">
-        <Button :label="t('openwebui_mods.reload')" severity="secondary" :disabled="saving" @click="reload" />
         <Button :label="t('tenant_admin.save')" icon="pi pi-save" :loading="saving" :disabled="saving || !valid" @click="saveDraft" />
       </div>
     </fieldset>
-    <Button v-else-if="loadError || catalogError" :label="t('openwebui_mods.reload')" severity="secondary" @click="reload" />
+    <Button v-else-if="loadError || catalogError" :label="t('openwebui_mods.retry')" severity="secondary" @click="retryLoad" />
     <Message v-if="failure" severity="error" :closable="false">{{ failure }}</Message>
     <OpenwebuiModsVersions v-if="versionMod && versionsVisible" :key="`${tenantId}:${versionMod}`" v-model="versionsVisible" :mod-id="versionMod" :current-source="versionSource" :initial-source="uploadedSource" :global-scope="globalScope" @select="selectVersion" />
   </div>
@@ -129,7 +127,7 @@ async function uploadFile(event: Event) {
   catch (error) { if (tenantId === props.tenantId) failure.value = errorMessage(error, t('openwebui_mods.upload_error')) }
 }
 
-async function reload() {
+async function retryLoad() {
   const tenantId = props.tenantId
   await Promise.all([configuration.refetch(), catalog.refetch()])
   if (tenantId === props.tenantId && data.value?.tenantId === tenantId && !loadError.value && !catalogError.value) reset(data.value.configuration)
