@@ -39,8 +39,19 @@ its host name in `MCP_ALLOWED_PRIVATE_HOSTS` (comma-separated) in the agent's en
 | `api_key`    | A static key configured on the connection is sent as the bearer token.                       |
 | `user_token` | The requesting user's token is forwarded, so the external action is attributed to that user. |
 
-`user_token` mode only works for user-initiated chat runs that carry the user's token. Scheduled, process-initiated,
-bot-channel, and agent-to-agent runs forward no user token and fail in this mode — use `api_key` or `none` for those.
+`user_token` mode only works for user-initiated chat runs that carry the user's token:
+
+- **OpenWebUI** sends it for users who logged in through Keycloak. Local accounts have none.
+- **The Admin UI chat** sends it for every chat.
+- **Other API clients** send the user's own Keycloak access token as an `X-AIHub-User-Token` header.
+
+The token is the user's Keycloak access token. The API refuses a request whose token belongs to someone else or is not
+valid. Scheduled, process-initiated, bot-channel, and agent-to-agent runs forward no user token and fail in this mode —
+use `api_key` or `none` for those.
+
+The MCP server receives a token that is also valid against the AI Hub API until it expires, so only point a `user_token`
+connection at a server you trust as much as the platform itself. A short-lived token minted for each run will replace it
+(see the ADR `2026_11_12_forward_keycloak_token_for_mcp_user_token`).
 
 ## Calling MCP tools from a step
 

@@ -9,6 +9,7 @@ from openai.types import ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion
 from starlette.responses import StreamingResponse
+from swiss_ai_hub.core.auth import ForwardedUserTokenVerifier
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -18,7 +19,6 @@ from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_ext
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import use_s3
 from swiss_ai_hub.core.routes import TenantScopedController
-from swiss_ai_hub.core.tracing import NATSMessageHeaders
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -235,7 +235,7 @@ class OpenaiController(TenantScopedController):
             completion_request.user = completion_request.user or user.id
             model_name = completion_request.model
 
-            aihub_headers = NATSMessageHeaders.extract_aihub_headers(dict(request.headers))
+            aihub_headers = await ForwardedUserTokenVerifier.verified_aihub_headers(dict(request.headers), user)
 
             return await OpenaiService.chat_completion_with_assistants(
                 model_name=model_name,

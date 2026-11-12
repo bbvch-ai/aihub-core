@@ -15,6 +15,9 @@ class NATSMessageHeaders:
     # check. Any consumer reading these values (e.g. an on-behalf-of token) MUST validate them
     # independently and must never treat an X-AIHub-* value as a trusted identity assertion.
     AIHUB_HEADER_PREFIX: ClassVar[str] = "X-AIHub-"
+    # The requesting user's Keycloak access token, lowercased as ``extract_aihub_headers`` returns it. The API verifies
+    # it belongs to the request's user (``ForwardedUserTokenVerifier``) before forwarding it.
+    USER_TOKEN_HEADER: ClassVar[str] = "x-aihub-user-token"
 
     def __init__(self, headers: dict[str, str] | None = None):
         self.headers = headers or {}

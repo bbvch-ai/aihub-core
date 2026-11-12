@@ -8,14 +8,14 @@ from operator import or_
 from typing import Annotated, override
 
 from bson import ObjectId
-from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Security
+from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Request, Security
 from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 from stringcase import snakecase
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import ForwardedUserTokenVerifier, UserIdentity
 from swiss_ai_hub.core.auth.usage import (
     ResourceType,
     UsageLimitMessages,
@@ -406,6 +406,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
+            request: Request,
             s3_client: Annotated[S3Client, Depends(use_s3)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
@@ -426,6 +427,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
             await AgentEndpointsDiscoveryService._refuse_unsupported_response_schema(start_event_input, agent_class)
+            aihub_headers = await ForwardedUserTokenVerifier.verified_aihub_headers(dict(request.headers), user)
 
             if thread_id is not None:
                 await ThreadService.get_or_create_thread_to_post_in(
@@ -455,6 +457,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
                 display_id=display_id,
                 user=user,
                 subscribe_to_thread=True,
+                aihub_headers=aihub_headers,
             )
 
             if isinstance(response_event, ExceptionEvent):
@@ -509,6 +512,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
+            request: Request,
             s3_client: Annotated[S3Client, Depends(use_s3)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
@@ -531,6 +535,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
             )
 
             await AgentEndpointsDiscoveryService._refuse_unsupported_response_schema(start_event_input, agent_class)
+            aihub_headers = await ForwardedUserTokenVerifier.verified_aihub_headers(dict(request.headers), user)
 
             if thread_id is not None:
                 await ThreadService.get_or_create_thread_to_post_in(
@@ -560,6 +565,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
                 display_id=display_id,
                 user=user,
                 subscribe_to_thread=True,
+                aihub_headers=aihub_headers,
             )
 
             async def sse_event_generator():

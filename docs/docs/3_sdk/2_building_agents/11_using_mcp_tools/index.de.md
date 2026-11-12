@@ -1,7 +1,7 @@
 ---
 title: MCP-Tools verwenden
 description: Verbinden Sie Agents mit externen MCP-Servern und lassen Sie diese die von diesen Servern bereitgestellten Tools aufrufen.
-source_sha: a55ae06217e875bc66fad58766012494441a555581c4d1ac556ef64a9920718f
+source_sha: 1230dc5731f94c2a25a78e61df605022f4bd51de2e10d0a2977ea8850ffe4b05
 ---
 
 # MCP-Tools verwenden
@@ -18,13 +18,22 @@ senden.
 jeden Schritt injiziert, der sie als Parameter deklariert – fügen Sie sie Ihrer Agent-Konfiguration hinzu, und sie wird
 in Ihrem Workflow verfügbar.
 
-| Feld        | Zweck                                                                            |
-| ----------- | -------------------------------------------------------------------------------- |
-| `name`      | Ein logischer Name für die Verbindung.                                           |
-| `url`       | Der MCP-Server-Endpunkt – FastMCP leitet den Transport ab.                       |
-| `auth_mode` | Wie authentifiziert werden soll: `none`, `api_key` oder `user_token`.            |
-| `api_key`   | Der statische Schlüssel, der nur verwendet wird, wenn `auth_mode` `api_key` ist. |
-| `timeout`   | Client-Timeout in Sekunden.                                                      |
+| Feld        | Zweck                                                                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------------- |
+| `name`      | Ein logischer Name für die Verbindung.                                                                        |
+| `url`       | Der HTTP(S)-Endpunkt des MCP-Servers; eine URL, die auf `/sse` endet, nutzt SSE, jede andere Streamable HTTP. |
+| `auth_mode` | Wie authentifiziert werden soll: `none`, `api_key` oder `user_token`.                                         |
+| `api_key`   | Der statische Schlüssel, der nur verwendet wird, wenn `auth_mode` `api_key` ist.                              |
+| `timeout`   | Client-Timeout in Sekunden.                                                                                   |
+
+## Welche Server ein Agent erreichen darf
+
+Wer ein Agent-Profil bearbeitet, legt die URL fest, und Agents laufen neben den eigenen Diensten der Plattform.
+`McpClientFactory` verbindet sich deshalb nur mit öffentlichen Hosts: Ein Docker-Dienstname, `localhost`, eine private
+Adresse oder ein Name, der zu einer solchen auflöst, wird abgewiesen, bevor die Verbindung geöffnet wird, und
+Weiterleitungen werden nur innerhalb desselben Ursprungs verfolgt, was das MCP SDK durchsetzt. Um einen MCP-Server in
+einem internen Netzwerk zu erreichen, etwa die eigene API der Plattform unter `http://api:8000/mcp`, tragen Sie seinen
+Hostnamen in `MCP_ALLOWED_PRIVATE_HOSTS` (kommagetrennt) in der Umgebung des Agents ein.
 
 ## Authentifizierungsmodi
 
@@ -34,9 +43,19 @@ in Ihrem Workflow verfügbar.
 | `api_key`    | Ein auf der Verbindung konfigurierter statischer Schlüssel wird als Bearer-Token gesendet.                             |
 | `user_token` | Das Token des anfragenden Benutzers wird weitergeleitet, sodass die externe Aktion diesem Benutzer zugeschrieben wird. |
 
-Der `user_token`-Modus funktioniert nur für vom Benutzer initiierte Chat-Läufe, die das Token des Benutzers enthalten.
-Geplante, prozessinitiierte, Bot-Kanal- und Agent-zu-Agent-Läufe leiten kein Benutzer-Token weiter und schlagen in
-diesem Modus fehl – verwenden Sie `api_key` oder `none` für diese.
+Der `user_token`-Modus funktioniert nur für vom Benutzer initiierte Chat-Läufe, die das Token des Benutzers enthalten:
+
+- **OpenWebUI** sendet es für Benutzer, die sich über Keycloak angemeldet haben. Lokale Konten haben keines.
+- **Der Chat im Admin UI** sendet es bei jedem Chat.
+- **Andere API-Clients** senden das eigene Keycloak-Access-Token des Benutzers im Header `X-AIHub-User-Token`.
+
+Das Token ist das Keycloak-Access-Token des Benutzers. Die API weist eine Anfrage ab, deren Token einem anderen Benutzer
+gehört oder ungültig ist. Geplante, prozessinitiierte, Bot-Kanal- und Agent-zu-Agent-Läufe leiten kein Benutzer-Token
+weiter und schlagen in diesem Modus fehl – verwenden Sie `api_key` oder `none` für diese.
+
+Der MCP-Server erhält ein Token, das bis zu seinem Ablauf auch gegenüber der AI-Hub-API gültig ist. Verbinden Sie eine
+`user_token`-Verbindung daher nur mit einem Server, dem Sie so sehr vertrauen wie der Plattform selbst. Ein kurzlebiges,
+für jeden Lauf ausgestelltes Token wird es ersetzen (siehe ADR `2026_11_12_forward_keycloak_token_for_mcp_user_token`).
 
 ## MCP-Tools von einem Schritt aus aufrufen
 

@@ -741,3 +741,56 @@ async def test_a_streamed_answer_from_a_member_who_did_not_start_the_run_is_a_40
     assert refused.value.status_code == 403
     for_thread.assert_not_called()
     distributor.distribute_event.assert_not_called()
+
+
+_VERIFIED_HEADERS = {"x-aihub-user-token": "eyJ.verified-by-the-endpoint"}
+
+
+@pytest.mark.asyncio
+async def test_a_sent_event_carries_the_verified_aihub_headers_to_the_agent(mock_nats, mock_user_identity):
+    """The OpenWebUI pipe talks to these endpoints, so an MCP profile with auth_mode 'user_token' depends on them
+    forwarding the user token."""
+    with (
+        patch.object(ThreadEntity, "get_thread_by_id", return_value=Mock(id=ObjectId())),
+        patch("swiss_ai_hub.api.routes.agent.agent_service.ChatService") as chat_service,
+    ):
+        chat_service.start_json_event_interaction = AsyncMock(return_value=Mock(stop_event=Mock()))
+        chat_service.wait_for_stop_then_drain = AsyncMock()
+
+        await AgentService.send_agent_input_event(
+            nc=mock_nats,
+            agent_class="TestAgent",
+            agent_id="test_agent_1",
+            input_event=Mock(spec=UserMessageEvent),
+            external_agent_event_distributor=Mock(),
+            thread_id=ObjectId(),
+            display_id=None,
+            user=mock_user_identity,
+            aihub_headers=_VERIFIED_HEADERS,
+        )
+
+    assert chat_service.start_json_event_interaction.await_args.kwargs["aihub_headers"] == _VERIFIED_HEADERS
+
+
+@pytest.mark.asyncio
+async def test_a_streamed_event_carries_the_verified_aihub_headers_to_the_agent(mock_nats, mock_user_identity):
+    distributor = Mock(distribute_event=AsyncMock())
+
+    with (
+        patch.object(ThreadEntity, "get_thread_by_id", return_value=Mock(id=ObjectId())),
+        patch.object(AgentNCSubscriber, "for_thread_display_events", return_value=Mock(start=AsyncMock())),
+        patch("swiss_ai_hub.api.routes.agent.agent_service.ChatService.ensure_answered_by_run_user"),
+    ):
+        await AgentService.send_agent_input_event_stream(
+            nc=mock_nats,
+            agent_class="TestAgent",
+            agent_id="test_agent_1",
+            input_event=Mock(spec=UserMessageEvent),
+            external_agent_event_distributor=distributor,
+            thread_id=ObjectId(),
+            display_id=None,
+            user=mock_user_identity,
+            aihub_headers=_VERIFIED_HEADERS,
+        )
+
+    assert distributor.distribute_event.await_args.kwargs["aihub_headers"] == _VERIFIED_HEADERS

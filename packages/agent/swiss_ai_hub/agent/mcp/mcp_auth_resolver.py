@@ -1,20 +1,22 @@
+from swiss_ai_hub.core.tracing import NATSMessageHeaders
+
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 
 
 class McpAuthResolver:
     """Read the user's bearer token out of the X-AIHub-* headers stashed in RunContext.
 
-    The API extracts ``X-AIHub-*`` request headers, forwards them on the NATS message envelope,
-    and ``AgentDispatcher`` lifts them into RunContext under ``_aihub_headers`` (lowercased
-    keys). This resolver is the MCP-side reader of that contract.
+    The API extracts ``X-AIHub-*`` request headers, checks that a forwarded user token belongs to the
+    requesting user (``ForwardedUserTokenVerifier``), forwards them on the NATS message envelope, and
+    ``AgentDispatcher`` lifts them into RunContext under ``_aihub_headers`` (lowercased keys). This
+    resolver is the MCP-side reader of that contract.
 
-    Keep ``AIHUB_HEADERS_KEY`` and ``USER_TOKEN_HEADER`` in lockstep with the dispatcher writer
-    (``AgentDispatcher._AIHUB_HEADERS_KEY``) and ``NATSMessageHeaders.extract_aihub_headers`` —
+    Keep ``AIHUB_HEADERS_KEY`` in lockstep with the dispatcher writer (``AgentDispatcher._AIHUB_HEADERS_KEY``) —
     ``test_mcp_auth_resolver.py`` asserts the RunContext key structurally to catch drift.
     """
 
     AIHUB_HEADERS_KEY = "_aihub_headers"
-    USER_TOKEN_HEADER = "x-aihub-user-token"
+    USER_TOKEN_HEADER = NATSMessageHeaders.USER_TOKEN_HEADER
 
     @staticmethod
     async def resolve_user_token(run_context: RunContext) -> str | None:
