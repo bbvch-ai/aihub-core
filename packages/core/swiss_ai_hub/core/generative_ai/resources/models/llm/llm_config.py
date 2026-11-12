@@ -18,8 +18,9 @@ from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLM
 from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base import LiteLLMBase
 from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_credentials import LiteLLMCredentials
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
-from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
+from swiss_ai_hub.core.infrastructure.litellm.model_requirements import ModelRequirements
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 # What a model without a curated `default_temperature` is sampled at; the value every model used before
 # defaults became per model.
 DEFAULT_TEMPERATURE = 0.0
+MODEL_NAME_FROM_PARENT = "../model_name"
 
 
 class LLMParameter(Form):
@@ -89,7 +91,7 @@ class LLMParameter(Form):
                 label=LocaleString.from_i18n_path("lib.llm.config.temperature.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.temperature.help"),
                 override_label=LocaleString.from_i18n_path("lib.llm.config.temperature.toggle_label"),
-                model_ref="../model_name",
+                model_ref=MODEL_NAME_FROM_PARENT,
                 default_from="default_temperature",
                 fallback_default=DEFAULT_TEMPERATURE,
                 min=0.0,
@@ -102,7 +104,7 @@ class LLMParameter(Form):
                 label=LocaleString.from_i18n_path("lib.llm.config.top_p.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.top_p.help"),
                 override_label=LocaleString.from_i18n_path("lib.llm.config.top_p.toggle_label"),
-                model_ref="../model_name",
+                model_ref=MODEL_NAME_FROM_PARENT,
                 default_from="default_top_p",
                 min=0.0,
                 max=1.0,
@@ -113,7 +115,7 @@ class LLMParameter(Form):
             accept_images=ModelGatedCheckbox(
                 label=LocaleString.from_i18n_path("lib.llm.config.accept_images.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.accept_images.help"),
-                model_ref="../model_name",
+                model_ref=MODEL_NAME_FROM_PARENT,
                 requires="supports_vision",
             ),
             logprobs=Checkbox(
@@ -156,7 +158,13 @@ class LLMConfig(LiteLLMBase[ResilientOpenAILike]):
     ] = LLMParameter()
 
     @classmethod
-    def as_form(cls, include_default_parameter: bool = True) -> Self:
+    def as_form(
+        cls,
+        include_default_parameter: bool = True,
+        requirements: Annotated[
+            ModelRequirements | None, "What the picked model must offer; any general-purpose chat model when unset"
+        ] = None,
+    ) -> Self:
         """
         Factory method to create a form-mode LLMConfig.
 
@@ -168,6 +176,7 @@ class LLMConfig(LiteLLMBase[ResilientOpenAILike]):
                 label=LocaleString.from_i18n_path("lib.llm.config.model.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.model.help"),
                 mode="chat",
+                requirements=requirements or ModelRequirements(),
             ),
             default_parameter=LLMParameter.as_form() if include_default_parameter else LLMParameter(),
         )
@@ -215,13 +224,12 @@ class LLMConfig(LiteLLMBase[ResilientOpenAILike]):
         On exit, also when the block raised, it reports the costs to `displayer` — tokens spent before a failure
         are spent all the same — and closes the LLM's clients (see `ResilientOpenAILike.aclose`).
         """
-        # The per-user key is the only carrier that reaches LiteLLM: it sets `user` on every spend log row
-        # and activates USER_MAX_BUDGET. Tenant is NOT sent: tenant attribution lives on LLMCostEvent. The
-        # gateway keeps request tags since LiteLLM v1.106.2, so tags and teams are both candidates for a
-        # gateway-side carrier; see ADR 2026_08_06_per_user_litellm_key_as_cost_attribution_carrier.
-        api_key = await LiteLLMService.api_key_for_user(user) if user else None
+        # The per-user key sets `user` on every spend log row and activates USER_MAX_BUDGET; the customer header
+        # books the call to the acting tenant (ADR 2026_11_09_acting_tenant_as_litellm_customer).
+        credentials = await LiteLLMCredentials.for_user(user)
+        headers = {**(extra_headers or {}), **credentials.headers}
 
-        llm, cost_tracker = self.to_llama_index(extra_headers=extra_headers, api_key=api_key)
+        llm, cost_tracker = self.to_llama_index(extra_headers=headers, api_key=credentials.api_key)
         try:
             yield llm
         finally:

@@ -1,6 +1,7 @@
 ---
 test: This is an english test
 default_chat_disclaimer: AI can make mistakes. Please verify answers.
+output_budget_exhausted: The model used its entire output budget on reasoning and produced no answer. Try a shorter input or a model without reasoning.
 translation:
   prompt: |
     You are a professional translator. Translate the text below from {source_language} into {target_language}, preserving meaning, tone, and formality.
@@ -18,3 +19,11 @@ translation:
 model_limits:
   above_maximum: '%{field}: at most %{maximum} is allowed for the model %{model}.'
   capability_missing: '%{field}: the model %{model} does not support this.'
+  requirements_unmet: '%{field}: the model %{model} does not meet what this field requires (%{requirements}).'
+  special_purpose: '%{field}: the model %{model} is built for one job only and cannot be chosen here.'
+  requirements:
+    vision: image input
+    tool_calling: tool calling
+    structured_output: structured output
+    reasoning: reasoning
+    hosting_location: hosting location

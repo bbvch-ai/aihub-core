@@ -1,6 +1,6 @@
 from typing import Self, override
 
-from mem0.vector_stores.milvus import MilvusDB
+from mem0.vector_stores.milvus import MilvusDB, OutputData
 
 
 class PatchedMilvusDB(MilvusDB):
@@ -24,6 +24,15 @@ class PatchedMilvusDB(MilvusDB):
         instance = cls.__new__(cls)
         instance.__dict__.update(milvus.__dict__)
         return instance
+
+    @override
+    def get(self, vector_id: str) -> OutputData | None:
+        """Upstream indexes the first hit unconditionally, so an unknown id raised IndexError instead of
+        reaching mem0's `AsyncMemory.get`, which already treats `None` as "not found"."""
+        result = self.client.get(collection_name=self.collection_name, ids=vector_id)
+        if not result:
+            return None
+        return OutputData(id=result[0].get("id"), score=None, payload=result[0].get("metadata"))
 
     @override
     def _create_filter(self, filters: dict) -> str:

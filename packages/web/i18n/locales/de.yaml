@@ -148,7 +148,6 @@ thread:
       completed: Abgeschlossen
       failed: Fehlgeschlagen
       agent_name_placeholder: Nach Agent filtern
-      user_name_placeholder: Nach Benutzer filtern
       date_range_placeholder: Nach Datum filtern
   utils:
     pendingTypes:
@@ -264,7 +263,6 @@ event:
   retrieveMemory:
     title: Erinnerung abgerufen
     memories: Erinnerungen
-    relations: Wissensgraph
     score: Relevanz
     noMemories: Keine Erinnerungen abgerufen
   storeMemory:
@@ -272,9 +270,6 @@ event:
     added: Hinzugefügt
     updated: Aktualisiert
     deleted: Gelöscht
-    addedRelations: hinzugefügte Beziehungen
-    deletedRelations: gelöschte Beziehungen
-    relationChanges: Beziehungsänderungen
     noChanges: Keine Änderungen
     chars: '{count} Zeichen'
     sourceDocument: '{count} Quelldokument | {count} Quelldokumente'
@@ -985,6 +980,8 @@ process:
       done: Abgeschlossen
       steps: Fortschritt
 form:
+  repeater:
+    add_item: Eintrag hinzufügen
   secret_file_input:
     drop_hint: Datei hier ablegen oder zum Auswählen klicken
     limits: '{accept}, bis {size}'
@@ -1008,6 +1005,14 @@ form:
       nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie
       sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
+  modelSelect:
+    contextWindow: 'Kontextfenster: {input} Eingabe- · {output} Ausgabe-Tokens'
+    contextWindowInputOnly: 'Kontextfenster: {input} Eingabe-Tokens'
+    notSelectable: '{model} erfüllt nicht, was dieses Feld verlangt. Wählen Sie vor dem Speichern ein anderes Modell.'
+    specialPurpose: '{model} ist nur für eine bestimmte Aufgabe gebaut und kann hier nicht gewählt werden. Wählen Sie vor dem Speichern ein anderes Modell.'
+    unavailable: '{model} steht Ihnen nicht zur Verfügung. Wählen Sie vor dem Speichern ein anderes Modell.'
+    loadFailed: Die Modelle konnten nicht geladen werden. Laden Sie die Seite neu, um es erneut zu versuchen.
+    empty: Keines der Modelle, die Sie verwenden dürfen, erfüllt, was dieses Feld verlangt.
   modelBound:
     providerDefault: Anbieter-Standard
     overrideRequired: Geben Sie einen Wert ein, oder deaktivieren Sie die Überschreibung,
@@ -1071,9 +1076,6 @@ lib:
         reservierte Schlüssel `namespace` ist nie erlaubt.
 memory:
   title: Erinnerungen
-  graph:
-    title: Wissensgraph
-    no_results: Keine Erinnerungen gefunden
   list:
     title: Erinnerungsliste
     no_results: Keine Erinnerungen gefunden
@@ -1136,8 +1138,6 @@ openwebui:
   memories:
     title: Agent-Erinnerungen
     select_agent: Agent auswählen
-    list: Liste
-    graph: Graph
     user_memories: Benutzererinnerungen
     org_memories: Organisationserinnerungen
 tenant:

@@ -1,5 +1,8 @@
 ---
 config:
+  list_help: Les bases de connaissances que cet agent consulte pour chaque question.
+    Ajoutez une entrée par base ; chacune a ses propres réglages pour le nombre de
+    documents à récupérer et la manière de chercher.
   index_namespaces:
     label: Espaces de noms d'index
     help: Liste de namespaces séparés par des virgules. Laissez vide pour récupérer

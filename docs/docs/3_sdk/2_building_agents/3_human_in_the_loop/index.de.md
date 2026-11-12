@@ -1,6 +1,6 @@
 ---
 title: Human-in-the-Loop
-source_sha: 074ec20f7a61c1c4eae62e9beff09f7ae3d3b411ab0ce06e0e39980474d2570c
+source_sha: 30913b915faa01d2376743103eb637f46df35e5bce64ffd82af521bf0a18435d
 ---
 
 # Human-in-the-Loop
@@ -16,6 +16,11 @@ Das HITL-Muster wird durch ein Ereignispaar orchestriert, das die Logik zum Anha
    `ControlEvent`, das auch als `DisplayEvent` fungiert, den Workflow anhält und dem Benutzer in der UI eine Frage
    präsentiert.
 2. **Response**: Die Antwort des Benutzers wird als `HumanInTheLoop.response`-Ereignis an das System zurückgesendet.
+   Antworten kann nur der Benutzer, der den Lauf gestartet hat: Die API weist die Antwort eines anderen Thread-Mitglieds
+   mit 403 ab, bevor sie gespeichert wird, sodass eine abgewiesene Antwort die Anfrage nie schließt. Der Server setzt
+   den angemeldeten Absender als `responded_by` auf die Antwort, unabhängig davon, was der Client sendet, und leitet sie
+   nur in einen Thread weiter, dem der Absender angehört. Der Dispatcher prüft `responded_by` erneut; das deckt einen
+   Lauf ab, dessen Start nie gespeichert wurde.
 3. **Resume**: Ein weiterer Schritt in Ihrem Agenten ist so konfiguriert, dass er dieses Antwort-Ereignis akzeptiert.
    Wenn das Ereignis eintrifft, leitet der Dispatcher es an den richtigen Schritt weiter, und der Workflow setzt seine
    Ausführung fort.

@@ -11,6 +11,8 @@ on:
     #   - "src/**/*.tsx"
     #   - "src/**/*.js"
     #   - "src/**/*.jsx"
+permissions:
+  contents: read
 jobs:
   claude-review:
     if: >-

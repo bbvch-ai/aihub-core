@@ -13,6 +13,7 @@ from swiss_ai_hub.agent.agents.universal_agent.universal_agent_config import Uni
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
 LIMIT = 1024
@@ -51,7 +52,7 @@ def _context(locale: str) -> ToolContext:
 
 @pytest.mark.parametrize("locale", LOCALES)
 def test_every_function_tool_description_fits_without_its_signature(locale: str) -> None:
-    tools = UniversalAgent.tool_set("tools").function_tools(_context(locale))
+    tools = UniversalAgent.tool_set("tools").function_tools(_context(locale), ToolLoopConfig())
     definitions = {
         name: UniversalAgent.tool_set("tools")._without_signature(
             name, tool.metadata.to_openai_tool(skip_length_check=True)["function"]["description"]

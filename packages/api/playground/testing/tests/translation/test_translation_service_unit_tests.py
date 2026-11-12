@@ -3,12 +3,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import LiteLLMCredentials
 
 from swiss_ai_hub.api.routes.translation.dto.translation_request import TranslationRequest
 from swiss_ai_hub.api.routes.translation.missing_translation_error import MissingTranslationError
 from swiss_ai_hub.api.routes.translation.translation_service import TranslationService
 
 _SERVICE_MODULE = "swiss_ai_hub.api.routes.translation.translation_service"
+_CREDENTIALS = LiteLLMCredentials(api_key="sk-user", headers={})
 
 
 class TestExtractTranslation:
@@ -84,7 +86,7 @@ def _per_locale_responses(responses: dict[str, str | Exception]) -> AsyncMock:
 async def _translate(source: LocaleString, apredict: AsyncMock, source_locale: str = "en"):
     with (
         patch(f"{_SERVICE_MODULE}.PromptTemplate"),
-        patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
+        patch(f"{_SERVICE_MODULE}.LiteLLMCredentials.for_user", new=AsyncMock(return_value=_CREDENTIALS)),
     ):
         return await TranslationService.translate(
             locale_string=source,
@@ -103,7 +105,7 @@ class TestTranslate:
 
         with (
             patch(f"{_SERVICE_MODULE}.PromptTemplate"),
-            patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
+            patch(f"{_SERVICE_MODULE}.LiteLLMCredentials.for_user", new=AsyncMock(return_value=_CREDENTIALS)),
         ):
             await TranslationService.translate(
                 locale_string=LocaleString(en="Hello"),
@@ -227,6 +229,27 @@ class TestTranslate:
         assert outcome.translated.model_dump(exclude_unset=True) == {"de": "Hallo"}
         assert outcome.failed_locales == []
 
+    @pytest.mark.asyncio
+    async def test_whitespace_only_source_text_skips_the_llm(self):
+        """Given only whitespace the model asks for text instead, so every locale failed (aihub-core-private#173)."""
+        apredict = AsyncMock()
+
+        outcome = await _translate(LocaleString(en="  \n "), apredict)
+
+        apredict.assert_not_awaited()
+        assert outcome.translated.model_dump(exclude_unset=True) == {"en": "  \n "}
+        assert outcome.failed_locales == []
+
+    @pytest.mark.asyncio
+    async def test_translates_a_locale_that_holds_only_whitespace(self):
+        apredict = _per_locale_responses({"de": "<translation>Hallo</translation>"})
+
+        outcome = await _translate(LocaleString(en="Hello", de="   ", fr="Salut", it="Ciao"), apredict)
+
+        assert apredict.await_count == 1
+        assert outcome.translated.de == "Hallo"
+        assert outcome.failed_locales == []
+
 
 class TestTranslateFromRequest:
     @pytest.mark.asyncio
@@ -242,7 +265,7 @@ class TestTranslateFromRequest:
 
         with (
             patch(f"{_SERVICE_MODULE}.PromptTemplate"),
-            patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
+            patch(f"{_SERVICE_MODULE}.LiteLLMCredentials.for_user", new=AsyncMock(return_value=_CREDENTIALS)),
             patch(f"{_SERVICE_MODULE}.LLMConfig.deterministic", return_value=llm_config) as deterministic_config,
         ):
             response = await TranslationService.translate_from_request(

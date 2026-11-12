@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.events.agent import ToolApprovalRequestEvent, ToolApprovalResponseEvent, UserMessageEvent
 from swiss_ai_hub.core.form import ConfigSpecs, Repeater, VectorStoreInput
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
@@ -17,7 +17,10 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
+from swiss_ai_hub.core.subscribers import AgentNCSubscriber
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
 from swiss_ai_hub.api.routes.agent.dto.agent_config_dto import AgentConfigDTO
@@ -715,3 +718,48 @@ class TestAgentSaveRejectsEmptyNamespaceScope:
         self._assert_rejected(raised)
         authorize.assert_not_awaited()
         stored.save_changes.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_a_streamed_answer_from_a_member_who_did_not_start_the_run_is_a_403_without_a_subscriber(
+    mock_nats, mock_user_identity
+):
+    thread = Mock(id=ObjectId())
+    request = ToolApprovalRequestEvent(
+        question="Allow?",
+        topic=AgentInstanceTopic(
+            agent_class="TestAgent",
+            agent_id="test_agent_1",
+            thread_id=str(thread.id),
+            display_id=str(ObjectId()),
+            run_id=str(ObjectId()),
+            event_type="control_event",
+            event_name="ToolApprovalResponseEvent",
+            event_id=str(ObjectId()),
+        ),
+        tool_call_id="c1",
+        name="run_command",
+        kind="function",
+    )
+    distributor = Mock(distribute_event=AsyncMock())
+
+    with (
+        patch.object(ThreadEntity, "get_thread_by_id", return_value=thread),
+        patch.object(PersistedAgentEventEntity, "user_id_of_run", return_value="run-owner"),
+        patch.object(AgentNCSubscriber, "for_thread_display_events") as for_thread,
+        pytest.raises(HTTPException) as refused,
+    ):
+        await AgentService.send_agent_input_event_stream(
+            nc=mock_nats,
+            agent_class="TestAgent",
+            agent_id="test_agent_1",
+            input_event=ToolApprovalResponseEvent(response=True, request_event=request),
+            external_agent_event_distributor=distributor,
+            thread_id=thread.id,
+            display_id=None,
+            user=mock_user_identity,
+        )
+
+    assert refused.value.status_code == 403
+    for_thread.assert_not_called()
+    distributor.distribute_event.assert_not_called()

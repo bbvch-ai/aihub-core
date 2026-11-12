@@ -16,6 +16,7 @@ class EventModelCreationService:
         "display_name",
         "display_description",
         "agent_config",
+        "responded_by",
     }
     _output_excluded_fields = {"event_id", "created_at", "_event_name", "_parent_event_names"}
     _model_config_dict = ConfigDict(

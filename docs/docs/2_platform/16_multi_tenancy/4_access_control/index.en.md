@@ -161,11 +161,13 @@ AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS="text-generation/Apertus-70B-Instruc
 # tenant until a sysadmin grants it.
 AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES="LLMWrappingAgent,FewShotAgent,RAGAgent"
 
-# Automatic user signup
-AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
-AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
-FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
+# Roles given to a tenant's first member and to every later member
+AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES='AIHubAdmin,AIHubUser'
+AIHUB_USER_SIGNUP_REGULAR_USER_ROLES='AIHubUser'
 ```
+
+The default roles and the signup settings are described in
+[Default Roles and New-User Role Assignment](../../11_access_management/3_default_roles/).
 
 ### What a new tenant starts with
 

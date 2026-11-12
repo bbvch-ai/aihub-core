@@ -384,6 +384,14 @@ class KnowledgeService:
                     f"'{model.model_info.mode}' model and cannot be used where a '{expected_mode}' model is required."
                 ),
             )
+        if not model.is_general_purpose:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Configuration validation failed: {field_path}: '{model_name}' is built for one job only "
+                    "and cannot be chosen here."
+                ),
+            )
         if expected_mode == "embedding" and model.model_info.output_vector_size is None:
             raise HTTPException(
                 status_code=400,

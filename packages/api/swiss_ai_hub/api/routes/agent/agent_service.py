@@ -255,6 +255,7 @@ class AgentService:
             display_id=topic_manager.display_id,
             event=input_event,
         )
+        ChatService.ensure_answered_by_run_user(external_event, user)
 
         stop_signal = asyncio.Event()
         event_queue: asyncio.Queue[DisplayEvent] = asyncio.Queue()

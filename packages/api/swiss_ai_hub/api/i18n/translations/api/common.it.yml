@@ -1,6 +1,7 @@
 ---
 test: Questo è un test italiano
 default_chat_disclaimer: L’IA può commettere errori. Verifica le risposte.
+output_budget_exhausted: Il modello ha esaurito l’intero budget di output nel ragionamento e non ha prodotto alcuna risposta. Prova con un input più breve o con un modello senza ragionamento.
 translation:
   prompt: |
     Sei un traduttore professionale. Traduci il testo seguente da {source_language} in {target_language}, preservando significato, tono e livello di formalità.
@@ -18,3 +19,11 @@ translation:
 model_limits:
   above_maximum: '%{field}: per il modello %{model} sono consentiti al massimo %{maximum}.'
   capability_missing: '%{field}: il modello %{model} non lo supporta.'
+  requirements_unmet: '%{field}: il modello %{model} non soddisfa i requisiti di questo campo (%{requirements}).'
+  special_purpose: '%{field}: il modello %{model} è pensato per un solo compito e non può essere scelto qui.'
+  requirements:
+    vision: input di immagini
+    tool_calling: chiamata di strumenti
+    structured_output: output strutturato
+    reasoning: ragionamento
+    hosting_location: luogo di hosting

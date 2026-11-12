@@ -62,6 +62,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const route = useRoute()
 const tenantPath = useTenantPath()
 const { pendingType } = useThreadUtils()
 
@@ -76,12 +77,11 @@ const toNode = (node: OrganizationChartNode) => {
     })
     displayId = display?.display_id
   }
-  if (displayId) {
-    router.push(tenantPath(`/service/threads/${props.thread.id}/display/${displayId}`))
-  }
-  else {
-    router.push(tenantPath(`/service/threads/${props.thread.id}/display`))
-  }
+  const displayPath = displayId ? `display/${displayId}` : 'display'
+  router.push({
+    path: tenantPath(`/service/threads/${props.thread.id}/${displayPath}`),
+    query: route.query,
+  })
 }
 
 const formattedDate = (datestr: string) => format(new Date(datestr), 'yyyy.MM.dd HH:mm')

@@ -23,15 +23,20 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
     model_info:
+      aihub_display_name: Apertus 70B Instruct
       aihub_hosting_location: swiss_cloud
+      aihub_general_purpose: true
       mode: chat
-      max_input_tokens: 65536
+      # Infomaniak serves a 100016-token window, input + output combined (measured 2026-11-11), so these two must
+      # sum to it.
+      max_input_tokens: 67248
       max_output_tokens: 32768
       supports_function_calling: true
       supports_response_schema: true
       # Probed 2026-10-21: named unguessable colour sequences of image inputs, so Infomaniak serves it with vision
       # although the model card describes a text model.
       supports_vision: true
+      supports_reasoning: false
       # No max_images: none was hit up to 128 images per request; the input window bounds it instead.
       # Sampling defaults recommended on the model card.
       default_temperature: 0.8
@@ -45,7 +50,9 @@ model_list:
       api_key: os.environ/STONEY_CLOUD_API_KEY
       drop_params: true
     model_info:
+      aihub_display_name: Gemma 4 31B
       aihub_hosting_location: swiss_cloud
+      aihub_general_purpose: true
       mode: chat
       # stoney's max_model_len 163840 is input + output combined, so these two must sum to it.
       max_input_tokens: 155648
@@ -54,6 +61,9 @@ model_list:
       supports_response_schema: true
       # Probed 2026-10-21: images are read (258 prompt tokens each, colours named correctly).
       supports_vision: true
+      # Probed 2026-11-04 on both providers: no thinking by default, a thinking phase when the call sends
+      # reasoning_effort or chat_template_kwargs.enable_thinking.
+      supports_reasoning: true
       # No max_images: none was hit up to 128 images per request; the input window bounds it instead.
       # Sampling defaults from the model's generation_config.json.
       default_temperature: 1.0
@@ -68,14 +78,20 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
     model_info:
+      aihub_display_name: Kimi K2.6
       aihub_hosting_location: swiss_cloud
+      aihub_general_purpose: true
       mode: chat
-      max_input_tokens: 131072
+      # Infomaniak's window, input + output combined, measured 256000 on 2026-11-11 but 249984 on 2026-10-08 (#2077);
+      # these two sum to the smaller until a re-measurement settles it.
+      max_input_tokens: 184448
       max_output_tokens: 65536
       supports_function_calling: true
       supports_response_schema: true
       # Probed 2026-10-21: images are read (colours named correctly).
       supports_vision: true
+      # Probed 2026-11-04: thinks by default.
+      supports_reasoning: true
       # No max_images: none was hit up to 128 images per request; the input window bounds it instead.
       # The model card's thinking-mode recommendation, the mode agents call it in.
       default_temperature: 1.0
@@ -90,10 +106,14 @@ model_list:
       api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
-      # Ministral's Mistral tokenizer 400s on `chat_template_kwargs`, and has no reasoning to disable.
-      additional_drop_params: [chat_template_kwargs]
+      # Ministral's Mistral tokenizer 400s on `chat_template_kwargs`, and has no reasoning to disable. LiteLLM forwards
+      # reasoning_effort to every model it does not know, and Infomaniak 400s on any value but none and high (probed
+      # 2026-11-04), which OpenWebUI users can send from a chat's advanced parameters.
+      additional_drop_params: [chat_template_kwargs, reasoning_effort]
     model_info:
+      aihub_display_name: Ministral 3 14B Instruct
       aihub_hosting_location: swiss_cloud
+      aihub_general_purpose: true
       mode: chat
       # Infomaniak serves an 80000-token window, input + output combined (its 400 names it), so these two must sum
       # to it. Their GET /1/ai/models declares max_token_input: 100000, more than the model accepts at all.
@@ -105,6 +125,7 @@ model_list:
       # "At most 10 image(s) may be provided in one prompt".
       supports_vision: true
       max_images: 10
+      supports_reasoning: false
       # The model card asks for a temperature below 0.1 in production and sets no top_p.
       default_temperature: 0.05
       input_cost_per_token: 0.0000003
@@ -116,16 +137,23 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
     model_info:
+      aihub_display_name: Qwen3.5 122B A10B
       aihub_hosting_location: swiss_cloud
+      aihub_general_purpose: true
       mode: chat
-      max_input_tokens: 131072
-      max_output_tokens: 8192
+      # Infomaniak serves a 204800-token window, input + output combined (measured 2026-11-11), so these two must
+      # sum to it. 32768 output is the model card's recommendation for most queries: with 8192 its reasoning used up
+      # the budget and answered nothing (aihub-incidents#72).
+      max_input_tokens: 172032
+      max_output_tokens: 32768
       supports_function_calling: true
       supports_response_schema: true
       # Probed 2026-10-21: images are read (colours named correctly) and Infomaniak's upstream 400 names the limit,
       # "At most 20 image(s) may be provided in one prompt".
       supports_vision: true
       max_images: 20
+      # Probed 2026-11-04: thinks by default.
+      supports_reasoning: true
       # Sampling defaults from the model's generation_config.json.
       default_temperature: 0.6
       default_top_p: 0.95
@@ -142,12 +170,18 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_OCR_API_KEY
       drop_params: true
     model_info:
+      aihub_display_name: MinerU 2.5 (OCR)
       aihub_hosting_location: swiss_cloud
+      # An OCR model served over /chat/completions: mode stays chat because LiteLLM calls and health-probes it by
+      # mode, and this flag keeps it out of model pickers and the default /models/mode/chat listing.
+      aihub_general_purpose: false
       mode: chat
       max_input_tokens: 8192
       max_output_tokens: 8192
       supports_function_calling: false
+      supports_response_schema: false
       supports_vision: true
+      supports_reasoning: false
       # Sampling defaults from the model's generation_config.json: near-greedy, as OCR should be.
       default_temperature: 0.01
       default_top_p: 0.001
@@ -172,6 +206,7 @@ model_list:
       max_parallel_requests: 16
       drop_params: true
     model_info:
+      aihub_display_name: BGE-M3
       aihub_hosting_location: swiss_cloud
       mode: embedding
       # The chunker reads this to size nodes. Without it LiteLLM reports null and callers have to guess,
@@ -199,6 +234,7 @@ model_list:
       # have no effect. Callers send one rerank per ranking instead of bursts.
       drop_params: true
     model_info:
+      aihub_display_name: BGE Reranker v2 M3
       aihub_hosting_location: swiss_cloud
       mode: rerank
       max_input_tokens: 8192
@@ -219,6 +255,7 @@ model_list:
       api_version: '2024-06-01'
       drop_params: true
     model_info:
+      aihub_display_name: Whisper Large v3
       aihub_hosting_location: swiss_cloud
       mode: audio_transcription
       base_model: openai/whisper-1
@@ -233,6 +270,7 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_IMAGE_API_KEY
       drop_params: true
     model_info:
+      aihub_display_name: FLUX
       aihub_hosting_location: swiss_cloud
       mode: image_generation
 # ===================================================================
@@ -468,6 +506,7 @@ litellm_settings:
     - detect_prompt_injection
     - otel
     - custom_callbacks.proxy_handler_instance
+    - tenant_attribution.tenant_attribution_instance
   telemetry: true
   json_logs: true
   drop_params: true

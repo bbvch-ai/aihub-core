@@ -1,7 +1,7 @@
 from typing import Annotated, Any
 
 from swiss_ai_hub.core.infrastructure import StructuredPipelineSettings
-from swiss_ai_hub.core.network import SourceHostGuard
+from swiss_ai_hub.core.network import PublicHostGuard
 
 from swiss_ai_hub.pipeline.resources.jira.jira_client import JiraClient
 from swiss_ai_hub.pipeline.resources.jira.jira_request_error import JiraRequestError
@@ -29,7 +29,7 @@ class JiraPreflight:
     ) -> JiraScope:
         """Returns what the sync needs again: the account's time zone and which projects are service desks. The host
         is checked first, so no request reaches an internal one."""
-        SourceHostGuard.require_public(
+        PublicHostGuard.require_public(
             options.base_url,
             StructuredPipelineSettings().private_host_allow_list(),
             _ALLOW_LIST_VARIABLE,

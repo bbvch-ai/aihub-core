@@ -232,6 +232,23 @@ class PersistedAgentEventEntity(Document):
 
     @classmethod
     @trace_fn
+    def user_id_of_run(cls, run_id: str) -> str | None:
+        """The user who started a run, from its persisted StartEvent. None for a run started without a user, such as
+        a scheduled one, and for a run whose StartEvent was never persisted."""
+        start = (
+            cls.objects(
+                run_id=run_id,
+                event_type=AgentTopicManager.CONTROL_EVENT,
+                event_parents__contains="StartEvent",
+            )
+            .only("event_data.user")
+            .first()
+        )
+        user = start.event_data.get("user") if start else None
+        return user.get("id") if user else None
+
+    @classmethod
+    @trace_fn
     def display_events_for_threads(
         cls, thread_ids: list[str], event_name: str | None = None
     ) -> list["PersistedAgentEventEntity"]:

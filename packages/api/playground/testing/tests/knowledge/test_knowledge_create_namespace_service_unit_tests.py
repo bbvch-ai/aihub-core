@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import HTTPException
 from mongoengine import DoesNotExist, NotUniqueError
+from pydantic import ValidationError
 from swiss_ai_hub.core.persistence.rag.datalake.entities import NamespaceEntity
 
 from swiss_ai_hub.api.routes.knowledge.dto.create_namespace_request import CreateNamespaceRequest
@@ -89,6 +90,13 @@ async def test_losing_a_race_on_the_unique_index_is_a_conflict(namespaces: Magic
         await _create("reports", "reports")
 
     assert exc_info.value.status_code == 409
+
+
+def test_a_folder_of_more_than_one_path_segment_is_refused() -> None:
+    """Ingestion files a document under its key's first segment, so ``legal/private`` would never hold a document of
+    its own, and its files would be checked against the namespace of ``legal``."""
+    with pytest.raises(ValidationError):
+        CreateNamespaceRequest(folder_name="legal/private")
 
 
 @pytest.mark.asyncio

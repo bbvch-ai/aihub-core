@@ -147,7 +147,6 @@ thread:
       completed: Completato
       failed: Fallito
       agent_name_placeholder: Filtra per agente
-      user_name_placeholder: Filtra per utente
       date_range_placeholder: Filtra per data
   utils:
     pendingTypes:
@@ -253,7 +252,6 @@ event:
   retrieveMemory:
     title: Memoria recuperata
     memories: Memorie
-    relations: Grafo della conoscenza
     score: Rilevanza
     noMemories: Nessuna memoria recuperata
   storeMemory:
@@ -261,9 +259,6 @@ event:
     added: Aggiunto
     updated: Aggiornato
     deleted: Eliminato
-    addedRelations: relazioni aggiunte
-    deletedRelations: relazioni eliminate
-    relationChanges: Modifiche alle relazioni
     noChanges: Nessuna modifica
   addMemoryToChatHistory:
     summary: '{count} messaggio di memoria aggiunto alla cronologia | {count} messaggi
@@ -984,6 +979,8 @@ process:
       done: Completato
       steps: Progresso
 form:
+  repeater:
+    add_item: Aggiungi elemento
   secret_file_input:
     drop_hint: Trascina qui il file o fai clic per sceglierlo
     limits: '{accept}, fino a {size}'
@@ -1007,6 +1004,14 @@ form:
       in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
       fino al rilascio di una correzione.
 lib:
+  modelSelect:
+    contextWindow: 'Finestra di contesto: {input} token in ingresso · {output} in uscita'
+    contextWindowInputOnly: 'Finestra di contesto: {input} token in ingresso'
+    notSelectable: '{model} non soddisfa i requisiti di questo campo. Scegli un altro modello prima di salvare.'
+    specialPurpose: '{model} è pensato per un solo compito e non può essere scelto qui. Scegli un altro modello prima di salvare.'
+    unavailable: '{model} non è disponibile per te. Scegli un altro modello prima di salvare.'
+    loadFailed: Non è stato possibile caricare i modelli. Ricarica la pagina per riprovare.
+    empty: Nessuno dei modelli che puoi usare soddisfa i requisiti di questo campo.
   modelBound:
     providerDefault: predefinito del fornitore
     overrideRequired: Inserisci un valore, oppure deseleziona la sostituzione per
@@ -1071,9 +1076,6 @@ lib:
         La chiave riservata `namespace` non è mai consentita.
 memory:
   title: Ricordi
-  graph:
-    title: Grafo della conoscenza
-    no_results: Nessun ricordo trovato
   list:
     title: Elenco dei ricordi
     no_results: Nessun ricordo trovato
@@ -1134,8 +1136,6 @@ openwebui:
   memories:
     title: Ricordi dell'Agente
     select_agent: Seleziona Agente
-    list: Lista
-    graph: Grafico
     user_memories: Ricordi dell'Utente
     org_memories: Ricordi dell'Organizzazione
 tenant:

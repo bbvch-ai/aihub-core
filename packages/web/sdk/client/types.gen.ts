@@ -4710,7 +4710,7 @@ export type CreateNamespaceRequest = {
   /**
    * Folder Name
    *
-   * The name of the folder to which the namespace belongs.
+   * The name of the folder to which the namespace belongs. A single path segment, because ingestion files every document under the first segment of its key.
    */
   folder_name: string;
   /**
@@ -7603,6 +7603,30 @@ export type HealthResponse = {
 };
 
 /**
+ * HostingLocation
+ *
+ * Where a model runs, as the LiteLLM config declares it in `aihub_hosting_location`.
+ *
+ * Keep in sync with `HOSTING_LOCATIONS` in `infra/deployment/generate_compose.py`, which rejects any other value.
+ */
+export const HostingLocation = {
+  LOCAL: "local",
+  SWISS_CLOUD: "swiss_cloud",
+  EU: "eu",
+  GLOBAL: "global",
+} as const;
+
+/**
+ * HostingLocation
+ *
+ * Where a model runs, as the LiteLLM config declares it in `aihub_hosting_location`.
+ *
+ * Keep in sync with `HOSTING_LOCATIONS` in `infra/deployment/generate_compose.py`, which rejects any other value.
+ */
+export type HostingLocation =
+  (typeof HostingLocation)[keyof typeof HostingLocation];
+
+/**
  * HtmlElement
  *
  * https://formkit.com/essentials/schema#html-elements-el
@@ -7947,6 +7971,12 @@ export type HumanInTheLoopChatResponseEvent = {
    */
   request_event: HumanInTheLoopChatRequestEvent;
   /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8111,6 +8141,12 @@ export type HumanInTheLoopConfirmationResponseEvent = {
    */
   request_event: HumanInTheLoopConfirmationRequestEvent;
   /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8216,6 +8252,12 @@ export type HumanInTheLoopInputResponseEvent = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopInputRequestEvent;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   /**
    * Event Name
    *
@@ -8400,6 +8442,12 @@ export type HumanInTheLoopResponseEvent = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopRequestEvent;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   /**
    * Event Name
    *
@@ -13009,6 +13057,26 @@ export type ModelBoundInputNumber = {
 };
 
 /**
+ * ModelCapability
+ *
+ * Something a model picker may require of a chat model, read from the LiteLLM `supports_*` flag it names.
+ */
+export const ModelCapability = {
+  VISION: "vision",
+  TOOL_CALLING: "tool_calling",
+  STRUCTURED_OUTPUT: "structured_output",
+  REASONING: "reasoning",
+} as const;
+
+/**
+ * ModelCapability
+ *
+ * Something a model picker may require of a chat model, read from the LiteLLM `supports_*` flag it names.
+ */
+export type ModelCapability =
+  (typeof ModelCapability)[keyof typeof ModelCapability];
+
+/**
  * ModelDTO
  */
 export type ModelDto = {
@@ -13022,6 +13090,12 @@ export type ModelDto = {
    * Detailed information about the model
    */
   model_info: ModelInfoDto;
+  /**
+   * Display Name
+   *
+   * The curated display name, or the model name without its capability prefix
+   */
+  readonly display_name: string;
   /**
    * Icon
    */
@@ -13242,6 +13316,9 @@ export type ModelGatedCheckbox = {
 
 /**
  * ModelInfoDTO
+ *
+ * Fields carry their LiteLLM ``model_info`` key as name, without aliases, because the model-bound form elements
+ * and the frontend read limits and flags from this DTO by that key.
  */
 export type ModelInfoDto = {
   /**
@@ -13250,6 +13327,22 @@ export type ModelInfoDto = {
    * The mode of the model (e.g., 'chat', 'completion', 'embedding')
    */
   mode?: string | null;
+  /**
+   * Aihub Display Name
+   *
+   * Human-readable model name curated in the LiteLLM config
+   */
+  aihub_display_name?: string | null;
+  /**
+   * Where the model runs, curated per model
+   */
+  aihub_hosting_location?: HostingLocation | null;
+  /**
+   * Aihub General Purpose
+   *
+   * False for a model built for one job, such as OCR, which model pickers leave out; a model that does not set it counts as general-purpose
+   */
+  aihub_general_purpose?: boolean | null;
   /**
    * Max Input Tokens
    *
@@ -13491,6 +13584,31 @@ export type ModelInfoDto = {
 };
 
 /**
+ * ModelRequirements
+ *
+ * What a model must offer to be offered and saved in one model picker.
+ *
+ * Stricter than `ModelGatedCheckbox` on purpose: that gates a feature on a model already chosen, this decides what
+ * may be chosen. So a flag counts only when it is true (LiteLLM reports an unset one as null), and a model whose
+ * location is missing or unknown fails a location requirement. It reads a plain `model_info` mapping, not the
+ * API's DTO, so core does not depend on the API.
+ */
+export type ModelRequirements = {
+  /**
+   * Capabilities
+   *
+   * Capabilities the model must all support.
+   */
+  capabilities?: Array<ModelCapability>;
+  /**
+   * Hosting Locations
+   *
+   * Where the model may run; any location when unset.
+   */
+  hosting_locations?: Array<HostingLocation> | null;
+};
+
+/**
  * ModelResponse
  */
 export type ModelResponse = {
@@ -13517,7 +13635,9 @@ export type ModelResponse = {
  * available models from the API based on the specified mode.
  *
  * The frontend component handles fetching models from `/api/v1/models/mode/{mode}`
- * and populating the dropdown options.
+ * and populating the dropdown options. `requirements` narrows them to the models with
+ * every required capability and an allowed hosting location; the API enforces the same
+ * rule when a profile is saved, and never offers a model that is not general-purpose.
  *
  * ### Supported Modes
  * - `chat`: Chat/text generation models
@@ -13673,6 +13793,10 @@ export type ModelSelect = {
    * Whether to show clear button
    */
   showClear?: boolean;
+  /**
+   * Capabilities and hosting locations the chosen model must have.
+   */
+  requirements?: ModelRequirements;
   /**
    * Validation
    */
@@ -15865,6 +15989,12 @@ export type ReadAttachedFilesEvent = {
    */
   kept_for_code?: Array<UserUploadedFile>;
   /**
+   * Code Sandbox Offered
+   *
+   * Whether the model can run code on the files in the sandbox, so a file cut down to fit is noted with the instruction to compute figures over the whole file there.
+   */
+  code_sandbox_offered?: boolean;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -16348,6 +16478,12 @@ export type Repeater = {
    * Label displayed as the section header
    */
   label?: LocaleString | string | null;
+  /**
+   * Help
+   *
+   * Explanation of what the list is for, shown under the header
+   */
+  help?: LocaleString | string | null;
   /**
    * Addlabel
    *
@@ -19885,6 +20021,12 @@ export type ToolApprovalResponseEvent = {
    */
   request_event: ToolApprovalRequestEvent;
   /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -19959,6 +20101,12 @@ export type ToolCallApprovedEvent = {
    * Whether the tool tells the model to cite what it returns.
    */
   cite_sources?: boolean;
+  /**
+   * Approved By
+   *
+   * The id of the user who approved the call, or whose earlier approval carried over to it; none when it needed no approval.
+   */
+  approved_by?: string | null;
   /**
    * Event Name
    *
@@ -21267,6 +21415,12 @@ export type UserIdentity = {
    * Whether the user has the AIHubSysAdmin realm role (from the JWT).
    */
   is_sys_admin?: boolean;
+  /**
+   * Openwebui Sys Admin
+   *
+   * Whether the user has the AIHubSysAdmin realm role but arrived through OpenWebUI's signed headers. Grants user access in the acting tenant instead of the sysadmin bypass.
+   */
+  openwebui_sys_admin?: boolean;
 };
 
 /**
@@ -25900,6 +26054,12 @@ export type HumanInTheLoopChatResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopChatRequestEventWritable;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -25980,6 +26140,12 @@ export type HumanInTheLoopConfirmationResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopConfirmationRequestEventWritable;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -26060,6 +26226,12 @@ export type HumanInTheLoopInputResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopInputRequestEventWritable;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -26205,6 +26377,12 @@ export type HumanInTheLoopResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopRequestEventWritable;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -29465,7 +29643,9 @@ export type ModelGatedCheckboxWritable = {
  * available models from the API based on the specified mode.
  *
  * The frontend component handles fetching models from `/api/v1/models/mode/{mode}`
- * and populating the dropdown options.
+ * and populating the dropdown options. `requirements` narrows them to the models with
+ * every required capability and an allowed hosting location; the API enforces the same
+ * rule when a profile is saved, and never offers a model that is not general-purpose.
  *
  * ### Supported Modes
  * - `chat`: Chat/text generation models
@@ -29621,6 +29801,10 @@ export type ModelSelectWritable = {
    * Whether to show clear button
    */
   showClear?: boolean;
+  /**
+   * Capabilities and hosting locations the chosen model must have.
+   */
+  requirements?: ModelRequirements;
   [key: string]: unknown;
 };
 
@@ -30757,6 +30941,12 @@ export type ReadAttachedFilesEventWritable = {
    */
   kept_for_code?: Array<UserUploadedFile>;
   /**
+   * Code Sandbox Offered
+   *
+   * Whether the model can run code on the files in the sandbox, so a file cut down to fit is noted with the instruction to compute figures over the whole file there.
+   */
+  code_sandbox_offered?: boolean;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -31168,6 +31358,12 @@ export type RepeaterWritable = {
    * Label displayed as the section header
    */
   label?: LocaleString | string | null;
+  /**
+   * Help
+   *
+   * Explanation of what the list is for, shown under the header
+   */
+  help?: LocaleString | string | null;
   /**
    * Addlabel
    *
@@ -33823,6 +34019,12 @@ export type ToolApprovalResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: ToolApprovalRequestEventWritable;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -33885,6 +34087,12 @@ export type ToolCallApprovedEventWritable = {
    * Whether the tool tells the model to cite what it returns.
    */
   cite_sources?: boolean;
+  /**
+   * Approved By
+   *
+   * The id of the user who approved the call, or whose earlier approval carried over to it; none when it needed no approval.
+   */
+  approved_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -35478,7 +35686,20 @@ export type GetLitellmModelsByModeData = {
      */
     mode: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Capability
+     */
+    capability?: Array<ModelCapability> | null;
+    /**
+     * Hosting Location
+     */
+    hosting_location?: Array<HostingLocation> | null;
+    /**
+     * Include Special Purpose
+     */
+    include_special_purpose?: boolean;
+  };
   url: "/{tenant_id}/models/mode/{mode}";
 };
 
@@ -35565,12 +35786,6 @@ export type GetUserThreadsData = {
      * Filter by agent id
      */
     agent_id?: string | null;
-    /**
-     * User Id
-     *
-     * Filter by user id
-     */
-    user_id?: string | null;
     /**
      * Status
      *

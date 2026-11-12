@@ -16,10 +16,16 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.jira.jira_settings import JiraSettings
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner import LangfuseProvisioner
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings import LangfuseSettings
+    from swiss_ai_hub.core.infrastructure.litellm.hosting_location import HostingLocation
+    from swiss_ai_hub.core.infrastructure.litellm.lite_llm_credentials import LiteLLMCredentials
+    from swiss_ai_hub.core.infrastructure.litellm.lite_llm_customer_service import LiteLLMCustomerService
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
+    from swiss_ai_hub.core.infrastructure.litellm.model_capability import ModelCapability
+    from swiss_ai_hub.core.infrastructure.litellm.model_requirements import ModelRequirements
     from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
     from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
+    from swiss_ai_hub.core.infrastructure.mem0.memory_not_found_error import MemoryNotFoundError
     from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
     from swiss_ai_hub.core.infrastructure.mem0.types.memory_relation import MemoryRelation
     from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
@@ -76,6 +82,7 @@ __all__ = [
     "MemoryRelation",
     "Memory",
     "Mem0Settings",
+    "MemoryNotFoundError",
     "AzureDocumentIntelligenceSettings",
     "AzureDataLakeSettings",
     "AccessGrant",
@@ -85,8 +92,13 @@ __all__ = [
     "TenantDefaultAccessSettings",
     "LangfuseProvisioner",
     "LangfuseSettings",
+    "LiteLLMCredentials",
+    "LiteLLMCustomerService",
     "LiteLLMProxySettings",
     "LiteLLMService",
+    "HostingLocation",
+    "ModelCapability",
+    "ModelRequirements",
     "MilvusSettings",
     "MineruSettings",
     "ConversationAttachments",
@@ -137,6 +149,7 @@ _LAZY_IMPORTS = {
     "MemoryRelation": "swiss_ai_hub.core.infrastructure.mem0.types.memory_relation",
     "Memory": "swiss_ai_hub.core.infrastructure.mem0.types.memory",
     "Mem0Settings": "swiss_ai_hub.core.infrastructure.mem0.mem0_settings",
+    "MemoryNotFoundError": "swiss_ai_hub.core.infrastructure.mem0.memory_not_found_error",
     "AzureDocumentIntelligenceSettings": "swiss_ai_hub.core.infrastructure.azure_cognitive_services.azure_document_intelligence_settings",
     "AzureDataLakeSettings": "swiss_ai_hub.core.infrastructure.azure_data_lake.azure_data_lake_settings",
     "AccessGrant": "swiss_ai_hub.core.infrastructure.openwebui.access_grant",
@@ -146,8 +159,13 @@ _LAZY_IMPORTS = {
     "TenantDefaultAccessSettings": "swiss_ai_hub.core.infrastructure.api.tenant_default_access_settings",
     "LangfuseProvisioner": "swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner",
     "LangfuseSettings": "swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings",
+    "LiteLLMCredentials": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_credentials",
+    "LiteLLMCustomerService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_customer_service",
     "LiteLLMProxySettings": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings",
     "LiteLLMService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service",
+    "HostingLocation": "swiss_ai_hub.core.infrastructure.litellm.hosting_location",
+    "ModelCapability": "swiss_ai_hub.core.infrastructure.litellm.model_capability",
+    "ModelRequirements": "swiss_ai_hub.core.infrastructure.litellm.model_requirements",
     "MilvusSettings": "swiss_ai_hub.core.infrastructure.milvus.milvus_settings",
     "MineruSettings": "swiss_ai_hub.core.infrastructure.mineru.mineru_settings",
     "ConversationAttachments": "swiss_ai_hub.core.infrastructure.open_terminal.conversation_attachments",
