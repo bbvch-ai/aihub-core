@@ -30,6 +30,7 @@
       ref="assignMenu"
       :model="assignMenuItems"
       :popup="true"
+      :pt="{ list: { class: 'max-h-80 overflow-y-auto' } }"
     />
   </div>
 </template>
