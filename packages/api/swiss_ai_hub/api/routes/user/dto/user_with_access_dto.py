@@ -35,13 +35,13 @@ class UserWithAccessDTO(UserDTO):
     async def from_user_identity(
         cls, user: UserIdentity, tenant: TenantIdentity, runner: "Runner", nc: NATS, t: LocaleHandler
     ) -> Self:
-        dashboard = UserDashboardEntity.get_dashboard(user.id) or UserDashboardEntity.create_default_dashboard()
-        dashboard_dto = DashboardDTO(**dashboard.to_mongo())
+        dashboard = await UserDashboardEntity.get_dashboard(user.id) or UserDashboardEntity.create_default_dashboard()
+        dashboard_dto = DashboardDTO(**dashboard.model_dump())
 
-        user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user.id, tenant.id)
-        valid_roles = RoleEntity.filter_existing_roles(user_roles, tenant.id)
+        user_roles = await UserTenantRoleEntity.get_roles_for_user_in_tenant(user.id, tenant.id)
+        valid_roles = await RoleEntity.filter_existing_roles(user_roles, tenant.id)
 
-        access_checker = AccessChecker.from_user(user)
+        access_checker = await AccessChecker.from_user(user)
         access = await AccessCatalogService.build_access(access_checker, runner, t, include_denied=False)
 
         # Read here rather than on UserIdentity: this endpoint is the only consumer,

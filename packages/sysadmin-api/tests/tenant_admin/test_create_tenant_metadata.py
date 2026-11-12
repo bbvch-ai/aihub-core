@@ -17,8 +17,8 @@ INIT_ROLES_PATH = (
 
 
 def _stub_metadata_lookups(monkeypatch: pytest.MonkeyPatch, by_id=None, by_name=None) -> None:
-    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_id", lambda tenant_id: by_id)
-    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_name", lambda name: by_name)
+    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_id", AsyncMock(return_value=by_id))
+    monkeypatch.setattr(TenantMetadataEntity, "get_metadata_by_tenant_name", AsyncMock(return_value=by_name))
 
 
 def _stub_keycloak_group_exists(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -60,7 +60,7 @@ async def test_configure_tenant_persists_metadata_last(monkeypatch: pytest.Monke
     async def record_superuser(tenant_id: str) -> None:
         call_order.append("superuser")
 
-    def record_create(**_kwargs) -> MagicMock:
+    async def record_create(**_kwargs) -> MagicMock:
         call_order.append("metadata")
         return fake_entity
 
@@ -86,7 +86,7 @@ async def test_configure_tenant_rejects_missing_keycloak_group_before_side_effec
 
     roles_mock = AsyncMock()
     superuser_mock = AsyncMock()
-    create_mock = MagicMock()
+    create_mock = AsyncMock()
     monkeypatch.setattr(INIT_ROLES_PATH, roles_mock)
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", superuser_mock)
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
@@ -109,7 +109,7 @@ async def test_configure_tenant_rejects_existing_tenant_id_before_side_effects(
 
     roles_mock = AsyncMock()
     superuser_mock = AsyncMock()
-    create_mock = MagicMock()
+    create_mock = AsyncMock()
     monkeypatch.setattr(INIT_ROLES_PATH, roles_mock)
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", superuser_mock)
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
@@ -130,7 +130,7 @@ async def test_configure_tenant_rejects_taken_name_before_side_effects(monkeypat
 
     roles_mock = AsyncMock()
     superuser_mock = AsyncMock()
-    create_mock = MagicMock()
+    create_mock = AsyncMock()
     monkeypatch.setattr(INIT_ROLES_PATH, roles_mock)
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", superuser_mock)
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
@@ -154,7 +154,7 @@ async def test_configure_tenant_does_not_persist_metadata_if_role_seeding_fails(
 
     monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(side_effect=RuntimeError("role seeding down")))
     superuser_mock = AsyncMock()
-    create_mock = MagicMock()
+    create_mock = AsyncMock()
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", superuser_mock)
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
 
@@ -179,7 +179,7 @@ async def test_configure_tenant_does_not_persist_metadata_if_superuser_assignmen
         "assign_superuser_to_tenant",
         AsyncMock(side_effect=RuntimeError("keycloak down")),
     )
-    create_mock = MagicMock()
+    create_mock = AsyncMock()
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
 
     with pytest.raises(RuntimeError):
@@ -225,7 +225,7 @@ async def test_configure_tenant_retry_after_midflight_failure_completes_cleanly(
     fake_entity.created_at = datetime.now(UTC)
     fake_entity.updated_at = datetime.now(UTC)
 
-    def record_create(**kwargs) -> MagicMock:
+    async def record_create(**kwargs) -> MagicMock:
         create_calls.append(kwargs)
         return fake_entity
 
@@ -260,7 +260,7 @@ async def test_configure_tenant_assigns_superuser(monkeypatch: pytest.MonkeyPatc
     fake_entity.chat_disclaimer = None
     fake_entity.created_at = datetime.now(UTC)
     fake_entity.updated_at = datetime.now(UTC)
-    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", lambda **_kwargs: fake_entity)
+    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", AsyncMock(return_value=fake_entity))
     monkeypatch.setattr(INIT_ROLES_PATH, AsyncMock(return_value=None))
 
     mock_assign_superuser = AsyncMock(return_value=None)
@@ -282,7 +282,7 @@ async def test_configure_tenant_normalizes_dotted_model_rule(monkeypatch: pytest
 
     create_calls: list[dict] = []
 
-    def record_create(**kwargs) -> MagicMock:
+    async def record_create(**kwargs) -> MagicMock:
         create_calls.append(kwargs)
         entity = MagicMock()
         entity.id = "my-tenant"

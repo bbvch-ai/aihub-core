@@ -7,7 +7,7 @@ since the query itself keeps working.
 """
 
 from datetime import UTC, datetime
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from bson import ObjectId
@@ -79,7 +79,7 @@ def mongodb():
 @pytest.fixture
 def grant_admin_rules():
     """Map the test role onto `aihub.admin.>` without seeding role rows, as `role_mocks` does."""
-    with patch.object(RoleEntity, "get_access_rules_for_roles", return_value={"aihub.admin.>"}):
+    with patch.object(RoleEntity, "get_access_rules_for_roles", new_callable=AsyncMock, return_value={"aihub.admin.>"}):
         yield
 
 

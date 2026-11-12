@@ -7,13 +7,15 @@ from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 from swiss_ai_hub.api.routes.i18n.i18n_controller import I18nController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
+pytestmark = pytest.mark.beanie
+
 BASE_URL = "http://test"
 API_ENDPOINT = "/api/v1/active/i18n/my-locale"
 DEFAULT_LANG_KEY = "lang"
 
 
-@pytest_asyncio.fixture(scope="module")
-async def api_client():
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def api_client(beanie_test_database):
     """Create an API client with I18nController mounted using TestAuthHandler."""
     auth = TestAuthHandler()
     controller = I18nController(auth=auth).get_my_locale()
@@ -40,7 +42,6 @@ async def api_client():
         ({"locale": "fr"}, {"locale": "it"}, "fr"),
     ],
 )
-@pytest.mark.asyncio
 async def test_get_locale_parametrized(api_client, headers, params, expected_locale):
     """Test /api/v1/active/i18n/my-locale with various header and query parameter configurations."""
     response = await api_client.get(API_ENDPOINT, headers=headers, params=params)

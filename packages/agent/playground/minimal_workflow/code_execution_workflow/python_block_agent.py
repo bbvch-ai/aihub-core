@@ -63,7 +63,7 @@ class PythonBlockAgent(Agent):
         if not blocks:
             reply = PythonBlocks.text(self.NO_BLOCKS, t.locale)
             return Conversation.complete(answer=await PythonBlocks.reply(displayer, reply))
-        workspace = SandboxWorkspace.for_user(user, topic, event.files or [])
+        workspace = await SandboxWorkspace.for_user(user, topic, event.files or [])
         await workspace.prepare()
         report, kept = await PythonBlocks.run(workspace, blocks, t.locale)
         await displayer.display_event(kept)

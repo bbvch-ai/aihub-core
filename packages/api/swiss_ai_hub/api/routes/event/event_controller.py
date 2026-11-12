@@ -70,7 +70,7 @@ class EventController(TenantScopedController):
                 )
 
             thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
-            ThreadAccess.ensure_can_view(thread, user)
+            await ThreadAccess.ensure_can_view(thread, user)
 
             # Offloaded: reads and deserialises every display event in the thread, so its cost grows
             # with conversation length. On the event loop that stalls every concurrent request.
@@ -102,7 +102,7 @@ class EventController(TenantScopedController):
                 return ThreadReference(thread_id="")
 
             thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
-            ThreadAccess.ensure_can_view(thread, user)
+            await ThreadAccess.ensure_can_view(thread, user)
 
             return ThreadReference(thread_id=thread_id)
 
@@ -133,7 +133,7 @@ class EventController(TenantScopedController):
             - 30d: 1 day resolution
             - 365d: 1 week resolution
             """
-            access_checker = AccessChecker.from_user(user)
+            access_checker = await AccessChecker.from_user(user)
 
             if agent_id and not agent_class:
                 raise HTTPException(
@@ -156,7 +156,7 @@ class EventController(TenantScopedController):
 
             if thread_id:
                 thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
-                ThreadAccess.ensure_can_view(thread, user)
+                await ThreadAccess.ensure_can_view(thread, user)
 
             # Offloaded: an unfiltered range aggregates the whole agent_events collection, which took
             # minutes in production and, on the event loop, pushed concurrent token validation past

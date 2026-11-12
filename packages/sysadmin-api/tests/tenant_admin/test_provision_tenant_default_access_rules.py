@@ -6,6 +6,7 @@ ceiling, so the derivation is skipped and the omitted rules reach the service as
 """
 
 from datetime import UTC, datetime
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -75,7 +76,7 @@ _PAYLOAD = {"tenant_id": "lcdm-5", "name": "Palme", "lcdm_tenant_id": 5}
 
 
 def test_new_tenant_without_rules_gets_the_derived_default(client, captured_rules, stub_proxy, monkeypatch) -> None:
-    monkeypatch.setattr(TenantAdminService, "is_configured", lambda tenant_id: False)
+    monkeypatch.setattr(TenantAdminService, "is_configured", AsyncMock(return_value=False))
 
     response = client.post(f"{BASE}/provision", json=_PAYLOAD)
 
@@ -85,7 +86,7 @@ def test_new_tenant_without_rules_gets_the_derived_default(client, captured_rule
 
 
 def test_existing_tenant_without_rules_keeps_its_ceiling(client, captured_rules, stub_proxy, monkeypatch) -> None:
-    monkeypatch.setattr(TenantAdminService, "is_configured", lambda tenant_id: True)
+    monkeypatch.setattr(TenantAdminService, "is_configured", AsyncMock(return_value=True))
 
     response = client.post(f"{BASE}/provision", json=_PAYLOAD)
 
@@ -95,7 +96,7 @@ def test_existing_tenant_without_rules_keeps_its_ceiling(client, captured_rules,
 
 
 def test_explicit_rules_are_not_replaced_by_the_default(client, captured_rules, stub_proxy, monkeypatch) -> None:
-    monkeypatch.setattr(TenantAdminService, "is_configured", lambda tenant_id: False)
+    monkeypatch.setattr(TenantAdminService, "is_configured", AsyncMock(return_value=False))
 
     response = client.post(f"{BASE}/provision", json={**_PAYLOAD, "access_rules": []})
 

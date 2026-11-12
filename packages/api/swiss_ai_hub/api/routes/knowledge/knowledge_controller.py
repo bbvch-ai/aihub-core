@@ -1,4 +1,3 @@
-import asyncio
 from typing import Annotated, Self
 
 from fastapi import Depends, HTTPException, Path, Query, Response, Security, status
@@ -91,7 +90,7 @@ class KnowledgeController(TenantScopedController):
             """
             all_databases = KnowledgeService.get_databases(t)
             accessible_databases = []
-            access_checker = AccessChecker.from_user(user)
+            access_checker = await AccessChecker.from_user(user)
             for db in all_databases:
                 if access_checker.has_access_to_knowledge_database(db.name):
                     accessible_namespaces = [
@@ -127,7 +126,7 @@ class KnowledgeController(TenantScopedController):
             Resolved for anyone signed in, without checking access: the agent checks what the asking user may read and
             tells them about the rest, which it could not if unreadable references were dropped here.
             """
-            return await asyncio.to_thread(OpenWebuiKnowledgeEntryEntity.references_for, request.openwebui_ids)
+            return await OpenWebuiKnowledgeEntryEntity.references_for(request.openwebui_ids)
 
         return self
 
@@ -511,7 +510,7 @@ class KnowledgeController(TenantScopedController):
             """
             if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
-            KnowledgeService.delete_database(database=database)
+            await KnowledgeService.delete_database(database=database)
             return Response(status_code=status.HTTP_202_ACCEPTED)
 
         return self
@@ -531,7 +530,7 @@ class KnowledgeController(TenantScopedController):
             """
             if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
-            KnowledgeService.delete_namespace(database=database, namespace=namespace)
+            await KnowledgeService.delete_namespace(database=database, namespace=namespace)
             return Response(status_code=status.HTTP_202_ACCEPTED)
 
         return self

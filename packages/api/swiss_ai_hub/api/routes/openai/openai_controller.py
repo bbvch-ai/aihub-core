@@ -102,7 +102,7 @@ class OpenaiController(TenantScopedController):
                 ),
             ] = False,
         ) -> ModelResponse:
-            access_checker = AccessChecker.from_user(user)
+            access_checker = await AccessChecker.from_user(user)
             model_response = await OpenaiService.get_models()
             model_response.data = [
                 m for m in model_response.data if OpenaiService._has_model_access(access_checker, m.id)
@@ -143,7 +143,7 @@ class OpenaiController(TenantScopedController):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ModelDetails:
             model = await OpenaiService.get_model_with_assistants(model_name=full_path, t=t)
-            access_checker = AccessChecker.from_user(user)
+            access_checker = await AccessChecker.from_user(user)
             if model.agent_class is not None:
                 permitted = access_checker.has_access_to_agent(model.agent_class, model.agent_id)
             else:

@@ -2,8 +2,6 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
-from mongoengine import connect, disconnect
-from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
@@ -14,27 +12,15 @@ TOKEN_BASE = "/api/v1/active/tokens"
 DEFAULT_USER_ID = "1234567890"
 
 
-@pytest.fixture(scope="function")
-def mongodb():
-    """Setup a test MongoDB connection and clear data after each test."""
-    yield
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-        uuidRepresentation="standard",
-    )
-    BearerToken.objects.delete()
-    disconnect()
-
-
 @pytest.fixture
-def api_client(mongodb):
-    """Create test client with ApiTokenController mounted."""
+def api_client():
+    """Create test client with ApiTokenController mounted; its tokens are removed on the client's own loop."""
     runner = ApiTestRunner()
     auth = TestAuthHandler()
     runner.mount(TokenController(auth=auth).create_token().list_tokens().revoke_token())
     with TestClient(runner.create_app(), raise_server_exceptions=True) as client:
         yield client
+        client.portal.call(BearerToken.delete_all)
 
 
 @pytest.fixture
@@ -95,6 +81,7 @@ def test_revoke_nonexistent_token(api_client):
     """Test revoking a non-existent token returns error."""
     response = api_client.delete(f"{TOKEN_BASE}/123456789012345678901234")
     assert response.status_code == 400
+    assert response.json()["detail"] == "BearerToken matching query does not exist."
 
 
 @pytest.mark.parametrize(
