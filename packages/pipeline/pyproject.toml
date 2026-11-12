@@ -43,7 +43,7 @@ dev = []
 [project.urls]
 Homepage = "https://github.com/bbvch-ai/aihub-core"
 Repository = "https://github.com/bbvch-ai/aihub-core"
-Documentation = "https://bbvch-ai.github.io/aihub-core/"
+Documentation = "https://docs.ai-hub.bbv.ch/"
 Issues = "https://github.com/bbvch-ai/aihub-core/issues"
 
 [build-system]

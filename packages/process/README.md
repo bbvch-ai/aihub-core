@@ -14,9 +14,9 @@ and programs in multi-step business processes.**
 
 ______________________________________________________________________
 
-> ## ⚠️ Status
+> ## Status
 >
-> **This package is experimental and a work in progress.** Its APIs are unstable and likely to change, it is not yet
+> ⚠️ **This package is experimental and a work in progress.** Its APIs are unstable and likely to change, it is not yet
 > production-ready, and it has no production entry point. Use it for exploration only — don't build on it yet.
 
 ______________________________________________________________________
@@ -57,7 +57,7 @@ Requires **Python 3.13**.
 ## Links
 
 - **Source & issues**: https://github.com/bbvch-ai/aihub-core
-- **Documentation**: https://bbvch-ai.github.io/aihub-core/
+- **Documentation**: https://docs.ai-hub.bbv.ch/
 - **The full SDK** (meta package): https://pypi.org/project/swiss-ai-hub/
 
 ## License

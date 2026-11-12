@@ -44,7 +44,7 @@ Drei Schalter entscheiden, und jeder einzelne genügt:
 | -------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PII_ANONYMISE_EXTERNAL_MODELS=true`                     | Der Betreiber, pro Deployment (standardmässig aus) | Jeden Aufruf an ein ausserhalb des Deployments gehostetes Modell, für jeden Aufrufer: Chats, Agenten (inklusive Titel, Follow-ups und Memory-Extraktion) und Bots |
 | **Personendaten anonymisieren** in einem Agentenprofil   | Der Admin des Profils                              | Jeden Aufruf der Läufe dieses Profils, unabhängig vom Modell                                                                                                      |
-| Der [Anonymisierer](../../5_agents/14_anonymiser/)-Agent | Jeder Benutzer, von Hand                           | Den Text, den der Benutzer ihm sendet                                                                                                                             |
+| Der [Anonymisierer](../../5_agents/16_anonymiser/)-Agent | Jeder Benutzer, von Hand                           | Den Text, den der Benutzer ihm sendet                                                                                                                             |
 
 Jedes Modell in der Gateway-Konfiguration gibt an, wo es läuft (`model_info.aihub_hosting_location`); jedes Modell, das
 nicht `local` ist (die Schweizer Cloud-Anbieter und jeder andere externe Anbieter), gilt als ausserhalb des Deployments.
