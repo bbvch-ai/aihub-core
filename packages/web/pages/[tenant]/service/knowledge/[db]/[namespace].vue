@@ -30,6 +30,7 @@
       :documents="documents"
       :sort-field="sortState.field"
       :sort-order="sortState.order"
+      :auto-sync="currentDatabase?.auto_sync"
       @selected="toDocument"
       @sort="handleSort"
       @deleted="handleDeleted"
