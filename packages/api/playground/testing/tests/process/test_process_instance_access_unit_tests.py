@@ -191,7 +191,28 @@ class TestCreateGrantsTheInstance:
         config_doc = stack.enter_context(patch(f"{_MODULE}.ProcessConfigEntityDocument"))
         config_doc.find_for_class_and_id.return_value = None
         config_doc.return_value = config_entity
+        stack.enter_context(
+            patch(f"{_MODULE}.PersistedProcessEventEntity.has_events_for_instance", return_value=False)
+        )
         return grant, config_entity
+
+    @pytest.mark.asyncio
+    async def test_an_id_with_leftover_walkthroughs_cannot_be_reused(self):
+        user = Mock()
+        user.acting_within_tenant = Mock()
+        request = CreateProcessInstanceRequest(process_id="q3-onboarding", configuration={})
+
+        with ExitStack() as stack:
+            grant, config_entity = self._mock_create_dependencies(stack)
+            stack.enter_context(
+                patch(f"{_MODULE}.PersistedProcessEventEntity.has_events_for_instance", return_value=True)
+            )
+            with pytest.raises(HTTPException) as raised:
+                await ProcessService.create_process_instance("Onboarding", request, Mock(spec=LocaleHandler), user=user)
+
+        assert raised.value.status_code == 409
+        config_entity.save.assert_not_called()
+        grant.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_grants_the_instance_to_the_creating_tenant(self):

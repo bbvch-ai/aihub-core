@@ -373,6 +373,16 @@ class ProcessService:
             raise HTTPException(
                 status_code=409, detail=f"Process instance '{process_class}/{request.process_id}' already exists."
             )
+        # Walkthrough events carry no tenant and survive deletion, so the creator of a reused id would read the
+        # previous owner's walkthroughs, submitted form data included.
+        if PersistedProcessEventEntity.has_events_for_instance(process_class, request.process_id):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Process instance id '{process_class}/{request.process_id}' was used before and its walkthrough "
+                    "history remains. Choose another id."
+                ),
+            )
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 

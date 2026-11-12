@@ -48,6 +48,12 @@ class PersistedProcessEventEntity(Document):
 
     @classmethod
     @trace_fn
+    def has_events_for_instance(cls, process_class: str, process_id: str) -> bool:
+        """Whether any walkthrough left events under this class and id; they outlive the instance itself."""
+        return cls.objects(process_class=process_class, process_id=process_id).only("id").first() is not None
+
+    @classmethod
+    @trace_fn
     def get_open_human_work_requests(
         cls, process_class: str, process_id: str, process_walkthrough_id: str
     ) -> list[Self]:
