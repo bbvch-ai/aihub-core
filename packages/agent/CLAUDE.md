@@ -33,14 +33,15 @@ packages/agent/                       # SDK framework
 │   ├── i18n/
 │   │   ├── agent_locale_string.py      # Multi-locale string resolution for agents
 │   │   └── translations/agent/         # Translation files: {name}.{de|en|fr|it}.yml
-│   ├── mcp/                            # MCP tool integration (McpClientFactory, McpReactService)
+│   ├── mcp/                            # MCP tool integration (McpClientFactory, McpCallSpan)
 ├── rag/                            # Shared RAG step functions and preconditions
 │   ├── runners/
 │   │   ├── agent_runner.py             # Production runner (NATS, Redis, Milvus, discovery)
 │   │   └── agent_test_runner.py        # Test runner (sandboxed, event capture, mock config)
 │   ├── steps/                          # Shared step configs (e.g., FewShotStepConfig)
 │   ├── tracing/
-│   │   └── agent_run_tracer.py         # OpenTelemetry + Langfuse trace integration
+│   │   ├── agent_run_tracer.py         # OpenTelemetry + Langfuse trace integration
+│   │   └── trace_input_redactor.py     # Masks secrets in step span inputs
 │   └── workflow/
 │       └── decorators/
 │           ├── step.py                 # @step() decorator — defines workflow building blocks
@@ -824,6 +825,23 @@ config seeder needed.
    `[Memory.remember(...), Conversation.complete(...)]` from the answer step (see the Capabilities section above)
 8. Write BDD tests with `AgentTestRunner`
 9. Run `make test`
+
+## Tracing
+
+`AgentRunTracer` opens one span per step with the step's inputs and outputs. Spans reach Langfuse (only those with an
+OpenInference kind, `filter/langfuse` in the collector) and the cloud trace backend (all of them).
+
+- **Inputs are redacted** (`TraceInputRedactor`): an `AgentConfig` or `StepConfig` input is dumped with every secret
+  field of its form (`Password`, `SecretFileInput`) masked. A context drops the forwarded user token and any `enc:v1:`
+  ciphertext, which `_agent_config` in `RunContext` carries. A secret held anywhere else in a step input (a plain
+  `BaseModel`, a header dict) is not masked, so keep secrets in form fields.
+- **A step is labelled by its first semantic output event**, skipping a `ToolEvent` (a requested call; the execution is
+  traced as the tool) and an `LLMEvent` without `output_messages` (a carried prompt). Without that, a deciding step
+  showed as a tool and a prompt-carrying step as a generation with no tokens.
+- **MCP calls** are traced by `McpCallSpan` in `execute_single_tool_call`: one TOOL span per tool call or resource read
+  with arguments, result, `mcp.server.name`, `mcp.auth_mode`, `mcp.method.name` and ERROR status for a failed call.
+  FastMCP's own CLIENT span nests under it. A call the server refuses (`is_error`, or `McpError` for an unknown tool or
+  bad arguments) goes back to the model as `Error: …`, as in the tool loop; transport errors still fail the step.
 
 ## Essential Files
 
