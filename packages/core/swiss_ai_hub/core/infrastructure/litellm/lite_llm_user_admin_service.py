@@ -13,8 +13,8 @@ class LiteLLMUserAdminService:
     # The role `LiteLLMService` gives every user it creates. Nothing else in the platform creates users with it, so it
     # tells the Hub's users apart from LiteLLM's own admin and from users made by hand in the LiteLLM UI.
     HUB_USER_ROLE: ClassVar[str] = "internal_user_viewer"
-    # Set on the user while the Hub holds their keys blocked, so that re-enabling the user unblocks only what the Hub
-    # blocked: a key an operator blocked by hand stays blocked.
+    # The hashed tokens of the keys the Hub blocked, kept on the user so that re-enabling the user unblocks only those:
+    # a key an operator blocked by hand, before or while the Hub held the user blocked, stays blocked.
     KEYS_BLOCKED_BY_HUB: ClassVar[str] = "keys_blocked_by_swiss_ai_hub"
     # The largest page `/user/list` and `/key/list` serve.
     _PAGE_SIZE: ClassVar[int] = 100
@@ -49,32 +49,38 @@ class LiteLLMUserAdminService:
         return bool(changes)
 
     @staticmethod
-    def keys_blocked_by_hub(user_row: dict[str, Any]) -> bool:
-        return bool((user_row.get("metadata") or {}).get(LiteLLMUserAdminService.KEYS_BLOCKED_BY_HUB))
+    def keys_blocked_by_hub(user_row: dict[str, Any]) -> list[str]:
+        return list((user_row.get("metadata") or {}).get(LiteLLMUserAdminService.KEYS_BLOCKED_BY_HUB) or [])
 
     @staticmethod
-    async def block_keys(user_row: dict[str, Any], keys: list[dict[str, Any]]) -> None:
+    async def block_keys(user_row: dict[str, Any], keys: list[dict[str, Any]]) -> list[str]:
         """
         LiteLLM cannot block a user (`blocked` on `/user/update` is not implemented in v1.106.4), so each of their keys
         is blocked instead. The Hub keeps handing out a blocked key rather than minting a new one, so the user stays
-        locked out until their keys are unblocked.
+        locked out until their keys are unblocked. Returns the tokens of the keys it blocked.
 
-        The user is marked first: a run that fails half-way leaves the mark, and either the next run blocks the rest
-        or re-enabling the user unblocks what was blocked. Marking last could leave keys blocked that nothing unblocks.
+        The keys are recorded on the user first: a run that fails half-way leaves the record, and either the next run
+        blocks the rest or re-enabling the user unblocks what was blocked. Recording last could leave keys blocked that
+        nothing unblocks.
         """
-        if not LiteLLMUserAdminService.keys_blocked_by_hub(user_row):
-            await LiteLLMUserAdminService._mark_keys_blocked(user_row, True)
-        for key in keys:
-            if not key.get("blocked"):
-                await LiteLLMUserAdminService._post("/key/block", {"key": key["token"]})
+        tokens = [key["token"] for key in keys if not key.get("blocked")]
+        if not tokens:
+            return []
+        recorded = LiteLLMUserAdminService.keys_blocked_by_hub(user_row)
+        await LiteLLMUserAdminService._record_keys_blocked(user_row, list(dict.fromkeys([*recorded, *tokens])))
+        for token in tokens:
+            await LiteLLMUserAdminService._post("/key/block", {"key": token})
+        return tokens
 
     @staticmethod
     async def unblock_keys(user_row: dict[str, Any], keys: list[dict[str, Any]]) -> None:
-        """The mark is cleared last, so a run that fails half-way is finished by the next one."""
+        """Unblocks only the keys the Hub recorded, then clears the record, so a run that fails half-way is finished by
+        the next one."""
+        recorded = set(LiteLLMUserAdminService.keys_blocked_by_hub(user_row))
         for key in keys:
-            if key.get("blocked"):
+            if key.get("blocked") and key["token"] in recorded:
                 await LiteLLMUserAdminService._post("/key/unblock", {"key": key["token"]})
-        await LiteLLMUserAdminService._mark_keys_blocked(user_row, False)
+        await LiteLLMUserAdminService._record_keys_blocked(user_row, [])
 
     @staticmethod
     async def delete_user(user_id: str) -> None:
@@ -88,12 +94,12 @@ class LiteLLMUserAdminService:
             response.raise_for_status()
 
     @staticmethod
-    async def _mark_keys_blocked(user_row: dict[str, Any], blocked: bool) -> None:
+    async def _record_keys_blocked(user_row: dict[str, Any], tokens: list[str]) -> None:
         """
-        LiteLLM replaces the whole metadata on update and ignores an empty one, so the mark is merged into what the
-        user has and cleared by setting it false rather than by removing it.
+        LiteLLM replaces the whole metadata on update and ignores an empty one, so the record is merged into what the
+        user has and cleared by setting it to an empty list rather than by removing it.
         """
-        metadata = {**(user_row.get("metadata") or {}), LiteLLMUserAdminService.KEYS_BLOCKED_BY_HUB: blocked}
+        metadata = {**(user_row.get("metadata") or {}), LiteLLMUserAdminService.KEYS_BLOCKED_BY_HUB: tokens}
         await LiteLLMUserAdminService._update_user(user_row["user_id"], {"metadata": metadata})
 
     @staticmethod

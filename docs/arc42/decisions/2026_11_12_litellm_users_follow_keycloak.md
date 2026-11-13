@@ -41,10 +41,11 @@ default). A Redis lease that expires after the interval keeps it to one run per 
 Only users with the role `internal_user_viewer` are changed. That is the role the Hub gives every user it creates, and
 nothing else in the platform uses it. Each run handles these users as follows:
 
-- **Disabled in Keycloak:** every key is blocked. A metadata flag on the user, set before the keys are blocked, records
-  that the Hub blocked them. When Keycloak lists the user as enabled again, the keys are unblocked and the flag cleared,
-  so a key an operator blocked by hand stays blocked. The Hub keeps handing out a blocked key rather than minting a new
-  one, so a disabled user cannot get a working key back through the Hub.
+- **Disabled in Keycloak:** every key that still works is blocked. The user's metadata records the hashed tokens of the
+  keys the Hub blocked, written before the keys are blocked. When Keycloak lists the user as enabled again, only those
+  keys are unblocked and the record is cleared, so a key an operator blocked by hand stays blocked. The Hub keeps
+  handing out a blocked key rather than minting a new one, so a disabled user cannot get a working key back through the
+  Hub.
 - **Missing from Keycloak:** the Hub asks Keycloak for the user once more. Only a 404 counts as gone, and then the user
   is deleted from LiteLLM together with their keys.
 - **Enabled:** limits that differ from the settings are pushed, and only the fields that differ. This keeps the budget
@@ -84,8 +85,8 @@ event lost while the API is down would never be replayed. A periodic comparison 
 - **One full listing of Keycloak's users, LiteLLM's users and LiteLLM's keys per interval.** These are paged by 100 in
   LiteLLM, which grows linearly with the user count.
 - **Coupled to key derivation (aihub-core-private#351).** Blocking relies on the Hub reusing a blocked key. If keys
-  become random or rotated, a disabled user could get a fresh key between runs. Provisioning must then refuse a user
-  carrying the Hub's block flag.
+  become random or rotated, a disabled user could get a fresh key between runs. Provisioning must then refuse a user the
+  Hub has recorded blocked keys for.
 
 ## Related Decisions
 

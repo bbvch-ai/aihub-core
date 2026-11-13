@@ -95,41 +95,60 @@ async def test_the_users_row_is_read_when_the_caller_does_not_have_it(gateway) -
 
 
 @pytest.mark.asyncio
-async def test_blocking_marks_the_user_before_blocking_only_their_usable_keys(gateway) -> None:
-    """Marking first means a run failing half-way still leaves the mark that later unblocks the keys."""
+async def test_blocking_records_the_usable_keys_before_blocking_them(gateway) -> None:
+    """Recording first means a run failing half-way still leaves the record that later unblocks the keys."""
     transport = gateway({"/user/update": [_ok()], "/key/block": [_ok()]})
     user_row = {"user_id": "u1", "metadata": {"note": "kept"}}
-    keys = [{"token": "hash-usable", "blocked": None}, {"token": "hash-blocked", "blocked": True}]
+    keys = [{"token": "hash-usable", "blocked": None}, {"token": "hash-blocked-by-hand", "blocked": True}]
 
-    await LiteLLMUserAdminService.block_keys(user_row, keys)
+    blocked = await LiteLLMUserAdminService.block_keys(user_row, keys)
 
     assert [path for _, path, _, _ in transport.requests] == ["/user/update", "/key/block"]
-    assert transport.bodies("/user/update") == [{"user_id": "u1", "metadata": {"note": "kept", FLAG: True}}]
+    assert transport.bodies("/user/update") == [{"user_id": "u1", "metadata": {"note": "kept", FLAG: ["hash-usable"]}}]
     assert transport.bodies("/key/block") == [{"key": "hash-usable"}]
+    assert blocked == ["hash-usable"]
 
 
 @pytest.mark.asyncio
-async def test_a_user_already_marked_is_not_marked_again(gateway) -> None:
-    transport = gateway({"/key/block": [_ok()]})
+async def test_a_key_minted_after_the_block_joins_the_record(gateway) -> None:
+    transport = gateway({"/user/update": [_ok()], "/key/block": [_ok()]})
+    user_row = {"user_id": "u1", "metadata": {FLAG: ["hash-old"]}}
 
     await LiteLLMUserAdminService.block_keys(
-        {"user_id": "u1", "metadata": {FLAG: True}}, [{"token": "hash-new", "blocked": False}]
+        user_row, [{"token": "hash-old", "blocked": True}, {"token": "hash-new", "blocked": False}]
     )
 
-    assert [path for _, path, _, _ in transport.requests] == ["/key/block"]
+    assert transport.bodies("/user/update") == [{"user_id": "u1", "metadata": {FLAG: ["hash-old", "hash-new"]}}]
+    assert transport.bodies("/key/block") == [{"key": "hash-new"}]
 
 
 @pytest.mark.asyncio
-async def test_unblocking_clears_the_mark_after_the_keys(gateway) -> None:
-    """LiteLLM ignores an empty metadata, so the mark is cleared by setting it false."""
-    transport = gateway({"/key/unblock": [_ok()], "/user/update": [_ok()]})
-    keys = [{"token": "hash-blocked", "blocked": True}, {"token": "hash-usable", "blocked": False}]
+async def test_blocking_a_user_without_usable_keys_changes_nothing(gateway) -> None:
+    transport = gateway({})
 
-    await LiteLLMUserAdminService.unblock_keys({"user_id": "u1", "metadata": {FLAG: True}}, keys)
+    blocked = await LiteLLMUserAdminService.block_keys(
+        {"user_id": "u1", "metadata": {}}, [{"token": "hash-blocked-by-hand", "blocked": True}]
+    )
+
+    assert transport.requests == []
+    assert blocked == []
+
+
+@pytest.mark.asyncio
+async def test_unblocking_releases_only_the_recorded_keys_then_clears_the_record(gateway) -> None:
+    """LiteLLM ignores an empty metadata, so the record is cleared by setting it to an empty list."""
+    transport = gateway({"/key/unblock": [_ok()], "/user/update": [_ok()]})
+    keys = [
+        {"token": "hash-blocked-by-hub", "blocked": True},
+        {"token": "hash-blocked-by-hand", "blocked": True},
+        {"token": "hash-usable", "blocked": False},
+    ]
+
+    await LiteLLMUserAdminService.unblock_keys({"user_id": "u1", "metadata": {FLAG: ["hash-blocked-by-hub"]}}, keys)
 
     assert [path for _, path, _, _ in transport.requests] == ["/key/unblock", "/user/update"]
-    assert transport.bodies("/key/unblock") == [{"key": "hash-blocked"}]
-    assert transport.bodies("/user/update") == [{"user_id": "u1", "metadata": {FLAG: False}}]
+    assert transport.bodies("/key/unblock") == [{"key": "hash-blocked-by-hub"}]
+    assert transport.bodies("/user/update") == [{"user_id": "u1", "metadata": {FLAG: []}}]
 
 
 @pytest.mark.asyncio

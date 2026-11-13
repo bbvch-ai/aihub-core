@@ -104,7 +104,7 @@ async def test_a_disabled_users_keys_are_blocked_and_their_limits_left_alone(wor
 
     report = await _reconciler(USER_RPM_LIMIT=60).reconcile()
 
-    assert world.update_user.call_args_list == [call("u1", {"metadata": {FLAG: True}})]
+    assert world.update_user.call_args_list == [call("u1", {"metadata": {FLAG: ["hash-1"]}})]
     assert world.post.call_args_list == [call("/key/block", {"key": "hash-1"})]
     assert report.blocked_user_ids == ["u1"]
 
@@ -112,7 +112,7 @@ async def test_a_disabled_users_keys_are_blocked_and_their_limits_left_alone(wor
 @pytest.mark.asyncio
 async def test_a_disabled_user_already_blocked_is_left_alone(world: _World) -> None:
     world.keycloak_user("u1", enabled=False)
-    world.litellm_user("u1", metadata={FLAG: True})
+    world.litellm_user("u1", metadata={FLAG: ["hash-1"]})
     world.key("u1", "hash-1", blocked=True)
 
     report = await _reconciler().reconcile()
@@ -124,25 +124,26 @@ async def test_a_disabled_user_already_blocked_is_left_alone(world: _World) -> N
 @pytest.mark.asyncio
 async def test_a_key_minted_after_the_block_is_blocked_too(world: _World) -> None:
     world.keycloak_user("u1", enabled=False)
-    world.litellm_user("u1", metadata={FLAG: True})
+    world.litellm_user("u1", metadata={FLAG: ["hash-old"]})
     world.key("u1", "hash-old", blocked=True)
     world.key("u1", "hash-new")
 
     await _reconciler().reconcile()
 
+    assert world.update_user.call_args_list == [call("u1", {"metadata": {FLAG: ["hash-old", "hash-new"]}})]
     assert world.post.call_args_list == [call("/key/block", {"key": "hash-new"})]
 
 
 @pytest.mark.asyncio
 async def test_a_user_enabled_again_has_the_keys_the_hub_blocked_unblocked(world: _World) -> None:
     world.keycloak_user("u1")
-    world.litellm_user("u1", metadata={FLAG: True})
+    world.litellm_user("u1", metadata={FLAG: ["hash-1"]})
     world.key("u1", "hash-1", blocked=True)
 
     report = await _reconciler().reconcile()
 
     assert world.post.call_args_list == [call("/key/unblock", {"key": "hash-1"})]
-    assert world.update_user.call_args_list == [call("u1", {"metadata": {FLAG: False}})]
+    assert world.update_user.call_args_list == [call("u1", {"metadata": {FLAG: []}})]
     assert report.unblocked_user_ids == ["u1"]
 
 
@@ -155,6 +156,27 @@ async def test_a_key_blocked_by_hand_stays_blocked(world: _World) -> None:
     await _reconciler().reconcile()
 
     assert world.writes() == []
+
+
+@pytest.mark.asyncio
+async def test_a_key_blocked_by_hand_before_the_user_was_disabled_stays_blocked_after_re_enabling(
+    world: _World,
+) -> None:
+    world.keycloak_user("u1", enabled=False)
+    user_row = world.litellm_user("u1")
+    world.key("u1", "hash-blocked-by-hand", blocked=True)
+    world.key("u1", "hash-usable")
+
+    await _reconciler().reconcile()
+    user_row["metadata"] = world.update_user.call_args.args[1]["metadata"]
+    world.keys[1]["blocked"] = True
+    world.keycloak_user("u1")
+    await _reconciler().reconcile()
+
+    assert [request.args for request in world.post.call_args_list] == [
+        ("/key/block", {"key": "hash-usable"}),
+        ("/key/unblock", {"key": "hash-usable"}),
+    ]
 
 
 @pytest.mark.asyncio

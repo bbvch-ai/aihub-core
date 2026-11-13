@@ -108,9 +108,9 @@ class LiteLLMUserReconciler:
         enabled = enabled_by_user_id.get(user_id)
         if enabled is None:
             await self._remove_if_gone(user_row, report)
-        elif not enabled and self._is_hub_user(user_row) and self._has_usable_key(user_row, keys_by_user_id[user_id]):
-            await LiteLLMUserAdminService.block_keys(user_row, keys_by_user_id[user_id])
-            report.blocked_user_ids.append(user_id)
+        elif not enabled and self._is_hub_user(user_row):
+            if await LiteLLMUserAdminService.block_keys(user_row, keys_by_user_id[user_id]):
+                report.blocked_user_ids.append(user_id)
 
     async def _remove_if_gone(self, user_row: dict[str, Any], report: LiteLLMReconciliationReport) -> None:
         """A user missing from the listing may have signed up after it was taken, so Keycloak is asked again."""
@@ -135,11 +135,6 @@ class LiteLLMUserReconciler:
             report.unblocked_user_ids.append(user_id)
         if await LiteLLMUserAdminService.update_limits(user_id, limits, LiteLLMUserLimits.from_user_row(user_row)):
             report.limits_updated_user_ids.append(user_id)
-
-    @staticmethod
-    def _has_usable_key(user_row: dict[str, Any], keys: list[dict[str, Any]]) -> bool:
-        """Unmarked counts as usable too: a key minted after the mark was set would otherwise go unnoticed."""
-        return not LiteLLMUserAdminService.keys_blocked_by_hub(user_row) or any(not key.get("blocked") for key in keys)
 
     @staticmethod
     def _is_hub_user(user_row: dict[str, Any]) -> bool:
