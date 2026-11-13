@@ -49,7 +49,7 @@ class LiteLLMUserAdminService:
         return bool(changes)
 
     @staticmethod
-    def keys_blocked_by_hub(user_row: dict[str, Any]) -> list[str]:
+    def tokens_blocked_by_hub(user_row: dict[str, Any]) -> list[str]:
         return list((user_row.get("metadata") or {}).get(LiteLLMUserAdminService.KEYS_BLOCKED_BY_HUB) or [])
 
     @staticmethod
@@ -66,7 +66,7 @@ class LiteLLMUserAdminService:
         tokens = [key["token"] for key in keys if not key.get("blocked")]
         if not tokens:
             return []
-        recorded = LiteLLMUserAdminService.keys_blocked_by_hub(user_row)
+        recorded = LiteLLMUserAdminService.tokens_blocked_by_hub(user_row)
         await LiteLLMUserAdminService._record_keys_blocked(user_row, list(dict.fromkeys([*recorded, *tokens])))
         for token in tokens:
             await LiteLLMUserAdminService._post("/key/block", {"key": token})
@@ -76,7 +76,7 @@ class LiteLLMUserAdminService:
     async def unblock_keys(user_row: dict[str, Any], keys: list[dict[str, Any]]) -> None:
         """Unblocks only the keys the Hub recorded, then clears the record, so a run that fails half-way is finished by
         the next one."""
-        recorded = set(LiteLLMUserAdminService.keys_blocked_by_hub(user_row))
+        recorded = set(LiteLLMUserAdminService.tokens_blocked_by_hub(user_row))
         for key in keys:
             if key.get("blocked") and key["token"] in recorded:
                 await LiteLLMUserAdminService._post("/key/unblock", {"key": key["token"]})

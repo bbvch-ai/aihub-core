@@ -257,8 +257,9 @@ async def test_an_outage_while_confirming_a_removal_deletes_nothing(world: _Worl
     world.litellm_user("unknown")
     world.user_exists.side_effect = ConnectionError("Keycloak unreachable")
 
+    reconciler = _reconciler()
     with pytest.raises(ExceptionGroup) as raised:
-        await _reconciler().reconcile()
+        await reconciler.reconcile()
 
     assert raised.group_contains(ConnectionError)
 
@@ -269,8 +270,9 @@ async def test_an_outage_while_confirming_a_removal_deletes_nothing(world: _Worl
 async def test_an_empty_realm_stops_the_run_before_litellm_is_read(world: _World) -> None:
     world.litellm_user("u1")
 
+    reconciler = _reconciler()
     with pytest.raises(RuntimeError, match="no users"):
-        await _reconciler().reconcile()
+        await reconciler.reconcile()
 
     assert world.list_users.await_count == 0
 
@@ -290,8 +292,9 @@ async def test_access_is_withdrawn_before_a_failing_limit_update(world: _World) 
 
     world.update_user.side_effect = reject_limits
 
+    reconciler = _reconciler(USER_RPM_LIMIT=60)
     with pytest.raises(ExceptionGroup) as raised:
-        await _reconciler(USER_RPM_LIMIT=60).reconcile()
+        await reconciler.reconcile()
 
     assert raised.group_contains(RuntimeError, match="rejected")
     assert world.post.call_args_list == [call("/key/block", {"key": "hash-disabled"})]
@@ -311,8 +314,9 @@ async def test_a_failing_limit_update_does_not_keep_a_re_enabled_user_locked_out
 
     world.update_user.side_effect = reject_limits
 
+    reconciler = _reconciler(USER_RPM_LIMIT=60)
     with pytest.raises(ExceptionGroup):
-        await _reconciler(USER_RPM_LIMIT=60).reconcile()
+        await reconciler.reconcile()
 
     assert world.post.call_args_list == [call("/key/unblock", {"key": "hash-1"})]
 
@@ -330,8 +334,9 @@ async def test_one_users_failing_block_does_not_keep_another_disabled_users_key_
 
     world.post.side_effect = reject_first
 
+    reconciler = _reconciler()
     with pytest.raises(ExceptionGroup) as raised:
-        await _reconciler().reconcile()
+        await reconciler.reconcile()
 
     assert raised.group_contains(RuntimeError, match="rejected the block")
     assert call("/key/block", {"key": "hash-second"}) in world.post.call_args_list
@@ -373,5 +378,6 @@ async def test_a_run_is_cut_off_when_its_lease_expires(world: _World) -> None:
     redis = AsyncMock()
     redis.set.return_value = True
 
+    reconciler = _reconciler(redis, USER_RECONCILE_INTERVAL_SECONDS=0.05)
     with pytest.raises(TimeoutError):
-        await _reconciler(redis, USER_RECONCILE_INTERVAL_SECONDS=0.05).run_if_due()
+        await reconciler.run_if_due()

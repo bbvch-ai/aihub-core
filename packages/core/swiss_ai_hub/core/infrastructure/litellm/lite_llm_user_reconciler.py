@@ -72,7 +72,7 @@ class LiteLLMUserReconciler:
         if not enabled_by_user_id:
             raise RuntimeError("Keycloak listed no users; refusing to compare LiteLLM's users against an empty realm")
 
-        exempt_user_ids = self._settings.user_reconcile_exempt_user_ids | {self.LITELLM_ADMIN_USER_ID}
+        exempt_user_ids = self._settings.user_ids_exempt_from_reconciliation | {self.LITELLM_ADMIN_USER_ID}
         all_users = await LiteLLMUserAdminService.list_users()
         users = [user for user in all_users if user["user_id"] not in exempt_user_ids]
         keys_by_user_id = self._keys_by_user_id(await LiteLLMUserAdminService.list_keys())
@@ -152,7 +152,7 @@ class LiteLLMUserReconciler:
     async def _restore_access(
         user_row: dict[str, Any], keys: list[dict[str, Any]], report: LiteLLMReconciliationReport
     ) -> None:
-        if LiteLLMUserAdminService.keys_blocked_by_hub(user_row):
+        if LiteLLMUserAdminService.tokens_blocked_by_hub(user_row):
             await LiteLLMUserAdminService.unblock_keys(user_row, keys)
             report.unblocked_user_ids.append(user_row["user_id"])
 

@@ -110,7 +110,7 @@ class LiteLLMProxySettings(EnvironmentSettings):
         return {"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"}
 
     @property
-    def user_reconcile_exempt_user_ids(self) -> set[str]:
+    def user_ids_exempt_from_reconciliation(self) -> set[str]:
         return {user_id.strip() for user_id in self.USER_RECONCILE_EXEMPT_USER_IDS.split(",") if user_id.strip()}
 
     @staticmethod
