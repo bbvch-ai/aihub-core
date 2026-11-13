@@ -9312,6 +9312,14 @@ export type IngestedNode = {
     [key: string]: string | number | number | Array<string>;
   };
   /**
+   * Document Classification
+   *
+   * The document's type and attributes from ingestion's classification, under their metadata keys; empty for a document that was not classified.
+   */
+  document_classification?: {
+    [key: string]: unknown;
+  };
+  /**
    * Score
    *
    * Score representing the relevance of the document.
@@ -26788,6 +26796,14 @@ export type IngestedNodeWritable = {
    */
   record_fields?: {
     [key: string]: string | number | number | Array<string>;
+  };
+  /**
+   * Document Classification
+   *
+   * The document's type and attributes from ingestion's classification, under their metadata keys; empty for a document that was not classified.
+   */
+  document_classification?: {
+    [key: string]: unknown;
   };
   /**
    * Score

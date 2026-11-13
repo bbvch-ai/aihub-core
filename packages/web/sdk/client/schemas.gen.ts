@@ -13816,6 +13816,14 @@ export const IngestedNodeSchema = {
         "Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.",
       default: {},
     },
+    document_classification: {
+      additionalProperties: true,
+      type: "object",
+      title: "Document Classification",
+      description:
+        "The document's type and attributes from ingestion's classification, under their metadata keys; empty for a document that was not classified.",
+      default: {},
+    },
     score: {
       anyOf: [
         {
@@ -40392,6 +40400,14 @@ export const IngestedNodeWritableSchema = {
       title: "Record Fields",
       description:
         "Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.",
+      default: {},
+    },
+    document_classification: {
+      additionalProperties: true,
+      type: "object",
+      title: "Document Classification",
+      description:
+        "The document's type and attributes from ingestion's classification, under their metadata keys; empty for a document that was not classified.",
       default: {},
     },
     score: {
