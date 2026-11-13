@@ -1,0 +1,333 @@
+# Financial documents that resemble invoices but are not one: receipts for a payment already made, credit notes,
+# payment reminders and account statements. All must be classified `other`. Every company and person is made up.
+
+- id: receipt-de-1
+  kind: hard_negative
+  title: Kassenbon_0412.jpg
+  note: A till receipt for a payment already made.
+  text: |
+    ALPENGLÜCK BÜROBEDARF AG
+    Marktgasse 30, 3011 Bern
+    MWST-Nr. CHE-481.516.232 MWST
+
+    Kassenbon 0412 · 21.05.2025 14:32
+    Ordner A4 breit        3 x 4.90     14.70
+    Kugelschreiber blau   10 x 1.20     12.00
+    TOTAL CHF                           26.70
+    Bezahlt Maestro                      26.70
+    MWST 8.1 % inkl.                      2.00
+
+    Vielen Dank für Ihren Einkauf!
+
+- id: receipt-de-2
+  kind: hard_negative
+  title: Quittung_Barzahlung.pdf
+  note: A receipt confirming a cash payment of an invoice.
+  text: |
+    # Quittung
+
+    Erhalten von: Muster Treuhand GmbH, Spitalgasse 4, 3011 Bern
+    Betrag: CHF 1'082.08 (in Worten: eintausendzweiundachtzig 08/100)
+    für: Rechnung 2025-1142 vom 21.05.2025
+
+    Bern, 28.05.2025
+    Alpenglück Bürobedarf AG, Unterschrift: ____________________
+
+- id: receipt-fr-1
+  kind: hard_negative
+  title: ticket_restaurant_2025-03-14.jpg
+  note: A French restaurant receipt.
+  text: |
+    BRASSERIE DU LAC
+    Quai Perdonnet 9, 1800 Vevey
+    TVA CHE-112.233.445 TVA
+
+    14.03.2025 12:47 · Table 7 · Couverts 2
+    Menu du jour       2 x 26.00    52.00
+    Eau minérale       1 x  6.50     6.50
+    Café               2 x  4.20     8.40
+    TOTAL CHF                       66.90
+    Payé par carte VISA ****4821     66.90
+    dont TVA 8,1 %                    5.01
+
+    Merci de votre visite !
+
+- id: receipt-en-1
+  kind: hard_negative
+  title: payment_receipt_RC-55120.pdf
+  note: An English payment receipt for an invoice already paid.
+  text: |
+    # Quillfeather Supplies Inc.
+    ## Payment Receipt RC-55120
+
+    Received from: Brightwater Analytics Ltd
+    Payment date: April 2, 2025
+    Payment method: Wire transfer
+    Amount received: USD 1,716.00
+    Applied to: Invoice #7781
+
+    Balance due: USD 0.00 · Thank you for your payment.
+
+- id: receipt-it-1
+  kind: hard_negative
+  title: scontrino_2025-09-18.jpg
+  note: An Italian till receipt.
+  text: |
+    CARTOLERIA CENTRALE SA
+    Via Nassa 12, 6900 Lugano
+
+    Scontrino n. 0087 · 18.09.2025 09:15
+    Carta A4 risma        2 x 6.90    13.80
+    Evidenziatori set     1 x 8.50     8.50
+    TOTALE CHF                        22.30
+    Contanti                          30.00
+    Resto                              7.70
+
+- id: credit-note-de-1
+  kind: hard_negative
+  title: Gutschrift_GU-2025-014.pdf
+  note: A credit note reducing an earlier invoice.
+  text: |
+    # Rhyfall Elektro GmbH
+    Mühlentalstrasse 5, 8200 Schaffhausen · MWST CHE-314.159.269
+
+    Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+    ## Gutschrift GU-2025-014
+    Schaffhausen, 28.03.2025
+    Bezug: Rechnung 88341 vom 17.03.2025
+
+    | Pos | Artikel | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 1 | Rücknahme LED-Panel 60x60, defekt | 2 | -180.00 |
+
+    MWST 8.1 % CHF -14.58
+    **Gutschrift total CHF -194.58**
+
+    Der Betrag wird mit Ihrer nächsten Zahlung verrechnet.
+
+- id: credit-note-fr-1
+  kind: hard_negative
+  title: note_de_credit_NC-0007.pdf
+  note: A French credit note.
+  text: |
+    # Alpenfunk Télécom SA
+    Avenue de la Gare 18, 1003 Lausanne
+
+    Atelier Rousseau Sàrl, Rue du Rhône 21, 1204 Genève
+
+    ## Note de crédit NC-0007
+    Lausanne, le 15 avril 2025
+    Référence : facture AF-2503-99127
+
+    Geste commercial pour interruption du service du 12 au 14 mars 2025 : CHF -30.00
+    TVA 8,1 % : CHF -2.43
+    **Total crédité CHF -32.43**
+
+    Ce montant sera déduit de votre prochaine facture.
+
+- id: credit-note-en-1
+  kind: hard_negative
+  title: Credit_Note_CN-2025-03.pdf
+  note: An English credit note.
+  text: |
+    # Brightwater Analytics Ltd
+    12 Canal Street, Manchester M1 3HE · VAT Reg. No. GB 123 4567 89
+
+    Customer: Hooli AG, Bahnhofstrasse 10, 8001 Zürich
+
+    ## Credit Note CN-2025-03
+    Date: 25 March 2025
+    Against invoice: BWA-INV-2025-077
+
+    Dashboard maintenance not delivered in February: -£650.00
+    **Total credit £650.00**
+
+- id: credit-note-de-2
+  kind: hard_negative
+  title: Rechnungskorrektur_RK-2025-02.pdf
+  note: A cancellation (Stornorechnung) of an earlier invoice.
+  text: |
+    # Kaffeerösterei Elbstrand e.K.
+    Hafenstraße 9, 20457 Hamburg · Steuernummer 43/123/45678
+
+    Nordlicht Software GmbH, Leopoldstraße 90, 80802 München
+
+    ## Stornorechnung zu Rechnung R25-0612
+    Storno-Nr. ST-2025-02 · Datum: 20.06.2025
+
+    Hiermit stornieren wir die Rechnung R25-0612 vom 12.06.2025 vollständig.
+    Stornobetrag: -496,27 € (inkl. 7 % USt.)
+
+- id: credit-note-it-1
+  kind: hard_negative
+  title: nota_di_credito_NC-12.pdf
+  note: An Italian credit note.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano
+
+    Studio Bellavista Sagl, Piazza Riforma 3, 6900 Lugano
+
+    ## Nota di credito n. NC-12
+    Lugano, 30 settembre 2025
+    Rif. fattura n. 2025/00456
+
+    Sconto per ritardo nella consegna: CHF -150.00
+    IVA 8,1 %: CHF -12.15
+    **Totale nota di credito: CHF -162.15**
+
+- id: reminder-de-1
+  kind: hard_negative
+  title: Zahlungserinnerung_2025-1142.pdf
+  note: A first payment reminder naming the open invoice and its amount.
+  text: |
+    # Alpenglück Bürobedarf AG
+    Marktgasse 30, 3011 Bern
+
+    Muster Treuhand GmbH, Spitalgasse 4, 3011 Bern
+
+    ## Zahlungserinnerung
+    Bern, 30.06.2025
+
+    Sicher ist es Ihrer Aufmerksamkeit entgangen, dass folgende Rechnung noch offen ist:
+
+    | Rechnung | Datum | Betrag CHF |
+    |---|---|---:|
+    | 2025-1142 | 21.05.2025 | 1'082.08 |
+
+    Wir bitten Sie, den Betrag bis 10.07.2025 zu überweisen.
+
+- id: reminder-de-2
+  kind: hard_negative
+  title: 2_Mahnung_88341.pdf
+  note: A second reminder that adds a fee and a new total.
+  text: |
+    # Rhyfall Elektro GmbH
+    Mühlentalstrasse 5, 8200 Schaffhausen
+
+    Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+    ## 2. Mahnung
+    Schaffhausen, 15.05.2025
+
+    Rechnung 88341 vom 17.03.2025: CHF 3'080.85
+    Mahngebühr: CHF 20.00
+    **Offener Betrag: CHF 3'100.85**
+
+    Bitte begleichen Sie den Betrag innert 10 Tagen, ansonsten leiten wir die Betreibung ein.
+
+- id: reminder-fr-1
+  kind: hard_negative
+  title: rappel_paiement_AF-2503-99127.pdf
+  note: A French payment reminder.
+  text: |
+    # Alpenfunk Télécom SA
+    Avenue de la Gare 18, 1003 Lausanne
+
+    Atelier Rousseau Sàrl, Rue du Rhône 21, 1204 Genève
+
+    ## Rappel de paiement
+    Lausanne, le 20 mai 2025
+
+    Sauf erreur de notre part, la facture n° AF-2503-99127 du 2 avril 2025 d'un montant de CHF 158.26 reste impayée.
+    Nous vous prions de régler ce montant d'ici le 30 mai 2025.
+
+- id: reminder-en-1
+  kind: hard_negative
+  title: Overdue_Notice_7781.pdf
+  note: An English overdue notice.
+  text: |
+    # Quillfeather Supplies Inc.
+    ## Overdue Notice
+
+    To: Brightwater Analytics Ltd
+    Date: May 10, 2025
+
+    Our records show that invoice #7781 for USD 1,716.00 is now 40 days past due.
+    Please remit payment within 7 days to avoid a late fee of USD 50.00.
+
+- id: reminder-it-1
+  kind: hard_negative
+  title: sollecito_2025_00456.pdf
+  note: An Italian payment reminder.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano
+
+    Studio Bellavista Sagl, Piazza Riforma 3, 6900 Lugano
+
+    ## Sollecito di pagamento
+    Lugano, 25 ottobre 2025
+
+    La fattura n. 2025/00456 del 15 settembre 2025 di CHF 1'794.46 risulta ancora scoperta.
+    Vi preghiamo di provvedere al pagamento entro il 5 novembre 2025.
+
+- id: statement-de-1
+  kind: hard_negative
+  title: Kontoauszug_2025-03.pdf
+  note: A bank account statement with totals and a period.
+  text: |
+    # Bank Seeland Genossenschaft
+    Kontoauszug März 2025
+
+    Kontoinhaber: Muster Treuhand GmbH · Konto CH12 3456 7890 1234 5678 9
+    Periode: 01.03.2025 – 31.03.2025
+
+    | Datum | Text | Belastung | Gutschrift | Saldo |
+    |---|---|---:|---:|---:|
+    | 01.03.2025 | Saldovortrag | | | 48'220.15 |
+    | 05.03.2025 | Zahlung Alpenglück Bürobedarf AG | 1'082.08 | | 47'138.07 |
+    | 20.03.2025 | Honorar Mandant 1044 | | 6'500.00 | 53'638.07 |
+    | 31.03.2025 | Kontoführungsgebühr | 15.00 | | 53'623.07 |
+
+    Saldo per 31.03.2025: CHF 53'623.07
+
+- id: statement-de-2
+  kind: hard_negative
+  title: Kontoauszug_Debitoren_Seeblick.pdf
+  note: A supplier's statement of open items listing several invoices.
+  text: |
+    # Rhyfall Elektro GmbH
+    Kontoauszug offene Posten · Stand 31.05.2025
+
+    Kunde: Seeblick Hotel AG, Kundennummer 10-2231
+
+    | Beleg | Datum | Betrag CHF | Fällig |
+    |---|---|---:|---|
+    | Rechnung 88341 | 17.03.2025 | 3'080.85 | 16.04.2025 |
+    | Gutschrift GU-2025-014 | 28.03.2025 | -194.58 | – |
+    | Mahngebühr | 15.05.2025 | 20.00 | 25.05.2025 |
+
+    **Total offen CHF 2'906.27**
+
+- id: statement-fr-1
+  kind: hard_negative
+  title: releve_compte_2025-04.pdf
+  note: A French account statement.
+  text: |
+    # Banque du Léman SA
+    Relevé de compte – avril 2025
+
+    Titulaire : Atelier Rousseau Sàrl · IBAN CH56 0483 5012 3456 7800 9
+    Période : du 1er au 30 avril 2025
+
+    Solde au 1er avril 2025 : CHF 12'450.30
+    Total des débits : CHF 3'210.75
+    Total des crédits : CHF 7'800.00
+    Solde au 30 avril 2025 : CHF 17'039.55
+
+- id: statement-en-1
+  kind: hard_negative
+  title: Credit_Card_Statement_2025-02.pdf
+  note: An English credit card statement with an amount due and a due date.
+  text: |
+    # Northgate Card Services
+    Statement for Brightwater Analytics Ltd · Card ending 4821
+    Statement period: 1 February 2025 – 28 February 2025
+
+    Previous balance £1,204.50
+    Payments received -£1,204.50
+    New purchases £2,318.90
+    **New balance £2,318.90**
+    Minimum payment due £69.57 by 25 March 2025

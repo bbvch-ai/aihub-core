@@ -1,0 +1,636 @@
+# Invoices written to test the boundary decisions of #2346 (C2, C5, C6, C7, C13), in German, French, Italian and
+# English. Every company and person is made up; every Swiss UID passes its check digit. `expected` holds the value as
+# stored (ISO dates, numbers, ISO currency codes), and None where the document does not state the attribute.
+
+- id: invoice-advance-payment-de
+  kind: boundary_invoice
+  title: Akontorechnung_AK-2025-017.pdf
+  note: An advance-payment invoice is an invoice (C2).
+  text: |
+    # Bergwerk Bau AG
+    Industriestrasse 44, 3600 Thun · MWST-Nr. CHE-106.412.867 MWST
+
+    Gemeinde Grünfeld
+    Bauverwaltung
+    Dorfplatz 1, 3612 Grünfeld
+
+    ## Akontorechnung Nr. AK-2025-017
+    Thun, 3. Februar 2025
+
+    Bauvorhaben: Sanierung Schulhaus Grünfeld
+    Werkvertrag Nr. WV-2024-088
+
+    | Pos | Beschreibung | Betrag CHF |
+    |-----|--------------|-----------:|
+    | 1 | 2. Akontozahlung gemäss Zahlungsplan (30 % der Werksumme) | 84'000.00 |
+
+    Total exkl. MWST CHF 84'000.00
+    MWST 8.1 % CHF 6'804.00
+    **Total CHF 90'804.00**
+
+    Zahlbar bis 5. März 2025.
+  expected:
+    document_date: "2025-02-03"
+    document_reference_number: AK-2025-017
+    document_issuer: Bergwerk Bau AG
+    document_issuer_tax_id: CHE106412867
+    document_recipient: Gemeinde Grünfeld
+    document_total_amount: 90804.00
+    document_currency: CHF
+    document_due_date: "2025-03-05"
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [WV-2024-088]
+
+- id: invoice-utility-de
+  kind: boundary_invoice
+  title: Stromrechnung_Q1_2025.pdf
+  note: A utility bill is an invoice; the customer number is not a related reference.
+  text: |
+    # Energieversorgung Talwil AG
+    Seestrasse 12, 8800 Talwil · UID CHE-112.233.445 MWST
+
+    Marco Brunner
+    Rebweg 7
+    8800 Talwil
+
+    ## Stromrechnung 2025-Q1-55812
+    Rechnungsdatum: 08.04.2025
+    Kundennummer: 700-114-559
+    Abrechnungsperiode: 01.01.2025 – 31.03.2025
+
+    | Leistung | Menge | Preis | Betrag CHF |
+    |---|---:|---:|---:|
+    | Energie Hochtarif | 812 kWh | 0.2240 | 181.89 |
+    | Energie Niedertarif | 455 kWh | 0.1810 | 82.36 |
+    | Netznutzung | 1'267 kWh | 0.0950 | 120.37 |
+    | Grundgebühr | 3 Monate | 9.50 | 28.50 |
+
+    Total exkl. MWST CHF 413.12
+    MWST 8.1 % CHF 33.46
+    **Rechnungsbetrag CHF 446.58**
+
+    Zahlbar bis 08.05.2025 mit beiliegendem QR-Einzahlungsschein.
+  expected:
+    document_date: "2025-04-08"
+    document_reference_number: 2025-Q1-55812
+    document_issuer: Energieversorgung Talwil AG
+    document_issuer_tax_id: CHE112233445
+    document_recipient: Marco Brunner
+    document_total_amount: 446.58
+    document_currency: CHF
+    document_due_date: "2025-05-08"
+    document_period_start: "2025-01-01"
+    document_period_end: "2025-03-31"
+    document_related_references: null
+
+- id: invoice-telecom-fr
+  kind: boundary_invoice
+  title: facture_alpenfunk_2025-03.pdf
+  note: A telecom bill in French, with a period written "du 1er au 31 mars 2025".
+  text: |
+    # Alpenfunk Télécom SA
+    Avenue de la Gare 18, 1003 Lausanne · N° TVA CHE-273.849.506 TVA
+
+    Atelier Rousseau Sàrl
+    Rue du Rhône 21
+    1204 Genève
+
+    ## Facture n° AF-2503-99127
+    Lausanne, le 2 avril 2025
+    Période de facturation : du 1er au 31 mars 2025
+
+    | Prestation | Montant CHF |
+    |---|---:|
+    | Abonnement Business Fibre 1 Gbit/s | 89.00 |
+    | Téléphonie fixe, 3 lignes | 45.00 |
+    | Communications hors forfait | 12.40 |
+
+    Total hors TVA CHF 146.40
+    TVA 8,1 % CHF 11.86
+    **Total à payer CHF 158.26**
+
+    Échéance : 2 mai 2025
+  expected:
+    document_date: "2025-04-02"
+    document_reference_number: AF-2503-99127
+    document_issuer: Alpenfunk Télécom SA
+    document_issuer_tax_id: CHE273849506
+    document_recipient: Atelier Rousseau Sàrl
+    document_total_amount: 158.26
+    document_currency: CHF
+    document_due_date: "2025-05-02"
+    document_period_start: "2025-03-01"
+    document_period_end: "2025-03-31"
+    document_related_references: null
+
+- id: invoice-self-billing-de
+  kind: boundary_invoice
+  title: Gutschrift_GS-2025-0031.pdf
+  note: >-
+    A self-billing invoice ("Gutschrift" under § 14 UStG) is issued by the buyer; per C2 the issuer attribute is the
+    supplier who is owed the payment.
+  text: |
+    # Nordlicht Software GmbH
+    Leopoldstrasse 90, 80802 München
+
+    An
+    Studio Pixelwerk Inh. Lena Vogt
+    Kastanienallee 3, 10435 Berlin
+    USt-IdNr. des Leistenden: DE 284 519 377
+
+    ## Gutschrift Nr. GS-2025-0031
+    im Sinne des § 14 Abs. 2 Satz 2 UStG
+    Datum: 31.01.2025
+    Leistungszeitraum: Januar 2025
+
+    Für die von Ihnen im Januar 2025 erbrachten Designleistungen schreiben wir Ihnen gut:
+
+    | Leistung | Stunden | Satz EUR | Betrag EUR |
+    |---|---:|---:|---:|
+    | UI-Design Projekt „Atlas" | 42 | 85,00 | 3.570,00 |
+
+    Nettobetrag EUR 3.570,00
+    USt. 19 % EUR 678,30
+    **Gutschriftsbetrag EUR 4.248,30**
+
+    Der Betrag wird am 14.02.2025 auf Ihr Konto überwiesen.
+  expected:
+    document_date: "2025-01-31"
+    document_reference_number: GS-2025-0031
+    document_issuer: Studio Pixelwerk Inh. Lena Vogt
+    document_issuer_tax_id: DE284519377
+    document_recipient: Nordlicht Software GmbH
+    document_total_amount: 4248.30
+    document_currency: EUR
+    document_due_date: "2025-02-14"
+    document_period_start: "2025-01-01"
+    document_period_end: "2025-01-31"
+    document_related_references: null
+
+- id: invoice-factoring-de
+  kind: boundary_invoice
+  title: RE-88341.pdf
+  note: The payee is a factoring company; the issuer is still the seller (C7).
+  text: |
+    # Rhyfall Elektro GmbH
+    Mühlentalstrasse 5, 8200 Schaffhausen · MWST CHE-314.159.269
+
+    Seeblick Hotel AG
+    Uferweg 2
+    6006 Luzern
+
+    ## Rechnung 88341
+    Schaffhausen, 17.03.2025
+    Ihre Bestellung: BE-77120 vom 02.03.2025
+    Lieferdatum: 12.03.2025
+
+    | Pos | Artikel | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 1 | LED-Panel 60x60, 4000 K | 24 | 2'160.00 |
+    | 2 | Montage, Stunden | 6 | 690.00 |
+
+    Total exkl. MWST CHF 2'850.00
+    MWST 8.1 % CHF 230.85
+    **Total CHF 3'080.85**
+
+    Wir haben unsere Forderungen an die Finanz Factoring Nord AG abgetreten.
+    Zahlbar an: Finanz Factoring Nord AG, 8001 Zürich, IBAN CH93 0076 2011 6238 5295 7
+    Zahlbar bis 16.04.2025.
+  expected:
+    document_date: "2025-03-17"
+    document_reference_number: "88341"
+    document_issuer: Rhyfall Elektro GmbH
+    document_issuer_tax_id: CHE314159269
+    document_recipient: Seeblick Hotel AG
+    document_total_amount: 3080.85
+    document_currency: CHF
+    document_due_date: "2025-04-16"
+    document_period_start: "2025-03-12"
+    document_period_end: "2025-03-12"
+    document_related_references: [BE-77120]
+
+- id: invoice-terms-only-de
+  kind: boundary_invoice
+  title: Rechnung_2025_1142.pdf
+  note: Payment terms without a date leave the due date empty.
+  text: |
+    # Alpenglück Bürobedarf AG
+    Marktgasse 30, 3011 Bern · CHE-481.516.232 MWST
+
+    Muster Treuhand GmbH
+    z.Hd. Frau Petra Keller
+    Spitalgasse 4, 3011 Bern
+
+    ## Rechnung 2025-1142
+    Bern, 21. Mai 2025
+
+    | Artikel | Menge | Betrag CHF |
+    |---|---:|---:|
+    | Kopierpapier A4, 80 g, Karton | 10 | 389.00 |
+    | Toner HP 26X | 4 | 612.00 |
+
+    Total inkl. 8.1 % MWST: CHF 1'082.08
+
+    Zahlbar innert 30 Tagen netto.
+  expected:
+    document_date: "2025-05-21"
+    document_reference_number: 2025-1142
+    document_issuer: Alpenglück Bürobedarf AG
+    document_issuer_tax_id: CHE481516232
+    document_recipient: Muster Treuhand GmbH
+    document_total_amount: 1082.08
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+    document_related_references: null
+
+- id: invoice-negative-final-de
+  kind: boundary_invoice
+  title: Schlussrechnung_SR-2025-004.pdf
+  note: A final invoice whose advance payments exceed the work keeps its negative total (C5).
+  text: |
+    # Bergwerk Bau AG
+    Industriestrasse 44, 3600 Thun · MWST-Nr. CHE-106.412.867 MWST
+
+    Gemeinde Grünfeld
+    Bauverwaltung, Dorfplatz 1, 3612 Grünfeld
+
+    ## Schlussrechnung SR-2025-004
+    Thun, 30. Juni 2025
+    Werkvertrag Nr. WV-2024-088
+
+    | Pos | Beschreibung | Betrag CHF |
+    |---|---|---:|
+    | 1 | Werksumme gemäss Schlussabrechnung | 268'500.00 |
+    | 2 | Abzüglich Akontozahlungen AK-2025-009, AK-2025-017, AK-2025-031 | -270'000.00 |
+
+    Saldo exkl. MWST CHF -1'500.00
+    MWST 8.1 % CHF -121.50
+    **Total zu Ihren Gunsten CHF -1'621.50**
+
+    Der Betrag wird Ihnen innert 30 Tagen zurückerstattet.
+  expected:
+    document_date: "2025-06-30"
+    document_reference_number: SR-2025-004
+    document_issuer: Bergwerk Bau AG
+    document_issuer_tax_id: CHE106412867
+    document_recipient: Gemeinde Grünfeld
+    document_total_amount: -1621.50
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [WV-2024-088, AK-2025-009, AK-2025-017, AK-2025-031]
+
+- id: invoice-steuernummer-de
+  kind: boundary_invoice
+  title: Rechnung_R25-0612.pdf
+  note: A German tax office number has no standard form, so the tax ID stays empty (C6).
+  text: |
+    # Kaffeerösterei Elbstrand e.K.
+    Inh. Jonas Petersen · Hafenstraße 9 · 20457 Hamburg
+    Steuernummer 43/123/45678
+
+    Nordlicht Software GmbH
+    Leopoldstraße 90
+    80802 München
+
+    ## Rechnung R25-0612
+    Rechnungsdatum: 12.06.2025
+    Leistungsdatum: 10.06.2025
+
+    | Artikel | Menge | Einzelpreis | Betrag |
+    |---|---:|---:|---:|
+    | Espresso Hausmischung 1 kg | 12 | 24,90 € | 298,80 € |
+    | Filterkaffee Äthiopien 1 kg | 6 | 27,50 € | 165,00 € |
+
+    Nettobetrag 463,80 €
+    USt. 7 % 32,47 €
+    **Rechnungsbetrag 496,27 €**
+
+    Bitte überweisen Sie den Betrag bis zum 26.06.2025.
+  expected:
+    document_date: "2025-06-12"
+    document_reference_number: R25-0612
+    document_issuer: Kaffeerösterei Elbstrand e.K.
+    document_issuer_tax_id: null
+    document_recipient: Nordlicht Software GmbH
+    document_total_amount: 496.27
+    document_currency: EUR
+    document_due_date: "2025-06-26"
+    document_period_start: "2025-06-10"
+    document_period_end: "2025-06-10"
+    document_related_references: null
+
+- id: invoice-long-total-on-last-page-de
+  kind: boundary_invoice
+  title: Rechnung_IT-2025-0388.pdf
+  note: The total and due date are on the last of four pages, outside the first two (C13).
+  text: |
+    # Hooli AG
+    Bahnhofstrasse 10, 8001 Zürich · MWST CHE-602.198.749 MWST
+
+    Muster Treuhand GmbH
+    Spitalgasse 4, 3011 Bern
+
+    ## Rechnung IT-2025-0388
+    Zürich, 14. März 2025
+    Ihre Bestellung PO-3333 · Lieferschein LS-8812
+    Leistungszeitraum: Februar 2025
+
+    | Pos | Beschreibung | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 1 | Cloud-Hosting Paket M, Februar | 1 | 980.00 |
+    | 2 | Backup-Speicher 2 TB | 1 | 120.00 |
+    | 3 | Support-Stunden | 12 | 1'760.00 |
+    <!-- PageBreak -->
+    | Pos | Beschreibung | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 4 | Lizenz Arbeitsplatz Standard | 25 | 1'125.00 |
+    | 5 | Lizenz Arbeitsplatz Pro | 8 | 640.00 |
+    | 6 | Mobile Device Management | 33 | 495.00 |
+    | 7 | E-Mail-Archivierung | 33 | 264.00 |
+    | 8 | Firewall-Abo | 1 | 310.00 |
+    <!-- PageBreak -->
+    | Pos | Beschreibung | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 9 | Patch-Management Server | 6 | 240.00 |
+    | 10 | Patch-Management Clients | 33 | 330.00 |
+    | 11 | Monitoring Netzwerk | 1 | 180.00 |
+    | 12 | Monitoring Server | 6 | 210.00 |
+    | 13 | VPN-Zugänge | 15 | 225.00 |
+    | 14 | Domain-Verwaltung | 4 | 48.00 |
+    | 15 | SSL-Zertifikate | 3 | 135.00 |
+    | 16 | Telefonie-Lizenzen | 20 | 300.00 |
+    | 17 | Konferenzraum-Lizenzen | 2 | 90.00 |
+    | 18 | Druckerverwaltung | 5 | 75.00 |
+    | 19 | Dokumentenablage 500 GB | 1 | 85.00 |
+    | 20 | Security Awareness Training | 33 | 396.00 |
+    | 21 | Passwortmanager | 33 | 198.00 |
+    | 22 | Endpoint Protection | 33 | 495.00 |
+    | 23 | Remote-Support-Zugang | 1 | 60.00 |
+    | 24 | Inventarisierung | 1 | 45.00 |
+    | 25 | Vor-Ort-Einsatz Pauschale | 2 | 300.00 |
+    | 26 | Wegpauschale | 2 | 80.00 |
+    | 27 | Notfall-Hotline Bereitschaft | 1 | 150.00 |
+    | 28 | Dokumentation Netzwerkplan | 1 | 220.00 |
+    | 29 | Lizenzprüfung | 1 | 95.00 |
+    | 30 | Kleinmaterial | 1 | 34.50 |
+    | 31 | Kabel und Adapter | 1 | 67.80 |
+    | 32 | Ersatz-Netzteil | 2 | 118.00 |
+    | 33 | Arbeitsplatz-Umzug | 3 | 270.00 |
+    | 34 | Benutzerverwaltung | 8 | 160.00 |
+    | 35 | Mailbox-Migration | 4 | 240.00 |
+    | 36 | Schulung Teams | 2 | 360.00 |
+    | 37 | Reporting Februar | 1 | 120.00 |
+    | 38 | Rabatt Rahmenvertrag | 1 | -500.00 |
+    <!-- PageBreak -->
+    Total exkl. MWST CHF 11'560.30
+    MWST 8.1 % CHF 936.38
+    **Total CHF 12'496.68**
+
+    Zahlbar bis 13.04.2025. Besten Dank für Ihren Auftrag.
+  expected:
+    document_date: "2025-03-14"
+    document_reference_number: IT-2025-0388
+    document_issuer: Hooli AG
+    document_issuer_tax_id: CHE602198749
+    document_recipient: Muster Treuhand GmbH
+    document_total_amount: 12496.68
+    document_currency: CHF
+    document_due_date: "2025-04-13"
+    document_period_start: "2025-02-01"
+    document_period_end: "2025-02-28"
+    document_related_references: [PO-3333, LS-8812]
+
+- id: invoice-eur-with-chf-equivalent-de
+  kind: boundary_invoice
+  title: Invoice_NS-2025-1207.pdf
+  note: The total is in EUR; the CHF equivalent is a conversion and must not become the currency.
+  text: |
+    # Nordlicht Software GmbH
+    Leopoldstraße 90 · 80802 München · USt-IdNr. DE 311 845 902
+
+    Hooli AG
+    Bahnhofstrasse 10
+    8001 Zürich, Schweiz
+
+    ## Rechnung NS-2025-1207
+    München, 07.10.2025
+    Vertrag Nr. SLA-2023-14
+
+    | Leistung | Betrag EUR |
+    |---|---:|
+    | Wartung Plattform „Nordstern", Q4 2025 | 7.800,00 |
+
+    Nettobetrag EUR 7.800,00
+    Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)
+    **Rechnungsbetrag EUR 7.800,00**
+    (entspricht CHF 7'312.50 zum Kurs vom 07.10.2025)
+
+    Zahlbar bis 06.11.2025.
+  expected:
+    document_date: "2025-10-07"
+    document_reference_number: NS-2025-1207
+    document_issuer: Nordlicht Software GmbH
+    document_issuer_tax_id: DE311845902
+    document_recipient: Hooli AG
+    document_total_amount: 7800.00
+    document_currency: EUR
+    document_due_date: "2025-11-06"
+    document_period_start: "2025-10-01"
+    document_period_end: "2025-12-31"
+    document_related_references: [SLA-2023-14]
+
+- id: invoice-it
+  kind: boundary_invoice
+  title: fattura_2025_00456.pdf
+  note: An Italian invoice from Ticino.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano · IVA CHE-556.677.884 IVA
+
+    Studio Bellavista Sagl
+    Piazza Riforma 3
+    6900 Lugano
+
+    ## Fattura n. 2025/00456
+    Lugano, 15 settembre 2025
+    Vostro ordine n. ORD-5521
+    Data di consegna: 12 settembre 2025
+
+    | Descrizione | Importo CHF |
+    |---|---:|
+    | Trasporto mobili ufficio Lugano–Bellinzona | 1'450.00 |
+    | Imballaggio e materiale | 210.00 |
+
+    Totale IVA esclusa CHF 1'660.00
+    IVA 8,1 % CHF 134.46
+    **Totale CHF 1'794.46**
+
+    Pagabile entro il 15 ottobre 2025.
+  expected:
+    document_date: "2025-09-15"
+    document_reference_number: 2025/00456
+    document_issuer: Ticino Logistica SA
+    document_issuer_tax_id: CHE556677884
+    document_recipient: Studio Bellavista Sagl
+    document_total_amount: 1794.46
+    document_currency: CHF
+    document_due_date: "2025-10-15"
+    document_period_start: "2025-09-12"
+    document_period_end: "2025-09-12"
+    document_related_references: [ORD-5521]
+
+- id: invoice-en-uk
+  kind: boundary_invoice
+  title: BWA-INV-2025-077.pdf
+  note: An English invoice with a UK VAT number and dates written with month names.
+  text: |
+    # Brightwater Analytics Ltd
+    12 Canal Street, Manchester M1 3HE, United Kingdom
+    VAT Reg. No. GB 123 4567 89
+
+    Bill to:
+    Hooli AG
+    Bahnhofstrasse 10, 8001 Zürich, Switzerland
+
+    ## Invoice BWA-INV-2025-077
+    Invoice date: 14 March 2025
+    Service period: 1 February 2025 to 28 February 2025
+    PO number: PO-3391
+
+    | Description | Amount GBP |
+    |---|---:|
+    | Data quality audit, February | 4,200.00 |
+    | Dashboard maintenance | 650.00 |
+
+    Subtotal £4,850.00
+    VAT 0% (outside the scope of UK VAT) £0.00
+    **Total due £4,850.00**
+
+    Payment due: 13 April 2025
+  expected:
+    document_date: "2025-03-14"
+    document_reference_number: BWA-INV-2025-077
+    document_issuer: Brightwater Analytics Ltd
+    document_issuer_tax_id: GB123456789
+    document_recipient: Hooli AG
+    document_total_amount: 4850.00
+    document_currency: GBP
+    document_due_date: "2025-04-13"
+    document_period_start: "2025-02-01"
+    document_period_end: "2025-02-28"
+    document_related_references: [PO-3391]
+
+- id: invoice-qr-bill-de
+  kind: boundary_invoice
+  title: QR-Rechnung_10442.pdf
+  note: The QR payment reference is not a related reference.
+  text: |
+    # Atelier Lindenhof GmbH
+    Lindenhofstrasse 8, 8001 Zürich · CHE-739.051.288 MWST
+
+    Seeblick Hotel AG
+    Uferweg 2, 6006 Luzern
+
+    ## Rechnung 10442
+    Datum: 22.08.2025
+    Ihr Auftrag: AU-2025-301
+
+    Neugestaltung Speisekarten, Herbst 2025, pauschal CHF 2'400.00
+    MWST 8.1 % CHF 194.40
+    **Total CHF 2'594.40**
+
+    Zahlbar innert 20 Tagen.
+
+    ---
+    **Zahlteil**
+    Konto / Zahlbar an: CH44 3199 9123 0008 8901 2 · Atelier Lindenhof GmbH
+    Referenz: 21 00000 00003 13947 14300 09017
+    Währung CHF · Betrag 2 594.40
+    Zahlbar durch: Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+  expected:
+    document_date: "2025-08-22"
+    document_reference_number: "10442"
+    document_issuer: Atelier Lindenhof GmbH
+    document_issuer_tax_id: CHE739051288
+    document_recipient: Seeblick Hotel AG
+    document_total_amount: 2594.40
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [AU-2025-301]
+
+- id: invoice-partial-de
+  kind: boundary_invoice
+  title: Teilrechnung_TR-2025-02.pdf
+  note: A partial invoice with a shortened period "1.–28.2.2025".
+  text: |
+    # Lemanic Services SA
+    Chemin des Vignes 4, 1009 Pully · CHE-817.263.546 TVA
+
+    Alpenglück Bürobedarf AG
+    Marktgasse 30, 3011 Bern
+
+    ## Teilrechnung TR-2025-02
+    Pully, 03.03.2025
+    Rahmenvertrag RV-2024-19
+    Leistungszeitraum: 1.–28.2.2025
+
+    Unterhaltsreinigung Büroflächen Bern, Februar
+    Pauschale gemäss Rahmenvertrag CHF 3'200.00
+    MWST 8.1 % CHF 259.20
+    **Total CHF 3'459.20**
+
+    Zahlbar bis 02.04.2025.
+  expected:
+    document_date: "2025-03-03"
+    document_reference_number: TR-2025-02
+    document_issuer: Lemanic Services SA
+    document_issuer_tax_id: CHE817263546
+    document_recipient: Alpenglück Bürobedarf AG
+    document_total_amount: 3459.20
+    document_currency: CHF
+    document_due_date: "2025-04-02"
+    document_period_start: "2025-02-01"
+    document_period_end: "2025-02-28"
+    document_related_references: [RV-2024-19]
+
+- id: invoice-ambiguous-us-date-en
+  kind: boundary_invoice
+  title: invoice_7781.pdf
+  note: >-
+    "04/03/2025" could be 3 April or 4 March, so no date may be stored; the copied text is kept. The label states
+    no date because the document does not settle it either.
+  text: |
+    # Quillfeather Supplies Inc.
+    880 Market Street, Suite 400, San Francisco, CA 94102, USA
+
+    Bill to: Brightwater Analytics Ltd, 12 Canal Street, Manchester M1 3HE
+
+    ## INVOICE #7781
+    Date: 04/03/2025
+
+    | Item | Qty | Amount |
+    |---|---:|---:|
+    | Ergonomic office chair | 4 | $1,596.00 |
+    | Shipping | 1 | $120.00 |
+
+    **Total: USD 1,716.00**
+    Terms: Net 30
+  expected:
+    document_date: null
+    document_reference_number: "7781"
+    document_issuer: Quillfeather Supplies Inc.
+    document_issuer_tax_id: null
+    document_recipient: Brightwater Analytics Ltd
+    document_total_amount: 1716.00
+    document_currency: USD
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+    document_related_references: null
