@@ -3,7 +3,10 @@ from keycloak import KeycloakGetError
 from starlette.concurrency import run_in_threadpool
 from swiss_ai_hub.core.auth import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.openwebui import (
-    OpenWebuiModConfiguration, OpenWebuiModDefaults, OpenWebuiModPublicationManifest, OpenWebuiModResolver,
+    OpenWebuiModConfiguration,
+    OpenWebuiModDefaults,
+    OpenWebuiModPublicationManifest,
+    OpenWebuiModResolver,
 )
 from swiss_ai_hub.core.persistence import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
@@ -46,7 +49,10 @@ class OpenWebuiModConfigurationService:
         await cls._validate_mods(configuration)
         updated = configuration.model_copy(update={"version": configuration.version + 1})
         saved = await run_in_threadpool(
-            TenantMetadataEntity.replace_openwebui_mods, tenant_id, tenant.openwebui_mods_json, updated.model_dump_json()
+            TenantMetadataEntity.replace_openwebui_mods,
+            tenant_id,
+            tenant.openwebui_mods_json,
+            updated.model_dump_json(),
         )
         if not saved:
             raise HTTPException(status_code=409, detail="Tenant or mod settings changed. Reload before saving.")

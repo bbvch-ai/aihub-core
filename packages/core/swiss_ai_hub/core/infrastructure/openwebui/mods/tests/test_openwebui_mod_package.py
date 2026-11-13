@@ -65,7 +65,9 @@ class TestOpenWebuiModPackage:
         assert "Field 'message': unknown control 'primeTextare'" in message
         assert "tagged-union" not in message
 
-    @pytest.mark.parametrize("changes", [{"backend_restart_required": "false"}, {"backend_restart_required": True, "backend": None}])
+    @pytest.mark.parametrize(
+        "changes", [{"backend_restart_required": "false"}, {"backend_restart_required": True, "backend": None}]
+    )
     def test_restart_declaration_requires_a_boolean_and_backend_entry(self, changes: dict[str, Any]) -> None:
         with pytest.raises(ValueError):
             OpenWebuiModPackage.from_zip(self.package(**changes))

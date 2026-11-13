@@ -28,7 +28,9 @@ class ModTestAuth(TestAuthHandler):
         return fake_user(is_sys_admin=self.is_admin)
 
 
-def install_mod(client: TestClient, source: bytes, publication: bytes, mod_id: str = "chat-tools", **changes: Any) -> str:
+def install_mod(
+    client: TestClient, source: bytes, publication: bytes, mod_id: str = "chat-tools", **changes: Any
+) -> str:
     with ZipFile(BytesIO(source)) as archive:
         files = {name: archive.read(name) for name in archive.namelist()}
     manifest = json.loads(files["mod.json"])
@@ -41,6 +43,8 @@ def install_mod(client: TestClient, source: bytes, publication: bytes, mod_id: s
     metadata["source_revision"] = hashlib.sha256(source).hexdigest()
     files["publication.json"] = json.dumps(metadata).encode()
     with patch.object(OpenWebuiModService, "_compile", AsyncMock(return_value=OpenWebuiModBundles.zip(files))):
-        response = client.post(BASE + "/install?replace=true", content=source, headers={"content-type": "application/zip"})
+        response = client.post(
+            BASE + "/install?replace=true", content=source, headers={"content-type": "application/zip"}
+        )
     assert response.status_code == 200, response.text
     return OpenWebuiModEntity.find_mod(mod_id).publication

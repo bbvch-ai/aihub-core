@@ -1,32 +1,91 @@
 <template>
   <div class="flex flex-col gap-4">
     <div>
-      <h3 class="text-lg font-semibold">{{ t(globalScope ? 'openwebui_mods.global.title' : 'openwebui_mods.title') }}</h3>
-      <p class="mt-1 text-sm text-surface-500">{{ t(globalScope ? 'openwebui_mods.global.description' : 'openwebui_mods.description') }}</p>
+      <h3 class="text-lg font-semibold">
+        {{ t(globalScope ? 'openwebui_mods.global.title' : 'openwebui_mods.title') }}
+      </h3>
+      <p class="mt-1 text-sm text-surface-500">
+        {{ t(globalScope ? 'openwebui_mods.global.description' : 'openwebui_mods.description') }}
+      </p>
     </div>
     <div class="flex flex-wrap items-center gap-3">
-      <Button :label="t('openwebui_mods.upload')" icon="pi pi-upload" severity="secondary" :disabled="saving" @click="uploadVisible = true" />
-      <p class="text-sm text-surface-500">{{ t(globalScope ? 'openwebui_mods.global.catalog_help' : 'openwebui_mods.catalog_help') }}</p>
+      <Button
+        :label="t('openwebui_mods.upload')"
+        icon="pi pi-upload"
+        severity="secondary"
+        :disabled="saving"
+        @click="uploadVisible = true"
+      />
+      <p class="text-sm text-surface-500">
+        {{ t(globalScope ? 'openwebui_mods.global.catalog_help' : 'openwebui_mods.catalog_help') }}
+      </p>
     </div>
-    <Message v-if="loadError || catalogError" severity="error" :closable="false">{{ t('openwebui_mods.load_error') }}</Message>
-    <ProgressBar v-if="loading || loadingCatalog" mode="indeterminate" style="height: 2px" />
-    <OpenwebuiModsGlobalStatus v-if="globalScope && data?.globalState" :state="data.globalState" @refresh="configuration.refetch()" />
-    <fieldset v-if="draft" :disabled="saving" class="flex min-w-0 flex-col gap-4">
-      <OpenwebuiModsCatalogEntry v-for="row in visibleDraft" :key="`${draftKey}:${row.selection.mod_id}`" v-model="row.selection" v-model:valid="row.valid" :global-scope="globalScope" :entry="entries?.find(entry => entry.manifest.id === row.selection.mod_id)" />
+    <Message
+      v-if="loadError || catalogError"
+      severity="error"
+      :closable="false"
+    >
+      {{ t('openwebui_mods.load_error') }}
+    </Message>
+    <ProgressBar
+      v-if="loading || loadingCatalog"
+      mode="indeterminate"
+      style="height: 2px"
+    />
+    <OpenwebuiModsGlobalStatus
+      v-if="globalScope && data?.globalState"
+      :state="data.globalState"
+      @refresh="configuration.refetch()"
+    />
+    <fieldset
+      v-if="draft"
+      :disabled="saving"
+      class="flex min-w-0 flex-col gap-4"
+    >
+      <OpenwebuiModsCatalogEntry
+        v-for="row in visibleDraft"
+        :key="`${draftKey}:${row.selection.mod_id}`"
+        v-model="row.selection"
+        v-model:valid="row.valid"
+        :global-scope="globalScope"
+        :entry="entries?.find(entry => entry.manifest.id === row.selection.mod_id)"
+      />
       <div class="flex flex-wrap justify-end gap-2">
-        <Button :label="t('tenant_admin.save')" icon="pi pi-save" :loading="saving" :disabled="saving || !valid" @click="saveDraft" />
+        <Button
+          :label="t('tenant_admin.save')"
+          icon="pi pi-save"
+          :loading="saving"
+          :disabled="saving || !valid"
+          @click="saveDraft"
+        />
       </div>
     </fieldset>
-    <Button v-else-if="loadError || catalogError" :label="t('openwebui_mods.retry')" severity="secondary" @click="retryLoad" />
-    <Message v-if="failure" severity="error" :closable="false">{{ failure }}</Message>
-    <OpenwebuiModsUpload v-if="uploadVisible" v-model="uploadVisible" @installed="onInstalled" />
+    <Button
+      v-else-if="loadError || catalogError"
+      :label="t('openwebui_mods.retry')"
+      severity="secondary"
+      @click="retryLoad"
+    />
+    <Message
+      v-if="failure"
+      severity="error"
+      :closable="false"
+    >
+      {{ failure }}
+    </Message>
+    <OpenwebuiModsUpload
+      v-if="uploadVisible"
+      v-model="uploadVisible"
+      @installed="onInstalled"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { OpenWebuiModCatalogEntry, OpenWebuiModConfiguration, OpenWebuiModSelection } from '~/sdk/client'
 import { useDocumentVisibility, useIntervalFn } from '@vueuse/core'
 import { cloneDeep, isEqual } from 'lodash-es'
+
+import type { OpenWebuiModCatalogEntry, OpenWebuiModConfiguration, OpenWebuiModSelection } from '~/sdk/client'
 
 const props = defineProps<{ tenantId: string, globalScope?: boolean }>()
 const { t } = useI18n()
@@ -39,7 +98,9 @@ const { data: entries, error: catalogError, isPending: loadingCatalog } = catalo
 const scope = props.globalScope ? 'global' : 'tenant'
 const localePath = useLocalePath()
 const visibility = useDocumentVisibility()
-useIntervalFn(() => { if (props.globalScope && visibility.value === 'visible') void configuration.refetch() }, 2000)
+useIntervalFn(() => {
+  if (props.globalScope && visibility.value === 'visible') configuration.refetch()
+}, 2000)
 const { isLoading: saving } = save
 const draft = ref<{ selection: OpenWebuiModSelection, valid: boolean }[] | null>(null)
 const version = ref(0)
@@ -68,7 +129,11 @@ function reset(value: OpenWebuiModConfiguration) {
   failure.value = ''
 }
 
-watch(() => props.tenantId, () => { draft.value = null; failure.value = ''; uploadVisible.value = false })
+watch(() => props.tenantId, () => {
+  draft.value = null
+  failure.value = ''
+  uploadVisible.value = false
+})
 watch([data, entries], ([value, catalogEntries]) => {
   if (value?.tenantId !== props.tenantId || !catalogEntries) return
   if (!draft.value) reset(value.configuration)

@@ -45,7 +45,10 @@ class OpenWebuiModPublication(BaseModel):
         )
 
     def validate_for_host(
-        self, source: OpenWebuiModPackage, compatibility: OpenWebuiModCompatibility, components: set[str],
+        self,
+        source: OpenWebuiModPackage,
+        compatibility: OpenWebuiModCompatibility,
+        components: set[str],
         callables: dict[str, dict[str, JsonValue]] | None = None,
     ) -> None:
         if self.manifest.source_revision != source.revision:
@@ -54,7 +57,9 @@ class OpenWebuiModPublication(BaseModel):
             raise ValueError("Publication was compiled for a different Open WebUI host; recompile its source")
         expected_frontend = f"frontend/{source.manifest.frontend}.mjs" if source.manifest.frontend else None
         expected_bootstrap = f"bootstrap/{source.manifest.bootstrap}.mjs" if source.manifest.bootstrap else None
-        expected_replacements = {target: f"frontend/{path}.mjs" for target, path in source.manifest.replacements.items()}
+        expected_replacements = {
+            target: f"frontend/{path}.mjs" for target, path in source.manifest.replacements.items()
+        }
         if (
             self.manifest.bootstrap != expected_bootstrap
             or self.manifest.frontend != expected_frontend

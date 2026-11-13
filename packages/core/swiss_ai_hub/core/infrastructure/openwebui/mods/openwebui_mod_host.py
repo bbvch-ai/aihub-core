@@ -28,7 +28,8 @@ class OpenWebuiModHost(BaseModel):
     async def load(cls, base_url: str) -> Self:
         async with httpx.AsyncClient(base_url=base_url.rstrip("/"), timeout=15) as client:
             contract, catalog, callables = await asyncio.gather(
-                client.get("/_aihub/mods/compatibility.json"), client.get("/_aihub/mods/components.json"),
+                client.get("/_aihub/mods/compatibility.json"),
+                client.get("/_aihub/mods/components.json"),
                 client.get("/_aihub/mods/callables.json"),
             )
         for response in (contract, catalog, callables):

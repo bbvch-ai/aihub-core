@@ -7,7 +7,10 @@ from zipfile import ZipFile
 import pytest
 from fastapi.testclient import TestClient
 from swiss_ai_hub.core.infrastructure.openwebui import (
-    OpenWebuiModBundles, OpenWebuiModConfiguration, OpenWebuiModHost, OpenWebuiModResolver,
+    OpenWebuiModBundles,
+    OpenWebuiModConfiguration,
+    OpenWebuiModHost,
+    OpenWebuiModResolver,
 )
 from swiss_ai_hub.core.persistence import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
@@ -26,7 +29,9 @@ def install_builtins(client: TestClient, host: OpenWebuiModHost) -> dict[str, st
         manifest = package.manifest.model_dump()
         host.components.update(manifest["replacements"])
         metadata = {
-            "format": 1, "source_revision": package.revision, "compatibility": host.compatibility.model_dump(),
+            "format": 1,
+            "source_revision": package.revision,
+            "compatibility": host.compatibility.model_dump(),
             "bootstrap": "bootstrap/" + manifest["bootstrap"] + ".mjs" if manifest["bootstrap"] else None,
             "frontend": "frontend/" + manifest["frontend"] + ".mjs" if manifest["frontend"] else None,
             "replacements": {target: "frontend/" + path + ".mjs" for target, path in manifest["replacements"].items()},
@@ -47,7 +52,8 @@ def install_builtins(client: TestClient, host: OpenWebuiModHost) -> dict[str, st
 
 
 def test_initializer_validates_publications_without_rewriting_tenant_settings(
-    client: TestClient, host: OpenWebuiModHost,
+    client: TestClient,
+    host: OpenWebuiModHost,
 ) -> None:
     install_builtins(client, host)
     before = list(TenantMetadataEntity._get_collection().find())
@@ -66,15 +72,20 @@ def test_initializer_validates_publications_without_rewriting_tenant_settings(
     assert client.get(BASE + "/tenants/one").json() == updated.json()
 
 
-def test_failed_builtin_install_does_not_create_catalog_entry(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_failed_builtin_install_does_not_create_catalog_entry(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from fastapi import HTTPException
+
     monkeypatch.setattr(OpenWebuiModService, "_compile", AsyncMock(side_effect=HTTPException(422, "Compiler failed")))
     assert client.post(BASE + "/builtins/builtin-default/install").status_code == 422
     assert client.get(BASE + "/catalog").json() == []
 
 
 def test_initializer_checks_all_bundles_even_without_enabled_defaults(
-    client: TestClient, host: OpenWebuiModHost, monkeypatch: pytest.MonkeyPatch,
+    client: TestClient,
+    host: OpenWebuiModHost,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     install_builtins(client, host)
     monkeypatch.setenv("OPENWEBUI_MODS_DEFAULTS", "[]")
@@ -85,15 +96,26 @@ def test_initializer_checks_all_bundles_even_without_enabled_defaults(
 def test_builtins_cannot_be_pinned_even_when_disabled(client: TestClient, host: OpenWebuiModHost) -> None:
     publications = install_builtins(client, host)
     for enabled in (True, False):
-        response = client.put(BASE + "/tenants/one", json={"mods": [{
-            "mod_id": "builtin-default", "publication": publications["builtin-default"], "enabled": enabled,
-        }]})
+        response = client.put(
+            BASE + "/tenants/one",
+            json={
+                "mods": [
+                    {
+                        "mod_id": "builtin-default",
+                        "publication": publications["builtin-default"],
+                        "enabled": enabled,
+                    }
+                ]
+            },
+        )
         assert response.status_code == 422
         assert response.json()["detail"][0]["type"] == "extra_forbidden"
 
 
 def test_builtin_upgrade_changes_code_without_rewriting_tenant_choices(
-    client: TestClient, host: OpenWebuiModHost, monkeypatch: pytest.MonkeyPatch,
+    client: TestClient,
+    host: OpenWebuiModHost,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     previous = install_builtins(client, host)
     install_builtins(client, host)
@@ -118,6 +140,8 @@ def test_builtin_upgrade_changes_code_without_rewriting_tenant_choices(
     assert current["builtin-default"] != previous["builtin-default"]
     install_builtins(client, host)
     assert client.get(BASE + "/tenants/one").json() == saved
-    resolved = asyncio.run(OpenWebuiModResolver.resolve(OpenWebuiModConfiguration.model_validate(saved), host.compatibility))
+    resolved = asyncio.run(
+        OpenWebuiModResolver.resolve(OpenWebuiModConfiguration.model_validate(saved), host.compatibility)
+    )
     assert resolved.mods[0].publication == current["builtin-default"]
     assert resolved.mods[0].settings["text"] == {"en": "Keep my text"}

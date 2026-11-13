@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
 from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
+
 from tests.openwebui_mods.helpers import BASE, install_mod
 
 
@@ -12,7 +13,9 @@ def test_catalog_reads_do_not_install_builtins(client: TestClient, storage: Magi
     assert storage.mock_calls == []
 
 
-def test_catalog_paginates_installed_mods_with_one_entry_per_id(client: TestClient, archive: bytes, publication: bytes) -> None:
+def test_catalog_paginates_installed_mods_with_one_entry_per_id(
+    client: TestClient, archive: bytes, publication: bytes
+) -> None:
     install_mod(client, archive, publication, "a-first")
     install_mod(client, archive, publication, "z-last")
     for version in ["2", "3", "4"]:

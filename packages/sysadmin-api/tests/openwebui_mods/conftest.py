@@ -37,7 +37,9 @@ def storage() -> MagicMock:
 
     client.put_object.side_effect = put_object
     client.get_object.side_effect = get_object
-    client.get_paginator.return_value.paginate.side_effect = lambda **kwargs: [{"Contents": [{"Key": key} for key in objects]}]
+    client.get_paginator.return_value.paginate.side_effect = lambda **kwargs: [
+        {"Contents": [{"Key": key} for key in objects]}
+    ]
 
     def delete_objects(**kwargs: Any) -> dict[str, Any]:
         for item in kwargs["Delete"]["Objects"]:
@@ -70,8 +72,16 @@ def client(
     monkeypatch.setattr(OpenWebuiModService, "_compile", AsyncMock(return_value=publication))
     runner = SysadminApiRunner()
     runner.mount(
-        OpenWebuiModController(auth=auth).get_host().catalog().inspect().install()
-        .get_configuration().replace_configuration().get_builtins().install_builtin().global_configuration()
+        OpenWebuiModController(auth=auth)
+        .get_host()
+        .catalog()
+        .inspect()
+        .install()
+        .get_configuration()
+        .replace_configuration()
+        .get_builtins()
+        .install_builtin()
+        .global_configuration()
     )
     runner._api_app.state.s3_client = storage
     yield TestClient(runner.create_app())
@@ -117,7 +127,11 @@ def bundled_packages(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     directory = tmp_path / "bundled"
     for name, mod_id in (("default-example", "builtin-default"), ("optional-example", "builtin-optional")):
         manifest = {
-            "format": 1, "id": mod_id, "name": name, "version": "1", "frontend": "frontend.js",
+            "format": 1,
+            "id": mod_id,
+            "name": name,
+            "version": "1",
+            "frontend": "frontend.js",
             "default_settings": {"text": {"en": "Default fixture text"}},
         }
         package = directory / name
@@ -131,8 +145,14 @@ def bundled_packages(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
 @pytest.fixture(autouse=True)
 def control(monkeypatch: pytest.MonkeyPatch) -> list[httpx.Request]:
     calls = []
-    state = {"configuration": {"version": 0, "mods": []}, "active_version": 0, "boot_id": "fixture-boot",
-             "expected_workers": 2, "restart_required": False, "workers": []}
+    state = {
+        "configuration": {"version": 0, "mods": []},
+        "active_version": 0,
+        "boot_id": "fixture-boot",
+        "expected_workers": 2,
+        "restart_required": False,
+        "workers": [],
+    }
 
     def respond(request: httpx.Request) -> httpx.Response:
         calls.append(request)
@@ -148,9 +168,16 @@ def control(monkeypatch: pytest.MonkeyPatch) -> list[httpx.Request]:
             return httpx.Response(204)
         return httpx.Response(202, json={"status": "restarting", "version": state["configuration"]["version"]})
 
-    monkeypatch.setattr(OpenWebuiModGlobalService, "_client", staticmethod(lambda: httpx.AsyncClient(
-        base_url="http://native/_aihub/mods/control/", transport=httpx.MockTransport(respond),
-    )))
+    monkeypatch.setattr(
+        OpenWebuiModGlobalService,
+        "_client",
+        staticmethod(
+            lambda: httpx.AsyncClient(
+                base_url="http://native/_aihub/mods/control/",
+                transport=httpx.MockTransport(respond),
+            )
+        ),
+    )
     return calls
 
 
@@ -160,7 +187,9 @@ def tenants(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> Generator[No
     for tenant_id in ("one", "two"):
         TenantMetadataEntity(id=tenant_id, name=tenant_id, access_rules=["aihub.user.>"]).save()
     monkeypatch.setattr(
-        TenantMetadataEntity, "get_metadata_by_tenant_id", lambda tenant_id: TenantMetadataEntity.objects(id=tenant_id).first()
+        TenantMetadataEntity,
+        "get_metadata_by_tenant_id",
+        lambda tenant_id: TenantMetadataEntity.objects(id=tenant_id).first(),
     )
     monkeypatch.setattr(KeycloakAdminService, "get_tenant_group", AsyncMock())
     yield

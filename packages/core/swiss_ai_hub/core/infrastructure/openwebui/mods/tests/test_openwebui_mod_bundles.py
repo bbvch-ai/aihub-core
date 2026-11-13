@@ -12,13 +12,22 @@ class TestOpenWebuiModBundles:
     @staticmethod
     def write_mod(directory: Path, mod_id: str) -> None:
         directory.mkdir()
-        (directory / "mod.json").write_text(json.dumps({
-            "format": 1, "id": mod_id, "name": mod_id, "version": "1", "frontend": "main.js",
-        }))
+        (directory / "mod.json").write_text(
+            json.dumps(
+                {
+                    "format": 1,
+                    "id": mod_id,
+                    "name": mod_id,
+                    "version": "1",
+                    "frontend": "main.js",
+                }
+            )
+        )
         (directory / "main.js").write_text("export function activate() {}")
 
     def test_new_manifest_is_discovered_without_registration(
-        self, bundled_packages: None,
+        self,
+        bundled_packages: None,
     ) -> None:
         directory = OpenWebuiModBundles.directory()
         assert set(OpenWebuiModBundles.packages()) == {"builtin-default", "builtin-optional"}

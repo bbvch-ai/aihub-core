@@ -36,10 +36,13 @@ class OpenWebuiModBundles:
     @classmethod
     @lru_cache(maxsize=8)
     def _source(cls, directory: Path) -> bytes:
-        return cls.zip({
-            path.relative_to(directory).as_posix(): path.read_bytes()
-            for path in directory.rglob("*") if path.is_file()
-        })
+        return cls.zip(
+            {
+                path.relative_to(directory).as_posix(): path.read_bytes()
+                for path in directory.rglob("*")
+                if path.is_file()
+            }
+        )
 
     @staticmethod
     def zip(files: dict[str, bytes]) -> bytes:

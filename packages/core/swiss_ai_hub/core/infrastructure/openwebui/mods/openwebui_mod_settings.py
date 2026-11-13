@@ -10,5 +10,8 @@ class OpenWebuiModSettings(EnvironmentSettings):
 
     DEFAULTS: Annotated[
         list[str],
-        Field(max_length=64, description="JSON array of bundled mod IDs enabled until a tenant saves its own configuration."),
+        Field(
+            max_length=64,
+            description="JSON array of bundled mod IDs enabled until a tenant saves its own configuration.",
+        ),
     ] = Field(default_factory=list)

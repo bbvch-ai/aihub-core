@@ -180,9 +180,12 @@ class TenantMetadataEntity(Document):
     @classmethod
     @trace_fn
     def replace_openwebui_mods(cls, tenant_id: str, previous: str | None, updated: str) -> bool:
-        return cls.objects(id=tenant_id, openwebui_mods_json=previous).update_one(
-            set__openwebui_mods_json=updated, set__updated_at=datetime.now(UTC)
-        ) == 1
+        return (
+            cls.objects(id=tenant_id, openwebui_mods_json=previous).update_one(
+                set__openwebui_mods_json=updated, set__updated_at=datetime.now(UTC)
+            )
+            == 1
+        )
 
     @classmethod
     @trace_fn

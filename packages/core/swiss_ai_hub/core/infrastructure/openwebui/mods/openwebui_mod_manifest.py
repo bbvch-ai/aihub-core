@@ -52,7 +52,9 @@ class OpenWebuiModManifest(BaseModel):
     @classmethod
     def validate_backend_overrides(cls, value: dict[str, str]) -> dict[str, str]:
         for target, handler in value.items():
-            if len(target) > 300 or not re.fullmatch(r"open_webui(?:\.[A-Za-z_]\w*)+:[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*", target):
+            if len(target) > 300 or not re.fullmatch(
+                r"open_webui(?:\.[A-Za-z_]\w*)+:[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*", target
+            ):
                 raise ValueError(f"Expected a native Open WebUI callable target: {target}")
             if not handler.isidentifier() or len(handler) > 128:
                 raise ValueError(f"Expected an exported Python handler name: {handler}")
@@ -122,4 +124,8 @@ class OpenWebuiModManifest(BaseModel):
 
     @property
     def entry_paths(self) -> set[str]:
-        return {path for path in [self.bootstrap, self.frontend, self.backend, *self.replacements.values()] if path is not None}
+        return {
+            path
+            for path in [self.bootstrap, self.frontend, self.backend, *self.replacements.values()]
+            if path is not None
+        }

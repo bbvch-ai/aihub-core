@@ -1,6 +1,14 @@
 <template>
-  <StructuralColumn :title="tenant?.name ?? t('openwebui_mods.title')" close-route="/tenants" :loading="tenantsAreLoading" size="normal">
-    <OpenwebuiModsCatalog :key="tenantId" :tenant-id="tenantId" />
+  <StructuralColumn
+    :title="tenant?.name ?? t('openwebui_mods.title')"
+    close-route="/tenants"
+    :loading="tenantsAreLoading"
+    size="normal"
+  >
+    <OpenwebuiModsCatalog
+      :key="tenantId"
+      :tenant-id="tenantId"
+    />
   </StructuralColumn>
 </template>
 

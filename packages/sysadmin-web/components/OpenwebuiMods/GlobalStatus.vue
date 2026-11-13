@@ -1,16 +1,51 @@
 <template>
   <div class="flex flex-col gap-3">
-    <Message v-if="state.restart_required" severity="warn" :closable="false">{{ t('openwebui_mods.global.pending') }}</Message>
-    <Message v-else :severity="ready ? 'success' : 'info'" :closable="false">{{ t(ready ? 'openwebui_mods.global.ready' : 'openwebui_mods.global.applying', { ready: readyWorkers, total: state.expected_workers }) }}</Message>
-    <Message v-for="error in errors" :key="error" severity="error" :closable="false">{{ error }}</Message>
-    <Message v-if="failure" severity="error" :closable="false">{{ failure }}</Message>
-    <Button v-if="state.restart_required || restarting" :label="t(restarting ? 'openwebui_mods.global.restarting' : 'openwebui_mods.global.restart')" icon="pi pi-refresh" severity="warn" class="self-start" :loading="restarting" :disabled="restarting" @click="confirmRestart" />
+    <Message
+      v-if="state.restart_required"
+      severity="warn"
+      :closable="false"
+    >
+      {{ t('openwebui_mods.global.pending') }}
+    </Message>
+    <Message
+      v-else
+      :severity="ready ? 'success' : 'info'"
+      :closable="false"
+    >
+      {{ t(ready ? 'openwebui_mods.global.ready' : 'openwebui_mods.global.applying', { ready: readyWorkers, total: state.expected_workers }) }}
+    </Message>
+    <Message
+      v-for="error in errors"
+      :key="error"
+      severity="error"
+      :closable="false"
+    >
+      {{ error }}
+    </Message>
+    <Message
+      v-if="failure"
+      severity="error"
+      :closable="false"
+    >
+      {{ failure }}
+    </Message>
+    <Button
+      v-if="state.restart_required || restarting"
+      :label="t(restarting ? 'openwebui_mods.global.restarting' : 'openwebui_mods.global.restart')"
+      icon="pi pi-refresh"
+      severity="warn"
+      class="self-start"
+      :loading="restarting"
+      :disabled="restarting"
+      @click="confirmRestart"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { restartOpenwebuiForMods, type OpenWebuiModGlobalState } from '~/sdk/client'
 import { useTimeoutFn } from '@vueuse/core'
+
+import { restartOpenwebuiForMods, type OpenWebuiModGlobalState } from '~/sdk/client'
 
 const props = defineProps<{ state: OpenWebuiModGlobalState }>()
 const emit = defineEmits<{ refresh: [] }>()

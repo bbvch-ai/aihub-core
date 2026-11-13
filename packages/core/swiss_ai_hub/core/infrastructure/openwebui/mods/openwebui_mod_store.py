@@ -20,11 +20,17 @@ class OpenWebuiModStore:
         self.client = client
 
     async def install(
-        self, source: bytes, compiled: bytes, installed_by: str, host: OpenWebuiModHost,
+        self,
+        source: bytes,
+        compiled: bytes,
+        installed_by: str,
+        host: OpenWebuiModHost,
     ) -> OpenWebuiModEntity:
         package = await run_in_threadpool(OpenWebuiModPackage.from_zip, source)
         publication = await run_in_threadpool(OpenWebuiModPublication.from_zip, compiled)
-        await run_in_threadpool(publication.validate_for_host, package, host.compatibility, host.components, host.callables)
+        await run_in_threadpool(
+            publication.validate_for_host, package, host.compatibility, host.components, host.callables
+        )
         await run_in_threadpool(self._write_archive, package.revision, source, "sources")
         await run_in_threadpool(self._write_archive, publication.revision, compiled, "publications")
         return await run_in_threadpool(OpenWebuiModEntity.install, package, publication, installed_by, len(compiled))
@@ -40,15 +46,25 @@ class OpenWebuiModStore:
             await run_in_threadpool(self._prune)
         except Exception:
             # The installed record is authoritative; failed cleanup must not turn a successful install into an error.
-            logging.getLogger(__name__).exception("Could not clean obsolete mod archives; retrying on the next installation")
+            logging.getLogger(__name__).exception(
+                "Could not clean obsolete mod archives; retrying on the next installation"
+            )
 
     def _prune(self) -> None:
-        keep = {key for mod in OpenWebuiModEntity.installed() for key in (
-            f"sources/{mod.source_revision}.zip", f"publications/{mod.publication}.zip",
-        )}
+        keep = {
+            key
+            for mod in OpenWebuiModEntity.installed()
+            for key in (
+                f"sources/{mod.source_revision}.zip",
+                f"publications/{mod.publication}.zip",
+            )
+        }
         for page in self.client.get_paginator("list_objects_v2").paginate(Bucket=self.BUCKET):
-            obsolete = [{"Key": obj["Key"]} for obj in page.get("Contents", [])
-                        if obj["Key"].startswith(("sources/", "publications/")) and obj["Key"] not in keep]
+            obsolete = [
+                {"Key": obj["Key"]}
+                for obj in page.get("Contents", [])
+                if obj["Key"].startswith(("sources/", "publications/")) and obj["Key"] not in keep
+            ]
             if obsolete:
                 result = self.client.delete_objects(Bucket=self.BUCKET, Delete={"Objects": obsolete, "Quiet": True})
                 if result.get("Errors"):
@@ -62,7 +78,10 @@ class OpenWebuiModStore:
                 if error.response["Error"]["Code"] != "BucketAlreadyOwnedByYou":
                     raise
         self.client.put_object(
-            Bucket=self.BUCKET, Key=f"{prefix}/{revision}.zip", Body=content, ContentType="application/zip",
+            Bucket=self.BUCKET,
+            Key=f"{prefix}/{revision}.zip",
+            Body=content,
+            ContentType="application/zip",
         )
 
     def _read_archive(self, revision: str, prefix: Literal["sources", "publications"]) -> bytes:

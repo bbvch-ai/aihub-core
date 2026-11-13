@@ -14,7 +14,6 @@ from swiss_ai_hub.core.persistence import TenantMetadataEntity
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.openwebui_mod_service import OpenWebuiModService
 from tests.openwebui_mods.helpers import install_mod
 
-
 BASE = "/api/v1/admin/openwebui-mods"
 TENANT = BASE + "/tenants/one"
 
@@ -25,12 +24,16 @@ pytestmark = pytest.mark.usefixtures("tenants")
 @pytest.fixture
 def selection(client: TestClient, archive: bytes, publication: bytes) -> dict[str, Any]:
     install_mod(client, archive, publication)
-    return {"mod_id": "chat-tools", "enabled": True,
-            "settings": {"label": "Tools", "nested": {"some.key": [True, 3, None]}}}
+    return {
+        "mod_id": "chat-tools",
+        "enabled": True,
+        "settings": {"label": "Tools", "nested": {"some.key": [True, 3, None]}},
+    }
 
 
 def test_configuration_is_tenant_scoped_and_preserves_other_metadata(
-    client: TestClient, selection: dict[str, Any],
+    client: TestClient,
+    selection: dict[str, Any],
 ) -> None:
     default = client.get(TENANT).json()
     assert default["version"] == 0
@@ -53,7 +56,9 @@ def test_removing_the_default_is_persistent(client: TestClient) -> None:
 
 
 def test_uploaded_mod_is_configured_in_database_independently_of_deployment_defaults(
-    client: TestClient, selection: dict[str, Any], monkeypatch: pytest.MonkeyPatch,
+    client: TestClient,
+    selection: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     defaults = client.get(TENANT).json()
     assert [mod["mod_id"] for mod in defaults["mods"] if mod["enabled"]] == ["builtin-default"]
@@ -114,7 +119,10 @@ def test_concurrent_saves_have_one_winner(client: TestClient, selection: dict[st
 
 
 def test_conflicting_replacements_do_not_change_saved_settings(
-    client: TestClient, selection: dict[str, Any], archive: bytes, publication: bytes,
+    client: TestClient,
+    selection: dict[str, Any],
+    archive: bytes,
+    publication: bytes,
 ) -> None:
     assert client.put(TENANT, json={"version": 0, "mods": [selection]}).status_code == 200
     install_mod(client, archive, publication, "other-tools")
@@ -128,7 +136,9 @@ def test_conflicting_replacements_do_not_change_saved_settings(
 
 
 def test_incompatible_host_blocks_enabling_but_allows_disabling(
-    client: TestClient, selection: dict[str, Any], host: OpenWebuiModHost,
+    client: TestClient,
+    selection: dict[str, Any],
+    host: OpenWebuiModHost,
 ) -> None:
     assert client.put(TENANT, json={"version": 0, "mods": [selection]}).status_code == 200
     host.compatibility = host.compatibility.model_copy(update={"source_commit": "c" * 40})
@@ -140,7 +150,9 @@ def test_incompatible_host_blocks_enabling_but_allows_disabling(
 
 
 def test_unavailable_host_does_not_prevent_disabling_all_mods(
-    client: TestClient, selection: dict[str, Any], monkeypatch: pytest.MonkeyPatch,
+    client: TestClient,
+    selection: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(OpenWebuiModService, "get_host", AsyncMock(side_effect=HTTPException(503, "Host unavailable")))
     assert client.put(TENANT, json={"version": 0, "mods": [selection]}).status_code == 503
@@ -149,7 +161,9 @@ def test_unavailable_host_does_not_prevent_disabling_all_mods(
 
 
 def test_missing_component_is_identified_before_saving(
-    client: TestClient, selection: dict[str, Any], host: OpenWebuiModHost,
+    client: TestClient,
+    selection: dict[str, Any],
+    host: OpenWebuiModHost,
 ) -> None:
     host.components.clear()
     response = client.put(TENANT, json={"version": 0, "mods": [selection]})
@@ -160,28 +174,39 @@ def test_missing_component_is_identified_before_saving(
 
 @pytest.mark.parametrize("change, status", [({"mod_id": "other"}, 422), ({"publication": "0" * 64}, 422)])
 def test_publication_must_exist_and_belong_to_selected_mod(
-    client: TestClient, selection: dict[str, Any], change: dict[str, str], status: int,
+    client: TestClient,
+    selection: dict[str, Any],
+    change: dict[str, str],
+    status: int,
 ) -> None:
     assert client.put(TENANT, json={"version": 0, "mods": [{**selection, **change}]}).status_code == status
     assert client.get(TENANT).json()["version"] == 0
 
 
 def test_disabled_installed_mod_can_keep_settings(
-    client: TestClient, archive: bytes,
+    client: TestClient,
+    archive: bytes,
 ) -> None:
-    assert client.post(BASE + '/install', content=archive, headers={'content-type': 'application/zip'}).status_code == 200
-    selection = {'mod_id': 'chat-tools', 'enabled': False, 'settings': {'label': 'Draft'}}
-    response = client.put(TENANT, json={'version': 0, 'mods': [selection]})
+    assert (
+        client.post(BASE + "/install", content=archive, headers={"content-type": "application/zip"}).status_code == 200
+    )
+    selection = {"mod_id": "chat-tools", "enabled": False, "settings": {"label": "Draft"}}
+    response = client.put(TENANT, json={"version": 0, "mods": [selection]})
     assert response.status_code == 200, response.text
-    assert response.json()['mods'] == [selection]
-    assert client.put(TENANT, json={'version': 1, 'mods': [{**selection, 'mod_id': 'unknown'}]}).status_code == 422
-    assert client.get(TENANT).json()['version'] == 1
+    assert response.json()["mods"] == [selection]
+    assert client.put(TENANT, json={"version": 1, "mods": [{**selection, "mod_id": "unknown"}]}).status_code == 422
+    assert client.get(TENANT).json()["version"] == 1
 
 
-@pytest.mark.parametrize("body", [
-    {"version": True, "mods": []}, {"version": -1, "mods": []}, {"version": 0, "unknown": 1},
-    {"version": 0, "mods": [{"mod_id": "tools", "publication": "0" * 64, "enabled": "yes"}]},
-])
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"version": True, "mods": []},
+        {"version": -1, "mods": []},
+        {"version": 0, "unknown": 1},
+        {"version": 0, "mods": [{"mod_id": "tools", "publication": "0" * 64, "enabled": "yes"}]},
+    ],
+)
 def test_invalid_configuration_is_rejected_before_writing(client: TestClient, body: dict[str, Any]) -> None:
     assert client.put(TENANT, json=body).status_code == 422
     assert client.get(TENANT).json()["version"] == 0
@@ -197,12 +222,16 @@ def test_duplicate_mods_and_oversized_settings_are_rejected(client: TestClient, 
 def test_missing_and_orphaned_tenants_cannot_be_edited(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     assert client.get(BASE + "/tenants/missing").status_code == 404
     assert client.put(BASE + "/tenants/missing", json={"mods": []}).status_code == 404
-    monkeypatch.setattr(KeycloakAdminService, "get_tenant_group", AsyncMock(side_effect=KeycloakGetError(response_code=404)))
+    monkeypatch.setattr(
+        KeycloakAdminService, "get_tenant_group", AsyncMock(side_effect=KeycloakGetError(response_code=404))
+    )
     assert client.put(TENANT, json={"mods": []}).status_code == 409
     assert client.get(TENANT).json()["version"] == 0
 
 
-def test_package_scope_change_preserves_tenant_intent_but_does_not_activate_globally(client: TestClient, selection: dict[str, Any], archive: bytes, publication: bytes) -> None:
+def test_package_scope_change_preserves_tenant_intent_but_does_not_activate_globally(
+    client: TestClient, selection: dict[str, Any], archive: bytes, publication: bytes
+) -> None:
     assert client.put(TENANT, json={"mods": [selection]}).status_code == 200
     install_mod(client, archive, publication, backend_restart_required=True)
     assert client.get(TENANT).json()["mods"] == [selection]
@@ -212,13 +241,17 @@ def test_package_scope_change_preserves_tenant_intent_but_does_not_activate_glob
 
 
 def test_keycloak_failure_is_not_reported_as_an_orphan(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(KeycloakAdminService, "get_tenant_group", AsyncMock(side_effect=KeycloakGetError(response_code=503)))
+    monkeypatch.setattr(
+        KeycloakAdminService, "get_tenant_group", AsyncMock(side_effect=KeycloakGetError(response_code=503))
+    )
     with pytest.raises(KeycloakGetError):
         client.put(TENANT, json={"mods": []})
     assert client.get(TENANT).json()["version"] == 0
 
 
-def test_replacement_does_not_validate_or_rewrite_saved_settings(client: TestClient, selection: dict[str, Any], archive: bytes, publication: bytes) -> None:
+def test_replacement_does_not_validate_or_rewrite_saved_settings(
+    client: TestClient, selection: dict[str, Any], archive: bytes, publication: bytes
+) -> None:
     assert client.put(TENANT, json={"mods": [selection]}).status_code == 200
     before = TenantMetadataEntity.objects.get(id="one").openwebui_mods_json
     install_mod(client, archive, publication, version="2", settings_fields={"new_required_field": {"required": True}})

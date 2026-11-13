@@ -5,10 +5,16 @@ from fastapi import HTTPException
 from mypy_boto3_s3 import S3Client
 from starlette.concurrency import run_in_threadpool
 from swiss_ai_hub.core.infrastructure.openwebui import (
-    OpenWebuiModActivation, OpenWebuiModConfiguration, OpenWebuiModHost, OpenWebuiModManifest, OpenWebuiModPublicationManifest,
-    OpenWebuiModResolvedConfiguration, OpenWebuiModSelection, OpenWebuiModStore, OpenWebuiSettings,
+    OpenWebuiModActivation,
+    OpenWebuiModConfiguration,
+    OpenWebuiModHost,
+    OpenWebuiModManifest,
+    OpenWebuiModPublicationManifest,
+    OpenWebuiModResolvedConfiguration,
+    OpenWebuiModSelection,
+    OpenWebuiModStore,
+    OpenWebuiSettings,
 )
-
 from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
 
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_global_state import OpenWebuiModGlobalState
@@ -20,7 +26,8 @@ class OpenWebuiModGlobalService:
     def _client() -> httpx.AsyncClient:
         settings = OpenWebuiSettings()
         return httpx.AsyncClient(
-            base_url=settings.BASE_URL.rstrip("/") + "/_aihub/mods/control/", timeout=60,
+            base_url=settings.BASE_URL.rstrip("/") + "/_aihub/mods/control/",
+            timeout=60,
             headers={"Authorization": f"Bearer {settings.SCIM_TOKEN.get_secret_value()}"},
         )
 
@@ -31,7 +38,11 @@ class OpenWebuiModGlobalService:
         except httpx.RequestError as error:
             raise HTTPException(503, "Open WebUI mod management is unavailable; reload after it recovers.") from error
         if response.is_error:
-            detail = response.json().get("detail") if response.headers.get("content-type", "").startswith("application/json") else None
+            detail = (
+                response.json().get("detail")
+                if response.headers.get("content-type", "").startswith("application/json")
+                else None
+            )
             raise HTTPException(response.status_code, detail or "Open WebUI refused the management operation.")
         return response
 
@@ -57,7 +68,10 @@ class OpenWebuiModGlobalService:
 
     @classmethod
     async def _prepare(
-        cls, configuration: OpenWebuiModConfiguration, storage: S3Client, http: httpx.AsyncClient,
+        cls,
+        configuration: OpenWebuiModConfiguration,
+        storage: S3Client,
+        http: httpx.AsyncClient,
     ) -> OpenWebuiModResolvedConfiguration:
         host = await OpenWebuiModService.get_host()
         return OpenWebuiModResolvedConfiguration(
@@ -67,15 +81,22 @@ class OpenWebuiModGlobalService:
 
     @classmethod
     async def _stage(
-        cls, mod: OpenWebuiModSelection, host: OpenWebuiModHost, storage: S3Client, http: httpx.AsyncClient,
+        cls,
+        mod: OpenWebuiModSelection,
+        host: OpenWebuiModHost,
+        storage: S3Client,
+        http: httpx.AsyncClient,
     ) -> OpenWebuiModActivation:
         installed = await run_in_threadpool(OpenWebuiModEntity.find_mod, mod.mod_id)
         if installed is None:
             raise HTTPException(422, f"Unknown mod '{mod.mod_id}'.")
         publication = OpenWebuiModPublicationManifest.model_validate_json(installed.publication_manifest_json)
-        if mod.enabled and (publication.compatibility != host.compatibility or any(
-            host.callables.get(target) != fingerprint for target, fingerprint in publication.backend_targets.items()
-        )):
+        if mod.enabled and (
+            publication.compatibility != host.compatibility
+            or any(
+                host.callables.get(target) != fingerprint for target, fingerprint in publication.backend_targets.items()
+            )
+        ):
             raise HTTPException(409, f"Reinstall '{mod.mod_id}' for this Open WebUI host.")
         store = OpenWebuiModStore(storage)
         for kind, revision, content in [
@@ -85,7 +106,9 @@ class OpenWebuiModGlobalService:
             await cls._request(http, "PUT", f"archives/{kind}/{revision}", content)
         manifest = OpenWebuiModManifest.model_validate_json(installed.manifest_json)
         return OpenWebuiModActivation(
-            **mod.model_dump(), publication=installed.publication, has_backend=manifest.backend is not None,
+            **mod.model_dump(),
+            publication=installed.publication,
+            has_backend=manifest.backend is not None,
         )
 
     @classmethod

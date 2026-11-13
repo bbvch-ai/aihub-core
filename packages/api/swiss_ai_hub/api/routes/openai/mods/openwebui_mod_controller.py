@@ -15,7 +15,8 @@ from swiss_ai_hub.api.routes.openai.mods.openwebui_mod_runtime_service import Op
 class OpenWebuiModController(Controller):
     def __init__(self, *, additionally_required_permission: str | None = None) -> None:
         super().__init__(
-            auth=OpenWebuiAuthHandler(base_auth_handler=TokenAuthHandler()), route="/mods",
+            auth=OpenWebuiAuthHandler(base_auth_handler=TokenAuthHandler()),
+            route="/mods",
             additionally_required_permission=additionally_required_permission,
         )
 
@@ -47,7 +48,8 @@ class OpenWebuiModController(Controller):
 
     def download_mod_archive(self, route: str = "/publications/{revision}/{kind}") -> Self:
         @self.router.get(
-            route, response_class=Response,
+            route,
+            response_class=Response,
             responses={200: {"content": {"application/zip": {"schema": {"type": "string", "format": "binary"}}}}},
         )
         async def download_openwebui_mod_archive(
@@ -59,7 +61,8 @@ class OpenWebuiModController(Controller):
         ) -> Response:
             content = await OpenWebuiModRuntimeService.read_archive(user, compatibility, revision, kind, client)
             return Response(
-                content, media_type="application/zip",
+                content,
+                media_type="application/zip",
                 headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
             )
 
@@ -74,8 +77,12 @@ class OpenWebuiModController(Controller):
         ) -> Response:
             """Reauthorizes a cached archive without downloading it again."""
             publication = await OpenWebuiModRuntimeService.authorize_publication(user, compatibility, revision)
-            return Response(media_type="application/zip", headers={
-                "Content-Length": str(publication.archive_bytes), "Cache-Control": "no-store",
-            })
+            return Response(
+                media_type="application/zip",
+                headers={
+                    "Content-Length": str(publication.archive_bytes),
+                    "Cache-Control": "no-store",
+                },
+            )
 
         return self

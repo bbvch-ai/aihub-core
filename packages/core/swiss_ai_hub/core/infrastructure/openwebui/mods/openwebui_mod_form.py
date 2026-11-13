@@ -14,9 +14,16 @@ class OpenWebuiModForm:
     _ELEMENT_ADAPTER = TypeAdapter(ALL_FORM_OPTIONS)
     # Mod settings have no secret storage or tenant-scoped picker APIs.
     _UNAVAILABLE_CONTROLS = {
-        "agentSelector", "knowledgeCollectionSelector", "knowledgeDatabaseSelector", "modelSelect",
-        "modelBoundNumber", "modelGatedCheckbox", "tenantSelect", "vectorStoreInput",
-        "primePassword", "secretFileInput",
+        "agentSelector",
+        "knowledgeCollectionSelector",
+        "knowledgeDatabaseSelector",
+        "modelSelect",
+        "modelBoundNumber",
+        "modelGatedCheckbox",
+        "tenantSelect",
+        "vectorStoreInput",
+        "primePassword",
+        "secretFileInput",
     }
     _LOCALE_KEYS = set(LOCALES)
     _FIELD_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
@@ -30,7 +37,11 @@ class OpenWebuiModForm:
         if isinstance(value, str) or value is None:
             return "primeInputText"
         if isinstance(value, dict):
-            if value and value.keys() <= cls._LOCALE_KEYS and all(isinstance(v, str) or v is None for v in value.values()):
+            if (
+                value
+                and value.keys() <= cls._LOCALE_KEYS
+                and all(isinstance(v, str) or v is None for v in value.values())
+            ):
                 return "localeInput"
             return "group"
         if isinstance(value, list):
@@ -102,7 +113,12 @@ class OpenWebuiModForm:
 
     @classmethod
     def build(
-        cls, defaults: dict[str, Any], fields: dict[str, dict[str, Any]], *, _depth: int = 0, _in_repeater: bool = False,
+        cls,
+        defaults: dict[str, Any],
+        fields: dict[str, dict[str, Any]],
+        *,
+        _depth: int = 0,
+        _in_repeater: bool = False,
     ) -> list[FormkitElement]:
         if _depth > 12:
             raise ValueError("Mod settings forms may be nested at most 12 levels")
@@ -128,8 +144,10 @@ class OpenWebuiModForm:
                 children = cls._children(name, definition.pop("children", None))
                 child_defaults = value[0] if isinstance(value, list) and value else value
                 definition["children"] = cls.build(
-                    child_defaults if isinstance(child_defaults, dict) else {}, children,
-                    _depth=_depth + 1, _in_repeater=_in_repeater or control == "repeater",
+                    child_defaults if isinstance(child_defaults, dict) else {},
+                    children,
+                    _depth=_depth + 1,
+                    _in_repeater=_in_repeater or control == "repeater",
                 )
             elif value is not None and not isinstance(value, list | dict):
                 # Complex defaults are carried separately from the platform's scalar element value.

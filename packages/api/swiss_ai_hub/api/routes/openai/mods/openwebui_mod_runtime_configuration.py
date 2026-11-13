@@ -16,14 +16,24 @@ class OpenWebuiModRuntimeConfiguration(BaseModel):
 
     @classmethod
     def from_configuration(
-        cls, tenant_id: str, compatibility: OpenWebuiModCompatibility, configuration: OpenWebuiModResolvedConfiguration,
+        cls,
+        tenant_id: str,
+        compatibility: OpenWebuiModCompatibility,
+        configuration: OpenWebuiModResolvedConfiguration,
     ) -> Self:
-        content = json.dumps({
-            "tenant_id": tenant_id,
-            "compatibility": compatibility.model_dump(mode="json"),
-            "mods": [mod.model_dump(mode="json") for mod in configuration.mods],
-        }, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+        content = json.dumps(
+            {
+                "tenant_id": tenant_id,
+                "compatibility": compatibility.model_dump(mode="json"),
+                "mods": [mod.model_dump(mode="json") for mod in configuration.mods],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode()
         return cls(
-            tenant_id=tenant_id, compatibility=compatibility, configuration=configuration,
+            tenant_id=tenant_id,
+            compatibility=compatibility,
+            configuration=configuration,
             revision=hashlib.sha256(content).hexdigest(),
         )

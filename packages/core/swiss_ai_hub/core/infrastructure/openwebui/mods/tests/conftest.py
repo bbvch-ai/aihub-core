@@ -11,7 +11,11 @@ def bundled_packages(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     directory = tmp_path / "bundled"
     for name, mod_id in (("default-example", "builtin-default"), ("optional-example", "builtin-optional")):
         manifest = {
-            "format": 1, "id": mod_id, "name": name, "version": "1", "frontend": "frontend.js",
+            "format": 1,
+            "id": mod_id,
+            "name": name,
+            "version": "1",
+            "frontend": "frontend.js",
             "default_settings": {"text": {"en": "Default fixture text"}},
         }
         package = directory / name

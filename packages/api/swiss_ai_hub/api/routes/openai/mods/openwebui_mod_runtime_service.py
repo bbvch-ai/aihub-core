@@ -5,8 +5,13 @@ from mypy_boto3_s3 import S3Client
 from starlette.concurrency import run_in_threadpool
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.infrastructure.openwebui import (
-    OpenWebuiModCompatibility, OpenWebuiModConfiguration, OpenWebuiModDefaults,
-    OpenWebuiModPublicationManifest, OpenWebuiModResolvedConfiguration, OpenWebuiModStore, OpenWebuiModResolver,
+    OpenWebuiModCompatibility,
+    OpenWebuiModConfiguration,
+    OpenWebuiModDefaults,
+    OpenWebuiModPublicationManifest,
+    OpenWebuiModResolvedConfiguration,
+    OpenWebuiModResolver,
+    OpenWebuiModStore,
 )
 from swiss_ai_hub.core.persistence import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
@@ -17,14 +22,18 @@ from swiss_ai_hub.api.routes.openai.mods.openwebui_mod_runtime_configuration imp
 class OpenWebuiModRuntimeService:
     @classmethod
     async def resolve_configuration(
-        cls, user: UserIdentity, compatibility: OpenWebuiModCompatibility,
+        cls,
+        user: UserIdentity,
+        compatibility: OpenWebuiModCompatibility,
     ) -> OpenWebuiModRuntimeConfiguration:
         configuration = await cls._resolve_selection(user, compatibility)
         return OpenWebuiModRuntimeConfiguration.from_configuration(cls._tenant_id(user), compatibility, configuration)
 
     @classmethod
     async def _resolve_selection(
-        cls, user: UserIdentity, compatibility: OpenWebuiModCompatibility,
+        cls,
+        user: UserIdentity,
+        compatibility: OpenWebuiModCompatibility,
     ) -> OpenWebuiModResolvedConfiguration:
         configuration = await cls._configuration(user)
         try:
@@ -54,7 +63,10 @@ class OpenWebuiModRuntimeService:
 
     @classmethod
     async def authorize_publication(
-        cls, user: UserIdentity, compatibility: OpenWebuiModCompatibility, revision: str,
+        cls,
+        user: UserIdentity,
+        compatibility: OpenWebuiModCompatibility,
+        revision: str,
     ) -> OpenWebuiModEntity:
         configuration = await cls._resolve_selection(user, compatibility)
         selected = next((mod for mod in configuration.mods if mod.publication == revision), None)
@@ -70,8 +82,12 @@ class OpenWebuiModRuntimeService:
 
     @classmethod
     async def read_archive(
-        cls, user: UserIdentity, compatibility: OpenWebuiModCompatibility, revision: str,
-        kind: Literal["frontend", "source"], client: S3Client,
+        cls,
+        user: UserIdentity,
+        compatibility: OpenWebuiModCompatibility,
+        revision: str,
+        kind: Literal["frontend", "source"],
+        client: S3Client,
     ) -> bytes:
         publication = await cls.authorize_publication(user, compatibility, revision)
         store = OpenWebuiModStore(client)

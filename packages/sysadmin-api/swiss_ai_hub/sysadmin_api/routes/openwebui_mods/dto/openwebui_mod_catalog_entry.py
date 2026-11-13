@@ -17,7 +17,8 @@ class OpenWebuiModCatalogEntry(BaseModel):
     def from_entity(cls, entity: OpenWebuiModEntity, *, builtin: bool) -> Self:
         return cls(
             source_revision=entity.source_revision,
-            manifest=OpenWebuiModManifest.model_validate_json(entity.manifest_json), builtin=builtin,
+            manifest=OpenWebuiModManifest.model_validate_json(entity.manifest_json),
+            builtin=builtin,
             installed_at=entity.installed_at.replace(tzinfo=UTC),
             warnings=OpenWebuiModPublicationManifest.model_validate_json(entity.publication_manifest_json).warnings,
         )

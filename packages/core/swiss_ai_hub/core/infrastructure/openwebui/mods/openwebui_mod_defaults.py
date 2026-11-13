@@ -16,10 +16,13 @@ class OpenWebuiModDefaults:
         if unknown := set(enabled) - builtins.keys():
             raise ValueError(f"OPENWEBUI_MODS_DEFAULTS contains unknown bundled mod IDs: {', '.join(sorted(unknown))}")
         mod_ids = enabled + [mod_id for mod_id in builtins if mod_id not in enabled]
-        return OpenWebuiModConfiguration(mods=[
-            OpenWebuiModSelection(
-                mod_id=mod_id, enabled=mod_id in enabled,
-                settings=deepcopy(builtins[mod_id].manifest.default_settings),
-            )
-            for mod_id in mod_ids
-        ])
+        return OpenWebuiModConfiguration(
+            mods=[
+                OpenWebuiModSelection(
+                    mod_id=mod_id,
+                    enabled=mod_id in enabled,
+                    settings=deepcopy(builtins[mod_id].manifest.default_settings),
+                )
+                for mod_id in mod_ids
+            ]
+        )

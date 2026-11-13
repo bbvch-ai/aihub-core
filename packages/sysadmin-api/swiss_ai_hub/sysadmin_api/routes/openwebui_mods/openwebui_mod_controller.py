@@ -6,23 +6,31 @@ from mypy_boto3_s3 import S3Client
 from swiss_ai_hub.core.auth import AuthHandler, UserIdentity
 from swiss_ai_hub.core.infrastructure import use_s3
 from swiss_ai_hub.core.infrastructure.openwebui import (
-    OpenWebuiModBundles, OpenWebuiModConfiguration, OpenWebuiModHost, OpenWebuiModPackage,
+    OpenWebuiModBundles,
+    OpenWebuiModConfiguration,
+    OpenWebuiModHost,
+    OpenWebuiModPackage,
 )
 from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.sysadmin_api.i18n import SysadminApiLocaleString
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_catalog_entry import OpenWebuiModCatalogEntry
+from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_global_state import OpenWebuiModGlobalState
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_upload_preview import OpenWebuiModUploadPreview
-from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.openwebui_mod_service import OpenWebuiModService
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.openwebui_mod_configuration_service import (
     OpenWebuiModConfigurationService,
 )
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.openwebui_mod_global_service import OpenWebuiModGlobalService
-from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_global_state import OpenWebuiModGlobalState
+from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.openwebui_mod_service import OpenWebuiModService
 
-ZIP_BODY = {"requestBody": {"required": True, "content": {
-    "application/zip": {"schema": {"type": "string", "format": "binary"}},
-}}}
+ZIP_BODY = {
+    "requestBody": {
+        "required": True,
+        "content": {
+            "application/zip": {"schema": {"type": "string", "format": "binary"}},
+        },
+    }
+}
 
 
 class OpenWebuiModController(Controller):
@@ -144,12 +152,16 @@ class OpenWebuiModController(Controller):
             client: Annotated[S3Client, Depends(use_s3)],
             replace: bool = False,
         ) -> OpenWebuiModCatalogEntry:
-            installed = await OpenWebuiModService.install(await self._read_upload(request), user.id, client, replace=replace)
+            installed = await OpenWebuiModService.install(
+                await self._read_upload(request), user.id, client, replace=replace
+            )
             try:
                 await OpenWebuiModGlobalService.reconcile(client, mod_id=installed.manifest.id)
             except Exception:
                 logging.getLogger(__name__).exception("Installed mod could not be reconciled with global activation")
-                installed.warnings.append("Installed, but global activation could not be updated. Save Global Open WebUI settings to retry.")
+                installed.warnings.append(
+                    "Installed, but global activation could not be updated. Save Global Open WebUI settings to retry."
+                )
             return installed
 
         return self

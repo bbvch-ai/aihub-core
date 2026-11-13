@@ -29,8 +29,8 @@ from swiss_ai_hub.api.routes.openai.dto.image_generation_request import ImageGen
 from swiss_ai_hub.api.routes.openai.dto.model_details import ModelDetails
 from swiss_ai_hub.api.routes.openai.dto.model_response import ModelResponse
 from swiss_ai_hub.api.routes.openai.dto.text_to_speech_request import TextToSpeechRequest
-from swiss_ai_hub.api.routes.openai.openai_service import OpenaiService
 from swiss_ai_hub.api.routes.openai.mods.openwebui_mod_controller import OpenWebuiModController
+from swiss_ai_hub.api.routes.openai.openai_service import OpenaiService
 
 logger = logging.getLogger(__name__)
 

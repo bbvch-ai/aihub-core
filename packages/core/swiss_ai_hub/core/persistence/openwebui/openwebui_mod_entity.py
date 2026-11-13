@@ -20,14 +20,19 @@ class OpenWebuiModEntity(Document):
     installed_by = StringField(required=True)
 
     @classmethod
-    def install(cls, source: OpenWebuiModPackage, publication: OpenWebuiModPublication, installed_by: str, archive_bytes: int) -> Self:
+    def install(
+        cls, source: OpenWebuiModPackage, publication: OpenWebuiModPublication, installed_by: str, archive_bytes: int
+    ) -> Self:
         return cls.objects(mod_id=source.manifest.id).modify(
-            upsert=True, new=True,
+            upsert=True,
+            new=True,
             set__source_revision=source.revision,
-            set__publication=publication.revision, set__archive_bytes=archive_bytes,
+            set__publication=publication.revision,
+            set__archive_bytes=archive_bytes,
             set__manifest_json=source.manifest.model_dump_json(),
             set__publication_manifest_json=publication.manifest.model_dump_json(),
-            set__installed_at=datetime.now(UTC), set__installed_by=installed_by,
+            set__installed_at=datetime.now(UTC),
+            set__installed_by=installed_by,
         )
 
     @classmethod
