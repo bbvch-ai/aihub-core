@@ -27,7 +27,7 @@ class NATSTraceContextPropagator:
         current_context = context.get_current()
         propagate.inject(headers, context=current_context)
 
-        logger.debug(f"Injected trace context into headers: {headers}")
+        logger.debug(f"Injected trace context into headers: {NATSTraceContextPropagator._trace_fields(headers)}")
         return headers
 
     @staticmethod
@@ -46,9 +46,15 @@ class NATSTraceContextPropagator:
             return extracted_context
 
         context.attach(extracted_context)
-        logger.debug(f"Activated trace context from headers: {headers}")
+        logger.debug(f"Activated trace context from headers: {NATSTraceContextPropagator._trace_fields(headers)}")
 
         return extracted_context
+
+    @staticmethod
+    def _trace_fields(headers: dict[str, str]) -> dict[str, str]:
+        """Only the propagator's own fields: the same headers carry X-AIHub-* values such as a user's access token."""
+        fields = {field.lower() for field in propagate.get_global_textmap().fields}
+        return {key: value for key, value in headers.items() if key.lower() in fields}
 
     @staticmethod
     def create_child_span(span_name: str, headers: dict[str, str] = None) -> trace.Span:

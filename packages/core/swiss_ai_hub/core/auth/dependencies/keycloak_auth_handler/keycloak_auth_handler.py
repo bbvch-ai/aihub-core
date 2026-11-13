@@ -71,8 +71,11 @@ class KeycloakAuthHandler(AuthHandler):
 
         return None
 
-    async def authenticate_token(self, oauth_token: str, request: Request | None = None) -> UserIdentity:
-        """Authenticates a user using a Keycloak JWT token."""
+    async def decode_token(self, oauth_token: str, audience: str | None = "account") -> dict[str, Any]:
+        """Verify a Keycloak JWT's signature, issuer, expiry and (unless ``audience`` is None) audience; return claims.
+
+        Unlike ``authenticate_token`` it has no side effects, so it can check a token that is not the request's own
+        credential, such as a forwarded user token."""
         try:
             unverified_header = jwt.get_unverified_header(oauth_token)
             kid = unverified_header.get("kid")
@@ -87,13 +90,25 @@ class KeycloakAuthHandler(AuthHandler):
                 logger.warning("No matching key found for kid: %s", kid)
                 raise HTTPException(status_code=401, detail="Token verification failed")
 
-            decoded_token = jwt.decode(
+            return jwt.decode(
                 oauth_token,
                 rsa_key,
                 algorithms=["RS256"],
-                audience="account",
+                audience=audience,
                 issuer=self.config.ISSUER_URL,
+                options={"verify_aud": audience is not None},
             )
+        except jwt.ExpiredSignatureError:
+            logger.info("Token expired")
+            raise HTTPException(status_code=401, detail="Token expired")
+        except jwt.InvalidTokenError as e:
+            logger.warning("Invalid token: %s", str(e))
+            raise HTTPException(status_code=401, detail="Token verification failed: Invalid token")
+
+    async def authenticate_token(self, oauth_token: str, request: Request | None = None) -> UserIdentity:
+        """Authenticates a user using a Keycloak JWT token."""
+        try:
+            decoded_token = await self.decode_token(oauth_token)
 
             logger.debug("Decoded token claims: %s", list(decoded_token.keys()))
 
@@ -123,12 +138,6 @@ class KeycloakAuthHandler(AuthHandler):
 
         except HTTPException:
             raise
-        except jwt.ExpiredSignatureError:
-            logger.info("Token expired")
-            raise HTTPException(status_code=401, detail="Token expired")
-        except jwt.InvalidTokenError as e:
-            logger.warning("Invalid token: %s", str(e))
-            raise HTTPException(status_code=401, detail="Token verification failed: Invalid token")
         except httpx.HTTPError:
             logger.exception("HTTP error during token validation")
             raise HTTPException(status_code=500, detail="Authentication service unavailable")

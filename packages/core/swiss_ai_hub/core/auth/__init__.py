@@ -8,6 +8,9 @@ if TYPE_CHECKING:
         TokenAndOauth2Handler,
     )
     from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
+    from swiss_ai_hub.core.auth.forwarded_token.forwarded_user_token_verifier import (
+        ForwardedUserTokenVerifier,
+    )
     from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
     from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
     from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
@@ -28,6 +31,7 @@ __all__ = [
     "AccessChecker",
     "AccessLevel",
     "AuthHandler",
+    "ForwardedUserTokenVerifier",
     "KeycloakAdminService",
     "KeycloakGroup",
     "KeycloakSettings",
@@ -44,6 +48,7 @@ _LAZY_IMPORTS = {
     "AccessChecker": "swiss_ai_hub.core.auth.access.access_checker",
     "AccessLevel": "swiss_ai_hub.core.auth.access.access_level",
     "AuthHandler": "swiss_ai_hub.core.auth.dependencies.auth_handler",
+    "ForwardedUserTokenVerifier": "swiss_ai_hub.core.auth.forwarded_token.forwarded_user_token_verifier",
     "KeycloakAdminService": "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service",
     "KeycloakGroup": "swiss_ai_hub.core.auth.keycloak.models.keycloak_group",
     "KeycloakSettings": "swiss_ai_hub.core.auth.keycloak.keycloak_settings",

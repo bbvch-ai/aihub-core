@@ -333,8 +333,12 @@ class AuthenticationService:
         user_name: Annotated[str, "User's name"],
         user_email: Annotated[str, "User's email address"],
         accept_language: Annotated[str | None, "Accept-Language header value"] = None,
+        user_token: Annotated[str | None, "The user's Keycloak access token, if they logged in through it"] = None,
     ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
-        """Prepare authenticated request headers"""
+        """Prepare authenticated request headers.
+
+        The user token lets an agent call an MCP server as the user (MCP profiles with auth_mode 'user_token'). The
+        API checks that it belongs to the signed user before forwarding it."""
         clean_username = urllib.parse.quote(user_name, safe="") if user_name else ""
         signature = self.sign_user_headers(clean_username, user_email)
 
@@ -347,6 +351,8 @@ class AuthenticationService:
         }
         if accept_language:
             headers["Accept-Language"] = accept_language
+        if user_token:
+            headers["X-AIHub-User-Token"] = user_token
         return headers
 
 
@@ -3124,6 +3130,9 @@ class Pipe:
         __event_call__: Annotated[Any, "Event caller function"],
         __request__: Annotated[Any, "HTTP request object"] = None,
         __files__: Annotated[Optional[list[dict[str, Any]]], "Uploaded files"] = None,
+        __oauth_token__: Annotated[
+            Optional[dict[str, Any]], "The user's OAuth session tokens; None for accounts that did not log in via SSO"
+        ] = None,
         **kwargs,
     ) -> Annotated[
         str | dict[str, Any] | AsyncGenerator[str, None], "Empty for the agent stream, SSE/JSON for a merge"
@@ -3168,7 +3177,12 @@ class Pipe:
 
                 # Prepare authentication (forward Accept-Language for localized error messages)
                 accept_language = __request__.headers.get("Accept-Language") if __request__ else None
-                headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"], accept_language)
+                headers = self._auth_service.prepare_headers(
+                    __user__["name"],
+                    __user__["email"],
+                    accept_language,
+                    user_token=(__oauth_token__ or {}).get("access_token"),
+                )
                 inject(headers)
 
                 # Convert messages

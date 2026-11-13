@@ -51,7 +51,8 @@ process-initiated, bot-channel, and agent-to-agent runs forward no user token an
 
 ### Trade-offs
 
-- `user_token` mode depends on the client sending an `X-AIHub-User-Token` header; nothing forwards it automatically yet,
-  so it currently requires a client that sets it explicitly.
-- The forwarded header is untrusted client input — the MCP server must validate the token itself before acting on it.
+- `user_token` mode depends on the client sending an `X-AIHub-User-Token` header. Since
+  `2026_11_12_forward_keycloak_token_for_mcp_user_token`, OpenWebUI and the Admin UI chat send the user's Keycloak
+  token, and the API checks that it belongs to the requesting user.
+- The MCP server must still validate the token itself before acting on it.
 - An MCP connection that needs per-user auth cannot be driven by non-interactive runs (scheduled, process, bot).
