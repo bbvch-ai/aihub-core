@@ -27,7 +27,7 @@ browser-visible and must not contain secrets.
 ## Deployment defaults
 
 `OPENWEBUI_MODS_DEFAULTS` is a JSON array of bundled mod IDs, passed identically to the main API and SysAdmin API.
-The shipped `.env.dev` and `.env.prod` enable `aihub-chat-disclaimer`, `aihub-locale-recovery`,
+The shipped `.env.dev` and `.env.prod` enable `aihub-chat-disclaimer`, `aihub-account-menu`, `aihub-locale-recovery`,
 `aihub-speech-recovery`, `aihub-pdf-export-guard` and `aihub-streaming-indicator`. Unset or `[]` enables no defaults.
 Unknown or duplicate IDs are rejected. After changing it, update/restart both API services; no Open WebUI rebuild is
 needed.
@@ -104,7 +104,7 @@ uploaded mods. Check their upstream dependencies when upgrading Open WebUI:
 | `pdf-export-guard` | Native menu wrappers share the selected chat's export policy through Svelte context. Check toolbar and sidebar menus, including a sidebar chat different from the open one. Single-model PDF and text/JSON export must work. Remove the guard once upstream PDF retains all side-by-side answers. |
 | `streaming-indicator` | A lifecycle-owned stylesheet replaces the pulsing bar with dots. Check response selectors, competing progress, reduced motion and disposal. |
 | `chat-disclaimer` | A lifecycle-owned renderer adds text below the composer. Check both chat layouts, wrapping, populated native footers, locale changes and disposal. |
-| `account-menu` | Optional Admin Panel shortcut and Settings restrictions. Check the native sidebar, allowed admin tabs and About, empty section headings, and blocked settings entry points for ordinary users. |
+| `account-menu` | Removes redundant account controls while preserving admin access. Check the native sidebar, allowed admin tabs and About, empty section headings, and blocked settings entry points for ordinary users. |
 
 The [customization browser suite](../../e2e/openwebui-mods/customizations/README.md) uses an authenticated disposable
 native host and the actual bundled archives. Also verify the real AI Hub login, installation, tenant switching and

@@ -1,9 +1,9 @@
 {
   "format": 1,
   "id": "aihub-account-menu",
-  "name": "Admin Panel shortcut",
+  "name": "Account menu cleanup",
   "version": "1.0.0",
-  "description": "Replaces the duplicate account display with an Admin Panel link. Admins retain admin settings and About; other users have no Settings access.",
+  "description": "Removes the redundant Open WebUI account menu. Admins retain the Admin Panel, admin settings and About. Other users have no Settings access.",
   "replacements": {
     "src/lib/components/layout/Sidebar/UserMenu.svelte": "Menu.svelte",
     "src/lib/components/chat/SettingsModal.svelte": "Settings.svelte",

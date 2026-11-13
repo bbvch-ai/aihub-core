@@ -1,6 +1,6 @@
 ---
 title: Open WebUI-Modifikationen
-source_sha: d80b76488033f773a10bd20c8067accbe098f40701bbac4691b61e5e7e32e8c7
+source_sha: d0fa40d0b51bd16f055767c7e6e9cd050d5a2f0271c355c6365e10a815002e74
 ---
 
 # Open WebUI-Modifikationen
@@ -63,16 +63,15 @@ zu 100 Zeichen. Der Hinweis folgt der Sprache von AI Hub und fällt auf Deutsch,
 Übersetzung zurück. Ungültige Texteinstellungen verhindern die Aktivierung dieses Mods. Deaktivieren Sie den Mod,
 um den Hinweis auszublenden.
 
-Die mitgelieferten Deployment-Vorgaben aktivieren Chat disclaimer, Saved language recovery, Voice reply recovery,
-Multi-model PDF export guard und Streaming indicator. Betreiber können festlegen, welche mitgelieferten
+Die mitgelieferten Deployment-Vorgaben aktivieren Chat disclaimer, Account menu cleanup, Saved language recovery,
+Voice reply recovery, Multi-model PDF export guard und Streaming indicator. Betreiber können festlegen, welche mitgelieferten
 Mods anfänglich aktiviert sind. Sobald ein Mandant seine eigene Konfiguration speichert, hat diese Vorrang.
 Mitgelieferte Mods sind mit Mit AI Hub aktualisiert gekennzeichnet und folgen dem installierten Release;
 gespeicherte Einstellungen und Aktivierung bleiben erhalten.
 
-Der optionale Mod Admin Panel shortcut ersetzt die doppelte Kontoanzeige für Administratoren durch einen direkten
-Link zum Admin Panel. Ihr Einstellungsdialog behält Admin-Tabs und About, ausgenommen Authentication, Connections und
-Database. Andere Benutzer können den Einstellungsdialog nicht öffnen. Dieser Mod wird mit AI Hub installiert, ist
-aber standardmässig nicht aktiviert.
+Der Mod Account menu cleanup entfernt die doppelte Kontoanzeige von Open WebUI. Administratoren erhalten einen
+direkten Link zum Admin Panel. Ihr Einstellungsdialog behält Admin-Tabs und About, ausgenommen Authentication, Connections und
+Database. Andere Benutzer können den Einstellungsdialog nicht öffnen.
 
 ## Änderungen für alle Mandanten
 

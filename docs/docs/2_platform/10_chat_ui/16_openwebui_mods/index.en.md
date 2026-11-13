@@ -54,14 +54,14 @@ and edit the Disclaimer field. Each translation accepts plain text of up to 100 
 The note follows the AI Hub language, falling back to German and then the first nonempty translation. Invalid text
 settings prevent this mod from activating. Disable the mod to hide the note.
 
-The shipped deployment defaults enable Chat disclaimer, Saved language recovery, Voice reply recovery,
-Multi-model PDF export guard and Streaming indicator. Operators can change which bundled mods start enabled;
+The shipped deployment defaults enable Chat disclaimer, Account menu cleanup, Saved language recovery,
+Voice reply recovery, Multi-model PDF export guard and Streaming indicator. Operators can change which bundled mods start enabled;
 once a tenant saves its own configuration, that saved configuration takes precedence. Bundled mods show Updated with
 AI Hub and follow the installed release while keeping saved settings and enablement.
 
-The optional Admin Panel shortcut mod replaces the duplicate account display with a direct Admin Panel link for
-admins. Their Settings dialog keeps admin tabs and About, excluding Authentication, Connections and Database.
-Other users cannot open the Settings dialog. This mod is installed with AI Hub but is not enabled by default.
+The Account menu cleanup mod removes the duplicate Open WebUI account display. Admins get a direct Admin Panel
+link; their Settings dialog keeps admin tabs and About, excluding Authentication, Connections and Database.
+Other users cannot open the Settings dialog.
 
 ## Changes across all tenants
 
