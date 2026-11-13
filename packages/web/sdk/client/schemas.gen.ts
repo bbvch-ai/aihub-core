@@ -21865,10 +21865,14 @@ export const OpenWebuiModActivationSchema = {
       pattern: "^[a-f0-9]{64}$",
       title: "Publication",
     },
+    has_backend: {
+      type: "boolean",
+      title: "Has Backend",
+    },
   },
   additionalProperties: false,
   type: "object",
-  required: ["mod_id", "publication"],
+  required: ["mod_id", "publication", "has_backend"],
   title: "OpenWebuiModActivation",
 } as const;
 

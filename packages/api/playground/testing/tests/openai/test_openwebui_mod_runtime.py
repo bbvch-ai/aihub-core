@@ -159,6 +159,7 @@ def test_runtime_resolves_current_configuration_without_user_contexts(
     assert current["tenant_id"] == "one"
     assert current["compatibility"] == compatibility
     assert current["configuration"]["version"] == 7
+    assert current["configuration"]["mods"][0]["has_backend"] is True
     assert len(current["revision"]) == 64
     for kind in ["source", "frontend"]:
         response = client.get(f'{BASE}/publications/{published["revision"]}/{kind}', headers=headers())
@@ -180,6 +181,7 @@ def test_runtime_applies_bundled_defaults_only_to_unconfigured_tenants(
     mods = current["configuration"]["mods"]
     assert [mod["mod_id"] for mod in mods] == ["builtin-default"]
     assert mods[0]["settings"] == {"text": {"en": "Default fixture text"}}
+    assert mods[0]["has_backend"] is False
     publication = mods[0]["publication"]
     assert client.get(f'{BASE}/publications/{publication}/frontend', headers=headers()).status_code == 200
     TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json='{"mods":[]}')

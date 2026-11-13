@@ -35,6 +35,10 @@ def test_global_save_stages_private_archives_before_configuration_and_does_not_e
     assert response.status_code == 200, response.text
     assert response.json()["restart_required"] is True
     assert response.json()["configuration"]["version"] == 1
+    assert response.json()["configuration"]["mods"] == [
+        {"mod_id": "chat-tools", "enabled": True, "settings": {"label": "Global"}},
+    ]
+    assert json.loads(control[-1].content)["mods"][0]["has_backend"] is True
     assert [request.url.path.split("/control/")[1] for request in control] == [
         "archives/sources/" + hashlib.sha256(control[0].content).hexdigest(), "archives/publications/" + revision, "global",
     ]

@@ -62,7 +62,7 @@ class GlobalModTests(unittest.IsolatedAsyncioTestCase):
         published = hashlib.sha256(publication).hexdigest()
         self.store.stage("sources", revision, source)
         self.store.stage("publications", published, publication)
-        return ModSelection(mod_id="global-fixture", publication=published, enabled=True, settings={"label": "Global"})
+        return ModSelection(mod_id="global-fixture", publication=published, has_backend=True, enabled=True, settings={"label": "Global"})
 
     def test_ordinary_global_changes_are_live_without_restart(self) -> None:
         selection = self.stage()

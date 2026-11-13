@@ -8,5 +8,6 @@ class ModSelection(BaseModel):
 
     mod_id: Annotated[str, Field(min_length=1, max_length=64)]
     publication: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+    has_backend: Annotated[bool, Field(strict=True)]
     enabled: bool
     settings: dict[str, JsonValue]

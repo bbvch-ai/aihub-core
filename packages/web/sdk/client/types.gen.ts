@@ -14526,6 +14526,10 @@ export type OpenWebuiModActivation = {
    * Publication
    */
   publication: string;
+  /**
+   * Has Backend
+   */
+  has_backend: boolean;
 };
 
 /**

@@ -36,7 +36,7 @@ class ModRuntime:
         handlers: dict[str, tuple[Callable[..., Any], ...]] = {}
         request.state.aihub_mod_bindings = {}
         for selection in snapshot.mods:
-            if not selection.enabled:
+            if not selection.enabled or not selection.has_backend:
                 continue
             try:
                 package = await self._package(snapshot, selection.publication, selection.mod_id, user)
@@ -106,6 +106,8 @@ class ModRuntime:
         selection = next((mod for mod in snapshot.mods if mod.enabled and mod.mod_id == mod_id), None)
         if selection is None:
             raise HTTPException(403, "This mod is not enabled for the tenant")
+        if not selection.has_backend:
+            raise HTTPException(404, "This mod has no HTTP handler")
         request.state.aihub_mod_path = path
         overrides = await self.request_overrides(request, user)
         binding = request.state.aihub_mod_bindings.get(selection.mod_id)

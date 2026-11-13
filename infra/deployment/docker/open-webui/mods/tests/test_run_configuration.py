@@ -17,7 +17,7 @@ class RunConfigurationTests(unittest.IsolatedAsyncioTestCase):
             "revision": "a" * 64, "tenant_id": "one",
             "compatibility": json.loads(self.compatibility),
             "configuration": {"version": 7, "mods": [{
-                "mod_id": "tools", "publication": "b" * 64, "enabled": True, "settings": {"label": "Current"},
+                "mod_id": "tools", "publication": "b" * 64, "has_backend": True, "enabled": True, "settings": {"label": "Current"},
             }]},
         }
         self.client = HubClient("http://hub", "service-token", "secret", transport=httpx.MockTransport(self.respond))
@@ -73,6 +73,15 @@ class RunConfigurationTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(json.loads(self.calls[-1].headers["X-AIHub-Mod-Compatibility"]), json.loads(self.compatibility))
         self.assertEqual(content, b"private archive")
+
+    async def test_backend_presence_must_be_explicit_and_boolean(self) -> None:
+        selection = self.response["configuration"]["mods"][0]
+        selection.pop("has_backend")
+        for changes in ({}, {"has_backend": "false"}, {"has_backend": 0}):
+            self.response["configuration"]["mods"] = [selection | changes]
+            with self.assertRaises(HTTPException) as raised:
+                await self.resolve()
+            self.assertEqual(raised.exception.status_code, 502)
 
 
 if __name__ == "__main__":

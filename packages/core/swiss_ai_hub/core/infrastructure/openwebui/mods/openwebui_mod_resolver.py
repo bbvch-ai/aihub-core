@@ -32,5 +32,7 @@ class OpenWebuiModResolver:
             publication = OpenWebuiModPublicationManifest.model_validate_json(mod.publication_manifest_json)
             if publication.compatibility != compatibility:
                 raise ValueError(f"Mod '{selection.mod_id}' needs installation for this Open WebUI host.")
-            mods.append(OpenWebuiModActivation(**selection.model_dump(), publication=mod.publication))
+            mods.append(OpenWebuiModActivation(
+                **selection.model_dump(), publication=mod.publication, has_backend=manifest.backend is not None,
+            ))
         return OpenWebuiModResolvedConfiguration(version=configuration.version, mods=mods)

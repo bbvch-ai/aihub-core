@@ -26,6 +26,7 @@ class ModRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.configurations: dict[str, dict] = {}
         self.objects: dict[str, bytes] = {}
         self.denied = False
+        self.archive_status = 200
         self.source = """
 from .helper import label
 
@@ -86,7 +87,7 @@ class Filter:
         self.objects[f"{published}/source"] = content
         snapshot = {
             "tenant_id": tenant, "compatibility": self.compatibility,
-            "configuration": {"mods": [{"mod_id": "tools", "publication": published, "enabled": True, "settings": {"label": label}}]},
+            "configuration": {"mods": [{"mod_id": "tools", "publication": published, "has_backend": True, "enabled": True, "settings": {"label": label}}]},
         }
         snapshot["revision"] = hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
         self.configurations[tenant] = snapshot
@@ -114,6 +115,8 @@ class Filter:
         if not any(mod["enabled"] and mod["publication"] == publication
                    for mod in self.configurations[tenant]["configuration"]["mods"]):
             return httpx.Response(403)
+        if self.archive_status != 200:
+            return httpx.Response(self.archive_status)
         if request.method == "HEAD":
             return httpx.Response(200)
         if suffix.startswith("publications/"):
@@ -231,6 +234,51 @@ class Filter:
         with self.assertRaises(HTTPException) as raised:
             await self.apply(self.request())
         self.assertEqual(raised.exception.status_code, 403)
+
+    async def test_frontend_only_mods_do_not_load_archives_when_delivery_is_unavailable(self) -> None:
+        self.configurations["one"]["configuration"]["mods"] = [
+            {"mod_id": f"frontend-{index}", "publication": "f" * 64, "has_backend": False, "enabled": True, "settings": {}}
+            for index in range(5)
+        ]
+
+        self.archive_status = 503
+        for view, execution in [("a" * 32, "e" * 32), (None, None)]:
+            for _ in range(2):
+                self.calls.clear()
+                request = self.request(view, execution)
+                self.assertEqual(await self.apply(request), {})
+                self.assertEqual(len(self.calls), 1)
+                self.assertTrue(self.calls[0].url.path.endswith("/configuration"))
+                self.assertEqual(request.state.aihub_mod_bindings, {})
+        self.assertEqual(self.host.runtime.packages, {})
+        self.calls.clear()
+        with self.assertRaises(HTTPException) as missing:
+            await self.host.runtime.handle("one", "frontend-0", "status", self.request(), self.user)
+        self.assertEqual(missing.exception.status_code, 404)
+        self.assertEqual(len(self.calls), 1)
+        self.denied = True
+        with self.assertRaises(HTTPException) as raised:
+            await self.apply(self.request())
+        self.assertEqual(raised.exception.status_code, 403)
+
+    async def test_mixed_configuration_loads_only_backend_packages(self) -> None:
+        self.configurations["one"]["configuration"]["mods"].insert(0, {
+            "mod_id": "frontend", "publication": "f" * 64, "has_backend": False, "enabled": True, "settings": {},
+        })
+        for _ in range(2):
+            self.assertEqual((await self.apply(self.request()))["label"], "First from asset")
+        self.assertEqual(len(self.host.runtime.packages), 1)
+        self.assertFalse(any("f" * 64 in call.url.path for call in self.calls))
+
+    async def test_cached_backend_packages_still_require_archive_authorization_and_delivery(self) -> None:
+        await self.apply(self.request())
+        for status in (403, 503):
+            self.archive_status = status
+            self.calls.clear()
+            with self.assertRaises(HTTPException) as raised:
+                await self.apply(self.request())
+            self.assertEqual(raised.exception.status_code, status)
+            self.assertEqual([call.method for call in self.calls], ["POST", "HEAD"])
 
     async def test_invalid_execution_header_fails_before_source_or_identity_access(self) -> None:
         for request in [self.request(execution="bad"), self.request(None)]:

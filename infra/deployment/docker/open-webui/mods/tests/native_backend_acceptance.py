@@ -83,7 +83,7 @@ class NativeBackendAcceptance(unittest.IsolatedAsyncioTestCase):
     def _snapshot(self, tenant: str, settings: dict[str, Any]) -> dict[str, Any]:
         snapshot = {"tenant_id": tenant, "compatibility": self.compatibility,
                     "configuration": {"mods": [{"mod_id": "native-info", "publication": self.revision,
-                                                "enabled": True, "settings": settings}]}}
+                                                "has_backend": True, "enabled": True, "settings": settings}]}}
         snapshot["revision"] = hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
         return snapshot
 
@@ -228,7 +228,7 @@ async def handle(request, context):
             store.initialize()
             store.stage("sources", self.source_revision, self.source)
             store.stage("publications", self.revision, self.publication)
-            selected = ModSelection(mod_id="native-info", publication=self.revision, enabled=True, settings={"label": "Global"})
+            selected = ModSelection(mod_id="native-info", publication=self.revision, has_backend=True, enabled=True, settings={"label": "Global"})
             self.assertFalse(store.replace(GlobalModConfiguration(mods=[selected]))["restart_required"])
             runtime = GlobalModRuntime(store, host.runtime)
             await runtime.start(app)

@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from mypy_boto3_s3 import S3Client
 from starlette.concurrency import run_in_threadpool
 from swiss_ai_hub.core.infrastructure.openwebui import (
-    OpenWebuiModActivation, OpenWebuiModConfiguration, OpenWebuiModHost, OpenWebuiModPublicationManifest,
+    OpenWebuiModActivation, OpenWebuiModConfiguration, OpenWebuiModHost, OpenWebuiModManifest, OpenWebuiModPublicationManifest,
     OpenWebuiModResolvedConfiguration, OpenWebuiModSelection, OpenWebuiModStore, OpenWebuiSettings,
 )
 
@@ -40,6 +40,7 @@ class OpenWebuiModGlobalService:
         data = response.json()
         for mod in data["configuration"]["mods"]:
             mod.pop("publication")
+            mod.pop("has_backend")
         return OpenWebuiModGlobalState.model_validate(data)
 
     @classmethod
@@ -82,7 +83,10 @@ class OpenWebuiModGlobalService:
             ("publications", installed.publication, await store.read_publication(installed.publication)),
         ]:
             await cls._request(http, "PUT", f"archives/{kind}/{revision}", content)
-        return OpenWebuiModActivation(**mod.model_dump(), publication=installed.publication)
+        manifest = OpenWebuiModManifest.model_validate_json(installed.manifest_json)
+        return OpenWebuiModActivation(
+            **mod.model_dump(), publication=installed.publication, has_backend=manifest.backend is not None,
+        )
 
     @classmethod
     async def reconcile(cls, storage: S3Client, *, mod_id: str | None = None) -> OpenWebuiModGlobalState:
