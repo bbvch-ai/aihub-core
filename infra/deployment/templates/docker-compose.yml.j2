@@ -2397,6 +2397,10 @@ services:
     container_name: mineru-api
     image: {{ global.registry_prefix }}{{ image_tags.mineru_api }}
     restart: always
+    # Caps the VLM calls one parse keeps open (MinerU's default is 100). Every parse runs its own cap, so up to
+    # MINERU_API_MAX_CONCURRENT_REQUESTS x 8 calls reach LiteLLM at once; at 5 x 100 its single process stalls for
+    # 10 s and more. A CLI flag only: MinerU reads no environment variable for it.
+    command: ["--host", "0.0.0.0", "--port", "8000", "--max-concurrency", "8"]
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8002:8000"
@@ -5387,6 +5391,8 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
