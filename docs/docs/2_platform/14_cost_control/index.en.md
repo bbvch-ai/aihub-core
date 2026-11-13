@@ -56,8 +56,8 @@ decisions, model selection, and budget planning.
 
 Every model call the Swiss AI Hub makes for a user is booked to the tenant the user is acting in. This covers chat
 through OpenWebUI, the OpenAI-compatible API, agent runs (chat, embeddings and reranking), translation and
-speech-to-text. The LiteLLM proxy records the tenant as its *customer*, named after the tenant. A user who belongs to two
-tenants has each call counted only in the tenant they were acting in.
+speech-to-text. The LiteLLM proxy records the tenant as its *customer*, named after the tenant. A user who belongs to
+two tenants has each call counted only in the tenant they were acting in.
 
 Calls made outside any tenant are booked to the customer `no-tenant`: sysadmins acting outside a tenant, scheduled agent
 runs, data pipelines, the memory writer and document parsing. They appear as their own line, never inside a tenant.
@@ -135,13 +135,38 @@ LITE_LLM_PROXY_USER_RPM_LIMIT=60               # 60 requests/minute
 LITE_LLM_PROXY_USER_MAX_PARALLEL_REQUESTS=5    # 5 concurrent requests
 ```
 
-These settings apply to new users created in the system. Existing users retain their configured limits.
+A changed max budget, budget duration, TPM limit or RPM limit also reaches users who already exist, on the first
+reconciliation after the API restarts (see below). A changed budget duration starts the user's budget period anew. The
+soft budget and the parallel-request limit apply only to users created after they are set, because LiteLLM cannot change
+them on an existing user.
 :::
 
 ::: warning Not currently enabled
 While the infrastructure supports these limits, they are not enabled by default. Set the environment variables above to
 activate budget and rate limiting.
 :::
+
+### LiteLLM users follow Keycloak
+
+The Hub creates a LiteLLM user and key for every Hub user on their first request. Users are disabled and removed in
+Keycloak, and nothing notifies the Hub, so the API compares LiteLLM's users with Keycloak's every five minutes
+(`LITE_LLM_PROXY_USER_RECONCILE_INTERVAL_SECONDS`), once across all API replicas:
+
+- **Limits.** A user whose limits differ from the settings above gets the new ones. Only changed fields are sent, so the
+  budget period is not restarted on every run.
+- **Disabled users.** LiteLLM cannot block a user, so every key of a user disabled in Keycloak is blocked. When the user
+  is enabled again, the keys the Hub blocked are unblocked. A key an operator blocked by hand stays blocked.
+- **Removed users.** A user Keycloak no longer has is deleted from LiteLLM together with their keys. Their spend stays
+  in LiteLLM's spend logs and usage views. Before deleting, the Hub asks Keycloak for that user again, so an outage or
+  an incomplete listing deletes no one.
+- **Users the Hub did not create.** LiteLLM users with a role other than `internal_user_viewer`, such as users made by
+  hand in the LiteLLM UI, are never changed. If Keycloak has no such user, they are listed in the API log as a warning,
+  so an operator can remove them.
+
+Each run logs a summary line, `LiteLLM user reconciliation: …`, with the users it deleted and blocked. A user disabled
+or removed in Keycloak keeps a working key until the next run. LiteLLM's built-in admin, `default_user_id`, is ignored.
+`LITE_LLM_PROXY_USER_RECONCILE_EXEMPT_USER_IDS` lists further user ids to leave alone; development uses it for the test
+identity.
 
 ## Optimization strategies
 

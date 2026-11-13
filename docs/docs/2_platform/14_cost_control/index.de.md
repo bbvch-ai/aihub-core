@@ -57,11 +57,11 @@ Agent-Design-Entscheidungen, der Modellwahl und der Budgetplanung.
 
 ## Nutzung pro Mandant
 
-Jeder Modellaufruf, den der Swiss AI Hub für einen Benutzer ausführt, wird dem Mandanten zugerechnet, in dem der Benutzer
-gerade arbeitet. Das gilt für Chats über OpenWebUI, die OpenAI-kompatible API, Agentenläufe (Chat, Embeddings und
-Reranking), Übersetzungen und Spracherkennung. Der LiteLLM-Proxy erfasst den Mandanten als seinen *Kunden* (Customer),
-benannt nach dem Mandanten. Gehört ein Benutzer zwei Mandanten an, wird jeder Aufruf nur in dem Mandanten gezählt, in dem
-er gerade gearbeitet hat.
+Jeder Modellaufruf, den der Swiss AI Hub für einen Benutzer ausführt, wird dem Mandanten zugerechnet, in dem der
+Benutzer gerade arbeitet. Das gilt für Chats über OpenWebUI, die OpenAI-kompatible API, Agentenläufe (Chat, Embeddings
+und Reranking), Übersetzungen und Spracherkennung. Der LiteLLM-Proxy erfasst den Mandanten als seinen *Kunden*
+(Customer), benannt nach dem Mandanten. Gehört ein Benutzer zwei Mandanten an, wird jeder Aufruf nur in dem Mandanten
+gezählt, in dem er gerade gearbeitet hat.
 
 Aufrufe ausserhalb eines Mandanten werden dem Kunden `no-tenant` zugerechnet: Sysadmins, die ausserhalb eines Mandanten
 arbeiten, geplante Agentenläufe, Datenpipelines, das Schreiben von Erinnerungen und das Parsen von Dokumenten. Sie
@@ -84,8 +84,8 @@ Auf einer gemeinsam genutzten Instanz, die mehrere Mandanten bedient:
      Completion-Tokens (Ausgabe) getrennt unter **Total Tokens Over Time**.
    - **Export Data** lädt dieselben Zahlen als Datei herunter.
 
-Ohne Kundenfilter listet der Reiter **Cost** unter **Spend Per Customer** jeden Mandanten und `no-tenant` auf. Ihre Summe
-entspricht dem Instanz-Total, das **Global Usage** für denselben Zeitraum zeigt.
+Ohne Kundenfilter listet der Reiter **Cost** unter **Spend Per Customer** jeden Mandanten und `no-tenant` auf. Ihre
+Summe entspricht dem Instanz-Total, das **Global Usage** für denselben Zeitraum zeigt.
 
 ::: details Die Zahlen über die API ablesen
 Die Oberfläche liest sie aus der Admin-API von LiteLLM, die Sie mit dem LiteLLM-Master-Key abfragen können. Die Antwort
@@ -108,8 +108,8 @@ Activity** wie oben ab.
 
 ::: warning Aufrufe, bevor Mandanten erfasst wurden
 Nur Aufrufe, seit der Swiss AI Hub Mandanten erfasst, werden einem Mandanten zugerechnet. Frühere Aufrufe über die
-OpenAI-kompatible API erscheinen unter Kunden, die nach einer Benutzer-ID benannt sind, und frühere Aufrufe ohne Benutzer
-unter gar keinem Kunden. Deployments mit eigener LiteLLM-Konfiguration müssen den Callback `tenant_attribution`
+OpenAI-kompatible API erscheinen unter Kunden, die nach einer Benutzer-ID benannt sind, und frühere Aufrufe ohne
+Benutzer unter gar keinem Kunden. Deployments mit eigener LiteLLM-Konfiguration müssen den Callback `tenant_attribution`
 registrieren, der neben `custom_callbacks.py` ausgeliefert wird, sonst fehlen Aufrufe ohne Mandanten in der
 Kundenansicht.
 :::
@@ -145,14 +145,41 @@ LITE_LLM_PROXY_USER_RPM_LIMIT=60               # 60 requests/minute
 LITE_LLM_PROXY_USER_MAX_PARALLEL_REQUESTS=5    # 5 concurrent requests
 ```
 
-Diese Einstellungen gelten für neue Benutzer, die im System erstellt werden. Bestehende Benutzer behalten ihre
-konfigurierten Limits.
+Ein geändertes Max. Budget, eine geänderte Budgetdauer, ein geändertes TPM- oder RPM-Limit erreicht auch bestehende
+Benutzer, beim ersten Abgleich nach dem Neustart der API (siehe unten). Eine geänderte Budgetdauer startet den
+Budgetzeitraum des Benutzers neu. Soft Budget und das Limit für parallele Anfragen gelten nur für Benutzer, die nach dem
+Setzen erstellt werden, weil LiteLLM sie bei bestehenden Benutzern nicht ändern kann.
 :::
 
 ::: warning Derzeit nicht aktiviert
 Obwohl die Infrastruktur diese Limits unterstützt, sind sie standardmässig nicht aktiviert. Setzen Sie die oben
 genannten Umgebungsvariablen, um Budget- und Ratenbegrenzungen zu aktivieren.
 :::
+
+### LiteLLM-Benutzer folgen Keycloak
+
+Der Hub legt für jeden Hub-Benutzer bei dessen erster Anfrage einen LiteLLM-Benutzer und einen Schlüssel an. Benutzer
+werden in Keycloak deaktiviert und entfernt, ohne dass der Hub davon erfährt. Deshalb gleicht die API die Benutzer von
+LiteLLM alle fünf Minuten mit jenen von Keycloak ab (`LITE_LLM_PROXY_USER_RECONCILE_INTERVAL_SECONDS`), einmal über alle
+API-Replikate hinweg:
+
+- **Limits.** Ein Benutzer, dessen Limits von den obigen Einstellungen abweichen, erhält die neuen. Gesendet werden nur
+  geänderte Felder, damit der Budgetzeitraum nicht bei jedem Lauf neu beginnt.
+- **Deaktivierte Benutzer.** LiteLLM kann keinen Benutzer sperren, deshalb wird jeder Schlüssel eines in Keycloak
+  deaktivierten Benutzers gesperrt. Wird der Benutzer wieder aktiviert, entsperrt der Hub die Schlüssel, die er gesperrt
+  hat. Ein von Hand gesperrter Schlüssel bleibt gesperrt.
+- **Entfernte Benutzer.** Ein Benutzer, den Keycloak nicht mehr kennt, wird mitsamt seinen Schlüsseln aus LiteLLM
+  gelöscht. Seine Ausgaben bleiben in den Spend-Logs und Nutzungsansichten von LiteLLM erhalten. Vor dem Löschen fragt
+  der Hub Keycloak erneut nach diesem Benutzer, damit ein Ausfall oder eine unvollständige Liste niemanden löscht.
+- **Benutzer, die der Hub nicht angelegt hat.** LiteLLM-Benutzer mit einer anderen Rolle als `internal_user_viewer`,
+  etwa von Hand in der LiteLLM-Oberfläche angelegte, werden nie geändert. Kennt Keycloak sie nicht, erscheinen sie als
+  Warnung im API-Log, damit ein Operator sie entfernen kann.
+
+Jeder Lauf schreibt eine Zusammenfassung, `LiteLLM user reconciliation: …`, mit den gelöschten und gesperrten Benutzern
+ins Log. Ein in Keycloak deaktivierter oder entfernter Benutzer behält bis zum nächsten Lauf einen funktionierenden
+Schlüssel. Der eingebaute Administrator von LiteLLM, `default_user_id`, wird übergangen.
+`LITE_LLM_PROXY_USER_RECONCILE_EXEMPT_USER_IDS` nennt weitere Benutzer-IDs, die unberührt bleiben; die Entwicklung nutzt
+das für die Testidentität.
 
 ## Optimierungsstrategien
 

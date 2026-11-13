@@ -87,9 +87,15 @@ that choice belongs to the tenant usage tracking work.
 
 ## Amendment 2026-11-09: the acting tenant is the LiteLLM customer
 
-Tenant attribution now does go to LiteLLM: every call names the acting tenant as its customer, and calls without a tenant
-are booked to `no-tenant`. User attribution on the key is unchanged. See
+Tenant attribution now does go to LiteLLM: every call names the acting tenant as its customer, and calls without a
+tenant are booked to `no-tenant`. User attribution on the key is unchanged. See
 `2026_11_09_acting_tenant_as_litellm_customer.md`.
+
+## Amendment 2026-11-12: users and keys follow Keycloak
+
+The per-user LiteLLM user and key are no longer only created. Changed limit settings now reach existing users. A user
+disabled in Keycloak has their keys blocked, and a user removed from Keycloak is deleted with their keys. See
+`2026_11_12_litellm_users_follow_keycloak.md`.
 
 ## Related Decisions
 
