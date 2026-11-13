@@ -56,6 +56,9 @@ rest, where totals and payment terms often stand.
 
 - Agents can filter by type and attributes in the document listing and in vector search, once ingestion stores them
   (#2482) and existing documents are backfilled (#2483).
+- Every German "Gutschrift" is `other`, a self-billing one under § 14 UStG included. The evaluation (#2481) showed that
+  calling self-billing Gutschriften invoices made the model take a plain credit note for one and swap issuer and
+  recipient; a credit note type (#2485) is where the two are told apart.
 - Every ingested document costs one more model call, through the PII guardrail for external models. #2482 measures it.
 - With only `invoice` and `other`, everything that is not an invoice is `other`. Adding a type raises the classification
   version, and documents marked `other` are classified again.

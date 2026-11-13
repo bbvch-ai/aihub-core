@@ -22,7 +22,9 @@ database.
 
 Not invoices, although they look alike: offers and quotes, order confirmations (even with a total), delivery notes,
 receipts for a payment already made, credit notes, payment reminders, account statements and pro-forma invoices. They
-are `other` until the list has a type for them.
+are `other` until the list has a type for them. A German "Gutschrift" is `other` too, even a self-billing one issued by
+the buyer under § 14 UStG: the word also means credit note, and the two are told apart once the list has a credit note
+type.
 
 A document has one **primary type**, the one that describes it as a whole. It may also list up to three **secondary
 types**, for example an invoice that is also its delivery note. Attributes always belong to the primary type; a

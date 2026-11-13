@@ -88,7 +88,7 @@ class DocumentTypeCatalog:
                 "order confirmations, even when they end with a total",
                 "delivery notes",
                 "receipts for a payment already made (Quittung, Kassenbon)",
-                "credit notes",
+                "credit notes and every Gutschrift, including a self-billing one the buyer issues under § 14 UStG",
                 "payment reminders (Mahnung)",
                 "account statements",
                 "pro-forma invoices",
