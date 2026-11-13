@@ -17,6 +17,8 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig
 from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collection, fill_collection, run_with_event_loop
 
+pytestmark = pytest.mark.external
+
 scenarios("features/vector_prev_next_post_processor.feature")
 
 

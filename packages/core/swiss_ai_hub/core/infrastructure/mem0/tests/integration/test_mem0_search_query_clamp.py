@@ -19,7 +19,7 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.generative_ai.memory.user_memory import UserMemory
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
-pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
+pytestmark = [pytest.mark.integration, pytest.mark.asyncio, pytest.mark.external]
 
 QUESTION = "What is the retention period for invoices?"
 REQUIRED_ENV = ("LITE_LLM_PROXY_BASE_URL", "MEM0_LLM_NAME", "MEM0_EMBEDDING_MODEL_NAME", "MILVUS_URL")

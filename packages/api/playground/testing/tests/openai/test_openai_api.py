@@ -7,6 +7,8 @@ from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
+pytestmark = pytest.mark.external
+
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/active/openai/models"
 CHAT_MODEL = "text-generation/gemma-4-31B-it"

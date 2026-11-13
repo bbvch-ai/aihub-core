@@ -52,7 +52,15 @@ fail.
 `ssh_key` is provided, the build gets SSH access to private repos during Docker build. When empty, a simpler step runs
 with the `VERSION` build-arg plus the optional `build_args` input (one `KEY=VALUE` per line; the Presidio analyzer's GPU
 image passes its CUDA torch index this way). Tags: `ghcr.io/{owner}/{repo}/{image_name}:{version}` with optional
-`secondary_tag` (nightly/latest).
+`secondary_tag` (nightly/latest). `cache_scope` (default empty = no cache) reads and writes the GitHub Actions build
+cache under that scope. Release builds and the PR `build-images` job in `analyze-test-pr.yml` use the same scopes
+(`agent` for all agent images, `pipeline` for the pipeline apps, the image name otherwise), so they share layers.
+
+**PR target selection**: `.github/scripts/ci_targets.py` decides which modules `analyze-test-pr.yml` tests (and how many
+shards each gets) and which images it builds without pushing. A module runs when its folder, a module it depends on, or
+a shared input (core, `uv.lock`, root `pyproject.toml`, `infra/`, `Makefile`, `.env.dev`, the test action, the workflow,
+the script) changed; pushes to `main` test every module. Every required SonarCloud check still reports, with coverage
+only for the modules that were tested.
 
 **lint_backend**: Uses `ruff format` via reviewdog. Aligned with local development (`make pr-ready` also uses
 `ruff format`).
@@ -65,13 +73,24 @@ cache key. Runs `nuxi prepare` before linting to generate Nuxt type stubs.
 - `docker_compose_services`: space-separated list of Docker services to start (empty = no Docker)
 - `install_ffmpeg`: installs FFmpeg via `make install-ffmpeg`
 - `huggingface_api_key`: added to `.env.dev` for model downloads
-- `swiss_llm_cloud_*`: Swiss LLM Cloud secrets (API, embedding, reranking, whisper, OCR) added to `.env.dev`
+- `swiss_llm_cloud_*`: Swiss LLM Cloud secrets (API, embedding, reranking, whisper, OCR) added to `.env.dev`. Only
+  `external-tests.yml` passes them; the PR checks run without provider credentials.
+- `pytest_markers`: the `-m` expression (default `not flaky`; PR checks pass `not flaky and not external`).
+- `shard_index` / `shard_count`: split the module's tests with pytest-split (`least_duration`, timings from the module's
+  committed `.test_durations`). Above one shard the job uploads `{working_directory}-shard-{index}` (raw
+  `.coverage.shard-N` + `pytest.xml`) instead of the final reports; the `merge-shards` job in `analyze-test-pr.yml`
+  combines them and uploads the usual `-coverage-report` / `-pytest-report` artifacts.
+- `check_name`: name of the published test-results check (default `working_directory`), so external runs do not
+  overwrite the PR check of the same module.
 - `regenerate_compose`: runs `make generate-compose` before starting Docker services
 - `pytest_timeout_seconds`: per-test budget passed as `--timeout` (default 300). Keep it well under the calling job's
   `timeout-minutes`, otherwise a hung test consumes the whole job and the forced stop discards `pytest.xml`,
   `coverage.xml` and the traceback — the run then reports only "The operation was canceled". `pytest-timeout` comes from
   the workspace root dev group, so every module has it.
-- Health check polling: waits up to 10 minutes for Docker services to become healthy
+- Health check: polls `docker ps` for up to 600 s and fails the job (with statuses and logs) as soon as a container
+  is unhealthy or exits non-zero, instead of running tests against a broken stack. `compose up --wait` is not used:
+  the runner's Compose treats one-shot init containers that exit 0 (`seaweedfs-ttl-init`) as failures. The runner is
+  discarded afterwards, so there is no teardown step.
 - Pre-pull login is **best-effort**: the `docker login ghcr.io` in the pre-pull step must not fail the job
   (`|| echo "::warning::..."`). The mirrored images under `ghcr.io/bbvch-ai/aihub-core/*` are public, so an
   expired/absent `PAT_GITHUB_READ_PACKAGES` still lets anonymous pulls succeed. Do NOT make this login fatal again.

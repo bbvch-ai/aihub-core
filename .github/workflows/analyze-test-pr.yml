@@ -5,10 +5,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-    types: [opened, edited, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review]
 concurrency:
-  # Editing the PR body (e.g. ticking a test-plan box) re-runs this workflow; overlapping runs upload
-  # SonarCloud analyses for the same PR at once and SonarCloud cancels them. Pushes to main are never cancelled.
+  # A new push supersedes the running analysis; overlapping runs would upload SonarCloud analyses for the
+  # same PR at once and SonarCloud cancels them. Pushes to main are never cancelled.
   group: analyze-test-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
@@ -16,10 +16,47 @@ permissions:
   security-events: write
   packages: read
 jobs:
+  changes:
+    name: Select Targets
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      test_matrix: ${{ steps.select.outputs.test_matrix }}
+      tested_modules: ${{ steps.select.outputs.tested_modules }}
+      sharded_modules: ${{ steps.select.outputs.sharded_modules }}
+      images: ${{ steps.select.outputs.images }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          fetch-depth: 0
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+      - name: Select modules to test and images to build
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          # Pull requests test only what their diff can affect. Pushes to main test every module, so a break the
+          # selection rules miss is still caught right after merge; their images follow the pushed diff.
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            args=(--base "$PR_BASE_SHA")
+          elif [[ "$PUSH_BEFORE_SHA" =~ ^0+$ || -z "$PUSH_BEFORE_SHA" ]]; then
+            args=()
+          else
+            args=(--all-tests --base "$PUSH_BEFORE_SHA")
+          fi
+          uv run --no-project --with pyyaml --with pydantic python .github/scripts/ci_targets.py "${args[@]}"
   test-modules:
-    name: Test Modules
-    runs-on: ${{ matrix.runner }}
-    if: ${{ !github.event.pull_request.draft }}
+    name: Test ${{ matrix.module }}${{ matrix.shard_count > 1 && format(' ({0}/{1})',
+      matrix.shard_index, matrix.shard_count) || '' }}
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.test_matrix != '[]' }}
     timeout-minutes: 30
     permissions:
       id-token: write
@@ -31,37 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - module: packages/core
-            runner: ubuntu-latest
-            docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
-              litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
-              seaweedfs-init etcd-init etcd milvus-standalone neo4j keycloak
-          - module: packages/api
-            runner: ubuntu-latest
-            docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
-              litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
-              seaweedfs-init etcd-init etcd milvus-standalone neo4j
-          - module: packages/pipeline
-            runner: ubuntu-latest
-            docker_compose_services: ''
-          - module: packages/agent
-            runner: ubuntu-latest
-            docker_compose_services: postgres clickhouse langfuse-worker langfuse-web
-              otel-collector nats valkey postgres-ferretdb ferretdb litellm seaweedfs-master
-              seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init
-              etcd milvus-standalone neo4j
-          - module: packages/bot
-            runner: ubuntu-latest
-            docker_compose_services: nats valkey postgres-ferretdb ferretdb
-          - module: packages/process
-            runner: ubuntu-latest
-            docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
-              litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
-              seaweedfs-init etcd-init etcd milvus-standalone
-          - module: packages/sysadmin-api
-            runner: ubuntu-latest
-            docker_compose_services: postgres-ferretdb ferretdb
+        include: ${{ fromJson(needs.changes.outputs.test_matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
@@ -71,19 +78,94 @@ jobs:
           github_token: ${{ secrets.PAT_GITHUB_READ_PACKAGES }}
           working_directory: ${{ matrix.module }}
           docker_compose_services: ${{ matrix.docker_compose_services }}
-          install_ffmpeg: ${{ matrix.module == 'packages/api' }}
-          huggingface_api_key: ${{ secrets.HUGGINGFACE_API_KEY }}
-          swiss_llm_cloud_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_API_BASE_URL }}
-          swiss_llm_cloud_api_key: ${{ secrets.SWISS_LLM_CLOUD_API_KEY }}
-          swiss_llm_cloud_embedding_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL }}
-          swiss_llm_cloud_embedding_api_key: ${{ secrets.SWISS_LLM_CLOUD_EMBEDDING_API_KEY }}
-          swiss_llm_cloud_reranking_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_RERANKING_API_BASE_URL }}
-          swiss_llm_cloud_reranking_api_key: ${{ secrets.SWISS_LLM_CLOUD_RERANKING_API_KEY }}
-          swiss_llm_cloud_whisper_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_WHISPER_API_BASE_URL }}
-          swiss_llm_cloud_whisper_api_key: ${{ secrets.SWISS_LLM_CLOUD_WHISPER_API_KEY }}
-          swiss_llm_cloud_ocr_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_OCR_API_BASE_URL }}
-          swiss_llm_cloud_ocr_api_key: ${{ secrets.SWISS_LLM_CLOUD_OCR_API_KEY }}
+          install_ffmpeg: ${{ matrix.install_ffmpeg }}
+          # Third-party provider tests run in external-tests.yml. No provider credentials reach this job, so a
+          # live call that is missing the `external` marker fails here instead of quietly depending on the provider.
+          pytest_markers: not flaky and not external
+          shard_index: ${{ matrix.shard_index }}
+          shard_count: ${{ matrix.shard_count }}
           regenerate_compose: 'true'
+  merge-shards:
+    name: Merge ${{ matrix.module }} shards
+    needs: [changes, test-modules]
+    runs-on: ubuntu-24.04-arm
+    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.changes.outputs.sharded_modules != '[]' }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.changes.outputs.sharded_modules) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - name: Sanitize artifact name
+        id: sanitize
+        env:
+          MODULE: ${{ matrix.module }}
+        run: echo "artifact_prefix=${MODULE//\//-}" >> "$GITHUB_OUTPUT"
+      - name: Download shard results
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          pattern: ${{ steps.sanitize.outputs.artifact_prefix }}-shard-*
+          path: ${{ runner.temp }}/shards
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+      - name: Combine coverage and test reports
+        working-directory: ${{ matrix.module }}
+        env:
+          SHARDS_DIR: ${{ runner.temp }}/shards
+        run: |
+          uvx --from 'coverage[toml]==7.14.0' coverage combine "$SHARDS_DIR"/*/.coverage.shard-*
+          uvx --from 'coverage[toml]==7.14.0' coverage xml -o coverage.xml
+          uvx --from 'coverage[toml]==7.14.0' coverage report --format=total
+          python3 - "$SHARDS_DIR" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ElementTree
+          from pathlib import Path
+          merged = ElementTree.Element("testsuites")
+          for report in sorted(Path(sys.argv[1]).glob("*/pytest.xml")):
+              merged.extend(ElementTree.parse(report).getroot().iter("testsuite"))
+          ElementTree.ElementTree(merged).write("pytest.xml", encoding="utf-8", xml_declaration=True)
+          PY
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report
+          path: ${{ matrix.module }}/coverage.xml
+      - name: Upload Pytest Report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ steps.sanitize.outputs.artifact_prefix }}-pytest-report
+          path: ${{ matrix.module }}/pytest.xml
+  build-images:
+    name: Build image (${{ matrix.name }})
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.images != '[]' }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.changes.outputs.images) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3.12.0
+      - name: Build image without pushing
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6.19.2
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          push: false
+          build-args: VERSION=ci
+          # Only main writes the cache, so pull requests cannot evict each other's layers.
+          cache-from: type=gha,scope=${{ matrix.cache_scope }}
+          cache-to: ${{ github.event_name == 'push' && format('type=gha,mode=max,scope={0}', matrix.cache_scope) || '' }}
   env-check:
     name: Env / Compose Consistency
     runs-on: ubuntu-24.04-arm
@@ -108,9 +190,9 @@ jobs:
         run: make check-env
   pytest-coverage-comment:
     name: Pytest Coverage Comment
-    needs: test-modules
+    needs: [changes, test-modules, merge-shards]
     runs-on: ubuntu-slim
-    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.changes.outputs.tested_modules != '[]' }}
     timeout-minutes: 10
     permissions:
       contents: read
@@ -120,14 +202,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module:
-          - packages/core
-          - packages/api
-          - packages/agent
-          - packages/pipeline
-          - packages/bot
-          - packages/process
-          - packages/sysadmin-api
+        module: ${{ fromJson(needs.changes.outputs.tested_modules) }}
     steps:
       - name: Coverage comment
         uses: bbvch-ai/aihub-core/.github/actions/pytest_coverage_comment@main
@@ -136,8 +211,10 @@ jobs:
   sonarcloud-scan:
     name: SonarCloud Scan
     runs-on: ubuntu-24.04-arm
-    needs: test-modules
-    if: ${{ !github.event.pull_request.draft }}
+    needs: [changes, test-modules, merge-shards]
+    # Every project is scanned even when its tests were skipped: the SonarCloud checks are required, and a
+    # module the diff cannot affect simply reports no coverage for its (empty) new code.
+    if: ${{ !cancelled() && !github.event.pull_request.draft }}
     timeout-minutes: 15
     permissions:
       contents: read
@@ -148,34 +225,18 @@ jobs:
         include:
           - folder: packages/agent
             sonar_project_key: aihub-core_agents-core
-            report_coverage: 'true'
           - folder: packages/api
             sonar_project_key: aihub-core_api-core
-            report_coverage: 'true'
           - folder: packages/core
             sonar_project_key: aihub-core_lib-core
-            report_coverage: 'true'
           - folder: packages/pipeline
             sonar_project_key: aihub-core_pipelines-core
-            report_coverage: 'true'
           - folder: packages/bot
             sonar_project_key: aihub-core_bot-core
-            report_coverage: 'true'
           - folder: packages/process
             sonar_project_key: aihub-core_process-core
-            report_coverage: 'true'
-          - folder: packages/web
-            sonar_project_key: aihub-core_aihub-web
-            report_coverage: 'false'
           - folder: packages/sysadmin-api
             sonar_project_key: aihub-core_sysadmin-api
-            report_coverage: 'true'
-          - folder: packages/sysadmin-web
-            sonar_project_key: aihub-core_sysadmin-web
-            report_coverage: 'false'
-          - folder: packages/backup
-            sonar_project_key: aihub-core_backup-core
-            report_coverage: 'false'
     steps:
       - name: SonarCloud Scan
         uses: bbvch-ai/aihub-core/.github/actions/sonarcloud_scan@main
@@ -184,4 +245,31 @@ jobs:
           sonar_project_key: ${{ matrix.sonar_project_key }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
-          report_coverage: ${{ matrix.report_coverage }}
+          report_coverage: ${{ contains(fromJson(needs.changes.outputs.tested_modules), matrix.folder) && 'true' || 'false' }}
+  sonarcloud-scan-static:
+    name: SonarCloud Scan
+    runs-on: ubuntu-24.04-arm
+    if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - folder: packages/web
+            sonar_project_key: aihub-core_aihub-web
+          - folder: packages/sysadmin-web
+            sonar_project_key: aihub-core_sysadmin-web
+          - folder: packages/backup
+            sonar_project_key: aihub-core_backup-core
+    steps:
+      - name: SonarCloud Scan
+        uses: bbvch-ai/aihub-core/.github/actions/sonarcloud_scan@main
+        with:
+          working_directory: ${{ matrix.folder }}
+          sonar_project_key: ${{ matrix.sonar_project_key }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
+          report_coverage: 'false'

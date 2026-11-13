@@ -262,8 +262,10 @@ Some findings are deliberately left open; check `git log` and existing comments 
 
 - **Location**: `tests/` dir at same level as code
 - **Naming**: `test_*.py`
-- **Markers**: `slow`, `integration`, `flaky`, `self_hosted`, `experimental` (per-scope `pyproject.toml`)
-- **CI excludes**: `pytest -m "not flaky"` — flaky tests skip in CI
+- **Markers**: `slow`, `integration`, `flaky`, `self_hosted`, `experimental`, `external` (per-scope `pyproject.toml`)
+- **`external`**: mark every test that calls a third-party provider (Swiss LLM Cloud). PR checks run
+  `pytest -m "not flaky and not external"` without provider credentials, so an unmarked live call fails there.
+  `external-tests.yml` runs them nightly on `main`, from the Actions tab, or on a PR labelled `run-external-tests`.
 - **BDD**: Use `pytest-bdd` for agent/process workflows (Gherkin `.feature` files in `tests/features/`)
 - **Async**: pytest-bdd has limitations; use plain pytest for async tests
 

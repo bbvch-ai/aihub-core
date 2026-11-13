@@ -1,0 +1,110 @@
+---
+# Tests marked `external` call third-party providers (Swiss LLM Cloud). They are kept out of the PR checks so a
+# provider outage cannot block merges; run them on a PR by adding the `run-external-tests` label, from the Actions
+# tab, or rely on the nightly run on main, which records failures on one tracking issue.
+name: External Provider Tests
+on:
+  pull_request:
+    branches: [main]
+    types: [labeled]
+  schedule:
+    - cron: 0 1 * * *
+  workflow_dispatch:
+concurrency:
+  group: external-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+env:
+  RUN_LABEL: run-external-tests
+  TRACKING_LABEL: external-tests
+jobs:
+  select:
+    name: Select Modules
+    runs-on: ubuntu-24.04-arm
+    if: ${{ github.event_name != 'pull_request' || github.event.label.name == 'run-external-tests' }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      test_matrix: ${{ steps.select.outputs.test_matrix }}
+    steps:
+      - name: Remove the trigger label so adding it again re-runs the tests
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "$RUN_LABEL"
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+      - name: Select the modules that own external tests
+        id: select
+        run: uv run --no-project --with pyyaml --with pydantic python .github/scripts/ci_targets.py
+          --only packages/core packages/agent packages/api
+  external-tests:
+    name: External ${{ matrix.module }}
+    needs: select
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.select.outputs.test_matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - name: Run external tests
+        uses: ./.github/actions/test_backend
+        with:
+          github_token: ${{ secrets.PAT_GITHUB_READ_PACKAGES }}
+          working_directory: ${{ matrix.module }}
+          docker_compose_services: ${{ matrix.docker_compose_services }}
+          install_ffmpeg: ${{ matrix.install_ffmpeg }}
+          pytest_markers: external
+          check_name: External tests ${{ matrix.module }}
+          huggingface_api_key: ${{ secrets.HUGGINGFACE_API_KEY }}
+          swiss_llm_cloud_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_API_BASE_URL }}
+          swiss_llm_cloud_api_key: ${{ secrets.SWISS_LLM_CLOUD_API_KEY }}
+          swiss_llm_cloud_embedding_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL }}
+          swiss_llm_cloud_embedding_api_key: ${{ secrets.SWISS_LLM_CLOUD_EMBEDDING_API_KEY }}
+          swiss_llm_cloud_reranking_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_RERANKING_API_BASE_URL }}
+          swiss_llm_cloud_reranking_api_key: ${{ secrets.SWISS_LLM_CLOUD_RERANKING_API_KEY }}
+          swiss_llm_cloud_whisper_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_WHISPER_API_BASE_URL }}
+          swiss_llm_cloud_whisper_api_key: ${{ secrets.SWISS_LLM_CLOUD_WHISPER_API_KEY }}
+          swiss_llm_cloud_ocr_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_OCR_API_BASE_URL }}
+          swiss_llm_cloud_ocr_api_key: ${{ secrets.SWISS_LLM_CLOUD_OCR_API_KEY }}
+          regenerate_compose: 'true'
+  report-nightly-failure:
+    name: Report Nightly Failure
+    needs: external-tests
+    runs-on: ubuntu-slim
+    if: ${{ failure() && github.event_name == 'schedule' }}
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Record the failure on the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{
+            github.run_id }}
+        run: |-
+          gh label create "$TRACKING_LABEL" --repo "$GITHUB_REPOSITORY" --force \
+            --description "Nightly third-party provider tests" --color D93F0B
+          body="External provider tests failed on main ($(date -u +%Y-%m-%d)): $RUN_URL"
+          issue=$(gh issue list --repo "$GITHUB_REPOSITORY" --label "$TRACKING_LABEL" --state open \
+            --json number --jq '.[0].number')
+          if [[ -n "$issue" ]]; then
+            gh issue comment "$issue" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --label "$TRACKING_LABEL" \
+              --title "External provider tests failing on main" --body "$body"
+          fi

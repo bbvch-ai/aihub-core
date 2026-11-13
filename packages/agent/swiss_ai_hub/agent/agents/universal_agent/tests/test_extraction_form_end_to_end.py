@@ -35,6 +35,7 @@ from swiss_ai_hub.core.testing import async_test
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 
+from swiss_ai_hub.agent.agents.memory_writer_agent.configs.memory_writer_agent_config import MemoryWriterAgentConfig
 from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalAgent
 from swiss_ai_hub.agent.agents.universal_agent.universal_agent_config import UniversalAgentConfig
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_scope import KnowledgeToolScope
@@ -140,6 +141,7 @@ def _control(runner: AgentTestRunner, event_class: type) -> list:
 async def _run_with_answer(text: str) -> AgentTestRunner:
     runner = AgentTestRunner(agent_type=UniversalAgent, agent_config=_config())
     async with runner.test_run(delay_before_stop=30) as topic:
+        await runner.ensure_dependent_agent_stream(MemoryWriterAgentConfig.AGENT_CLASS)
         await runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
