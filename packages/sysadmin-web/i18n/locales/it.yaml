@@ -1,6 +1,57 @@
 ---
+http_error:
+  code:
+    409: Modifiche in conflitto. Controlla le impostazioni attuali prima di salvare.
+    413: Questo file è troppo grande.
+    415: Questo tipo di file non è supportato.
+    422: Alcuni valori inviati non sono validi.
+openwebui_mods:
+  global:
+    settings_help: Questi valori sono accessibili al codice backend attivato globalmente. Non inserire segreti.
+    navigation: Mod globali Open WebUI
+    title: Modifiche globali di Open WebUI
+    description: Gestisci le modifiche del backend per tutti i tenant, comprese le
+      attività senza un utente connesso. Le modifiche del frontend restano specifiche
+      del tenant.
+    catalog_help: 'Questi pacchetti installati supportano l’attivazione globale del backend.'
+    mod_restart: Le modifiche a questo pacchetto richiedono un riavvio di Open WebUI.
+    pending: Le modifiche di avvio salvate attendono un riavvio di Open WebUI. La
+      configurazione precedente rimane attiva.
+    ready: Attivo su tutti i {total} processi.
+    applying: 'Applicazione delle modifiche salvate: {ready} processi pronti su {total}.'
+    restart: Riavvia per applicare le modifiche salvate
+    restarting: In attesa del riavvio di Open WebUI…
+    restart_confirm: Riavviare Open WebUI per tutti i tenant? Le chat e le attività
+      in corso potrebbero essere interrotte. Verranno applicate solo le modifiche
+      salvate.
+    restart_error: Non è stato possibile confermare il riavvio. Controlla lo stato
+      attuale prima di riprovare.
+    restart_timeout: Il ripristino non è stato confermato dopo due minuti. Controlla
+      i log di Open WebUI e ricarica lo stato.
+  catalog_help: 'I pacchetti installati sono condivisi da tutti i tenant. Attivali separatamente per ogni tenant.'
+  automatic_version: Aggiornata con AI Hub
+  title: Impostazioni Open WebUI
+  description: Scegli le modifiche per questo tenant. I cambiamenti salvati si applicano
+    al prossimo ricaricamento della chat.
+  enable: Abilita {name}
+  settings: Impostazioni
+  settings_help: Questi valori sono accessibili alla mod nel browser. Non inserire segreti.
+  retry: Riprova
+  saved: Impostazioni Open WebUI salvate
+  save_error: Salvataggio non riuscito. Le tue modifiche sono conservate.
+  load_error: Impossibile caricare le modifiche. Riprova.
+  upload: Carica ZIP
+  upload_error: Impossibile caricare questo pacchetto.
+  backend_notice: Questo pacchetto include codice Python eseguito in Open WebUI. Abilita
+    solo codice attendibile.
+  frontend_notice: Questo pacchetto esegue codice nelle chat degli utenti. Abilita
+    solo codice attendibile.
+  install: 'Installa'
+  replace: 'Sostituisci il mod installato'
+  installed: '{name} installato'
+  replace_help: 'Questo sostituisce la versione {version} ovunque questo mod sia attivo. Le impostazioni salvate vengono mantenute. Gli utenti attivi potrebbero dover ricaricare la pagina.'
 tenant_admin:
-  title: Amministrazione tenant
+  title: Amministrazione di sistema
   exit: Esci
   tenants_title: Tenant
   select_description: Gestisci tenant, regole di accesso e impostazioni di sistema.
@@ -41,9 +92,6 @@ tenant_admin:
       istanza. Salvare ora creerebbe un tenant senza alcun accesso — verificare che
       l'API della piattaforma e il gateway dei modelli siano raggiungibili.
   form:
-    chat_disclaimer: Avvertenza della chat
-    chat_disclaimer_help: Visualizzata sotto il campo di input della chat. Massimo
-      100 caratteri per lingua.
     name: Nome del tenant
     description: Descrizione
   table:

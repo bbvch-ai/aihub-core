@@ -4,10 +4,41 @@ import type {
   CreateTenantMetadataResponse,
   GetAccessCapabilitiesResponse,
   GetTenantResponse,
+  InstallOpenwebuiBuiltinModResponse,
+  InstallOpenwebuiModResponse,
+  ListOpenwebuiModCatalogResponse,
   ListTenantsResponse,
   ProvisionTenantResponse,
   UpdateTenantMetadataResponse,
 } from "./types.gen";
+
+const openWebuiModCatalogEntrySchemaResponseTransformer = (data: any) => {
+  data.installed_at = new Date(data.installed_at);
+  return data;
+};
+
+export const listOpenwebuiModCatalogResponseTransformer = async (
+  data: any,
+): Promise<ListOpenwebuiModCatalogResponse> => {
+  data = data.map((item: any) =>
+    openWebuiModCatalogEntrySchemaResponseTransformer(item),
+  );
+  return data;
+};
+
+export const installOpenwebuiBuiltinModResponseTransformer = async (
+  data: any,
+): Promise<InstallOpenwebuiBuiltinModResponse> => {
+  data = openWebuiModCatalogEntrySchemaResponseTransformer(data);
+  return data;
+};
+
+export const installOpenwebuiModResponseTransformer = async (
+  data: any,
+): Promise<InstallOpenwebuiModResponse> => {
+  data = openWebuiModCatalogEntrySchemaResponseTransformer(data);
+  return data;
+};
 
 const tenantResponseSchemaResponseTransformer = (data: any) => {
   data.created_at = new Date(data.created_at);

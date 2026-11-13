@@ -29,6 +29,7 @@ from swiss_ai_hub.api.routes.openai.dto.image_generation_request import ImageGen
 from swiss_ai_hub.api.routes.openai.dto.model_details import ModelDetails
 from swiss_ai_hub.api.routes.openai.dto.model_response import ModelResponse
 from swiss_ai_hub.api.routes.openai.dto.text_to_speech_request import TextToSpeechRequest
+from swiss_ai_hub.api.routes.openai.mods.openwebui_mod_controller import OpenWebuiModController
 from swiss_ai_hub.api.routes.openai.openai_service import OpenaiService
 
 logger = logging.getLogger(__name__)
@@ -70,15 +71,10 @@ class OpenaiController(TenantScopedController):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_chat_disclaimer(self, route: str = "/chat-disclaimer") -> Self:
-        @self.router.get(route, tags=self.tags)
-        async def get_chat_disclaimer(
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
-        ) -> str:
-            """Read the current tenant's chat disclaimer in the user's requested language."""
-            return await OpenaiService.get_chat_disclaimer(user.acting_within_tenant.id, t)
-
+    def with_openwebui_mods(self) -> Self:
+        controller = OpenWebuiModController(additionally_required_permission=self.additionally_required_permission)
+        controller.resolve_mod_configuration().download_mod_archive().check_mod_publication()
+        self.router.include_router(controller.router, prefix=controller.base_route, tags=self.tags)
         return self
 
     def get_models(self, route: str = "/models") -> Self:

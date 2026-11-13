@@ -33,6 +33,7 @@ const navItems = computed<NavItem[]>(() => [
   { name: t('tenant_admin.navigation.overview'), key: 'overview', path: subPath('overview'), isActive: isActive('overview') },
   { name: t('tenant_admin.navigation.roles'), key: 'roles', path: subPath('roles'), isActive: isActive('roles') },
   { name: t('tenant_admin.navigation.users'), key: 'users', path: subPath('users'), isActive: isActive('users') },
+  { name: t('openwebui_mods.title'), key: 'openwebui', path: subPath('openwebui'), isActive: isActive('openwebui') },
 ])
 
 const toNavItem = (navItem: NavItem | null) => {

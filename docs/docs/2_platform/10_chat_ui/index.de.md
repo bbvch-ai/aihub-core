@@ -23,7 +23,7 @@ Ressourcen für die Pflege der grundlegenden Chat-Infrastruktur aufwenden zu mü
 
 ## Benutzerdefinierte Erweiterungen
 
-Der Swiss AI Hub erweitert die Funktionalität von Open WebUI auf drei Hauptarten.
+Der Swiss AI Hub erweitert Open WebUI mit Plattformintegrationen und konfigurierbaren Mods.
 
 Die Schnittstelle ist direkt in die Swiss AI Hub Suite eingebettet, anstatt als separate Anwendung zu laufen. Benutzer
 greifen über eine vereinheitlichte Navigation auf Chat-Funktionen zu, ohne den Kontext wechseln oder sich neu
@@ -36,6 +36,9 @@ KI-generierten Inhalten.
 Benutzerdefiniertes Tracing zeigt die schrittweise Agentenausführung, einschließlich Argumentationsketten, Tool-Aufrufen
 und Entscheidungspunkten. Diese Sichtbarkeit unterstützt das Debugging und die Anforderungen an die Einhaltung
 gesetzlicher Vorschriften.
+
+Systemadministratoren können zudem [Open WebUI-Modifikationen](16_openwebui_mods/) für einzelne Mandanten oder
+globales Backend-Verhalten installieren.
 
 ## Überlegungen zur Bereitstellung
 

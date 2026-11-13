@@ -26,7 +26,6 @@ def _fake_entity() -> MagicMock:
     entity.description = "desc"
     entity.access_rules = []
     entity.lcdm_tenant_id = 5
-    entity.chat_disclaimer = None
     entity.created_at = datetime.now(UTC)
     entity.updated_at = datetime.now(UTC)
     return entity

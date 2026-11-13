@@ -1,6 +1,57 @@
 ---
+http_error:
+  code:
+    409: Widersprüchliche Änderungen. Prüfen Sie vor dem Speichern die aktuellen Einstellungen.
+    413: Diese Datei ist zu gross.
+    415: Dieser Dateityp wird nicht unterstützt.
+    422: Einige übermittelte Werte sind ungültig.
+openwebui_mods:
+  global:
+    settings_help: Diese Werte stehen dem global aktivierten Backend-Code zur Verfügung. Keine Geheimnisse eintragen.
+    navigation: Globale Open-WebUI-Mods
+    title: Globale Open-WebUI-Anpassungen
+    description: Backend-Anpassungen für alle Mandanten verwalten, auch für Abläufe
+      ohne angemeldeten Benutzer. Frontend-Anpassungen bleiben mandantenspezifisch.
+    catalog_help: 'Diese installierten Pakete unterstützen die globale Backend-Aktivierung.'
+    mod_restart: Änderungen an diesem Paket erfordern einen Neustart von Open WebUI.
+    pending: Gespeicherte Startanpassungen warten auf einen Neustart von Open WebUI.
+      Die bisherige Konfiguration bleibt aktiv.
+    ready: Auf allen {total} Workern aktiv.
+    applying: 'Gespeicherte Änderungen werden angewendet: {ready} von {total} Workern
+      bereit.'
+    restart: Gespeicherte Änderungen mit Neustart anwenden
+    restarting: Warten auf den Neustart von Open WebUI…
+    restart_confirm: Open WebUI für alle Mandanten neu starten? Laufende Chats und
+      Hintergrundaufgaben können unterbrochen werden. Nur gespeicherte Änderungen
+      werden angewendet.
+    restart_error: Der Neustart konnte nicht bestätigt werden. Prüfen Sie den aktuellen
+      Status vor einem erneuten Versuch.
+    restart_timeout: Die Wiederherstellung wurde nach zwei Minuten noch nicht bestätigt.
+      Prüfen Sie die Open-WebUI-Protokolle und laden Sie den Status neu.
+  catalog_help: 'Installierte Pakete stehen allen Mandanten zur Verfügung. Aktivieren Sie sie für jeden Mandanten separat.'
+  automatic_version: Mit AI Hub aktualisiert
+  title: Open-WebUI-Einstellungen
+  description: Wählen Sie Anpassungen für diesen Mandanten. Gespeicherte Änderungen
+    gelten beim nächsten Neuladen des Chats.
+  enable: '{name} aktivieren'
+  settings: Einstellungen
+  settings_help: Diese Werte sind für den Mod im Browser sichtbar. Keine Geheimnisse eintragen.
+  retry: Erneut versuchen
+  saved: Open-WebUI-Einstellungen gespeichert
+  save_error: Speichern fehlgeschlagen. Ihre Änderungen bleiben erhalten.
+  load_error: Anpassungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.
+  upload: ZIP hochladen
+  upload_error: Dieses Paket konnte nicht hochgeladen werden.
+  backend_notice: Dieses Paket enthält Python-Code, der in Open WebUI ausgeführt wird.
+    Aktivieren Sie nur vertrauenswürdigen Code.
+  frontend_notice: Dieses Paket führt Code in den Chats der Benutzer aus. Aktivieren
+    Sie nur vertrauenswürdigen Code.
+  install: 'Installieren'
+  replace: 'Installierte Mod ersetzen'
+  installed: '{name} installiert'
+  replace_help: 'Dies ersetzt Version {version} überall, wo diese Mod aktiviert ist. Gespeicherte Einstellungen bleiben erhalten. Aktive Benutzer müssen möglicherweise neu laden.'
 tenant_admin:
-  title: Tenant-Verwaltung
+  title: Systemverwaltung
   exit: Beenden
   tenants_title: Tenants
   select_description: Tenants, Zugriffsregeln und Systemeinstellungen verwalten.
@@ -41,9 +92,6 @@ tenant_admin:
       geladen werden. Ein jetzt gespeicherter Mandant hätte keinerlei Zugriff — prüfen
       Sie, ob die Plattform-API und das Modell-Gateway erreichbar sind.
   form:
-    chat_disclaimer: Hinweis im Chat
-    chat_disclaimer_help: Wird unter dem Chat-Eingabefeld angezeigt. Maximal 100 Zeichen
-      pro Sprache.
     name: Tenant-Name
     description: Beschreibung
   table:

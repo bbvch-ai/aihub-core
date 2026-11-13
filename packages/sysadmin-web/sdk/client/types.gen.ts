@@ -540,73 +540,7 @@ export type HealthResponse = {
   checks?: ApiHealthChecks | AgentHealthChecks | ProcessHealthChecks | null;
 };
 
-/**
- * LocaleString
- *
- * A multi-language string container supporting German, English, French, and Italian.
- *
- * LocaleString serves as a data container for translated strings. For form rendering,
- * use the `LocaleInput` FormKit element with the duality pattern.
- *
- * ## Basic Usage (Data Mode)
- *
- * ```python
- * greeting = LocaleString(
- * de="Hallo",
- * en="Hello",
- * fr="Bonjour",
- * it="Ciao",
- * )
- * print(greeting.in_locale("en"))  # "Hello"
- * ```
- *
- * ## Form Duality Pattern
- *
- * For form fields that accept LocaleString values, use the union type pattern:
- *
- * ```python
- * class MyConfig(Form):
- * name: Annotated[LocaleString | LocaleInput, Field(description="Name")]
- *
- * # Form mode - for rendering:
- * config = MyConfig(name=LocaleInput(label=LocaleString(en="Name", de="Name")))
- *
- * # Data mode - from submission:
- * config = MyConfig(name=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"))
- * ```
- *
- * For convenience, use `LocaleString.as_form()` to create a pre-configured `LocaleInput`:
- *
- * ```python
- * config = MyConfig(name=LocaleString.as_form(label=LocaleString(en="Name", de="Name")))
- * ```
- */
-export type LocaleString = {
-  /**
-   * De
-   *
-   * German
-   */
-  de?: string | null;
-  /**
-   * En
-   *
-   * English
-   */
-  en?: string | null;
-  /**
-   * Fr
-   *
-   * French
-   */
-  fr?: string | null;
-  /**
-   * It
-   *
-   * Italian
-   */
-  it?: string | null;
-};
+export type JsonValue = unknown;
 
 /**
  * LoginOptionsResponse
@@ -646,6 +580,252 @@ export type MyTenantsResponse = {
    * Whether the user has system administrator privileges
    */
   is_sys_admin?: boolean;
+};
+
+/**
+ * OpenWebuiModCatalogEntry
+ */
+export type OpenWebuiModCatalogEntry = {
+  /**
+   * Source Revision
+   */
+  source_revision: string;
+  manifest: OpenWebuiModManifest;
+  /**
+   * Builtin
+   */
+  builtin: boolean;
+  /**
+   * Installed At
+   */
+  installed_at: Date;
+  /**
+   * Warnings
+   */
+  warnings: Array<string>;
+  /**
+   * Settings Form
+   */
+  readonly settings_form: Array<{
+    [key: string]: JsonValue;
+  }>;
+  /**
+   * Scopes
+   */
+  readonly scopes: Array<"tenant" | "global">;
+};
+
+/**
+ * OpenWebuiModCompatibility
+ */
+export type OpenWebuiModCompatibility = {
+  /**
+   * Openwebui
+   */
+  openwebui: string;
+  /**
+   * Source Commit
+   */
+  source_commit: string;
+  /**
+   * Svelte
+   */
+  svelte: string;
+  /**
+   * Host Protocol
+   */
+  host_protocol: number;
+  /**
+   * Python
+   */
+  python: string;
+};
+
+/**
+ * OpenWebuiModConfiguration
+ */
+export type OpenWebuiModConfiguration = {
+  /**
+   * Version
+   */
+  version?: number;
+  /**
+   * Mods
+   */
+  mods?: Array<OpenWebuiModSelection>;
+};
+
+/**
+ * OpenWebuiModGlobalState
+ */
+export type OpenWebuiModGlobalState = {
+  configuration: OpenWebuiModConfiguration;
+  /**
+   * Active Version
+   */
+  active_version: number;
+  /**
+   * Boot Id
+   */
+  boot_id: string;
+  /**
+   * Expected Workers
+   */
+  expected_workers: number;
+  /**
+   * Restart Required
+   */
+  restart_required: boolean;
+  /**
+   * Workers
+   */
+  workers: Array<OpenWebuiModWorkerState>;
+};
+
+/**
+ * OpenWebuiModHost
+ */
+export type OpenWebuiModHost = {
+  compatibility: OpenWebuiModCompatibility;
+  /**
+   * Components
+   */
+  components: Array<string>;
+  /**
+   * Callables
+   */
+  callables?: {
+    [key: string]: {
+      [key: string]: JsonValue;
+    };
+  };
+};
+
+/**
+ * OpenWebuiModManifest
+ *
+ * Source entry points shared by package validation, publication and the two runtimes.
+ */
+export type OpenWebuiModManifest = {
+  /**
+   * Format
+   */
+  format: 1;
+  /**
+   * Id
+   */
+  id: string;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Version
+   */
+  version: string;
+  /**
+   * Description
+   */
+  description?: string;
+  /**
+   * Bootstrap
+   */
+  bootstrap?: string | null;
+  /**
+   * Frontend
+   */
+  frontend?: string | null;
+  /**
+   * Backend
+   */
+  backend?: string | null;
+  /**
+   * Backend Overrides
+   */
+  backend_overrides?: {
+    [key: string]: string;
+  };
+  /**
+   * Backend Restart Required
+   */
+  backend_restart_required?: boolean;
+  /**
+   * Replacements
+   */
+  replacements?: {
+    [key: string]: string;
+  };
+  /**
+   * Default Settings
+   */
+  default_settings?: {
+    [key: string]: JsonValue;
+  };
+  /**
+   * Settings Fields
+   */
+  settings_fields?: {
+    [key: string]: {
+      [key: string]: JsonValue;
+    };
+  };
+};
+
+/**
+ * OpenWebuiModSelection
+ */
+export type OpenWebuiModSelection = {
+  /**
+   * Mod Id
+   */
+  mod_id: string;
+  /**
+   * Enabled
+   */
+  enabled?: boolean;
+  /**
+   * Settings
+   */
+  settings?: {
+    [key: string]: JsonValue;
+  };
+};
+
+/**
+ * OpenWebuiModUploadPreview
+ */
+export type OpenWebuiModUploadPreview = {
+  manifest: OpenWebuiModManifest;
+  /**
+   * Installed Version
+   */
+  installed_version: string | null;
+};
+
+/**
+ * OpenWebuiModWorkerState
+ */
+export type OpenWebuiModWorkerState = {
+  /**
+   * Pid
+   */
+  pid: number;
+  /**
+   * Version
+   */
+  version: number;
+  /**
+   * Error
+   */
+  error: string | null;
+  /**
+   * Ready
+   */
+  ready: boolean;
+  /**
+   * Updated At
+   */
+  updated_at: number;
 };
 
 /**
@@ -813,10 +993,6 @@ export type TenantResponse = {
    */
   access_rules: Array<string>;
   /**
-   * Chat disclaimer in each supported language.
-   */
-  chat_disclaimer: LocaleString;
-  /**
    * Lcdm Tenant Id
    *
    * Originating LCDM Hub tenant id (numeric), if this tenant was pushed in from the LCDM Hub.
@@ -931,10 +1107,6 @@ export type UpdateTenantMetadataRequest = {
    * Access rules granted to this tenant.
    */
   access_rules?: Array<string> | null;
-  /**
-   * Plain text below the chat input, up to 100 characters per language. At least one translation is required.
-   */
-  chat_disclaimer?: LocaleString | null;
 };
 
 /**
@@ -1139,6 +1311,29 @@ export type ValidationError = {
   };
 };
 
+/**
+ * OpenWebuiModCatalogEntry
+ */
+export type OpenWebuiModCatalogEntryWritable = {
+  /**
+   * Source Revision
+   */
+  source_revision: string;
+  manifest: OpenWebuiModManifest;
+  /**
+   * Builtin
+   */
+  builtin: boolean;
+  /**
+   * Installed At
+   */
+  installed_at: Date;
+  /**
+   * Warnings
+   */
+  warnings: Array<string>;
+};
+
 export type GetHealthData = {
   body?: never;
   path?: never;
@@ -1154,6 +1349,322 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type GetOpenwebuiModHostData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/openwebui-mods/host";
+};
+
+export type GetOpenwebuiModHostResponses = {
+  /**
+   * Successful Response
+   */
+  200: OpenWebuiModHost;
+};
+
+export type GetOpenwebuiModHostResponse =
+  GetOpenwebuiModHostResponses[keyof GetOpenwebuiModHostResponses];
+
+export type GetOpenwebuiGlobalModsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/openwebui-mods/global";
+};
+
+export type GetOpenwebuiGlobalModsResponses = {
+  /**
+   * Successful Response
+   */
+  200: OpenWebuiModGlobalState;
+};
+
+export type GetOpenwebuiGlobalModsResponse =
+  GetOpenwebuiGlobalModsResponses[keyof GetOpenwebuiGlobalModsResponses];
+
+export type ReplaceOpenwebuiGlobalModsData = {
+  body: OpenWebuiModConfiguration;
+  path?: never;
+  query?: never;
+  url: "/admin/openwebui-mods/global";
+};
+
+export type ReplaceOpenwebuiGlobalModsErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ReplaceOpenwebuiGlobalModsError =
+  ReplaceOpenwebuiGlobalModsErrors[keyof ReplaceOpenwebuiGlobalModsErrors];
+
+export type ReplaceOpenwebuiGlobalModsResponses = {
+  /**
+   * Successful Response
+   */
+  200: OpenWebuiModGlobalState;
+};
+
+export type ReplaceOpenwebuiGlobalModsResponse =
+  ReplaceOpenwebuiGlobalModsResponses[keyof ReplaceOpenwebuiGlobalModsResponses];
+
+export type ReconcileOpenwebuiGlobalModsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/openwebui-mods/global/reconcile";
+};
+
+export type ReconcileOpenwebuiGlobalModsResponses = {
+  /**
+   * Successful Response
+   */
+  200: OpenWebuiModGlobalState;
+};
+
+export type ReconcileOpenwebuiGlobalModsResponse =
+  ReconcileOpenwebuiGlobalModsResponses[keyof ReconcileOpenwebuiGlobalModsResponses];
+
+export type RestartOpenwebuiForModsData = {
+  body?: never;
+  path?: never;
+  query: {
+    /**
+     * Version
+     */
+    version: number;
+  };
+  url: "/admin/openwebui-mods/global/restart";
+};
+
+export type RestartOpenwebuiForModsErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type RestartOpenwebuiForModsError =
+  RestartOpenwebuiForModsErrors[keyof RestartOpenwebuiForModsErrors];
+
+export type RestartOpenwebuiForModsResponses = {
+  /**
+   * Response Restart Openwebui For Mods
+   *
+   * Successful Response
+   */
+  202: {
+    [key: string]: string | number;
+  };
+};
+
+export type RestartOpenwebuiForModsResponse =
+  RestartOpenwebuiForModsResponses[keyof RestartOpenwebuiForModsResponses];
+
+export type ListOpenwebuiModCatalogData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Offset
+     */
+    offset?: number;
+    /**
+     * Limit
+     */
+    limit?: number;
+  };
+  url: "/admin/openwebui-mods/catalog";
+};
+
+export type ListOpenwebuiModCatalogErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ListOpenwebuiModCatalogError =
+  ListOpenwebuiModCatalogErrors[keyof ListOpenwebuiModCatalogErrors];
+
+export type ListOpenwebuiModCatalogResponses = {
+  /**
+   * Response List Openwebui Mod Catalog
+   *
+   * Successful Response
+   */
+  200: Array<OpenWebuiModCatalogEntry>;
+};
+
+export type ListOpenwebuiModCatalogResponse =
+  ListOpenwebuiModCatalogResponses[keyof ListOpenwebuiModCatalogResponses];
+
+export type GetOpenwebuiModBuiltinsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/openwebui-mods/builtins";
+};
+
+export type GetOpenwebuiModBuiltinsResponses = {
+  /**
+   * Response Get Openwebui Mod Builtins
+   *
+   * Successful Response
+   */
+  200: Array<string>;
+};
+
+export type GetOpenwebuiModBuiltinsResponse =
+  GetOpenwebuiModBuiltinsResponses[keyof GetOpenwebuiModBuiltinsResponses];
+
+export type InstallOpenwebuiBuiltinModData = {
+  body?: never;
+  path: {
+    /**
+     * Mod Id
+     */
+    mod_id: string;
+  };
+  query?: never;
+  url: "/admin/openwebui-mods/builtins/{mod_id}/install";
+};
+
+export type InstallOpenwebuiBuiltinModErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type InstallOpenwebuiBuiltinModError =
+  InstallOpenwebuiBuiltinModErrors[keyof InstallOpenwebuiBuiltinModErrors];
+
+export type InstallOpenwebuiBuiltinModResponses = {
+  /**
+   * Successful Response
+   */
+  200: OpenWebuiModCatalogEntry;
+};
+
+export type InstallOpenwebuiBuiltinModResponse =
+  InstallOpenwebuiBuiltinModResponses[keyof InstallOpenwebuiBuiltinModResponses];
+
+export type GetOpenwebuiModConfigurationData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/admin/openwebui-mods/tenants/{tenant_id}";
+};
+
+export type GetOpenwebuiModConfigurationErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetOpenwebuiModConfigurationError =
+  GetOpenwebuiModConfigurationErrors[keyof GetOpenwebuiModConfigurationErrors];
+
+export type GetOpenwebuiModConfigurationResponses = {
+  /**
+   * Successful Response
+   */
+  200: OpenWebuiModConfiguration;
+};
+
+export type GetOpenwebuiModConfigurationResponse =
+  GetOpenwebuiModConfigurationResponses[keyof GetOpenwebuiModConfigurationResponses];
+
+export type ReplaceOpenwebuiModConfigurationData = {
+  body: OpenWebuiModConfiguration;
+  path: {
+    /**
+     * Tenant Id
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/admin/openwebui-mods/tenants/{tenant_id}";
+};
+
+export type ReplaceOpenwebuiModConfigurationErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ReplaceOpenwebuiModConfigurationError =
+  ReplaceOpenwebuiModConfigurationErrors[keyof ReplaceOpenwebuiModConfigurationErrors];
+
+export type ReplaceOpenwebuiModConfigurationResponses = {
+  /**
+   * Successful Response
+   */
+  200: OpenWebuiModConfiguration;
+};
+
+export type ReplaceOpenwebuiModConfigurationResponse =
+  ReplaceOpenwebuiModConfigurationResponses[keyof ReplaceOpenwebuiModConfigurationResponses];
+
+export type InspectOpenwebuiModData = {
+  body: Blob | File;
+  path?: never;
+  query?: never;
+  url: "/admin/openwebui-mods/inspect";
+};
+
+export type InspectOpenwebuiModResponses = {
+  /**
+   * Successful Response
+   */
+  200: OpenWebuiModUploadPreview;
+};
+
+export type InspectOpenwebuiModResponse =
+  InspectOpenwebuiModResponses[keyof InspectOpenwebuiModResponses];
+
+export type InstallOpenwebuiModData = {
+  body: Blob | File;
+  path?: never;
+  query?: {
+    /**
+     * Replace
+     */
+    replace?: boolean;
+  };
+  url: "/admin/openwebui-mods/install";
+};
+
+export type InstallOpenwebuiModErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type InstallOpenwebuiModError =
+  InstallOpenwebuiModErrors[keyof InstallOpenwebuiModErrors];
+
+export type InstallOpenwebuiModResponses = {
+  /**
+   * Successful Response
+   */
+  200: OpenWebuiModCatalogEntry;
+};
+
+export type InstallOpenwebuiModResponse =
+  InstallOpenwebuiModResponses[keyof InstallOpenwebuiModResponses];
 
 export type ListTenantsData = {
   body?: never;

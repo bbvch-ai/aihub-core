@@ -1134,7 +1134,11 @@ memory:
       message: Alle Erinnerungen konnten nicht gelöscht werden. Bitte versuchen Sie
         es erneut.
 openwebui:
-  default_disclaimer: KI kann Fehler machen. Bitte überprüfen Sie die Antworten.
+  mods:
+    changed_title: Chat-Anpassungen wurden geändert
+    changed_detail: Laden Sie die Seite im Browser neu, wenn Sie die aktualisierte Oberfläche verwenden möchten. Dabei können ungesendete Eingaben oder nicht gespeicherte Änderungen verloren gehen.
+    failed_title: Einige Chat-Anpassungen konnten nicht geladen werden
+    failed_detail: Laden Sie die Seite im Browser neu, um es erneut zu versuchen. Falls das Problem weiterhin besteht, wenden Sie sich bitte an Ihren Administrator. Dabei können ungesendete Eingaben oder nicht gespeicherte Änderungen verloren gehen.
   memories:
     title: Agent-Erinnerungen
     select_agent: Agent auswählen

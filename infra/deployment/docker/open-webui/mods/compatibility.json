@@ -1,0 +1,7 @@
+{
+  "openwebui": "0.11.4",
+  "source_commit": "8bd8b4fac5e059578ac0c74b3c18d11139f88b7d",
+  "svelte": "5.56.0",
+  "host_protocol": 1,
+  "python": "3.11"
+}

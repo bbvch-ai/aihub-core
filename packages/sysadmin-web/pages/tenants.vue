@@ -1,5 +1,8 @@
 <template>
   <StructuralScreen>
+    <template #top>
+      <SysadminNavigation />
+    </template>
     <StructuralColumn
       :title="t('tenant_admin.tenants_title')"
       :loading="tenantsAreLoading"

@@ -1,16 +1,15 @@
+from copy import deepcopy
 from datetime import UTC, datetime
-from typing import Self
+from typing import Any, Self
 
-from mongoengine import DateTimeField, Document, EmbeddedDocumentField, IntField, ListField, NotUniqueError, StringField
+from mongoengine import DateTimeField, Document, IntField, ListField, NotUniqueError, StringField, signals
 
-from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 
 class TenantMetadataEntity(Document):
     """
-    Metadata (display name, description, access rules, chat disclaimer) for a tenant.
+    Metadata (display name, description, access rules, Open WebUI mods) for a tenant.
 
     WARNING: This collection is NOT the source of truth for tenant existence.
     Keycloak owns that — the group ``/tenants/<tenant_id>`` is the only authoritative
@@ -37,11 +36,11 @@ class TenantMetadataEntity(Document):
     name = StringField(required=True, unique=True)
     description = StringField(default="")
     access_rules = ListField(StringField(), default=list)
-    chat_disclaimer = EmbeddedDocumentField(LocaleStringEntity)
     # The originating LCDM Hub tenant id (numeric), set when a tenant is pushed in from the LCDM Hub.
     # It is what the LCDM MCP expects in its X-LCDM-Tenant header, so exposing it here lets an admin
     # read it off the AI Hub tenant when wiring an McpReactAgent profile. None for non-LCDM tenants.
     lcdm_tenant_id = IntField(null=True)
+    openwebui_mods_json = StringField()
     created_at = DateTimeField(default=lambda: datetime.now(UTC))
     updated_at = DateTimeField(default=lambda: datetime.now(UTC))
 
@@ -49,6 +48,21 @@ class TenantMetadataEntity(Document):
     @trace_fn
     def get_metadata_by_tenant_id(cls, tenant_id: str) -> Self | None:
         return cls.objects(id=tenant_id).first()
+
+    @classmethod
+    @trace_fn
+    def snapshot_tenant_metadata(cls, tenant_id: str) -> dict[str, Any] | None:
+        """Keep all persisted fields, including those outside the schema, for a lossless deletion rollback."""
+        return deepcopy(cls._get_collection().find_one({"_id": tenant_id}))
+
+    @classmethod
+    @trace_fn
+    def restore_tenant_metadata(cls, snapshot: dict[str, Any]) -> Self:
+        """Restore the raw snapshot without overwriting a concurrent recreation, then notify access subscribers."""
+        cls._get_collection().insert_one(deepcopy(snapshot))
+        tenant = cls._from_son(deepcopy(snapshot))
+        signals.post_save.send(cls, document=tenant, created=True)
+        return tenant
 
     @classmethod
     @trace_fn
@@ -84,7 +98,6 @@ class TenantMetadataEntity(Document):
         description: str = "",
         access_rules: list[str] | None = None,
         lcdm_tenant_id: int | None = None,
-        chat_disclaimer: LocaleString | None = None,
     ) -> Self:
         """Stores metadata for an existing Keycloak tenant group.
 
@@ -97,7 +110,6 @@ class TenantMetadataEntity(Document):
             description=description,
             access_rules=access_rules or [],
             lcdm_tenant_id=lcdm_tenant_id,
-            chat_disclaimer=LocaleStringEntity.from_locale_string(chat_disclaimer) if chat_disclaimer else None,
         )
         tenant.save()
         return tenant
@@ -141,7 +153,6 @@ class TenantMetadataEntity(Document):
         description: str | None = None,
         access_rules: list[str] | None = None,
         lcdm_tenant_id: int | None = None,
-        chat_disclaimer: LocaleString | None = None,
     ) -> Self | None:
         """
         Updates stored metadata for an existing tenant. Returns the updated entity or None if no metadata was stored.
@@ -161,12 +172,20 @@ class TenantMetadataEntity(Document):
             tenant.access_rules = access_rules
         if lcdm_tenant_id is not None:
             tenant.lcdm_tenant_id = lcdm_tenant_id
-        if chat_disclaimer is not None:
-            tenant.chat_disclaimer = LocaleStringEntity.from_locale_string(chat_disclaimer)
 
         tenant.updated_at = datetime.now(UTC)
         tenant.save()
         return tenant
+
+    @classmethod
+    @trace_fn
+    def replace_openwebui_mods(cls, tenant_id: str, previous: str | None, updated: str) -> bool:
+        return (
+            cls.objects(id=tenant_id, openwebui_mods_json=previous).update_one(
+                set__openwebui_mods_json=updated, set__updated_at=datetime.now(UTC)
+            )
+            == 1
+        )
 
     @classmethod
     @trace_fn

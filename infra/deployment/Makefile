@@ -1,4 +1,4 @@
-.PHONY: mirror-image build-and-push-postgres-image build-and-push-presidio-analyzer-image build-and-push-playwright-image build-and-push-browser-proxy-image build-and-push-open-terminal-image build-and-push-openwebui-image build-and-push-rclone-image
+.PHONY: mirror-image build-and-push-postgres-image build-and-push-presidio-analyzer-image build-and-push-playwright-image build-and-push-browser-proxy-image build-and-push-open-terminal-image build-openwebui-image build-and-push-openwebui-image build-and-push-rclone-image
 
 # Build the project-managed postgres image (pgvector + pg_repack) and push to ghcr.
 #
@@ -90,17 +90,21 @@ build-and-push-browser-proxy-image:
 	@docker push ghcr.io/bbvch-ai/aihub-core/browser-proxy:7.6-1
 	@echo "Successfully published browser-proxy:7.6-1"
 
-# Keep OpenWebUI's Python client compatible with the project-managed browser server.
-# Publish both images before deploying their matching tags from compose-config.yml.
-build-and-push-openwebui-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1..."
-	@docker login ghcr.io
+# The host is built only when OpenWebUI or its generic adapters change. Mods publish at runtime.
+# Publish this image before deploying its tag from compose-config.yml.
+OPENWEBUI_IMAGE = ghcr.io/bbvch-ai/aihub-core/$(shell awk '/^  open_webui:/{print $$2}' compose-config.yml)
+build-openwebui-image:
+	@echo "Building $(OPENWEBUI_IMAGE)..."
 	@docker build --platform linux/amd64 \
-		-t ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1 \
+		-t $(OPENWEBUI_IMAGE) \
 		-f docker/open-webui/Dockerfile \
 		docker/open-webui
-	@docker push ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
-	@echo "Successfully published open-webui:v0.11.4-playwright1.63.0-1"
+
+build-and-push-openwebui-image:
+	@docker login ghcr.io
+	@$(MAKE) build-openwebui-image
+	@docker push $(OPENWEBUI_IMAGE)
+	@echo "Successfully published $(OPENWEBUI_IMAGE)"
 
 # Build the project-managed rclone image (upstream rclone + a refreshed CA bundle) and push to ghcr.
 # The Dockerfile lives at `infra/deployment/docker/rclone/Dockerfile`. Re-run this whenever the base rclone tag changes.

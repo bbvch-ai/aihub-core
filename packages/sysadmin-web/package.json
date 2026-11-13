@@ -23,6 +23,7 @@
     "layouts/",
     "middleware/",
     "pages/",
+    "plugins/",
     "sdk/"
   ],
   "scripts": {

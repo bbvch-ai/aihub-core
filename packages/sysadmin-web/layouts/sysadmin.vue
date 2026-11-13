@@ -1,13 +1,13 @@
 <template>
   <div class="flex min-h-screen w-full flex-col bg-white dark:bg-surface-900">
-    <div class="fixed z-50 flex h-[50px] w-full items-center justify-between border-b border-surface-200 bg-surface-50 px-4 dark:border-surface-700 dark:bg-surface-950">
-      <div class="flex items-center gap-3">
+    <div class="fixed z-50 flex h-[50px] w-full items-center justify-between gap-4 border-b border-surface-200 bg-surface-50 px-4 dark:border-surface-700 dark:bg-surface-950">
+      <div class="flex min-w-0 flex-1 items-center gap-3">
         <i class="pi pi-building text-lg text-primary" />
-        <h1 class="text-sm font-semibold text-surface-900 dark:text-surface-50">
+        <h1 class="truncate text-sm font-semibold text-surface-900 dark:text-surface-50">
           {{ t('tenant_admin.title') }}
         </h1>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-2">
         <Button
           v-tooltip.bottom="{ value: t('bar.toggle_dark_mode'), showDelay: 0 }"
           :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"

@@ -1637,16 +1637,14 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-3
     restart: always
     network_mode: host
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data:z
-      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro,z
-      - ./configs/openwebui/style/custom.css:/app/build/static/custom.css:ro,z
     configs:
-      - source: openwebui-disclaimer
-        target: /app/build/static/aihub-disclaimer.json
+      - source: openwebui-mods
+        target: /app/build/static/aihub-mods.json
     depends_on:
       otel-collector:
         condition: service_started
@@ -1932,6 +1930,28 @@ services:
     networks:
       - data
 
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
+  openwebui-mods-init:
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-3
+    restart: on-failure
+    depends_on:
+      open-webui:
+        condition: service_healthy
+      openwebui-init:
+        condition: service_completed_successfully
+    environment:
+      AIHUB_SYSADMIN_API_URL: http://host.docker.internal:8001/api/v1
+      AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
+    entrypoint: [python, -m, aihub_mods.initialize]
+    extra_hosts: [host.docker.internal:host-gateway]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+
   # ===================================================================
   # Common Agents & Pipelines
   # ===================================================================
@@ -2021,6 +2041,6 @@ volumes:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   clickhouse-logs:
 configs:
-  openwebui-disclaimer:
+  openwebui-mods:
     content: |-
       {"parentOrigin": "http://localhost:3333"}

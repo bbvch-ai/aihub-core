@@ -2,3 +2,6 @@
 tenant_admin:
   name: Tenant Administration
   description: Create, edit, and delete tenants (system administrators only)
+openwebui_mods:
+  name: Open WebUI modifications
+  description: Manage Open WebUI mod packages (system administrators only)

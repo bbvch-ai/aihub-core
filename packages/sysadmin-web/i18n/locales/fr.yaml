@@ -1,6 +1,58 @@
 ---
+http_error:
+  code:
+    409: Modifications en conflit. Vérifiez les paramètres actuels avant d’enregistrer.
+    413: Ce fichier est trop volumineux.
+    415: Ce type de fichier n’est pas pris en charge.
+    422: Certaines valeurs envoyées ne sont pas valides.
+openwebui_mods:
+  global:
+    settings_help: Ces valeurs sont accessibles au code backend activé globalement. N’incluez aucun secret.
+    navigation: Mods globaux Open WebUI
+    title: Modifications globales d’Open WebUI
+    description: Gérez les modifications du backend pour tous les locataires, y compris
+      les tâches sans utilisateur connecté. Les modifications du frontend restent
+      propres à chaque locataire.
+    catalog_help: 'Ces paquets installés prennent en charge une activation globale du backend.'
+    mod_restart: La modification de ce paquet nécessite un redémarrage d’Open WebUI.
+    pending: Les modifications de démarrage enregistrées attendent un redémarrage
+      d’Open WebUI. La configuration précédente reste active.
+    ready: Actif sur les {total} processus.
+    applying: 'Application des modifications enregistrées : {ready} processus prêts
+      sur {total}.'
+    restart: Redémarrer pour appliquer les modifications enregistrées
+    restarting: En attente du redémarrage d’Open WebUI…
+    restart_confirm: Redémarrer Open WebUI pour tous les locataires ? Les discussions
+      et tâches en cours peuvent être interrompues. Seules les modifications enregistrées
+      seront appliquées.
+    restart_error: Le redémarrage n’a pas pu être confirmé. Vérifiez le statut actuel
+      avant de réessayer.
+    restart_timeout: Le rétablissement n’a pas été confirmé après deux minutes. Consultez
+      les journaux d’Open WebUI et rechargez le statut.
+  catalog_help: 'Les paquets installés sont partagés par tous les tenants. Activez-les séparément pour chaque tenant.'
+  automatic_version: Mise à jour avec AI Hub
+  title: Paramètres Open WebUI
+  description: Choisissez les modifications de ce tenant. Les changements enregistrés
+    s’appliquent au prochain rechargement du chat.
+  enable: Activer {name}
+  settings: Paramètres
+  settings_help: Ces valeurs sont accessibles au mod dans le navigateur. N’incluez aucun secret.
+  retry: Réessayer
+  saved: Paramètres Open WebUI enregistrés
+  save_error: Échec de l’enregistrement. Vos modifications sont conservées.
+  load_error: Impossible de charger les modifications. Veuillez réessayer.
+  upload: Importer un ZIP
+  upload_error: Impossible d’importer ce paquet.
+  backend_notice: Ce paquet contient du code Python exécuté dans Open WebUI. N’activez
+    que du code de confiance.
+  frontend_notice: Ce paquet exécute du code dans les chats des utilisateurs. N’activez
+    que du code de confiance.
+  install: 'Installer'
+  replace: 'Remplacer le mod installé'
+  installed: '{name} installé'
+  replace_help: 'Ceci remplace la version {version} partout où ce mod est activé. Les paramètres enregistrés sont conservés. Les utilisateurs actifs devront peut-être recharger la page.'
 tenant_admin:
-  title: Administration des tenants
+  title: Administration système
   exit: Quitter
   tenants_title: Tenants
   select_description: Gérer les tenants, les règles d'accès et les paramètres système.
@@ -41,9 +93,6 @@ tenant_admin:
       instance. Enregistrer maintenant créerait un locataire sans aucun accès — vérifiez
       que l'API de la plateforme et la passerelle de modèles sont accessibles.
   form:
-    chat_disclaimer: Avertissement du chat
-    chat_disclaimer_help: Affiché sous le champ de saisie du chat. Maximum 100 caractères
-      par langue.
     name: Nom du tenant
     description: Description
   table:

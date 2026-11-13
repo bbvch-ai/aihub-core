@@ -1,0 +1,27 @@
+{
+  "format": 1,
+  "id": "aihub-chat-disclaimer",
+  "name": "Chat disclaimer",
+  "version": "1.0.0",
+  "description": "Shows the localized disclaimer configured in this mod's settings below the chat input.",
+  "frontend": "frontend.js",
+  "default_settings": {
+    "text": {
+      "de": "KI kann Fehler machen. Bitte überprüfen Sie die Antworten.",
+      "en": "AI can make mistakes. Please verify answers.",
+      "fr": "L’IA peut faire des erreurs. Veuillez vérifier les réponses.",
+      "it": "L’IA può commettere errori. Verifica le risposte."
+    }
+  },
+  "settings_fields": {
+    "text": {
+      "label": {
+        "en": "Disclaimer",
+        "de": "Hinweis",
+        "fr": "Avertissement",
+        "it": "Avvertenza"
+      },
+      "maxLength": 100
+    }
+  }
+}

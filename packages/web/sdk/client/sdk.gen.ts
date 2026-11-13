@@ -37,6 +37,8 @@ import type {
   ChatCompletionWithAssistantsData,
   ChatCompletionWithAssistantsError,
   ChatCompletionWithAssistantsResponse,
+  CheckOpenwebuiModPublicationData,
+  CheckOpenwebuiModPublicationError,
   CreateAgentInstanceData,
   CreateAgentInstanceError,
   CreateAgentInstanceResponse,
@@ -100,6 +102,9 @@ import type {
   DeleteUserMemoryData,
   DeleteUserMemoryError,
   DeleteUserMemoryResponse,
+  DownloadOpenwebuiModArchiveData,
+  DownloadOpenwebuiModArchiveError,
+  DownloadOpenwebuiModArchiveResponse,
   GenerateImageData,
   GenerateImageError,
   GenerateImageResponse,
@@ -144,8 +149,6 @@ import type {
   GetAuthProviderResponse,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
-  GetChatDisclaimerData,
-  GetChatDisclaimerResponse,
   GetDatabasesData,
   GetDatabasesResponse,
   GetDatasetData,
@@ -313,6 +316,9 @@ import type {
   RemoveUserFromThreadData,
   RemoveUserFromThreadError,
   RemoveUserFromThreadResponse,
+  ResolveOpenwebuiModConfigurationData,
+  ResolveOpenwebuiModConfigurationError,
+  ResolveOpenwebuiModConfigurationResponse,
   ResolveOpenwebuiReferencesData,
   ResolveOpenwebuiReferencesError,
   ResolveOpenwebuiReferencesResponse,
@@ -2590,32 +2596,87 @@ export const getDefaultTenantRules = <
   });
 
 /**
- * Get Chat Disclaimer
+ * Resolve Openwebui Mod Configuration
  *
- * Read the current tenant's chat disclaimer in the user's requested language.
+ * Resolves current tenant selections using Open WebUI's service token and signed user headers.
  */
-export const getChatDisclaimer = <
+export const resolveOpenwebuiModConfiguration = <
   TComposable extends Composable = "$fetch",
-  DefaultT extends GetChatDisclaimerResponse = GetChatDisclaimerResponse,
+  DefaultT extends ResolveOpenwebuiModConfigurationResponse =
+    ResolveOpenwebuiModConfigurationResponse,
 >(
   options: Options<
     TComposable,
-    GetChatDisclaimerData,
-    GetChatDisclaimerResponse,
+    ResolveOpenwebuiModConfigurationData,
+    ResolveOpenwebuiModConfigurationResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    ResolveOpenwebuiModConfigurationResponse | DefaultT,
+    ResolveOpenwebuiModConfigurationError,
+    DefaultT
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/{tenant_id}/openai/mods/configuration",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Download Openwebui Mod Archive
+ */
+export const downloadOpenwebuiModArchive = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends DownloadOpenwebuiModArchiveResponse =
+    DownloadOpenwebuiModArchiveResponse,
+>(
+  options: Options<
+    TComposable,
+    DownloadOpenwebuiModArchiveData,
+    DownloadOpenwebuiModArchiveResponse,
     DefaultT
   >,
 ) =>
   (options.client ?? client).get<
     TComposable,
-    GetChatDisclaimerResponse | DefaultT,
-    unknown,
+    DownloadOpenwebuiModArchiveResponse | DefaultT,
+    DownloadOpenwebuiModArchiveError,
     DefaultT
   >({
-    security: [
-      { scheme: "bearer", type: "http" },
-      { scheme: "bearer", type: "http" },
-    ],
-    url: "/{tenant_id}/openai/chat-disclaimer",
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/{tenant_id}/openai/mods/publications/{revision}/{kind}",
+    ...options,
+  });
+
+/**
+ * Check Openwebui Mod Publication
+ *
+ * Reauthorizes a cached archive without downloading it again.
+ */
+export const checkOpenwebuiModPublication = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<
+    TComposable,
+    CheckOpenwebuiModPublicationData,
+    unknown,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).head<
+    TComposable,
+    unknown | DefaultT,
+    CheckOpenwebuiModPublicationError,
+    DefaultT
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/{tenant_id}/openai/mods/publications/{revision}/frontend",
     ...options,
   });
 
