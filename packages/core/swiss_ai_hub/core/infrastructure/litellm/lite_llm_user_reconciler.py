@@ -73,13 +73,18 @@ class LiteLLMUserReconciler:
             raise RuntimeError("Keycloak listed no users; refusing to compare LiteLLM's users against an empty realm")
 
         exempt_user_ids = self._settings.user_reconcile_exempt_user_ids | {self.LITELLM_ADMIN_USER_ID}
-        users = [user for user in await LiteLLMUserAdminService.list_users() if user["user_id"] not in exempt_user_ids]
+        all_users = await LiteLLMUserAdminService.list_users()
+        users = [user for user in all_users if user["user_id"] not in exempt_user_ids]
         keys_by_user_id = self._keys_by_user_id(await LiteLLMUserAdminService.list_keys())
         enabled_hub_users = [
             user for user in users if self._is_hub_user(user) and enabled_by_user_id.get(user["user_id"])
         ]
         limits = LiteLLMUserLimits.from_settings(self._settings)
-        report = LiteLLMReconciliationReport()
+        report = LiteLLMReconciliationReport(
+            keycloak_state_by_user_id_without_row=self._keycloak_state_by_user_id_without_row(
+                keys_by_user_id, {user["user_id"] for user in all_users} | exempt_user_ids, enabled_by_user_id
+            )
+        )
         failures: list[Exception] = []
 
         for user_row in users:
@@ -167,6 +172,24 @@ class LiteLLMUserReconciler:
             failures.append(error)
 
     @staticmethod
+    def _keycloak_state_by_user_id_without_row(
+        keys_by_user_id: dict[str, list[dict[str, Any]]],
+        user_ids_with_row: set[str],
+        enabled_by_user_id: dict[str, bool],
+    ) -> dict[str, str]:
+        """
+        Keys are only reached through their user's row, so a key without one would go unnoticed. Provisioning left
+        such keys behind when LiteLLM refused a user for an email another user still held.
+        """
+        states = {True: "enabled", False: "disabled", None: "not in Keycloak"}
+        return {
+            user_id: states[enabled_by_user_id.get(user_id)]
+            for user_id in sorted(
+                user_id for user_id in keys_by_user_id if user_id and user_id not in user_ids_with_row
+            )
+        }
+
+    @staticmethod
     def _is_hub_user(user_row: dict[str, Any]) -> bool:
         return user_row.get("user_role") == LiteLLMUserAdminService.HUB_USER_ROLE
 
@@ -184,6 +207,13 @@ class LiteLLMUserReconciler:
             logger.info("Deleted LiteLLM users that Keycloak no longer has: %s", ", ".join(report.deleted_user_ids))
         if report.blocked_user_ids:
             logger.info("Blocked the keys of users disabled in Keycloak: %s", ", ".join(report.blocked_user_ids))
+        if report.keycloak_state_by_user_id_without_row:
+            logger.warning(
+                "LiteLLM keys whose user has no LiteLLM user, left alone without limits and never blocked: %s",
+                ", ".join(
+                    f"{user_id} ({state})" for user_id, state in report.keycloak_state_by_user_id_without_row.items()
+                ),
+            )
         left_alone = [user_id for user_id in report.users_without_hub_user if user_id not in report.deleted_user_ids]
         if left_alone:
             logger.warning(

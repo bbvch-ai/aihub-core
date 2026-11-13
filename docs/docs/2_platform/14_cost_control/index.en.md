@@ -162,6 +162,9 @@ Keycloak, and nothing notifies the Hub, so the API compares LiteLLM's users with
 - **Users the Hub did not create.** LiteLLM users with a role other than `internal_user_viewer`, such as users made by
   hand in the LiteLLM UI, are never changed. If Keycloak has no such user, they are listed in the API log as a warning,
   so an operator can remove them.
+- **Keys without a LiteLLM user.** Older versions of the Hub could leave a key whose LiteLLM user was never created.
+  Such a key has no limits and is never blocked. It is listed in the API log as a warning, with the user's state in
+  Keycloak, so an operator can delete it.
 
 Each run logs a summary line, `LiteLLM user reconciliation: …`, with the users it deleted and blocked. A user disabled
 or removed in Keycloak keeps a working key until the next run. LiteLLM's built-in admin, `default_user_id`, is ignored.

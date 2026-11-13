@@ -174,6 +174,9 @@ API-Replikate hinweg:
 - **Benutzer, die der Hub nicht angelegt hat.** LiteLLM-Benutzer mit einer anderen Rolle als `internal_user_viewer`,
   etwa von Hand in der LiteLLM-Oberfläche angelegte, werden nie geändert. Kennt Keycloak sie nicht, erscheinen sie als
   Warnung im API-Log, damit ein Operator sie entfernen kann.
+- **Schlüssel ohne LiteLLM-Benutzer.** Ältere Versionen des Hubs konnten einen Schlüssel hinterlassen, dessen
+  LiteLLM-Benutzer nie angelegt wurde. Ein solcher Schlüssel hat keine Limits und wird nie gesperrt. Er erscheint als
+  Warnung im API-Log, zusammen mit dem Zustand des Benutzers in Keycloak, damit ein Operator ihn löschen kann.
 
 Jeder Lauf schreibt eine Zusammenfassung, `LiteLLM user reconciliation: …`, mit den gelöschten und gesperrten Benutzern
 ins Log. Ein in Keycloak deaktivierter oder entfernter Benutzer behält bis zum nächsten Lauf einen funktionierenden

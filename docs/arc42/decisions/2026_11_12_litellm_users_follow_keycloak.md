@@ -87,6 +87,9 @@ event lost while the API is down would never be replayed. A periodic comparison 
   their LiteLLM user again. The next run deletes it again.
 - **One full listing of Keycloak's users, LiteLLM's users and LiteLLM's keys per interval.** These are paged by 100 in
   LiteLLM, which grows linearly with the user count.
+- **Keys without a LiteLLM user are only reported.** Provisioning used to leave a key without its user when LiteLLM
+  refused the user for an email another user still held. Such a key carries no limits and is never blocked, so the run
+  lists it in the API log with the user's state in Keycloak, and an operator removes it.
 - **The role is the Hub's only mark on its users.** LiteLLM also gives `internal_user_viewer` to users its own SSO or
   SCIM creates. The platform turns on neither. If an operator turns one on, the run treats those users as the Hub's, and
   deletes those whose id is not a Keycloak user id, such as a username.

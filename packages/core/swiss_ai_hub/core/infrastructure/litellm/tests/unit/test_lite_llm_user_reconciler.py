@@ -218,6 +218,27 @@ async def test_a_user_the_hub_did_not_create_is_only_reported(world: _World) -> 
 
 
 @pytest.mark.asyncio
+async def test_keys_whose_user_has_no_litellm_user_are_reported_with_their_keycloak_state(world: _World) -> None:
+    world.keycloak_user("enabled-without-row")
+    world.keycloak_user("disabled-without-row", enabled=False)
+    world.keycloak_user("with-row")
+    world.litellm_user("with-row")
+    world.litellm_user("test-identity")
+    for user_id in ("enabled-without-row", "disabled-without-row", "gone-without-row", "with-row", "test-identity"):
+        world.key(user_id, f"hash-{user_id}")
+    world.keys.append({"user_id": None, "token": "hash-service", "blocked": None})
+
+    report = await _reconciler(USER_RECONCILE_EXEMPT_USER_IDS="test-identity").reconcile()
+
+    assert world.writes() == []
+    assert report.keycloak_state_by_user_id_without_row == {
+        "disabled-without-row": "disabled",
+        "enabled-without-row": "enabled",
+        "gone-without-row": "not in Keycloak",
+    }
+
+
+@pytest.mark.asyncio
 async def test_litellms_admin_and_exempt_users_are_neither_reported_nor_touched(world: _World) -> None:
     world.keycloak_user("someone-else")
     world.litellm_user(LiteLLMUserReconciler.LITELLM_ADMIN_USER_ID, role="proxy_admin")
