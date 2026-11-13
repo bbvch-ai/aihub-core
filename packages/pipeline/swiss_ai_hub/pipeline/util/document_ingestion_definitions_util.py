@@ -33,6 +33,7 @@ from swiss_ai_hub.pipeline.jobs.knowledge_teardown_job import knowledge_teardown
 from swiss_ai_hub.pipeline.jobs.repair_orphaned_nodes_job import repair_orphaned_nodes_job
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_file_system_resource import S3DataLakeFileSystemResource
 from swiss_ai_hub.pipeline.resources.factory import default_io_manager_s3_datalake_resources
+from swiss_ai_hub.pipeline.resources.parser.document_classification_resource import DocumentClassificationResource
 from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource, LoaderType
 from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_resource import (
     MarkdownStructuralNodeParserResource,
@@ -133,6 +134,7 @@ def document_ingestion_pipeline_definitions(
         with_summary_nodes=settings.WITH_SUMMARY_NODES,
         with_table_refinement=settings.WITH_TABLE_REFINEMENT,
         with_figure_descriptions=settings.WITH_FIGURE_DESCRIPTIONS,
+        with_document_classification=settings.WITH_DOCUMENT_CLASSIFICATION,
     )
     registration_sensor = _registration_sensor(ingestor, display_name, description, announced_config)
 
@@ -148,6 +150,7 @@ def document_ingestion_pipeline_definitions(
         "vector_store_io_manager": VectorStoreIOManager(encode_partition_keys=encode_partition_keys),
         "data_lake_file_system": S3DataLakeFileSystemResource(),
         "table_refinement": TableRefinementResource(),
+        "document_classification": DocumentClassificationResource(),
         **default_io_manager_s3_datalake_resources(container_name=ingestor),
     }
 

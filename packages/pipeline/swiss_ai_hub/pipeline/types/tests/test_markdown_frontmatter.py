@@ -249,6 +249,14 @@ class TestMetadata:
         assert parsed.metadata == {}
         assert "platform already uses" in parsed.skipped[raw_key]
 
+    @pytest.mark.parametrize("raw_key", ["document_type", "Document Types", "document_date", "document_issuer_raw"])
+    def test_a_key_classification_writes_is_skipped(self, raw_key: str) -> None:
+        """A record's own `document_type` must not pass for ingestion's classification, which filters rely on."""
+        parsed = _parse(f"'{raw_key}': invoice\n")
+
+        assert parsed.metadata == {}
+        assert "platform already uses" in parsed.skipped[raw_key]
+
     def test_the_first_of_two_keys_with_the_same_normalised_name_wins(self) -> None:
         parsed = _parse("fix-version: '1.0'\nfix_version: '2.0'\nTitle: First\ntitle: Second\n")
 

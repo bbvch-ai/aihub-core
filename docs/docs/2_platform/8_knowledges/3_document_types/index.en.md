@@ -61,6 +61,20 @@ The attributes follow the invoice models of
 [German VAT Act, § 14](https://www.gesetze-im-internet.de/ustg_1980/__14.html). Swiss law does not require an invoice
 number, so an empty `document_reference_number` on a Swiss invoice is expected.
 
+## When documents are classified
+
+Ingestion classifies every new or changed document once, after parsing and table refinement, with the knowledge
+database's own text model. The setting **Classify documents** of the knowledge database switches it off; it is on by
+default.
+
+- Records synced from Jira, Confluence or MediaWiki are not classified: their own fields already say what they are.
+- If the model call fails, the document is ingested without a type and stays fully searchable. It is classified later by
+  a backfill.
+- The type and attributes are filter metadata only. They are not part of the text that is embedded or shown to a model,
+  so search results for existing content do not change.
+- Every knowledge database can be filtered by `document_type`, `document_types` and each attribute's value, in vector
+  search and in the document listing, without configuring the keys.
+
 ## How values are stored
 
 The model only copies text; it never converts or completes a value. For every attribute, the document and each of its

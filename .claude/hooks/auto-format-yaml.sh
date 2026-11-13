@@ -16,6 +16,11 @@ if [[ "$file_path" != *.yaml && "$file_path" != *.yml ]]; then
   exit 0
 fi
 
+# Synthetic evaluation documents are text in YAML literal blocks; yamlfix deletes their blank lines.
+if [[ "$file_path" == */tests/evaluation/synthetic/* ]]; then
+  exit 0
+fi
+
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT" 2>/dev/null || exit 0
 

@@ -781,6 +781,11 @@ last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadat
 - **Separate from record fields.** The keys are kept out of embedded text like frontmatter keys, so
   `IngestedNode.from_llama_index_node` takes them into `document_classification` before it builds `record_fields`.
   `KnowledgeDocumentSummary` lists `document_type`, `document_types` and `document_attributes` (values without copies).
+- **Filterable on every database.** `narrow_retrievers` accepts `DocumentTypeCatalog.filter_keys()` (types and values,
+  never the `_raw` copies) without a retriever listing them in `allowed_metadata_filter_fields`.
+- **The synthetic evaluation sample is kept from yamlfix** (`tests/evaluation/synthetic/`, excluded in the root
+  `format-yaml` target and the YAML edit hook): yamlfix deletes the blank lines inside its literal text blocks, which
+  would change the documents the classifier is measured on.
 
 `AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
 (issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it

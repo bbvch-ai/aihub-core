@@ -45,6 +45,10 @@ class DocumentIngestionConfig(IngestorConfig):
     with_figure_descriptions: Annotated[
         bool | Checkbox | None, Field(description="Generate figure descriptions with the vision model.")
     ] = None
+    with_document_classification: Annotated[
+        bool | Checkbox | None,
+        Field(description="Classify each document and read its attributes with the text model, as filter metadata."),
+    ] = None
 
     @classmethod
     def as_form(
@@ -56,6 +60,7 @@ class DocumentIngestionConfig(IngestorConfig):
         with_summary_nodes: bool = True,
         with_table_refinement: bool = True,
         with_figure_descriptions: bool = True,
+        with_document_classification: bool = True,
     ) -> Self:
         """The announced form, pre-filled with the deployment's own defaults so a new database starts from them."""
         base = IngestorConfig.as_form()
@@ -94,5 +99,10 @@ class DocumentIngestionConfig(IngestorConfig):
                 label=LocaleString.from_i18n_path(f"{_I18N}.with_figure_descriptions.label"),
                 help=LocaleString.from_i18n_path(f"{_I18N}.with_figure_descriptions.help"),
                 value=with_figure_descriptions,
+            ),
+            with_document_classification=Checkbox(
+                label=LocaleString.from_i18n_path(f"{_I18N}.with_document_classification.label"),
+                help=LocaleString.from_i18n_path(f"{_I18N}.with_document_classification.help"),
+                value=with_document_classification,
             ),
         )
