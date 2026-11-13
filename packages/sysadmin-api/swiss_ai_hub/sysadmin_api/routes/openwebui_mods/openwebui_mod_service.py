@@ -109,8 +109,9 @@ class OpenWebuiModService:
     async def _compile(source: bytes) -> bytes:
         settings = OpenWebuiSettings()
         try:
-            async with httpx.AsyncClient(timeout=75) as client:
-                async with client.stream(
+            async with (
+                httpx.AsyncClient(timeout=75) as client,
+                client.stream(
                     "POST",
                     settings.BASE_URL.rstrip("/") + "/_aihub/mods/control/compile",
                     content=source,
@@ -118,20 +119,21 @@ class OpenWebuiModService:
                         "Authorization": f"Bearer {settings.SCIM_TOKEN.get_secret_value()}",
                         "Content-Type": "application/zip",
                     },
-                ) as response:
-                    content = bytearray()
-                    async for chunk in response.aiter_bytes():
-                        content.extend(chunk)
-                        if len(content) > OpenWebuiModPackage.MAX_ARCHIVE_BYTES:
-                            raise HTTPException(502, "Open WebUI returned an oversized compilation result")
-                    if response.status_code >= 400:
-                        try:
-                            detail = json.loads(content)["detail"]
-                        except (ValueError, KeyError, TypeError) as error:
-                            raise HTTPException(502, "Open WebUI returned an invalid compiler error") from error
-                        raise HTTPException(response.status_code, detail)
-                    if response.headers.get("content-type", "").split(";", 1)[0] != "application/zip":
-                        raise HTTPException(502, "Open WebUI did not return a compiled mod archive")
-                    return bytes(content)
+                ) as response,
+            ):
+                content = bytearray()
+                async for chunk in response.aiter_bytes():
+                    content.extend(chunk)
+                    if len(content) > OpenWebuiModPackage.MAX_ARCHIVE_BYTES:
+                        raise HTTPException(502, "Open WebUI returned an oversized compilation result")
+                if response.status_code >= 400:
+                    try:
+                        detail = json.loads(content)["detail"]
+                    except (ValueError, KeyError, TypeError) as error:
+                        raise HTTPException(502, "Open WebUI returned an invalid compiler error") from error
+                    raise HTTPException(response.status_code, detail)
+                if response.headers.get("content-type", "").split(";", 1)[0] != "application/zip":
+                    raise HTTPException(502, "Open WebUI did not return a compiled mod archive")
+                return bytes(content)
         except httpx.HTTPError as error:
             raise HTTPException(503, "The Open WebUI mod compiler is unavailable") from error
