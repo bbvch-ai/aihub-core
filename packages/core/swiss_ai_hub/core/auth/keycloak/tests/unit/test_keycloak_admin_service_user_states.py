@@ -62,3 +62,14 @@ async def test_every_user_is_listed_with_whether_they_are_enabled(patch_admin) -
     query = admin.a_get_users.call_args.kwargs["query"]
     assert "first" not in query
     assert "max" not in query
+
+
+@pytest.mark.asyncio
+async def test_a_user_listed_without_enabled_stops_the_listing(patch_admin) -> None:
+    """Read as enabled, such a user would have the keys the Hub blocked for them unblocked."""
+    admin = AsyncMock()
+    admin.a_get_users = AsyncMock(return_value=[{"id": "unknown"}])
+    patch_admin(admin)
+
+    with pytest.raises(KeyError):
+        await KeycloakAdminService.get_enabled_by_user_id()

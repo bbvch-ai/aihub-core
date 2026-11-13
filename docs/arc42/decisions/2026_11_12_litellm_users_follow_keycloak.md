@@ -35,8 +35,9 @@ LiteLLM v1.106.4, which every deployment runs, constrains the design:
 ## Decision
 
 **The API compares LiteLLM's users with Keycloak's on an interval** (`LiteLLMUserReconciler`, every five minutes by
-default). A Redis lease that expires after the interval keeps it to one run per interval across all replicas. Like
-`CronScheduler`, it keeps no state of its own and can move to aihub-daemon (#1203) unchanged.
+default). A Redis lease that expires after the interval keeps it to one run per interval across all replicas. A run
+still going when its lease expires is cut off, so two runs never overlap. Like `CronScheduler`, it keeps no state of its
+own and can move to aihub-daemon (#1203) unchanged.
 
 Only users with the role `internal_user_viewer` are changed. That is the role the Hub gives every user it creates, and
 nothing else in the platform uses it. Each run handles these users as follows:
@@ -51,8 +52,10 @@ nothing else in the platform uses it. Each run handles these users as follows:
 - **Enabled:** limits that differ from the settings are pushed, and only the fields that differ. This keeps the budget
   period from restarting on every run.
 
-Access is withdrawn for all users before any user's access is restored or limits are changed. So if LiteLLM rejects one
-user's update, a disabled or removed user later in the list still loses their key.
+Each run makes three passes: it withdraws access for all users, then restores it for re-enabled users, then changes
+limits. A failure for one user stops neither its own pass nor the later ones, and the failures are raised together at
+the end. So if LiteLLM rejects one user's update, a disabled or removed user still loses their key, and a re-enabled
+user still gets theirs back.
 
 LiteLLM users with no Keycloak user that the Hub did not create are listed in the API log as a warning, and never
 changed. `default_user_id`, LiteLLM's built-in admin, is skipped. So are the ids in
@@ -84,6 +87,9 @@ event lost while the API is down would never be replayed. A periodic comparison 
   their LiteLLM user again. The next run deletes it again.
 - **One full listing of Keycloak's users, LiteLLM's users and LiteLLM's keys per interval.** These are paged by 100 in
   LiteLLM, which grows linearly with the user count.
+- **The role is the Hub's only mark on its users.** LiteLLM also gives `internal_user_viewer` to users its own SSO or
+  SCIM creates. The platform turns on neither. If an operator turns one on, the run treats those users as the Hub's, and
+  deletes those whose id is not a Keycloak user id, such as a username.
 - **Coupled to key derivation (aihub-core-private#351).** Blocking relies on the Hub reusing a blocked key. If keys
   become random or rotated, a disabled user could get a fresh key between runs. Provisioning must then refuse a user the
   Hub has recorded blocked keys for.

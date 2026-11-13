@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Iterator
 from typing import Any
 from unittest.mock import AsyncMock, call, patch
@@ -235,8 +236,10 @@ async def test_an_outage_while_confirming_a_removal_deletes_nothing(world: _Worl
     world.litellm_user("unknown")
     world.user_exists.side_effect = ConnectionError("Keycloak unreachable")
 
-    with pytest.raises(ConnectionError):
+    with pytest.raises(ExceptionGroup) as raised:
         await _reconciler().reconcile()
+
+    assert raised.group_contains(ConnectionError)
 
     assert world.delete_user.await_count == 0
 
@@ -266,10 +269,51 @@ async def test_access_is_withdrawn_before_a_failing_limit_update(world: _World) 
 
     world.update_user.side_effect = reject_limits
 
-    with pytest.raises(RuntimeError, match="rejected"):
+    with pytest.raises(ExceptionGroup) as raised:
         await _reconciler(USER_RPM_LIMIT=60).reconcile()
 
+    assert raised.group_contains(RuntimeError, match="rejected")
     assert world.post.call_args_list == [call("/key/block", {"key": "hash-disabled"})]
+
+
+@pytest.mark.asyncio
+async def test_a_failing_limit_update_does_not_keep_a_re_enabled_user_locked_out(world: _World) -> None:
+    world.keycloak_user("drifted")
+    world.keycloak_user("re-enabled")
+    world.litellm_user("drifted", rpm_limit=30)
+    world.litellm_user("re-enabled", rpm_limit=60, metadata={FLAG: ["hash-1"]})
+    world.key("re-enabled", "hash-1", blocked=True)
+
+    async def reject_limits(user_id: str, fields: dict) -> None:
+        if "rpm_limit" in fields:
+            raise RuntimeError("LiteLLM rejected the update")
+
+    world.update_user.side_effect = reject_limits
+
+    with pytest.raises(ExceptionGroup):
+        await _reconciler(USER_RPM_LIMIT=60).reconcile()
+
+    assert world.post.call_args_list == [call("/key/unblock", {"key": "hash-1"})]
+
+
+@pytest.mark.asyncio
+async def test_one_users_failing_block_does_not_keep_another_disabled_users_key_working(world: _World) -> None:
+    for user_id in ("first", "second"):
+        world.keycloak_user(user_id, enabled=False)
+        world.litellm_user(user_id)
+        world.key(user_id, f"hash-{user_id}")
+
+    async def reject_first(path: str, body: dict) -> None:
+        if body == {"key": "hash-first"}:
+            raise RuntimeError("LiteLLM rejected the block")
+
+    world.post.side_effect = reject_first
+
+    with pytest.raises(ExceptionGroup) as raised:
+        await _reconciler().reconcile()
+
+    assert raised.group_contains(RuntimeError, match="rejected the block")
+    assert call("/key/block", {"key": "hash-second"}) in world.post.call_args_list
 
 
 @pytest.mark.asyncio
@@ -293,3 +337,20 @@ async def test_a_run_holds_the_lease_for_one_interval(world: _World) -> None:
 
     assert redis.set.call_args == call("litellm:user-reconciliation:lease", "held", nx=True, px=120_000)
     assert world.list_users.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_a_run_is_cut_off_when_its_lease_expires(world: _World) -> None:
+    """Two overlapping runs could clear the record of keys the other is about to block."""
+    world.keycloak_user("u1")
+
+    async def outlive_the_lease() -> list:
+        await asyncio.sleep(1)
+        return []
+
+    world.list_users.side_effect = outlive_the_lease
+    redis = AsyncMock()
+    redis.set.return_value = True
+
+    with pytest.raises(TimeoutError):
+        await _reconciler(redis, USER_RECONCILE_INTERVAL_SECONDS=0.05).run_if_due()

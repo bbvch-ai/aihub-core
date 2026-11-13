@@ -57,10 +57,10 @@ class KeycloakAdminService:
     @trace_fn
     async def get_enabled_by_user_id() -> dict[str, bool]:
         """Whether each user in the realm is enabled, keyed by user id. Without `first` or `max`, python-keycloak
-        fetches every page."""
+        fetches every page. A user without `enabled` raises: reading it as enabled would unblock a disabled user."""
         admin = _create_admin()
         users = await admin.a_get_users(query={"briefRepresentation": True})
-        return {user["id"]: user.get("enabled", True) for user in users}
+        return {user["id"]: user["enabled"] for user in users}
 
     @staticmethod
     @trace_fn

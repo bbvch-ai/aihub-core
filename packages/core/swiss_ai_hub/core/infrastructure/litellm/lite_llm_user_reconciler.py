@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from collections import defaultdict
+from collections.abc import Coroutine
 from typing import Any, ClassVar
 
 from redis.asyncio import Redis
@@ -62,8 +63,10 @@ class LiteLLMUserReconciler:
 
     async def reconcile(self) -> LiteLLMReconciliationReport:
         """
-        One run, without the lease. Access is withdrawn for every user before any is restored or has their limits
-        changed, so a user whose update LiteLLM rejects cannot keep a disabled or removed user's key working.
+        One run, without the lease. Access is withdrawn for every user before any is restored, and restored for every
+        user before any limit is changed. A failure stops neither its own pass nor the later ones: one user's rejected
+        update must not keep another user's key working, or keep a re-enabled user locked out. The failures are raised
+        together once every user has been handled.
         """
         enabled_by_user_id = await KeycloakAdminService.get_enabled_by_user_id()
         if not enabled_by_user_id:
@@ -72,14 +75,27 @@ class LiteLLMUserReconciler:
         exempt_user_ids = self._settings.user_reconcile_exempt_user_ids | {self.LITELLM_ADMIN_USER_ID}
         users = [user for user in await LiteLLMUserAdminService.list_users() if user["user_id"] not in exempt_user_ids]
         keys_by_user_id = self._keys_by_user_id(await LiteLLMUserAdminService.list_keys())
+        enabled_hub_users = [
+            user for user in users if self._is_hub_user(user) and enabled_by_user_id.get(user["user_id"])
+        ]
+        limits = LiteLLMUserLimits.from_settings(self._settings)
         report = LiteLLMReconciliationReport()
+        failures: list[Exception] = []
 
         for user_row in users:
-            await self._withdraw_access(user_row, enabled_by_user_id, keys_by_user_id, report)
-        limits = LiteLLMUserLimits.from_settings(self._settings)
-        for user_row in users:
-            if self._is_hub_user(user_row) and enabled_by_user_id.get(user_row["user_id"]):
-                await self._restore_and_update(user_row, keys_by_user_id[user_row["user_id"]], limits, report)
+            await self._attempt(
+                self._withdraw_access(user_row, enabled_by_user_id, keys_by_user_id[user_row["user_id"]], report),
+                failures,
+            )
+        for user_row in enabled_hub_users:
+            await self._attempt(self._restore_access(user_row, keys_by_user_id[user_row["user_id"]], report), failures)
+        for user_row in enabled_hub_users:
+            await self._attempt(self._update_limits(user_row, limits, report), failures)
+
+        if failures:
+            raise ExceptionGroup(
+                f"LiteLLM user reconciliation failed for some users after {report.summary()}", failures
+            )
         return report
 
     async def _reconciliation_loop(self) -> None:
@@ -91,26 +107,31 @@ class LiteLLMUserReconciler:
             await asyncio.sleep(self._settings.USER_RECONCILE_INTERVAL_SECONDS)
 
     async def run_if_due(self) -> None:
-        """Runs unless another replica, or this one, ran within the interval."""
-        lease_milliseconds = int(self._settings.USER_RECONCILE_INTERVAL_SECONDS * 1000)
-        if not await self._redis.set(self._LEASE_KEY, "held", nx=True, px=lease_milliseconds):
+        """
+        Runs unless another replica, or this one, ran within the interval. The run is cut off when its lease expires,
+        so two runs never overlap: one could otherwise clear the record of keys the other is about to block. A run cut
+        off part-way is safe, and the next one finishes it.
+        """
+        interval_seconds = self._settings.USER_RECONCILE_INTERVAL_SECONDS
+        if not await self._redis.set(self._LEASE_KEY, "held", nx=True, px=int(interval_seconds * 1000)):
             return
-        self._log(await self.reconcile())
+        async with asyncio.timeout(interval_seconds):
+            report = await self.reconcile()
+        self._log(report)
 
     async def _withdraw_access(
         self,
         user_row: dict[str, Any],
         enabled_by_user_id: dict[str, bool],
-        keys_by_user_id: defaultdict[str, list[dict[str, Any]]],
+        keys: list[dict[str, Any]],
         report: LiteLLMReconciliationReport,
     ) -> None:
         user_id = user_row["user_id"]
         enabled = enabled_by_user_id.get(user_id)
         if enabled is None:
             await self._remove_if_gone(user_row, report)
-        elif not enabled and self._is_hub_user(user_row):
-            if await LiteLLMUserAdminService.block_keys(user_row, keys_by_user_id[user_id]):
-                report.blocked_user_ids.append(user_id)
+        elif not enabled and self._is_hub_user(user_row) and await LiteLLMUserAdminService.block_keys(user_row, keys):
+            report.blocked_user_ids.append(user_id)
 
     async def _remove_if_gone(self, user_row: dict[str, Any], report: LiteLLMReconciliationReport) -> None:
         """A user missing from the listing may have signed up after it was taken, so Keycloak is asked again."""
@@ -123,18 +144,27 @@ class LiteLLMUserReconciler:
             report.deleted_user_ids.append(user_id)
 
     @staticmethod
-    async def _restore_and_update(
-        user_row: dict[str, Any],
-        keys: list[dict[str, Any]],
-        limits: LiteLLMUserLimits,
-        report: LiteLLMReconciliationReport,
+    async def _restore_access(
+        user_row: dict[str, Any], keys: list[dict[str, Any]], report: LiteLLMReconciliationReport
     ) -> None:
-        user_id = user_row["user_id"]
         if LiteLLMUserAdminService.keys_blocked_by_hub(user_row):
             await LiteLLMUserAdminService.unblock_keys(user_row, keys)
-            report.unblocked_user_ids.append(user_id)
+            report.unblocked_user_ids.append(user_row["user_id"])
+
+    @staticmethod
+    async def _update_limits(
+        user_row: dict[str, Any], limits: LiteLLMUserLimits, report: LiteLLMReconciliationReport
+    ) -> None:
+        user_id = user_row["user_id"]
         if await LiteLLMUserAdminService.update_limits(user_id, limits, LiteLLMUserLimits.from_user_row(user_row)):
             report.limits_updated_user_ids.append(user_id)
+
+    @staticmethod
+    async def _attempt(step: Coroutine[Any, Any, None], failures: list[Exception]) -> None:
+        try:
+            await step
+        except Exception as error:
+            failures.append(error)
 
     @staticmethod
     def _is_hub_user(user_row: dict[str, Any]) -> bool:
