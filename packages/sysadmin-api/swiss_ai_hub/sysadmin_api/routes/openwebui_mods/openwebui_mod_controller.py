@@ -40,12 +40,12 @@ class OpenWebuiModController(Controller):
 
     def __init__(self, *, auth: AuthHandler, route: str = "/admin/openwebui-mods"):
         super().__init__(auth=auth, route=route)
+        self._sys_admin_dependency = Security(self.sys_admin_user())
+        self.router.dependencies.append(self._sys_admin_dependency)
 
     def get_host(self, route: str = "/host") -> Self:
         @self.router.get(route, tags=self.tags)
-        async def get_openwebui_mod_host(
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
-        ) -> OpenWebuiModHost:
+        async def get_openwebui_mod_host() -> OpenWebuiModHost:
             return await OpenWebuiModService.get_host()
 
         return self
@@ -53,7 +53,6 @@ class OpenWebuiModController(Controller):
     def catalog(self, route: str = "/catalog") -> Self:
         @self.router.get(route, tags=self.tags)
         async def list_openwebui_mod_catalog(
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
             offset: Annotated[int, Query(ge=0)] = 0,
             limit: Annotated[int, Query(ge=1, le=100)] = 50,
         ) -> list[OpenWebuiModCatalogEntry]:
@@ -63,9 +62,7 @@ class OpenWebuiModController(Controller):
 
     def get_builtins(self, route: str = "/builtins") -> Self:
         @self.router.get(route, tags=self.tags)
-        async def get_openwebui_mod_builtins(
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
-        ) -> list[str]:
+        async def get_openwebui_mod_builtins() -> list[str]:
             return list(OpenWebuiModBundles.packages())
 
         return self
@@ -74,7 +71,6 @@ class OpenWebuiModController(Controller):
         @self.router.post(route, tags=self.tags)
         async def install_openwebui_builtin_mod(
             mod_id: str,
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
             client: Annotated[S3Client, Depends(use_s3)],
         ) -> OpenWebuiModCatalogEntry:
             return await OpenWebuiModService.install_builtin(mod_id, client)
@@ -83,32 +79,25 @@ class OpenWebuiModController(Controller):
 
     def get_configuration(self, route: str = "/tenants/{tenant_id}") -> Self:
         @self.router.get(route, tags=self.tags)
-        async def get_openwebui_mod_configuration(
-            tenant_id: str,
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
-        ) -> OpenWebuiModConfiguration:
+        async def get_openwebui_mod_configuration(tenant_id: str) -> OpenWebuiModConfiguration:
             return await OpenWebuiModConfigurationService.get(tenant_id)
 
         return self
 
     def global_configuration(self, route: str = "/global") -> Self:
         @self.router.get(route, tags=self.tags)
-        async def get_openwebui_global_mods(
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
-        ) -> OpenWebuiModGlobalState:
+        async def get_openwebui_global_mods() -> OpenWebuiModGlobalState:
             return await OpenWebuiModGlobalService.get()
 
         @self.router.put(route, tags=self.tags)
         async def replace_openwebui_global_mods(
             configuration: OpenWebuiModConfiguration,
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
             client: Annotated[S3Client, Depends(use_s3)],
         ) -> OpenWebuiModGlobalState:
             return await OpenWebuiModGlobalService.replace(configuration, client)
 
         @self.router.post(route + "/reconcile", tags=self.tags)
         async def reconcile_openwebui_global_mods(
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
             client: Annotated[S3Client, Depends(use_s3)],
         ) -> OpenWebuiModGlobalState:
             return await OpenWebuiModGlobalService.reconcile(client)
@@ -116,7 +105,6 @@ class OpenWebuiModController(Controller):
         @self.router.post(route + "/restart", tags=self.tags, status_code=202)
         async def restart_openwebui_for_mods(
             version: Annotated[int, Query(ge=0)],
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> dict[str, str | int]:
             return await OpenWebuiModGlobalService.restart(version)
 
@@ -127,7 +115,6 @@ class OpenWebuiModController(Controller):
         async def replace_openwebui_mod_configuration(
             tenant_id: str,
             configuration: OpenWebuiModConfiguration,
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> OpenWebuiModConfiguration:
             """Saves the complete selection for the next chat load. Version prevents lost updates."""
             return await OpenWebuiModConfigurationService.replace(tenant_id, configuration)
@@ -136,10 +123,7 @@ class OpenWebuiModController(Controller):
 
     def inspect(self, route: str = "/inspect") -> Self:
         @self.router.post(route, tags=self.tags, openapi_extra=ZIP_BODY)
-        async def inspect_openwebui_mod(
-            request: Request,
-            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
-        ) -> OpenWebuiModUploadPreview:
+        async def inspect_openwebui_mod(request: Request) -> OpenWebuiModUploadPreview:
             return await OpenWebuiModService.inspect(await self._read_upload(request))
 
         return self
@@ -148,7 +132,7 @@ class OpenWebuiModController(Controller):
         @self.router.post(route, tags=self.tags, openapi_extra=ZIP_BODY)
         async def install_openwebui_mod(
             request: Request,
-            user: Annotated[UserIdentity, Security(self.sys_admin_user())],
+            user: Annotated[UserIdentity, self._sys_admin_dependency],
             client: Annotated[S3Client, Depends(use_s3)],
             replace: bool = False,
         ) -> OpenWebuiModCatalogEntry:

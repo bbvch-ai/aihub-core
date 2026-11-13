@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from swiss_ai_hub.core.infrastructure.openwebui import OpenWebuiModHost, OpenWebuiModPackage, OpenWebuiModStore
 from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID
 
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.openwebui_mod_service import OpenWebuiModService
 from tests.openwebui_mods.helpers import BASE, ModTestAuth, install_mod
@@ -33,6 +34,17 @@ def test_inspection_is_ephemeral_and_install_has_one_record(
     assert client.post(BASE + "/install", content=archive, headers=ZIP).status_code == 409
     assert client.post(BASE + "/install?replace=true", content=archive, headers=ZIP).status_code == 200
     assert OpenWebuiModEntity.objects.count() == 1
+
+
+def test_install_uses_the_authenticated_admin_without_authenticating_twice(
+    client: TestClient, auth: ModTestAuth, archive: bytes, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    authenticate = AsyncMock(wraps=auth.authenticate_token)
+    monkeypatch.setattr(auth, "authenticate_token", authenticate)
+    response = client.post(BASE + "/install", content=archive, headers=ZIP)
+    assert response.status_code == 200, response.text
+    assert OpenWebuiModEntity.objects.get(mod_id=response.json()["manifest"]["id"]).installed_by == TEST_USER_OID
+    authenticate.assert_awaited_once()
 
 
 @pytest.mark.parametrize("is_admin, authenticated, status", [(False, True, 403), (True, False, 401)])

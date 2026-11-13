@@ -95,7 +95,7 @@ def test_unsupported_services_secrets_or_schema_properties_are_rejected(hints):
 
 
 def test_unrepresentable_legacy_values_are_not_coerced_into_text_inputs():
-    assert OpenWebuiModForm.build({"mixed": [1, "two"], "key.with.dots": "keep"}, {}) == []
+    assert OpenWebuiModForm.build({"mixed": [1, "two"], "key.with.dots": "keep", "café": "keep"}, {}) == []
 
 
 def test_manifest_validates_hints_without_executing_mod_code():

@@ -26,7 +26,7 @@ class OpenWebuiModForm:
         "secretFileInput",
     }
     _LOCALE_KEYS = set(LOCALES)
-    _FIELD_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+    _FIELD_NAME_PATTERN = re.compile(r"^[A-Za-z]\w*$", re.ASCII)
 
     @classmethod
     def _infer(cls, value: Any) -> str | None:
@@ -104,7 +104,7 @@ class OpenWebuiModForm:
                 property_path = ".".join(str(part) for part in issue["loc"][1:])
                 detail = f"{property_path}: {issue['msg']}" if property_path else issue["msg"]
             raise ValueError(f"Field {name!r}: {detail}") from error
-        allowed = {key for key in type(element).model_fields}
+        allowed = set(type(element).model_fields)
         allowed.update(field.alias for field in type(element).model_fields.values() if field.alias)
         unknown = definition.keys() - allowed
         if unknown:
@@ -128,29 +128,43 @@ class OpenWebuiModForm:
                 if name in fields:
                     raise ValueError(f"Invalid mod setting field name: {name}")
                 continue
-            value = defaults.get(name)
-            definition = cls._definition(name, value, fields.get(name, {}))
-            if definition is None:
-                continue
-            control = definition["formkit"]
-            # The shared renderer cannot mount a repeater inside another repeater's row.
-            if control == "repeater" and _in_repeater:
-                if name in fields:
-                    raise ValueError("Mod settings do not support repeaters inside repeater rows")
-                continue
-            if name in defaults and value is None:
-                definition.setdefault("nullable", True)
-            if control in {"group", "repeater"}:
-                children = cls._children(name, definition.pop("children", None))
-                child_defaults = value[0] if isinstance(value, list) and value else value
-                definition["children"] = cls.build(
-                    child_defaults if isinstance(child_defaults, dict) else {},
-                    children,
-                    _depth=_depth + 1,
-                    _in_repeater=_in_repeater or control == "repeater",
-                )
-            elif value is not None and not isinstance(value, list | dict):
-                # Complex defaults are carried separately from the platform's scalar element value.
-                definition["value"] = value
-            result.append(cls._validate(name, definition))
+            element = cls._build_field(name, defaults, fields, depth=_depth, in_repeater=_in_repeater)
+            if element is not None:
+                result.append(element)
         return result
+
+    @classmethod
+    def _build_field(
+        cls,
+        name: str,
+        defaults: dict[str, Any],
+        fields: dict[str, dict[str, Any]],
+        *,
+        depth: int,
+        in_repeater: bool,
+    ) -> FormkitElement | None:
+        value = defaults.get(name)
+        definition = cls._definition(name, value, fields.get(name, {}))
+        if definition is None:
+            return None
+        control = definition["formkit"]
+        # The shared renderer cannot mount a repeater inside another repeater's row.
+        if control == "repeater" and in_repeater:
+            if name in fields:
+                raise ValueError("Mod settings do not support repeaters inside repeater rows")
+            return None
+        if name in defaults and value is None:
+            definition.setdefault("nullable", True)
+        if control in {"group", "repeater"}:
+            children = cls._children(name, definition.pop("children", None))
+            child_defaults = value[0] if isinstance(value, list) and value else value
+            definition["children"] = cls.build(
+                child_defaults if isinstance(child_defaults, dict) else {},
+                children,
+                _depth=depth + 1,
+                _in_repeater=in_repeater or control == "repeater",
+            )
+        elif value is not None and not isinstance(value, list | dict):
+            # Complex defaults are carried separately from the platform's scalar element value.
+            definition["value"] = value
+        return cls._validate(name, definition)
