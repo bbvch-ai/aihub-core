@@ -4,7 +4,7 @@
 
 # Swiss AI-Hub
 
-**The open-source AI infrastructure stack for Swiss enterprises.**
+**The open-source corporate AI soloution for small and medium enterprises.**
 
 Connect, orchestrate, and monitor best-in-class open-source tools to deliver\
 what cloud AI platforms promise, but where you own every layer.
