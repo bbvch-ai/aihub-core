@@ -55,7 +55,7 @@ an iframe. A tenant mismatch clears the custom footer while AI Hub displays its 
 
 ## Footer placement
 
-Tested in Chromium with OpenWebUI v0.11.4-slim. The loader:
+Tested in Chromium with OpenWebUI v0.12.5-slim. The loader:
 
 1. Finds `#chat-input-container #chat-input` and its form inside `#chat-pane`.
 2. Searches that composer's ancestors for the upstream footer with `absolute bottom-1 text-xs text-center line-clamp-1`
@@ -108,7 +108,7 @@ In a full deployment:
 ## Voice call speech
 
 The same `loader.js` also keeps OpenWebUI's voice call panel from hanging when text-to-speech fails. Stock OpenWebUI
-v0.11.4 returns the panel to "Listening..." only after it has played every sentence of the answer, and it requests a
+v0.12.5 returns the panel to "Listening..." only after it has played every sentence of the answer, and it requests a
 sentence's speech again every 200 ms until one succeeds. The platform routes no speech model and non-admin users lack
 the TTS permission, so the request never succeeds and the panel shows "Tap to interrupt" forever.
 
@@ -117,7 +117,7 @@ one is replaced by a silent 10 ms clip, so the panel moves on and returns to "Li
 and "Voice reply unavailable, answer shown as text" appears below the panel's own status line. The text clears when
 speech succeeds.
 
-The status line is located through the panel's markup, `button.z-10 > div.line-clamp-1.text-sm.font-normal`. Recheck the
+The status line is located through the panel's markup, `div.z-10.line-clamp-1.text-sm.font-normal[role="status"]`. Recheck the
 selector and the speech endpoint after OpenWebUI upgrades, and remove this part of the script once OpenWebUI stops
 retrying failed speech without limit.
 
@@ -127,16 +127,21 @@ return `audio/wav`.
 
 ## Interface language
 
-The loader also repairs the language OpenWebUI saved in the browser (`localStorage.locale`). OpenWebUI falls back from a
-saved language only to that same language, so a code it ships no translation for loads no translation at all. From
-v0.11.4 on, settings texts use code-name keys, and the Settings dialog and the chat's Controls panel then show raw keys
-such as `settings.personal.general.parameters.streamChatResponse.label`. Two kinds of browsers hit this: those where
-OpenWebUI v0.11.3 or earlier saved `de` from the former `DEFAULT_LOCALE`, and those whose own language is a regional
-code OpenWebUI does not ship, such as `de-CH` or `it-CH`, from their second visit on.
+The loader also repairs the language OpenWebUI saved in the browser (`localStorage.locale`). OpenWebUI v0.11.4 fell
+back from a saved language only to that same language, so a code it ships no translation for loaded no translation at
+all, and the Settings dialog and the chat's Controls panel showed raw keys such as
+`settings.personal.general.parameters.streamChatResponse.label`. Two kinds of browsers hit this: those where OpenWebUI
+v0.11.3 or earlier saved `de` from the former `DEFAULT_LOCALE`, and those whose own language is a regional code
+OpenWebUI does not ship, such as `de-CH` or `it-CH`, from their second visit on.
 
 Before OpenWebUI starts, the loader replaces a saved language that is not in OpenWebUI's locale list with `en-US`.
 French codes are kept, because OpenWebUI maps any of them to `fr-FR` itself. The repair runs in the AI Hub frame and on
-direct visits. `DEFAULT_LOCALE` is `en-US` for the same reason.
+direct visits. Since v0.12, OpenWebUI maps every such code to a language it ships (`de-CH` to `de-DE`), so the repair
+only keeps these browsers in English, as on v0.11.4. Removing it would switch them to that language.
+
+`DEFAULT_LOCALE` is `en-US`, and since v0.12 it is the starting language of everyone who has not picked one, ahead of
+the browser's language. OpenWebUI stores it on its first start only, so `openwebui-init` moves a stored `de`, left from
+before 2026-10-30, to `en-US`.
 
 The locale list in the loader is copied from OpenWebUI's `src/lib/i18n/locales/languages.json`. Recheck it after
 OpenWebUI upgrades. `e2e/disclaimer/locale.spec.ts` covers the repair in the browser suite above.

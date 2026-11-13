@@ -206,6 +206,9 @@ create_service_account() {
             role = EXCLUDED.role,
             updated_at = EXCLUDED.updated_at;
 
+        -- The API signs the tokens of this account itself, without a session stamp, and OpenWebUI 0.12 accepts them only
+        -- while the stamp is NULL. Resetting it on every start keeps a sign-out-everywhere from locking the provisioner
+        -- out for good.
         INSERT INTO auth (id, email, password, active)
         VALUES (
             '${SERVICE_ACCOUNT_ID}',
@@ -213,8 +216,19 @@ create_service_account() {
             '$(echo "${SERVICE_ACCOUNT_PASSWORD}" | sed "s/'/''/g")',
             true
         )
-        ON CONFLICT DO NOTHING;
+        ON CONFLICT (id) DO UPDATE SET session_stamp = NULL;
     " 2>&1 && log "Service account ready" || log "WARNING: Service account creation failed"
+}
+
+# OpenWebUI stores DEFAULT_LOCALE only on its first start, so deployments installed while it was "de" (until
+# 2026-10-30) still hold "de". Since OpenWebUI 0.12 that stored value is the starting language of everyone who never
+# picked one, so the stale value moves to en-US. Any other stored value is left as it is.
+reset_stale_default_locale() {
+    run_sql -v ON_ERROR_STOP=1 -c "
+        UPDATE config SET value = to_json('en-US'::text), updated_at = $(date +%s)
+        WHERE key = 'ui.default_locale' AND value #>> '{}' = 'de'
+        RETURNING key;
+    " | grep -q . && log "Default language changed from de to en-US" || true
 }
 
 # Replace OpenWebUI's built-in Code Interpreter prompt. Its stock wording makes models link files saved
@@ -285,6 +299,8 @@ main() {
 
     # Create AI-Hub service account admin for API access
     create_service_account
+
+    reset_stale_default_locale
 
     set_code_interpreter_prompt
 

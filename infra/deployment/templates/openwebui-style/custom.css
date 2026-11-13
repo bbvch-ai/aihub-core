@@ -1,5 +1,5 @@
 /*
- * Stylesheet stock OpenWebUI v0.11.4 loads from /static/custom.css. See "Streaming indicator" in
+ * Stylesheet stock OpenWebUI v0.12.5 loads from /static/custom.css. See "Streaming indicator" in
  * docs/docs/2_platform/10_chat_ui/11_integration_architecture/index.en.md.
  *
  * OpenWebUI marks an unfinished answer with a thin pulsing bar after its content. Agents think and call tools for
@@ -7,7 +7,7 @@
  * thought or tool call shows its own progress, and drawn as three typing dots otherwise.
  */
 
-#response-content-container > div > span.animate-pulse.align-text-bottom {
+#response-content-container > div > span.animate-cursor-pulse.align-text-bottom {
   position: relative;
   width: 1.625rem;
   height: 0.375rem;
@@ -17,7 +17,7 @@
   vertical-align: middle;
 }
 
-#response-content-container > div > span.animate-pulse.align-text-bottom::before {
+#response-content-container > div > span.animate-cursor-pulse.align-text-bottom::before {
   content: "";
   position: absolute;
   top: 0;
@@ -50,12 +50,12 @@
   }
 }
 
-#response-content-container:has(.shimmer) > div:has(> span.animate-pulse.align-text-bottom) {
+#response-content-container:has(.shimmer) > div:has(> span.animate-cursor-pulse.align-text-bottom) {
   display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #response-content-container > div > span.animate-pulse.align-text-bottom::before {
+  #response-content-container > div > span.animate-cursor-pulse.align-text-bottom::before {
     animation: none;
     background: rgb(156 163 175 / 0.6);
     box-shadow:

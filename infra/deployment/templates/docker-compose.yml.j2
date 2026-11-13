@@ -2803,6 +2803,9 @@ services:
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: playwright
       PLAYWRIGHT_WS_URL: {{ 'ws://localhost:3036' if stage == 'dev' else PLAYWRIGHT_WS_URL }}
+      # Attach Webpage first fetches the page itself, and without a user agent it sends aiohttp's default, which
+      # Wikipedia refuses with 403. Wikimedia asks for a name and a contact.
+      USER_AGENT: "Swiss-AI-Hub (+https://docs.ai-hub.bbv.ch/)"
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 

@@ -50,13 +50,20 @@ for (const unsupported of ['de', 'de-CH', 'it-CH', 'en']) {
   })
 }
 
-for (const shipped of ['de-DE', 'vi-VN', 'fr-CH']) {
+for (const shipped of ['de-DE', 'vi-VN']) {
   test(`a saved "${shipped}" is kept`, async ({ page }) => {
     await saveLocale(page, shipped)
     expect(await visit(page)).not.toMatch(rawKey)
     expect(await page.evaluate(() => localStorage.getItem('locale'))).toBe(shipped)
   })
 }
+
+// The repair leaves French codes alone; OpenWebUI 0.12 saves them as the French it ships.
+test('a saved "fr-CH" becomes fr-FR and settings stay readable', async ({ page }) => {
+  await saveLocale(page, 'fr-CH')
+  expect(await visit(page)).not.toMatch(rawKey)
+  expect(await page.evaluate(() => localStorage.getItem('locale'))).toBe('fr-FR')
+})
 
 test.describe('a Swiss German browser', () => {
   test.use({ locale: 'de-CH' })
