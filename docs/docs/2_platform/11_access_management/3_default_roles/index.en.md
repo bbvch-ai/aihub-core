@@ -39,15 +39,15 @@ Each role grants one or more access rules in the `aihub.[user|admin].<resource>`
 | `AIHubKnowledgeUser`  | `aihub.user.knowledge.>`                           | Use every knowledge database, and nothing else                            |
 | `AIHubKnowledgeAdmin` | `aihub.admin.knowledge`, `aihub.admin.knowledge.>` | Administer every knowledge database and create new ones, and nothing else |
 | `AIHubProcessUser`    | `aihub.user.process.>`                             | Use every process, and nothing else                                       |
-| `AIHubProcessAdmin`   | `aihub.admin.process.>`                            | Administer every process, and nothing else                                |
+| `AIHubProcessAdmin`   | `aihub.admin.process`, `aihub.admin.process.>`     | Administer every process and create new ones, and nothing else            |
 
 Points that are easy to miss:
 
 - **User and admin access are separate.** `aihub.admin.>` does not include `aihub.user.>`. An administrator who should
   also use the tenant needs both `AIHubAdmin` and `AIHubUser`, which is why the first user receives both by default.
-- **`AIHubKnowledgeAdmin` needs two rules.** `aihub.admin.knowledge.>` covers every existing database. Creating a new
-  database is checked against the bare `aihub.admin.knowledge` rule, because a database that does not exist yet has no
-  name a rule could match.
+- **`AIHubKnowledgeAdmin` and `AIHubProcessAdmin` need two rules.** `aihub.admin.knowledge.>` covers every existing
+  database. Creating a new database is checked against the bare `aihub.admin.knowledge` rule, because a database that
+  does not exist yet has no name a rule could match. Processes work the same way with `aihub.admin.process`.
 - **The tenant's access ceiling caps every role.** A role never grants more than its tenant allows. In a tenant whose
   ceiling excludes a model or an assistant, `AIHubAdmin` cannot reach it either. See
   [Access Control](../../16_multi_tenancy/4_access_control/).

@@ -75,14 +75,14 @@ _AGENT_ROUTES = [
 _ROLE_ROUTES = [("aihub.admin.service.role", None)]
 _OPENAI_ROUTES = [("aihub.user.?>", None)]
 # Guards mirror the real Process/Knowledge controllers, which cannot be instantiated here — both open
-# infrastructure connections in ``__init__``. Process "Create" is a class-level read-only guard
-# (`{process_class}.?>`), so process has no grantable class row at all. Knowledge has a "Manage" row at both
+# infrastructure connections in ``__init__``. Process "Create" is resource-wide (`aihub.admin.process`), so
+# process has no class row of its own. Knowledge has a "Manage" row at both
 # depths: over a whole database (`aihub.admin.knowledge.{database}`, on ``update_database_source`` and
 # ``create_namespace``) and over one folder (`aihub.admin.knowledge.{database}.{namespace}`, on
 # ``initiate_document_upload``); "Create" is resource-wide.
 _PROCESS_ROUTES = [
     ("aihub.user.process.?>", f"{_OPS}.process.see"),
-    ("aihub.admin.process.{process_class}.?>", f"{_OPS}.process.create"),
+    ("aihub.admin.process", f"{_OPS}.process.create"),
     ("aihub.user.process.{process_class}.{process_id}", f"{_OPS}.process.use"),
     ("aihub.admin.process.{process_class}.{process_id}", f"{_OPS}.process.manage"),
 ]
@@ -400,9 +400,10 @@ async def test_process_resolver_builds_class_and_instance_groups():
     service = _group_by_key(response.groups, "service:process")
     onboarding = _group_by_key(service.groups, "process:Onboarding")
     assert onboarding.label == "Onboarding"
-    # "Create" (`aihub.admin.process.{process_class}.?>`) is class-level AND an existence query → read-only.
-    create = next(cap for cap in onboarding.capabilities if cap.label and not cap.toggleable)
-    assert create.rule is None
+    # "Create" is guarded on the bare process root, so it is a grantable row on the service, not on a class.
+    create = _by_rule({cap.key: cap for cap in service.capabilities}, "aihub.admin.process")
+    assert create.toggleable and not create.granted
+    assert not any(cap.rule == "aihub.admin.process" for cap in onboarding.capabilities)
 
     run = _group_by_key(onboarding.groups, "process:Onboarding:run1")
     assert run.label == "Q3 Onboarding"
