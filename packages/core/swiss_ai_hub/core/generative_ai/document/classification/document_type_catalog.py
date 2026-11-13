@@ -199,6 +199,11 @@ class DocumentTypeCatalog:
         return [key for definition in cls.ATTRIBUTES for key in definition.stored_keys() if key != definition.raw_key]
 
     @classmethod
+    def filter_keys(cls) -> list[str]:
+        """The keys a retrieval filter may name on any knowledge database: the types and the values, not the copies."""
+        return [DOCUMENT_TYPE, DOCUMENT_TYPES, *cls.value_keys()]
+
+    @classmethod
     def prompt_types(cls) -> list[dict[str, Any]]:
         return [
             definition.model_dump(include={"type", "description", "excludes", "cue_words"}) for definition in cls.TYPES

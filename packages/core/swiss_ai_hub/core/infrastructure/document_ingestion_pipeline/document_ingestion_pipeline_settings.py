@@ -42,6 +42,14 @@ class DocumentIngestionPipelineSettings(EnvironmentSettings):
     WITH_FIGURE_DESCRIPTIONS: Annotated[
         bool, Field(default=True, description="Generate figure descriptions with a vision LLM.")
     ]
+    WITH_DOCUMENT_CLASSIFICATION: Annotated[
+        bool,
+        Field(
+            default=True,
+            description="Classify each document into the closed set of types and read its attributes with the text "
+            "model, as filterable metadata.",
+        ),
+    ]
 
     @field_validator("VISION_MODEL", mode="before")
     @classmethod

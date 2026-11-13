@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: b77e1a33224d779e7940b78e4a797d41c5084a93eb98c29ab68175c03285f2e5
+source_sha: 98ec8818d4779265ba18856e70594bdb6d70445e776bb1b90e9c7f11095de6b2
 ---
 
 # Dokumenttypen und Attribute
@@ -63,6 +63,21 @@ aus [EN 16931](https://docs.peppol.eu/poacc/billing/3.0/syntax/ubl-invoice/tree/
 [deutschen Umsatzsteuergesetz, § 14](https://www.gesetze-im-internet.de/ustg_1980/__14.html). Das Schweizer Recht
 verlangt keine Rechnungsnummer, daher ist eine leere `document_reference_number` bei einer Schweizer Rechnung zu
 erwarten.
+
+## Wann Dokumente klassifiziert werden
+
+Die Ingestion klassifiziert jedes neue oder geänderte Dokument einmal, nach dem Parsen und der Tabellenaufbereitung, mit
+dem Textmodell der jeweiligen Wissensdatenbank. Die Einstellung **Dokumente klassifizieren** der Wissensdatenbank
+schaltet das aus; standardmässig ist sie eingeschaltet.
+
+- Aus Jira, Confluence oder MediaWiki synchronisierte Datensätze werden nicht klassifiziert: Ihre eigenen Felder sagen
+  bereits, was sie sind.
+- Schlägt der Modellaufruf fehl, wird das Dokument ohne Typ aufgenommen und bleibt vollständig durchsuchbar. Es wird
+  später durch einen Backfill klassifiziert.
+- Typ und Attribute sind reine Filter-Metadaten. Sie gehören nicht zum Text, der eingebettet oder einem Modell gezeigt
+  wird, daher ändern sich die Suchergebnisse für bestehende Inhalte nicht.
+- Jede Wissensdatenbank lässt sich nach `document_type`, `document_types` und dem Wert jedes Attributs filtern, in der
+  Vektorsuche und in der Dokumentliste, ohne dass die Schlüssel konfiguriert werden müssen.
 
 ## Wie Werte gespeichert werden
 

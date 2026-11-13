@@ -181,6 +181,34 @@ class TestEnforcement:
                 ],
             )
 
+    def test_classification_keys_are_allowed_on_every_bucket_without_being_listed(self):
+        """Ingestion writes them on every database, so no retriever config has to list them (#2482)."""
+        retrievers = [_retriever("bucket_a", ["ns1"])]
+        filters = [
+            MetadataFilterPair(key="document_types", value="invoice"),
+            MetadataFilterPair(key="document_issuer", value="Hooli AG"),
+        ]
+
+        runtime_configs = narrow_retrievers(
+            retrievers, [], [BucketMetadataFilters(bucket_name="bucket_a", filters=filters)]
+        )
+
+        assert runtime_configs[0].additional_metadata_filters == filters
+
+    def test_the_copied_text_of_a_classified_value_is_not_a_filter_key(self):
+        retrievers = [_retriever("bucket_a", ["ns1"])]
+        with pytest.raises(ValueError, match="not allowed on bucket 'bucket_a'"):
+            narrow_retrievers(
+                retrievers,
+                [],
+                [
+                    BucketMetadataFilters(
+                        bucket_name="bucket_a",
+                        filters=[MetadataFilterPair(key="document_date_raw", value="14. März 2025")],
+                    )
+                ],
+            )
+
     def test_reserved_namespace_key_raises(self):
         retrievers = [_retriever("bucket_a", ["ns1"], allowed=["namespace"])]
         with pytest.raises(ValueError, match="reserved"):

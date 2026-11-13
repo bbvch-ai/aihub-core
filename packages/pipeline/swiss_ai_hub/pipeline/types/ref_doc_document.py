@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from llama_index.core import Document
 from pydantic import computed_field
+from swiss_ai_hub.core.generative_ai import DocumentTypeCatalog
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_TITLE,
@@ -94,3 +95,19 @@ class RefDocDocument(Document):
         )
         applied.set_content(frontmatter.body)
         return applied
+
+    def with_classification(self, classification_metadata: dict[str, Any]) -> Self:
+        """A copy carrying the classification's type and attributes, kept out of the embedded and model-facing text.
+
+        They are filter metadata, not content: excluded, the embedded text of every chunk stays what it was, so a
+        later re-classification never has to embed again. Every key classification can write is excluded, also those
+        this document's type does not carry, so the lists do not depend on the type.
+        """
+        keys = DocumentTypeCatalog.metadata_keys()
+        return self.model_copy(
+            update={
+                "metadata": {**self.metadata, **classification_metadata},
+                "excluded_embed_metadata_keys": [*self.excluded_embed_metadata_keys, *keys],
+                "excluded_llm_metadata_keys": [*self.excluded_llm_metadata_keys, *keys],
+            }
+        )
