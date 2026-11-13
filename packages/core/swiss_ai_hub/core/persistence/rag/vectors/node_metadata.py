@@ -29,6 +29,12 @@ UPDATED_AT: str = "updated_at"
 INSERTED_AT: str = "inserted_at"
 IS_INGESTED: str = "is_ingested"
 
+# Document level - Classification (attribute keys: `DocumentTypeCatalog.metadata_keys()`)
+DOCUMENT_TYPE: str = "document_type"
+DOCUMENT_TYPES: str = "document_types"
+DOCUMENT_CLASSIFICATION_VERSION: str = "document_classification_version"
+DOCUMENT_NORMALIZER_VERSION: str = "document_normalizer_version"
+
 # Node level - Metadata
 INDEX = "index"
 PAGE = "page"

@@ -24,6 +24,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
         S3AnonymousFileAccessService,
     )
+    from swiss_ai_hub.core.generative_ai.document.classification.document_attribute import DocumentAttribute
+    from swiss_ai_hub.core.generative_ai.document.classification.document_classification import DocumentClassification
+    from swiss_ai_hub.core.generative_ai.document.classification.document_classifier import DocumentClassifier
+    from swiss_ai_hub.core.generative_ai.document.classification.document_type import DocumentType
+    from swiss_ai_hub.core.generative_ai.document.classification.document_type_catalog import DocumentTypeCatalog
     from swiss_ai_hub.core.generative_ai.document.extraction.document_extractor import DocumentExtractor
     from swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver import DocumentTitleDeriver
     from swiss_ai_hub.core.generative_ai.document.extraction.extracted_document import ExtractedDocument
@@ -240,6 +245,11 @@ __all__ = [
     "RecordSchemaBuilder",
     "DocumentIntelligenceLoader",
     "CitationId",
+    "DocumentAttribute",
+    "DocumentClassification",
+    "DocumentClassifier",
+    "DocumentType",
+    "DocumentTypeCatalog",
     "DocumentExtractor",
     "DocumentLoaderSelector",
     "DocumentTitleDeriver",
@@ -328,6 +338,11 @@ _LAZY_IMPORTS = {
     "BucketNamespacePair": "swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair",
     "DocumentIntelligenceLoader": "swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader",
     "CitationId": "swiss_ai_hub.core.generative_ai.citations.citation_id",
+    "DocumentAttribute": "swiss_ai_hub.core.generative_ai.document.classification.document_attribute",
+    "DocumentClassification": "swiss_ai_hub.core.generative_ai.document.classification.document_classification",
+    "DocumentClassifier": "swiss_ai_hub.core.generative_ai.document.classification.document_classifier",
+    "DocumentType": "swiss_ai_hub.core.generative_ai.document.classification.document_type",
+    "DocumentTypeCatalog": "swiss_ai_hub.core.generative_ai.document.classification.document_type_catalog",
     "DocumentExtractor": "swiss_ai_hub.core.generative_ai.document.extraction.document_extractor",
     "DocumentLoaderSelector": "swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector",
     "DocumentTitleDeriver": "swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver",

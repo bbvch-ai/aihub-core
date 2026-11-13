@@ -1,12 +1,13 @@
 import json
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from llama_index.core.schema import BaseNode, NodeWithScore, TextNode
 from openinference.semconv.trace import DocumentAttributes
 from pydantic import Field, computed_field
 
 from swiss_ai_hub.core.generative_ai.citations.citation_id import CitationId
+from swiss_ai_hub.core.generative_ai.document.classification.document_type_catalog import DocumentTypeCatalog
 from swiss_ai_hub.core.generative_ai.document.types.ingested_base import IngestedBase
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
@@ -91,6 +92,14 @@ class IngestedNode(IngestedBase):
         ),
     ] = {}
 
+    document_classification: Annotated[
+        dict[str, Any],
+        Field(
+            description="The document's type and attributes from ingestion's classification, under their metadata "
+            "keys; empty for a document that was not classified."
+        ),
+    ] = {}
+
     score: Annotated[float | None, Field(description="Score representing the relevance of the document.")] = None
 
     @classmethod
@@ -104,6 +113,8 @@ class IngestedNode(IngestedBase):
         )
 
         metadata = node.metadata.copy() if node.metadata else {}
+        # Classification keys are kept out of the embedded text too, so they are taken first: they are not a record's.
+        classification = {key: metadata.pop(key) for key in DocumentTypeCatalog.metadata_keys() if key in metadata}
         # Ingestion keeps exactly the frontmatter's own keys out of the embedded text, so that list names them.
         record_fields = {key: metadata.pop(key) for key in node.excluded_embed_metadata_keys if key in metadata}
         inst = cls(
@@ -135,6 +146,7 @@ class IngestedNode(IngestedBase):
             inserted_at=to_iso(metadata.pop(INSERTED_AT, 0)),
             metadata=metadata,
             record_fields=record_fields,
+            document_classification=classification,
         )
 
         return inst
@@ -179,6 +191,7 @@ class IngestedNode(IngestedBase):
                 INSERTED_AT: from_iso(self.inserted_at),
                 **self.metadata,
                 **self.record_fields,
+                **self.document_classification,
             },
             ref_doc_id=self.document_id,
         )
