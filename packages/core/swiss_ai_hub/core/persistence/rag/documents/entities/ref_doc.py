@@ -56,6 +56,13 @@ class Metadata(DynamicEmbeddedDocument):
     # Legacy docs without this field are treated as ingested
     is_ingested = BooleanField(default=True)
 
+    # Set by classification; absent on a document that was not classified. The attribute values stay dynamic fields,
+    # since their keys and value types come from `DocumentTypeCatalog`, not from this schema.
+    document_type = StringField(required=False)
+    document_types = ListField(StringField(), required=False)
+    document_classification_version = IntField(required=False)
+    document_normalizer_version = IntField(required=False)
+
 
 class DocumentData(DynamicEmbeddedDocument):
     id = StringField(required=True, db_field="id_")
