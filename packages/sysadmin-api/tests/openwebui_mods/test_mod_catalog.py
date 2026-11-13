@@ -1,41 +1,26 @@
-import json
-from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
-from swiss_ai_hub.core.infrastructure.openwebui import OpenWebuiModBundles
-from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModRevisionEntity
-
-from tests.openwebui_mods.test_mod_upload import archive, auth, client, host, publication, storage  # noqa: F401
+from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
+from tests.openwebui_mods.helpers import BASE, install_mod
 
 
-def test_catalog_contains_current_builtins_without_seeding(client: TestClient, storage: MagicMock) -> None:
-    response = client.get('/api/v1/admin/openwebui-mods/catalog')
-    assert response.status_code == 200
-    packages = OpenWebuiModBundles.packages()
-    assert {item['manifest']['id']: item['source_revision'] for item in response.json()} == {
-        mod_id: package.revision for mod_id, package in packages.items()
-    }
-    assert all(item['builtin'] for item in response.json())
-    assert all(item['settings_form'][0]['formkit'] == 'localeInput' for item in response.json())
-    assert all(item['settings_form'][0]['name'] == 'text' for item in response.json())
-    assert OpenWebuiModRevisionEntity.objects.count() == 0
+def test_catalog_reads_do_not_install_builtins(client: TestClient, storage: MagicMock) -> None:
+    assert client.get(BASE + "/catalog").json() == []
+    assert client.get(BASE + "/builtins").json() == ["builtin-default", "builtin-optional"]
+    assert OpenWebuiModEntity.objects.count() == 0
     assert storage.mock_calls == []
 
 
-def test_catalog_paginates_mods_independently_of_revision_history(client: TestClient) -> None:
-    now = datetime.now(UTC)
-    for index in range(105):
-        mod_id = 'zz-many-versions' if index else 'aa-old-mod'
-        manifest = {'format': 1, 'id': mod_id, 'name': mod_id, 'version': str(index), 'frontend': 'main.js'}
-        OpenWebuiModRevisionEntity(
-            revision=f'{index:064x}', mod_id=mod_id, manifest_json=json.dumps(manifest), archive_bytes=1,
-            uploaded_at=now + timedelta(seconds=index), uploaded_by='fixture',
-        ).save()
-    entries = []
-    for offset in range(5):
-        entries.extend(client.get('/api/v1/admin/openwebui-mods/catalog', params={'offset': offset, 'limit': 1}).json())
-    expected = sorted(['aa-old-mod', 'zz-many-versions', *OpenWebuiModBundles.packages()])
-    assert [entry['manifest']['id'] for entry in entries] == expected
-    assert entries[-1]['manifest']['version'] == '104'
-    assert entries[-1]['builtin'] is False
+def test_catalog_paginates_installed_mods_with_one_entry_per_id(client: TestClient, archive: bytes, publication: bytes) -> None:
+    install_mod(client, archive, publication, "a-first")
+    install_mod(client, archive, publication, "z-last")
+    for version in ["2", "3", "4"]:
+        install_mod(client, archive, publication, "a-first", version=version)
+    first = client.get(BASE + "/catalog", params={"offset": 0, "limit": 1}).json()
+    last = client.get(BASE + "/catalog", params={"offset": 1, "limit": 1}).json()
+    assert first[0]["manifest"]["id"] == "a-first"
+    assert first[0]["manifest"]["version"] == "4"
+    assert last[0]["manifest"]["id"] == "z-last"
+    assert client.get(BASE + "/catalog", params={"offset": 2, "limit": 1}).json() == []
+    assert not first[0]["builtin"]

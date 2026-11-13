@@ -1,6 +1,6 @@
 ---
 title: Funktionen
-source_sha: eba1a0dd50ee9af4208a413d05b1e69447f11f2704f1c0e9778716039f857051
+source_sha: 3d3bb7d7ac9e482ade084dbda6e29fef37395c2942da54ce40d1021cf13ada17
 ---
 
 # :sparkles: Funktionen
@@ -14,4 +14,4 @@ Diese Funktionsliste wird regelmäßig aktualisiert. Schauen Sie öfter vorbei, 
 wir die Funktionalität der Plattform erweitern.
 :::
 
-[Open WebUI-Mods schreiben](1_openwebui_mods/) beschreibt eigene Chat-Komponenten, Backend-Hooks und Veröffentlichung zur Laufzeit.
+[Open WebUI-Mods schreiben](1_openwebui_mods/) beschreibt eigene Chat-Komponenten, Backend-Hooks und Installation zur Laufzeit.

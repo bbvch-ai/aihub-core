@@ -29,4 +29,4 @@ The renderer checks deliberately bypass the host to isolate that DOM contract; t
 
 For an already running equivalent fixture, override `OPENWEBUI_MODS_URL`, `OPENWEBUI_MODS_TEST_PARENT` and
 `OPENWEBUI_MODS_CONTROL_TOKEN` and set the server's `TEST_PARENT_ORIGIN` to the same parent origin. This suite must never
-point at a production host. Full AI Hub login, publishing and deployment acceptance remain separate checks.
+point at a production host. Full AI Hub login, installation and deployment acceptance remain separate checks.

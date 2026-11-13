@@ -6,11 +6,9 @@
         <p class="text-sm text-surface-500">{{ manifest?.version }}<span v-if="entry?.builtin"> · {{ t('openwebui_mods.automatic_version') }}</span></p>
         <p v-if="manifest?.description" class="mt-1 text-sm">{{ manifest.description }}</p>
       </div>
-      <ToggleSwitch v-model="selection.enabled" class="shrink-0" :disabled="!selection.enabled && ((!entry?.builtin && !selection.publication) || (requiresRestart && !globalScope))" :aria-label="t('openwebui_mods.enable', { name: manifest?.name ?? selection.mod_id })" />
+      <ToggleSwitch v-model="selection.enabled" class="shrink-0" :aria-label="t('openwebui_mods.enable', { name: manifest?.name ?? selection.mod_id })" />
     </div>
-    <Message v-if="error" severity="warn" :closable="false" class="mt-3">{{ t('openwebui_mods.metadata_error') }}</Message>
-    <p v-if="requiresRestart" class="mt-3 text-sm text-surface-500">{{ t(globalScope ? 'openwebui_mods.global.mod_restart' : 'openwebui_mods.global.global_only') }}</p>
-    <p v-if="!entry?.builtin && !selection.publication" class="mt-3 text-sm text-surface-500">{{ t('openwebui_mods.select_before_enable') }}</p>
+    <p v-if="requiresRestart" class="mt-3 text-sm text-surface-500">{{ t('openwebui_mods.global.mod_restart') }}</p>
     <details v-if="form?.length" class="mt-4">
       <summary class="cursor-pointer text-sm">{{ t('openwebui_mods.settings') }}</summary>
       <p :id="`${selection.mod_id}-help`" class="my-2 text-sm text-surface-500">{{ t(globalScope ? 'openwebui_mods.global.settings_help' : 'openwebui_mods.settings_help') }}</p>
@@ -23,34 +21,20 @@
         @valid="valid = $event"
       />
     </details>
-    <Button v-if="!entry?.builtin" class="mt-3" :label="t('openwebui_mods.versions')" severity="secondary" text size="small" @click="emit('versions', source)" />
   </section>
 </template>
 
 <script setup lang="ts">
 import { getFormkitType, type FormElement } from '@core/composables/form/useFormKitTransform'
-import { getOpenwebuiModPublication, getOpenwebuiModRevision, type OpenWebuiModSelection, type OpenWebuiModCatalogEntry, type OpenWebuiModRevisionResponse } from '~/sdk/client'
+import type { OpenWebuiModSelection, OpenWebuiModCatalogEntry } from '~/sdk/client'
 
 const selection = defineModel<OpenWebuiModSelection>({ required: true })
 const valid = defineModel<boolean>('valid', { default: true })
 const props = defineProps<{ entry?: OpenWebuiModCatalogEntry, globalScope?: boolean }>()
-const emit = defineEmits<{ versions: [OpenWebuiModRevisionResponse | undefined] }>()
 const { t } = useI18n()
 const formId = useId().replace(/[^a-zA-Z0-9_]/g, '_')
-const { data: resolvedSource, error } = useQuery({
-  key: () => ['openwebui-mod-source-for-publication', selection.value.publication ?? ''],
-  enabled: () => !props.entry?.builtin && Boolean(selection.value.publication),
-  query: async () => {
-    const publicationId = selection.value.publication!
-    const publication = await getOpenwebuiModPublication({ composable: '$fetch', path: { revision: publicationId } })
-    const source = await getOpenwebuiModRevision({ composable: '$fetch', path: { revision: publication.manifest.source_revision } })
-    return { publicationId, source }
-  },
-})
-const source = computed(() => resolvedSource.value && resolvedSource.value.publicationId === selection.value.publication ? resolvedSource.value.source : undefined)
-const manifest = computed(() => props.entry?.builtin ? props.entry.manifest : source.value?.manifest ?? props.entry?.manifest)
-const metadata = computed(() => props.entry?.builtin ? props.entry : source.value)
-const formKey = computed(() => `${formId}:${selection.value.publication ?? props.entry?.source_revision ?? ''}`)
+const manifest = computed(() => props.entry?.manifest)
+const formKey = computed(() => `${formId}:${props.entry?.source_revision ?? ''}`)
 watch(formKey, () => { valid.value = true })
 // Each mod owns its FormKit IDs, including synthetic nullable toggles.
 function scopeFields(fields: Record<string, unknown>[], path = ''): FormElement[] {
@@ -61,8 +45,8 @@ function scopeFields(fields: Record<string, unknown>[], path = ''): FormElement[
     ...(Array.isArray(field.children) ? { children: scopeFields(field.children, `${path}${field.name}__`) } : {}),
   }))
 }
-const form = computed(() => metadata.value?.settings_form ? scopeFields(metadata.value.settings_form) : undefined)
-const initialSettings = computed(() => ({ ...metadata.value?.manifest.default_settings, ...selection.value.settings }))
+const form = computed(() => props.entry?.settings_form ? scopeFields(props.entry.settings_form) : undefined)
+const initialSettings = computed(() => ({ ...props.entry?.manifest.default_settings, ...selection.value.settings }))
 function mergeFields(saved: Record<string, unknown>, changed: Record<string, unknown>, fields: FormElement[]): Record<string, unknown> {
   const result = { ...saved }
   for (const field of fields) {

@@ -3,13 +3,15 @@ from typing import Any
 import httpx
 from fastapi import HTTPException
 from mypy_boto3_s3 import S3Client
+from starlette.concurrency import run_in_threadpool
 from swiss_ai_hub.core.infrastructure.openwebui import (
-    OpenWebuiModBundles, OpenWebuiModConfiguration, OpenWebuiModHost, OpenWebuiModResolver,
-    OpenWebuiModSelection, OpenWebuiModStore, OpenWebuiSettings,
+    OpenWebuiModActivation, OpenWebuiModConfiguration, OpenWebuiModHost, OpenWebuiModPublicationManifest,
+    OpenWebuiModResolvedConfiguration, OpenWebuiModSelection, OpenWebuiModStore, OpenWebuiSettings,
 )
 
+from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
+
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_global_state import OpenWebuiModGlobalState
-from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_publication_response import OpenWebuiModPublicationResponse
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.openwebui_mod_service import OpenWebuiModService
 
 
@@ -35,11 +37,10 @@ class OpenWebuiModGlobalService:
 
     @staticmethod
     def _state(response: httpx.Response) -> OpenWebuiModGlobalState:
-        state = OpenWebuiModGlobalState.model_validate(response.json())
-        for mod in state.configuration.mods:
-            if mod.mod_id in OpenWebuiModBundles.packages():
-                mod.publication = None
-        return state
+        data = response.json()
+        for mod in data["configuration"]["mods"]:
+            mod.pop("publication")
+        return OpenWebuiModGlobalState.model_validate(data)
 
     @classmethod
     async def get(cls) -> OpenWebuiModGlobalState:
@@ -56,55 +57,50 @@ class OpenWebuiModGlobalService:
     @classmethod
     async def _prepare(
         cls, configuration: OpenWebuiModConfiguration, storage: S3Client, http: httpx.AsyncClient,
-    ) -> OpenWebuiModConfiguration:
+    ) -> OpenWebuiModResolvedConfiguration:
         host = await OpenWebuiModService.get_host()
-        prepared = configuration.model_copy(deep=True)
-        store = OpenWebuiModStore(storage)
-        for mod in prepared.mods:
-            publication = await cls._publication(mod, host)
-            source = await OpenWebuiModService.get_revision(publication.manifest.source_revision)
-            if publication.mod_id != mod.mod_id or source.manifest.backend is None:
-                raise HTTPException(422, f"Select a backend publication belonging to '{mod.mod_id}'.")
-            if not source.manifest.backend_overrides and not source.manifest.backend_restart_required:
-                raise HTTPException(422, f"'{mod.mod_id}' needs declared callable overrides or an explicit backend restart requirement for global activation.")
-            if mod.enabled and (publication.manifest.compatibility != host.compatibility or any(
-                host.callables.get(target) != fingerprint for target, fingerprint in publication.manifest.backend_targets.items()
-            )):
-                raise HTTPException(409, f"Republish '{mod.mod_id}' for this Open WebUI host.")
-            mod.publication = publication.revision
-            for kind, revision, content in [
-                ("sources", source.revision, await store.read_archive(source.revision)),
-                ("publications", publication.revision, await store.read_publication(publication.revision)),
-            ]:
-                await cls._request(http, "PUT", f"archives/{kind}/{revision}", content)
-        return prepared
-
-    @staticmethod
-    async def _publication(mod: OpenWebuiModSelection, host: OpenWebuiModHost) -> OpenWebuiModPublicationResponse:
-        builtin = OpenWebuiModBundles.packages().get(mod.mod_id)
-        if builtin is not None:
-            if mod.publication is not None:
-                raise HTTPException(422, f"Built-in '{mod.mod_id}' follows AI Hub and cannot be pinned.")
-            publication = await OpenWebuiModResolver.publication(builtin.revision, host.compatibility)
-            if publication is None:
-                raise HTTPException(409, "Initialize supplied mods before global activation.")
-            return OpenWebuiModPublicationResponse.from_entity(publication)
-        if mod.publication is None:
-            raise HTTPException(422, f"Select a published backend version of '{mod.mod_id}' first.")
-        return await OpenWebuiModService.get_publication(mod.publication)
+        return OpenWebuiModResolvedConfiguration(
+            version=configuration.version,
+            mods=[await cls._stage(mod, host, storage, http) for mod in configuration.mods],
+        )
 
     @classmethod
-    async def reconcile(cls, storage: S3Client) -> OpenWebuiModGlobalState:
+    async def _stage(
+        cls, mod: OpenWebuiModSelection, host: OpenWebuiModHost, storage: S3Client, http: httpx.AsyncClient,
+    ) -> OpenWebuiModActivation:
+        installed = await run_in_threadpool(OpenWebuiModEntity.find_mod, mod.mod_id)
+        if installed is None:
+            raise HTTPException(422, f"Unknown mod '{mod.mod_id}'.")
+        publication = OpenWebuiModPublicationManifest.model_validate_json(installed.publication_manifest_json)
+        if mod.enabled and (publication.compatibility != host.compatibility or any(
+            host.callables.get(target) != fingerprint for target, fingerprint in publication.backend_targets.items()
+        )):
+            raise HTTPException(409, f"Reinstall '{mod.mod_id}' for this Open WebUI host.")
+        store = OpenWebuiModStore(storage)
+        for kind, revision, content in [
+            ("sources", installed.source_revision, await store.read_archive(installed.source_revision)),
+            ("publications", installed.publication, await store.read_publication(installed.publication)),
+        ]:
+            await cls._request(http, "PUT", f"archives/{kind}/{revision}", content)
+        return OpenWebuiModActivation(**mod.model_dump(), publication=installed.publication)
+
+    @classmethod
+    async def reconcile(cls, storage: S3Client, *, mod_id: str | None = None) -> OpenWebuiModGlobalState:
         async with cls._client() as http:
             response = await cls._request(http, "GET", "global")
-            current = OpenWebuiModGlobalState.model_validate(response.json())
-            configuration = cls._state(response).configuration
-            if not any(mod.mod_id in OpenWebuiModBundles.packages() for mod in configuration.mods):
-                return cls._state(response)
-            prepared = await cls._prepare(configuration, storage, http)
-            if prepared != current.configuration:
+            current = OpenWebuiModResolvedConfiguration.model_validate(response.json()["configuration"])
+            state = cls._state(response)
+            if not any(mod_id is None or mod.mod_id == mod_id for mod in state.configuration.mods):
+                return state
+            host = await OpenWebuiModService.get_host()
+            prepared = current.model_copy(deep=True)
+            for index, mod in enumerate(state.configuration.mods):
+                if mod_id is None or mod.mod_id == mod_id:
+                    prepared.mods[index] = await cls._stage(mod, host, storage, http)
+            if prepared != current:
                 response = await cls._request(http, "PUT", "global", prepared.model_dump_json().encode())
-            return cls._state(response)
+                return cls._state(response)
+            return state
 
     @classmethod
     async def restart(cls, version: int) -> dict[str, Any]:

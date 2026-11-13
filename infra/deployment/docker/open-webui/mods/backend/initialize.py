@@ -30,23 +30,12 @@ class ModInitializer:
             local = json.loads(Path(__file__).with_name("compatibility.json").read_bytes())
             if host["compatibility"] != local:
                 raise RuntimeError("Initializer image differs from the running Open WebUI host")
-            sources = (await self.request("GET", "builtins")).json()
-            for source in sources:
-                await self.publish(source, host["compatibility"])
-            revisions = {source["manifest"]["id"]: source["revision"] for source in sources}
-            await self.request("POST", "initialize", json=revisions)
+            for mod_id in (await self.request("GET", "builtins")).json():
+                await self.request("POST", f"builtins/{mod_id}/install")
+                print(f"Installed: {mod_id}", flush=True)
             global_state = (await self.request("POST", "global/reconcile")).json()
             print(json.dumps({"status": "restart_required" if global_state["restart_required"] else "ready"}), flush=True)
 
-    async def publish(self, source: dict[str, Any], compatibility: dict[str, Any]) -> None:
-        revision = source["revision"]
-        prefix = f"revisions/{revision}"
-        publications = (await self.request("GET", prefix + "/publications")).json()
-        if any(publication["manifest"]["compatibility"] == compatibility for publication in publications):
-            print(f"Current: {source['manifest']['id']}", flush=True)
-            return
-        await self.request("POST", prefix + "/publications")
-        print(f"Published: {source['manifest']['id']}", flush=True)
 
 
 if __name__ == "__main__":

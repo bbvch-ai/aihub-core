@@ -3,7 +3,7 @@ import json
 from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field
-from swiss_ai_hub.core.infrastructure.openwebui import OpenWebuiModCompatibility, OpenWebuiModConfiguration
+from swiss_ai_hub.core.infrastructure.openwebui import OpenWebuiModCompatibility, OpenWebuiModResolvedConfiguration
 
 
 class OpenWebuiModRuntimeConfiguration(BaseModel):
@@ -11,12 +11,12 @@ class OpenWebuiModRuntimeConfiguration(BaseModel):
 
     tenant_id: str
     compatibility: OpenWebuiModCompatibility
-    configuration: OpenWebuiModConfiguration
+    configuration: OpenWebuiModResolvedConfiguration
     revision: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 
     @classmethod
     def from_configuration(
-        cls, tenant_id: str, compatibility: OpenWebuiModCompatibility, configuration: OpenWebuiModConfiguration,
+        cls, tenant_id: str, compatibility: OpenWebuiModCompatibility, configuration: OpenWebuiModResolvedConfiguration,
     ) -> Self:
         content = json.dumps({
             "tenant_id": tenant_id,

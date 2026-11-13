@@ -1,6 +1,7 @@
 import fcntl
 import hashlib
 import json
+import logging
 import os
 import time
 from collections.abc import Iterator
@@ -59,6 +60,7 @@ class GlobalModStore:
             configuration = self._configuration("desired.json")
             self._write(self.directory / "live.json", configuration.model_dump_json().encode())
             self._write(marker, json.dumps({"id": self.boot_id, "configuration": configuration.model_dump()}).encode())
+            self._prune()
 
     def live(self) -> GlobalModConfiguration:
         with self._lock():
@@ -94,7 +96,7 @@ class GlobalModStore:
         archive = FrontendArchive(mod.publication, publication)
         manifest = json.loads(archive.read("publication.json", manifest=True))
         if validate and manifest["compatibility"] != self.compatibility:
-            raise ValueError(f"Republish '{mod.mod_id}' for this Open WebUI host")
+            raise ValueError(f"Reinstall '{mod.mod_id}' for this Open WebUI host")
         revision = manifest["source_revision"]
         if not isinstance(revision, str) or len(revision) != 64 or any(char not in "0123456789abcdef" for char in revision):
             raise ValueError("Invalid global source revision")
@@ -102,8 +104,8 @@ class GlobalModStore:
         if hashlib.sha256(source).hexdigest() != revision:
             raise ValueError("Global source failed its integrity check")
         declared = json.loads(BackendPackage.read_files(source)["mod.json"])
-        if declared["id"] != mod.mod_id or not declared.get("backend"):
-            raise ValueError("Global activation requires the selected mod's backend entry")
+        if declared["id"] != mod.mod_id:
+            raise ValueError("Global source belongs to another mod")
         if not validate:
             return revision, source, declared
         expected = {}
@@ -116,7 +118,7 @@ class GlobalModStore:
             changed = sorted(
                 target for target in published.keys() | expected.keys() if published.get(target) != expected.get(target)
             )
-            raise ValueError(f"Native callable source changed for '{mod.mod_id}': {', '.join(changed)}. Republish it.")
+            raise ValueError(f"Native callable source changed for '{mod.mod_id}': {', '.join(changed)}. Reinstall it.")
         return revision, source, declared
 
     def _startup(self, configuration: GlobalModConfiguration) -> list[dict[str, Any]]:
@@ -144,7 +146,21 @@ class GlobalModStore:
             self._write(self.directory / "desired.json", updated.model_dump_json().encode())
             if not restart:
                 self._write(self.directory / "live.json", updated.model_dump_json().encode())
+            self._prune()
         return self.status()
+
+    def _prune(self) -> None:
+        try:
+            boot = GlobalModConfiguration.model_validate(json.loads((self.directory / "boot.json").read_bytes())["configuration"])
+            configurations = [boot, self._configuration("desired.json"), self._configuration("live.json")]
+            publications = {mod.publication for config in configurations for mod in config.mods}
+            sources = {self.source(mod, validate=False)[0] for config in configurations for mod in config.mods}
+            for kind, keep in (("sources", sources), ("publications", publications)):
+                for archive in (self.directory / kind).glob("*.zip"):
+                    if archive.stem not in keep:
+                        archive.unlink()
+        except Exception:
+            logging.getLogger(__name__).exception("Could not clean global mod archives; retrying on the next save or startup")
 
     def worker_status(self, version: int, error: str | None, ready: bool = False) -> None:
         content = {"pid": os.getpid(), "version": version, "error": error, "ready": ready, "updated_at": time.time(),

@@ -12,15 +12,8 @@ openwebui_mods:
     title: Globale Open-WebUI-Anpassungen
     description: Backend-Anpassungen für alle Mandanten verwalten, auch für Abläufe
       ohne angemeldeten Benutzer. Frontend-Anpassungen bleiben mandantenspezifisch.
-    catalog_help: Alle eigenen Pakete werden angezeigt. Wählen Sie für die globale
-      Nutzung eine Version mit Funktionsüberschreibungen oder Startanpassungen.
-    version_ineligible: Diese Version enthält keine Funktionsüberschreibungen oder
-      Startanpassungen und kann nicht global ausgewählt werden.
-    select_before_save: Globale Einstellungen für {names} können erst nach Auswahl
-      einer veröffentlichten Version gespeichert werden.
+    catalog_help: 'Diese installierten Pakete unterstützen die globale Backend-Aktivierung.'
     mod_restart: Änderungen an diesem Paket erfordern einen Neustart von Open WebUI.
-    global_only: Diese Version kann nur in den globalen Open-WebUI-Einstellungen ausgewählt
-      werden.
     pending: Gespeicherte Startanpassungen warten auf einen Neustart von Open WebUI.
       Die bisherige Konfiguration bleibt aktiv.
     ready: Auf allen {total} Workern aktiv.
@@ -35,15 +28,8 @@ openwebui_mods:
       Status vor einem erneuten Versuch.
     restart_timeout: Die Wiederherstellung wurde nach zwei Minuten noch nicht bestätigt.
       Prüfen Sie die Open-WebUI-Protokolle und laden Sie den Status neu.
-  catalog_help: Pakete stehen allen Sysadmins zur Verfügung. Aktivieren Sie sie für
-    jeden Mandanten separat.
-  versions: Versionen
-  versions_help: Die neuesten Uploads stehen zuerst. Die Versionsauswahl ändert den
-    Aktivierungsstatus nicht; speichern Sie die Einstellungen, um sie anzuwenden.
-  selected: Ausgewählt
+  catalog_help: 'Installierte Pakete stehen allen Mandanten zur Verfügung. Aktivieren Sie sie für jeden Mandanten separat.'
   automatic_version: Mit AI Hub aktualisiert
-  select_before_enable: Wählen Sie vor dem Konfigurieren oder Aktivieren dieser Anpassung eine
-    veröffentlichte Version.
   title: Open-WebUI-Einstellungen
   description: Wählen Sie Anpassungen für diesen Mandanten. Gespeicherte Änderungen
     gelten beim nächsten Neuladen des Chats.
@@ -54,25 +40,16 @@ openwebui_mods:
   saved: Open-WebUI-Einstellungen gespeichert
   save_error: Speichern fehlgeschlagen. Ihre Änderungen bleiben erhalten.
   load_error: Anpassungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.
-  metadata_error: Paketdetails sind nicht verfügbar. Sie können diese Anpassung weiterhin
-    deaktivieren oder entfernen.
   upload: ZIP hochladen
   upload_error: Dieses Paket konnte nicht hochgeladen werden.
-  publishing: Wird veröffentlicht…
-  publish: Für dieses Open WebUI veröffentlichen
-  publish_help: Die Veröffentlichung bereitet diese Version für das laufende Open
-    WebUI vor. Dabei werden keine gespeicherten Einstellungen geändert.
-  publish_error: Dieses Paket konnte nicht veröffentlicht werden.
-  use_version: Diese Version verwenden
-  host_error: Open WebUI ist nicht erreichbar. Veröffentlichung und Versionsauswahl
-    erfordern eine Verbindung.
-  library_empty: Noch keine Pakete hochgeladen.
-  previous: Zurück
-  next: Weiter
   backend_notice: Dieses Paket enthält Python-Code, der in Open WebUI ausgeführt wird.
     Aktivieren Sie nur vertrauenswürdigen Code.
   frontend_notice: Dieses Paket führt Code in den Chats der Benutzer aus. Aktivieren
     Sie nur vertrauenswürdigen Code.
+  install: 'Installieren'
+  replace: 'Installierte Mod ersetzen'
+  installed: '{name} installiert'
+  replace_help: 'Dies ersetzt Version {version} überall, wo diese Mod aktiviert ist. Gespeicherte Einstellungen bleiben erhalten. Aktive Benutzer müssen möglicherweise neu laden.'
 tenant_admin:
   title: Systemverwaltung
   exit: Beenden

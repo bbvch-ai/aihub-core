@@ -722,6 +722,18 @@ export const OpenWebuiModCatalogEntrySchema = {
       type: "boolean",
       title: "Builtin",
     },
+    installed_at: {
+      type: "string",
+      format: "date-time",
+      title: "Installed At",
+    },
+    warnings: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Warnings",
+    },
     settings_form: {
       items: {
         additionalProperties: {
@@ -733,9 +745,26 @@ export const OpenWebuiModCatalogEntrySchema = {
       title: "Settings Form",
       readOnly: true,
     },
+    scopes: {
+      items: {
+        type: "string",
+        enum: ["tenant", "global"],
+      },
+      type: "array",
+      title: "Scopes",
+      readOnly: true,
+    },
   },
   type: "object",
-  required: ["source_revision", "manifest", "builtin", "settings_form"],
+  required: [
+    "source_revision",
+    "manifest",
+    "builtin",
+    "installed_at",
+    "warnings",
+    "settings_form",
+    "scopes",
+  ],
   title: "OpenWebuiModCatalogEntry",
 } as const;
 
@@ -980,160 +1009,6 @@ export const OpenWebuiModManifestSchema = {
     "Source entry points shared by package validation, publication and the two runtimes.",
 } as const;
 
-export const OpenWebuiModPublicationManifestSchema = {
-  properties: {
-    format: {
-      type: "integer",
-      const: 1,
-      title: "Format",
-    },
-    source_revision: {
-      type: "string",
-      pattern: "^[a-f0-9]{64}$",
-      title: "Source Revision",
-    },
-    compatibility: {
-      $ref: "#/components/schemas/OpenWebuiModCompatibility",
-    },
-    bootstrap: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Bootstrap",
-    },
-    frontend: {
-      anyOf: [
-        {
-          type: "string",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Frontend",
-    },
-    replacements: {
-      additionalProperties: {
-        type: "string",
-      },
-      type: "object",
-      title: "Replacements",
-    },
-    backend_targets: {
-      additionalProperties: {
-        additionalProperties: {
-          $ref: "#/components/schemas/JsonValue",
-        },
-        type: "object",
-      },
-      type: "object",
-      maxProperties: 128,
-      title: "Backend Targets",
-    },
-    warnings: {
-      items: {
-        type: "string",
-      },
-      type: "array",
-      title: "Warnings",
-    },
-  },
-  additionalProperties: false,
-  type: "object",
-  required: ["format", "source_revision", "compatibility"],
-  title: "OpenWebuiModPublicationManifest",
-} as const;
-
-export const OpenWebuiModPublicationResponseSchema = {
-  properties: {
-    revision: {
-      type: "string",
-      title: "Revision",
-    },
-    mod_id: {
-      type: "string",
-      title: "Mod Id",
-    },
-    manifest: {
-      $ref: "#/components/schemas/OpenWebuiModPublicationManifest",
-    },
-    archive_bytes: {
-      type: "integer",
-      title: "Archive Bytes",
-    },
-    published_at: {
-      type: "string",
-      format: "date-time",
-      title: "Published At",
-    },
-    published_by: {
-      type: "string",
-      title: "Published By",
-    },
-  },
-  type: "object",
-  required: [
-    "revision",
-    "mod_id",
-    "manifest",
-    "archive_bytes",
-    "published_at",
-    "published_by",
-  ],
-  title: "OpenWebuiModPublicationResponse",
-} as const;
-
-export const OpenWebuiModRevisionResponseSchema = {
-  properties: {
-    revision: {
-      type: "string",
-      title: "Revision",
-    },
-    manifest: {
-      $ref: "#/components/schemas/OpenWebuiModManifest",
-    },
-    archive_bytes: {
-      type: "integer",
-      title: "Archive Bytes",
-    },
-    uploaded_at: {
-      type: "string",
-      format: "date-time",
-      title: "Uploaded At",
-    },
-    uploaded_by: {
-      type: "string",
-      title: "Uploaded By",
-    },
-    settings_form: {
-      items: {
-        additionalProperties: {
-          $ref: "#/components/schemas/JsonValue",
-        },
-        type: "object",
-      },
-      type: "array",
-      title: "Settings Form",
-      readOnly: true,
-    },
-  },
-  type: "object",
-  required: [
-    "revision",
-    "manifest",
-    "archive_bytes",
-    "uploaded_at",
-    "uploaded_by",
-    "settings_form",
-  ],
-  title: "OpenWebuiModRevisionResponse",
-} as const;
-
 export const OpenWebuiModSelectionSchema = {
   properties: {
     mod_id: {
@@ -1141,18 +1016,6 @@ export const OpenWebuiModSelectionSchema = {
       maxLength: 64,
       pattern: "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
       title: "Mod Id",
-    },
-    publication: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^[a-f0-9]{64}$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Publication",
     },
     enabled: {
       type: "boolean",
@@ -1171,6 +1034,28 @@ export const OpenWebuiModSelectionSchema = {
   type: "object",
   required: ["mod_id"],
   title: "OpenWebuiModSelection",
+} as const;
+
+export const OpenWebuiModUploadPreviewSchema = {
+  properties: {
+    manifest: {
+      $ref: "#/components/schemas/OpenWebuiModManifest",
+    },
+    installed_version: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Installed Version",
+    },
+  },
+  type: "object",
+  required: ["manifest", "installed_version"],
+  title: "OpenWebuiModUploadPreview",
 } as const;
 
 export const OpenWebuiModWorkerStateSchema = {
@@ -1796,42 +1681,26 @@ export const OpenWebuiModCatalogEntryWritableSchema = {
       type: "boolean",
       title: "Builtin",
     },
-  },
-  type: "object",
-  required: ["source_revision", "manifest", "builtin"],
-  title: "OpenWebuiModCatalogEntry",
-} as const;
-
-export const OpenWebuiModRevisionResponseWritableSchema = {
-  properties: {
-    revision: {
-      type: "string",
-      title: "Revision",
-    },
-    manifest: {
-      $ref: "#/components/schemas/OpenWebuiModManifest",
-    },
-    archive_bytes: {
-      type: "integer",
-      title: "Archive Bytes",
-    },
-    uploaded_at: {
+    installed_at: {
       type: "string",
       format: "date-time",
-      title: "Uploaded At",
+      title: "Installed At",
     },
-    uploaded_by: {
-      type: "string",
-      title: "Uploaded By",
+    warnings: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Warnings",
     },
   },
   type: "object",
   required: [
-    "revision",
+    "source_revision",
     "manifest",
-    "archive_bytes",
-    "uploaded_at",
-    "uploaded_by",
+    "builtin",
+    "installed_at",
+    "warnings",
   ],
-  title: "OpenWebuiModRevisionResponse",
+  title: "OpenWebuiModCatalogEntry",
 } as const;

@@ -14,7 +14,7 @@ class TestOpenWebuiModDefaults:
     def test_defaults_follow_builtins_without_pinning_and_copy_settings(self, bundled_packages: None) -> None:
         first = OpenWebuiModDefaults.configuration()
         second = OpenWebuiModDefaults.configuration()
-        assert all(mod.publication is None for mod in first.mods)
+        assert all("publication" not in mod.model_dump() for mod in first.mods)
         assert [mod.mod_id for mod in first.mods if mod.enabled] == ['builtin-default']
         first.mods[0].settings['text']['en'] = 'Changed'
         assert second.mods[0].settings['text']['en'] != 'Changed'
@@ -40,7 +40,7 @@ class TestOpenWebuiModDefaults:
         monkeypatch.setenv("OPENWEBUI_MODS_DEFAULTS", '["builtin-optional","builtin-default"]')
         mods = OpenWebuiModDefaults.configuration().mods
         assert [mod.mod_id for mod in mods] == ["builtin-optional", "builtin-default"]
-        assert all(mod.enabled and mod.publication is None for mod in mods)
+        assert all(mod.enabled and "publication" not in mod.model_dump() for mod in mods)
         assert all(mod.settings == {"text": {"en": "Default fixture text"}} for mod in mods)
 
     @pytest.mark.parametrize("value", [

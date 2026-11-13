@@ -1,15 +1,9 @@
-import hashlib
 from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile, ZipInfo
 
-from mypy_boto3_s3 import S3Client
-from starlette.concurrency import run_in_threadpool
-
-from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_store import OpenWebuiModStore
 from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_package import OpenWebuiModPackage
-from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_revision_entity import OpenWebuiModRevisionEntity
 
 
 class OpenWebuiModBundles:
@@ -32,15 +26,6 @@ class OpenWebuiModBundles:
                 raise ValueError(f"Duplicate bundled mod ID: {package.manifest.id}")
             packages[package.manifest.id] = package
         return packages
-
-    @classmethod
-    async def seed_catalog(cls, client: S3Client) -> None:
-        store = OpenWebuiModStore(client)
-        for name in cls.names():
-            content = await run_in_threadpool(cls.source, name)
-            revision = hashlib.sha256(content).hexdigest()
-            if await run_in_threadpool(OpenWebuiModRevisionEntity.find_revision, revision) is None:
-                await store.upload(content, "aihub-bundled")
 
     @classmethod
     def source(cls, name: str) -> bytes:

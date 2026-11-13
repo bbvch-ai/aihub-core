@@ -29,11 +29,16 @@ Route native API calls through the existing request bridge. Mods register lifecy
 to handle, rewrite or wrap requests; components can import the same fetch function. Keep host control and asset traffic
 outside the chain. Request middleware does not replace backend authorization, replay failures or patch global fetch.
 
-Use immutable source ZIPs and host-compatible publications. SysAdmin sends stored source to the running host's
-compiler, which validates and compiles without executing uploaded code. Source/publication archives stay in private
-S3 storage, with catalog metadata in MongoDB. Tenant metadata holds versioned selections and settings. Bundled mods
-follow the installed AI Hub source; custom selections retain their publication. Operator defaults name bundled IDs
-and apply only until a tenant saves its configuration.
+Keep one installed package per mod ID in MongoDB, with source and compiled archives identified by hash in private S3
+storage. SysAdmin sends an upload to the running host's compiler, which validates and compiles without executing it.
+Only a successful installation replaces the catalog record; failed attempts are not persisted. Saved settings contain
+mod IDs, enablement and values, independently of the installed code. Replacements apply wherever the ID is enabled.
+Bundled mods follow the installed AI Hub source. Operator defaults name bundled IDs and apply only until a tenant
+saves its configuration.
+
+Remove obsolete central archives after installation. Global host archives retain boot, live and pending selections
+until saves or startup make them unreferenced; no session tracking is required. Rollback means re-uploading an earlier
+source ZIP. Operators keep those ZIPs and schedule replacements with possible disruption in mind.
 
 Authorize native users and current tenant selections independently of browser view identifiers. Frontend assets
 require current publication access; backend source is not exposed to browsers. New backend operations resolve
@@ -47,8 +52,8 @@ saved selections and avoiding a cycle with native Function registration and API 
 
 ## Consequences
 
-SysAdmins can publish and configure mods at runtime. Ordinary AI Hub releases reuse a compatible host image;
-Open WebUI/host upgrades require a new image and compatible publications. Private component/callable contracts,
+SysAdmins can install and configure mods at runtime. Ordinary AI Hub releases reuse a compatible host image;
+Open WebUI/host upgrades require a new image and reinstallation of compatible custom mods. Private component/callable contracts,
 Svelte internals and unknown caches may need adapter changes despite successful syntax/fingerprint checks.
 
 Mods are trusted application code, not sandboxed tenant code. Request/run contexts separate settings and state;

@@ -1,19 +1,19 @@
 ---
 title: Open WebUI-Mods schreiben
-source_sha: 2c39d7ffed06bda0a16b05e680b394f96c1221926690ae3f495a5a12d73dfe7a
+source_sha: 6747690be84c20ebc147fd859a2984bfdfce2cd9bdc46affd6be314f990a68f5
 ---
 
 # Open WebUI-Mods schreiben
 
 Ein **Open WebUI-Mod** ist ein Quellcode-ZIP, das ein Systemadministrator über die
-[Open WebUI-Einstellungen](../../../2_platform/10_chat_ui/16_openwebui_mods/) hochlädt und veröffentlicht. Es kann
+[Open WebUI-Einstellungen](../../../2_platform/10_chat_ui/16_openwebui_mods/) hochlädt und installiert. Es kann
 Svelte-Komponenten, JavaScript oder TypeScript, Python und lokale Assets enthalten. Nutzen Sie die nativen
 Einstellungen oder Functions von Open WebUI, wenn diese das gewünschte Verhalten bereits bieten.
 
-Mods verwenden die Svelte-Laufzeit und Python-Umgebung des laufenden Hosts. Die Veröffentlichung kompiliert für diesen
+Mods verwenden die Svelte-Laufzeit und Python-Umgebung des laufenden Hosts. Die Installation kompiliert für diesen
 Host, ohne Abhängigkeiten zu installieren oder hochgeladenen Code auszuführen. Sie prüft Syntax, Frontend-Imports und deklarierte
 Ziele, belegt aber weder korrektes Laufzeitverhalten noch führt sie eine semantische TypeScript-Prüfung durch. Prüfen
-Sie Typen in Ihrem Entwicklungsprojekt und testen Sie den veröffentlichten Mod auf einem passenden temporären Host.
+Sie Typen in Ihrem Entwicklungsprojekt und testen Sie den installierten Mod auf einem passenden temporären Host.
 
 ## Den Quellcode paketieren
 
@@ -41,11 +41,12 @@ relativ zum Archivwurzelverzeichnis. Absolute Pfade, Traversierung, Symlinks und
 Ein Quellcode-ZIP ist auf 16 MiB komprimiert, 32 MiB entpackt, 512 Einträge und ein 64-KiB-Manifest begrenzt.
 Einstellungen erlauben 16 KiB pro Mod; eine Mandantenauswahl erlaubt insgesamt 64 Mods und 64 KiB.
 
-Quell- und Veröffentlichungsrevisionen identifizieren die exakten Archivbytes über SHA-256. Erneutes Paketieren
-identischen Quellcodes kann eine neue Revision erzeugen. Bei der Veröffentlichung werden Quellrevision,
-Host-Kompatibilität und Fingerabdrücke nativer Ziele erfasst. Hochladen und Veröffentlichen aktiviert keinen Code;
-ein Administrator wählt und speichert die Veröffentlichung separat. Es gibt keine Oberfläche zum Löschen von
-Archiven. Bewahren Sie frühere Revisionen für Rollbacks auf.
+Hashes der Quell- und kompilierten Archive identifizieren exakte Bytes über SHA-256. Die Installation erfasst den
+Quellhash, die Host-Kompatibilität und Fingerabdrücke nativer Ziele. Jede ID hat ein installiertes Paket. Ein Austausch
+wird kompiliert und geprüft, bevor dieser Datensatz umgestellt wird; Fehler lassen ihn unverändert. Ein Austausch gilt
+überall, wo die ID aktiviert ist, und behält gespeicherte Einstellungen und Aktivierung bei. Neue Installationen sind
+zunächst deaktiviert. Es gibt weder gespeicherte Upload-Entwürfe noch Versionsverlauf. Bewahren Sie frühere ZIPs auf
+und laden Sie eines erneut hoch, um dessen Code wiederherzustellen.
 
 ## Eingabefelder für Einstellungen
 
@@ -98,21 +99,22 @@ etwa `required`, Grenzwerte und `help`. Für übersetzte Auswahlmöglichkeiten v
 Felddefinitionen sind auf 16 KiB begrenzt. Ungültige Definitionen führen beim Hochladen zu einem Feldfehler; bei dieser
 Prüfung wird kein Mod-Code ausgeführt.
 
-Wählen Sie bei hochgeladenen Mods vor dem Bearbeiten der Einstellungen eine veröffentlichte Version; deren
-Quellrevision liefert das Formular. Mandanten- und globale Einstellungen unterstützen dieselben Felder. Geheimnisfelder,
+Das installierte Manifest liefert das Einstellungsformular. Ein Paketaustausch erneuert dieses Formular mit den
+gespeicherten Werten. Mandanten- und globale Einstellungen unterstützen dieselben Felder. Geheimnisfelder,
 Mandanten-/Modell-/Agenten-/Wissensauswahl und automatische Übersetzung sind hier nicht verfügbar. Auswahlwerte müssen
 im Paket enthalten sein. Mods müssen verwendete Einstellungen selbst prüfen; Formularvalidierung unterstützt lediglich
 die Eingabe.
 
 Gespeicherte Werte ohne passendes Eingabefeld bleiben erhalten. Neu hinzugekommene Vorgaben erscheinen im Formular
-und werden beim Speichern wirksam. Öffnen der Einstellungen oder ein Upgrade allein ändert die Laufzeitkonfiguration nicht.
+und werden beim Speichern wirksam. Öffnen der Einstellungen oder ein Upgrade allein speichert keine neuen Vorgabewerte.
 
 ## Komponenten hinzufügen oder ersetzen
 
 Lesen Sie den Komponentenkatalog des laufenden Hosts über SysAdmins `GET /api/v1/admin/openwebui-mods/host`.
 Verwenden Sie dessen Quell-IDs als Schlüssel für Ersetzungen. Eine Ersetzung erhält Props, Bindings und Slots der
-nativen Komponente und muss den von ihren Aufrufern benötigten Vertrag erhalten. Zwei aktivierte Mods können nicht
-dieselbe Komponente ersetzen.
+nativen Komponente und muss den von ihren Aufrufern benötigten Vertrag erhalten. Beim Speichern der
+Mandanteneinstellungen werden zwei aktivierte Mods abgelehnt, die dieselbe Komponente ersetzen. Führt ein Paketupdate
+einen Konflikt ein, lehnt das Frontend den betroffenen Mod bei der Aktivierung ab.
 
 Neue Kindkomponenten sind gewöhnliche Svelte-Imports innerhalb des Pakets. Um eine native Komponente zu erweitern,
 importieren Sie `getOriginalComponent` aus `@aihub/mods`, holen das Original über seine Katalog-ID und kombinieren es
@@ -276,6 +278,11 @@ Frontend-Ersetzungen und Chat-Filter-Hooks benötigen weiterhin Mandantenaktivie
 `scope='global'`, `app`, Einstellungen und Anfragezustand sowie gegebenenfalls eine HTTP-Anfrage bereit; sie bestätigen
 keinen Mandanten oder Benutzer.
 
+Pakete mit `backend_restart_required` oder einem Override von `open_webui.main:lifespan` sind ausschliesslich global;
+ihre Frontend- oder Chat-Filter-Hooks können nicht aktiviert werden. Legen Sie diese Teile in einem separaten
+Mandantenpaket ab. Pakete mit gewöhnlichen Callable-Overrides können in beiden Geltungsbereichen mit getrennten
+Einstellungen aktiviert werden.
+
 Ein Override von `open_webui.main:lifespan` erfordert immer globale Aktivierung und einen Neustart. Geben Sie einen
 asynchronen Context Manager zurück, treten Sie in `next(...)` ein, um den nativen Start zu erhalten, geben Sie dessen
 Zustand mit Yield weiter und räumen Sie eigene Arbeit beim Verlassen auf. Lifespan läuft in jedem Worker; Jobs, die
@@ -285,13 +292,13 @@ expliziten Host-Adapter.
 
 ## Einen Mod prüfen und pflegen
 
-Testen Sie Veröffentlichung, Aktivierung, Einstellungen, Deaktivierung und Rollback auf dem festgelegten Host.
+Testen Sie Installation, Austausch, Aktivierung, Einstellungen, Deaktivierung und ZIP-Rollback auf dem festgelegten Host.
 Prüfen Sie bei Frontend-Mods beide Chat-Layouts, Navigation, gemeinsamen Zustand und Bereinigung. Prüfen Sie bei
 Backend-Mods parallele Mandanten, Abbruch, Streams und die genutzten eigenständigen/globalen Pfade. Berücksichtigen Sie
 Fehlerfälle und verifizieren Sie, dass natives Verhalten nutzbar bleibt.
 
-Veröffentlichen Sie nach einem Host-Upgrade eine kompatible Version und prüfen Sie geänderte Ziele vor deren Auswahl.
-Kompilierungswarnungen bleiben der Veröffentlichung zugeordnet. Die Quelldefinitionen liegen im
+Prüfen Sie nach einem Host-Upgrade geänderte Ziele und installieren Sie ein kompatibles Paket erneut.
+Kompilierungswarnungen bleiben dem installierten Paket zugeordnet. Die Quelldefinitionen liegen im
 [Host-Verzeichnis](https://github.com/bbvch-ai/aihub-core/tree/main/infra/deployment/docker/open-webui/mods).
 Die [Deployment-Anleitung](https://github.com/bbvch-ai/aihub-core/blob/main/infra/deployment/openwebui.md)
 beschreibt Host-Builds, Initialisierung, Backups und Wiederherstellung.

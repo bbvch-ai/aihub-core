@@ -106,7 +106,7 @@ class BackendPackage:
             changed = sorted(
                 target for target in declared.keys() | expected.keys() if declared.get(target) != expected.get(target)
             )
-            raise ValueError(f"Backend callable source changed: {', '.join(changed)}. Republish the mod for this host.")
+            raise ValueError(f"Backend callable source changed: {', '.join(changed)}. Reinstall the mod for this host.")
 
     def bind_overrides(self, context: ModRequestContext | GlobalModContext) -> dict[str, tuple[Callable[..., Any], ...]]:
         return {target: (self._bind(getattr(self.entry, handler), context),) for target, handler in self.overrides.items()}

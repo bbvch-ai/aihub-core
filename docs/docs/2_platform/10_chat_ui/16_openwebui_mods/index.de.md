@@ -1,6 +1,6 @@
 ---
 title: Open WebUI-Modifikationen
-source_sha: f32ae38dcd20054a402708ac30b779ec78c504d44b73d44ac2f626a12f30ff33
+source_sha: d80b76488033f773a10bd20c8067accbe098f40701bbac4691b61e5e7e32e8c7
 ---
 
 # Open WebUI-Modifikationen
@@ -17,24 +17,26 @@ Der Katalog steht allen Mandanten zur Verfügung; Aktivierung und Einstellungen 
 
 Für einen eigenen Mod:
 
-1. Wählen Sie ZIP hochladen und laden Sie das Paket des Autors hoch.
-2. Öffnen Sie Versionen, wählen Sie die Quellversion und dann Für dieses Open WebUI veröffentlichen. Dabei wird das
-   Paket geprüft und kompiliert, aber noch nicht aktiviert.
-3. Wählen Sie Diese Version verwenden, aktivieren Sie den Mod und bearbeiten Sie die Felder unter Einstellungen.
-4. Speichern Sie die Einstellungen des Mandanten.
+1. Wählen Sie ZIP hochladen und das vom Autor bereitgestellte Paket.
+2. Wählen Sie Installieren, oder bestätigen Sie Installierte Mod ersetzen, wenn die ID bereits installiert ist.
+3. Aktivieren Sie den Mod, bearbeiten Sie die Felder unter Einstellungen und speichern Sie.
 
-Die Veröffentlichung erfordert einen erreichbaren, kompatiblen Open WebUI-Mod-Host. Kompilierungsfehler erscheinen im
-Versionsdialog. Ist das Paket bereits für diesen Host veröffentlicht, können Sie es ohne erneute Veröffentlichung
-auswählen. Das Hochladen einer neueren Version ändert bestehende Auswahlen nicht. Für ein Rollback wählen Sie eine
-frühere kompatible Version und speichern.
+Die Installation prüft und kompiliert das Paket mit dem laufenden Open WebUI-Host. Ein fehlgeschlagener Upload bleibt
+im Dialog; beim Schliessen wird der Versuch verworfen. Das installierte Paket bleibt unverändert. Eine fehlgeschlagene
+Erstinstallation fügt keinen Eintrag hinzu.
 
-Beim Deaktivieren bleiben die ausgewählte Version und die Einstellungen erhalten. Alle deaktivieren und anschliessendes
-Speichern schaltet die Mods des Mandanten aus. Fehlgeschlagene Speichervorgänge erhalten Ihren Entwurf. Falls ein anderer
-Administrator die Konfiguration geändert hat, prüfen Sie dessen gespeicherte Einstellungen vor einem erneuten Versuch.
-Gespeicherte Einstellungen neu laden ersetzt Ihren Entwurf.
+Jeder Mod hat eine installierte Version für alle Mandanten. Ein erfolgreicher Austausch aktualisiert denselben Eintrag
+und behält gespeicherte Einstellungen und Aktivierung bei. Erfüllen die Werte die Regeln des neuen Formulars nicht
+mehr, unterstützt die normale Feldvalidierung die Korrektur. Deaktivieren und speichern Sie den Mod, wenn er inaktiv
+bleiben soll. Schalteränderungen betreffen immer die installierte Version. Um früheren Code wiederherzustellen, laden
+Sie dessen ZIP erneut hoch; es gibt weder Versionsverlauf noch Rollback-Schaltfläche. Bewahren Sie Ihre Quellcode-ZIPs auf.
+
+Neue Mods sind zunächst deaktiviert. Fehlgeschlagene Speichervorgänge behalten ungespeicherte Änderungen bei. Hat ein
+anderer Administrator Einstellungen geändert, laden Sie die Seite neu und prüfen Sie den gespeicherten Stand, bevor
+Sie es erneut versuchen.
 
 ::: warning Vertrauenswürdiger Code und Einstellungen
-Nur Systemadministratoren können Mods hochladen, veröffentlichen und konfigurieren. Mods laufen mit den Möglichkeiten
+Nur Systemadministratoren können Mods hochladen, installieren und konfigurieren. Mods laufen mit den Möglichkeiten
 der Anwendung in den Browsern der Benutzer oder innerhalb von Open WebUI; sie sind nicht in einer Sandbox isoliert.
 Aktivieren Sie nur Code, dem Sie vertrauen. Mandanteneinstellungen werden an den Browser übermittelt. Speichern Sie
 darin deshalb keine Passwörter, Tokens oder sonstigen Geheimnisse.
@@ -48,7 +50,9 @@ Das Speichern erzwingt kein Neuladen, während jemand schreibt. Neue Backend-Vor
 Konfiguration; laufende Anfragen behalten ihren ausgewählten Code und ihre Einstellungen.
 
 Ein Fehler beim Import, bei der Aktivierung oder beim Rendern einer Komponente deaktiviert den betroffenen Frontend-Mod
-und bietet einen Hinweis zum Neuladen an. Andere Mods können weiterlaufen. Backend-Fehler folgen der normalen
+und bietet einen Hinweis zum Neuladen an. Die gespeicherte Aktivierung bleibt unverändert. Fehler beim Backend-Import
+oder beim Erzeugen eines Filters werden protokolliert; diese Instanz wird übersprungen. Globale Ladefehler erscheinen
+zusätzlich im Worker-Status. Andere Mods können weiterlaufen. Fehler während Backend-Vorgängen folgen der normalen
 Fehlerbehandlung von Open WebUI.
 
 ## Den Chat-Hinweis konfigurieren
@@ -63,17 +67,26 @@ Die mitgelieferten Deployment-Vorgaben aktivieren Chat disclaimer, Saved languag
 Multi-model PDF export guard und Streaming indicator. Betreiber können festlegen, welche mitgelieferten
 Mods anfänglich aktiviert sind. Sobald ein Mandant seine eigene Konfiguration speichert, hat diese Vorrang.
 Mitgelieferte Mods sind mit Mit AI Hub aktualisiert gekennzeichnet und folgen dem installierten Release;
-gespeicherte Einstellungen und Aktivierung bleiben erhalten. Eigene Versionen bleiben ausgewählt, bis ein
-Administrator die Auswahl ändert.
+gespeicherte Einstellungen und Aktivierung bleiben erhalten.
+
+Der optionale Mod Admin Panel shortcut ersetzt die doppelte Kontoanzeige für Administratoren durch einen direkten
+Link zum Admin Panel. Ihr Einstellungsdialog behält Admin-Tabs und About, ausgenommen Authentication, Connections und
+Database. Andere Benutzer können den Einstellungsdialog nicht öffnen. Dieser Mod wird mit AI Hub installiert, ist
+aber standardmässig nicht aktiviert.
 
 ## Änderungen für alle Mandanten
 
 Open WebUI global verwaltet Backend-Callable-Overrides und Startverhalten für alle Mandanten, einschliesslich Arbeit
-ohne angemeldeten Benutzer. Frontend-Änderungen benötigen weiterhin eine Aktivierung pro Mandant. Versionen zeigt,
-welche Pakete global verwendet werden können.
+ohne angemeldeten Benutzer. Frontend-Änderungen benötigen weiterhin eine Aktivierung pro Mandant. Jede Seite zeigt die
+für ihren Geltungsbereich geeigneten Pakete. Wird ein ausschliesslich globales Paket auf einer Mandantenseite hochgeladen,
+öffnet sich nach der Installation die globale Seite. Änderungen am Geltungsbereich eines Pakets behalten gespeicherte
+Entscheidungen bei, aktivieren es aber niemals automatisch in einem anderen Geltungsbereich.
 
-Gewöhnliche globale Änderungen werden ohne Container-Neustart wirksam. Änderungen am Startverhalten bleiben ausstehend,
-bis Sie Gespeicherte Änderungen mit Neustart anwenden bestätigen. Die Seite zeigt gespeicherten und aktiven
+Gewöhnliche globale Änderungen werden ohne Container-Neustart wirksam. Sind Startänderungen ausstehend, warten alle
+gespeicherten globalen Änderungen, bis Sie Gespeicherte Änderungen mit Neustart anwenden bestätigen. Eine Warnung zur
+globalen Aktivierung nach der Installation bedeutet, dass das Paket installiert wurde, der Host es aber nicht
+übernehmen konnte. Speichern Sie die globalen Open-WebUI-Einstellungen, um es erneut zu versuchen.
+Die Seite zeigt gespeicherten und aktiven
 Zustand sowie die Bereitschaft der Worker. Ein Neustart betrifft alle Mandanten und kann Chats oder Hintergrundjobs
 unterbrechen. Planen Sie ein geeignetes Wartungsfenster. Werden die Worker nicht wieder bereit, muss der Betreiber die
 Open WebUI-Logs prüfen.

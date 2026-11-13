@@ -3,10 +3,10 @@ from keycloak import KeycloakGetError
 from starlette.concurrency import run_in_threadpool
 from swiss_ai_hub.core.auth import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.openwebui import (
-    OpenWebuiModBundles, OpenWebuiModConfiguration, OpenWebuiModDefaults, OpenWebuiModResolver,
+    OpenWebuiModConfiguration, OpenWebuiModDefaults, OpenWebuiModPublicationManifest, OpenWebuiModResolver,
 )
 from swiss_ai_hub.core.persistence import TenantMetadataEntity
-from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModRevisionEntity
+from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
 
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.openwebui_mod_service import OpenWebuiModService
 
@@ -54,45 +54,23 @@ class OpenWebuiModConfigurationService:
 
     @staticmethod
     async def _validate_mods(configuration: OpenWebuiModConfiguration) -> None:
-        builtins = OpenWebuiModBundles.packages()
         for mod in configuration.mods:
-            if mod.mod_id in builtins and mod.publication is not None:
-                raise HTTPException(status_code=422, detail=f"Built-in '{mod.mod_id}' follows AI Hub and cannot be pinned.")
-            if mod.mod_id not in builtins and mod.publication is None:
-                latest = await run_in_threadpool(OpenWebuiModRevisionEntity.latest_revision, mod.mod_id)
-                if latest is None:
-                    raise HTTPException(status_code=422, detail=f"Unknown mod '{mod.mod_id}'.")
-        host = await OpenWebuiModService.get_host() if any(mod.enabled for mod in configuration.mods) else None
-        if host is not None:
-            try:
-                enabled = await OpenWebuiModResolver.resolve(configuration, host.compatibility)
-            except ValueError as error:
-                raise HTTPException(status_code=409, detail=str(error)) from error
-        else:
-            enabled = OpenWebuiModConfiguration()
-        for mod in configuration.mods:
-            if mod.enabled or mod.mod_id in builtins or mod.publication is None:
-                continue
-            publication = await OpenWebuiModService.get_publication(mod.publication)
-            if publication.mod_id != mod.mod_id:
-                raise HTTPException(status_code=422, detail=f"Publication does not belong to mod '{mod.mod_id}'.")
+            if await run_in_threadpool(OpenWebuiModEntity.find_mod, mod.mod_id) is None:
+                raise HTTPException(422, f"Unknown mod '{mod.mod_id}'.")
+        if not any(mod.enabled for mod in configuration.mods):
+            return
+        host = await OpenWebuiModService.get_host()
+        try:
+            enabled = await OpenWebuiModResolver.resolve(configuration, host.compatibility)
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from error
         targets: dict[str, str] = {}
         for mod in enabled.mods:
-            publication = await OpenWebuiModService.get_publication(mod.publication)
-            source = await OpenWebuiModService.get_revision(publication.manifest.source_revision)
-            if source.manifest.backend_restart_required or "open_webui.main:lifespan" in source.manifest.backend_overrides:
-                raise HTTPException(status_code=422, detail=f"'{mod.mod_id}' requires global activation and an Open WebUI restart.")
-            if publication.mod_id != mod.mod_id:
-                raise HTTPException(status_code=422, detail=f"Publication does not belong to mod '{mod.mod_id}'.")
-            assert host is not None
-            manifest = publication.manifest
-            if manifest.compatibility != host.compatibility:
-                raise HTTPException(status_code=409, detail=f"Recompile '{mod.mod_id}' for the current Open WebUI host.")
+            installed = await run_in_threadpool(OpenWebuiModEntity.find_mod, mod.mod_id)
+            manifest = OpenWebuiModPublicationManifest.model_validate_json(installed.publication_manifest_json)
             for target in manifest.replacements:
                 if target not in host.components:
-                    raise HTTPException(status_code=409, detail=f"Replacement target is absent: {target}")
+                    raise HTTPException(409, f"Replacement target is absent: {target}")
                 if target in targets:
-                    raise HTTPException(
-                        status_code=409, detail=f"Mods '{targets[target]}' and '{mod.mod_id}' both replace {target}."
-                    )
+                    raise HTTPException(409, f"Mods '{targets[target]}' and '{mod.mod_id}' both replace {target}.")
                 targets[target] = mod.mod_id

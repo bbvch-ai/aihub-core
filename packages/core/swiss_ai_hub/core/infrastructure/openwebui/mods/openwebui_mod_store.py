@@ -1,4 +1,5 @@
 import hashlib
+import logging
 from typing import ClassVar, Literal
 
 from botocore.exceptions import ClientError
@@ -9,42 +10,51 @@ from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_host import O
 from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_package import OpenWebuiModPackage
 from swiss_ai_hub.core.infrastructure.openwebui.mods.openwebui_mod_publication import OpenWebuiModPublication
 from swiss_ai_hub.core.infrastructure.s3.s3_bucket_provisioner import S3BucketProvisioner
-from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_revision_entity import OpenWebuiModRevisionEntity
-from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_publication_entity import OpenWebuiModPublicationEntity
+from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_entity import OpenWebuiModEntity
 
 
 class OpenWebuiModStore:
     BUCKET: ClassVar[str] = "openwebui-mods"
 
-    def __init__(self, client: S3Client):
+    def __init__(self, client: S3Client) -> None:
         self.client = client
 
-    async def upload(self, content: bytes, uploaded_by: str) -> OpenWebuiModRevisionEntity:
-        package = await run_in_threadpool(OpenWebuiModPackage.from_zip, content)
-        await run_in_threadpool(self._write_archive, package.revision, content)
-        # A failed metadata write leaves an unreferenced object; retrying the same upload repairs it.
-        return await run_in_threadpool(OpenWebuiModRevisionEntity.record_upload, package, len(content), uploaded_by)
+    async def install(
+        self, source: bytes, compiled: bytes, installed_by: str, host: OpenWebuiModHost,
+    ) -> OpenWebuiModEntity:
+        package = await run_in_threadpool(OpenWebuiModPackage.from_zip, source)
+        publication = await run_in_threadpool(OpenWebuiModPublication.from_zip, compiled)
+        await run_in_threadpool(publication.validate_for_host, package, host.compatibility, host.components, host.callables)
+        await run_in_threadpool(self._write_archive, package.revision, source, "sources")
+        await run_in_threadpool(self._write_archive, publication.revision, compiled, "publications")
+        return await run_in_threadpool(OpenWebuiModEntity.install, package, publication, installed_by, len(compiled))
 
     async def read_archive(self, revision: str) -> bytes:
-        return await run_in_threadpool(self._read_archive, revision)
-
-    async def publish(
-        self, content: bytes, source_revision: str, published_by: str, host: OpenWebuiModHost
-    ) -> OpenWebuiModPublicationEntity:
-        source = await run_in_threadpool(OpenWebuiModPackage.from_zip, await self.read_archive(source_revision))
-        publication = await run_in_threadpool(OpenWebuiModPublication.from_zip, content)
-        await run_in_threadpool(publication.validate_for_host, source, host.compatibility, host.components, host.callables)
-        await run_in_threadpool(self._write_archive, publication.revision, content, "publications")
-        return await run_in_threadpool(
-            OpenWebuiModPublicationEntity.record_publication, publication, source.manifest.id, len(content), published_by
-        )
+        return await run_in_threadpool(self._read_archive, revision, "sources")
 
     async def read_publication(self, revision: str) -> bytes:
         return await run_in_threadpool(self._read_archive, revision, "publications")
 
-    def _write_archive(
-        self, revision: str, content: bytes, prefix: Literal["sources", "publications"] = "sources"
-    ) -> None:
+    async def prune(self) -> None:
+        try:
+            await run_in_threadpool(self._prune)
+        except Exception:
+            # The installed record is authoritative; failed cleanup must not turn a successful install into an error.
+            logging.getLogger(__name__).exception("Could not clean obsolete mod archives; retrying on the next installation")
+
+    def _prune(self) -> None:
+        keep = {key for mod in OpenWebuiModEntity.installed() for key in (
+            f"sources/{mod.source_revision}.zip", f"publications/{mod.publication}.zip",
+        )}
+        for page in self.client.get_paginator("list_objects_v2").paginate(Bucket=self.BUCKET):
+            obsolete = [{"Key": obj["Key"]} for obj in page.get("Contents", [])
+                        if obj["Key"].startswith(("sources/", "publications/")) and obj["Key"] not in keep]
+            if obsolete:
+                result = self.client.delete_objects(Bucket=self.BUCKET, Delete={"Objects": obsolete, "Quiet": True})
+                if result.get("Errors"):
+                    raise RuntimeError("Object storage could not delete obsolete mod archives")
+
+    def _write_archive(self, revision: str, content: bytes, prefix: Literal["sources", "publications"]) -> None:
         if not S3BucketProvisioner.bucket_exists(self.client, self.BUCKET):
             try:
                 self.client.create_bucket(Bucket=self.BUCKET)
@@ -52,13 +62,10 @@ class OpenWebuiModStore:
                 if error.response["Error"]["Code"] != "BucketAlreadyOwnedByYou":
                     raise
         self.client.put_object(
-            Bucket=self.BUCKET,
-            Key=f"{prefix}/{revision}.zip",
-            Body=content,
-            ContentType="application/zip",
+            Bucket=self.BUCKET, Key=f"{prefix}/{revision}.zip", Body=content, ContentType="application/zip",
         )
 
-    def _read_archive(self, revision: str, prefix: Literal["sources", "publications"] = "sources") -> bytes:
+    def _read_archive(self, revision: str, prefix: Literal["sources", "publications"]) -> bytes:
         response = self.client.get_object(Bucket=self.BUCKET, Key=f"{prefix}/{revision}.zip")
         body = response["Body"]
         try:

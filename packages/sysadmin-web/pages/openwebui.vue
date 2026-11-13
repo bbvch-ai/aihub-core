@@ -3,7 +3,7 @@
     <template #top>
       <SysadminNavigation />
     </template>
-    <StructuralColumn :title="t('openwebui_mods.global.title')" close-route="/tenants" size="large">
+    <StructuralColumn :title="t('openwebui_mods.global.title')" size="large">
       <OpenwebuiModsCatalog tenant-id="" global-scope />
     </StructuralColumn>
   </StructuralScreen>

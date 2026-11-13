@@ -34,7 +34,7 @@ class GlobalModTests(unittest.IsolatedAsyncioTestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.directory = Path(self.temporary.name)
-        self.compatibility = b'{"protocol":2,"openwebui":"fixture"}'
+        self.compatibility = b'{"host_protocol":1,"openwebui":"fixture"}'
         self.store = GlobalModStore(self.directory, self.compatibility, "first-boot")
         self.store.initialize()
         self.enterContext(patch.dict(CallableRegistry.catalog, {self.TARGET: self.FINGERPRINT}))
@@ -89,12 +89,36 @@ class GlobalModTests(unittest.IsolatedAsyncioTestCase):
         self.store.replace(GlobalModConfiguration(mods=[selection]))
         cancelled = self.store.replace(GlobalModConfiguration(version=1))
         self.assertFalse(cancelled["restart_required"])
+        selection = self.stage(restart=True)
         self.store.replace(GlobalModConfiguration(version=2, mods=[selection]))
         restarted = GlobalModStore(self.directory, self.compatibility, "second-boot")
         restarted.initialize()
         removed = restarted.replace(GlobalModConfiguration(version=3))
         self.assertTrue(removed["restart_required"])
         self.assertEqual(len(restarted.live().mods), 1)
+
+    def test_archives_keep_boot_and_latest_pending_only_then_prune_on_restart(self) -> None:
+        first = self.stage(restart=True)
+        self.store.replace(GlobalModConfiguration(mods=[first]))
+        active = GlobalModStore(self.directory, self.compatibility, "second-boot")
+        active.initialize()
+        second = self.stage(restart=True, code="def operation(next, context): return 'second'")
+        active.replace(GlobalModConfiguration(version=1, mods=[second]))
+        third = self.stage(restart=True, code="def operation(next, context): return 'third'")
+        active.replace(GlobalModConfiguration(version=2, mods=[third]))
+        remaining = {path.stem for path in (self.directory / "publications").glob("*.zip")}
+        self.assertEqual(remaining, {first.publication, third.publication})
+        restarted = GlobalModStore(self.directory, self.compatibility, "third-boot")
+        restarted.initialize()
+        self.assertEqual({path.stem for path in (self.directory / "publications").glob("*.zip")}, {third.publication})
+        self.assertEqual(len(list((self.directory / "sources").glob("*.zip"))), 1)
+
+    def test_ordinary_replacement_deletes_old_files_immediately(self) -> None:
+        first = self.stage()
+        self.store.replace(GlobalModConfiguration(mods=[first]))
+        second = self.stage(code="def operation(next, context): return 'second'")
+        self.store.replace(GlobalModConfiguration(version=1, mods=[second]))
+        self.assertEqual({path.stem for path in (self.directory / "publications").glob("*.zip")}, {second.publication})
 
     def test_restart_confirmation_freezes_changes_until_the_next_boot(self) -> None:
         selection = self.stage(restart=True)
@@ -175,7 +199,7 @@ class GlobalModTests(unittest.IsolatedAsyncioTestCase):
         self.store.replace(GlobalModConfiguration(mods=[selection]))
         upgraded = GlobalModStore(self.directory, b'{"protocol":3,"openwebui":"fixture"}', "second-boot")
         upgraded.initialize()
-        with self.assertRaisesRegex(ValueError, "Republish"):
+        with self.assertRaisesRegex(ValueError, "Reinstall"):
             upgraded.source(selection)
         result = upgraded.replace(GlobalModConfiguration(version=1, mods=[selection.model_copy(update={"enabled": False})]))
         self.assertTrue(result["restart_required"])
@@ -249,7 +273,7 @@ class GlobalModTests(unittest.IsolatedAsyncioTestCase):
             app.state.aihub_mods = SimpleNamespace(global_runtime=runtime)
             app.add_middleware(ModScopeMiddleware)
             with TestClient(app) as client:
-                self.assertEqual(client.get("/ordinary").status_code, 503)
+                self.assertEqual(client.get("/ordinary").status_code, 404)
                 self.assertEqual(client.get("/_aihub/mods/control/global").status_code, 404)
             self.store.replace(GlobalModConfiguration(version=1))
             await runtime.refresh()

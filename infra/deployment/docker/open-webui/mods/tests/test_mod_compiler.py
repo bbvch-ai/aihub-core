@@ -73,6 +73,17 @@ class ModCompilerTests(unittest.IsolatedAsyncioTestCase):
             await self.compiler.compile(b"not a zip")
         self.assertEqual(caught.exception.status_code, 422)
 
+    async def test_next_compilation_cleans_interrupted_attempt_and_failed_upload(self) -> None:
+        abandoned = self.root / "compile-interrupted"
+        abandoned.mkdir()
+        (abandoned / "source.zip").write_bytes(b"incomplete upload")
+        with self.assertRaises(HTTPException):
+            await self.compiler.compile(b"invalid ZIP")
+        self.assertEqual(list(self.root.glob("compile-*")), [])
+        self.assertTrue((self.root / "components.json").exists())
+        await self.compiler.compile(self.source())
+        self.assertEqual(list(self.root.glob("compile-*")), [])
+
     async def test_another_process_holds_the_shared_compilation_slot(self) -> None:
         process = await asyncio.create_subprocess_exec(
             "python", "-c", "import fcntl,sys,time; f=open(sys.argv[1],'a'); fcntl.flock(f,fcntl.LOCK_EX); print('ready',flush=True); time.sleep(30)",

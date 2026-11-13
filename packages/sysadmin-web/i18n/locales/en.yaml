@@ -12,14 +12,8 @@ openwebui_mods:
     title: Global Open WebUI modifications
     description: Manage backend changes across all tenants, including work without
       a signed-in user. Frontend changes remain tenant-specific.
-    catalog_help: All custom packages are listed. Select a version with callable overrides
-      or startup changes for global use.
-    version_ineligible: This version has no callable overrides or startup changes
-      and cannot be selected globally.
-    select_before_save: 'Select a published version before saving global settings
-      for: {names}.'
+    catalog_help: 'These installed packages support global backend activation.'
     mod_restart: Changing this package requires an Open WebUI restart.
-    global_only: This version can only be selected in Global Open WebUI settings.
     pending: Saved startup changes are waiting for an Open WebUI restart. The previous
       configuration remains active.
     ready: Active on all {total} workers.
@@ -32,14 +26,8 @@ openwebui_mods:
       trying again.
     restart_timeout: Restart recovery has not been confirmed after two minutes. Check
       the Open WebUI logs and reload the status.
-  catalog_help: Packages are available to all sysadmins. Enable them separately for
-    each tenant.
-  versions: Versions
-  versions_help: Newest uploads appear first. Selecting a version preserves its enablement;
-    save the settings to apply it.
-  selected: Selected
+  catalog_help: 'Installed packages are shared by all tenants. Enable them separately for each tenant.'
   automatic_version: Updated with AI Hub
-  select_before_enable: Select a published version before configuring or enabling this modification.
   title: Open WebUI settings
   description: Choose modifications for this tenant. Saved changes apply when users
     next reload chat.
@@ -50,24 +38,16 @@ openwebui_mods:
   saved: Open WebUI settings saved
   save_error: Could not save. Your changes are still here.
   load_error: Could not load modifications. Please try again.
-  metadata_error: Package details are unavailable. You can still disable this modification.
   upload: Upload ZIP
   upload_error: Could not upload this package.
-  publishing: Publishing…
-  publish: Publish for this Open WebUI
-  publish_help: Publishing prepares this version for the running Open WebUI. It does
-    not change saved settings.
-  publish_error: Could not publish this package.
-  use_version: Use this version
-  host_error: Open WebUI is unavailable. Publishing and version selection require
-    a connection.
-  library_empty: No packages uploaded yet.
-  previous: Previous
-  next: Next
   backend_notice: This package includes Python code that runs inside Open WebUI. Only
     enable code you trust.
   frontend_notice: This package runs code in users’ chat sessions. Only enable code
     you trust.
+  install: 'Install'
+  replace: 'Replace installed mod'
+  installed: '{name} installed'
+  replace_help: 'This replaces version {version} wherever this mod is enabled. Saved settings are kept. Active users may need to reload.'
 tenant_admin:
   title: System Administration
   exit: Exit

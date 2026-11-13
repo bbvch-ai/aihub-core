@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import re
 from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
@@ -37,7 +38,13 @@ class ModRuntime:
         for selection in snapshot.mods:
             if not selection.enabled:
                 continue
-            package = await self._package(snapshot, selection.publication, selection.mod_id, user)
+            try:
+                package = await self._package(snapshot, selection.publication, selection.mod_id, user)
+            except HTTPException:
+                raise
+            except Exception:
+                logging.getLogger(__name__).exception("Mod '%s' failed to load", selection.mod_id)
+                continue
             context = ModRequestContext(
                 id=request.state.aihub_mod_view, tenant_id=snapshot.tenant_id, mod_id=selection.mod_id, publication=selection.publication,
                 settings=selection.model_copy(deep=True).settings, request=request, user=dict(user),
@@ -101,7 +108,10 @@ class ModRuntime:
             raise HTTPException(403, "This mod is not enabled for the tenant")
         request.state.aihub_mod_path = path
         overrides = await self.request_overrides(request, user)
-        package, context = request.state.aihub_mod_bindings[selection.mod_id]
+        binding = request.state.aihub_mod_bindings.get(selection.mod_id)
+        if binding is None:
+            raise HTTPException(503, "This mod could not start. Please contact your administrator.")
+        package, context = binding
         # The ASGI middleware resets this after streaming/background response work completes.
         CallableRegistry.active.set(CallableRegistry.selection(overrides, getattr(request.state, "aihub_global_handlers", None)))
         return await package.handle(context)
@@ -117,8 +127,15 @@ class ModRuntime:
         for selection in snapshot.mods:
             if not selection.enabled:
                 continue
-            package, _ = request.state.aihub_mod_bindings[selection.mod_id]
-            instance = package.create_filter()
+            binding = request.state.aihub_mod_bindings.get(selection.mod_id)
+            if binding is None:
+                continue
+            package, _ = binding
+            try:
+                instance = package.create_filter()
+            except Exception:
+                logging.getLogger(__name__).exception("Mod '%s' failed to create its filter", selection.mod_id)
+                continue
             if instance is not None:
                 context = ModRunContext(
                     id=request.state.aihub_mod_view, tenant_id=snapshot.tenant_id, mod_id=selection.mod_id,
@@ -143,7 +160,7 @@ class ModRuntime:
             if CallableRegistry.catalog.get(target) != fingerprint:
                 raise HTTPException(
                     409, f"Backend callable changed or is absent: {target}. "
-                    "Please contact your administrator to republish the mod."
+                    "Please contact your administrator to reinstall the mod."
                 )
         async def read_source() -> bytes:
             content = await self.host.client.request(

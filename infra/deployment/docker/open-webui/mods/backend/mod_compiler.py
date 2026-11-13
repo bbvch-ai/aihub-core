@@ -2,6 +2,7 @@ import asyncio
 import fcntl
 import importlib.util
 import json
+import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from zipfile import BadZipFile
@@ -31,7 +32,9 @@ class ModCompiler:
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError as error:
                 raise HTTPException(429, "Another mod is compiling; retry when it finishes", headers={"Retry-After": "1"}) from error
-            with TemporaryDirectory(prefix="aihub-mod-compile-") as temporary:
+            for abandoned in self.directory.glob("compile-*"):
+                await asyncio.to_thread(shutil.rmtree, abandoned)
+            with TemporaryDirectory(prefix="compile-", dir=self.directory) as temporary:
                 root = Path(temporary)
                 try:
                     await asyncio.to_thread(BackendPackage.read_files, content)

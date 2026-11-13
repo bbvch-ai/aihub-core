@@ -10,22 +10,23 @@ from swiss_ai_hub.core.infrastructure.openwebui import (
     OpenWebuiModBundles, OpenWebuiModConfiguration, OpenWebuiModHost, OpenWebuiModResolver,
 )
 from swiss_ai_hub.core.persistence import TenantMetadataEntity
+from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
 
-from tests.openwebui_mods.test_mod_configuration import tenants  # noqa: F401
-from tests.openwebui_mods.test_mod_upload import archive, auth, client, host, publication, storage  # noqa: F401
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.openwebui_mod_service import OpenWebuiModService
+
+pytestmark = pytest.mark.usefixtures("tenants")
 
 BASE = "/api/v1/admin/openwebui-mods"
 
 
-def publish_builtins(client: TestClient, host: OpenWebuiModHost) -> tuple[dict[str, str], dict[str, str]]:
-    sources = client.get(BASE + "/builtins").json()
-    revisions, publications = {}, {}
-    for source in sources:
-        manifest = source["manifest"]
+def install_builtins(client: TestClient, host: OpenWebuiModHost) -> dict[str, str]:
+    sources = OpenWebuiModBundles.packages()
+    publications = {}
+    for mod_id, package in sources.items():
+        manifest = package.manifest.model_dump()
         host.components.update(manifest["replacements"])
         metadata = {
-            "format": 1, "source_revision": source["revision"], "compatibility": host.compatibility.model_dump(),
+            "format": 1, "source_revision": package.revision, "compatibility": host.compatibility.model_dump(),
             "bootstrap": "bootstrap/" + manifest["bootstrap"] + ".mjs" if manifest["bootstrap"] else None,
             "frontend": "frontend/" + manifest["frontend"] + ".mjs" if manifest["frontend"] else None,
             "replacements": {target: "frontend/" + path + ".mjs" for target, path in manifest["replacements"].items()},
@@ -39,67 +40,63 @@ def publish_builtins(client: TestClient, host: OpenWebuiModHost) -> tuple[dict[s
             for filename in metadata["replacements"].values():
                 zipped.writestr("files/" + filename, "export default function Component() {}")
         with patch.object(OpenWebuiModService, "_compile", AsyncMock(return_value=buffer.getvalue())):
-            response = client.post(f'{BASE}/revisions/{source["revision"]}/publications')
+            response = client.post(f"{BASE}/builtins/{mod_id}/install")
         assert response.status_code == 200, response.text
-        revisions[manifest["id"]] = source["revision"]
-        publications[manifest["id"]] = response.json()["revision"]
-    return revisions, publications
+        publications[manifest["id"]] = OpenWebuiModEntity.find_mod(mod_id).publication
+    return publications
 
 
 def test_initializer_validates_publications_without_rewriting_tenant_settings(
     client: TestClient, host: OpenWebuiModHost,
 ) -> None:
-    revisions, _ = publish_builtins(client, host)
+    install_builtins(client, host)
     before = list(TenantMetadataEntity._get_collection().find())
-    initialized = client.post(BASE + "/initialize", json=revisions)
-    assert initialized.status_code == 204, initialized.text
-    assert initialized.content == b""
+    install_builtins(client, host)
     assert list(TenantMetadataEntity._get_collection().find()) == before
     saved = client.get(BASE + "/tenants/one").json()
     disclaimer = saved["mods"][0]
-    assert disclaimer["publication"] is None and disclaimer["enabled"]
+    assert "publication" not in disclaimer and disclaimer["enabled"]
     disclaimer["enabled"] = False
     disclaimer["settings"] = {"text": {"en": "Custom terms"}, "custom": "Later edit"}
     updated = client.put(BASE + "/tenants/one", json=saved)
     assert updated.status_code == 200, updated.text
     before = list(TenantMetadataEntity._get_collection().find())
-    assert client.post(BASE + "/initialize", json=revisions).status_code == 204
+    install_builtins(client, host)
     assert list(TenantMetadataEntity._get_collection().find()) == before
     assert client.get(BASE + "/tenants/one").json() == updated.json()
 
 
-def test_initializer_waits_for_all_publications_and_rejects_stale_sources(client: TestClient) -> None:
-    sources = client.get(BASE + "/builtins").json()
-    revisions = {source["manifest"]["id"]: source["revision"] for source in sources}
-    assert client.post(BASE + "/initialize", json=revisions).status_code == 409
-    assert client.post(BASE + "/initialize", json={}).status_code == 409
-    assert all(tenant.openwebui_mods_json is None for tenant in TenantMetadataEntity.objects)
+def test_failed_builtin_install_does_not_create_catalog_entry(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    from fastapi import HTTPException
+    monkeypatch.setattr(OpenWebuiModService, "_compile", AsyncMock(side_effect=HTTPException(422, "Compiler failed")))
+    assert client.post(BASE + "/builtins/builtin-default/install").status_code == 422
+    assert client.get(BASE + "/catalog").json() == []
 
 
 def test_initializer_checks_all_bundles_even_without_enabled_defaults(
     client: TestClient, host: OpenWebuiModHost, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    revisions, _ = publish_builtins(client, host)
+    install_builtins(client, host)
     monkeypatch.setenv("OPENWEBUI_MODS_DEFAULTS", "[]")
-    assert client.post(BASE + "/initialize", json=revisions).status_code == 204
+    install_builtins(client, host)
     assert all(tenant.openwebui_mods_json is None for tenant in TenantMetadataEntity.objects)
 
 
 def test_builtins_cannot_be_pinned_even_when_disabled(client: TestClient, host: OpenWebuiModHost) -> None:
-    _, publications = publish_builtins(client, host)
+    publications = install_builtins(client, host)
     for enabled in (True, False):
         response = client.put(BASE + "/tenants/one", json={"mods": [{
             "mod_id": "builtin-default", "publication": publications["builtin-default"], "enabled": enabled,
         }]})
         assert response.status_code == 422
-        assert "cannot be pinned" in response.json()["detail"]
+        assert response.json()["detail"][0]["type"] == "extra_forbidden"
 
 
 def test_builtin_upgrade_changes_code_without_rewriting_tenant_choices(
     client: TestClient, host: OpenWebuiModHost, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    revisions, previous = publish_builtins(client, host)
-    assert client.post(BASE + "/initialize", json=revisions).status_code == 204
+    previous = install_builtins(client, host)
+    install_builtins(client, host)
     configuration = client.get(BASE + "/tenants/one").json()
     configuration["mods"][0]["settings"]["text"] = {"en": "Keep my text"}
     saved = client.put(BASE + "/tenants/one", json=configuration).json()
@@ -115,12 +112,11 @@ def test_builtin_upgrade_changes_code_without_rewriting_tenant_choices(
         return OpenWebuiModBundles.zip(files)
 
     monkeypatch.setattr(OpenWebuiModBundles, "source", upgraded_source)
-    with pytest.raises(ValueError, match="not initialized"):
+    with pytest.raises(ValueError, match="needs initialization"):
         asyncio.run(OpenWebuiModResolver.resolve(OpenWebuiModConfiguration.model_validate(saved), host.compatibility))
-    assert client.post(BASE + "/initialize", json=revisions).status_code == 409
-    revisions, current = publish_builtins(client, host)
+    current = install_builtins(client, host)
     assert current["builtin-default"] != previous["builtin-default"]
-    assert client.post(BASE + "/initialize", json=revisions).status_code == 204
+    install_builtins(client, host)
     assert client.get(BASE + "/tenants/one").json() == saved
     resolved = asyncio.run(OpenWebuiModResolver.resolve(OpenWebuiModConfiguration.model_validate(saved), host.compatibility))
     assert resolved.mods[0].publication == current["builtin-default"]

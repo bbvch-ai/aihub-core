@@ -1,6 +1,6 @@
 ---
 title: Integrationsarchitektur
-source_sha: 9441d72cf5e8e26d30b2b0f541247f06b8ffd52287381f4ec1c7d147586864fc
+source_sha: e522274ef157401211dac84c809a39fc0ea5cb42ef76fa50cfd12f0e208da4aa
 ---
 
 # Integrationsarchitektur
@@ -58,37 +58,137 @@ Sicherheitseinstellungen und Content Security Policies, um Cross-Site Scripting 
 Die Plattform verwaltet, welche Agents jeder Benutzer in Open WebUI sehen kann. Da die Pipe Discovery von Open WebUI
 ohne Benutzerkontext läuft, pusht der AI-Hub den Berechtigungsstatus in Open WebUI, anstatt auf Pipe-Ebene zu filtern.
 
-### Funktionsweise:
+**Funktionsweise:**
 
-- **Gruppen**: Der AI-Hub erstellt Open WebUI-Gruppen für jede Mandant-Rollen-Kombination (benannt
-  `aihub:{tenant}:{role}`), wobei die Mitgliedschaften basierend auf dem E-Mail-Abgleich zwischen beiden Systemen
-  synchronisiert werden.
-- **Workspace-Modelle**: Für jeden Online-Agent erstellt der AI-Hub ein Workspace-Modell, das an die entsprechende
-  Pipe-Funktion delegiert.
-- **Zugriffsberechtigungen**: Für jedes Workspace-Modell berechnet der AI-Hub, welche Gruppen Zugriff haben, unter
-  Verwendung des Berechtigungssystems der Plattform (mit Erzwingung der Mandantenobergrenze), und setzt dann
-  `access_control` für das Modell.
+1. **Gruppen**: AI-Hub erstellt Open-WebUI-Gruppen für jede Mandant-Rollen-Kombination mit dem Namen
+   `aihub:{tenant}:{role}`. Mitgliedschaften werden über die E-Mail-Adressen beider Systeme abgeglichen. Für Benutzer,
+   die in ihrem aktiven Mandanten eine Rolle haben, aber den Chat noch nicht geöffnet haben, erstellt derselbe Sync
+   ein Open-WebUI-Konto über SCIM. Ihre Modelle sind damit beim ersten Chat-Besuch verfügbar; die Chat-Anmeldung
+   verknüpft sich mit diesem Konto. Jeder Mandant hat ausserdem eine Gruppe `aihub:{tenant}:AIHubSysAdmin` mit den
+   Systemadministratoren, deren aktiver Mandant er ist. Ein Sysadmin sieht und nutzt somit alle Agents und Modelle
+   dieses Mandanten, ohne eine Mandantenrolle zu benötigen. Im Chat hat er die Rechte eines regulären Benutzers dieses
+   Mandanten: Anfragen über Open WebUI tragen keine Systemadministrationsrechte, etwa zum Löschen eines Mandanten.
+   Der Rollenname `AIHubSysAdmin` ist reserviert und darf nicht als Mandantenrolle verwendet werden. Die Realm-Rolle
+   `AIHubSysAdmin` wird in Keycloak vergeben oder entzogen, ohne AI-Hub zu benachrichtigen. Die Änderung erreicht den
+   Chat daher beim nächsten Zugriffssync; ein Mandantenwechsel löst einen solchen Sync aus
+2. **Workspace-Modelle**: Für jeden Online-Agent erstellt AI-Hub ein Workspace-Modell, das an die entsprechende
+   Pipe-Funktion delegiert
+3. **Zugriffsberechtigungen**: Für jedes Workspace-Modell berechnet AI-Hub mit dem Berechtigungssystem der Plattform,
+   welche Gruppen Zugriff haben, berücksichtigt dabei die Berechtigungsobergrenze des Mandanten und setzt
+   `access_control` für das Modell
 
-Der Provisioner läuft beim API-Start, wenn sich der Satz der Online-Agents ändert (alle 60 Sekunden überprüft), wenn
-Benutzer Mandanten wechseln, wenn sich neue Benutzer über einen Open WebUI Webhook anmelden und wenn Rollen, Mandanten
-oder Benutzer-Rollen-Zuordnungen geändert werden. Alle Zugriffsänderungen werden sofort weitergegeben.
+Der Provisioner läuft beim API-Start, beim Erstellen, Umbenennen oder Löschen einer Agent-Instanz (sofort in der
+Modellauswahl sichtbar), bei Änderungen der Online-Agents (periodischer Abgleich alle 60 Sekunden), beim
+Mandantenwechsel und bei Änderungen an Rollen, Mandanten oder Benutzer-Rollen-Zuordnungen. Alle Änderungen werden
+sofort weitergegeben.
 
-### Zuverlässigkeit bei Multi-Replica-Deployments:
+**Zuverlässigkeit bei Multi-Replica-Deployments:**
 
 - **Debouncing**: Schnelle Mutationen von Zugriffs-Entitäten (z. B. Massenzuweisungen von Benutzern) werden durch ein
   2-Sekunden-Ruhefenster zu einem einzigen Synchronisationsaufruf zusammengefasst.
-- **Verteiltes Locking**: Jede Synchronisationsoperation erwirbt ein nicht-blockierendes Redis-Lock, sodass
-  gleichzeitige API-Replicas überspringen, anstatt um die Ressourcen zu konkurrieren.
+- **Verteiltes Locking**: Jede Synchronisationsoperation erwirbt ein Redis-Lock, damit gleichzeitige API-Replicas nicht
+  konkurrieren. Modellsyncs werden übersprungen, solange ein anderer Sync das Lock hält; Zugriffssyncs warten darauf,
+  damit eine Rollenänderung während eines laufenden Syncs trotzdem angewendet wird.
 - **Änderungserkennung**: Der Discovery Service speichert einen SHA-256-Hash des Online-Agent-Sets in Redis, der
   Neustarts übersteht und über Replicas hinweg korrekt funktioniert.
 
 `BYPASS_MODEL_ACCESS_CONTROL=False` muss in Open WebUI gesetzt werden, um diese Zugriffssteuerungen durchzusetzen.
 
+## Chat-Schalter für Agents
+
+Bei Agents sind die Open-WebUI-Schalter Web Search, Code Interpreter und Image Generation eine Anfrage an den Agent.
+Open WebUI führt diese Funktionen nicht selbst aus. Der Agent entscheidet über die Ausführung und erfasst sie als
+Schritt mit Trace und Kostenzuordnung.
+
+- **Welche Schalter erscheinen**: Ein Agent zeigt einen Schalter nur, wenn sein Blueprint die Funktion unterstützt.
+  Diese Unterstützung ergibt sich aus den installierten Capabilities; der Provisioner hinterlegt sie im
+  Open-WebUI-Modell des Agents. Reine LLM-Modelle behalten alle eigenen Schalter von Open WebUI.
+- **Was ein aktivierter Schalter bewirkt**: Ein AI-Hub-Filter an Agent-Modellen entfernt die Schalter aus der Anfrage,
+  bevor Open WebUI darauf reagiert, und übergibt die unterstützten Funktionen an den Agent. Open WebUI führt für
+  Agents weder seine eigene Suche noch Bildgenerierung oder Code Interpreter aus und verändert den Prompt nicht.
+- **Veraltete Schalterzustände**: Open WebUI sendet den Zustand auch nach einem Wechsel zu einem Modell, das den
+  Schalter ausblendet. Der Filter leitet nur vom gewählten Agent unterstützte Funktionen weiter; andere von einem
+  API-Aufrufer gesendete Funktionen ignoriert der Agent.
+- **Memory**: Die eigene Memory-Injektion von Open WebUI ist für Agents deaktiviert. Sie rufen Benutzer- und
+  Organisations-Memory selbst ab.
+
+## Angehängte Dateien in Agent-Chats
+
+Wenn ein Benutzer eine Datei in einem Agent-Chat anhängt, liest der Agent sie; Open WebUI speichert nur den Upload.
+
+- **Open WebUI verarbeitet sie nicht für Agents**: Datei-Retrieval und -Injektion (die Capability File Context) sind
+  bei Agent-Modellen deaktiviert. Open WebUI erstellt zudem keine Embeddings für Uploads mehr, da es im
+  Vollkontextmodus läuft und diese Embeddings nie gelesen hat. Reine LLM-Modelle behalten die Dateiverarbeitung von
+  Open WebUI.
+- **Der Agent liest das ganze Dokument**: Die Pipe kopiert jede Datei einmal pro Agent in dessen Upload-Bucket. Der
+  Agent verarbeitet sie mit der Dokumentextraktion der Plattform (MinerU für PDFs und Bilder, openpyxl für XLSX,
+  MarkItDown für andere Office-Dateien). Ein inhaltsbasierter Cache sorgt dafür, dass jede Datei nur einmal konvertiert
+  wird. Der vollständige Text kommt in den Modellkontext und wird bei Bedarf gekürzt. Der Benutzer erfährt, wenn nur
+  ein Teil der Datei Platz hatte.
+- **Spätere Antworten und bearbeitete Nachrichten**: Alle Dateien des aktuellen Nachrichtenzweigs werden bei jeder
+  Anfrage mitgesendet. Eine früher angehängte Datei bleibt somit für spätere Fragen verfügbar; bearbeitete oder neu
+  generierte Nachrichten sehen nur die Dateien ihres eigenen Zweigs.
+- **Quellen**: Jede vom Modell gelesene Datei erscheint als Quelle, die den ursprünglichen Upload öffnet und den an
+  das Modell übergebenen Text zeigt. Nicht lesbare Dateien werden gemeldet und nicht stillschweigend übersprungen.
+- **Temporäre Chats**: Open WebUI speichert nichts und sendet den im Browser extrahierten Text. Der Agent liest
+  diesen Text wie jeden anderen Anhang.
+
+## Quellenverweise im Text
+
+Agent-Antworten verknüpfen jede Aussage mit ihrer Quelle, wie Open WebUI es für sein eigenes Retrieval tut.
+
+- **Was das Modell zitiert**: Jedes Wissensdokument und jede angehängte Datei im Prompt trägt eine kurze ID, die das
+  Modell als `[s3f9a1c]` zitiert. Die IDs bleiben über Anfragen und Retrievals hinweg stabil, da sie aus dem Dokument
+  selbst und nicht aus seiner Listenposition abgeleitet werden.
+- **Was Open WebUI anzeigt**: Open WebUI verlinkt nur Zahlen, die über die Quellen einer Nachricht gezählt werden.
+  Die Pipe listet jedes Dokument einmal in der vom Agent gelieferten Reihenfolge auf und ersetzt jede zitierte ID
+  während des Streamings durch die entsprechende Dokumentnummer. Eine ID ohne vom Agent gelieferte Quelle wird
+  entfernt, statt als ungültiger Verweis zu erscheinen.
+- **Welche Dokumente erscheinen**: Aufgeführt werden die tatsächlich vom Modell gelesenen Dokumente nach dem
+  Reranking, einschliesslich aus früheren Anfragen übernommener Dokumente, nicht jeder Suchtreffer. Jede Quelle zeigt
+  ihren Titel oder Dateinamen und verlinkt das Dokument, sofern eine Referenz-URL vorhanden ist.
+
+## Unser Wissen mit `#` referenzieren
+
+In einem Agent-Chat listet `#` die lesbaren Wissenssammlungen als „Datenbank / Sammlung“ neben den Wissensdatenbanken
+von Open WebUI auf. Open WebUI dient nur zur Auswahl: Die Einträge enthalten keinen Inhalt, und Open WebUI führt kein
+Retrieval darauf aus. Der Agent durchsucht die referenzierten Sammlungen selbst mit dem jeweiligen Embedding-Modell
+der Datenbank und zitiert Ergebnisse wie andere Quellen.
+
+- **Wer was sieht**: Ein Eintrag ist für die Rollengruppen lesbar, die die Sammlung durchsuchen dürfen. Die Liste
+  entspricht damit dem Wissensbereich. Der Agent prüft den Zugriff des fragenden Benutzers vor der Suche erneut,
+  sodass eine Referenz nie eine unzulässige Sammlung erreicht. Eine nicht lesbare oder gelöschte Sammlung wird dem
+  Modell genannt; es teilt dem Benutzer mit, dass es sie nicht verwenden konnte.
+- **Automatisch synchronisiert**: Einträge entstehen beim Anlegen einer Sammlung, wenige Sekunden nach Änderungen
+  an Sammlung oder Datenbank und bei jedem Discovery-Zyklus für von Pipelines erstellte Sammlungen. Verschwindet eine
+  Sammlung, wird ihr Eintrag entfernt.
+- **Zusätzlich zum Retrieval des Agents**: Ein Document Intelligence Assistant durchsucht seine konfigurierten
+  Quellen und die referenzierten Sammlungen. Ein Instructed Assistant antwortet ausschliesslich aus den referenzierten
+  Sammlungen.
+
+## Tool-Aufrufe in Agent-Chats
+
+Wenn ein Agent das Modell seine Tools auswählen lässt (siehe [Agents-Übersicht](../../5_agents/#tools-the-model-chooses)),
+erscheint jeder Aufruf in Open WebUI als eigener aufklappbarer Tool-Block mit einer verständlichen Beschriftung wie
+„Unser Wissen durchsuchen“. Darin steht das Ergebnis, wie das Modell es erhalten hat. Text, den das Modell vor einem
+Aufruf gestreamt hat, wird in einen eingeklappten Denkabschnitt verschoben, sodass die Antwort nach der Arbeit beginnt.
+Während der Agent Informationen sammelt, zeigt der Chat seine Tätigkeit, auch wenn eine lange Konversation für das
+Modell verdichtet wird.
+
+- **Freigaben**: Ein vom Administrator als freigabepflichtig markiertes Tool fragt im Chat nach Ja/Nein-Bestätigung
+  und nennt seinen Namen und Zweck. Ein abgelehntes Tool wird für diese Antwort nicht erneut angefragt; das Modell
+  antwortet ohne dieses Tool.
+- **Schalter bestimmen das Angebot**: Ein Tool, das Code Interpreter oder My Files benötigt, wird nur bei aktivem
+  Schalter angeboten. Siehe [Chat-Schalter für Agents](#chat-schalter-für-agents).
+- **Grenzen**: Ein Profil begrenzt, wie oft das Modell entscheiden und wie viele Aufrufe es ausführen darf. Erreicht es
+  die Grenze, antwortet es mit den vorhandenen Informationen und nennt den vorzeitigen Abbruch.
+- **Quellen**: Eine vom Modell gewählte Wissenssuche erzeugt dieselben Quellen-Chips wie eine `#`-Referenz.
+
 ## Chat-Modifikationen
 
 Systemadministratoren verwalten mandantenspezifische Frontend- und Backend-Mods über die Open-WebUI-Einstellungen.
 Der mitgelieferte Mod Chat disclaimer zeigt lokalisierten Text unter der Eingabe. Unter
-[Open WebUI-Modifikationen](../16_openwebui_mods/) finden Sie Konfiguration, Versionsauswahl und den Zeitpunkt,
+[Open WebUI-Modifikationen](../16_openwebui_mods/) finden Sie Installation, Konfiguration und den Zeitpunkt,
 zu dem gespeicherte Änderungen für Benutzer sichtbar werden.
 
 ## Streaming-Anzeige
@@ -99,7 +199,7 @@ schmaler pulsierender Balken, der unter der Denk-Anzeige wie ein einzelnes `|` w
 `aihub-streaming-indicator` lädt das Stylesheet und entfernt es beim Dispose.
 
 Bearbeiten Sie `infrastructure/openwebui/mods/bundled/streaming-indicator/style.css` in Core. Die Initialisierung
-veröffentlicht geänderte mitgelieferte Quellen. Administratoren können den Mod pro Mandant aktivieren oder deaktivieren.
+installiert geänderte mitgelieferte Quellen. Administratoren können den Mod pro Mandant aktivieren oder deaktivieren.
 Die Regeln beziehen sich auf das Markup von Open WebUI v0.11.4. Ändert ein Upgrade dieses Markup, erscheint wieder der
 native Balken. Prüfen Sie daher nach jedem Open-WebUI-Upgrade die Anzeige und das Verhalten bei reduzierter Bewegung.
 
@@ -143,13 +243,10 @@ Benutzerpopulationen und Konversationsvolumen wachsen.
 
 Open WebUI-Updates verwenden unveränderten Upstream-Quellcode mit den versionierten Host-Adaptern von AI Hub.
 Upgrades erfordern Kompatibilitäts- und Verhaltenstests; private Upstream-Schnittstellen können Adapteränderungen
-nötig machen. Gewöhnliche Mod-Veröffentlichungen verwenden den installierten Host weiter.
+nötig machen. Gewöhnliche Mod-Installationen verwenden den installierten Host weiter.
 
 Verantwortlichkeiten bleiben klar. Open WebUI verwaltet Chat-Interaktionen. Die Plattform bietet Authentifizierung,
 Autorisierung, Wissensmanagement und Agenten-Orchestrierung. Diese Trennung vereinfacht Tests und Wartung.
-
-Die Einbettung statt eines Forkings bewahrt die Vorteile von Open Source. Die Plattform erhält Community-Beiträge,
-Sicherheitspatches und Features, ohne eine benutzerdefinierte Variante pflegen zu müssen.
 
 Organisationen können Open WebUI durch alternative Chat-Oberflächen ersetzen, indem sie dieselben Einbettungs- und
 Nachrichtenmuster verwenden. Dies vermeidet eine Bindung an eine spezifische Chat-Technologie.

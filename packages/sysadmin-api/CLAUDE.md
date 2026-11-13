@@ -18,9 +18,9 @@ runner's lifespan if those controllers need more infra.
 Code that lives in this package (must require sysadmin role + be sysadmin-only):
 
 - Tenant lifecycle management (`TenantAdminController` — list / get / create / update / delete tenant metadata).
-- Open WebUI mod source/publication revisions (`OpenWebuiModController` — bounded ZIP upload, list, metadata,
-  download and host compatibility). Publication validates without execution. The catalog is global; versioned
-  tenant selections are stored with tenant metadata and reject conflicting replacements. Runtime activation is separate.
+- Open WebUI mod installation (`OpenWebuiModController` — bounded ZIP inspection, compilation and replacement).
+  Installation validates without executing uploaded code. The shared catalog holds one installed package per ID;
+  tenant settings store enablement and values, independently of package installation. Runtime activation is separate.
 
 Code that does NOT live here (lives in `packages/api`):
 

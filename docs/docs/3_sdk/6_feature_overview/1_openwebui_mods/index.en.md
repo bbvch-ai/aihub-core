@@ -4,15 +4,15 @@ title: Writing Open WebUI mods
 
 # Writing Open WebUI mods
 
-An **Open WebUI mod** is a source ZIP that a system administrator uploads and publishes through
+An **Open WebUI mod** is a source ZIP that a system administrator uploads and installs through
 [Open WebUI settings](../../../2_platform/10_chat_ui/16_openwebui_mods/). It can contain Svelte components,
 JavaScript or TypeScript, Python and local assets. Use Open WebUI's native settings or Functions when they already
 provide the behavior you need.
 
-Mods use the running host's Svelte runtime and Python environment. Publication compiles against that host without
+Mods use the running host's Svelte runtime and Python environment. Installation compiles against that host without
 installing dependencies or executing uploaded code. It checks syntax, frontend imports and declared targets, but does not prove
 runtime correctness or perform semantic TypeScript checking. Check types in your authoring project and test the
-published mod on a matching disposable host.
+installed mod on a matching disposable host.
 
 ## Package the source
 
@@ -40,10 +40,11 @@ absolute paths, traversal, symlinks and duplicate entries are rejected. A source
 32 MiB expanded, 512 entries and a 64 KiB manifest. Settings allow 16 KiB per mod; a tenant selection allows 64 mods
 and 64 KiB in total.
 
-Source and publication revisions identify exact archive bytes by SHA-256. Repacking identical source can create a new
-revision. Publishing records the source revision, host compatibility and native target fingerprints. Uploading and
-publishing do not activate code; an administrator selects and saves the publication separately. There is no archive
-deletion interface; keep prior revisions for rollback.
+Source and compiled archive hashes identify exact bytes by SHA-256. Installation records the source hash, host
+compatibility and native target fingerprints. Each ID has one installed package. A replacement compiles and validates
+before switching that record; failures leave it unchanged. Replacements apply wherever the ID is enabled, keeping
+saved settings and enablement. New installations start disabled. There are no saved upload drafts or version history;
+keep earlier ZIPs and re-upload one to restore its code.
 
 ## Settings controls
 
@@ -93,19 +94,20 @@ and its `children`; repeaters cannot contain other repeaters. Keep defaults in `
 `[A-Za-z][A-Za-z0-9_]*`; `slots`, `constructor` and `prototype` are reserved. Field definitions are limited to 16 KiB.
 Invalid definitions fail upload with a field error; mod code does not run during this check.
 
-For uploaded mods, select a published version before editing settings; its source revision supplies the form.
+The installed manifest supplies the settings form. Replacing the package refreshes this form with saved values.
 Tenant and global settings support the same controls. Secret inputs, tenant/model/agent/knowledge pickers and automatic
 translation are unavailable here. Supply choices in the package. Mods must validate the settings they consume;
 form validation only assists editing.
 
 Saved values without a matching editor are retained. Newly introduced defaults appear in the form and take effect
-when the administrator saves. Opening settings or upgrading alone does not change the runtime configuration.
+when the administrator saves. Opening settings or upgrading alone does not save new default values.
 
 ## Add or replace components
 
 Read the running host's component catalog through SysAdmin's `GET /api/v1/admin/openwebui-mods/host`. Use its source
 IDs as replacement keys. The replacement receives the native component's props, bindings and slots; it must preserve
-the contract needed by its callers. Two enabled mods cannot replace the same component.
+the contract needed by its callers. Saving tenant settings rejects two enabled mods that replace the same component.
+If a package update introduces a conflict, the frontend rejects the conflicting mod during activation.
 
 New child components are ordinary Svelte imports inside the package. To extend a native component, import
 `getOriginalComponent` from `@aihub/mods`, obtain the original by its catalog ID, and compose it with your new children.
@@ -249,6 +251,10 @@ Global activation supports backend callable overrides and packages declaring `ba
 Frontend replacements and chat Filter hooks still require tenant activation. Global contexts expose `scope='global'`,
 `app`, settings and request state, with an HTTP request when available; they do not assert a tenant or user.
 
+Packages declaring `backend_restart_required` or overriding `open_webui.main:lifespan` are global-only and cannot
+activate their frontend or chat Filter hooks. Put those parts in a separate tenant package. Ordinary callable-override
+packages may be enabled in either scope, with separate settings.
+
 An `open_webui.main:lifespan` override always requires global activation and a restart. Return an async context
 manager, enter `next(...)` to preserve native startup, yield its state and clean up owned work on exit. Lifespan runs
 in every worker; jobs that must run once need their own coordination. Upstream imports have already run when global
@@ -256,12 +262,12 @@ packages load, so changing behavior consumed during those imports needs an expli
 
 ## Validate and maintain a mod
 
-Test publication, enablement, settings, disablement and rollback on the pinned host. For frontend mods, check both
+Test installation, replacement, enablement, settings, disablement and ZIP rollback on the pinned host. For frontend mods, check both
 chat layouts, navigation, shared state and cleanup. For backend mods, check concurrent tenants, cancellation, streams
 and any standalone/global paths used by the mod. Include failure cases and verify that native behavior remains usable.
 
-After a host upgrade, publish a compatible version and inspect changed targets before selecting it. Compilation
-warnings remain attached to the publication. Source definitions are in the
+After a host upgrade, inspect changed targets and reinstall a compatible package. Compilation warnings remain
+attached to the installed package. Source definitions are in the
 [host directory](https://github.com/bbvch-ai/aihub-core/tree/main/infra/deployment/docker/open-webui/mods);
 the [deployment guide](https://github.com/bbvch-ai/aihub-core/blob/main/infra/deployment/openwebui.md)
 describes host builds, initialization, backups and recovery.

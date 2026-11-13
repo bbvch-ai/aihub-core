@@ -13,15 +13,8 @@ openwebui_mods:
     description: Gérez les modifications du backend pour tous les locataires, y compris
       les tâches sans utilisateur connecté. Les modifications du frontend restent
       propres à chaque locataire.
-    catalog_help: Tous les paquets personnalisés sont affichés. Pour une utilisation
-      globale, choisissez une version qui remplace des fonctions ou modifie le démarrage.
-    version_ineligible: Cette version ne remplace aucune fonction et ne modifie pas
-      le démarrage. Elle ne peut pas être sélectionnée globalement.
-    select_before_save: 'Sélectionnez une version publiée avant d’enregistrer les
-      paramètres globaux pour : {names}.'
+    catalog_help: 'Ces paquets installés prennent en charge une activation globale du backend.'
     mod_restart: La modification de ce paquet nécessite un redémarrage d’Open WebUI.
-    global_only: Cette version ne peut être sélectionnée que dans les paramètres globaux
-      d’Open WebUI.
     pending: Les modifications de démarrage enregistrées attendent un redémarrage
       d’Open WebUI. La configuration précédente reste active.
     ready: Actif sur les {total} processus.
@@ -36,14 +29,8 @@ openwebui_mods:
       avant de réessayer.
     restart_timeout: Le rétablissement n’a pas été confirmé après deux minutes. Consultez
       les journaux d’Open WebUI et rechargez le statut.
-  catalog_help: Les paquets sont accessibles à tous les administrateurs système. Activez-les
-    séparément pour chaque locataire.
-  versions: Versions
-  versions_help: Les derniers téléversements apparaissent en premier. Choisir une
-    version conserve son état d’activation ; enregistrez les paramètres pour l’appliquer.
-  selected: Sélectionnée
+  catalog_help: 'Les paquets installés sont partagés par tous les tenants. Activez-les séparément pour chaque tenant.'
   automatic_version: Mise à jour avec AI Hub
-  select_before_enable: Sélectionnez une version publiée avant de configurer ou d’activer cette modification.
   title: Paramètres Open WebUI
   description: Choisissez les modifications de ce tenant. Les changements enregistrés
     s’appliquent au prochain rechargement du chat.
@@ -54,25 +41,16 @@ openwebui_mods:
   saved: Paramètres Open WebUI enregistrés
   save_error: Échec de l’enregistrement. Vos modifications sont conservées.
   load_error: Impossible de charger les modifications. Veuillez réessayer.
-  metadata_error: Les détails du paquet sont indisponibles. Vous pouvez toujours désactiver
-    ou retirer cette modification.
   upload: Importer un ZIP
   upload_error: Impossible d’importer ce paquet.
-  publishing: Publication en cours…
-  publish: Publier pour cet Open WebUI
-  publish_help: La publication prépare cette version pour l’Open WebUI en cours d’exécution.
-    Elle ne modifie pas les paramètres enregistrés.
-  publish_error: Impossible de publier ce paquet.
-  use_version: Utiliser cette version
-  host_error: Open WebUI est indisponible. La publication et la sélection d’une version
-    nécessitent une connexion.
-  library_empty: Aucun paquet importé.
-  previous: Précédent
-  next: Suivant
   backend_notice: Ce paquet contient du code Python exécuté dans Open WebUI. N’activez
     que du code de confiance.
   frontend_notice: Ce paquet exécute du code dans les chats des utilisateurs. N’activez
     que du code de confiance.
+  install: 'Installer'
+  replace: 'Remplacer le mod installé'
+  installed: '{name} installé'
+  replace_help: 'Ceci remplace la version {version} partout où ce mod est activé. Les paramètres enregistrés sont conservés. Les utilisateurs actifs devront peut-être recharger la page.'
 tenant_admin:
   title: Administration système
   exit: Quitter

@@ -9,7 +9,7 @@ operators use the [deployment guide](../../../openwebui.md).
 | Area | Entry points |
 | --- | --- |
 | Archive format, publication validation and built-in discovery | [Core mods](../../../../../packages/core/swiss_ai_hub/core/infrastructure/openwebui/mods/) |
-| Upload, publish and tenant configuration | [SysAdmin routes](../../../../../packages/sysadmin-api/swiss_ai_hub/sysadmin_api/routes/openwebui_mods/) |
+| Installation and tenant configuration | [SysAdmin routes](../../../../../packages/sysadmin-api/swiss_ai_hub/sysadmin_api/routes/openwebui_mods/) |
 | Compilation and supported imports | [compiler.mjs](compiler.mjs) |
 | Native component replacements and shared state | [host_plugin.mjs](host_plugin.mjs), [component_plugin.mjs](component_plugin.mjs), [component_boundary.mjs](component_boundary.mjs) |
 | Browser startup, activation and execution events | [host.mjs](host.mjs), [script_entries.mjs](script_entries.mjs), [lifecycle.mjs](lifecycle.mjs), [executions.mjs](executions.mjs) |
@@ -27,7 +27,7 @@ to restore originals after rendering failures. These adapters require checks aga
 `canSettings` on SlashCommands and `canConfigureDirect` on TerminalMenu. Defaults preserve native behavior. The
 account-menu mod supplies the policy through wrappers; native search, forms and save callbacks remain intact.
 The build checks each edited source location and fails on drift. Review these small edits when upgrading Open WebUI.
-Changes to these hooks require a host rebuild; changing the mod policy only requires publishing the mod.
+Changes to these hooks require a host rebuild; changing the mod policy only requires reinstalling the mod.
 
 `install_client_hook.mjs` installs the supported SvelteKit client `init` hook. It stops the build if an upstream hook
 already exists or moves, so an upgrade cannot silently discard upstream startup behavior. The hook authenticates
@@ -59,7 +59,7 @@ Per-message cleanup preserves unrelated notifications.
 worker lock, a 256 MiB JavaScript heap limit and a 60-second timeout; cancellation reaps the subprocess. Uploaded code
 is not executed during compilation. TypeScript is transpiled with syntax diagnostics; semantic type checking is not
 included. `backend/initialize.py` prepares bundled publications through SysAdmin without
-rewriting tenant settings, and reconciles global built-ins.
+rewriting tenant settings, and reconciles globally selected packages.
 
 ## Verification
 
@@ -81,7 +81,7 @@ OPENWEBUI_MODS_URL=http://localhost:18081 pnpm -C e2e exec playwright test compo
 ```
 
 The component tests cover shared state, bindings, slots, events, cleanup and restoration. Also validate the actual
-package with the complete AI Hub login/publishing flow; fixture tests alone do not establish deployment acceptance.
+package with the complete AI Hub login/installation flow; fixture tests alone do not establish deployment acceptance.
 
 The [bundled customization suite](../../../../../e2e/openwebui-mods/customizations/README.md) checks startup locale repair,
 native voice recovery, PDF menus, streaming styles and disclaimer rendering against a disposable authenticated host.

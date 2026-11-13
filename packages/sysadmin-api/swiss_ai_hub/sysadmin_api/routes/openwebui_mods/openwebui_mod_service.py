@@ -5,40 +5,22 @@ from fastapi import HTTPException
 from mypy_boto3_s3 import S3Client
 from starlette.concurrency import run_in_threadpool
 from swiss_ai_hub.core.infrastructure.openwebui import (
-    OpenWebuiModBundles, OpenWebuiModHost, OpenWebuiModManifest, OpenWebuiModPackage, OpenWebuiModStore, OpenWebuiSettings,
+    OpenWebuiModBundles, OpenWebuiModHost, OpenWebuiModManifest, OpenWebuiModPackage,
+    OpenWebuiModPublicationManifest, OpenWebuiModStore, OpenWebuiSettings,
 )
-from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModPublicationEntity, OpenWebuiModRevisionEntity
+from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
 
 from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_catalog_entry import OpenWebuiModCatalogEntry
-from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_publication_response import (
-    OpenWebuiModPublicationResponse,
-)
-
-from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_revision_response import (
-    OpenWebuiModRevisionResponse,
-)
+from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.dto.openwebui_mod_upload_preview import OpenWebuiModUploadPreview
 
 
 class OpenWebuiModService:
     @staticmethod
     async def catalog(offset: int, limit: int) -> list[OpenWebuiModCatalogEntry]:
         builtins = OpenWebuiModBundles.packages()
-        custom_ids = await run_in_threadpool(OpenWebuiModRevisionEntity.list_mod_ids)
-        mod_ids = sorted(set(custom_ids) | builtins.keys())[offset:offset + limit]
-        entries = []
-        for mod_id in mod_ids:
-            if package := builtins.get(mod_id):
-                entries.append(OpenWebuiModCatalogEntry(
-                    source_revision=package.revision, manifest=package.manifest, builtin=True,
-                ))
-            else:
-                latest = await run_in_threadpool(OpenWebuiModRevisionEntity.latest_revision, mod_id)
-                if latest is not None:
-                    entries.append(OpenWebuiModCatalogEntry(
-                        source_revision=latest.revision,
-                        manifest=OpenWebuiModManifest.model_validate_json(latest.manifest_json), builtin=False,
-                    ))
-        return entries
+        installed = await run_in_threadpool(OpenWebuiModEntity.installed)
+        return [OpenWebuiModCatalogEntry.from_entity(mod, builtin=mod.mod_id in builtins)
+                for mod in installed[offset:offset + limit]]
 
     @staticmethod
     async def get_host() -> OpenWebuiModHost:
@@ -48,44 +30,59 @@ class OpenWebuiModService:
             raise HTTPException(status_code=503, detail="The compatible Open WebUI mod host is unavailable.") from error
 
     @staticmethod
-    async def upload(content: bytes, uploaded_by: str, client: S3Client) -> OpenWebuiModRevisionResponse:
+    def _package(content: bytes) -> OpenWebuiModPackage:
         try:
             package = OpenWebuiModPackage.from_zip(content)
-            builtin = OpenWebuiModBundles.packages().get(package.manifest.id)
-            if builtin is not None and package.revision != builtin.revision:
+            if package.manifest.id in OpenWebuiModBundles.packages():
                 raise ValueError("Built-in mod IDs are reserved. Choose a different ID for a custom mod.")
-            entity = await OpenWebuiModStore(client).upload(content, uploaded_by)
+            return package
         except ValueError as error:
-            raise HTTPException(status_code=422, detail=str(error)) from error
-        return OpenWebuiModRevisionResponse.from_entity(entity)
-
-    @staticmethod
-    async def list_revisions(
-        mod_id: str | None, offset: int, limit: int,
-    ) -> list[OpenWebuiModRevisionResponse]:
-        entities = await run_in_threadpool(OpenWebuiModRevisionEntity.list_revisions, mod_id, offset, limit)
-        return [OpenWebuiModRevisionResponse.from_entity(entity) for entity in entities]
-
-    @staticmethod
-    async def get_revision(revision: str) -> OpenWebuiModRevisionResponse:
-        entity = await run_in_threadpool(OpenWebuiModRevisionEntity.find_revision, revision)
-        if entity is None:
-            raise HTTPException(status_code=404, detail="Open WebUI mod revision not found.")
-        return OpenWebuiModRevisionResponse.from_entity(entity)
+            raise HTTPException(422, str(error)) from error
 
     @classmethod
-    async def publish(
-        cls, source_revision: str, published_by: str, client: S3Client
-    ) -> OpenWebuiModPublicationResponse:
-        await cls.get_revision(source_revision)
+    async def inspect(cls, content: bytes) -> OpenWebuiModUploadPreview:
+        package = await run_in_threadpool(cls._package, content)
+        installed = await run_in_threadpool(OpenWebuiModEntity.find_mod, package.manifest.id)
+        return OpenWebuiModUploadPreview(
+            manifest=package.manifest,
+            installed_version=OpenWebuiModManifest.model_validate_json(installed.manifest_json).version if installed else None,
+        )
+
+    @classmethod
+    async def install(cls, content: bytes, installed_by: str, client: S3Client, *, replace: bool) -> OpenWebuiModCatalogEntry:
+        package = await run_in_threadpool(cls._package, content)
+        if not replace and await run_in_threadpool(OpenWebuiModEntity.find_mod, package.manifest.id) is not None:
+            raise HTTPException(409, "A mod with this ID is already installed. Confirm replacement before updating it.")
         host = await cls.get_host()
+        return await cls._install(content, installed_by, client, host, builtin=False)
+
+    @classmethod
+    async def install_builtin(cls, mod_id: str, client: S3Client) -> OpenWebuiModCatalogEntry:
+        package = OpenWebuiModBundles.packages().get(mod_id)
+        if package is None:
+            raise HTTPException(404, "Built-in mod not found.")
+        installed = await run_in_threadpool(OpenWebuiModEntity.find_mod, mod_id)
+        host = await cls.get_host()
+        if (installed is not None and installed.source_revision == package.revision
+                and OpenWebuiModPublicationManifest.model_validate_json(installed.publication_manifest_json).compatibility == host.compatibility):
+            await OpenWebuiModStore(client).prune()
+            return OpenWebuiModCatalogEntry.from_entity(installed, builtin=True)
+        content = OpenWebuiModBundles.zip(package.files)
+        return await cls._install(content, "aihub-bundled", client, host, builtin=True)
+
+    @classmethod
+    async def _install(
+        cls, content: bytes, installed_by: str, client: S3Client, host: OpenWebuiModHost, *, builtin: bool,
+    ) -> OpenWebuiModCatalogEntry:
+        compiled = await cls._compile(content)
         store = OpenWebuiModStore(client)
-        content = await cls._compile(await store.read_archive(source_revision))
         try:
-            entity = await store.publish(content, source_revision, published_by, host)
+            installed = await store.install(content, compiled, installed_by, host)
         except ValueError as error:
-            raise HTTPException(status_code=422, detail=str(error)) from error
-        return OpenWebuiModPublicationResponse.from_entity(entity)
+            raise HTTPException(422, str(error)) from error
+        finally:
+            await store.prune()
+        return OpenWebuiModCatalogEntry.from_entity(installed, builtin=builtin)
 
     @staticmethod
     async def _compile(source: bytes) -> bytes:
@@ -113,16 +110,3 @@ class OpenWebuiModService:
                     return bytes(content)
         except httpx.HTTPError as error:
             raise HTTPException(503, "The Open WebUI mod compiler is unavailable") from error
-
-    @classmethod
-    async def list_publications(cls, source_revision: str) -> list[OpenWebuiModPublicationResponse]:
-        await cls.get_revision(source_revision)
-        entities = await run_in_threadpool(OpenWebuiModPublicationEntity.list_publications, source_revision)
-        return [OpenWebuiModPublicationResponse.from_entity(entity) for entity in entities]
-
-    @staticmethod
-    async def get_publication(revision: str) -> OpenWebuiModPublicationResponse:
-        entity = await run_in_threadpool(OpenWebuiModPublicationEntity.find_publication, revision)
-        if entity is None:
-            raise HTTPException(status_code=404, detail="Open WebUI mod publication not found.")
-        return OpenWebuiModPublicationResponse.from_entity(entity)

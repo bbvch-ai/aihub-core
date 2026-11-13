@@ -13,4 +13,4 @@ This feature list is regularly updated. Check back often to discover new capabil
 functionality.
 :::
 
-[Writing Open WebUI mods](1_openwebui_mods/) covers custom chat components, backend hooks and runtime publication.
+[Writing Open WebUI mods](1_openwebui_mods/) covers custom chat components, backend hooks and runtime installation.

@@ -15,22 +15,23 @@ enablement and settings are saved separately for each tenant.
 
 For a custom mod:
 
-1. Choose Upload ZIP and upload the package supplied by its author.
-2. Open Versions, select the source version, and choose Publish for this Open WebUI. Publishing checks and compiles
-   the package; it does not activate it.
-3. Choose Use this version, enable the mod, and edit the controls under Settings.
-4. Save the tenant's settings.
+1. Choose Upload ZIP and select the package supplied by its author.
+2. Choose Install, or confirm Replace installed mod if its ID is already installed.
+3. Enable the mod, edit the controls under Settings, and Save.
 
-Publishing requires a reachable, compatible Open WebUI mod host. Compilation errors appear in the version dialog.
-If the package is already published for this host, select it without publishing again. Uploading a newer version
-does not switch existing selections. To roll back, select an earlier compatible version and save.
+Installation checks and compiles the package using the running Open WebUI host. A failed upload stays in the dialog;
+closing it discards the attempt. The installed package remains unchanged, and a failed first installation adds no row.
 
-Disabling a mod preserves its selected version and settings. Disable all followed by Save turns off the tenant's
-mods. Failed saves retain your draft; if another administrator changed the configuration, review their saved settings
-before retrying. Reload saved settings replaces your draft.
+Each mod has one installed version shared by all tenants. A successful replacement updates that same row and keeps
+saved settings and enablement. If those values no longer meet the new form's rules, ordinary field validation guides
+the edit. Disable the mod and Save if it should stay inactive. Toggle changes always apply to the installed version.
+To restore earlier code, upload its ZIP again; there is no version history or rollback button. Keep your source ZIPs.
+
+New mods start disabled. Failed settings saves retain unsaved edits; if another administrator changed the settings,
+reload the page and review the saved configuration before retrying.
 
 ::: warning Trusted code and settings
-Only system administrators can upload, publish and configure mods. Mods run with application capabilities in users'
+Only system administrators can upload, install and configure mods. Mods run with application capabilities in users'
 browsers or inside Open WebUI; they are not sandboxed. Enable code you trust. Tenant settings are delivered to the
 browser, so do not put passwords, tokens or other secrets in them.
 :::
@@ -42,7 +43,9 @@ to the tab or reconnect, then offer a reload notice. Saving does not force a rel
 New backend operations use the saved configuration; requests already running retain their selected code and settings.
 
 An import, activation or component-rendering failure disables the affected frontend mod and offers a reload notice.
-Other mods can continue. Backend errors follow Open WebUI's normal error handling.
+Saved enablement remains unchanged. Backend import/filter-construction failures are logged and skip that instance;
+global load errors also appear in worker status. Other mods can continue. Exceptions during backend operations follow
+Open WebUI's normal error handling.
 
 ## Configure the chat disclaimer
 
@@ -54,17 +57,23 @@ settings prevent this mod from activating. Disable the mod to hide the note.
 The shipped deployment defaults enable Chat disclaimer, Saved language recovery, Voice reply recovery,
 Multi-model PDF export guard and Streaming indicator. Operators can change which bundled mods start enabled;
 once a tenant saves its own configuration, that saved configuration takes precedence. Bundled mods show Updated with
-AI Hub and follow the installed release while keeping saved settings and enablement. Custom versions remain selected
-until an administrator changes them.
+AI Hub and follow the installed release while keeping saved settings and enablement.
+
+The optional Admin Panel shortcut mod replaces the duplicate account display with a direct Admin Panel link for
+admins. Their Settings dialog keeps admin tabs and About, excluding Authentication, Connections and Database.
+Other users cannot open the Settings dialog. This mod is installed with AI Hub but is not enabled by default.
 
 ## Changes across all tenants
 
 Global Open WebUI manages backend callable overrides and startup behavior across tenants, including work without a
-signed-in user. Frontend changes still require tenant activation. Versions shows which packages are eligible for
-global use.
+signed-in user. Frontend changes still require tenant activation. Each page lists packages eligible for its scope.
+Uploading a global-only package from a tenant page opens the global page after installation. Updating a package's
+scope preserves saved choices but never automatically enables it in a different scope.
 
-Ordinary global changes apply without a container restart. Changes to startup behavior remain pending until you
-confirm Restart to apply saved changes. The page shows the saved and active state and worker readiness. Restarting
+Ordinary global changes apply without a container restart. If startup changes are pending, all saved global changes
+wait until you confirm Restart to apply saved changes. An installation warning about global activation means the
+package was installed, but the host could not adopt it; save Global Open WebUI settings to retry.
+The page shows the saved and active state and worker readiness. Restarting
 affects all tenants and can interrupt chats or background jobs; arrange a suitable maintenance window. If readiness
 does not recover, the operator needs to inspect the Open WebUI logs.
 

@@ -596,11 +596,23 @@ export type OpenWebuiModCatalogEntry = {
    */
   builtin: boolean;
   /**
+   * Installed At
+   */
+  installed_at: Date;
+  /**
+   * Warnings
+   */
+  warnings: Array<string>;
+  /**
    * Settings Form
    */
   readonly settings_form: Array<{
     [key: string]: JsonValue;
   }>;
+  /**
+   * Scopes
+   */
+  readonly scopes: Array<"tenant" | "global">;
 };
 
 /**
@@ -760,103 +772,6 @@ export type OpenWebuiModManifest = {
 };
 
 /**
- * OpenWebuiModPublicationManifest
- */
-export type OpenWebuiModPublicationManifest = {
-  /**
-   * Format
-   */
-  format: 1;
-  /**
-   * Source Revision
-   */
-  source_revision: string;
-  compatibility: OpenWebuiModCompatibility;
-  /**
-   * Bootstrap
-   */
-  bootstrap?: string | null;
-  /**
-   * Frontend
-   */
-  frontend?: string | null;
-  /**
-   * Replacements
-   */
-  replacements?: {
-    [key: string]: string;
-  };
-  /**
-   * Backend Targets
-   */
-  backend_targets?: {
-    [key: string]: {
-      [key: string]: JsonValue;
-    };
-  };
-  /**
-   * Warnings
-   */
-  warnings?: Array<string>;
-};
-
-/**
- * OpenWebuiModPublicationResponse
- */
-export type OpenWebuiModPublicationResponse = {
-  /**
-   * Revision
-   */
-  revision: string;
-  /**
-   * Mod Id
-   */
-  mod_id: string;
-  manifest: OpenWebuiModPublicationManifest;
-  /**
-   * Archive Bytes
-   */
-  archive_bytes: number;
-  /**
-   * Published At
-   */
-  published_at: Date;
-  /**
-   * Published By
-   */
-  published_by: string;
-};
-
-/**
- * OpenWebuiModRevisionResponse
- */
-export type OpenWebuiModRevisionResponse = {
-  /**
-   * Revision
-   */
-  revision: string;
-  manifest: OpenWebuiModManifest;
-  /**
-   * Archive Bytes
-   */
-  archive_bytes: number;
-  /**
-   * Uploaded At
-   */
-  uploaded_at: Date;
-  /**
-   * Uploaded By
-   */
-  uploaded_by: string;
-  /**
-   * Settings Form
-   */
-  readonly settings_form: Array<{
-    [key: string]: JsonValue;
-  }>;
-};
-
-/**
  * OpenWebuiModSelection
  */
 export type OpenWebuiModSelection = {
@@ -864,10 +779,6 @@ export type OpenWebuiModSelection = {
    * Mod Id
    */
   mod_id: string;
-  /**
-   * Publication
-   */
-  publication?: string | null;
   /**
    * Enabled
    */
@@ -878,6 +789,17 @@ export type OpenWebuiModSelection = {
   settings?: {
     [key: string]: JsonValue;
   };
+};
+
+/**
+ * OpenWebuiModUploadPreview
+ */
+export type OpenWebuiModUploadPreview = {
+  manifest: OpenWebuiModManifest;
+  /**
+   * Installed Version
+   */
+  installed_version: string | null;
 };
 
 /**
@@ -1402,29 +1324,14 @@ export type OpenWebuiModCatalogEntryWritable = {
    * Builtin
    */
   builtin: boolean;
-};
-
-/**
- * OpenWebuiModRevisionResponse
- */
-export type OpenWebuiModRevisionResponseWritable = {
   /**
-   * Revision
+   * Installed At
    */
-  revision: string;
-  manifest: OpenWebuiModManifest;
+  installed_at: Date;
   /**
-   * Archive Bytes
+   * Warnings
    */
-  archive_bytes: number;
-  /**
-   * Uploaded At
-   */
-  uploaded_at: Date;
-  /**
-   * Uploaded By
-   */
-  uploaded_by: string;
+  warnings: Array<string>;
 };
 
 export type GetHealthData = {
@@ -1608,43 +1515,43 @@ export type GetOpenwebuiModBuiltinsResponses = {
    *
    * Successful Response
    */
-  200: Array<OpenWebuiModRevisionResponse>;
+  200: Array<string>;
 };
 
 export type GetOpenwebuiModBuiltinsResponse =
   GetOpenwebuiModBuiltinsResponses[keyof GetOpenwebuiModBuiltinsResponses];
 
-export type InitializeOpenwebuiModsData = {
-  /**
-   * Revisions
-   */
-  body: {
-    [key: string]: string;
+export type InstallOpenwebuiBuiltinModData = {
+  body?: never;
+  path: {
+    /**
+     * Mod Id
+     */
+    mod_id: string;
   };
-  path?: never;
   query?: never;
-  url: "/admin/openwebui-mods/initialize";
+  url: "/admin/openwebui-mods/builtins/{mod_id}/install";
 };
 
-export type InitializeOpenwebuiModsErrors = {
+export type InstallOpenwebuiBuiltinModErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type InitializeOpenwebuiModsError =
-  InitializeOpenwebuiModsErrors[keyof InitializeOpenwebuiModsErrors];
+export type InstallOpenwebuiBuiltinModError =
+  InstallOpenwebuiBuiltinModErrors[keyof InstallOpenwebuiBuiltinModErrors];
 
-export type InitializeOpenwebuiModsResponses = {
+export type InstallOpenwebuiBuiltinModResponses = {
   /**
    * Successful Response
    */
-  204: void;
+  200: OpenWebuiModCatalogEntry;
 };
 
-export type InitializeOpenwebuiModsResponse =
-  InitializeOpenwebuiModsResponses[keyof InitializeOpenwebuiModsResponses];
+export type InstallOpenwebuiBuiltinModResponse =
+  InstallOpenwebuiBuiltinModResponses[keyof InstallOpenwebuiBuiltinModResponses];
 
 export type GetOpenwebuiModConfigurationData = {
   body?: never;
@@ -1710,258 +1617,54 @@ export type ReplaceOpenwebuiModConfigurationResponses = {
 export type ReplaceOpenwebuiModConfigurationResponse =
   ReplaceOpenwebuiModConfigurationResponses[keyof ReplaceOpenwebuiModConfigurationResponses];
 
-export type ListOpenwebuiModRevisionsData = {
-  body?: never;
-  path?: never;
-  query?: {
-    /**
-     * Mod Id
-     */
-    mod_id?: string | null;
-    /**
-     * Offset
-     */
-    offset?: number;
-    /**
-     * Limit
-     */
-    limit?: number;
-  };
-  url: "/admin/openwebui-mods/revisions";
-};
-
-export type ListOpenwebuiModRevisionsErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type ListOpenwebuiModRevisionsError =
-  ListOpenwebuiModRevisionsErrors[keyof ListOpenwebuiModRevisionsErrors];
-
-export type ListOpenwebuiModRevisionsResponses = {
-  /**
-   * Response List Openwebui Mod Revisions
-   *
-   * Successful Response
-   */
-  200: Array<OpenWebuiModRevisionResponse>;
-};
-
-export type ListOpenwebuiModRevisionsResponse =
-  ListOpenwebuiModRevisionsResponses[keyof ListOpenwebuiModRevisionsResponses];
-
-export type UploadOpenwebuiModData = {
+export type InspectOpenwebuiModData = {
   body: Blob | File;
   path?: never;
   query?: never;
-  url: "/admin/openwebui-mods/revisions";
+  url: "/admin/openwebui-mods/inspect";
 };
 
-export type UploadOpenwebuiModResponses = {
+export type InspectOpenwebuiModResponses = {
   /**
    * Successful Response
    */
-  200: OpenWebuiModRevisionResponse;
+  200: OpenWebuiModUploadPreview;
 };
 
-export type UploadOpenwebuiModResponse =
-  UploadOpenwebuiModResponses[keyof UploadOpenwebuiModResponses];
+export type InspectOpenwebuiModResponse =
+  InspectOpenwebuiModResponses[keyof InspectOpenwebuiModResponses];
 
-export type GetOpenwebuiModRevisionData = {
-  body?: never;
-  path: {
+export type InstallOpenwebuiModData = {
+  body: Blob | File;
+  path?: never;
+  query?: {
     /**
-     * Revision
+     * Replace
      */
-    revision: string;
+    replace?: boolean;
   };
-  query?: never;
-  url: "/admin/openwebui-mods/revisions/{revision}";
+  url: "/admin/openwebui-mods/install";
 };
 
-export type GetOpenwebuiModRevisionErrors = {
+export type InstallOpenwebuiModErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type GetOpenwebuiModRevisionError =
-  GetOpenwebuiModRevisionErrors[keyof GetOpenwebuiModRevisionErrors];
+export type InstallOpenwebuiModError =
+  InstallOpenwebuiModErrors[keyof InstallOpenwebuiModErrors];
 
-export type GetOpenwebuiModRevisionResponses = {
+export type InstallOpenwebuiModResponses = {
   /**
    * Successful Response
    */
-  200: OpenWebuiModRevisionResponse;
+  200: OpenWebuiModCatalogEntry;
 };
 
-export type GetOpenwebuiModRevisionResponse =
-  GetOpenwebuiModRevisionResponses[keyof GetOpenwebuiModRevisionResponses];
-
-export type DownloadOpenwebuiModSourceData = {
-  body?: never;
-  path: {
-    /**
-     * Revision
-     */
-    revision: string;
-  };
-  query?: never;
-  url: "/admin/openwebui-mods/revisions/{revision}/source";
-};
-
-export type DownloadOpenwebuiModSourceErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type DownloadOpenwebuiModSourceError =
-  DownloadOpenwebuiModSourceErrors[keyof DownloadOpenwebuiModSourceErrors];
-
-export type DownloadOpenwebuiModSourceResponses = {
-  /**
-   * Successful Response
-   */
-  200: Blob | File;
-};
-
-export type DownloadOpenwebuiModSourceResponse =
-  DownloadOpenwebuiModSourceResponses[keyof DownloadOpenwebuiModSourceResponses];
-
-export type ListOpenwebuiModPublicationsData = {
-  body?: never;
-  path: {
-    /**
-     * Revision
-     */
-    revision: string;
-  };
-  query?: never;
-  url: "/admin/openwebui-mods/revisions/{revision}/publications";
-};
-
-export type ListOpenwebuiModPublicationsErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type ListOpenwebuiModPublicationsError =
-  ListOpenwebuiModPublicationsErrors[keyof ListOpenwebuiModPublicationsErrors];
-
-export type ListOpenwebuiModPublicationsResponses = {
-  /**
-   * Response List Openwebui Mod Publications
-   *
-   * Successful Response
-   */
-  200: Array<OpenWebuiModPublicationResponse>;
-};
-
-export type ListOpenwebuiModPublicationsResponse =
-  ListOpenwebuiModPublicationsResponses[keyof ListOpenwebuiModPublicationsResponses];
-
-export type PublishOpenwebuiModData = {
-  body?: never;
-  path: {
-    /**
-     * Revision
-     */
-    revision: string;
-  };
-  query?: never;
-  url: "/admin/openwebui-mods/revisions/{revision}/publications";
-};
-
-export type PublishOpenwebuiModErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type PublishOpenwebuiModError =
-  PublishOpenwebuiModErrors[keyof PublishOpenwebuiModErrors];
-
-export type PublishOpenwebuiModResponses = {
-  /**
-   * Successful Response
-   */
-  200: OpenWebuiModPublicationResponse;
-};
-
-export type PublishOpenwebuiModResponse =
-  PublishOpenwebuiModResponses[keyof PublishOpenwebuiModResponses];
-
-export type GetOpenwebuiModPublicationData = {
-  body?: never;
-  path: {
-    /**
-     * Revision
-     */
-    revision: string;
-  };
-  query?: never;
-  url: "/admin/openwebui-mods/publications/{revision}";
-};
-
-export type GetOpenwebuiModPublicationErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type GetOpenwebuiModPublicationError =
-  GetOpenwebuiModPublicationErrors[keyof GetOpenwebuiModPublicationErrors];
-
-export type GetOpenwebuiModPublicationResponses = {
-  /**
-   * Successful Response
-   */
-  200: OpenWebuiModPublicationResponse;
-};
-
-export type GetOpenwebuiModPublicationResponse =
-  GetOpenwebuiModPublicationResponses[keyof GetOpenwebuiModPublicationResponses];
-
-export type DownloadOpenwebuiModPublicationData = {
-  body?: never;
-  path: {
-    /**
-     * Revision
-     */
-    revision: string;
-  };
-  query?: never;
-  url: "/admin/openwebui-mods/publications/{revision}/bundle";
-};
-
-export type DownloadOpenwebuiModPublicationErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type DownloadOpenwebuiModPublicationError =
-  DownloadOpenwebuiModPublicationErrors[keyof DownloadOpenwebuiModPublicationErrors];
-
-export type DownloadOpenwebuiModPublicationResponses = {
-  /**
-   * Successful Response
-   */
-  200: Blob | File;
-};
-
-export type DownloadOpenwebuiModPublicationResponse =
-  DownloadOpenwebuiModPublicationResponses[keyof DownloadOpenwebuiModPublicationResponses];
+export type InstallOpenwebuiModResponse =
+  InstallOpenwebuiModResponses[keyof InstallOpenwebuiModResponses];
 
 export type ListTenantsData = {
   body?: never;

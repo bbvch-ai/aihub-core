@@ -16,7 +16,7 @@ from swiss_ai_hub.core.auth import AuthHandler, KeycloakAdminService, TokenAuthH
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.infrastructure.openwebui import OpenWebuiModBundles, OpenWebuiModConfiguration, OpenWebuiModPackage, OpenWebuiModPublication
 from swiss_ai_hub.core.persistence import RoleEntity, TenantMetadataEntity, UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModPublicationEntity, OpenWebuiModRevisionEntity
+from swiss_ai_hub.core.persistence.openwebui import OpenWebuiModEntity
 
 from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
 
@@ -69,7 +69,7 @@ def bundled_packages(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch, storage: MagicMock, compatibility: dict) -> Generator[TestClient]:
     connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
-    for entity in [TenantMetadataEntity, OpenWebuiModPublicationEntity, OpenWebuiModRevisionEntity]:
+    for entity in [TenantMetadataEntity, OpenWebuiModEntity]:
         entity.drop_collection()
     for name in OpenWebuiModBundles.names():
         content = OpenWebuiModBundles.source(name)
@@ -86,8 +86,7 @@ def client(monkeypatch: pytest.MonkeyPatch, storage: MagicMock, compatibility: d
             files["files/" + filename] = b"export default function Component() {}"
         bundle = OpenWebuiModBundles.zip(files)
         publication = OpenWebuiModPublication.from_zip(bundle)
-        OpenWebuiModRevisionEntity.record_upload(package, len(content), "initializer")
-        OpenWebuiModPublicationEntity.record_publication(publication, package.manifest.id, len(bundle), "initializer")
+        OpenWebuiModEntity.install(package, publication, "initializer", len(bundle))
         storage.put_object(Key=f"sources/{package.revision}.zip", Body=content)
         storage.put_object(Key=f"publications/{publication.revision}.zip", Body=bundle)
     storage.put_object.reset_mock()
@@ -112,7 +111,7 @@ def client(monkeypatch: pytest.MonkeyPatch, storage: MagicMock, compatibility: d
     with TestClient(app) as test_client:
         yield test_client
     ordinary_auth.assert_not_called()
-    for entity in [TenantMetadataEntity, OpenWebuiModPublicationEntity, OpenWebuiModRevisionEntity]:
+    for entity in [TenantMetadataEntity, OpenWebuiModEntity]:
         entity.drop_collection()
     disconnect()
 
@@ -124,13 +123,12 @@ def publish_mod(compatibility: dict, storage: MagicMock, *, version: str = "1", 
         zipped.writestr("main.js", "export function activate() {}")
         zipped.writestr("backend.py", "raise RuntimeError('Do not execute source while serving it')")
     package = OpenWebuiModPackage.from_zip(source.getvalue())
-    OpenWebuiModRevisionEntity.record_upload(package, len(source.getvalue()), "sysadmin")
     compiled = BytesIO()
     with ZipFile(compiled, "w") as zipped:
         zipped.writestr("publication.json", json.dumps({"format": 1, "source_revision": package.revision, "compatibility": compatibility, "frontend": "frontend/main.js.mjs"}))
         zipped.writestr("files/frontend/main.js.mjs", "export function activate() {}")
     publication = OpenWebuiModPublication.from_zip(compiled.getvalue())
-    OpenWebuiModPublicationEntity.record_publication(publication, mod_id, len(compiled.getvalue()), "sysadmin")
+    OpenWebuiModEntity.install(package, publication, "sysadmin", len(compiled.getvalue()))
     storage.put_object(Key=f"sources/{package.revision}.zip", Body=source.getvalue())
     storage.put_object(Key=f"publications/{publication.revision}.zip", Body=compiled.getvalue())
     return {"revision": publication.revision, "source": source.getvalue(), "frontend": compiled.getvalue()}
@@ -140,7 +138,7 @@ def publish_mod(compatibility: dict, storage: MagicMock, *, version: str = "1", 
 def published(client: TestClient, compatibility: dict, storage: MagicMock) -> dict:
     publication = publish_mod(compatibility, storage)
     configuration = OpenWebuiModConfiguration(version=7, mods=[
-        {"mod_id": "tools", "publication": publication["revision"], "settings": {"label": "Original"}},
+        {"mod_id": "tools", "settings": {"label": "Original"}},
     ])
     TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json=configuration.model_dump_json())
     return publication
@@ -193,7 +191,7 @@ def test_revision_is_shared_between_users_and_ignores_save_version_and_json_key_
     client: TestClient, compatibility: dict, published: dict,
 ) -> None:
     current = resolve_configuration(client, compatibility)
-    configuration = current["configuration"]
+    configuration = json.loads(TenantMetadataEntity.objects.get(id="one").openwebui_mods_json)
     configuration["mods"][0]["settings"] = {"label": "Original", "nested": {"first": 1, "second": 2}}
     TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json=json.dumps(configuration))
     first = resolve_configuration(client, compatibility)
@@ -211,16 +209,15 @@ def test_revision_tracks_settings_publications_and_mod_order(
 ) -> None:
     current = resolve_configuration(client, compatibility)
     revisions = {current["revision"]}
-    configuration = current["configuration"]
+    configuration = json.loads(TenantMetadataEntity.objects.get(id="one").openwebui_mods_json)
     configuration["mods"][0]["settings"]["label"] = "Updated"
     TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json=json.dumps(configuration))
     revisions.add(resolve_configuration(client, compatibility)["revision"])
     replacement = publish_mod(compatibility, storage, version="2")
-    configuration["mods"][0]["publication"] = replacement["revision"]
     TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json=json.dumps(configuration))
     revisions.add(resolve_configuration(client, compatibility)["revision"])
     extra = publish_mod(compatibility, storage, mod_id="extra")
-    configuration["mods"].append({"mod_id": "extra", "publication": extra["revision"]})
+    configuration["mods"].append({"mod_id": "extra"})
     TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json=json.dumps(configuration))
     revisions.add(resolve_configuration(client, compatibility)["revision"])
     configuration["mods"].reverse()
@@ -277,17 +274,17 @@ def test_unverified_default_adapter_does_not_publish(
 ) -> None:
     response = client.post(BASE + "/configuration", headers=headers(), json={**compatibility, "openwebui": "0.12.5"})
     assert response.status_code == 409
-    assert "not initialized" in response.json()["detail"]
+    assert "installation" in response.json()["detail"]
     storage.put_object.assert_not_called()
 
 
 def test_runtime_never_publishes_a_missing_builtin(
     client: TestClient, compatibility: dict, storage: MagicMock,
 ) -> None:
-    OpenWebuiModPublicationEntity.drop_collection()
+    OpenWebuiModEntity.drop_collection()
     response = client.post(BASE + "/configuration", headers=headers(), json=compatibility)
     assert response.status_code == 409
-    assert "openwebui-mods-init" in response.json()["detail"]
+    assert "initialization" in response.json()["detail"]
     storage.put_object.assert_not_called()
 
 
@@ -357,13 +354,13 @@ def test_head_reauthorizes_without_reading_storage(
 def test_asset_authorization_reads_only_the_requested_custom_publication(
     client: TestClient, compatibility: dict, published: dict, storage: MagicMock, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    configuration = {"mods": [{"mod_id": "tools", "publication": published["revision"]}]}
+    configuration = {"mods": [{"mod_id": "tools"}]}
     for mod_id in ["extra", "another"]:
         publication = publish_mod(compatibility, storage, mod_id=mod_id)
-        configuration["mods"].append({"mod_id": mod_id, "publication": publication["revision"]})
+        configuration["mods"].append({"mod_id": mod_id})
     TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json=json.dumps(configuration))
-    find_publication = MagicMock(wraps=OpenWebuiModPublicationEntity.find_publication)
-    monkeypatch.setattr(OpenWebuiModPublicationEntity, "find_publication", find_publication)
+    find_publication = MagicMock(wraps=OpenWebuiModEntity.find_publication)
+    monkeypatch.setattr(OpenWebuiModEntity, "find_publication", find_publication)
     response = client.head(f'{BASE}/publications/{published["revision"]}/frontend', headers=headers())
     assert response.status_code == 200
     find_publication.assert_called_once_with(published["revision"])
@@ -379,10 +376,6 @@ def test_only_the_current_selected_publication_is_readable(
 ) -> None:
     current = resolve_configuration(client, compatibility)
     replacement = publish_mod(compatibility, storage, version="2")
-    configuration = current["configuration"]
-    configuration["version"] += 1
-    configuration["mods"][0]["publication"] = replacement["revision"]
-    TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json=json.dumps(configuration))
     updated = resolve_configuration(client, compatibility)
     assert updated["revision"] != current["revision"]
     assert updated["configuration"]["mods"][0]["publication"] == replacement["revision"]
@@ -399,7 +392,7 @@ def test_asset_authorization_requires_a_host_compatible_selection(
     client: TestClient, compatibility: dict, published: dict, storage: MagicMock,
 ) -> None:
     replacement = publish_mod({**compatibility, "source_commit": "c" * 40}, storage, version="2")
-    configuration = {"mods": [{"mod_id": "tools", "publication": replacement["revision"]}]}
+    configuration = {"mods": [{"mod_id": "tools"}]}
     TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json=json.dumps(configuration))
     assert client.post(BASE + "/configuration", headers=headers(), json=compatibility).status_code == 409
     for kind in ["source", "frontend"]:
@@ -426,3 +419,18 @@ def test_archive_integrity_is_checked(client: TestClient, published: dict, stora
     storage.get_object.side_effect = lambda **kwargs: {"Body": BytesIO(b"corrupted archive")}
     with pytest.raises(RuntimeError, match="integrity check"):
         client.get(f'{BASE}/publications/{published["revision"]}/{kind}', headers=headers())
+
+
+def test_frontend_replacement_collision_does_not_block_backend_configuration(client: TestClient, compatibility: dict, published: dict, storage: MagicMock) -> None:
+    publish_mod(compatibility, storage, mod_id="other")
+    for mod_id in ["tools", "other"]:
+        installed = OpenWebuiModEntity.find_mod(mod_id)
+        manifest = json.loads(installed.publication_manifest_json)
+        manifest["replacements"] = {"src/lib/Menu.svelte": "frontend/Menu.svelte.mjs"}
+        installed.publication_manifest_json = json.dumps(manifest)
+        installed.save()
+    TenantMetadataEntity.objects(id="one").update_one(set__openwebui_mods_json=json.dumps({
+        "mods": [{"mod_id": "tools"}, {"mod_id": "other"}],
+    }))
+    configuration = resolve_configuration(client, compatibility)["configuration"]
+    assert [mod["mod_id"] for mod in configuration["mods"]] == ["tools", "other"]

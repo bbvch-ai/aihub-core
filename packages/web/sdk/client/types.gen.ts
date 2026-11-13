@@ -14505,6 +14505,30 @@ export type OpenChatHitlResponse = {
 };
 
 /**
+ * OpenWebuiModActivation
+ */
+export type OpenWebuiModActivation = {
+  /**
+   * Mod Id
+   */
+  mod_id: string;
+  /**
+   * Enabled
+   */
+  enabled?: boolean;
+  /**
+   * Settings
+   */
+  settings?: {
+    [key: string]: JsonValue;
+  };
+  /**
+   * Publication
+   */
+  publication: string;
+};
+
+/**
  * OpenWebuiModCompatibility
  */
 export type OpenWebuiModCompatibility = {
@@ -14531,17 +14555,17 @@ export type OpenWebuiModCompatibility = {
 };
 
 /**
- * OpenWebuiModConfiguration
+ * OpenWebuiModResolvedConfiguration
  */
-export type OpenWebuiModConfiguration = {
+export type OpenWebuiModResolvedConfiguration = {
   /**
    * Version
    */
-  version?: number;
+  version: number;
   /**
    * Mods
    */
-  mods?: Array<OpenWebuiModSelection>;
+  mods: Array<OpenWebuiModActivation>;
 };
 
 /**
@@ -14553,35 +14577,11 @@ export type OpenWebuiModRuntimeConfiguration = {
    */
   tenant_id: string;
   compatibility: OpenWebuiModCompatibility;
-  configuration: OpenWebuiModConfiguration;
+  configuration: OpenWebuiModResolvedConfiguration;
   /**
    * Revision
    */
   revision: string;
-};
-
-/**
- * OpenWebuiModSelection
- */
-export type OpenWebuiModSelection = {
-  /**
-   * Mod Id
-   */
-  mod_id: string;
-  /**
-   * Publication
-   */
-  publication?: string | null;
-  /**
-   * Enabled
-   */
-  enabled?: boolean;
-  /**
-   * Settings
-   */
-  settings?: {
-    [key: string]: JsonValue;
-  };
 };
 
 /**

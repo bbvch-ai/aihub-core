@@ -10,17 +10,13 @@ import { client } from "./client.gen";
 import {
   createTenantMetadataResponseTransformer,
   getAccessCapabilitiesResponseTransformer,
-  getOpenwebuiModBuiltinsResponseTransformer,
-  getOpenwebuiModPublicationResponseTransformer,
-  getOpenwebuiModRevisionResponseTransformer,
   getTenantResponseTransformer,
-  listOpenwebuiModPublicationsResponseTransformer,
-  listOpenwebuiModRevisionsResponseTransformer,
+  installOpenwebuiBuiltinModResponseTransformer,
+  installOpenwebuiModResponseTransformer,
+  listOpenwebuiModCatalogResponseTransformer,
   listTenantsResponseTransformer,
   provisionTenantResponseTransformer,
-  publishOpenwebuiModResponseTransformer,
   updateTenantMetadataResponseTransformer,
-  uploadOpenwebuiModResponseTransformer,
 } from "./transformers.gen";
 import type {
   AssignRoleData,
@@ -38,12 +34,6 @@ import type {
   DeleteTenantMetadataData,
   DeleteTenantMetadataError,
   DeleteTenantMetadataResponse,
-  DownloadOpenwebuiModPublicationData,
-  DownloadOpenwebuiModPublicationError,
-  DownloadOpenwebuiModPublicationResponse,
-  DownloadOpenwebuiModSourceData,
-  DownloadOpenwebuiModSourceError,
-  DownloadOpenwebuiModSourceResponse,
   GetAccessCapabilitiesData,
   GetAccessCapabilitiesError,
   GetAccessCapabilitiesResponse,
@@ -71,12 +61,6 @@ import type {
   GetOpenwebuiModConfigurationResponse,
   GetOpenwebuiModHostData,
   GetOpenwebuiModHostResponse,
-  GetOpenwebuiModPublicationData,
-  GetOpenwebuiModPublicationError,
-  GetOpenwebuiModPublicationResponse,
-  GetOpenwebuiModRevisionData,
-  GetOpenwebuiModRevisionError,
-  GetOpenwebuiModRevisionResponse,
   GetRoleData,
   GetRoleError,
   GetRoleResponse,
@@ -91,18 +75,17 @@ import type {
   GetUsersData,
   GetUsersError,
   GetUsersResponse,
-  InitializeOpenwebuiModsData,
-  InitializeOpenwebuiModsError,
-  InitializeOpenwebuiModsResponse,
+  InspectOpenwebuiModData,
+  InspectOpenwebuiModResponse,
+  InstallOpenwebuiBuiltinModData,
+  InstallOpenwebuiBuiltinModError,
+  InstallOpenwebuiBuiltinModResponse,
+  InstallOpenwebuiModData,
+  InstallOpenwebuiModError,
+  InstallOpenwebuiModResponse,
   ListOpenwebuiModCatalogData,
   ListOpenwebuiModCatalogError,
   ListOpenwebuiModCatalogResponse,
-  ListOpenwebuiModPublicationsData,
-  ListOpenwebuiModPublicationsError,
-  ListOpenwebuiModPublicationsResponse,
-  ListOpenwebuiModRevisionsData,
-  ListOpenwebuiModRevisionsError,
-  ListOpenwebuiModRevisionsResponse,
   ListTenantsData,
   ListTenantsResponse,
   ListUnconfiguredTenantsData,
@@ -110,9 +93,6 @@ import type {
   ProvisionTenantData,
   ProvisionTenantError,
   ProvisionTenantResponse,
-  PublishOpenwebuiModData,
-  PublishOpenwebuiModError,
-  PublishOpenwebuiModResponse,
   ReconcileOpenwebuiGlobalModsData,
   ReconcileOpenwebuiGlobalModsResponse,
   ReplaceOpenwebuiGlobalModsData,
@@ -133,8 +113,6 @@ import type {
   UpdateTenantMetadataData,
   UpdateTenantMetadataError,
   UpdateTenantMetadataResponse,
-  UploadOpenwebuiModData,
-  UploadOpenwebuiModResponse,
 } from "./types.gen";
 
 export type Options<
@@ -344,6 +322,7 @@ export const listOpenwebuiModCatalog = <
     ListOpenwebuiModCatalogError,
     DefaultT
   >({
+    responseTransformer: listOpenwebuiModCatalogResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
@@ -373,7 +352,6 @@ export const getOpenwebuiModBuiltins = <
     unknown,
     DefaultT
   >({
-    responseTransformer: getOpenwebuiModBuiltinsResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
@@ -383,36 +361,33 @@ export const getOpenwebuiModBuiltins = <
   });
 
 /**
- * Initialize Openwebui Mods
+ * Install Openwebui Builtin Mod
  */
-export const initializeOpenwebuiMods = <
+export const installOpenwebuiBuiltinMod = <
   TComposable extends Composable = "$fetch",
-  DefaultT extends InitializeOpenwebuiModsResponse =
-    InitializeOpenwebuiModsResponse,
+  DefaultT extends InstallOpenwebuiBuiltinModResponse =
+    InstallOpenwebuiBuiltinModResponse,
 >(
   options: Options<
     TComposable,
-    InitializeOpenwebuiModsData,
-    InitializeOpenwebuiModsResponse,
+    InstallOpenwebuiBuiltinModData,
+    InstallOpenwebuiBuiltinModResponse,
     DefaultT
   >,
 ) =>
   (options.client ?? client).post<
     TComposable,
-    InitializeOpenwebuiModsResponse | DefaultT,
-    InitializeOpenwebuiModsError,
+    InstallOpenwebuiBuiltinModResponse | DefaultT,
+    InstallOpenwebuiBuiltinModError,
     DefaultT
   >({
+    responseTransformer: installOpenwebuiBuiltinModResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
     ],
-    url: "/admin/openwebui-mods/initialize",
+    url: "/admin/openwebui-mods/builtins/{mod_id}/install",
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
   });
 
 /**
@@ -480,64 +455,31 @@ export const replaceOpenwebuiModConfiguration = <
   });
 
 /**
- * List Openwebui Mod Revisions
+ * Inspect Openwebui Mod
  */
-export const listOpenwebuiModRevisions = <
+export const inspectOpenwebuiMod = <
   TComposable extends Composable = "$fetch",
-  DefaultT extends ListOpenwebuiModRevisionsResponse =
-    ListOpenwebuiModRevisionsResponse,
+  DefaultT extends InspectOpenwebuiModResponse = InspectOpenwebuiModResponse,
 >(
   options: Options<
     TComposable,
-    ListOpenwebuiModRevisionsData,
-    ListOpenwebuiModRevisionsResponse,
-    DefaultT
-  >,
-) =>
-  (options.client ?? client).get<
-    TComposable,
-    ListOpenwebuiModRevisionsResponse | DefaultT,
-    ListOpenwebuiModRevisionsError,
-    DefaultT
-  >({
-    responseTransformer: listOpenwebuiModRevisionsResponseTransformer,
-    security: [
-      { scheme: "bearer", type: "http" },
-      { scheme: "bearer", type: "http" },
-    ],
-    url: "/admin/openwebui-mods/revisions",
-    ...options,
-  });
-
-/**
- * Upload Openwebui Mod
- *
- * Stores a validated source archive. Does not compile, publish or execute it.
- */
-export const uploadOpenwebuiMod = <
-  TComposable extends Composable = "$fetch",
-  DefaultT extends UploadOpenwebuiModResponse = UploadOpenwebuiModResponse,
->(
-  options: Options<
-    TComposable,
-    UploadOpenwebuiModData,
-    UploadOpenwebuiModResponse,
+    InspectOpenwebuiModData,
+    InspectOpenwebuiModResponse,
     DefaultT
   >,
 ) =>
   (options.client ?? client).post<
     TComposable,
-    UploadOpenwebuiModResponse | DefaultT,
+    InspectOpenwebuiModResponse | DefaultT,
     unknown,
     DefaultT
   >({
     bodySerializer: null,
-    responseTransformer: uploadOpenwebuiModResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
     ],
-    url: "/admin/openwebui-mods/revisions",
+    url: "/admin/openwebui-mods/inspect",
     ...options,
     headers: {
       "Content-Type": "application/zip",
@@ -546,180 +488,37 @@ export const uploadOpenwebuiMod = <
   });
 
 /**
- * Get Openwebui Mod Revision
+ * Install Openwebui Mod
  */
-export const getOpenwebuiModRevision = <
+export const installOpenwebuiMod = <
   TComposable extends Composable = "$fetch",
-  DefaultT extends GetOpenwebuiModRevisionResponse =
-    GetOpenwebuiModRevisionResponse,
+  DefaultT extends InstallOpenwebuiModResponse = InstallOpenwebuiModResponse,
 >(
   options: Options<
     TComposable,
-    GetOpenwebuiModRevisionData,
-    GetOpenwebuiModRevisionResponse,
-    DefaultT
-  >,
-) =>
-  (options.client ?? client).get<
-    TComposable,
-    GetOpenwebuiModRevisionResponse | DefaultT,
-    GetOpenwebuiModRevisionError,
-    DefaultT
-  >({
-    responseTransformer: getOpenwebuiModRevisionResponseTransformer,
-    security: [
-      { scheme: "bearer", type: "http" },
-      { scheme: "bearer", type: "http" },
-    ],
-    url: "/admin/openwebui-mods/revisions/{revision}",
-    ...options,
-  });
-
-/**
- * Download Openwebui Mod Source
- */
-export const downloadOpenwebuiModSource = <
-  TComposable extends Composable = "$fetch",
-  DefaultT extends DownloadOpenwebuiModSourceResponse =
-    DownloadOpenwebuiModSourceResponse,
->(
-  options: Options<
-    TComposable,
-    DownloadOpenwebuiModSourceData,
-    DownloadOpenwebuiModSourceResponse,
-    DefaultT
-  >,
-) =>
-  (options.client ?? client).get<
-    TComposable,
-    DownloadOpenwebuiModSourceResponse | DefaultT,
-    DownloadOpenwebuiModSourceError,
-    DefaultT
-  >({
-    security: [
-      { scheme: "bearer", type: "http" },
-      { scheme: "bearer", type: "http" },
-    ],
-    url: "/admin/openwebui-mods/revisions/{revision}/source",
-    ...options,
-  });
-
-/**
- * List Openwebui Mod Publications
- */
-export const listOpenwebuiModPublications = <
-  TComposable extends Composable = "$fetch",
-  DefaultT extends ListOpenwebuiModPublicationsResponse =
-    ListOpenwebuiModPublicationsResponse,
->(
-  options: Options<
-    TComposable,
-    ListOpenwebuiModPublicationsData,
-    ListOpenwebuiModPublicationsResponse,
-    DefaultT
-  >,
-) =>
-  (options.client ?? client).get<
-    TComposable,
-    ListOpenwebuiModPublicationsResponse | DefaultT,
-    ListOpenwebuiModPublicationsError,
-    DefaultT
-  >({
-    responseTransformer: listOpenwebuiModPublicationsResponseTransformer,
-    security: [
-      { scheme: "bearer", type: "http" },
-      { scheme: "bearer", type: "http" },
-    ],
-    url: "/admin/openwebui-mods/revisions/{revision}/publications",
-    ...options,
-  });
-
-/**
- * Publish Openwebui Mod
- */
-export const publishOpenwebuiMod = <
-  TComposable extends Composable = "$fetch",
-  DefaultT extends PublishOpenwebuiModResponse = PublishOpenwebuiModResponse,
->(
-  options: Options<
-    TComposable,
-    PublishOpenwebuiModData,
-    PublishOpenwebuiModResponse,
+    InstallOpenwebuiModData,
+    InstallOpenwebuiModResponse,
     DefaultT
   >,
 ) =>
   (options.client ?? client).post<
     TComposable,
-    PublishOpenwebuiModResponse | DefaultT,
-    PublishOpenwebuiModError,
+    InstallOpenwebuiModResponse | DefaultT,
+    InstallOpenwebuiModError,
     DefaultT
   >({
-    responseTransformer: publishOpenwebuiModResponseTransformer,
+    bodySerializer: null,
+    responseTransformer: installOpenwebuiModResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
     ],
-    url: "/admin/openwebui-mods/revisions/{revision}/publications",
+    url: "/admin/openwebui-mods/install",
     ...options,
-  });
-
-/**
- * Get Openwebui Mod Publication
- */
-export const getOpenwebuiModPublication = <
-  TComposable extends Composable = "$fetch",
-  DefaultT extends GetOpenwebuiModPublicationResponse =
-    GetOpenwebuiModPublicationResponse,
->(
-  options: Options<
-    TComposable,
-    GetOpenwebuiModPublicationData,
-    GetOpenwebuiModPublicationResponse,
-    DefaultT
-  >,
-) =>
-  (options.client ?? client).get<
-    TComposable,
-    GetOpenwebuiModPublicationResponse | DefaultT,
-    GetOpenwebuiModPublicationError,
-    DefaultT
-  >({
-    responseTransformer: getOpenwebuiModPublicationResponseTransformer,
-    security: [
-      { scheme: "bearer", type: "http" },
-      { scheme: "bearer", type: "http" },
-    ],
-    url: "/admin/openwebui-mods/publications/{revision}",
-    ...options,
-  });
-
-/**
- * Download Openwebui Mod Publication
- */
-export const downloadOpenwebuiModPublication = <
-  TComposable extends Composable = "$fetch",
-  DefaultT extends DownloadOpenwebuiModPublicationResponse =
-    DownloadOpenwebuiModPublicationResponse,
->(
-  options: Options<
-    TComposable,
-    DownloadOpenwebuiModPublicationData,
-    DownloadOpenwebuiModPublicationResponse,
-    DefaultT
-  >,
-) =>
-  (options.client ?? client).get<
-    TComposable,
-    DownloadOpenwebuiModPublicationResponse | DefaultT,
-    DownloadOpenwebuiModPublicationError,
-    DefaultT
-  >({
-    security: [
-      { scheme: "bearer", type: "http" },
-      { scheme: "bearer", type: "http" },
-    ],
-    url: "/admin/openwebui-mods/publications/{revision}/bundle",
-    ...options,
+    headers: {
+      "Content-Type": "application/zip",
+      ...options.headers,
+    },
   });
 
 /**

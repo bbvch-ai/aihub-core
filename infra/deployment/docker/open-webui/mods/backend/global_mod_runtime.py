@@ -18,7 +18,6 @@ class GlobalModRuntime:
         self.store = store
         self.runtime = runtime
         self.version = -1
-        self.attempted_version = -1
         self.error: str | None = None
         self.ready = False
         self.selected: list[tuple[BackendPackage, ModSelection]] = []
@@ -43,26 +42,28 @@ class GlobalModRuntime:
     async def refresh(self) -> None:
         async with self.lock:
             configuration = await asyncio.to_thread(self.store.live)
-            try:
-                if configuration.version != self.attempted_version:
-                    self.attempted_version = configuration.version
-                    selected = []
-                    for mod in configuration.mods:
-                        if not mod.enabled:
+            if configuration.version != self.version:
+                selected = []
+                failures = []
+                for mod in configuration.mods:
+                    if not mod.enabled:
+                        continue
+                    try:
+                        revision, content, manifest = await asyncio.to_thread(self.store.source, mod)
+                        if not manifest.get("backend") or not (manifest.get("backend_overrides") or manifest.get("backend_restart_required")):
                             continue
-                        revision, content, _ = await asyncio.to_thread(self.store.source, mod)
 
                         async def read_source(content: bytes = content) -> bytes:
                             return content
 
                         package = await self.runtime.load_package(revision, mod.mod_id, read_source)
                         selected.append((package, mod))
-                    self.selected, self.version, self.error = selected, configuration.version, None
-                    CallableRegistry.global_handlers = self.handlers()
-            except Exception:
-                # Keep the control API reachable so an invalid global selection can be repaired.
-                self.error = f"Global mod version {configuration.version} failed to load; see Open WebUI logs and correct the selection."
-                logging.getLogger(__name__).exception(self.error)
+                    except Exception:
+                        failures.append(mod.mod_id)
+                        logging.getLogger(__name__).exception("Global mod '%s' failed to load", mod.mod_id)
+                self.selected, self.version = selected, configuration.version
+                self.error = f"Mods failed to load: {', '.join(failures)}. See Open WebUI logs." if failures else None
+                CallableRegistry.global_handlers = self.handlers()
             await asyncio.to_thread(self.store.worker_status, self.version, self.error, self.ready)
 
     async def mark_ready(self) -> None:

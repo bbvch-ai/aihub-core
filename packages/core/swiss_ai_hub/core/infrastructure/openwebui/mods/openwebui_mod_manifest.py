@@ -25,6 +25,14 @@ class OpenWebuiModManifest(BaseModel):
     default_settings: dict[str, JsonValue] = Field(default_factory=dict)
     settings_fields: dict[str, dict[str, JsonValue]] = Field(default_factory=dict)
 
+    @property
+    def global_only(self) -> bool:
+        return self.backend_restart_required or "open_webui.main:lifespan" in self.backend_overrides
+
+    @property
+    def supports_global(self) -> bool:
+        return bool(self.backend and (self.backend_restart_required or self.backend_overrides))
+
     @model_validator(mode="after")
     def validate_settings_fields(self) -> Self:
         if len(json.dumps(self.settings_fields, allow_nan=False).encode()) > 16 * 1024:

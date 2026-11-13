@@ -21840,6 +21840,38 @@ export const OpenChatHitlResponseSchema = {
     "Response indicating whether there's an open chat HITL request for a thread.",
 } as const;
 
+export const OpenWebuiModActivationSchema = {
+  properties: {
+    mod_id: {
+      type: "string",
+      maxLength: 64,
+      pattern: "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      title: "Mod Id",
+    },
+    enabled: {
+      type: "boolean",
+      title: "Enabled",
+      default: true,
+    },
+    settings: {
+      additionalProperties: {
+        $ref: "#/components/schemas/JsonValue",
+      },
+      type: "object",
+      title: "Settings",
+    },
+    publication: {
+      type: "string",
+      pattern: "^[a-f0-9]{64}$",
+      title: "Publication",
+    },
+  },
+  additionalProperties: false,
+  type: "object",
+  required: ["mod_id", "publication"],
+  title: "OpenWebuiModActivation",
+} as const;
+
 export const OpenWebuiModCompatibilitySchema = {
   properties: {
     openwebui: {
@@ -21876,26 +21908,23 @@ export const OpenWebuiModCompatibilitySchema = {
   title: "OpenWebuiModCompatibility",
 } as const;
 
-export const OpenWebuiModConfigurationSchema = {
+export const OpenWebuiModResolvedConfigurationSchema = {
   properties: {
     version: {
       type: "integer",
-      minimum: 0,
       title: "Version",
-      default: 0,
     },
     mods: {
       items: {
-        $ref: "#/components/schemas/OpenWebuiModSelection",
+        $ref: "#/components/schemas/OpenWebuiModActivation",
       },
       type: "array",
-      maxItems: 64,
       title: "Mods",
     },
   },
-  additionalProperties: false,
   type: "object",
-  title: "OpenWebuiModConfiguration",
+  required: ["version", "mods"],
+  title: "OpenWebuiModResolvedConfiguration",
 } as const;
 
 export const OpenWebuiModRuntimeConfigurationSchema = {
@@ -21908,7 +21937,7 @@ export const OpenWebuiModRuntimeConfigurationSchema = {
       $ref: "#/components/schemas/OpenWebuiModCompatibility",
     },
     configuration: {
-      $ref: "#/components/schemas/OpenWebuiModConfiguration",
+      $ref: "#/components/schemas/OpenWebuiModResolvedConfiguration",
     },
     revision: {
       type: "string",
@@ -21920,45 +21949,6 @@ export const OpenWebuiModRuntimeConfigurationSchema = {
   type: "object",
   required: ["tenant_id", "compatibility", "configuration", "revision"],
   title: "OpenWebuiModRuntimeConfiguration",
-} as const;
-
-export const OpenWebuiModSelectionSchema = {
-  properties: {
-    mod_id: {
-      type: "string",
-      maxLength: 64,
-      pattern: "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
-      title: "Mod Id",
-    },
-    publication: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^[a-f0-9]{64}$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Publication",
-    },
-    enabled: {
-      type: "boolean",
-      title: "Enabled",
-      default: true,
-    },
-    settings: {
-      additionalProperties: {
-        $ref: "#/components/schemas/JsonValue",
-      },
-      type: "object",
-      title: "Settings",
-    },
-  },
-  additionalProperties: false,
-  type: "object",
-  required: ["mod_id"],
-  title: "OpenWebuiModSelection",
 } as const;
 
 export const OpenWebuiWebhookPayloadSchema = {

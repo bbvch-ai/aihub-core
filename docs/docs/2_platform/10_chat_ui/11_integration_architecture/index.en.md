@@ -170,7 +170,7 @@ including when a long conversation is being condensed to fit the model.
 
 System administrators manage tenant-specific frontend and backend mods through Open WebUI settings. The supplied
 Chat disclaimer mod displays localized text below the input. See [Open WebUI modifications](../16_openwebui_mods/)
-for configuration, version selection and when users see saved changes.
+for installation, configuration and when users see saved changes.
 
 ## Streaming indicator
 
@@ -179,7 +179,7 @@ own progress, the dots are hidden, so an agent that works for minutes before it 
 Open WebUI's own marker is a thin pulsing bar that would sit under the "Thinking..." row for that whole time and read as
 a stray `|`. The bundled `aihub-streaming-indicator` mod supplies the stylesheet and removes it on disposal.
 
-Edit Core's `infrastructure/openwebui/mods/bundled/streaming-indicator/style.css`; initialization publishes changed
+Edit Core's `infrastructure/openwebui/mods/bundled/streaming-indicator/style.css`; initialization installs changed
 bundled sources. An administrator can enable or disable the mod per tenant. The rules target Open WebUI v0.11.4 markup;
 if an upgrade changes that markup, the native bar returns. Check the indicator and reduced-motion behavior after each
 Open WebUI upgrade.
@@ -221,14 +221,11 @@ volumes grow.
 ## What this approach provides
 
 Open WebUI updates use pristine upstream source with AI Hub's versioned host adapters. Upgrades require compatibility
-and behavior checks; private upstream interfaces can require adapter changes. Ordinary mod publication reuses the
+and behavior checks; private upstream interfaces can require adapter changes. Ordinary mod installation reuses the
 installed host.
 
 Responsibilities stay clear. Open WebUI handles chat interactions. The platform provides authentication, authorization,
 knowledge management, and agent orchestration. This separation simplifies testing and maintenance.
-
-Embedding rather than forking preserves open-source advantages. The platform receives community contributions, security
-patches, and features without maintaining a custom variant.
 
 Organizations can replace Open WebUI with alternative chat interfaces using the same embedding and messaging patterns.
 This avoids lock-in to specific chat technology.

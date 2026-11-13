@@ -1,21 +1,15 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_publication_entity import OpenWebuiModPublicationEntity
-    from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_revision_entity import OpenWebuiModRevisionEntity
+    from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_entity import OpenWebuiModEntity
 
-__all__ = ["OpenWebuiModRevisionEntity", "OpenWebuiModPublicationEntity"]
+__all__ = ["OpenWebuiModEntity"]
 
 
 def __getattr__(name: str) -> object:
-    if name == "OpenWebuiModPublicationEntity":
-        from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_publication_entity import OpenWebuiModPublicationEntity
+    if name == "OpenWebuiModEntity":
+        from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_entity import OpenWebuiModEntity
 
-        globals()[name] = OpenWebuiModPublicationEntity
-        return OpenWebuiModPublicationEntity
-    if name == "OpenWebuiModRevisionEntity":
-        from swiss_ai_hub.core.persistence.openwebui.openwebui_mod_revision_entity import OpenWebuiModRevisionEntity
-
-        globals()[name] = OpenWebuiModRevisionEntity
-        return OpenWebuiModRevisionEntity
+        globals()[name] = OpenWebuiModEntity
+        return OpenWebuiModEntity
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

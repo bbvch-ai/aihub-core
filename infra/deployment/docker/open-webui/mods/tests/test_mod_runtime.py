@@ -251,6 +251,20 @@ class Filter:
             self.assertEqual(rejected.exception.status_code, 400)
         self.assertEqual(self.calls, [])
 
+    async def test_failed_import_does_not_block_chat_or_change_enablement(self) -> None:
+        self.install("one", "Broken", "raise RuntimeError('Import failed')")
+        with self.assertLogs("aihub_mods.mod_runtime", level="ERROR"):
+            result = await self.apply(self.request())
+        self.assertEqual(result, {})
+        self.assertTrue(self.configurations["one"]["configuration"]["mods"][0]["enabled"])
+        self.install("one", "Fixed")
+        self.assertEqual((await self.apply(self.request()))["label"], "Fixed from asset")
+
+    async def test_failed_filter_constructor_does_not_block_chat(self) -> None:
+        self.install("one", "Broken", "class Filter:\n def __init__(self): raise ValueError('Invalid settings')")
+        with self.assertLogs("aihub_mods.mod_runtime", level="ERROR"):
+            self.assertEqual(await self.apply(self.request()), {})
+
     async def test_backend_hook_errors_are_not_silently_skipped(self) -> None:
         self.install("one", "Broken", "class Filter:\n async def inlet(self, body, context):\n  raise ValueError('fixture failure')")
         with self.assertRaisesRegex(ValueError, "fixture failure"):
