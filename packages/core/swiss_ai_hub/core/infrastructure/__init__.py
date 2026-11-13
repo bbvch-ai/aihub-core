@@ -20,7 +20,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_credentials import LiteLLMCredentials
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_customer_service import LiteLLMCustomerService
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
+    from swiss_ai_hub.core.infrastructure.litellm.lite_llm_reconciliation_report import LiteLLMReconciliationReport
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
+    from swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_admin_service import LiteLLMUserAdminService
+    from swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_limits import LiteLLMUserLimits
+    from swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_reconciler import LiteLLMUserReconciler
     from swiss_ai_hub.core.infrastructure.litellm.model_capability import ModelCapability
     from swiss_ai_hub.core.infrastructure.litellm.model_requirements import ModelRequirements
     from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
@@ -96,6 +100,10 @@ __all__ = [
     "LiteLLMCustomerService",
     "LiteLLMProxySettings",
     "LiteLLMService",
+    "LiteLLMReconciliationReport",
+    "LiteLLMUserAdminService",
+    "LiteLLMUserLimits",
+    "LiteLLMUserReconciler",
     "HostingLocation",
     "ModelCapability",
     "ModelRequirements",
@@ -163,6 +171,10 @@ _LAZY_IMPORTS = {
     "LiteLLMCustomerService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_customer_service",
     "LiteLLMProxySettings": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings",
     "LiteLLMService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service",
+    "LiteLLMReconciliationReport": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_reconciliation_report",
+    "LiteLLMUserAdminService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_admin_service",
+    "LiteLLMUserLimits": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_limits",
+    "LiteLLMUserReconciler": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_reconciler",
     "HostingLocation": "swiss_ai_hub.core.infrastructure.litellm.hosting_location",
     "ModelCapability": "swiss_ai_hub.core.infrastructure.litellm.model_capability",
     "ModelRequirements": "swiss_ai_hub.core.infrastructure.litellm.model_requirements",

@@ -8,6 +8,8 @@ from cachetools import TTLCache
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_customer_service import LiteLLMCustomerService
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_admin_service import LiteLLMUserAdminService
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_limits import LiteLLMUserLimits
 
 
 class LiteLLMService:
@@ -67,17 +69,14 @@ class LiteLLMService:
         new_user_response = await client.post(
             "/user/new",
             json={
-                "max_budget": litellm_proxy.USER_MAX_BUDGET,
+                **LiteLLMUserLimits.from_settings(litellm_proxy).model_dump(),
                 "soft_budget": litellm_proxy.USER_SOFT_BUDGET,
-                "user_id": user.id,
                 "max_parallel_requests": litellm_proxy.USER_MAX_PARALLEL_REQUESTS,
-                "tpm_limit": litellm_proxy.USER_TPM_LIMIT,
-                "rpm_limit": litellm_proxy.USER_RPM_LIMIT,
-                "budget_duration": litellm_proxy.USER_BUDGET_DURATION,
+                "user_id": user.id,
                 "blocked": False,
                 "user_email": user.email,
                 "user_alias": user.name,
-                "user_role": "internal_user_viewer",
+                "user_role": LiteLLMUserAdminService.HUB_USER_ROLE,
                 "auto_create_key": False,
                 "send_invite_email": False,
             },

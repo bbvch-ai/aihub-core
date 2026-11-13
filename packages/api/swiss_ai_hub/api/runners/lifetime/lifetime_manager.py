@@ -15,6 +15,7 @@ from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
     LangfuseProvisioner,
     LiteLLMProxySettings,
+    LiteLLMUserReconciler,
     MilvusSettings,
     MongoSettings,
     NatsSettings,
@@ -316,6 +317,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         cron_scheduler.start()
         app.state.cron_scheduler = cron_scheduler
 
+        # Keycloak tells no one when a user is disabled or removed, so their LiteLLM user and key are compared
+        # against it on an interval. A Redis lease keeps it to one run per interval across replicas.
+        litellm_user_reconciler = LiteLLMUserReconciler(redis=redis)
+        litellm_user_reconciler.start()
+        app.state.litellm_user_reconciler = litellm_user_reconciler
+
         # Provision Langfuse with AI-Hub LLM connections
         await _provision_non_fatal("Langfuse", langfuse_provisioner.provision)
 
@@ -349,6 +356,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         if hasattr(app.state, "cron_scheduler"):
             await app.state.cron_scheduler.stop()
+
+        if hasattr(app.state, "litellm_user_reconciler"):
+            await app.state.litellm_user_reconciler.stop()
 
         # Stop the discovery services
         if hasattr(app.state, "agent_discovery_service"):
