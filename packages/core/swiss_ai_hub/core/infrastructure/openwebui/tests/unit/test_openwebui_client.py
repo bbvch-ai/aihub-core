@@ -7,6 +7,7 @@ import pytest
 from scim2_models import Group, User
 
 import swiss_ai_hub.core.infrastructure.openwebui.openwebui_client as openwebui_client_module
+from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import SCIM_PAGE_SIZE, OpenWebuiClient
 
 BASE_URL = "http://open-webui:8080"
@@ -35,22 +36,57 @@ def _response(status_code: int = 200, json_data: dict | list | None = None) -> h
     )
 
 
+HR_READ = AccessGrant(principal_type="group", principal_id="g-hr", permission="read")
+
+
 class TestUpdateModelAccess:
+    """Since OpenWebUI 0.12.4 the model update ignores grants, so a revoke sent there would leave access in place."""
+
+    @pytest.mark.asyncio
+    async def test_grants_go_to_the_access_endpoint(self, owui_client: OpenWebuiClient) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.post.return_value = _response(json_data={"id": "m1"})
+
+        result = await owui_client.update_model_access(mock_client, "m1", [HR_READ])
+
+        assert result == {"id": "m1"}
+        mock_client.get.assert_not_awaited()
+        call_args = mock_client.post.call_args
+        assert call_args.args[0] == f"{BASE_URL}/api/v1/models/model/access/update"
+        assert call_args.kwargs["json"] == {"id": "m1", "access_grants": [HR_READ.model_dump()]}
+
     @pytest.mark.asyncio
     async def test_clears_access_when_no_grants(self, owui_client: OpenWebuiClient) -> None:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
-        mock_client.get.return_value = _response(
-            json_data={"id": "m1", "name": "Model 1", "meta": {}, "params": {}, "base_model_id": "base-1"}
-        )
         mock_client.post.return_value = _response(json_data={"id": "m1"})
 
-        result = await owui_client.update_model_access(mock_client, "m1", [])
-        assert result == {"id": "m1"}
+        await owui_client.update_model_access(mock_client, "m1", [])
+
+        assert mock_client.post.call_args.kwargs["json"]["access_grants"] == []
+
+
+class TestUpdateKnowledge:
+    @pytest.mark.asyncio
+    async def test_renaming_sends_no_grants(self, owui_client: OpenWebuiClient) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.post.return_value = _response()
+
+        await owui_client.update_knowledge(mock_client, "k1", "HR / Policies", "Company policies")
 
         call_args = mock_client.post.call_args
-        # OpenWebUI's update endpoint treats a null access_grants as "leave untouched", so an
-        # explicit [] must be sent to actually clear a revoked grant — None would silently keep it.
-        assert call_args.kwargs["json"]["access_grants"] == []
+        assert call_args.args[0] == f"{BASE_URL}/api/v1/knowledge/k1/update"
+        assert call_args.kwargs["json"] == {"name": "HR / Policies", "description": "Company policies"}
+
+    @pytest.mark.asyncio
+    async def test_grants_go_to_the_access_endpoint(self, owui_client: OpenWebuiClient) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.post.return_value = _response()
+
+        await owui_client.update_knowledge_access(mock_client, "k1", [])
+
+        call_args = mock_client.post.call_args
+        assert call_args.args[0] == f"{BASE_URL}/api/v1/knowledge/k1/access/update"
+        assert call_args.kwargs["json"] == {"access_grants": []}
 
 
 class TestUpdateModel:

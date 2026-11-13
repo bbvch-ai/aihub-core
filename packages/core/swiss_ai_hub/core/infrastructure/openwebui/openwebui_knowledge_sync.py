@@ -71,9 +71,19 @@ class OpenWebuiKnowledgeSync:
                 created = await self._openwebui.create_knowledge(http, name, description, grants)
                 await asyncio.to_thread(OpenWebuiKnowledgeEntryEntity.record, created["id"], reference)
                 logger.info("OpenWebUI: Created knowledge entry '%s'", name)
-            elif self._differs(current, name, description, grants):
-                await self._openwebui.update_knowledge(http, current["id"], name, description, grants)
-                logger.info("OpenWebUI: Updated knowledge entry '%s'", name)
+            else:
+                await self._reconcile(http, current, name, description, grants)
+
+    async def _reconcile(
+        self, http: httpx.AsyncClient, current: dict[str, Any], name: str, description: str, grants: list[AccessGrant]
+    ) -> None:
+        """Name and grants go to separate endpoints: since OpenWebUI 0.12.4 the update ignores grants."""
+        if current.get("name") != name or (current.get("description") or "") != description:
+            await self._openwebui.update_knowledge(http, current["id"], name, description)
+            logger.info("OpenWebUI: Updated knowledge entry '%s'", name)
+        if self._grants_differ(current, grants):
+            await self._openwebui.update_knowledge_access(http, current["id"], grants)
+            logger.info("OpenWebUI: Updated access to knowledge entry '%s'", name)
 
     async def _remove_stale(
         self,
@@ -114,12 +124,9 @@ class OpenWebuiKnowledgeSync:
         return listing
 
     @staticmethod
-    def _differs(current: dict[str, Any], name: str, description: str, grants: list[AccessGrant]) -> bool:
+    def _grants_differ(current: dict[str, Any], grants: list[AccessGrant]) -> bool:
         current_grants = {
             (grant.get("principal_type"), grant.get("principal_id"), grant.get("permission"))
             for grant in current.get("access_grants") or []
         }
-        wanted = {(grant.principal_type, grant.principal_id, grant.permission) for grant in grants}
-        return (
-            current.get("name") != name or (current.get("description") or "") != description or current_grants != wanted
-        )
+        return current_grants != {(grant.principal_type, grant.principal_id, grant.permission) for grant in grants}

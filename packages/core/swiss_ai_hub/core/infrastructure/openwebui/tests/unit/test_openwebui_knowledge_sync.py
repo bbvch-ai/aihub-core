@@ -30,6 +30,7 @@ def _client(existing: list[dict]) -> MagicMock:
     client.list_own_knowledge = AsyncMock(return_value=existing)
     client.create_knowledge = AsyncMock(return_value={"id": "new-id"})
     client.update_knowledge = AsyncMock()
+    client.update_knowledge_access = AsyncMock()
     client.delete_knowledge = AsyncMock()
     return client
 
@@ -65,17 +66,41 @@ async def test_an_unchanged_entry_is_left_alone():
 
     client.create_knowledge.assert_not_awaited()
     client.update_knowledge.assert_not_awaited()
+    client.update_knowledge_access.assert_not_awaited()
     client.delete_knowledge.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_a_renamed_collection_or_changed_access_updates_its_entry():
-    existing = [{"id": "k1", "name": "HR / Old name", "description": "", "access_grants": []}]
+async def test_a_renamed_collection_renames_its_entry_and_leaves_its_access_alone():
+    existing = [{"id": "k1", "name": "HR / Old name", "description": "", "access_grants": HR_READ}]
+
+    client, _ = await _sync({POLICIES: ("HR / Policies", "New text")}, [_entry("k1", *POLICIES)], existing)
+
+    assert client.update_knowledge.await_args.args[1:] == ("k1", "HR / Policies", "New text")
+    client.update_knowledge_access.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_changed_access_goes_to_the_access_endpoint_without_renaming():
+    """OpenWebUI 0.12.4 dropped grants from the regular update, which also re-embeds the entry's name."""
+    existing = [{"id": "k1", "name": "HR / Policies", "description": "", "access_grants": []}]
 
     client, _ = await _sync({POLICIES: ("HR / Policies", "")}, [_entry("k1", *POLICIES)], existing)
 
-    _, knowledge_id, name, _, grants = client.update_knowledge.await_args.args
-    assert (knowledge_id, name, [grant.principal_id for grant in grants]) == ("k1", "HR / Policies", ["g-hr"])
+    _, knowledge_id, grants = client.update_knowledge_access.await_args.args
+    assert (knowledge_id, [grant.principal_id for grant in grants]) == ("k1", ["g-hr"])
+    client.update_knowledge.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_a_group_that_lost_access_is_dropped_from_the_grants():
+    sales_read = [{"principal_type": "group", "principal_id": "g-sales", "permission": "read"}]
+    existing = [{"id": "k1", "name": "HR / Policies", "description": "", "access_grants": HR_READ + sales_read}]
+
+    client, _ = await _sync({POLICIES: ("HR / Policies", "")}, [_entry("k1", *POLICIES)], existing)
+
+    _, _, grants = client.update_knowledge_access.await_args.args
+    assert [grant.principal_id for grant in grants] == ["g-hr"]
 
 
 @pytest.mark.asyncio
