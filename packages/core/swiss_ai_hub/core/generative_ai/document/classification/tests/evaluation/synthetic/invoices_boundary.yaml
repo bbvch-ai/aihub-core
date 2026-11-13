@@ -124,50 +124,6 @@
     document_period_end: "2025-03-31"
     document_related_references: null
 
-- id: invoice-self-billing-de
-  kind: boundary_invoice
-  title: Gutschrift_GS-2025-0031.pdf
-  note: >-
-    A self-billing invoice ("Gutschrift" under § 14 UStG) is issued by the buyer; per C2 the issuer attribute is the
-    supplier who is owed the payment.
-  text: |
-    # Nordlicht Software GmbH
-    Leopoldstrasse 90, 80802 München
-
-    An
-    Studio Pixelwerk Inh. Lena Vogt
-    Kastanienallee 3, 10435 Berlin
-    USt-IdNr. des Leistenden: DE 284 519 377
-
-    ## Gutschrift Nr. GS-2025-0031
-    im Sinne des § 14 Abs. 2 Satz 2 UStG
-    Datum: 31.01.2025
-    Leistungszeitraum: Januar 2025
-
-    Für die von Ihnen im Januar 2025 erbrachten Designleistungen schreiben wir Ihnen gut:
-
-    | Leistung | Stunden | Satz EUR | Betrag EUR |
-    |---|---:|---:|---:|
-    | UI-Design Projekt „Atlas" | 42 | 85,00 | 3.570,00 |
-
-    Nettobetrag EUR 3.570,00
-    USt. 19 % EUR 678,30
-    **Gutschriftsbetrag EUR 4.248,30**
-
-    Der Betrag wird am 14.02.2025 auf Ihr Konto überwiesen.
-  expected:
-    document_date: "2025-01-31"
-    document_reference_number: GS-2025-0031
-    document_issuer: Studio Pixelwerk Inh. Lena Vogt
-    document_issuer_tax_id: DE284519377
-    document_recipient: Nordlicht Software GmbH
-    document_total_amount: 4248.30
-    document_currency: EUR
-    document_due_date: "2025-02-14"
-    document_period_start: "2025-01-01"
-    document_period_end: "2025-01-31"
-    document_related_references: null
-
 - id: invoice-factoring-de
   kind: boundary_invoice
   title: RE-88341.pdf
@@ -249,7 +205,9 @@
 - id: invoice-negative-final-de
   kind: boundary_invoice
   title: Schlussrechnung_SR-2025-004.pdf
-  note: A final invoice whose advance payments exceed the work keeps its negative total (C5).
+  note: >-
+    A final invoice whose advance payments exceed the work keeps its negative total (C5). The earlier advance-payment
+    invoices it deducts are invoices, not orders, delivery notes or contracts, so they are not related references.
   text: |
     # Bergwerk Bau AG
     Industriestrasse 44, 3600 Thun · MWST-Nr. CHE-106.412.867 MWST
@@ -282,7 +240,7 @@
     document_due_date: null
     document_period_start: null
     document_period_end: null
-    document_related_references: [WV-2024-088, AK-2025-009, AK-2025-017, AK-2025-031]
+    document_related_references: [WV-2024-088]
 
 - id: invoice-steuernummer-de
   kind: boundary_invoice

@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: 1817b55285f5797f3ce65ec13a2bdb36843837beef9ba90a2e02cd43838a67e2
+source_sha: b77e1a33224d779e7940b78e4a797d41c5084a93eb98c29ab68175c03285f2e5
 ---
 
 # Dokumenttypen und Attribute
@@ -24,7 +24,9 @@ jeden Mandanten und jede Wissensdatenbank gleich.
 
 Keine Rechnungen, obwohl sie ähnlich aussehen: Angebote und Offerten, Auftragsbestätigungen (auch mit Total),
 Lieferscheine, Quittungen für eine bereits geleistete Zahlung, Gutschriften, Zahlungserinnerungen, Kontoauszüge und
-Proforma-Rechnungen. Sie sind `other`, bis die Liste einen Typ für sie hat.
+Proforma-Rechnungen. Sie sind `other`, bis die Liste einen Typ für sie hat. Auch eine Gutschrift ist `other`, selbst
+eine vom Leistungsempfänger nach § 14 UStG ausgestellte Gutschrift im Sinne einer Abrechnung: Das Wort bezeichnet auch
+eine Rechnungskorrektur, und beide werden unterschieden, sobald die Liste einen Typ für Gutschriften hat.
 
 Ein Dokument hat einen **primären Typ**, nämlich den, der es als Ganzes beschreibt. Es kann zusätzlich bis zu drei
 **sekundäre Typen** aufführen, zum Beispiel eine Rechnung, die zugleich ihr Lieferschein ist. Attribute gehören immer

@@ -106,6 +106,38 @@
 
     Der Betrag wird mit Ihrer nächsten Zahlung verrechnet.
 
+- id: credit-note-self-billing-de
+  kind: hard_negative
+  title: Gutschrift_GS-2025-0031.pdf
+  note: >-
+    A self-billing Gutschrift under § 14 UStG is not an invoice for now: "Gutschrift" also means credit note,
+    and telling the two apart is left to a credit-note type (#2485).
+  text: |
+    # Nordlicht Software GmbH
+    Leopoldstrasse 90, 80802 München
+
+    An
+    Studio Pixelwerk Inh. Lena Vogt
+    Kastanienallee 3, 10435 Berlin
+    USt-IdNr. des Leistenden: DE 284 519 377
+
+    ## Gutschrift Nr. GS-2025-0031
+    im Sinne des § 14 Abs. 2 Satz 2 UStG
+    Datum: 31.01.2025
+    Leistungszeitraum: Januar 2025
+
+    Für die von Ihnen im Januar 2025 erbrachten Designleistungen schreiben wir Ihnen gut:
+
+    | Leistung | Stunden | Satz EUR | Betrag EUR |
+    |---|---:|---:|---:|
+    | UI-Design Projekt „Atlas" | 42 | 85,00 | 3.570,00 |
+
+    Nettobetrag EUR 3.570,00
+    USt. 19 % EUR 678,30
+    **Gutschriftsbetrag EUR 4.248,30**
+
+    Der Betrag wird am 14.02.2025 auf Ihr Konto überwiesen.
+
 - id: credit-note-fr-1
   kind: hard_negative
   title: note_de_credit_NC-0007.pdf
