@@ -1,6 +1,6 @@
 ---
 title: Datenverschlüsselung
-source_sha: 73fa26f8efa021b88de883df4decf745f3f70b4b3d04d1f9a7a2979998475f5c
+source_sha: 61726a696c62696c1eb2cfed8c9b8cfce35d8f0748a8191c70a4fe5a65767d01
 ---
 
 # Datenverschlüsselung im Ruhezustand
@@ -129,9 +129,16 @@ In Produktions-Deployments werden TLS-Zertifikate über Folgendes verwaltet:
 Traefik wendet sicherheitsgehärtete HTTP-Header auf alle Antworten an:
 
 - **Strict-Transport-Security (HSTS)**: Erzwingt HTTPS für ein Jahr, einschließlich aller Subdomains
-- **Content-Security-Policy**: Beschränkt das Frame-Embedding auf Same-Origin
 - **X-Content-Type-Options**: Verhindert MIME-Typ-Sniffing
 - **Referrer-Policy**: Begrenzt das Leck von Referrer-Informationen
+
+Die Admin UI und die Sysadmin UI senden zusätzlich eine eigene **Content-Security-Policy** und einen HSTS-Header aus
+nginx. Skripte werden nur von der App selbst geladen, Plugins und `<base>`-Umleitungen sind blockiert, und Frames,
+Formularziele und ausgehende Verbindungen sind auf die App, Keycloak und OpenWebUI beschränkt. Die Admin UI lädt Bilder
+nur von der App und dem S3-Speicher, sodass ein Markdown-Bild keine Chat-Inhalte an einen anderen Server senden kann.
+Der Container setzt diese Origins beim Start aus `OAUTH_AUTHORITY_URL`, `WEBUI_URL`, `WS_ENDPOINT` und
+`S3_STORAGE_PUBLIC_ENDPOINT` ein. Ohne `S3_STORAGE_PUBLIC_ENDPOINT` sind Bilder und Uploads von jedem HTTPS-Origin
+erlaubt.
 
 ## Verbindungen zu externen Services
 
