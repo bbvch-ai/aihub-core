@@ -1,3 +1,4 @@
+import asyncio
 import time
 from typing import Any
 
@@ -422,7 +423,9 @@ class ProcessService:
         config_entity.save()
 
         if user.acting_within_tenant is not None:
-            ProcessInstanceAccessGrant.grant(process_class, request.process_id, user, config_entity.delete)
+            await ProcessInstanceAccessGrant.grant(
+                process_class, request.process_id, user, lambda: asyncio.to_thread(config_entity.delete)
+            )
 
         return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=True)
 
@@ -472,7 +475,7 @@ class ProcessService:
             raise HTTPException(status_code=404, detail=f"Process instance '{process_class}/{process_id}' not found.")
 
         ProcessConfigEntityDocument.delete_if_exists_for_class_and_id(process_class, process_id)
-        ProcessInstanceAccessGrant.revoke(process_class, process_id)
+        await ProcessInstanceAccessGrant.revoke(process_class, process_id)
 
     @staticmethod
     @trace_fn

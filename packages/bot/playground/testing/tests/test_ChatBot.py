@@ -1,5 +1,6 @@
 import asyncio
 import json
+from collections.abc import AsyncIterator
 from pathlib import Path
 
 import pytest
@@ -79,38 +80,12 @@ def setup_test_credentials():
     PathEntity(path=json_path, credentials=test_credentials, system_message="Test system message").save()
     PathEntity(path=stream_path, credentials=test_credentials, system_message="Test system message").save()
 
-    # Create default tenant and assign test user
-    default_tenant = TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
-        tenant_id=StartupTenantSettings().ID, name=StartupTenantSettings().NAME, access_rules=["aihub.admin.>"]
-    )
-    tenant_id = str(default_tenant.id)
-
-    # Grant the test user exactly this agent. Use the OID that
-    # ``KeycloakAdminService.find_user_by_email`` resolves to in tests (the fake
-    # admin returns a single stub user keyed by this OID).
-    dev_oid = TEST_USER_OID
-    RoleEntity.objects(name=AGENT_USER_ROLE, tenant_id=tenant_id).delete()
-    RoleEntity(
-        name=AGENT_USER_ROLE,
-        description="Bot test agent user",
-        access_rules=[AccessChecker.agent_instance_user_rule(AGENT_CLASS, AGENT_ID)],
-        tenant_id=tenant_id,
-    ).save()
-    UserTenantRoleEntity.create_or_update(
-        user_id=dev_oid,
-        tenant_id=tenant_id,
-        roles=[AGENT_USER_ROLE],
-        validate_roles=False,
-    )
-
     yield
 
     # Clean up test data
     try:
         PathEntity.objects(path=json_path).delete()
         PathEntity.objects(path=stream_path).delete()
-        UserTenantRoleEntity.objects(user_id=dev_oid).delete()
-        RoleEntity.objects(name=AGENT_USER_ROLE, tenant_id=tenant_id).delete()
     except Exception:
         # Connection may already be closed, ignore cleanup errors
         pass
@@ -201,10 +176,41 @@ async def client(test_runner: SimulatedAgentBotTestRunner):
             yield client
 
 
+@pytest_asyncio.fixture(scope="function")
+async def tenant_membership(client: AsyncClient) -> AsyncIterator[None]:
+    """Grants the test user exactly this agent in the default tenant, through the Beanie client the bot's lifespan
+    started.
+
+    Use the OID that ``KeycloakAdminService.find_user_by_email`` resolves to in tests (the fake admin returns a
+    single stub user keyed by this OID).
+    """
+    default_tenant = await TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
+        tenant_id=StartupTenantSettings().ID, name=StartupTenantSettings().NAME, access_rules=["aihub.admin.>"]
+    )
+    tenant_id = str(default_tenant.id)
+    await RoleEntity.find({"name": AGENT_USER_ROLE, "tenant_id": tenant_id}).delete()
+    await RoleEntity(
+        name=AGENT_USER_ROLE,
+        description="Bot test agent user",
+        access_rules=[AccessChecker.agent_instance_user_rule(AGENT_CLASS, AGENT_ID)],
+        tenant_id=tenant_id,
+    ).insert()
+    await UserTenantRoleEntity.create_or_update(
+        user_id=TEST_USER_OID,
+        tenant_id=tenant_id,
+        roles=[AGENT_USER_ROLE],
+        validate_roles=False,
+    )
+    yield
+    await UserTenantRoleEntity.find({"user_id": TEST_USER_OID}).delete()
+    await RoleEntity.find({"name": AGENT_USER_ROLE, "tenant_id": tenant_id}).delete()
+
+
 @pytest.mark.asyncio
 async def test_send_message(
     test_runner: SimulatedAgentBotTestRunner,
     client: AsyncClient,
+    tenant_membership: None,
     patch_requests_adapter,
     setup_test_credentials,
     signed_headers,
@@ -261,6 +267,7 @@ async def test_unsigned_activity_is_rejected_before_reaching_the_agent(
 async def test_unprovisioned_user_is_prompted_to_log_in(
     test_runner: SimulatedAgentBotTestRunner,
     client: AsyncClient,
+    tenant_membership: None,
     patch_requests_adapter,
     setup_test_credentials,
     signed_headers,
@@ -306,6 +313,7 @@ async def test_unprovisioned_user_is_prompted_to_log_in(
 async def test_stream_response(
     test_runner: SimulatedAgentBotTestRunner,
     client: AsyncClient,
+    tenant_membership: None,
     patch_requests_adapter,
     setup_test_credentials,
     signed_headers,

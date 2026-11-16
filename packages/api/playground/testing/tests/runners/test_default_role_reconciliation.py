@@ -1,4 +1,6 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     _DEFAULT_ROLE_DEFINITIONS,
@@ -10,11 +12,12 @@ TENANT = "tenant-1"
 
 
 def _role(access_rules: list[str]) -> MagicMock:
-    return MagicMock(access_rules=list(access_rules))
+    return MagicMock(access_rules=list(access_rules), save_changes=AsyncMock())
 
 
 class TestReconcileDefaultRoleRules:
-    def test_adds_rules_the_definition_gained_since_the_role_was_seeded(self):
+    @pytest.mark.asyncio
+    async def test_adds_rules_the_definition_gained_since_the_role_was_seeded(self):
         existing = _role(["aihub.admin.agent.>", "aihub.admin.knowledge.>"])
         definition = _DefaultRoleDefinition(
             name="AIHubKnowledgeAdmin",
@@ -22,26 +25,28 @@ class TestReconcileDefaultRoleRules:
             access_rules=["aihub.admin.agent.>", "aihub.admin.knowledge", "aihub.admin.knowledge.>"],
         )
 
-        _reconcile_default_role_rules(existing, definition, TENANT)
+        await _reconcile_default_role_rules(existing, definition, TENANT)
 
         assert existing.access_rules == [
             "aihub.admin.agent.>",
             "aihub.admin.knowledge.>",
             "aihub.admin.knowledge",
         ]
-        existing.save.assert_called_once()
+        existing.save_changes.assert_awaited_once()
 
-    def test_keeps_rules_an_admin_added_by_hand(self):
+    @pytest.mark.asyncio
+    async def test_keeps_rules_an_admin_added_by_hand(self):
         existing = _role(["aihub.admin.knowledge.>", "aihub.admin.custom.thing"])
         definition = _DefaultRoleDefinition(
             name="AIHubKnowledgeAdmin", description="", access_rules=["aihub.admin.knowledge"]
         )
 
-        _reconcile_default_role_rules(existing, definition, TENANT)
+        await _reconcile_default_role_rules(existing, definition, TENANT)
 
         assert "aihub.admin.custom.thing" in existing.access_rules
 
-    def test_does_not_write_when_the_role_already_carries_every_rule(self):
+    @pytest.mark.asyncio
+    async def test_does_not_write_when_the_role_already_carries_every_rule(self):
         existing = _role(["aihub.admin.knowledge", "aihub.admin.knowledge.>"])
         definition = _DefaultRoleDefinition(
             name="AIHubKnowledgeAdmin",
@@ -49,9 +54,9 @@ class TestReconcileDefaultRoleRules:
             access_rules=["aihub.admin.knowledge.>", "aihub.admin.knowledge"],
         )
 
-        _reconcile_default_role_rules(existing, definition, TENANT)
+        await _reconcile_default_role_rules(existing, definition, TENANT)
 
-        existing.save.assert_not_called()
+        existing.save_changes.assert_not_awaited()
 
 
 class TestKnowledgeAdminDefinition:

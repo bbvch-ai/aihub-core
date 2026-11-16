@@ -8,75 +8,58 @@ validation in general but not the ``is_sys_admin`` derivation, which is the
 capability that now replaces the old handler. These tests fill that gap.
 """
 
-from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 
 import pytest
+import pytest_asyncio
 from bson import ObjectId
-from mongoengine import connect, disconnect
 
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
-from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
-from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
-pytestmark = pytest.mark.usefixtures("mongo_connection")
+pytestmark = pytest.mark.beanie
 
 
-@pytest.fixture
-def mongo_connection() -> Generator[None]:
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-    )
-    TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
+@pytest_asyncio.fixture(loop_scope="session")
+async def seeded_token(clean_beanie_collections: None) -> tuple[str, str]:
+    """Creates a valid bearer token backed by a fake Keycloak user that is a member
+    of the default tenant.
+
+    Returns ``(token_str, user_oid)``. The fake Keycloak admin derives group membership
+    from ``UserTenantRoleEntity`` rows, so the association is what makes
+    ``_resolve_active_tenant`` succeed in ``build_identity``. Depends on ``clean_beanie_collections`` so the
+    collections are emptied before, not after, this fixture writes.
+    """
+    await TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
         tenant_id=StartupTenantSettings().ID,
         name=StartupTenantSettings().NAME,
         description="Startup tenant for testing",
         access_rules=["aihub.admin.>"],
     )
-    yield
-    disconnect()
-
-
-@pytest.fixture
-def seeded_token() -> Generator[tuple[str, str]]:
-    """Creates a valid bearer token backed by a fake Keycloak user that is a member
-    of the default tenant.
-
-    Yields ``(token_str, user_oid)``. The fake Keycloak admin derives group membership
-    from ``UserTenantRoleEntity`` rows, so the association is what makes
-    ``_resolve_active_tenant`` succeed in ``build_identity``.
-    """
     user_oid = str(ObjectId())
     register_fake_keycloak_user(user_id=user_oid, name="Token Holder", email="holder@example.com")
 
-    association = UserTenantRoleEntity.create_or_update(
+    await UserTenantRoleEntity.create_or_update(
         user_id=user_oid,
         tenant_id=StartupTenantSettings().ID,
         roles=["AIHubUser"],
         validate_roles=False,
     )
-    token_doc = BearerToken.create_new_token(
+    token_doc = await BearerToken.create_new_token(
         name="sysadmin-test-token",
         expiry_date=datetime.now(UTC) + timedelta(hours=1),
         user_oid=user_oid,
     )
-    try:
-        yield token_doc.token, user_oid
-    finally:
-        token_doc.delete()
-        association.delete()
+    return token_doc.token, user_oid
 
 
-@pytest.mark.asyncio
 async def test_token_owner_with_sys_admin_realm_role_is_marked_sys_admin(
     monkeypatch: pytest.MonkeyPatch, seeded_token: tuple[str, str]
 ) -> None:
@@ -99,7 +82,6 @@ async def test_token_owner_with_sys_admin_realm_role_is_marked_sys_admin(
     assert identity.is_sys_admin is True
 
 
-@pytest.mark.asyncio
 async def test_token_owner_without_sys_admin_realm_role_is_not_sys_admin(
     monkeypatch: pytest.MonkeyPatch, seeded_token: tuple[str, str]
 ) -> None:
@@ -115,7 +97,6 @@ async def test_token_owner_without_sys_admin_realm_role_is_not_sys_admin(
     assert identity.is_sys_admin is False
 
 
-@pytest.mark.asyncio
 async def test_token_owner_with_empty_realm_roles_is_not_sys_admin(
     monkeypatch: pytest.MonkeyPatch, seeded_token: tuple[str, str]
 ) -> None:
@@ -127,7 +108,6 @@ async def test_token_owner_with_empty_realm_roles_is_not_sys_admin(
     assert identity.is_sys_admin is False
 
 
-@pytest.mark.asyncio
 async def test_sys_admin_flag_reflects_only_the_specific_sys_admin_realm_role(
     monkeypatch: pytest.MonkeyPatch, seeded_token: tuple[str, str]
 ) -> None:

@@ -1,46 +1,50 @@
 from typing import Self
 from uuid import uuid4
 
-from mongoengine import (
-    BooleanField,
-    Document,
-    DoesNotExist,
-    EmbeddedDocument,
-    EmbeddedDocumentField,
-    IntField,
-    ListField,
-    StringField,
-)
+from beanie import Document
+from pydantic import BaseModel, ConfigDict, Field
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
-class DashboardItem(EmbeddedDocument):
-    id = StringField(required=True)
-    component = StringField(required=True)
-    w = IntField()
-    noResize = BooleanField()
-    timeRange = StringField()
-    event = StringField()
-    x = IntField(required=True)
-    y = IntField(required=True)
-    meta = {"strict": False}
+class DashboardItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    component: str
+    w: int | None = None
+    noResize: bool | None = None
+    timeRange: str | None = None
+    event: str | None = None
+    x: int
+    y: int
 
 
-class Dashboard(EmbeddedDocument):
-    minRow = IntField()
-    margin = IntField()
-    column = IntField()
-    cellHeight = IntField()
-    children = ListField(EmbeddedDocumentField(DashboardItem))
-    meta = {"strict": False}
+class Dashboard(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    minRow: int | None = None
+    margin: int | None = None
+    column: int | None = None
+    cellHeight: int | None = None
+    children: list[DashboardItem] = Field(default_factory=list)
 
 
 class UserDashboardEntity(Document):
-    meta = {"collection": "user_dashboards", "strict": False}
+    """A user's dashboard layout, keyed by the user id.
 
-    id = StringField(primary_key=True)
-    dashboard = EmbeddedDocumentField(Dashboard)
+    Unknown fields are kept (`extra="allow"`), here and in the embedded models: every MongoEngine document involved
+    ran `strict: False`, and the frontend owns the layout's shape.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    dashboard: Dashboard | None = None
+
+    class Settings:
+        name = "user_dashboards"
+        keep_nulls = False
 
     @staticmethod
     @trace_fn
@@ -86,19 +90,17 @@ class UserDashboardEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_dashboard(cls, user_id: str) -> Dashboard | None:
-        try:
-            entity = cls.objects.get(id=user_id)
-            return entity.dashboard
-        except DoesNotExist:
-            return None
+    async def get_dashboard(cls, user_id: str) -> Dashboard | None:
+        entity = await cls.get(user_id)
+        return entity.dashboard if entity else None
 
     @classmethod
     @trace_fn
-    def set_dashboard(cls, user_id: str, dashboard: Dashboard) -> Self:
-        entity = cls.objects(id=user_id).modify(
+    async def set_dashboard(cls, user_id: str, dashboard: Dashboard) -> Self:
+        """Upserts the dashboard with a `$set` of the field alone, so fields the model does not declare survive."""
+        await cls.get_pymongo_collection().update_one(
+            {"_id": user_id},
+            {"$set": {"dashboard": dashboard.model_dump(exclude_none=True)}},
             upsert=True,
-            new=True,
-            set__dashboard=dashboard,
         )
-        return entity
+        return await cls.get(user_id)

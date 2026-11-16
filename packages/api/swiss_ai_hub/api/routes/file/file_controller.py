@@ -46,8 +46,9 @@ class FileController(TenantScopedController):
             The caller needs read access to the knowledge namespace or the agent owning the object; objects of any
             other bucket are never signed.
             """
+            access_checker = await AccessChecker.from_user(user)
             url = await asyncio.to_thread(
-                lambda: FileService.get_file_url(AccessChecker.from_user(user), container, file_path, s3_service)
+                lambda: FileService.get_file_url(access_checker, container, file_path, s3_service)
             )
             return SignedUrlDto(url=url)
 

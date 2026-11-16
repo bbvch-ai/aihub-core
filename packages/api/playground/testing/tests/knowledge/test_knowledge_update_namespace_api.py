@@ -6,6 +6,8 @@ path carried ObjectIds (aihub-core-private#290). Asserted over HTTP so the guard
 forwarding are exercised together.
 """
 
+from unittest.mock import AsyncMock
+
 import pytest
 from fastapi import Request
 from fastapi.testclient import TestClient
@@ -54,7 +56,7 @@ class _AuthHandler(AuthHandler):
 def forwarded(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, str]]:
     """Records what the controller hands the service, so the guard is the only thing under test."""
     calls: list[tuple[str, str]] = []
-    monkeypatch.setattr(RoleEntity, "get_access_rules_for_roles", lambda roles, tenant_id: set(_FOLDER_ADMIN_RULES))
+    monkeypatch.setattr(RoleEntity, "get_access_rules_for_roles", AsyncMock(return_value=set(_FOLDER_ADMIN_RULES)))
 
     async def _update_namespace(
         database: str, namespace: str, request: UpdateNamespaceRequest, t, user, llm_config=None

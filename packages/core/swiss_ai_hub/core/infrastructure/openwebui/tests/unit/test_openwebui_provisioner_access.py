@@ -212,21 +212,24 @@ class TestSyncAccessGrants:
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
         ):
             tenant = MagicMock()
             tenant.name = "T1"
             tenant.id = "T1"
             tenant.access_rules = ["aihub.user.agent.>"]
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
 
             role = MagicMock()
             role.name = "R1"
             role.tenant_id = "T1"
             role.access_rules = ["aihub.user.agent.>"]
-            mock_role.objects.return_value = [role]
+            mock_role.list_all.return_value = [role]
 
             await provisioner._sync_access_grants(mock_client)
 
@@ -255,21 +258,24 @@ class TestSyncAccessGrants:
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
         ):
             tenant = MagicMock()
             tenant.name = "T1"
             tenant.id = "T1"
             tenant.access_rules = ["aihub.user.agent.my-rag.*"]
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
 
             role = MagicMock()
             role.name = "R1"
             role.tenant_id = "T1"
             role.access_rules = ["aihub.user.agent.my-rag.*"]
-            mock_role.objects.return_value = [role]
+            mock_role.list_all.return_value = [role]
 
             await provisioner._sync_access_grants(mock_client)
 
@@ -295,21 +301,24 @@ class TestSyncAccessGrants:
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
         ):
             tenant = MagicMock()
             tenant.name = "T1"
             tenant.id = "T1"
             tenant.access_rules = ["aihub.user.agent.>"]
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
 
             role = MagicMock()
             role.name = "R1"
             role.tenant_id = "T1"
             role.access_rules = ["aihub.user.agent.>"]
-            mock_role.objects.return_value = [role]
+            mock_role.list_all.return_value = [role]
 
             await provisioner._sync_access_grants(mock_client)
 
@@ -358,15 +367,18 @@ class TestSyncAccessGrants:
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
         ):
             tenant = MagicMock()
             tenant.name = "T1"
             tenant.id = "T1"
             tenant.access_rules = ["aihub.user.agent.>"]
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
 
             role1 = MagicMock()
             role1.name = "R1"
@@ -376,7 +388,7 @@ class TestSyncAccessGrants:
             role2.name = "R2"
             role2.tenant_id = "T1"
             role2.access_rules = ["aihub.user.agent.>"]
-            mock_role.objects.return_value = [role1, role2]
+            mock_role.list_all.return_value = [role1, role2]
 
             await provisioner._sync_access_grants(mock_client)
 
@@ -399,15 +411,19 @@ class TestSyncAccessGrants:
 
 
 class TestBuildRoleRules:
-    def test_same_role_name_in_different_tenants_do_not_collide(self) -> None:
+    @pytest.mark.asyncio
+    async def test_same_role_name_in_different_tenants_do_not_collide(self) -> None:
         """Roles are unique per (tenant_id, name), so the same name exists in every tenant with its
         own rules. A name-only key collapsed them and let the last tenant's rules mask the rest;
         the (tenant name, role name) key keeps them distinct."""
         with (
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
         ):
             tenant_a = MagicMock()
             tenant_a.id = "ta"
@@ -415,7 +431,7 @@ class TestBuildRoleRules:
             tenant_b = MagicMock()
             tenant_b.id = "tb"
             tenant_b.name = "TenantB"
-            mock_tenant.objects.return_value = [tenant_a, tenant_b]
+            mock_tenant.get_all_metadata.return_value = [tenant_a, tenant_b]
 
             role_a = MagicMock()
             role_a.name = "Shared"
@@ -425,9 +441,9 @@ class TestBuildRoleRules:
             role_b.name = "Shared"
             role_b.tenant_id = "tb"
             role_b.access_rules = ["aihub.user.agent.other.*"]
-            mock_role.objects.return_value = [role_a, role_b]
+            mock_role.list_all.return_value = [role_a, role_b]
 
-            result = OpenWebuiProvisioner._build_role_rules()
+            result = await OpenWebuiProvisioner._build_role_rules()
 
         assert result == {
             ("TenantA", "Shared"): ["aihub.user.agent.rag.*"],
@@ -436,50 +452,58 @@ class TestBuildRoleRules:
             ("TenantB", SYS_ADMIN_ROLE): SYS_ADMIN_OPENWEBUI_ACCESS_RULES,
         }
 
-    def test_role_of_unknown_tenant_is_skipped(self) -> None:
+    @pytest.mark.asyncio
+    async def test_role_of_unknown_tenant_is_skipped(self) -> None:
         """A role whose tenant has no TenantMetadataEntity has no OpenWebUI group either, so its
         rules are never looked up — dropping it keeps the lookup key well-defined."""
         with (
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
         ):
             tenant = MagicMock()
             tenant.id = "ta"
             tenant.name = "TenantA"
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
 
             orphan = MagicMock()
             orphan.name = "Ghost"
             orphan.tenant_id = "deleted"
             orphan.access_rules = ["aihub.user.agent.>"]
-            mock_role.objects.return_value = [orphan]
+            mock_role.list_all.return_value = [orphan]
 
-            assert OpenWebuiProvisioner._build_role_rules() == {
+            assert await OpenWebuiProvisioner._build_role_rules() == {
                 ("TenantA", SYS_ADMIN_ROLE): SYS_ADMIN_OPENWEBUI_ACCESS_RULES
             }
 
-    def test_sys_admin_group_rules_win_over_a_same_named_tenant_role(self) -> None:
+    @pytest.mark.asyncio
+    async def test_sys_admin_group_rules_win_over_a_same_named_tenant_role(self) -> None:
         """A tenant role named like the sysadmin group must not narrow or widen what the group grants."""
         with (
             patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity",
+                new_callable=AsyncMock,
             ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity", new_callable=AsyncMock
+            ) as mock_role,
         ):
             tenant = MagicMock()
             tenant.id = "ta"
             tenant.name = "TenantA"
-            mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_all_metadata.return_value = [tenant]
 
             legacy = MagicMock()
             legacy.name = SYS_ADMIN_ROLE
             legacy.tenant_id = "ta"
             legacy.access_rules = []
-            mock_role.objects.return_value = [legacy]
+            mock_role.list_all.return_value = [legacy]
 
-            assert OpenWebuiProvisioner._build_role_rules() == {
+            assert await OpenWebuiProvisioner._build_role_rules() == {
                 ("TenantA", SYS_ADMIN_ROLE): SYS_ADMIN_OPENWEBUI_ACCESS_RULES
             }
 

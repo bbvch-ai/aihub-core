@@ -1,6 +1,6 @@
 import functools
 import json
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import openai
@@ -73,7 +73,7 @@ async def test_streaming_response_outlives_the_handler() -> None:
 
     with (
         patch.object(OpenaiService, "get_model", new=AsyncMock()),
-        patch.object(OpenaiService, "_assert_model_access", new=Mock()),
+        patch.object(OpenaiService, "_assert_model_access", new=AsyncMock()),
         patch.object(OpenaiService, "_max_output_tokens", new=AsyncMock(return_value=8192)),
         patch(f"{_SERVICE}.LiteLLMService.openai_aclient_for_user", new=AsyncMock(return_value=client)),
     ):
@@ -107,7 +107,7 @@ async def test_streaming_upstream_rejection_surfaces_in_the_handler_scope() -> N
 
     with (
         patch.object(OpenaiService, "get_model", new=AsyncMock()),
-        patch.object(OpenaiService, "_assert_model_access", new=Mock()),
+        patch.object(OpenaiService, "_assert_model_access", new=AsyncMock()),
         patch.object(OpenaiService, "_max_output_tokens", new=AsyncMock(return_value=8192)),
         patch(f"{_SERVICE}.LiteLLMService.openai_aclient_for_user", new=AsyncMock(return_value=client)),
     ):
@@ -146,7 +146,7 @@ async def test_abandoned_stream_is_closed_when_the_consumer_stops_early() -> Non
 
     with (
         patch.object(OpenaiService, "get_model", new=AsyncMock()),
-        patch.object(OpenaiService, "_assert_model_access", new=Mock()),
+        patch.object(OpenaiService, "_assert_model_access", new=AsyncMock()),
         patch.object(OpenaiService, "_max_output_tokens", new=AsyncMock(return_value=8192)),
         patch(f"{_SERVICE}.LiteLLMService.openai_aclient_for_user", new=AsyncMock(return_value=client)),
         patch.object(client.chat.completions, "create", new=capturing_create),

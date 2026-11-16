@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 import httpx
 import jwt
@@ -6,10 +7,8 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from mongoengine import connect, disconnect
 from swiss_ai_hub.core.auth import KeycloakSettings
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAuthHandler
-from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing import (
@@ -22,25 +21,13 @@ from swiss_ai_hub.core.testing.auth_utils import TEST_USER_EMAIL, TEST_USER_NAME
 from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
-pytestmark = pytest.mark.usefixtures("mongo_db", "keycloak_config", "monkeypatch_httpx")
+pytestmark = [pytest.mark.beanie, pytest.mark.usefixtures("keycloak_config", "monkeypatch_httpx")]
 
 # Constants for the tests
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/active/my-account"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 TOKEN_EXPIRY_MINUTES = 10
-
-
-@pytest.fixture(scope="module")
-def mongo_db():
-    """Set up and tear down the MongoDB connection for tests."""
-    connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-        uuidRepresentation="standard",
-    )
-    yield
-    disconnect()
 
 
 @pytest.fixture
@@ -98,29 +85,21 @@ def valid_keycloak_token(keycloak_config, rsa_keys):
     return token
 
 
-@pytest.fixture
-def setup_test_user(mongo_db):
+@pytest_asyncio.fixture(loop_scope="session")
+async def setup_test_user(clean_beanie_collections: None) -> SimpleNamespace:
     """Create the test user with expected roles before the test runs."""
-    from types import SimpleNamespace as _SimpleNamespace
-
-    config = _SimpleNamespace(OID=TEST_USER_OID, NAME=TEST_USER_NAME, EMAIL=TEST_USER_EMAIL, ROLES=TEST_USER_ROLES)
+    config = SimpleNamespace(OID=TEST_USER_OID, NAME=TEST_USER_NAME, EMAIL=TEST_USER_EMAIL, ROLES=TEST_USER_ROLES)
 
     # Assign the expected roles in the default tenant
-    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
-    user_tenant_role = None
+    default_tenant = await TenantMetadataEntity.get_startup_tenant_metadata()
     if default_tenant:
-        user_tenant_role = UserTenantRoleEntity.create_or_update(
+        await UserTenantRoleEntity.create_or_update(
             user_id=config.OID,
             tenant_id=str(default_tenant.id),
             roles=config.ROLES,
             validate_roles=False,
         )
-
-    yield config
-
-    # Cleanup
-    if user_tenant_role:
-        user_tenant_role.delete()
+    return config
 
 
 @pytest.fixture
@@ -137,8 +116,8 @@ def expected_user_data():
     }
 
 
-@pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def keycloak_api_client():
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def keycloak_api_client(beanie_test_database):
     """Return a TestClient with KeycloakAuthHandler and MyAccountController mounted."""
     runner = ApiTestRunner()
     auth = KeycloakAuthHandler()
@@ -149,7 +128,6 @@ async def keycloak_api_client():
             yield client
 
 
-@pytest.mark.asyncio(loop_scope="module")
 async def test_get_user_with_valid_keycloak_token(
     keycloak_api_client, valid_keycloak_token, expected_user_data, setup_test_user
 ):
@@ -171,7 +149,6 @@ async def test_get_user_with_valid_keycloak_token(
     assert user_data == expected_user_data
 
 
-@pytest.mark.asyncio(loop_scope="module")
 async def test_get_user_with_invalid_keycloak_token(keycloak_api_client):
     """Test GET /my-account returns an error for an invalid Keycloak token."""
     headers = {

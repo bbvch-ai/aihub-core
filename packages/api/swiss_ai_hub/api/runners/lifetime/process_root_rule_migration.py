@@ -17,19 +17,19 @@ class ProcessRootRuleMigration:
     WILDCARD = f"{AccessChecker.ADMIN_PREFIX}process.>"
 
     @staticmethod
-    def run() -> list[str]:
+    async def run() -> list[str]:
         """Adds the root where it is missing; returns the tenants and roles it rewrote."""
         root = AccessChecker.process_root_admin_rule()
         migrated: list[str] = []
-        for tenant in TenantMetadataEntity.objects(access_rules=ProcessRootRuleMigration.WILDCARD):
+        for tenant in await TenantMetadataEntity.find({"access_rules": ProcessRootRuleMigration.WILDCARD}).to_list():
             if root not in tenant.access_rules:
                 tenant.access_rules = [*tenant.access_rules, root]
                 tenant.updated_at = datetime.now(UTC)
-                tenant.save()
+                await tenant.save()
                 migrated.append(f"tenant {tenant.id}")
-        for role in RoleEntity.objects(access_rules=ProcessRootRuleMigration.WILDCARD):
+        for role in await RoleEntity.find({"access_rules": ProcessRootRuleMigration.WILDCARD}).to_list():
             if root not in role.access_rules:
                 role.access_rules = [*role.access_rules, root]
-                role.save()
+                await role.save()
                 migrated.append(f"role {role.name} ({role.tenant_id})")
         return migrated

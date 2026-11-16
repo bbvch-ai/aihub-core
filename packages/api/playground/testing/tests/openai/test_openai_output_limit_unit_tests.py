@@ -177,7 +177,7 @@ def _gateway(captured: list[dict], *responses: httpx.Response) -> openai.AsyncOp
 async def _call(request: ChatCompletionRequest, client: openai.AsyncOpenAI, ceiling: int | None = _CEILING):
     with (
         patch.object(OpenaiService, "get_model", new=AsyncMock()),
-        patch.object(OpenaiService, "_assert_model_access", new=Mock()),
+        patch.object(OpenaiService, "_assert_model_access", new=AsyncMock()),
         patch.object(OpenaiService, "_max_output_tokens", new=AsyncMock(return_value=ceiling)),
         patch(f"{_SERVICE}.LiteLLMService.openai_aclient_for_user", new=AsyncMock(return_value=client)),
     ):

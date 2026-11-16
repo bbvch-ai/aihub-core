@@ -1,4 +1,9 @@
-from mongoengine import Document, StringField
+from typing import Self
+
+from beanie import Document
+from pymongo import ASCENDING, IndexModel
+
+from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 class OpenWebuiAccountEntity(Document):
@@ -9,22 +14,25 @@ class OpenWebuiAccountEntity(Document):
     anyway and records the result here.
     """
 
-    meta = {
-        "collection": "openwebui_accounts",
-        "indexes": [{"fields": ["user_id"], "unique": True}],
-    }
+    user_id: str
+    openwebui_id: str
 
-    user_id = StringField(required=True)
-    openwebui_id = StringField(required=True)
+    class Settings:
+        name = "openwebui_accounts"
+        keep_nulls = False
+        indexes = [IndexModel([("user_id", ASCENDING)], unique=True)]
 
     @classmethod
-    def record_all(cls, openwebui_ids_by_user: dict[str, str]) -> None:
+    @trace_fn
+    async def record_all(cls, openwebui_ids_by_user: dict[str, str]) -> None:
         """Replace the recorded accounts with this sync's matches; a user no longer matched loses their entry."""
-        cls.objects(user_id__nin=list(openwebui_ids_by_user)).delete()
+        await cls.find({"user_id": {"$nin": list(openwebui_ids_by_user)}}).delete()
+        collection = cls.get_pymongo_collection()
         for user_id, openwebui_id in openwebui_ids_by_user.items():
-            cls.objects(user_id=user_id).update_one(set__openwebui_id=openwebui_id, upsert=True)
+            await collection.update_one({"user_id": user_id}, {"$set": {"openwebui_id": openwebui_id}}, upsert=True)
 
     @classmethod
-    def openwebui_id_of(cls, user_id: str) -> str | None:
-        account = cls.objects(user_id=user_id).first()
+    @trace_fn
+    async def openwebui_id_of(cls, user_id: str) -> str | None:
+        account: Self | None = await cls.find_one({"user_id": user_id})
         return account.openwebui_id if account else None

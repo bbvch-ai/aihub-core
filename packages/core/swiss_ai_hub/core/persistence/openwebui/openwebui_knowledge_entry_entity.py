@@ -1,8 +1,10 @@
 from typing import Self
 
-from mongoengine import Document, StringField
+from beanie import Document
+from pymongo import ASCENDING, IndexModel
 
 from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
+from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 class OpenWebuiKnowledgeEntryEntity(Document):
@@ -12,37 +14,42 @@ class OpenWebuiKnowledgeEntryEntity(Document):
     the sync finds the entry to update or remove through it, and a referenced entry resolves to our collection.
     """
 
-    meta = {
-        "collection": "openwebui_knowledge_entries",
-        "indexes": [
-            {"fields": ["openwebui_id"], "unique": True},
-            {"fields": ["database", "namespace"], "unique": True},
-        ],
-    }
+    openwebui_id: str
+    database: str
+    namespace: str
 
-    openwebui_id = StringField(required=True)
-    database = StringField(required=True)
-    namespace = StringField(required=True)
+    class Settings:
+        name = "openwebui_knowledge_entries"
+        keep_nulls = False
+        indexes = [
+            IndexModel([("openwebui_id", ASCENDING)], unique=True),
+            IndexModel([("database", ASCENDING), ("namespace", ASCENDING)], unique=True),
+        ]
 
     @property
     def reference(self) -> KnowledgeReference:
         return KnowledgeReference(database=self.database, namespace=self.namespace)
 
     @classmethod
-    def all_entries(cls) -> list[Self]:
-        return list(cls.objects())
+    @trace_fn
+    async def all_entries(cls) -> list[Self]:
+        return await cls.find().to_list()
 
     @classmethod
-    def record(cls, openwebui_id: str, reference: KnowledgeReference) -> Self:
-        cls.objects(database=reference.database, namespace=reference.namespace).delete()
-        return cls(openwebui_id=openwebui_id, database=reference.database, namespace=reference.namespace).save()
+    @trace_fn
+    async def record(cls, openwebui_id: str, reference: KnowledgeReference) -> Self:
+        await cls.find({"database": reference.database, "namespace": reference.namespace}).delete()
+        return await cls(openwebui_id=openwebui_id, database=reference.database, namespace=reference.namespace).insert()
 
     @classmethod
-    def forget(cls, openwebui_id: str) -> None:
-        cls.objects(openwebui_id=openwebui_id).delete()
+    @trace_fn
+    async def forget(cls, openwebui_id: str) -> None:
+        await cls.find({"openwebui_id": openwebui_id}).delete()
 
     @classmethod
-    def references_for(cls, openwebui_ids: list[str]) -> list[KnowledgeReference]:
+    @trace_fn
+    async def references_for(cls, openwebui_ids: list[str]) -> list[KnowledgeReference]:
         """Our collections behind these entries, in the order given; an id we did not create resolves to nothing."""
-        by_id = {entry.openwebui_id: entry.reference for entry in cls.objects(openwebui_id__in=openwebui_ids)}
+        entries = await cls.find({"openwebui_id": {"$in": openwebui_ids}}).to_list()
+        by_id = {entry.openwebui_id: entry.reference for entry in entries}
         return [by_id[openwebui_id] for openwebui_id in openwebui_ids if openwebui_id in by_id]

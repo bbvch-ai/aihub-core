@@ -32,17 +32,17 @@ class SandboxWorkspace:
         self.folder = ConversationAttachments(client, topic.thread_id).folder
 
     @classmethod
-    def of(cls, context: ToolContext) -> Self:
-        return cls.for_user(context.user, context.topic, context.files)
+    async def of(cls, context: ToolContext) -> Self:
+        return await cls.for_user(context.user, context.topic, context.files)
 
     @classmethod
-    def for_user(
+    async def for_user(
         cls, user: UserIdentity | None, topic: AgentInstanceTopic | None, files: list[UserUploadedFile]
     ) -> Self:
         """The user's workspace in this conversation, for a step running code without a tool loop as much as a tool."""
         if user is None or topic is None:
             raise OpenTerminalError("The code sandbox needs a signed-in user in a conversation.")
-        openwebui_id = OpenWebuiAccountEntity.openwebui_id_of(user.id)
+        openwebui_id = await OpenWebuiAccountEntity.openwebui_id_of(user.id)
         if openwebui_id is None:
             raise OpenTerminalError("This user has no code sandbox yet; it is set up with their chat account.")
         return cls(OpenTerminalClient(openwebui_id), topic, files)

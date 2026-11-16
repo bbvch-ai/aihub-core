@@ -16,6 +16,13 @@ def rl(pattern: str, limit: int, period: str) -> RoleUsageLimit:
     return RoleUsageLimit(pattern=pattern, limit=limit, period=period)
 
 
+def mock_role_entity_class() -> MagicMock:
+    """Stands in for RoleEntity, whose usage-limit lookup is awaited."""
+    role_entity = MagicMock()
+    role_entity.get_usage_limits_for_roles = AsyncMock()
+    return role_entity
+
+
 def create_service(mock_redis: AsyncMock | None = None) -> UsageLimits:
     """Create a UsageLimits with a mocked Redis."""
     if mock_redis is None:
@@ -91,31 +98,34 @@ class TestSpecificity:
 class TestGetEffectiveLimitsForRoles:
     """Tests for UsageLimits.get_effective_limits_for_roles"""
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_unlimited_when_no_roles_have_limits(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_unlimited_when_no_roles_have_limits(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[], []]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["role1", "role2"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
         assert limits == []
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_returns_empty_when_no_roles(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_returns_empty_when_no_roles(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = []
 
-        limits = UsageLimits.get_effective_limits_for_roles([], TEST_TENANT_ID)
+        limits = await UsageLimits.get_effective_limits_for_roles([], TEST_TENANT_ID)
 
         assert limits == []
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_single_role_with_catchall(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_single_role_with_catchall(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d")],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -124,8 +134,9 @@ class TestGetEffectiveLimitsForRoles:
         assert limits[0].period == "1d"
         assert limits[0].pattern == f"{AGENT_PREFIX}>"
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_all_matching_patterns_returned_independently(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_all_matching_patterns_returned_independently(self, mock_role_entity: MagicMock):
         """Both catchall and class-level patterns should be returned as independent limits."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [
@@ -134,7 +145,7 @@ class TestGetEffectiveLimitsForRoles:
             ],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -151,15 +162,16 @@ class TestGetEffectiveLimitsForRoles:
         assert class_level.limit == 20
         assert class_level.period == "1h"
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_same_pattern_across_roles_highest_limit_wins(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_same_pattern_across_roles_highest_limit_wins(self, mock_role_entity: MagicMock):
         """For the same pattern across roles, take the highest limit."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 50, "1d")],
             [rl(f"{AGENT_PREFIX}>", 200, "1d")],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["role1", "role2"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -167,8 +179,9 @@ class TestGetEffectiveLimitsForRoles:
         assert limits[0].limit == 200
         assert limits[0].period == "1d"
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_different_patterns_across_roles_are_independent(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_different_patterns_across_roles_are_independent(self, mock_role_entity: MagicMock):
         """
         Role A: > = 50/day
         Role B: > = 100/day, LLMWrappingAgent.> = 10/hour
@@ -179,7 +192,7 @@ class TestGetEffectiveLimitsForRoles:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["roleA", "roleB"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -191,46 +204,50 @@ class TestGetEffectiveLimitsForRoles:
         assert class_level.limit == 10
         assert class_level.period == "1h"
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_no_matching_pattern_returns_empty(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_no_matching_pattern_returns_empty(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}RagAgent.>", 10, "1h")],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert limits == []
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_no_resource_path_picks_most_permissive_rule(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_no_resource_path_picks_most_permissive_rule(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(["role1"], TEST_TENANT_ID)
+        limits = await UsageLimits.get_effective_limits_for_roles(["role1"], TEST_TENANT_ID)
 
         assert len(limits) == 1
         assert limits[0].limit == 100
         assert limits[0].period == "1d"
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_role_without_limits_grants_unlimited(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_role_without_limits_grants_unlimited(self, mock_role_entity: MagicMock):
         """A role without limits means unlimited — if any role is unlimited, user is unlimited."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 50, "1d")],
             [],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["role1", "role2"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert limits == []
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_three_levels_all_returned(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_three_levels_all_returned(self, mock_role_entity: MagicMock):
         """Catchall + class-level + instance-level: all three are independent limits."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [
@@ -240,7 +257,7 @@ class TestGetEffectiveLimitsForRoles:
             ],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -254,8 +271,9 @@ class TestGetEffectiveLimitsForRoles:
 class TestGetEffectiveLimitForRoles:
     """Tests for get_effective_limit_for_roles (single most specific)."""
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_returns_most_specific(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_returns_most_specific(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [
                 rl(f"{AGENT_PREFIX}>", 100, "1d"),
@@ -263,7 +281,7 @@ class TestGetEffectiveLimitForRoles:
             ],
         ]
 
-        result = UsageLimits.get_effective_limit_for_roles(
+        result = await UsageLimits.get_effective_limit_for_roles(
             ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -272,11 +290,12 @@ class TestGetEffectiveLimitForRoles:
         assert result.period == "1h"
         assert result.pattern == f"{AGENT_PREFIX}LLMWrappingAgent.>"
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_returns_none_when_no_limits(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_returns_none_when_no_limits(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
 
-        result = UsageLimits.get_effective_limit_for_roles(
+        result = await UsageLimits.get_effective_limit_for_roles(
             ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}Foo.bar"
         )
 
@@ -287,7 +306,7 @@ class TestGetUsageStatus:
     """Tests for UsageLimits.get_usage_status"""
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_unlimited_user_returns_empty_limits(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
         store = AsyncMock(spec=RateLimitStore)
@@ -300,7 +319,7 @@ class TestGetUsageStatus:
         store.get_counts.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_returns_all_matching_limits_with_counts(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
@@ -317,7 +336,7 @@ class TestGetUsageStatus:
         assert status.is_exceeded is False
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_exceeded_when_any_limit_at_capacity(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
@@ -341,7 +360,7 @@ class TestCheckAndIncrement:
     """Tests for UsageLimits.check_and_increment (atomic Lua script)."""
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_unlimited_does_not_increment(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
         store = AsyncMock(spec=RateLimitStore)
@@ -354,7 +373,7 @@ class TestCheckAndIncrement:
         store.check_and_increment.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_increments_all_matching_counters(self, mock_role_entity: MagicMock):
         """With catchall + class-level, a single atomic call increments both counters."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
@@ -373,7 +392,7 @@ class TestCheckAndIncrement:
         store.check_and_increment.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_does_not_increment_any_when_one_exceeded(self, mock_role_entity: MagicMock):
         """If any limit is exceeded, the store returns pre-increment counts."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
@@ -391,7 +410,7 @@ class TestCheckAndIncrement:
         store.check_and_increment.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_single_limit_increments_atomically(self, mock_role_entity: MagicMock):
         """Single limit uses the same atomic call."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 100, "1d")]]
@@ -409,22 +428,24 @@ class TestCheckAndIncrement:
 class TestMultiRoleWithIndependentLimits:
     """Multi-role scenarios with independent limits."""
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_same_pattern_across_roles_highest_wins(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_same_pattern_across_roles_highest_wins(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 50, "1d")],
             [rl(f"{AGENT_PREFIX}>", 200, "1d")],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["roleA", "roleB"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
         assert limits[0].limit == 200
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_different_patterns_stay_independent(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_different_patterns_stay_independent(self, mock_role_entity: MagicMock):
         """
         Role A: > = 50/day, LLMWrappingAgent.> = 10/hour
         Role B: > = 100/day
@@ -435,7 +456,7 @@ class TestMultiRoleWithIndependentLimits:
             [rl(f"{AGENT_PREFIX}>", 100, "1d")],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["roleA", "roleB"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -446,26 +467,28 @@ class TestMultiRoleWithIndependentLimits:
         class_level = next(el for el in limits if el.pattern == f"{AGENT_PREFIX}LLMWrappingAgent.>")
         assert class_level.limit == 10
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_three_roles_highest_per_pattern(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_three_roles_highest_per_pattern(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 10, "1d")],
             [rl(f"{AGENT_PREFIX}>", 500, "1d")],
             [rl(f"{AGENT_PREFIX}>", 100, "1d")],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["r1", "r2", "r3"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
         assert limits[0].limit == 500
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_both_roles_no_limits_means_unlimited(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_both_roles_no_limits_means_unlimited(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[], []]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["roleA", "roleB"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -476,7 +499,7 @@ class TestCheckAndIncrementIntegration:
     """End-to-end check_and_increment with multi-limit enforcement."""
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_increments_all_counters_when_none_exceeded(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")],
@@ -493,7 +516,7 @@ class TestCheckAndIncrementIntegration:
         store.check_and_increment.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_blocks_when_class_level_exceeded_catchall_ok(self, mock_role_entity: MagicMock):
         """Even though catchall has room, class-level exceeded blocks the call."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
@@ -511,7 +534,7 @@ class TestCheckAndIncrementIntegration:
         store.check_and_increment.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_multi_role_highest_limit_applied_per_pattern(self, mock_role_entity: MagicMock):
         """Two roles with same catchall → highest wins, both limits enforced."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
@@ -536,7 +559,7 @@ class TestBackwardCompatProperties:
     """Test backward-compat properties on UsageStatus."""
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_limit_property_returns_most_restrictive(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
@@ -555,7 +578,7 @@ class TestBackwardCompatProperties:
         assert status.current_count == 9
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_properties_return_none_when_unlimited(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
         store = AsyncMock(spec=RateLimitStore)
@@ -586,8 +609,9 @@ class TestPeriodConstants:
 class TestPatternPeriodCombinations:
     """Tests for (pattern, period) handling - duplicates prevented at RoleEntity level."""
 
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
-    def test_same_pattern_different_periods_kept_independently(self, mock_role_entity: MagicMock):
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
+    @pytest.mark.asyncio
+    async def test_same_pattern_different_periods_kept_independently(self, mock_role_entity: MagicMock):
         """Same pattern with different periods are independent limits, both kept."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [
@@ -596,7 +620,7 @@ class TestPatternPeriodCombinations:
             ],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(
+        limits = await UsageLimits.get_effective_limits_for_roles(
             ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -610,7 +634,7 @@ class TestCheckAndRaise:
     """Tests for UsageLimits.check_and_raise (HTTP 429 path)."""
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_raises_429_when_exceeded(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 10, "1h")]]
         store = AsyncMock(spec=RateLimitStore)
@@ -632,7 +656,7 @@ class TestCheckAndRaise:
         assert detail["period"] == "1h"
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_does_not_raise_when_within_limit(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 100, "1d")]]
         store = AsyncMock(spec=RateLimitStore)
@@ -649,7 +673,7 @@ class TestCheckAndRaise:
         assert status.is_exceeded is False
 
     @pytest.mark.asyncio
-    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity")
+    @patch("swiss_ai_hub.core.persistence.access.entities.role_entity.RoleEntity", new_callable=mock_role_entity_class)
     async def test_unlimited_user_passes(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
         store = AsyncMock(spec=RateLimitStore)

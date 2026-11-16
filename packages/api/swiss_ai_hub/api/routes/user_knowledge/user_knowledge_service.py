@@ -47,8 +47,8 @@ class UserKnowledgeService:
     MAX_PREVIEW_BYTES = 20 * 1024 * 1024
 
     @staticmethod
-    def client_for(user: UserIdentity) -> OpenTerminalClient:
-        openwebui_id = OpenWebuiAccountEntity.openwebui_id_of(user.id)
+    async def client_for(user: UserIdentity) -> OpenTerminalClient:
+        openwebui_id = await OpenWebuiAccountEntity.openwebui_id_of(user.id)
         if openwebui_id is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -89,7 +89,7 @@ class UserKnowledgeService:
         download, and the response forbids sniffing and scripting either way.
         """
         relative = SandboxHomePath.shown(path)
-        content, content_type = await UserKnowledgeService.client_for(user).view(relative)
+        content, content_type = await (await UserKnowledgeService.client_for(user)).view(relative)
         media_type = UserKnowledgeService._media_type(content_type)
         shown = not download and media_type in UserKnowledgeService.SHOWN_IN_PLACE
         filename = quote(posixpath.basename(relative))
@@ -113,7 +113,7 @@ class UserKnowledgeService:
             raise HTTPException(
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="This file type has no preview."
             )
-        content, content_type = await UserKnowledgeService.client_for(user).view(relative)
+        content, content_type = await (await UserKnowledgeService.client_for(user)).view(relative)
         if len(content) > UserKnowledgeService.MAX_PREVIEW_BYTES:
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -136,14 +136,14 @@ class UserKnowledgeService:
         name = SandboxHomePath.name(file.filename or "")
         path = SandboxHomePath.shown(name, relative)
         content = await UserKnowledgeService._read_bounded(file)
-        await UserKnowledgeService.client_for(user).upload(relative, name, content)
+        await (await UserKnowledgeService.client_for(user)).upload(relative, name, content)
         return FilePathDTO(path=path)
 
     @staticmethod
     @trace_fn
     async def create_folder(user: UserIdentity, path: str) -> FilePathDTO:
         relative = UserKnowledgeService._below_top(path)
-        await UserKnowledgeService.client_for(user).mkdir(relative)
+        await (await UserKnowledgeService.client_for(user)).mkdir(relative)
         return FilePathDTO(path=relative)
 
     @staticmethod
@@ -151,14 +151,16 @@ class UserKnowledgeService:
     async def move(user: UserIdentity, source: str, destination: str) -> FilePathDTO:
         relative_destination = UserKnowledgeService._below_top(destination)
         SandboxHomePath.name(posixpath.basename(relative_destination))
-        await UserKnowledgeService.client_for(user).move(UserKnowledgeService._below_top(source), relative_destination)
+        await (await UserKnowledgeService.client_for(user)).move(
+            UserKnowledgeService._below_top(source), relative_destination
+        )
         return FilePathDTO(path=relative_destination)
 
     @staticmethod
     @trace_fn
     async def delete(user: UserIdentity, path: str) -> FilePathDTO:
         relative = UserKnowledgeService._below_top(path)
-        await UserKnowledgeService.client_for(user).delete(relative)
+        await (await UserKnowledgeService.client_for(user)).delete(relative)
         return FilePathDTO(path=relative)
 
     @staticmethod
@@ -169,7 +171,7 @@ class UserKnowledgeService:
         """The files attached in a chat, by file id to name, also land in that conversation's folder, each once: the
         chat client validates them on every turn, and a file the user has since deleted or changed there is theirs to
         keep that way. A user without a file space yet has none to place them in."""
-        openwebui_id = OpenWebuiAccountEntity.openwebui_id_of(user.id)
+        openwebui_id = await OpenWebuiAccountEntity.openwebui_id_of(user.id)
         if openwebui_id is None:
             return []
         attachments = ConversationAttachments(OpenTerminalClient(openwebui_id), thread_id)
@@ -217,7 +219,7 @@ class UserKnowledgeService:
     async def _listing(user: UserIdentity, relative: str, is_own_conversation: bool) -> dict[str, Any]:
         """A conversation's folder only exists once a file lands in it, yet the user's own chat is theirs to open."""
         try:
-            return await UserKnowledgeService.client_for(user).list_files(relative)
+            return await (await UserKnowledgeService.client_for(user)).list_files(relative)
         except OpenTerminalError as error:
             if is_own_conversation and error.status_code == status.HTTP_404_NOT_FOUND:
                 return {"entries": []}

@@ -25,8 +25,8 @@ class UserService:
     @staticmethod
     async def get_user_by_oid(user_oid: str) -> UserDTO:
         keycloak_user = await KeycloakAdminService.get_user_by_id(user_oid)
-        dashboard = UserDashboardEntity.get_dashboard(user_oid)
-        dashboard_dto = DashboardDTO(**dashboard.to_mongo()) if dashboard else None
+        dashboard = await UserDashboardEntity.get_dashboard(user_oid)
+        dashboard_dto = DashboardDTO(**dashboard.model_dump()) if dashboard else None
         return UserDTO.from_keycloak_user_with_dashboard(keycloak_user, dashboard_dto)
 
     @staticmethod
@@ -47,7 +47,7 @@ class UserService:
             id=user_oid,
             name=keycloak_user.name,
             email=keycloak_user.email,
-            roles=UserTenantRoleEntity.get_roles_for_user_in_tenant(user_oid, tenant.id),
+            roles=await UserTenantRoleEntity.get_roles_for_user_in_tenant(user_oid, tenant.id),
             acting_within_tenant=tenant,
             is_sys_admin=user_oid in sys_admin_ids,
         )
@@ -69,7 +69,7 @@ class UserService:
         total = await KeycloakAdminService.count_tenant_members(tenant_id)
 
         member_ids = [m.id for m in members]
-        roles_by_user = UserTenantRoleEntity.get_roles_for_users_in_tenant(member_ids, tenant_id)
+        roles_by_user = await UserTenantRoleEntity.get_roles_for_users_in_tenant(member_ids, tenant_id)
         sys_admin_ids = await KeycloakAdminService.get_user_ids_with_realm_role(SYS_ADMIN_ROLE)
 
         user_dtos = [
@@ -95,10 +95,10 @@ class UserService:
 
         if not await KeycloakAdminService.is_user_member_of_tenant(user_oid, tenant_id):
             raise HTTPException(status_code=404, detail="User not found in tenant.")
-        if not RoleEntity.filter_existing_roles([role_name], tenant_id):
+        if not await RoleEntity.filter_existing_roles([role_name], tenant_id):
             raise HTTPException(status_code=400, detail=f"Role '{role_name}' does not exist in this tenant.")
         # validate_roles=False: role existence is already checked above, so skip the redundant DB lookup.
-        entity = UserTenantRoleEntity.add_roles(user_oid, tenant_id, [role_name], validate_roles=False)
+        entity = await UserTenantRoleEntity.add_roles(user_oid, tenant_id, [role_name], validate_roles=False)
         return entity.roles
 
     @staticmethod
@@ -110,5 +110,5 @@ class UserService:
         """
         if not await KeycloakAdminService.is_user_member_of_tenant(user_oid, tenant_id):
             raise HTTPException(status_code=404, detail="User not found in tenant.")
-        entity = UserTenantRoleEntity.remove_roles(user_oid, tenant_id, [role_name])
+        entity = await UserTenantRoleEntity.remove_roles(user_oid, tenant_id, [role_name])
         return entity.roles if entity else []
