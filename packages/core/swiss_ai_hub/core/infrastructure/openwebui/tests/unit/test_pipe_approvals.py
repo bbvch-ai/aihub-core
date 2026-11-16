@@ -1,6 +1,7 @@
 """How the OpenWebUI pipe shows an agent's question in Open WebUI's dialog: the dialog cannot scroll, so a long tool
 input sits in a capped box that keeps the buttons on screen, and the input is shown exactly as the model wrote it."""
 
+import html
 import importlib.util
 import re
 import sys
@@ -96,12 +97,12 @@ async def test_a_long_command_sits_escaped_in_one_scroll_box_between_lead_and_as
 
     assert message.count("<pre") == 1
     assert message.count("</pre>") == 1
-    lead, box, ask = re.fullmatch(r"<p>(.*)</p>\n\n<pre style=\"([^\"]*)\">(.*)</pre>\n\n<p>(.*)</p>", message, re.S).group(
-        1, 3, 4
-    )
+    lead, box, ask = re.fullmatch(
+        r"<p>(.*)</p>\n\n<pre style=\"([^\"]*)\">(.*)</pre>\n\n<p>(.*)</p>", message, re.S
+    ).group(1, 3, 4)
     assert lead == "The assistant wants to use &quot;Run Command&quot;: Run in the code sandbox:"
     assert ask == "Allow it?"
-    assert box.split("\n") == [line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#x27;") for line in TRICKY_LINES * 10]
+    assert box.split("\n") == [html.escape(line) for line in TRICKY_LINES * 10]
 
 
 @pytest.mark.asyncio
