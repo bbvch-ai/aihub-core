@@ -14,6 +14,7 @@ members = [
     "swiss-ai-hub-backup",
     "swiss-ai-hub-bot",
     "swiss-ai-hub-core",
+    "swiss-ai-hub-ee",
     "swiss-ai-hub-pipeline",
     "swiss-ai-hub-process",
     "swiss-ai-hub-sysadmin-api",
@@ -6332,6 +6333,17 @@ dev = [
     { name = "pandas-stubs", specifier = ">=2.3.3.251201" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20240917" },
 ]
+
+[[package]]
+name = "swiss-ai-hub-ee"
+version = "0.326.0"
+source = { editable = "ee" }
+dependencies = [
+    { name = "swiss-ai-hub-agent" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "swiss-ai-hub-agent", editable = "packages/agent" }]
 
 [[package]]
 name = "swiss-ai-hub-jambo"

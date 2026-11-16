@@ -4,7 +4,7 @@
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT" || exit 0
 
-SCOPES=("packages/core" "packages/agent" "packages/process" "packages/api" "packages/bot" "packages/pipeline" "packages/web")
+SCOPES=("packages/core" "packages/agent" "packages/process" "packages/api" "packages/bot" "packages/pipeline" "packages/web" "ee")
 
 # Find scopes with modified files
 changed_files=$(git diff --name-only 2>/dev/null)

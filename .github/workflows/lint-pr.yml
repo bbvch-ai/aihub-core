@@ -25,6 +25,7 @@ jobs:
           - packages/bot
           - packages/process
           - packages/sysadmin-api
+          - ee
     steps:
       - name: Lint backend
         uses: bbvch-ai/aihub-core/.github/actions/lint_backend@main

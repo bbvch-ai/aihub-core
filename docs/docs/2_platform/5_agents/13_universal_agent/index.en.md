@@ -5,6 +5,11 @@ description: One assistant that decides for itself whether to search your knowle
 
 # Universal Agent
 
+::: info Enterprise feature
+The Universal Agent is part of bbv AI Hub Enterprise. Running it needs a bbv AI Hub Enterprise License; see
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
+:::
+
 The **Universal Agent** works the way people expect a modern assistant to work. Instead of following a fixed sequence of
 steps, it looks at each message and decides for itself what it needs: search your company's knowledge, read a file the
 user attached, recall what it remembers about the user, or answer straight away. It keeps going, one tool after another,

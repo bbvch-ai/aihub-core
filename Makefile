@@ -23,6 +23,7 @@ test:
 	@(cd packages/pipeline && make test)
 	@(cd packages/core && make test)
 	@(cd packages/agent && make test)
+	@(cd ee && make test)
 	@(cd packages/process && make test)
 	@(cd packages/api && make test)
 	@(cd packages/sysadmin-api && make test)
@@ -42,6 +43,7 @@ lint:
 	@(cd packages/pipeline && make lint)
 	@(cd packages/core && make lint)
 	@(cd packages/agent && make lint)
+	@(cd ee && make lint)
 	@(cd packages/process && make lint)
 	@(cd packages/api && make lint)
 	@(cd packages/sysadmin-api && make lint)
@@ -54,6 +56,7 @@ format:
 	@(cd packages/pipeline && make format)
 	@(cd packages/core && make format)
 	@(cd packages/agent && make format)
+	@(cd ee && make format)
 	@(cd packages/process && make format)
 	@(cd packages/api && make format)
 	@(cd packages/sysadmin-api && make format)
@@ -78,6 +81,7 @@ typecheck:
 	@(cd packages/pipeline && make typecheck)
 	@(cd packages/core && make typecheck)
 	@(cd packages/agent && make typecheck)
+	@(cd ee && make typecheck)
 	@(cd packages/process && make typecheck)
 	@(cd packages/api && make typecheck)
 	@(cd packages/sysadmin-api && make typecheck)
@@ -89,6 +93,7 @@ pr-ready:
 	@(cd packages/pipeline &&  make pr-ready)
 	@(cd packages/core &&  make pr-ready)
 	@(cd packages/agent &&  make pr-ready)
+	@(cd ee &&  make pr-ready)
 	@(cd packages/process &&  make pr-ready)
 	@(cd packages/api &&  make pr-ready)
 	@(cd packages/sysadmin-api &&  make pr-ready)
@@ -184,7 +189,7 @@ up-local-gpu: local-cert
 VERSION ?= 0.263.0
 version-bump:
 	@echo "Bumping version to $(VERSION) across all packages..."
-	@for f in pyproject.toml packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/sysadmin-api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml packages/backup/pyproject.toml packages/meta/pyproject.toml; do \
+	@for f in pyproject.toml packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/sysadmin-api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml packages/backup/pyproject.toml packages/meta/pyproject.toml ee/pyproject.toml; do \
 		sed -i '/^\[project\]/,/^version =/ s/version = "[^"]*"/version = "$(VERSION)"/' $$f; \
 		sed -i -E 's/(swiss-ai-hub-(core|agent|api|bot|pipeline|process))==[^"]*/\1==$(VERSION)/g' $$f; \
 	done

@@ -62,6 +62,12 @@ jobs:
           - module: packages/sysadmin-api
             runner: ubuntu-latest
             docker_compose_services: postgres-ferretdb ferretdb
+          - module: ee
+            runner: ubuntu-latest
+            docker_compose_services: postgres clickhouse langfuse-worker langfuse-web
+              otel-collector nats valkey postgres-ferretdb ferretdb litellm seaweedfs-master
+              seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init
+              etcd milvus-standalone neo4j
     steps:
       - name: Checkout repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
@@ -128,6 +134,7 @@ jobs:
           - packages/bot
           - packages/process
           - packages/sysadmin-api
+          - ee
     steps:
       - name: Coverage comment
         uses: bbvch-ai/aihub-core/.github/actions/pytest_coverage_comment@main
@@ -169,6 +176,9 @@ jobs:
             report_coverage: 'false'
           - folder: packages/sysadmin-api
             sonar_project_key: aihub-core_sysadmin-api
+            report_coverage: 'true'
+          - folder: ee
+            sonar_project_key: aihub-core_ee
             report_coverage: 'true'
           - folder: packages/sysadmin-web
             sonar_project_key: aihub-core_sysadmin-web

@@ -1,0 +1,50 @@
+START NOTE
+Swiss AI Hub is an open core project. The core packages are licensed Apache-2.0 for the backend/runtime and SDK and AGPL-3.0-or-later for the web frontend and 
+administration components. Individual package licenses take precedence over the root license.
+Certain parts of the periphery of Swiss AI Hub are commercially
+licensed and governed by this Enterprise License. The enterprise licensed software is named bbv AI Hub.
+For the avoidance of doubt, this license does not apply 
+to the core of bbv/Swiss AI Hub as it is defined in its license in 
+the directory "/LICENSE" (as opposed to this file  "ee/LICENSE")
+which can be used and run without infringing the below license
+and its licensed materials.
+END NOTE
+
+START OF LICENSE
+bbv Software Services Corp. Enterprise license (the “Enterprise License” or "EE license")
+
+Copyright (c) 2026 bbv Software Services Corp.
+
+With regard to the Swiss AI Hub Enterprise Software:
+This software and associated documentation files (the "Software") may only be
+used, if you (and any entity that you represent) have agreed to,
+and are in compliance with, the applicable agreement governing the use of the Software, 
+as agreed by you and bbv Software Services Corp. (including any successor or permitted assignee of either),
+and otherwise have a valid bbv AI Hub Enterprise License.
+
+Subject to the foregoing sentence, you are free to
+modify this Software and publish patches to the Software. You agree that bbv/Swiss AI Hub
+and/or its licensors (as applicable) retain all right, title and interest in and
+to all such modifications and/or patches, and all such modifications and/or
+patches may only be used, copied, modified, displayed, distributed, or otherwise
+exploited with a valid bbv Software Services Corp. Enterprise License. Notwithstanding the foregoing, you may copy and modify
+the Software for development and testing purposes, without requiring a
+subscription. You agree that bbv Software Services Corp. and/or its licensors (as applicable) retain
+all right, title and interest in and to all such modifications. You are not
+granted any other rights beyond what is expressly stated herein. Subject to the
+foregoing, it is forbidden to copy, merge, publish, distribute, sublicense,
+and/or sell the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+For all third party components incorporated into the bbv/Swiss AI Hub Software, those
+components are licensed under the original license provided by the owner of the
+applicable component.
+
+END OF LICENSE

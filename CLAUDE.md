@@ -114,6 +114,8 @@ Code shared by 2+ services belongs in `packages/core`. Service-specific code sta
 - **`packages/sysadmin-web`**: System-administration UI — Nuxt Layer extending `packages/web` (AGPL-3.0-or-later).
 - **`packages/bot`**: Collaboration platform integrations (MS Teams, Slack).
 - **`packages/backup`**: Centralized backup/restore service (independent Dagster instance). AGPL-3.0-or-later.
+- **`ee`**: Paid agents of bbv AI Hub (Universal Agent, Email Classification Agent), built on `packages/agent`. bbv AI
+  Hub Enterprise License. No open package may import it, and it is never published to PyPI.
 - **`.github/actions`**: Reusable GitHub Actions for CI/CD.
 - **`docs`**: arc42 documentation + ADRs (VitePress).
 

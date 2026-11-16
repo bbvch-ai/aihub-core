@@ -169,6 +169,7 @@ updates:
     directories:
       - /packages/api
       - /packages/agent/app/*
+      - /ee/app/*
       - /packages/bot
       - /packages/backup
       - /packages/pipeline
