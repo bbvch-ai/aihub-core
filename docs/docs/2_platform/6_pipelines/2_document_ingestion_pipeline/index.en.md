@@ -42,6 +42,8 @@ The pipeline processes documents through five stages:
 
 1. Document parsing extracts text content and structure from PDFs, Word documents, PowerPoint presentations, and other
    formats. The parser identifies headings, paragraphs, lists, and tables while preserving the document's organization.
+   Pictures it cannot read, such as linked pictures, SVG graphics without a PNG fallback, or WMF/EMF clipart, are
+   skipped: their alt text is kept, and the rest of the document is processed.
 
 2. Chunking splits large documents into smaller text chunks. The pipeline uses a structural parser that breaks text at
    heading boundaries and paragraph breaks rather than at arbitrary character counts, ensuring each chunk contains

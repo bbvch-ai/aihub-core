@@ -7,6 +7,7 @@ chosen hash function (dHash, hash_size=8) and the threshold (12 bits).
 import base64
 import hashlib
 import re
+import struct
 from io import BytesIO
 
 import imagehash
@@ -18,7 +19,9 @@ from swiss_ai_hub.core.generative_ai.utils.image_processor import (
     _detect_extension,
     _find_perceptual_match,
     _image_hash,
+    embed_images_as_base64,
     extract_and_upload_images,
+    image_marker,
 )
 
 
@@ -349,3 +352,168 @@ class TestExtractAndUploadImages:
 
         assert ref_pattern not in result
         assert "s3://" in result
+
+
+SVG_URI = "data:image/svg+xml;base64," + base64.b64encode(b'<svg xmlns="http://www.w3.org/2000/svg"/>').decode()
+SIGNATURE_ONLY_PNG_URI = "data:image/png;base64,iVBORw0KGgo="
+IMAGE_HASH = "swiss_ai_hub.core.generative_ai.utils.image_processor._image_hash"
+
+
+def _data_uri(mime: str, payload: bytes) -> str:
+    return f"data:{mime};base64,{base64.b64encode(payload).decode()}"
+
+
+def _png_uri(img: Image.Image) -> str:
+    return _data_uri("image/png", _png_bytes(img))
+
+
+def _wmf(inch: int) -> bytes:
+    """A placeable WMF header; Pillow raises OSError for inch=1440 and ValueError for inch=0."""
+    head = struct.pack("<IHhhhhHIH", 0x9AC6CDD7, 0, 0, 0, 1440, 1440, inch, 0, 0)
+    return head + struct.pack("<HHIHIH", 1, 9, 0x300, 0, 0, 0) + b"\x03\x00\x00\x00\x00\x00"
+
+
+def _emf_with_zero_frame() -> bytes:
+    """An EMF header Pillow answers with ZeroDivisionError, not OSError."""
+    bounds = struct.pack("<iiii", 0, 0, 99, 99)
+    frame = struct.pack("<iiii", 0, 0, 0, 0)
+    tail = struct.pack("<IIIHHIIIiiii", 0x10000, 108, 1, 1, 0, 0, 0, 0, 1920, 1080, 508, 286)
+    return struct.pack("<II", 1, 108) + bounds + frame + b" EMF" + tail
+
+
+@pytest.fixture
+def no_decoding(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail(image_bytes: bytes) -> None:
+        raise AssertionError("the MIME type must decide, without decoding the image")
+
+    monkeypatch.setattr(IMAGE_HASH, fail)
+
+
+class TestImageMarker:
+    def test_keeps_the_alt_text(self) -> None:
+        assert image_marker("  company logo ") == "[image: company logo]"
+
+    def test_without_alt_text(self) -> None:
+        assert image_marker(" ") == "[image]"
+
+
+class TestSkippedImages:
+    @pytest.mark.asyncio
+    async def test_an_svg_between_two_figures_is_replaced_and_the_figures_stay_numbered(self) -> None:
+        images = {
+            "a.png": _png_uri(_make_distinct_figure("lines")),
+            "logo.svg": SVG_URI,
+            "b.png": _png_uri(_make_distinct_figure("circle")),
+        }
+        md = "![](a.png) ![logo](logo.svg) ![](b.png)"
+
+        fs = _FakeFileSystem()
+        result = await extract_and_upload_images(md, images, fs, "bucket/docs/deck.pptx")
+
+        assert len(fs.files) == 2
+        assert "[image: logo]" in result
+        assert "![Figure 1](" in result
+        assert "![Figure 2](" in result
+        assert "Figure 3" not in result
+        assert not any(path.endswith(".svg") for path in fs.files)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "data_uri",
+        [
+            _data_uri("image/x-wmf", _wmf(1440)),
+            _data_uri("image/x-wmf", _wmf(0)),
+            _data_uri("image/x-emf", _emf_with_zero_frame()),
+        ],
+        ids=["wmf", "wmf-inch-0", "emf-zero-frame"],
+    )
+    async def test_a_metafile_is_skipped_before_pillow_reads_it(self, data_uri: str, no_decoding: None) -> None:
+        fs = _FakeFileSystem()
+        result = await extract_and_upload_images("![clipart](x.wmf)", {"x.wmf": data_uri}, fs, "bucket/docs/a.docx")
+
+        assert result == "[image: clipart]"
+        assert fs.files == {}
+
+    @pytest.mark.asyncio
+    async def test_a_truncated_png_is_skipped_and_the_other_images_are_uploaded(self) -> None:
+        truncated = _png_bytes(_make_distinct_figure("lines"))[:40]
+        images = {
+            "broken.png": _data_uri("image/png", truncated),
+            "ok.png": _png_uri(_make_distinct_figure("circle")),
+        }
+
+        fs = _FakeFileSystem()
+        result = await extract_and_upload_images(
+            "![chart](broken.png) ![](ok.png)", images, fs, "bucket/docs/report.pdf"
+        )
+
+        assert result.startswith("[image: chart] <figure>![Figure 1](s3://")
+        assert len(fs.files) == 1
+
+    @pytest.mark.asyncio
+    async def test_raw_base64_that_does_not_decode_is_skipped(self) -> None:
+        images = {"x.jpg": base64.b64encode(b"not an image at all").decode()}
+
+        fs = _FakeFileSystem()
+        result = await extract_and_upload_images("![scan](images/x.jpg)", images, fs, "bucket/docs/report.pdf")
+
+        assert result == "[image: scan]"
+        assert fs.files == {}
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("reference", ["images/x.wmf", "./images/x.wmf", "x.wmf"])
+    async def test_every_reference_style_keeps_its_alt_text(self, reference: str) -> None:
+        images = {"x.wmf": _data_uri("image/x-wmf", _wmf(1440))}
+
+        result = await extract_and_upload_images(f"![chart]({reference})", images, _FakeFileSystem(), "b/doc.pdf")
+
+        assert result == "[image: chart]"
+
+    @pytest.mark.asyncio
+    async def test_dedup_still_works_across_a_skipped_image(self) -> None:
+        images = {
+            "logo_1.jpg": _b64(_make_logo()),
+            "vector.svg": SVG_URI,
+            "logo_2.jpg": _b64(_make_logo(1, 0)),
+        }
+        md = "![](logo_1.jpg) ![](vector.svg) ![](logo_2.jpg)"
+
+        fs = _FakeFileSystem()
+        result = await extract_and_upload_images(md, images, fs, "bucket/docs/report.pdf")
+
+        assert len(fs.files) == 1
+        assert len(set(re.findall(r"s3://[^)]+", result))) == 1
+        assert "[image]" in result
+
+    @pytest.mark.asyncio
+    async def test_nothing_is_written_when_every_image_is_skipped(self) -> None:
+        fs = _FakeFileSystem()
+        result = await extract_and_upload_images("![logo](logo.svg)", {"logo.svg": SVG_URI}, fs, "bucket/docs/a.pptx")
+
+        assert result == "[image: logo]"
+        assert fs.files == {}
+        assert fs.makedirs_calls == []
+
+    @pytest.mark.asyncio
+    async def test_a_decompression_bomb_still_fails_the_document(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def bomb(image_bytes: bytes) -> None:
+            raise Image.DecompressionBombError("too many pixels")
+
+        monkeypatch.setattr(IMAGE_HASH, bomb)
+
+        with pytest.raises(Image.DecompressionBombError):
+            await extract_and_upload_images(
+                "![](a.png)", {"a.png": _png_uri(_make_logo())}, _FakeFileSystem(), "bucket/docs/report.pdf"
+            )
+
+
+class TestEmbedImagesAsBase64:
+    def test_an_svg_is_replaced_and_a_png_is_embedded_without_decoding(self, no_decoding: None) -> None:
+        images = {"logo.svg": SVG_URI, "chart.png": SIGNATURE_ONLY_PNG_URI}
+
+        result = embed_images_as_base64("![logo](logo.svg) ![](chart.png)", images, source_file="deck.pptx")
+
+        assert result == f"[image: logo] <figure>![Figure 1]({SIGNATURE_ONLY_PNG_URI})</figure>"
+
+    def test_the_source_file_is_optional(self) -> None:
+        assert embed_images_as_base64("![](logo.svg)", {"logo.svg": SVG_URI}) == "[image]"
