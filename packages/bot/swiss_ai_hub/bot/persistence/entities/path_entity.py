@@ -1,11 +1,15 @@
-from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, StringField
+from typing import Self
+
+from beanie import Document
+from pydantic import BaseModel
+from pymongo import ASCENDING, IndexModel
 
 
-class Credentials(EmbeddedDocument):
-    APP_TYPE = StringField(required=False)
-    APP_ID = StringField(required=False)
-    APP_PASSWORD = StringField(required=False)
-    APP_TENANTID = StringField(required=False)
+class Credentials(BaseModel):
+    APP_TYPE: str | None = None
+    APP_ID: str | None = None
+    APP_PASSWORD: str | None = None
+    APP_TENANTID: str | None = None
 
 
 class PathEntity(Document):
@@ -21,29 +25,31 @@ class PathEntity(Document):
     directly in the database.
     """
 
-    meta = {
-        "collection": "bot_paths",
-        "strict": True,
-        "indexes": [
-            {"fields": ["path"], "unique": True},
-        ],
-    }
-    path = StringField(required=True)
-    credentials = EmbeddedDocumentField(Credentials, required=True)
-    system_message = StringField(required=False)
-    slack_token = StringField(required=False)
+    path: str
+    credentials: Credentials
+    system_message: str | None = None
+    slack_token: str | None = None
+
+    class Settings:
+        name = "bot_paths"
+        keep_nulls = False
+        indexes = [IndexModel([("path", ASCENDING)], unique=True)]
 
     @classmethod
-    def get_credentials_by_path(cls, path: str) -> Credentials | None:
-        doc = cls.objects().filter(path=path).first()
+    async def get_by_path(cls, path: str) -> Self | None:
+        return await cls.find_one({"path": path})
+
+    @classmethod
+    async def get_credentials_by_path(cls, path: str) -> Credentials | None:
+        doc = await cls.get_by_path(path)
         return doc.credentials if doc else None
 
     @classmethod
-    def get_system_message_by_path(cls, path: str) -> str | None:
-        doc = cls.objects().filter(path=path).first()
+    async def get_system_message_by_path(cls, path: str) -> str | None:
+        doc = await cls.get_by_path(path)
         return doc.system_message if doc else None
 
     @classmethod
-    def get_slack_token_by_path(cls, path: str) -> str | None:
-        doc = cls.objects().filter(path=path).first()
+    async def get_slack_token_by_path(cls, path: str) -> str | None:
+        doc = await cls.get_by_path(path)
         return doc.slack_token if doc else None

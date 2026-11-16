@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import ClassVar
 
 from beanie import Document, init_beanie
@@ -46,8 +47,12 @@ class BeanieInitializer:
         return AsyncMongoClient(MongoSettings().CONNECTION_STRING.get_secret_value(), uuidRepresentation="standard")
 
     @staticmethod
-    async def initialize(client: AsyncMongoClient) -> None:
+    async def initialize(
+        client: AsyncMongoClient,
+        service_document_models: Sequence[type[Document]] = (),
+    ) -> None:
+        """Binds the core documents, plus the documents only one service owns (e.g. the bot's conversations)."""
         await init_beanie(
             database=client[AIHubSettings().MONGO_MAIN_DB_NAME],
-            document_models=BeanieInitializer.DOCUMENT_MODELS,
+            document_models=[*BeanieInitializer.DOCUMENT_MODELS, *service_document_models],
         )

@@ -50,7 +50,7 @@ def configured_bot(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         RoutesService,
         "get_credentials",
-        MagicMock(
+        AsyncMock(
             return_value=Credentials(
                 APP_TYPE="SingleTenant", APP_ID=APP_ID, APP_PASSWORD="secret", APP_TENANTID=TENANT_ID
             )
@@ -67,7 +67,7 @@ def adapter(monkeypatch: pytest.MonkeyPatch, configured_bot: None) -> MagicMock:
         return Response(status_code=202)
 
     fake_adapter.process = AsyncMock(side_effect=_process)
-    monkeypatch.setattr(RoutesService, "get_adapter", MagicMock(return_value=fake_adapter))
+    monkeypatch.setattr(RoutesService, "get_adapter", AsyncMock(return_value=fake_adapter))
     return fake_adapter
 
 
@@ -181,7 +181,7 @@ async def test_token_without_service_url_is_rejected(client: AsyncClient, adapte
 async def test_path_without_bot_configuration_is_not_found(
     client: AsyncClient, adapter: MagicMock, monkeypatch: pytest.MonkeyPatch
 ):
-    monkeypatch.setattr(RoutesService, "get_credentials", MagicMock(return_value=None))
+    monkeypatch.setattr(RoutesService, "get_credentials", AsyncMock(return_value=None))
     assert await _post(client, _token()) == 404
     adapter.process.assert_not_awaited()
 
