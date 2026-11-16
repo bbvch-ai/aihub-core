@@ -19,7 +19,10 @@ _UNCURATED_FAMILY_RULES: tuple[str, ...] = (
     # Reachability for the databases a tenant then creates arrives per database from
     # ``KnowledgeService._grant_knowledge_access``, which grants ``knowledge.<db>`` and ``knowledge.<db>.>``.
     "aihub.admin.knowledge",
-    "aihub.admin.process.>",
+    # Same reasoning as knowledge: process instances live in one global collection with no tenant column, so
+    # ``process.>`` would hand every new tenant every instance in the deployment. Each instance a tenant
+    # creates is granted to it by ``ProcessInstanceAccessGrant``.
+    "aihub.admin.process",
     "aihub.admin.service.>",
     "aihub.user.memory.>",
 )

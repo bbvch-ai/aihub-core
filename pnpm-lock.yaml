@@ -143,12 +143,6 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
-      graphology:
-        specifier: ^0.26.0
-        version: 0.26.0(graphology-types@0.24.8)
-      graphology-layout-forceatlas2:
-        specifier: ^0.10.1
-        version: 0.10.1(graphology-types@0.24.8)
       gridstack:
         specifier: ^12.6.0
         version: 12.6.0
@@ -1098,8 +1092,8 @@ packages:
   '@formkit/addons@2.0.0':
     resolution: {integrity: sha512-w+48qDGnMEoV21Dqt9LDo+krlp0chLf2UUjnNmAzCtTdVWTuUZRlJa+rgsxjPNGKkPjwAHqqKhpQlBOFwdl9ow==}
 
-  '@formkit/auto-animate@0.10.0':
-    resolution: {integrity: sha512-KGomRttjUfORuPUaR/ZGQw+6xfMrTM+sxnILv7JAd9AmabU9rg9i6gF/iC0Ih+QpKCubJpCA/1DX9UHKE8cX+A==}
+  '@formkit/auto-animate@0.10.2':
+    resolution: {integrity: sha512-t2Z3y8b/zB3wPWwgpc6JDVm4q0ezb5vfe2mqfUrQJ7XziZY8iYuhocQ7eJdTzowRePihrNbZ/DNJoFa6Yi5blg==}
 
   '@formkit/core@1.7.2':
     resolution: {integrity: sha512-XDRVqkDtOziU3z44hdvgWEqGpiv6nTNeCmP8cnESKkr24a4keQuEwmfDVvibYV0ywyTMg6ylp2lyklCYeRHykQ==}
@@ -4675,11 +4669,6 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  graphology-layout-forceatlas2@0.10.1:
-    resolution: {integrity: sha512-ogzBeF1FvWzjkikrIFwxhlZXvD2+wlY54lqhsrWprcdPjopM2J9HoMweUmIgwaTvY4bUYVimpSsOdvDv1gPRFQ==}
-    peerDependencies:
-      graphology-types: '>=0.19.0'
-
   graphology-types@0.24.8:
     resolution: {integrity: sha512-hDRKYXa8TsoZHjgEaysSRyPdT6uB78Ci8WnjgbStlQysz7xR52PInxNsmnB7IBOM1BhikxkNyCVEFgmPKnpx3Q==}
 
@@ -4687,11 +4676,6 @@ packages:
     resolution: {integrity: sha512-ckHg8MXrXJkOARk56ZaSCM1g1Wihe2d6iTmz1enGOz4W/l831MBCKSayeFQfowgF8wd+PQ4rlch/56Vs/VZLDQ==}
     peerDependencies:
       graphology-types: '>=0.23.0'
-
-  graphology@0.26.0:
-    resolution: {integrity: sha512-8SSImzgUUYC89Z042s+0r/vMibY7GX/Emz4LDO5e7jYXhuoWfHISPFJYjpRLUSJGq6UQ6xlenvX1p/hJdfXuXg==}
-    peerDependencies:
-      graphology-types: '>=0.24.0'
 
   gridstack@12.6.0:
     resolution: {integrity: sha512-dUrqsormSybFn/2P4Dz8AgprftKD5e/IiV7UmC0XLQU+G+/WtkAeFiCSNLoAGhPDXoJ/O61Xtj3gljY/Ds83yQ==}
@@ -7708,7 +7692,7 @@ snapshots:
 
   '@babel/generator@7.29.8':
     dependencies:
-      '@babel/parser': 7.29.8
+      '@babel/parser': 7.29.11
       '@babel/types': 7.29.8
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
@@ -7860,13 +7844,13 @@ snapshots:
   '@babel/template@7.28.6':
     dependencies:
       '@babel/code-frame': 7.29.0
-      '@babel/parser': 7.29.8
+      '@babel/parser': 7.29.11
       '@babel/types': 7.29.8
 
   '@babel/template@7.29.7':
     dependencies:
       '@babel/code-frame': 7.29.7
-      '@babel/parser': 7.29.8
+      '@babel/parser': 7.29.11
       '@babel/types': 7.29.8
 
   '@babel/traverse@7.29.0':
@@ -7874,7 +7858,7 @@ snapshots:
       '@babel/code-frame': 7.29.0
       '@babel/generator': 7.29.1
       '@babel/helper-globals': 7.28.0
-      '@babel/parser': 7.29.8
+      '@babel/parser': 7.29.11
       '@babel/template': 7.28.6
       '@babel/types': 7.29.8
       debug: 4.4.3
@@ -8422,12 +8406,12 @@ snapshots:
 
   '@formkit/addons@2.0.0':
     dependencies:
-      '@formkit/auto-animate': 0.10.0
+      '@formkit/auto-animate': 0.10.2
       '@formkit/core': 2.0.0
       '@formkit/inputs': 2.0.0
       '@formkit/utils': 2.0.0
 
-  '@formkit/auto-animate@0.10.0': {}
+  '@formkit/auto-animate@0.10.2': {}
 
   '@formkit/core@1.7.2':
     dependencies:
@@ -8902,7 +8886,7 @@ snapshots:
 
   '@nuxt/devtools-kit@2.7.0(magicast@0.5.4)(vite@7.3.7(@types/node@22.19.19)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.47.1)(yaml@2.9.0))':
     dependencies:
-      '@nuxt/kit': 3.21.5(magicast@0.5.4)
+      '@nuxt/kit': 3.21.10(magicast@0.5.4)
       execa: 8.0.1
       vite: 7.3.7(@types/node@22.19.19)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.47.1)(yaml@2.9.0)
     transitivePeerDependencies:
@@ -13335,20 +13319,10 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  graphology-layout-forceatlas2@0.10.1(graphology-types@0.24.8):
-    dependencies:
-      graphology-types: 0.24.8
-      graphology-utils: 2.5.2(graphology-types@0.24.8)
-
   graphology-types@0.24.8: {}
 
   graphology-utils@2.5.2(graphology-types@0.24.8):
     dependencies:
-      graphology-types: 0.24.8
-
-  graphology@0.26.0(graphology-types@0.24.8):
-    dependencies:
-      events: 3.3.0
       graphology-types: 0.24.8
 
   gridstack@12.6.0: {}

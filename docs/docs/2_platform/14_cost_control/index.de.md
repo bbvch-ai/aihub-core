@@ -1,6 +1,6 @@
 ---
 title: Kostenkontrolle
-source_sha: cf794b0668f6689edbabc34314e15bae51b0ffae539f87051c864997f144fb0b
+source_sha: 680b4ecab6faec8d2f79431fd6e748b2f044a6596fb565367e156030495e5de1
 ---
 
 # Kostenkontrolle
@@ -54,6 +54,65 @@ konsistent zu verfolgen.
 
 Sie können Kosteninformationen pro Konversation anzeigen, um zu sehen, welche Fragen am teuersten sind. Dies hilft bei
 Agent-Design-Entscheidungen, der Modellwahl und der Budgetplanung.
+
+## Nutzung pro Mandant
+
+Jeder Modellaufruf, den der Swiss AI Hub für einen Benutzer ausführt, wird dem Mandanten zugerechnet, in dem der Benutzer
+gerade arbeitet. Das gilt für Chats über OpenWebUI, die OpenAI-kompatible API, Agentenläufe (Chat, Embeddings und
+Reranking), Übersetzungen und Spracherkennung. Der LiteLLM-Proxy erfasst den Mandanten als seinen *Kunden* (Customer),
+benannt nach dem Mandanten. Gehört ein Benutzer zwei Mandanten an, wird jeder Aufruf nur in dem Mandanten gezählt, in dem
+er gerade gearbeitet hat.
+
+Aufrufe ausserhalb eines Mandanten werden dem Kunden `no-tenant` zugerechnet: Sysadmins, die ausserhalb eines Mandanten
+arbeiten, geplante Agentenläufe, Datenpipelines, das Schreiben von Erinnerungen und das Parsen von Dokumenten. Sie
+erscheinen als eigene Zeile, nie innerhalb eines Mandanten.
+
+Die Kosten werden aus den Preisen berechnet, die in LiteLLM für jedes Modell konfiguriert sind.
+
+### Nutzung eines Mandanten im letzten Monat ablesen
+
+Auf einer gemeinsam genutzten Instanz, die mehrere Mandanten bedient:
+
+1. Öffnen Sie die LiteLLM-Oberfläche unter `https://litellm.<Ihre Domain>/ui` und melden Sie sich als
+   Proxy-Administrator an.
+2. Öffnen Sie **Usage** und wechseln Sie die Ansicht von **Global Usage** zu **Customer Usage**.
+3. Setzen Sie **Select Time Range** auf den ersten und letzten Tag des Monats.
+4. Wählen Sie unter **Select customer to filter** den Mandanten anhand seines Namens.
+5. Lesen Sie die Zahlen ab:
+   - Reiter **Cost**: Gesamtkosten, Anfragen und Tokens des Mandanten sowie die Kosten pro Modell.
+   - Reiter **Model Activity**: Anfragen, Tokens und Kosten pro Modell, mit Prompt-Tokens (Eingabe) und
+     Completion-Tokens (Ausgabe) getrennt unter **Total Tokens Over Time**.
+   - **Export Data** lädt dieselben Zahlen als Datei herunter.
+
+Ohne Kundenfilter listet der Reiter **Cost** unter **Spend Per Customer** jeden Mandanten und `no-tenant` auf. Ihre Summe
+entspricht dem Instanz-Total, das **Global Usage** für denselben Zeitraum zeigt.
+
+::: details Die Zahlen über die API ablesen
+Die Oberfläche liest sie aus der Admin-API von LiteLLM, die Sie mit dem LiteLLM-Master-Key abfragen können. Die Antwort
+listet jeden Tag mit seinen Prompt-Tokens, Completion-Tokens und Kosten, insgesamt und pro Modell:
+
+```bash
+curl -s "https://litellm.<your domain>/customer/daily/activity?end_user_ids=<tenant id>&start_date=2026-10-01&end_date=2026-10-31&page_size=1000" \
+  -H "Authorization: Bearer $LITELLM_MASTER_KEY"
+```
+
+`/customer/list` listet die Kunden mit ihren Mandantennamen, und `/user/daily/activity` mit denselben Daten liefert das
+Instanz-Total.
+:::
+
+### Nutzung einer dedizierten Instanz im letzten Monat ablesen
+
+Auf einer Instanz, die einen einzigen Kunden bedient, ist die gesamte Instanz die Nutzung dieses Kunden. Öffnen Sie
+**Usage** → **Global Usage**, setzen Sie den Zeitraum auf den Monat und lesen Sie die Totale und den Reiter **Model
+Activity** wie oben ab.
+
+::: warning Aufrufe, bevor Mandanten erfasst wurden
+Nur Aufrufe, seit der Swiss AI Hub Mandanten erfasst, werden einem Mandanten zugerechnet. Frühere Aufrufe über die
+OpenAI-kompatible API erscheinen unter Kunden, die nach einer Benutzer-ID benannt sind, und frühere Aufrufe ohne Benutzer
+unter gar keinem Kunden. Deployments mit eigener LiteLLM-Konfiguration müssen den Callback `tenant_attribution`
+registrieren, der neben `custom_callbacks.py` ausgeliefert wird, sonst fehlen Aufrufe ohne Mandanten in der
+Kundenansicht.
+:::
 
 ## Budgets und Ratenbegrenzungen
 

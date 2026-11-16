@@ -26,18 +26,28 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # milvus-backup tool (official Zilliz backup/restore for Milvus)
+# Checksums come from the release's milvus-backup_<version>_checksums.txt; update them with the version.
 ARG MILVUS_BACKUP_VERSION=0.5.11
+ARG MILVUS_BACKUP_SHA256_AMD64=732a8cb957c9b7e98c41a388e9bfb312e4fcb6dd0141ec33143d5262d7d2e990
+ARG MILVUS_BACKUP_SHA256_ARM64=8f79e0329c13f8b6eb4251d912f780f6c26451f9617bc500a71cd2f869dd5664
 ARG TARGETARCH
 RUN ARCH=$([ "$TARGETARCH" = "arm64" ] && echo "arm64" || echo "x86_64") && \
+    SHA256=$([ "$TARGETARCH" = "arm64" ] && echo "$MILVUS_BACKUP_SHA256_ARM64" || echo "$MILVUS_BACKUP_SHA256_AMD64") && \
     wget -q "https://github.com/zilliztech/milvus-backup/releases/download/v${MILVUS_BACKUP_VERSION}/milvus-backup_${MILVUS_BACKUP_VERSION}_Linux_${ARCH}.tar.gz" -O /tmp/milvus-backup.tar.gz && \
+    echo "${SHA256}  /tmp/milvus-backup.tar.gz" | sha256sum -c - && \
     tar -xzf /tmp/milvus-backup.tar.gz -C /usr/local/bin/ milvus-backup && \
     chmod +x /usr/local/bin/milvus-backup && \
     rm /tmp/milvus-backup.tar.gz
 
 # nats CLI (official backup/restore tool for NATS JetStream streams)
+# Checksums come from the release's SHA256SUMS; update them with the version.
 ARG NATS_CLI_VERSION=0.3.1
+ARG NATS_CLI_SHA256_AMD64=f48374be6fc903b954b90b729321772bdd5bc745234edf3d31cd17ab79e85629
+ARG NATS_CLI_SHA256_ARM64=ae8f6a743c7f787ec0c72d8c48b0b1045a350ca290a3a36e09509f2500ae12ad
 RUN ARCH=$([ "$TARGETARCH" = "arm64" ] && echo "arm64" || echo "amd64") && \
+    SHA256=$([ "$TARGETARCH" = "arm64" ] && echo "$NATS_CLI_SHA256_ARM64" || echo "$NATS_CLI_SHA256_AMD64") && \
     wget -q "https://github.com/nats-io/natscli/releases/download/v${NATS_CLI_VERSION}/nats-${NATS_CLI_VERSION}-linux-${ARCH}.zip" -O /tmp/nats-cli.zip && \
+    echo "${SHA256}  /tmp/nats-cli.zip" | sha256sum -c - && \
     unzip -j /tmp/nats-cli.zip "nats-${NATS_CLI_VERSION}-linux-${ARCH}/nats" -d /usr/local/bin/ && \
     chmod +x /usr/local/bin/nats && \
     rm -rf /tmp/nats-cli.zip

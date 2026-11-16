@@ -367,6 +367,7 @@ litellm_settings:
     - detect_prompt_injection
     - otel
     - custom_callbacks.proxy_handler_instance
+    - tenant_attribution.tenant_attribution_instance
   default_fallbacks: [text-generation/Qwen3-VL-30B-A3B-Instruct-FP8]
   telemetry: true
   json_logs: true

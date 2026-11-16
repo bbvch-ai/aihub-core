@@ -85,6 +85,12 @@ and reading the spend log back. The Hub still sends no tenant tag, so nothing ab
 attribution stays on `LLMCostEvent`. A gateway-side tenant carrier is now possible with tags as well as with teams, and
 that choice belongs to the tenant usage tracking work.
 
+## Amendment 2026-11-09: the acting tenant is the LiteLLM customer
+
+Tenant attribution now does go to LiteLLM: every call names the acting tenant as its customer, and calls without a tenant
+are booked to `no-tenant`. User attribution on the key is unchanged. See
+`2026_11_09_acting_tenant_as_litellm_customer.md`.
+
 ## Related Decisions
 
 - `2026_04_28_litellm_pipeline_message_redaction.md` — also constrained by the free tier, and establishes the

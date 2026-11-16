@@ -17,7 +17,7 @@ Unterschiede.
 :::warning Wann die DSGVO ebenfalls gilt
 Schweizer Organisationen müssen sowohl dem revDSG als auch der DSGVO entsprechen, wenn sie Waren/Dienstleistungen für
 EU-Bürger anbieten oder das Verhalten von Personen in der EU überwachen. Siehe
-[Anwendbarkeit der DSGVO](../2_gdpr/#applicability-to-swiss-organizations).
+[Anwendbarkeit der DSGVO](../2_gdpr/#anwendbarkeit-auf-schweizer-organisationen).
 :::
 
 ## Wesentliche Unterschiede zur DSGVO
@@ -50,7 +50,7 @@ die keine Plattformfunktionen benötigt.
 Die Betroffenenrechte funktionieren ähnlich wie bei der DSGVO mit geringfügigen Unterschieden. Die Antwortzeit beträgt
 30 Tage anstatt 1 Monat. Die Terminologie „Recht auf Vergessenwerden“ wird nicht verwendet, aber das Recht auf Löschung
 besteht. Die Anforderungen an die Datenportabilität sind einfacher als bei der DSGVO. Siehe
-[DSGVO-Dokumentation](../2_gdpr/#data-subject-rights) für Details, wie die Plattform diese Rechte unterstützt.
+[DSGVO-Dokumentation](../2_gdpr/#rechte-der-betroffenen-personen) für Details, wie die Plattform diese Rechte unterstützt.
 
 ### Meldung von Datenschutzverletzungen
 
@@ -78,7 +78,7 @@ des revDSG unterliegen.
 Für rein schweizerische Operationen vermeidet das Hosten von Daten in der Schweiz auch die Anforderungen an
 internationale Transfers gemäss revDSG. Die Plattform unterstützt On-Premise- und Schweizer Cloud-Deployments. Siehe
 [Deployment-Optionen](../../3_deployment_guide/1_deployment_options/) und
-[Internationale Datentransfers der DSGVO](../2_gdpr/#international-data-transfers).
+[Internationale Datentransfers der DSGVO](../2_gdpr/#internationale-datenubermittlungen).
 
 ## Datentransfers
 

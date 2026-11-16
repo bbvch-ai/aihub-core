@@ -227,12 +227,12 @@ ______________________________________________________________________
 | **Conversation state** | Per-endpoint config + conversation history in MongoDB, with a configurable TTL                                    |
 | **Testing**            | `BotTestRunner` and `SimulatedAgentBotTestRunner` for capturing outbound activities and faking an agent over NATS |
 
-See the [documentation](https://bbvch-ai.github.io/aihub-core/) for the full handler/streaming/BITL reference.
+See the [documentation](https://docs.ai-hub.bbv.ch/) for the full handler/streaming/BITL reference.
 
 ## Links
 
 - **Source & issues**: https://github.com/bbvch-ai/aihub-core
-- **Documentation**: https://bbvch-ai.github.io/aihub-core/
+- **Documentation**: https://docs.ai-hub.bbv.ch/
 - **The full SDK** (meta package): https://pypi.org/project/swiss-ai-hub/
 
 ## License

@@ -311,7 +311,7 @@ those values per run. Settings you pass in code win over the `DOCUMENT_INGESTION
 form's pre-filled defaults and for databases that store no value of their own; the environment is read only when no
 settings were passed. If you point the text model at a provider without image input, also set the vision model
 (`DOCUMENT_INGESTION_VISION_MODEL`); it defaults to the text model, and nothing checks that the model can read images.
-See [Building Pipelines](../index.en.md#making-your-pipeline-selectable-in-the-ui) for how to add a setting of your own.
+See [Building Pipelines](../#making-your-pipeline-selectable-in-the-ui) for how to add a setting of your own.
 
 ## Default Data Mapping
 

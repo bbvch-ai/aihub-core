@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/media/logo.png" alt="Swiss AI-Hub" width="120">
+<img src="https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docs/public/logo.png" alt="Swiss AI-Hub" width="120">
 
 # Swiss AI-Hub
 
@@ -15,7 +15,7 @@ what cloud AI platforms promise, but where you own every layer.
 [![PyPI](https://img.shields.io/pypi/v/swiss-ai-hub-core?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/swiss-ai-hub-core/)
 [![npm](https://img.shields.io/npm/v/@swiss-ai-hub/web?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@swiss-ai-hub/web)
 
-[Get started](#quick-start) · [Documentation](https://bbvch-ai.github.io/aihub-core/) ·
+[Get started](#quick-start) · [Documentation](https://docs.ai-hub.bbv.ch/) ·
 [Discord](https://discord.gg/wArT8zDB) · [Releases](https://github.com/bbvch-ai/aihub-core/releases)
 
 </div>
@@ -439,11 +439,11 @@ ______________________________________________________________________
 Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and open to contributions. See
 [CONTRIBUTING.md](https://github.com/bbvch-ai/aihub-core/blob/main/CONTRIBUTING.md) for the full guide, or jump in:
 
-|                                                                |                                                              |
-| -------------------------------------------------------------- | ------------------------------------------------------------ |
-| [Join the Discord](https://discord.gg/wArT8zDB)                | Ask questions, share what you have built, get help           |
-| [Open an issue](https://github.com/bbvch-ai/aihub-core/issues) | Report bugs and request features                             |
-| [Read the ADRs](https://bbvch-ai.github.io/aihub-core/arc42/)  | Understand key decisions before proposing structural changes |
+|                                                                                        |                                                              |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [Join the Discord](https://discord.gg/wArT8zDB)                                        | Ask questions, share what you have built, get help           |
+| [Open an issue](https://github.com/bbvch-ai/aihub-core/issues)                         | Report bugs and request features                             |
+| [Read the ADRs](https://github.com/bbvch-ai/aihub-core/tree/main/docs/arc42/decisions) | Understand key decisions before proposing structural changes |
 
 ## License
 

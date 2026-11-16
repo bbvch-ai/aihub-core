@@ -252,7 +252,6 @@ event:
   retrieveMemory:
     title: Memoria recuperata
     memories: Memorie
-    relations: Grafo della conoscenza
     score: Rilevanza
     noMemories: Nessuna memoria recuperata
   storeMemory:
@@ -260,9 +259,6 @@ event:
     added: Aggiunto
     updated: Aggiornato
     deleted: Eliminato
-    addedRelations: relazioni aggiunte
-    deletedRelations: relazioni eliminate
-    relationChanges: Modifiche alle relazioni
     noChanges: Nessuna modifica
   addMemoryToChatHistory:
     summary: '{count} messaggio di memoria aggiunto alla cronologia | {count} messaggi
@@ -1080,9 +1076,6 @@ lib:
         La chiave riservata `namespace` non è mai consentita.
 memory:
   title: Ricordi
-  graph:
-    title: Grafo della conoscenza
-    no_results: Nessun ricordo trovato
   list:
     title: Elenco dei ricordi
     no_results: Nessun ricordo trovato
@@ -1143,8 +1136,6 @@ openwebui:
   memories:
     title: Ricordi dell'Agente
     select_agent: Seleziona Agente
-    list: Lista
-    graph: Grafico
     user_memories: Ricordi dell'Utente
     org_memories: Ricordi dell'Organizzazione
 tenant:

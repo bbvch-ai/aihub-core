@@ -249,6 +249,9 @@ class TestProcessSaveRejectsEmptyNamespaceScope:
         config_auth.validate_for_user_or_raise = AsyncMock()
         config_doc = stack.enter_context(patch(f"{_PROCESS_MODULE}.ProcessConfigEntityDocument"))
         config_doc.find_for_class_and_id.return_value = None
+        stack.enter_context(
+            patch(f"{_PROCESS_MODULE}.PersistedProcessEventEntity.has_events_for_instance", return_value=False)
+        )
         return config_doc, config_auth.validate_for_user_or_raise
 
     @staticmethod

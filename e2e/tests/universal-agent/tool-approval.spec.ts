@@ -39,3 +39,50 @@ test.describe('Approval of every run_command call', () => {
     expect(next.answer.answer).not.toBe('')
   })
 })
+
+test.describe('Approval of typing into a running command', () => {
+  const profile = ThrowawayProfileFixture.register('approval-input', {
+    approvals: [
+      { tool: 'run_command', policy: 'never' },
+      { tool: 'send_process_input', policy: 'every_call' },
+    ],
+  })
+
+  test.beforeEach(async ({ chat }) => {
+    await chat.open(profile().modelId)
+    await chat.setCodeInterpreter(true)
+  })
+
+  test('B3 @llm typing into a command asks every time, and confirming types it', async ({ chat }) => {
+    await chat.send(
+      'Start the interactive interpreter `python3 -u -q -i` with run_command and do not wait for it to finish. ' +
+        'Then type `print(6*7)` followed by a newline into it with send_process_input, read its output with ' +
+        'get_process_status, and tell me the number it printed.',
+    )
+    const { answer, approvals } = await chat.answerApprovals('Confirm')
+
+    const typed = answer.callsOf('send_process_input')
+    expect(typed.length, 'the model typed into the running interpreter').toBeGreaterThanOrEqual(1)
+    expect(approvals, 'the "Agent Question" dialog asked before every input').toBe(typed.length)
+    expect(answer.mentionsNumber(42)).toBe(true)
+  })
+})
+
+test.describe('Sandbox defaults without approval rules', () => {
+  const profile = ThrowawayProfileFixture.register('approval-defaults', { approvals: [] })
+
+  test.beforeEach(async ({ chat }) => {
+    await chat.open(profile().modelId)
+    await chat.setCodeInterpreter(true)
+    await chat.attach([SALES_XLSX])
+  })
+
+  test('B4 @llm run_command asks by default, and cancelling runs nothing', async ({ chat }) => {
+    await chat.send(QUESTION)
+    const { answer, approvals } = await chat.answerApprovals('Cancel')
+
+    expect(approvals, 'a profile without rules still asks before a command').toBeGreaterThan(0)
+    const results = answer.callsOf('run_command').map((call) => call.result)
+    expect(results.every((result) => result === undefined || result.startsWith('Error'))).toBe(true)
+  })
+})

@@ -12,7 +12,7 @@ from swiss_ai_hub.jambo import SchemaConverter
 class ModelCreationService:
     _input_suffix = "Input"
     _output_suffix = "Output"
-    _output_excluded_fields = {"event_id", "created_at", "_event_name", "_parent_event_names"}
+    _output_excluded_fields = {"created_at", "_event_name", "_parent_event_names"}
     _model_config_dict = ConfigDict(
         arbitrary_types_allowed=False,
         populate_by_name=True,

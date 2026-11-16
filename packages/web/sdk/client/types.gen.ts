@@ -7971,6 +7971,12 @@ export type HumanInTheLoopChatResponseEvent = {
    */
   request_event: HumanInTheLoopChatRequestEvent;
   /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8135,6 +8141,12 @@ export type HumanInTheLoopConfirmationResponseEvent = {
    */
   request_event: HumanInTheLoopConfirmationRequestEvent;
   /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8240,6 +8252,12 @@ export type HumanInTheLoopInputResponseEvent = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopInputRequestEvent;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   /**
    * Event Name
    *
@@ -8424,6 +8442,12 @@ export type HumanInTheLoopResponseEvent = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopRequestEvent;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   /**
    * Event Name
    *
@@ -15965,6 +15989,12 @@ export type ReadAttachedFilesEvent = {
    */
   kept_for_code?: Array<UserUploadedFile>;
   /**
+   * Code Sandbox Offered
+   *
+   * Whether the model can run code on the files in the sandbox, so a file cut down to fit is noted with the instruction to compute figures over the whole file there.
+   */
+  code_sandbox_offered?: boolean;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -19991,6 +20021,12 @@ export type ToolApprovalResponseEvent = {
    */
   request_event: ToolApprovalRequestEvent;
   /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -20065,6 +20101,12 @@ export type ToolCallApprovedEvent = {
    * Whether the tool tells the model to cite what it returns.
    */
   cite_sources?: boolean;
+  /**
+   * Approved By
+   *
+   * The id of the user who approved the call, or whose earlier approval carried over to it; none when it needed no approval.
+   */
+  approved_by?: string | null;
   /**
    * Event Name
    *
@@ -26012,6 +26054,12 @@ export type HumanInTheLoopChatResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopChatRequestEventWritable;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -26092,6 +26140,12 @@ export type HumanInTheLoopConfirmationResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopConfirmationRequestEventWritable;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -26172,6 +26226,12 @@ export type HumanInTheLoopInputResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopInputRequestEventWritable;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -26317,6 +26377,12 @@ export type HumanInTheLoopResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: HumanInTheLoopRequestEventWritable;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -30875,6 +30941,12 @@ export type ReadAttachedFilesEventWritable = {
    */
   kept_for_code?: Array<UserUploadedFile>;
   /**
+   * Code Sandbox Offered
+   *
+   * Whether the model can run code on the files in the sandbox, so a file cut down to fit is noted with the instruction to compute figures over the whole file there.
+   */
+  code_sandbox_offered?: boolean;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -33947,6 +34019,12 @@ export type ToolApprovalResponseEventWritable = {
    * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
    */
   request_event: ToolApprovalRequestEventWritable;
+  /**
+   * Responded By
+   *
+   * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
+   */
+  responded_by?: string | null;
   [key: string]: unknown;
 };
 
@@ -34009,6 +34087,12 @@ export type ToolCallApprovedEventWritable = {
    * Whether the tool tells the model to cite what it returns.
    */
   cite_sources?: boolean;
+  /**
+   * Approved By
+   *
+   * The id of the user who approved the call, or whose earlier approval carried over to it; none when it needed no approval.
+   */
+  approved_by?: string | null;
   [key: string]: unknown;
 };
 

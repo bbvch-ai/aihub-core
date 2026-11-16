@@ -9,7 +9,7 @@ title: API
 The OpenAI-Compatible REST API provides a standards-based HTTP interface built on FastAPI that follows the OpenAI API
 specification. Applications built on the OpenAI SDKs call language models on the Swiss AI Hub by changing only the API
 endpoint URL and the authentication token. Agents are called through the same interface; how much of the OpenAI request
-they honour is described in [Calling Agents](#calling-agents).
+they honour is described in [Calling Agents](./1_openai_compatible_api/#calling-agents).
 
 The strategic value of this compatibility layer lies in reducing migration friction and protecting existing technology
 investments. Organizations can adopt Swiss AI Hub infrastructure for data sovereignty, cost control, or compliance

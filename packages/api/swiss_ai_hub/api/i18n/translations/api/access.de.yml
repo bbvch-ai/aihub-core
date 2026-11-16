@@ -17,6 +17,10 @@ presets:
   user_all_processes:
     name: Alle Prozesse nutzen
     description: Jeden Prozess starten und daran teilnehmen.
+  admin_process_create:
+    name: Prozesse erstellen
+    description: Neue Prozessinstanzen erstellen. Jede wird ihrem Ersteller freigegeben;
+      mit „Alle Prozesse verwalten“ kombinieren, um auch die bestehenden zu verwalten.
   admin_all_processes:
     name: Alle Prozesse verwalten
     description: Jeden Prozess erstellen, konfigurieren und löschen.

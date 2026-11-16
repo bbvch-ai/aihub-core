@@ -15,7 +15,7 @@ export interface UseMemorySearchFilterOptions {
 
 /**
  * Shared composable for memory search and filtering logic.
- * Eliminates duplication across user/org list and graph pages.
+ * Eliminates duplication across user/org list pages.
  *
  * Provides:
  * - Search input synced with URL query param

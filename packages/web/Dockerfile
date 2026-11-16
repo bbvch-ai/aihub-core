@@ -1,9 +1,9 @@
 # Stage 1: Build the Nuxt application as part of the pnpm workspace.
 # Build context is the monorepo root (set in docker-compose template and CI),
 # so the workspace lockfile resolves deterministically.
-FROM node:25-alpine AS builder
+FROM node:24.22.1-alpine AS builder
 
-# Install corepack (no longer bundled with Node.js as of v25). Remove the
+# Install a pinned corepack instead of the bundled one. Remove the
 # pre-shipped yarn shim so the corepack install does not collide with it.
 # Pinned + --ignore-scripts to satisfy supply-chain security policy.
 RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg \

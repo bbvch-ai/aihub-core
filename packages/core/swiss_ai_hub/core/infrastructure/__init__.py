@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner import LangfuseProvisioner
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings import LangfuseSettings
     from swiss_ai_hub.core.infrastructure.litellm.hosting_location import HostingLocation
+    from swiss_ai_hub.core.infrastructure.litellm.lite_llm_credentials import LiteLLMCredentials
+    from swiss_ai_hub.core.infrastructure.litellm.lite_llm_customer_service import LiteLLMCustomerService
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
     from swiss_ai_hub.core.infrastructure.litellm.model_capability import ModelCapability
@@ -90,6 +92,8 @@ __all__ = [
     "TenantDefaultAccessSettings",
     "LangfuseProvisioner",
     "LangfuseSettings",
+    "LiteLLMCredentials",
+    "LiteLLMCustomerService",
     "LiteLLMProxySettings",
     "LiteLLMService",
     "HostingLocation",
@@ -155,6 +159,8 @@ _LAZY_IMPORTS = {
     "TenantDefaultAccessSettings": "swiss_ai_hub.core.infrastructure.api.tenant_default_access_settings",
     "LangfuseProvisioner": "swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner",
     "LangfuseSettings": "swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings",
+    "LiteLLMCredentials": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_credentials",
+    "LiteLLMCustomerService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_customer_service",
     "LiteLLMProxySettings": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings",
     "LiteLLMService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service",
     "HostingLocation": "swiss_ai_hub.core.infrastructure.litellm.hosting_location",

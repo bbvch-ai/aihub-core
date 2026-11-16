@@ -55,9 +55,6 @@ class RerankingModelConfig(LiteLLMBase[CohereRerank]):
     def to_llama_index(
         self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
     ) -> tuple[CohereRerank, LLMCostTracker]:
-        # extra_headers accepted for LiteLLMBase signature parity but unused —
-        # llama_index CohereRerank does not expose a header injection point.
-        del extra_headers
         config = LiteLLMProxySettings()
         model_info = self.get_model_info()
 
@@ -79,5 +76,8 @@ class RerankingModelConfig(LiteLLMBase[CohereRerank]):
         reranking_service._client = ClientV2(
             api_key=resolved_api_key, base_url=config.BASE_URL, timeout=RERANK_TIMEOUT_SECONDS
         )
+        # Neither CohereRerank nor cohere's public constructor takes headers, but every request reads them from the
+        # wrapper both API versions share, so this is how a rerank names its customer (LiteLLMCustomerService).
+        reranking_service._client._client_wrapper._headers = extra_headers
 
         return reranking_service, cost_tracker
