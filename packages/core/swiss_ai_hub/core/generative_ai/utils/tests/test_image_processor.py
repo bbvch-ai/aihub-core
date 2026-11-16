@@ -500,11 +500,11 @@ class TestSkippedImages:
             raise Image.DecompressionBombError("too many pixels")
 
         monkeypatch.setattr(IMAGE_HASH, bomb)
+        images = {"a.png": _png_uri(_make_logo())}
+        fs = _FakeFileSystem()
 
         with pytest.raises(Image.DecompressionBombError):
-            await extract_and_upload_images(
-                "![](a.png)", {"a.png": _png_uri(_make_logo())}, _FakeFileSystem(), "bucket/docs/report.pdf"
-            )
+            await extract_and_upload_images("![](a.png)", images, fs, "bucket/docs/report.pdf")
 
 
 class TestEmbedImagesAsBase64:
