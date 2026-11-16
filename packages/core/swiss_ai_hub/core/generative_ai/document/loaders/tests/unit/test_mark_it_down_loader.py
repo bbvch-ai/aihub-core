@@ -98,7 +98,9 @@ def deck(picture: str) -> bytes:
             del blip.attrib[qn("r:embed")]
             extensions = blip.makeelement(qn("a:extLst"), {})
             extension = extensions.makeelement(qn("a:ext"), {"uri": SVG_BLIP_EXTENSION})
-            extension.append(extension.makeelement(SVG_BLIP, {qn("r:embed"): slide.part.relate_to(part, RELATIONSHIP_TYPE.IMAGE)}))
+            extension.append(
+                extension.makeelement(SVG_BLIP, {qn("r:embed"): slide.part.relate_to(part, RELATIONSHIP_TYPE.IMAGE)})
+            )
             extensions.append(extension)
             blip.append(extensions)
         case "emf":
