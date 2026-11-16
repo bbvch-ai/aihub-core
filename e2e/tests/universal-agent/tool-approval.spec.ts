@@ -1,3 +1,4 @@
+import { LLM_TURN_TIMEOUT } from './support/env'
 import { GROUND_TRUTH, SALES_XLSX } from './support/fixture-files'
 import { expect, test } from './support/openwebui-test'
 import { ThrowawayProfileFixture } from './support/throwaway-profile'
@@ -37,6 +38,30 @@ test.describe('Approval of every run_command call', () => {
     await chat.send('Reply with the single word READY and use no tools.')
     const next = await chat.answerApprovals('Cancel')
     expect(next.answer.answer).not.toBe('')
+  })
+
+  // Playwright scrolls a clipped button into view from code, so only the toBeInViewport check before any click
+  // catches a dialog taller than the screen.
+  test('B5 @llm a long command scrolls inside the dialog and its buttons stay on screen', async ({ chat, page }) => {
+    await page.setViewportSize({ width: 1280, height: 600 })
+    await chat.send(
+      'In one single run_command call, run a Python script of at least 60 lines over sales.xlsx: put a comment ' +
+        'line above every statement and print the Q3 revenue of each region on its own line. Do not shorten it.',
+    )
+
+    const dialog = chat.approvalDialog
+    await expect(dialog).toBeVisible({ timeout: LLM_TURN_TIMEOUT })
+    await expect(dialog.getByRole('button', { name: 'Confirm', exact: true })).toBeInViewport({ ratio: 1 })
+    await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeInViewport({ ratio: 1 })
+    const box = dialog.locator('pre')
+    await expect(box).toHaveCount(1)
+    expect(await box.evaluate((pre) => pre.scrollHeight > pre.clientHeight), 'the command scrolls in its box').toBe(
+      true,
+    )
+    await expect(box, 'the command shows as written, not as markdown').toContainText('# ')
+
+    const { approvals } = await chat.answerApprovals('Cancel')
+    expect(approvals).toBeGreaterThan(0)
   })
 })
 
