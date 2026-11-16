@@ -1,4 +1,5 @@
-import { LLM_TURN_TIMEOUT } from './support/env'
+import type { Locator } from '@playwright/test'
+
 import { GROUND_TRUTH, SALES_XLSX } from './support/fixture-files'
 import { expect, test } from './support/openwebui-test'
 import { ThrowawayProfileFixture } from './support/throwaway-profile'
@@ -40,8 +41,8 @@ test.describe('Approval of every run_command call', () => {
     expect(next.answer.answer).not.toBe('')
   })
 
-  // Playwright scrolls a clipped button into view from code, so only the toBeInViewport check before any click
-  // catches a dialog taller than the screen.
+  // Playwright scrolls a clipped button into view when clicking, so B1-B4 pass on a dialog taller than the screen;
+  // each dialog is measured before its click instead. The model often inspects the file with a short command first.
   test('B5 @llm a long command scrolls inside the dialog and its buttons stay on screen', async ({ chat, page }) => {
     await page.setViewportSize({ width: 1280, height: 600 })
     await chat.send(
@@ -49,19 +50,24 @@ test.describe('Approval of every run_command call', () => {
         'line above every statement and print the Q3 revenue of each region on its own line. Do not shorten it.',
     )
 
-    const dialog = chat.approvalDialog
-    await expect(dialog).toBeVisible({ timeout: LLM_TURN_TIMEOUT })
-    await expect(dialog.getByRole('button', { name: 'Confirm', exact: true })).toBeInViewport({ ratio: 1 })
-    await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeInViewport({ ratio: 1 })
-    const box = dialog.locator('pre')
-    await expect(box).toHaveCount(1)
-    expect(await box.evaluate((pre) => pre.scrollHeight > pre.clientHeight), 'the command scrolls in its box').toBe(
-      true,
-    )
-    await expect(box, 'the command shows as written, not as markdown').toContainText('# ')
+    const dialogs: ApprovalDialogLayout[] = []
+    await chat.newAssistantMessage(async (candidate) => {
+      if (await chat.approvalDialog.isVisible()) {
+        dialogs.push(await approvalDialogLayout(chat.approvalDialog))
+        await chat.approvalDialog.getByRole('button', { name: 'Confirm', exact: true }).click()
+        await expect(chat.approvalDialog).toBeHidden()
+      }
+      return candidate.done === true
+    })
 
-    const { approvals } = await chat.answerApprovals('Cancel')
-    expect(approvals).toBeGreaterThan(0)
+    expect(dialogs.length, 'the "Agent Question" dialog asked before each command').toBeGreaterThan(0)
+    expect(dialogs, 'both buttons on screen and the command in one box, as written').toEqual(
+      dialogs.map((layout) => ({ ...layout, buttonsOnScreen: true, boxes: 1, markdownRendered: false })),
+    )
+    expect(
+      dialogs.some((layout) => layout.boxScrolls),
+      'at least one command was long enough to scroll in its box',
+    ).toBe(true)
   })
 })
 
@@ -111,3 +117,30 @@ test.describe('Sandbox defaults without approval rules', () => {
     expect(results.every((result) => result === undefined || result.startsWith('Error'))).toBe(true)
   })
 })
+
+interface ApprovalDialogLayout {
+  buttonsOnScreen: boolean
+  boxes: number
+  boxScrolls: boolean
+  markdownRendered: boolean
+}
+
+async function approvalDialogLayout(dialog: Locator): Promise<ApprovalDialogLayout> {
+  return dialog.evaluate((element) => {
+    const buttons = [...element.querySelectorAll('button')].filter((button) =>
+      ['Confirm', 'Cancel'].includes(button.textContent?.trim() ?? ''),
+    )
+    const onScreen = (button: HTMLButtonElement): boolean => {
+      const rect = button.getBoundingClientRect()
+      return rect.top >= 0 && rect.bottom <= window.innerHeight
+    }
+    const boxes = element.querySelectorAll('pre')
+    const box = boxes[0]
+    return {
+      buttonsOnScreen: buttons.length === 2 && buttons.every(onScreen),
+      boxes: boxes.length,
+      boxScrolls: box !== undefined && box.scrollHeight > box.clientHeight,
+      markdownRendered: element.querySelector('h1, h2, h3, h4, strong, em, code') !== null,
+    }
+  })
+}
