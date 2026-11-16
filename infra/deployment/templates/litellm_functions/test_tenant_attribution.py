@@ -2,7 +2,7 @@
 
 Not part of a CI `make test` scope. Run with the other LiteLLM function tests:
 
-    uv run --with "litellm==1.106.4" pytest infra/deployment/templates/litellm_functions/test_tenant_attribution.py
+    uv run --with "litellm==1.106.9" pytest infra/deployment/templates/litellm_functions/test_tenant_attribution.py
 
 What LiteLLM then writes to its spend tables was checked against a running v1.106.4 proxy (ADR 2026_11_09).
 """
