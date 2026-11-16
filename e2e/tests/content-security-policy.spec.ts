@@ -164,8 +164,10 @@ test.describe('Content-Security-Policy', () => {
     await expect(message).toContainText('Session expired', { timeout: 60_000 })
     const threadUrl = page.url()
 
+    // The allowlist strips the javascript: source; the image must not break the rest of the message.
+    await expect(message).toContainText('An image whose source the allowlist drops')
     for (const selector of ['iframe', 'form', 'style', 'meta', 'embed', 'object', 'svg',
-      'input:not([type="checkbox"])', 'a[href^="javascript:"]', '[onerror]']) {
+      'input:not([type="checkbox"])', 'a[href^="javascript:"]', '[onerror]', 'img:not([src])']) {
       // Counted once, not retried: a retrying assertion would pass once the payload navigated the page away.
       expect.soft(await message.locator(selector).count(), `message renders ${selector}`).toBe(0)
     }
