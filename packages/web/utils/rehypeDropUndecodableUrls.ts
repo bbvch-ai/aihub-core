@@ -25,7 +25,7 @@ export default function rehypeDropUndecodableUrls() {
     for (const element of elementsOf(tree)) {
       for (const property of URL_PROPERTIES) {
         const url = element.properties?.[property]
-        if (typeof url === 'string' && !isDecodable(url)) delete element.properties[property]
+        if (typeof url === 'string' && !isDecodable(url)) Reflect.deleteProperty(element.properties, property)
       }
     }
   }
