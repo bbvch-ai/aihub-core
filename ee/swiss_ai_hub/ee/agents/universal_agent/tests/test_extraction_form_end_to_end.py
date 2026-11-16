@@ -26,6 +26,7 @@ from swiss_ai_hub.agent.capabilities import (
     KnowledgeDocumentScope,
     KnowledgeToolScope,
     ToolLoop,
+    UserMemoryConfig,
 )
 from swiss_ai_hub.agent.capabilities.tests.test_record_extraction_end_to_end import FINANCE, _document, _stub
 from swiss_ai_hub.core.events.agent import (
@@ -65,6 +66,7 @@ def _config() -> UniversalAgentConfig:
         description=LocaleString(en="Universal fixture"),
         llm=LLMConfig(model_name="text-generation/dummy"),
         knowledge_documents=KnowledgeDocumentConfig(enabled=True),
+        user_memory=UserMemoryConfig(enable_user_memory_retrieval=False, enable_user_memory_storage=False),
     )
 
 
