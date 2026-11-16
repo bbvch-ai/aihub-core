@@ -279,6 +279,8 @@ runs:
           != '1' && format(' (shard {0}/{1})', inputs.shard_index, inputs.shard_count)
           || '' }}
         comment_title: Test results for ${{ inputs.check_name || inputs.working_directory }}
+        # Shards share the module's comment, so each would overwrite it with its own part; the merge job posts it.
+        comment_mode: ${{ inputs.shard_count == '1' && 'always' || 'off' }}
     - name: Check if Tests Failed
       if: env.TEST_FAIL == 'true'
       shell: bash

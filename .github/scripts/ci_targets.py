@@ -15,6 +15,7 @@ import yaml
 from pydantic import BaseModel
 
 COMPOSE_CONFIG = Path("infra/deployment/compose-config.yml")
+EXTERNAL_MARKER = "pytest.mark.external"
 
 PYTHON_SHARED_PATHS = ("packages/core/", "uv.lock", "pyproject.toml")
 FRONTEND_SHARED_PATHS = ("package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml")
@@ -99,6 +100,14 @@ class CiTargets:
             module
             for module in TEST_MODULES
             if cls.touches(changed, (*TEST_SHARED_PATHS, f"{module.path}/", *module.triggered_by))
+        ]
+
+    @staticmethod
+    def modules_with_external_tests() -> list[TestModule]:
+        return [
+            module
+            for module in TEST_MODULES
+            if any(EXTERNAL_MARKER in file.read_text(encoding="utf-8") for file in Path(module.path).rglob("test_*.py"))
         ]
 
     @staticmethod
@@ -205,13 +214,15 @@ def main() -> None:
     parser.add_argument("--base", help="Commit to diff against; omit to select everything")
     parser.add_argument("--head", default="HEAD")
     parser.add_argument("--all-tests", action="store_true", help="Test every module regardless of the diff")
-    parser.add_argument("--only", nargs="*", help="Restrict testing to these module paths")
+    parser.add_argument(
+        "--only-external", action="store_true", help="Test only the modules that contain `external` tests, unsharded"
+    )
     args = parser.parse_args()
 
     changed = CiTargets.changed_files(args.base, args.head) if args.base else None
     outputs = CiTargets.outputs(None if args.all_tests else changed, changed)
-    if args.only is not None:
-        selected = [module for module in TEST_MODULES if module.path in args.only]
+    if args.only_external:
+        selected = CiTargets.modules_with_external_tests()
         outputs["test_matrix"] = json.dumps(CiTargets.test_matrix(selected, sharded=False))
         outputs["tested_modules"] = json.dumps([module.path for module in selected])
 
