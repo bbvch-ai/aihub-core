@@ -197,8 +197,40 @@ geschützt, die vor jedem Service liegen. OAuth2 Proxy handhabt den gesamten OID
 authentifizierte Anfragen an den Upstream-Service weitergeleitet werden. Nur Benutzer mit der Rolle `AIHubSysAdmin`
 können auf diese Services zugreifen.
 
+Jeder Pfad auf `litellm.<domain>` läuft über `oauth2proxy-litellm`, auch die OpenAI-kompatiblen Inferenz-Routen, und
+verlangt eine SSO-Sitzung mit `AIHubSysAdmin` vor dem Login von LiteLLM selbst. LiteLLM hat keine eigene öffentliche
+Route: Die Services des Hubs rufen es innerhalb des Docker-Netzwerks auf, und ein LiteLLM-Schlüssel, der von aussen
+verwendet wird, würde die Modell-Zugriffsregeln und Nutzungslimits des Hubs umgehen. Clients ausserhalb des Hubs
+verwenden stattdessen die [OpenAI-kompatible API](../../18_api/1_openai_compatible_api/) des Hubs.
+
 Aufgrund des Split-Horizon-Netzwerks in Docker-Deployments (Container verwenden interne Hostnamen, Browser externe URLs)
 wird die OIDC-Erkennung übersprungen und Endpunkte werden explizit konfiguriert.
+
+## LiteLLM-Schlüssel
+
+Jeder Modellaufruf, den der Hub für einen Benutzer macht, trägt dessen eigenen LiteLLM-Schlüssel. Damit wird der Aufruf
+dem Budget und den Kosten dieses Benutzers zugerechnet (siehe [Kostenkontrolle](../../14_cost_control/)). Der Hub
+erstellt den Schlüssel bei der ersten Anfrage des Benutzers. Er leitet ihn mit HMAC-SHA256 aus dem LiteLLM-Master-Key
+ab, sodass sich der Schlüssel weder aus der Benutzer-ID noch aus anderen Angaben berechnen lässt, die andere Benutzer
+sehen können. Benutzer sehen ihren Schlüssel nie.
+
+Frühere Releases leiteten den Schlüssel allein aus der Benutzer-ID ab. Diese Schlüssel bleiben gültig, damit Agenten,
+die auf einem älteren Release aufbauen, weiter funktionieren. Weil LiteLLM keine öffentliche Route hat, lassen sie sich
+nur innerhalb des Docker-Netzwerks verwenden.
+
+Diese Container eines Docker-Compose-Deployments kennen den Master-Key:
+
+| Container                                                                                                           | Variable                                                                        | Wozu                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `litellm`                                                                                                           | `LITELLM_MASTER_KEY`                                                            | Es ist der Master-Key von LiteLLM selbst                                              |
+| `mineru-api`                                                                                                        | `MINERU_VL_API_KEY`                                                             | Ruft sein Vision-Language-Modell über LiteLLM auf                                     |
+| `api`, jeder Agent-Container und die Code-Server der Pipelines `default_rag`, `shared_rag` und `document_ingestion` | `LITE_LLM_PROXY_API_KEY`, in den meisten zusätzlich `MINERU_VLM_SERVER_API_KEY` | LiteLLM-Benutzer anlegen, ihre Schlüssel ableiten und Aufrufe ohne Benutzer ausführen |
+
+Die [Referenz der Umgebungsvariablen](../../3_deployment_guide/9_environment_variables/) nennt jeden Container. Dass
+diese Container den Schlüssel jedes Benutzers berechnen können, gibt ihnen nichts Neues, denn mit dem Master-Key lässt
+sich ohnehin für jeden Benutzer ein Schlüssel erstellen. Ein neuer Master-Key gibt jedem Benutzer bei seiner nächsten
+Anfrage einen neuen Schlüssel; die aus dem alten abgeleiteten Schlüssel bleiben gültig, bis sie in LiteLLM entfernt
+werden.
 
 ## Langfuse-Zugriff
 
