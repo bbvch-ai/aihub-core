@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: 7c0054c57f3f503f15de0cdb22d1b377769379b6ab36502e1616338c2b231042
+source_sha: 7a3887a542cf99ec89161aefd57a16e20fb6b903a6577d205ef2270a27ff84b2
 ---
 
 # Dokumenttypen und Attribute
@@ -113,8 +113,11 @@ Regeln, die verhindern, dass Werte geraten werden:
 - **Steuer-IDs werden geprüft.** Eine Schweizer UID muss ihre Prüfziffer bestehen. Eine EU-MWST-Nummer muss dem Format
   ihres Landes entsprechen. Eine deutsche Steuernummer hat keine einheitliche Form und wird nur als Text aufbewahrt.
 - **Beträge in jeder Schreibweise.** `12'496.36`, `12.496,36`, `12 496,36` und `12,496.36` sind derselbe Betrag; das
-  Schweizer `1'250.–` ist 1250.00. Ein negativer Endbetrag behält sein Vorzeichen. Ein alleinstehendes `$` wird nicht
-  als Währung gelesen.
+  Schweizer `1'250.–` ist 1250.00. Ein negativer Endbetrag behält sein Vorzeichen, wenn das Minus direkt an der Zahl
+  steht (`-500`, `CHF -500`, `500-`) oder Klammern nur die Zahl umschliessen (`(500.00)`); ein Gedankenstrich mit
+  Leerzeichen (`Betrag - CHF 500`) oder ein eingeklammerter Betrag mit Währung (`Total (CHF 500.00)`) ist kein
+  Vorzeichen. Nennt ein Betrag zwei Währungen, gilt die zuerst geschriebene. Ein alleinstehendes `$` wird nicht als
+  Währung gelesen.
 
 Jedes Dokument hält zudem die Versionen fest, mit denen es klassifiziert wurde, damit eine spätere Änderung nur die
 Dokumente erneut bearbeitet, die sie betreffen kann:

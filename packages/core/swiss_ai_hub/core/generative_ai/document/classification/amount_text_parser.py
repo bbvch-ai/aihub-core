@@ -7,14 +7,16 @@ class AmountTextParser:
     """Reads an amount written with any of the separators used in Switzerland, the EU and English-speaking countries.
 
     `12'496.36`, `12’496.36`, `12.496,36`, `12 496,36` and `12,496.36` are all 12496.36; the Swiss `1'250.–` is
-    1250.00. A minus before or after the number, or brackets around it, make it negative. With one separator, three
+    1250.00. A minus touching the number (`-500`, `CHF -500`, `500-`) or its currency (`-CHF 500`), or brackets around
+    the number alone (`(500.00)`), make it negative. A spaced dash is a separator ("Betrag - CHF 500") and a bracketed
+    total with its currency ("Total (CHF 500.00)") an aside, so neither is read as a sign. With one separator, three
     digits after it mean thousands, as no currency is written with three decimals.
     """
 
     _ZERO_CENTS: ClassVar[re.Pattern[str]] = re.compile(r"([.,])\s?-{1,2}(?!\d)")
     _NUMBER: ClassVar[re.Pattern[str]] = re.compile(r"\d(?:[\d'’  .,]*\d)?")
-    _NEGATIVE_BEFORE: ClassVar[re.Pattern[str]] = re.compile(r"[-(]\s*(?:[a-z.]{1,4}\s*)?$", re.IGNORECASE)
-    _NEGATIVE_AFTER: ClassVar[re.Pattern[str]] = re.compile(r"^\s*[-)]")
+    _MINUS_BEFORE: ClassVar[re.Pattern[str]] = re.compile(r"(?:^|[^\w-])-(?:[a-z$€£.]{1,4}\s?)?$", re.IGNORECASE)
+    _MINUS_AFTER: ClassVar[re.Pattern[str]] = re.compile(r"^-(?!\d)")
 
     @classmethod
     def parse(cls, raw: str | None) -> float | None:
@@ -28,7 +30,9 @@ class AmountTextParser:
         value = cls._value(re.sub(r"['’  ]", "", match[0]))
         if value is None:
             return None
-        negative = cls._NEGATIVE_BEFORE.search(text[: match.start()]) or cls._NEGATIVE_AFTER.search(text[match.end() :])
+        before, after = text[: match.start()], text[match.end() :]
+        bracketed = before.rstrip().endswith("(") and after.lstrip().startswith(")")
+        negative = bracketed or cls._MINUS_BEFORE.search(before) or cls._MINUS_AFTER.search(after)
         return round(-value if negative else value, 2)
 
     @classmethod

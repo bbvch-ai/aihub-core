@@ -26,3 +26,16 @@ def test_codes_symbols_and_swiss_abbreviations_are_read(raw: str, code: str) -> 
 @pytest.mark.parametrize("raw", ["$ 50", "12'496.36", "", None])
 def test_a_bare_dollar_or_no_currency_stays_unread(raw: str | None) -> None:
     assert CurrencyTextParser.parse(raw) is None
+
+
+@pytest.mark.parametrize(
+    ("raw", "code"),
+    [
+        ("CHF 1'250.00 (€ 1'150.00)", "CHF"),
+        ("Total CHF 1'250.00 €", "CHF"),
+        ("€ 1'150 (CHF 1'250)", "EUR"),
+        ("1'250.00 CHF, entspricht EUR 1'150", "CHF"),
+    ],
+)
+def test_the_currency_written_first_wins_over_a_conversion(raw: str, code: str) -> None:
+    assert CurrencyTextParser.parse(raw) == code

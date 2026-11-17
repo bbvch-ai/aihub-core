@@ -27,9 +27,24 @@ def test_every_separator_convention_reads_the_same_amount(raw: str, amount: floa
     assert AmountTextParser.parse(raw) == amount
 
 
-@pytest.mark.parametrize("raw", ["-500.00", "CHF -500.00", "−CHF 500.00", "500.00-", "(CHF 500.00)"])
+@pytest.mark.parametrize("raw", ["-500.00", "CHF -500.00", "−CHF 500.00", "Total: -CHF 500", "500.00-", "(500.00)"])
 def test_a_negative_total_keeps_its_sign(raw: str) -> None:
     assert AmountTextParser.parse(raw) == -500.0
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "Total (CHF 500.00)",
+        "(CHF 500.00)",
+        "Rechnungsbetrag - CHF 500.00",
+        "Total inkl. MWST - CHF 500.00",
+        "CHF 500.00 -",
+        "CHF 500.00 (€ 460.00)",
+    ],
+)
+def test_a_spaced_dash_or_a_bracketed_total_with_its_currency_is_no_sign(raw: str) -> None:
+    assert AmountTextParser.parse(raw) == 500.0
 
 
 @pytest.mark.parametrize("raw", ["", "gratis", None])

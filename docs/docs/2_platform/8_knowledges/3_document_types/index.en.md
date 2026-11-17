@@ -103,7 +103,10 @@ Rules that keep values from being guessed:
 - **Tax IDs are checked.** A Swiss UID must pass its check digit. An EU VAT number must match its country's format. A
   German tax office number (Steuernummer) has no standard form and is kept as text only.
 - **Amounts in every convention.** `12'496.36`, `12.496,36`, `12 496,36` and `12,496.36` are the same amount; the Swiss
-  `1'250.–` is 1250.00. A negative total keeps its sign. A bare `$` is not read as a currency.
+  `1'250.–` is 1250.00. A negative total keeps its sign when the minus touches the number (`-500`, `CHF -500`, `500-`)
+  or brackets enclose the number alone (`(500.00)`); a spaced dash (`Betrag - CHF 500`) or a bracketed total with its
+  currency (`Total (CHF 500.00)`) is not a sign. When a total names two currencies, the one written first is its
+  currency. A bare `$` is not read as a currency.
 
 Each document also records the versions it was classified with, so a later change redoes only the documents it can
 affect:
