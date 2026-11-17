@@ -2,6 +2,10 @@ import re
 import unicodedata
 from typing import ClassVar
 
+_EIGHT_DIGITS = r"\d{8}"
+_NINE_DIGITS = r"\d{9}"
+_ELEVEN_DIGITS = r"\d{11}"
+
 
 class TaxIdTextParser:
     """Reads a Swiss UID or an EU/UK VAT number into one form: country prefix and digits, no separators or suffix.
@@ -19,28 +23,28 @@ class TaxIdTextParser:
         "BG": r"\d{9,10}",
         "CY": r"\d{8}[A-Z]",
         "CZ": r"\d{8,10}",
-        "DE": r"\d{9}",
-        "DK": r"\d{8}",
-        "EE": r"\d{9}",
-        "EL": r"\d{9}",
+        "DE": _NINE_DIGITS,
+        "DK": _EIGHT_DIGITS,
+        "EE": _NINE_DIGITS,
+        "EL": _NINE_DIGITS,
         "ES": r"[A-Z0-9]\d{7}[A-Z0-9]",
-        "FI": r"\d{8}",
+        "FI": _EIGHT_DIGITS,
         "FR": r"[A-HJ-NP-Z0-9]{2}\d{9}",
         "GB": r"\d{12}|\d{9}",
-        "HR": r"\d{11}",
-        "HU": r"\d{8}",
+        "HR": _ELEVEN_DIGITS,
+        "HU": _EIGHT_DIGITS,
         "IE": r"\d{7}[A-W][A-I]?",
-        "IT": r"\d{11}",
+        "IT": _ELEVEN_DIGITS,
         "LT": r"\d{12}|\d{9}",
-        "LU": r"\d{8}",
-        "LV": r"\d{11}",
-        "MT": r"\d{8}",
+        "LU": _EIGHT_DIGITS,
+        "LV": _ELEVEN_DIGITS,
+        "MT": _EIGHT_DIGITS,
         "NL": r"\d{9}B\d{2}",
         "PL": r"\d{10}",
-        "PT": r"\d{9}",
+        "PT": _NINE_DIGITS,
         "RO": r"\d{2,10}",
         "SE": r"\d{12}",
-        "SI": r"\d{8}",
+        "SI": _EIGHT_DIGITS,
         "SK": r"\d{10}",
     }
     # A lookahead, so candidates overlap: "MWST-Nr. CHE-…" must not swallow the UID into a candidate for "MW".
