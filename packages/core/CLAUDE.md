@@ -788,10 +788,11 @@ last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadat
 - **Filterable on every database.** `narrow_retrievers` accepts `DocumentTypeCatalog.filter_keys()` (types and values,
   never the `_raw` copies) without a retriever listing them in `allowed_metadata_filter_fields`.
 - **Backfill primitives** (used by the pipeline's backfill, #2483): `BucketEntity.request_classification` /
-  `get_classification_requested_buckets` / `clear_classification_request` (the request is a naive-UTC millisecond time,
-  so a run clears only the one it served); `RefDoc.list_classification_states` (metadata and exclusions, no text),
-  `RefDoc.text_of(…, content_hash)` and `RefDoc.set_classification` (one atomic `$set` + `$addToSet`, only while the
-  content hash matches); `PartitionAwareMilvusVectorStore.rewrite_document_metadata` (patches dynamic keys and
+  `get_classification_requested_buckets` / `clear_classification_request` / `fail_classification_request` (the request
+  is a naive-UTC millisecond time, so a run clears or gives up only the one it served; a given-up request is kept as
+  `classification_failed_at` until the next request); `RefDoc.list_classification_states` (metadata and exclusions, no
+  text), `RefDoc.text_of(…, content_hash)` and `RefDoc.set_classification` (one atomic `$set` + `$addToSet`, only while
+  the content hash matches); `PartitionAwareMilvusVectorStore.rewrite_document_metadata` (patches dynamic keys and
   `_node_content` of the nodes of one content hash, returns their ids per partition, nothing embedded again);
   `DocumentClassification.renormalized` (kept copies, current parser, no model).
 - **The synthetic evaluation sample is kept from yamlfix** (`tests/evaluation/synthetic/`, excluded in the root

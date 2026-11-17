@@ -193,6 +193,7 @@ class KnowledgeService:
                     ingestor=bucket.ingestor,
                     classification_available=KnowledgeService._is_classification_available(bucket),
                     classification_requested_at=KnowledgeService._as_utc(bucket.classification_requested_at),
+                    classification_failed_at=KnowledgeService._as_utc(bucket.classification_failed_at),
                     namespaces=namespaces,
                 )
             )
@@ -691,6 +692,7 @@ class KnowledgeService:
             description=KnowledgeService._safe_extract_locale_string(bucket.description, t),
             classification_available=KnowledgeService._is_classification_available(bucket),
             classification_requested_at=KnowledgeService._as_utc(bucket.classification_requested_at),
+            classification_failed_at=KnowledgeService._as_utc(bucket.classification_failed_at),
         )
 
     @staticmethod

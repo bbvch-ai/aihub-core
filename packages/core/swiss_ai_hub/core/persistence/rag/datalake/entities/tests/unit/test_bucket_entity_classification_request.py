@@ -68,3 +68,34 @@ def test_a_request_made_while_the_run_ran_survives_it(mongo_connection):
 
     assert cleared is False
     assert BucketEntity.get_bucket_by_bucket_name("invoices").classification_requested_at == newer
+
+
+def test_a_request_given_up_on_leaves_the_queue_and_is_kept_as_failed(mongo_connection):
+    bucket = BucketEntity.create_bucket(bucket_name="invoices")
+    requested_at = BucketEntity.request_classification(str(bucket.id))
+
+    assert BucketEntity.fail_classification_request("invoices", requested_at) is True
+
+    stored = BucketEntity.get_bucket_by_id(str(bucket.id))
+    assert stored.classification_requested_at is None
+    assert stored.classification_failed_at == requested_at
+    assert BucketEntity.get_classification_requested_buckets() == []
+
+
+def test_giving_up_on_an_older_request_leaves_a_newer_one_queued(mongo_connection):
+    bucket = BucketEntity.create_bucket(bucket_name="invoices")
+    older = BucketEntity.request_classification(str(bucket.id))
+    newer = older + timedelta(seconds=5)
+    BucketEntity.objects(id=bucket.id).update_one(set__classification_requested_at=newer)
+
+    assert BucketEntity.fail_classification_request("invoices", older) is False
+    assert BucketEntity.get_bucket_by_id(str(bucket.id)).classification_requested_at == newer
+
+
+def test_a_new_request_clears_the_failed_one(mongo_connection):
+    bucket = BucketEntity.create_bucket(bucket_name="invoices")
+    BucketEntity.fail_classification_request("invoices", BucketEntity.request_classification(str(bucket.id)))
+
+    BucketEntity.request_classification(str(bucket.id))
+
+    assert BucketEntity.get_bucket_by_id(str(bucket.id)).classification_failed_at is None

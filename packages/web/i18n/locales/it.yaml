@@ -633,6 +633,7 @@ knowledge:
         le sue collezioni compaiono qui dopo la prossima sincronizzazione pianificata.
         Se ancora non compaiono, controlla le impostazioni della sorgente.
   classification:
+    failed: 'La classificazione richiesta il {date} non è riuscita più volte ed è stata interrotta. Richiedila di nuovo o chiedi a un amministratore di controllare la pipeline.'
     request: Classifica i documenti esistenti
     pending: 'Classificazione richiesta il {date}; i documenti vengono classificati alla prossima esecuzione della pipeline.'
     confirm:

@@ -110,6 +110,7 @@ class KnowledgeController(TenantScopedController):
                             ingestor=db.ingestor,
                             classification_available=db.classification_available and manages_database,
                             classification_requested_at=db.classification_requested_at,
+                            classification_failed_at=db.classification_failed_at,
                             namespaces=accessible_namespaces,
                         )
                     )

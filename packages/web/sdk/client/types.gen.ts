@@ -5258,6 +5258,12 @@ export type DatabaseDto = {
    */
   classification_requested_at?: Date | null;
   /**
+   * Classification Failed At
+   *
+   * The request (UTC) the pipeline gave up on after its backfill runs kept failing; null when the last request did not fail. Cleared by a new request.
+   */
+  classification_failed_at?: Date | null;
+  /**
    * Namespaces
    *
    * List of namespaces
@@ -5333,6 +5339,12 @@ export type DatabaseResponse = {
    * When classification of the documents already ingested was requested (UTC); null when none is pending. Cleared by the pipeline once its backfill ran.
    */
   classification_requested_at?: Date | null;
+  /**
+   * Classification Failed At
+   *
+   * The request (UTC) the pipeline gave up on after its backfill runs kept failing; null when the last request did not fail. Cleared by a new request.
+   */
+  classification_failed_at?: Date | null;
 };
 
 /**

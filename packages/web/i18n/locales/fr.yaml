@@ -633,6 +633,7 @@ knowledge:
         \ : ses collections apparaissent ici après la prochaine synchronisation planifiée.\
         \ Si elles n'apparaissent toujours pas, vérifiez les paramètres de la source."
   classification:
+    failed: 'Le classement demandé le {date} a échoué plusieurs fois et a été arrêté. Demandez-le à nouveau ou demandez à un administrateur de vérifier le pipeline.'
     request: Classer les documents existants
     pending: 'Classement demandé le {date} ; les documents sont classés lors de la prochaine exécution du pipeline.'
     confirm:

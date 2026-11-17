@@ -626,6 +626,7 @@ knowledge:
         here after the next scheduled sync. If they still do not, check the source
         settings.
   classification:
+    failed: 'The classification requested {date} failed several times and was stopped. Request it again, or ask an administrator to check the pipeline.'
     request: Classify existing documents
     pending: 'Classification requested {date}; the documents are classified on the pipeline''s next run.'
     confirm:

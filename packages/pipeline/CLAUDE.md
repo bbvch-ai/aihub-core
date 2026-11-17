@@ -886,7 +886,11 @@ text in the doc store, without parsing or embedding again.
   the work queue, like `deleting`: `DocumentClassificationBackfillSensorFor_…` starts one run per requested database
   (never two at once, a run key numbered by attempt so a failed run is driven again) with `dry_run: false` and the
   request time, and the run clears exactly that request (`BucketEntity.clear_classification_request`), so one made
-  meanwhile starts the next run. A launch by hand needs the `aihub/bucket` tag and is a dry run unless
+  meanwhile starts the next run. Runs carry their request time (`aihub/classification_requested_at`), so attempts are
+  counted per request: after `MAX_ATTEMPTS_PER_REQUEST` (3) runs of one request failed, the sensor stops and keeps the
+  request as failed (`BucketEntity.fail_classification_request` → `classification_failed_at`, shown as a warning on the
+  Knowledge page), instead of starting a run every tick through an outage. A new request starts over. A launch by hand
+  needs the `aihub/bucket` tag and is a dry run unless
   `ops: {backfill_document_classification_op: {config: {dry_run: false}}}`.
 
 ## Per-Database Configuration

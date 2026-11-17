@@ -9,7 +9,9 @@ from dagster import DagsterInstance, build_sensor_context
 
 from swiss_ai_hub.pipeline.jobs.backfill_document_classification_job import backfill_document_classification_job
 from swiss_ai_hub.pipeline.sensors.document_classification_backfill_sensor import (
+    BACKFILL_REQUEST_TAG,
     BACKFILL_TARGET_TAG,
+    MAX_ATTEMPTS_PER_REQUEST,
     document_classification_backfill_sensor,
 )
 from swiss_ai_hub.pipeline.util.run_routing import BUCKET_RUN_TAG
@@ -44,6 +46,7 @@ def test_a_requested_database_gets_a_real_run_that_knows_which_request_it_serves
     [request] = result.run_requests
     assert request.tags[BUCKET_RUN_TAG] == "invoices"
     assert request.tags[BACKFILL_TARGET_TAG] == "invoices"
+    assert request.tags[BACKFILL_REQUEST_TAG] == _REQUESTED_AT.isoformat()
     op_config = request.run_config["ops"]["backfill_document_classification_op"]["config"]
     assert op_config == {"dry_run": False, "requested_at": _REQUESTED_AT.isoformat()}
     assert request.run_key == f"classification_backfill_invoices_{_REQUESTED_AT.isoformat()}_0"
@@ -70,3 +73,22 @@ def test_a_failed_run_is_driven_again_under_a_new_key(instance) -> None:
 
     [request] = result.run_requests
     assert request.run_key.endswith("_1")
+
+
+def test_a_request_whose_runs_keep_failing_is_given_up_and_kept_as_failed(instance) -> None:
+    with (
+        patch.object(instance, "get_runs_count", return_value=MAX_ATTEMPTS_PER_REQUEST),
+        patch(f"{_MODULE}.BucketEntity.fail_classification_request") as fail,
+    ):
+        result = _tick(instance, _bucket("invoices"))
+
+    assert not result.run_requests
+    fail.assert_called_once_with("invoices", _REQUESTED_AT)
+
+
+def test_attempts_are_counted_per_request_so_a_new_request_starts_over(instance) -> None:
+    with patch.object(instance, "get_runs_count", return_value=0) as count:
+        _tick(instance, _bucket("invoices"))
+
+    counted_tags = count.call_args.args[0].tags
+    assert counted_tags == {BACKFILL_TARGET_TAG: "invoices", BACKFILL_REQUEST_TAG: _REQUESTED_AT.isoformat()}

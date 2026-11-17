@@ -40,8 +40,13 @@
               class="pi pi-clock text-surface-400 dark:text-surface-500"
               :title="t('knowledge.classification.pending', { date: formatRequestedAt(database.classification_requested_at) })"
             />
+            <i
+              v-if="database.deletable && !database.classification_requested_at && database.classification_failed_at"
+              class="pi pi-exclamation-triangle text-orange-500"
+              :title="t('knowledge.classification.failed', { date: formatRequestedAt(database.classification_failed_at) })"
+            />
             <Button
-              v-else-if="database.deletable && database.classification_available"
+              v-if="database.deletable && database.classification_available && !database.classification_requested_at"
               v-tooltip.top="t('knowledge.classification.request')"
               icon="pi pi-tags"
               rounded

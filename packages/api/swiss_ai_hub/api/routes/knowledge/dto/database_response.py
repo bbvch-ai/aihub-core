@@ -38,3 +38,10 @@ class DatabaseResponse(BaseModel):
             "is pending. Cleared by the pipeline once its backfill ran.",
         ),
     ] = None
+    classification_failed_at: Annotated[
+        datetime | None,
+        Field(
+            description="The request (UTC) the pipeline gave up on after its backfill runs kept failing; null when the "
+            "last request did not fail. Cleared by a new request.",
+        ),
+    ] = None

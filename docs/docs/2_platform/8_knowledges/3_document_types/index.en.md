@@ -75,7 +75,8 @@ default.
   database; when only the reading of copied values improved, it reads the stored copies again without asking a model. A
   knowledge administrator requests it with **Classify existing documents** (the tag button next to the database's name
   on the Knowledge page). A clock shows instead while the request waits for the pipeline. Each document that still needs
-  a type costs one model call.
+  a type costs one model call. If the backfill fails three times in a row, for example while a store is unreachable, it
+  stops and a warning sign next to the button says so; requesting again starts over.
 - The type and attributes are filter metadata only. They are not part of the text that is embedded or shown to a model,
   so search results for existing content do not change.
 - Every knowledge database can be filtered by `document_type`, `document_types` and each attribute's value, in vector

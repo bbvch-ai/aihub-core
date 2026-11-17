@@ -7762,6 +7762,20 @@ export const DatabaseDTOSchema = {
       description:
         "When classification of the documents already ingested was requested (UTC); null when none is pending. Cleared by the pipeline once its backfill ran.",
     },
+    classification_failed_at: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Classification Failed At",
+      description:
+        "The request (UTC) the pipeline gave up on after its backfill runs kept failing; null when the last request did not fail. Cleared by a new request.",
+    },
     namespaces: {
       items: {
         $ref: "#/components/schemas/NamespaceDTO",
@@ -7872,6 +7886,20 @@ export const DatabaseResponseSchema = {
       title: "Classification Requested At",
       description:
         "When classification of the documents already ingested was requested (UTC); null when none is pending. Cleared by the pipeline once its backfill ran.",
+    },
+    classification_failed_at: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Classification Failed At",
+      description:
+        "The request (UTC) the pipeline gave up on after its backfill runs kept failing; null when the last request did not fail. Cleared by a new request.",
     },
   },
   type: "object",

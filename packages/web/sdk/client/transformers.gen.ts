@@ -141,6 +141,9 @@ const databaseResponseSchemaResponseTransformer = (data: any) => {
       data.classification_requested_at,
     );
   }
+  if (data.classification_failed_at) {
+    data.classification_failed_at = new Date(data.classification_failed_at);
+  }
   return data;
 };
 
@@ -170,6 +173,9 @@ const databaseDtoSchemaResponseTransformer = (data: any) => {
     data.classification_requested_at = new Date(
       data.classification_requested_at,
     );
+  }
+  if (data.classification_failed_at) {
+    data.classification_failed_at = new Date(data.classification_failed_at);
   }
   return data;
 };

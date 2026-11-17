@@ -21,6 +21,7 @@ from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 DATABASE = "invoices"
 REQUESTED_AT = datetime(2026, 11, 17, 9, 30, tzinfo=UTC)
+FAILED_AT = datetime(2026, 11, 16, 8, 0, tzinfo=UTC)
 _READER_RULES = {"aihub.user.service.knowledge", f"aihub.user.knowledge.{DATABASE}.>"}
 _ADMIN_RULES = _READER_RULES | {f"aihub.admin.knowledge.{DATABASE}"}
 
@@ -55,6 +56,7 @@ def _listed_database(monkeypatch: pytest.MonkeyPatch, rules: set[str]) -> dict:
                 ingestor="document_ingestion",
                 classification_available=True,
                 classification_requested_at=REQUESTED_AT,
+                classification_failed_at=FAILED_AT,
                 namespaces=[],
             )
         ],
@@ -72,6 +74,7 @@ def test_a_database_admin_is_offered_classification_and_sees_a_pending_request(m
 
     assert database["classification_available"] is True
     assert datetime.fromisoformat(database["classification_requested_at"]) == REQUESTED_AT
+    assert datetime.fromisoformat(database["classification_failed_at"]) == FAILED_AT
 
 
 def test_a_reader_is_not_offered_classification(monkeypatch: pytest.MonkeyPatch):

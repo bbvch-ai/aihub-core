@@ -24,6 +24,7 @@ def _bucket(**overrides) -> MagicMock:
         ingestor=IngestorType.DOCUMENT_INGESTION.value,
         configuration={},
         classification_requested_at=None,
+        classification_failed_at=None,
     )
     defaults.update(overrides)
     return MagicMock(**defaults)
@@ -101,3 +102,18 @@ def test_the_listing_shows_whether_a_request_is_pending():
 
     assert response.classification_available is True
     assert response.classification_requested_at == requested_at.replace(tzinfo=UTC)
+    assert response.classification_failed_at is None
+
+
+def test_the_listing_shows_a_request_the_pipeline_gave_up_on():
+    failed_at = datetime(2026, 11, 16, 8, 0)
+    bucket = _bucket(classification_failed_at=failed_at, source=None)
+
+    with (
+        patch.object(KnowledgeService, "_masked_source_configuration", return_value={}),
+        patch.object(KnowledgeService, "_safe_extract_locale_string", return_value="Invoices"),
+    ):
+        response = KnowledgeService._database_response(bucket, LocaleHandler("en"))
+
+    assert response.classification_requested_at is None
+    assert response.classification_failed_at == failed_at.replace(tzinfo=UTC)

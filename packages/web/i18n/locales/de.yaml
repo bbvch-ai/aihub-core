@@ -632,6 +632,7 @@ knowledge:
         Sammlungen erscheinen hier also nach der nächsten geplanten Synchronisierung.
         Fehlen sie danach noch, prüfen Sie die Einstellungen der Quelle.
   classification:
+    failed: 'Die am {date} angeforderte Klassifizierung ist mehrmals fehlgeschlagen und wurde abgebrochen. Fordern Sie sie erneut an oder bitten Sie eine Administratorin oder einen Administrator, die Pipeline zu prüfen.'
     request: Bestehende Dokumente klassifizieren
     pending: 'Klassifizierung angefordert am {date}; die Dokumente werden beim nächsten Lauf der Pipeline klassifiziert.'
     confirm:

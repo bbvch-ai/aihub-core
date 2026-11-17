@@ -59,6 +59,8 @@ class BucketEntity(Document):
     # `deleting`, the flag is the work queue: the pipeline's backfill sensor runs a backfill while it is set, and the
     # run clears only the request it started from, so one made during the run is served by the next.
     classification_requested_at = DateTimeField(required=False, default=None)
+    # The request the backfill gave up on after its attempts failed, so the page can say so; cleared by a new request.
+    classification_failed_at = DateTimeField(required=False, default=None)
 
     @staticmethod
     def _validate_name(name: str, field_name: str) -> None:
@@ -257,7 +259,9 @@ class BucketEntity(Document):
         now = datetime.now(UTC).replace(tzinfo=None)
         requested_at = now.replace(microsecond=now.microsecond // 1000 * 1000)
         with switch_db(cls, db_alias) as SwitchedBucket:
-            SwitchedBucket.objects(id=bucket_id).update_one(set__classification_requested_at=requested_at)
+            SwitchedBucket.objects(id=bucket_id).update_one(
+                set__classification_requested_at=requested_at, unset__classification_failed_at=True
+            )
         return requested_at
 
     @classmethod
@@ -275,6 +279,19 @@ class BucketEntity(Document):
             return bool(
                 SwitchedBucket.objects(bucket_name=bucket_name, classification_requested_at=requested_at).update_one(
                     unset__classification_requested_at=True
+                )
+            )
+
+    @classmethod
+    def fail_classification_request(cls, bucket_name: str, requested_at: datetime, db_alias: str = "default") -> bool:
+        """Give up on a request whose backfill kept failing: it leaves the queue and is kept as the failed one.
+
+        Only that request, as `clear_classification_request` does, so a newer one made meanwhile is still served.
+        """
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return bool(
+                SwitchedBucket.objects(bucket_name=bucket_name, classification_requested_at=requested_at).update_one(
+                    unset__classification_requested_at=True, set__classification_failed_at=requested_at
                 )
             )
 
