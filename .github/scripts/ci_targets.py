@@ -59,6 +59,7 @@ TEST_MODULES = (
         path="packages/api",
         services=f"{STACK_DATA} {STACK_STORAGE} neo4j",
         install_ffmpeg=True,
+        triggered_by=("docs/docs/2_platform/11_access_management/3_default_roles/",),
     ),
     TestModule(path="packages/pipeline"),
     TestModule(

@@ -68,8 +68,8 @@ test or image build keeps the PR blocked.
 **PR target selection**: `.github/scripts/ci_targets.py` decides which modules `analyze-test-pr.yml` tests (and how many
 shards each gets) and which images it builds without pushing. A module runs when its folder, a module it depends on, or
 a shared input (core, `uv.lock`, root `pyproject.toml`, `infra/`, `Makefile`, `.env.dev`, the test action, the workflow,
-the script) changed; pushes to `main` test every module. Every required SonarCloud check still reports, with coverage
-only for the modules that were tested.
+the script) changed, and api also runs for the default-roles docs page its drift test reads; pushes to `main` test every
+module. Every required SonarCloud check still reports, with coverage only for the modules that were tested.
 
 **lint_backend**: Uses `ruff format` via reviewdog. Aligned with local development (`make pr-ready` also uses
 `ruff format`).

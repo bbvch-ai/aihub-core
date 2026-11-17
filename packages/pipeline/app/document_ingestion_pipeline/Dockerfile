@@ -1,8 +1,6 @@
 # Build stage
 FROM python:3.13-slim AS builder
 
-ARG VERSION
-
 COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /uvx /bin/
 
 ENV PYTHONUNBUFFERED=1 \
