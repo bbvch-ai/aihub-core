@@ -75,12 +75,17 @@ def _run_request_for(
     Keyed by the request time and the number of runs that request has had, as the teardown sensor keys its runs: the
     key stays the same while an attempt is pending, and moves on once it finished, so a failed run is driven again.
     A run that succeeds clears its request, so every earlier run of a request still owed is one that failed.
+
+    "Running" looks at every run of the job for this database by the `aihub/bucket` tag, which a run launched by hand
+    must carry too, not at the sensor's own tag: a manual run that writes would otherwise run beside the sensor's.
     """
-    target_tag = {BACKFILL_TARGET_TAG: bucket_name}
     if instance.get_run_records(
-        RunsFilter(job_name=job_name, tags=target_tag, statuses=list(NOT_FINISHED_STATUSES)), limit=1
+        RunsFilter(job_name=job_name, tags={BUCKET_RUN_TAG: bucket_name}, statuses=list(NOT_FINISHED_STATUSES)),
+        limit=1,
     ):
         return None
+
+    target_tag = {BACKFILL_TARGET_TAG: bucket_name}
 
     requested_at = bucket.classification_requested_at.isoformat()
     request_tags = target_tag | {BACKFILL_REQUEST_TAG: requested_at}

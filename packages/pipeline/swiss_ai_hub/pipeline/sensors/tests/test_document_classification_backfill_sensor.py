@@ -5,7 +5,7 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
-from dagster import DagsterInstance, build_sensor_context
+from dagster import DagsterInstance, DagsterRun, DagsterRunStatus, build_sensor_context
 
 from swiss_ai_hub.pipeline.jobs.backfill_document_classification_job import backfill_document_classification_job
 from swiss_ai_hub.pipeline.sensors.document_classification_backfill_sensor import (
@@ -92,3 +92,28 @@ def test_attempts_are_counted_per_request_so_a_new_request_starts_over(instance)
 
     counted_tags = count.call_args.args[0].tags
     assert counted_tags == {BACKFILL_TARGET_TAG: "invoices", BACKFILL_REQUEST_TAG: _REQUESTED_AT.isoformat()}
+
+
+def test_a_run_launched_by_hand_counts_as_running_too(instance) -> None:
+    """A manual run carries only `aihub/bucket`, not the sensor's own tags, and must still keep a second run out."""
+    instance.add_run(
+        DagsterRun(
+            job_name=_JOB.name, run_id="manual-run", tags={BUCKET_RUN_TAG: "invoices"}, status=DagsterRunStatus.STARTED
+        )
+    )
+
+    result = _tick(instance, _bucket("invoices"))
+
+    assert not result.run_requests
+
+
+def test_a_manual_run_of_another_database_does_not_hold_this_one_back(instance) -> None:
+    instance.add_run(
+        DagsterRun(
+            job_name=_JOB.name, run_id="manual-run", tags={BUCKET_RUN_TAG: "contracts"}, status=DagsterRunStatus.STARTED
+        )
+    )
+
+    [request] = _tick(instance, _bucket("invoices")).run_requests
+
+    assert request.tags[BUCKET_RUN_TAG] == "invoices"
