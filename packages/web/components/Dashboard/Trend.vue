@@ -2,18 +2,28 @@
   <Tag
     v-if="isTrendingUp"
     :severity="reverseLogic ? 'danger' : 'success'"
-    :value="t('chart.trending_up')"
     size="small"
     icon="pi pi-arrow-up-right"
     rounded
-  />
+    class="max-w-full"
+  >
+    <DashboardTruncatedText
+      :text="t('chart.trending_up')"
+      class="min-w-0"
+    />
+  </Tag>
   <Tag
     v-else
     :severity="reverseLogic ? 'success' : 'danger'"
-    :value="t('chart.trending_down')"
     icon="pi pi-arrow-down-right"
     rounded
-  />
+    class="max-w-full"
+  >
+    <DashboardTruncatedText
+      :text="t('chart.trending_down')"
+      class="min-w-0"
+    />
+  </Tag>
 </template>
 
 <script setup lang="ts">

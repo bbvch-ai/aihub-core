@@ -1,16 +1,21 @@
 <template>
   <div class="relative">
-    <div class="flex flex-col gap-1">
-      <div class="flex items-baseline gap-4">
-        <p class="text-lg font-medium">
-          {{ title }}
-        </p>
-        <p
-          class="text-surface-500"
-        >
-          {{ agentName }}
-        </p>
-        <DashboardTrend :timeseries="timeseries" />
+    <div class="relative z-10 flex w-fit max-w-full flex-col gap-1">
+      <div class="flex min-w-0 items-baseline gap-4">
+        <DashboardTruncatedText
+          tag="p"
+          :text="title"
+          class="min-w-0 text-lg font-medium"
+        />
+        <DashboardTruncatedText
+          tag="p"
+          :text="agentName"
+          class="min-w-0 text-surface-500"
+        />
+        <DashboardTrend
+          class="shrink-0"
+          :timeseries="timeseries"
+        />
       </div>
     </div>
     <div class="absolute inset-x-0 top-0">
