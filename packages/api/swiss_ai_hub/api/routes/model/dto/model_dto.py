@@ -48,8 +48,8 @@ class ModelInfoDTO(BaseModel):
     max_output_tokens: Annotated[
         int | None, Field(None, description="Maximum number of output tokens the model can generate")
     ]
-    input_cost_per_token: Annotated[float | None, Field(None, description="Cost per input token in USD")]
-    output_cost_per_token: Annotated[float | None, Field(None, description="Cost per output token in USD")]
+    input_cost_per_token: Annotated[float | None, Field(None, description="Cost per input token in CHF")]
+    output_cost_per_token: Annotated[float | None, Field(None, description="Cost per output token in CHF")]
     cache_creation_input_token_cost: Annotated[
         float | None, Field(None, description="Cost for creating cache from input tokens")
     ]

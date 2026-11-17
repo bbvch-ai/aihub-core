@@ -13358,13 +13358,13 @@ export type ModelInfoDto = {
   /**
    * Input Cost Per Token
    *
-   * Cost per input token in USD
+   * Cost per input token in CHF
    */
   input_cost_per_token?: number | null;
   /**
    * Output Cost Per Token
    *
-   * Cost per output token in USD
+   * Cost per output token in CHF
    */
   output_cost_per_token?: number | null;
   /**
