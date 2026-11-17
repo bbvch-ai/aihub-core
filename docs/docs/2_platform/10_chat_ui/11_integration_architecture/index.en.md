@@ -182,7 +182,7 @@ Open WebUI's own marker is a thin pulsing bar that would sit under the "Thinking
 a stray `|`. The bundled `aihub-streaming-indicator` mod supplies the stylesheet and removes it on disposal.
 
 Edit Core's `infrastructure/openwebui/mods/bundled/streaming-indicator/style.css`; initialization installs changed
-bundled sources. An administrator can enable or disable the mod per tenant. The rules target Open WebUI v0.11.4 markup;
+bundled sources. An administrator can enable or disable the mod per tenant. The rules target Open WebUI v0.12.5 markup;
 if an upgrade changes that markup, the native bar returns. Check the indicator and reduced-motion behavior after each
 Open WebUI upgrade.
 

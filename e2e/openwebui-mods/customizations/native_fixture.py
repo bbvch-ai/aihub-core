@@ -14,6 +14,7 @@ from starlette.routing import Route
 Path(os.environ['DATA_DIR']).mkdir(parents=True, exist_ok=True)
 from aihub_mods.main import app, host
 from aihub_mods.mod_compiler import ModCompiler
+from open_webui.models.auths import Auths
 from open_webui.models.users import Users
 from open_webui.utils.auth import create_token
 
@@ -44,7 +45,7 @@ async def respond(request):
         return httpx.Response(403)
     if request.url.path.endswith('/configuration'):
         snapshot = {'tenant_id': 'one', 'compatibility': compatibility,
-                    'configuration': {'mods': [{'mod_id': name, 'publication': revision, 'enabled': True,
+                    'configuration': {'mods': [{'mod_id': name, 'publication': revision, 'has_backend': False, 'enabled': True,
                                                'settings': {'text': {'en': 'AI can make mistakes. Please verify answers.', 'de': 'KI kann Fehler machen. Bitte überprüfen Sie die Antworten.'}}}
                                               for name, (revision, _) in publications.items()]}}
         snapshot['revision'] = hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
@@ -74,12 +75,10 @@ async def lifespan(application):
         revision = hashlib.sha256(publication).hexdigest()
         publications[mod_id] = (revision, publication)
         sources[revision] = source
-    if not await Users.get_user_by_id('mods-user'):
-        await Users.insert_new_user(id='mods-user', name='Mods test', email='mods@example.test', role='admin')
-    if not await Users.get_user_by_id('mods-regular-user'):
-        await Users.insert_new_user(id='mods-regular-user', name='Regular user', email='mods-user@example.test', role='user')
-    tokens['admin'] = create_token({'id': 'mods-user'})
-    tokens['user'] = create_token({'id': 'mods-regular-user'})
+    for role, name, email in [('admin', 'Mods test', 'mods@example.test'), ('user', 'Regular user', 'mods-user@example.test')]:
+        user = await Users.get_user_by_email(email) or await Auths.insert_new_auth(email=email, password='!', name=name, role=role)
+        auth = await Auths.get_auth_by_id(user.id)
+        tokens[role] = create_token({'id': user.id, 'session_stamp': auth.session_stamp})
     async with previous(application) as state:
         yield state
 

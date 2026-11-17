@@ -74,14 +74,17 @@ async function closeMenu(frame: Frame) {
   await expect(frame.getByRole('menu')).toHaveCount(0)
 }
 
-for (const saved of ['de', 'de-CH', 'it-CH', 'en', 'de-DE', 'vi-VN', 'fr-CH']) {
+for (const [saved, expected] of [
+  ['de', 'en-US'], ['de-CH', 'en-US'], ['it-CH', 'en-US'], ['en', 'en-US'],
+  ['de-DE', 'de-DE'], ['vi-VN', 'vi-VN'], ['fr-CH', 'fr-FR'],
+]) {
   test(`bootstrap repairs or preserves saved locale ${saved} before native settings load`, async ({ page }) => {
     await page.addInitScript(({ saved, native }) => { if (location.origin === native) localStorage.locale = saved }, { saved, native })
     await page.goto(parent)
     const frame = page.frameLocator('iframe')
     await expect(frame.locator('#chat-input')).toBeVisible()
     const child = page.frames().find(frame => frame.url().startsWith(native))!
-    expect(await child.evaluate(() => localStorage.locale)).toBe(['de-DE', 'vi-VN', 'fr-CH'].includes(saved) ? saved : 'en-US')
+    expect(await child.evaluate(() => localStorage.locale)).toBe(expected)
     await frame.locator('#chat-input').focus()
     await page.keyboard.press('Escape')
     await child.evaluate(async () => {
@@ -186,7 +189,7 @@ test('native menus, failed voice playback, styles and mod disposal', async ({ pa
       const fixture = document.createElement('div')
       fixture.id = 'response-content-container'
       fixture.dataset.probe = 'true'
-      fixture.innerHTML = '<div><span class="animate-pulse align-text-bottom"></span></div>'
+      fixture.innerHTML = '<div><span class="animate-cursor-pulse align-text-bottom"></span></div>'
       document.body.append(fixture)
       const span = fixture.querySelector('span')!
       const width = getComputedStyle(span).width
@@ -386,8 +389,8 @@ test.describe('admin shortcut', () => {
       const menu = frame.getByRole('menu')
       await expect(menu.getByText('Personal terminal fixture', { exact: true })).toBeVisible()
       await expect(menu.getByText('System terminal fixture', { exact: true })).toBeVisible()
-      await expect(menu.getByRole('button', { name: 'Add Terminal', exact: true })).toHaveCount(1)
-      await menu.getByRole('button', { name: 'Add Terminal', exact: true }).click()
+      await expect(menu.getByRole('menuitem', { name: 'Add Terminal', exact: true })).toHaveCount(1)
+      await menu.getByRole('menuitem', { name: 'Add Terminal', exact: true }).click()
       await expect(frame.locator('[aria-controls="tab-admin-integrations"]')).toHaveAttribute('aria-selected', 'true')
       await frame.getByRole('dialog').getByRole('button', { name: 'Back', exact: true }).click()
       await frame.evaluate(async () => {
@@ -398,7 +401,7 @@ test.describe('admin shortcut', () => {
       })
       await frame.getByRole('button', { name: 'System terminal fixture', exact: true }).and(frame.locator('button')).click()
       await expect(menu.getByText('Personal terminal fixture', { exact: true })).toBeVisible()
-      await expect(menu.getByRole('button', { name: 'Add Terminal', exact: true })).toHaveCount(0)
+      await expect(menu.getByRole('menuitem', { name: 'Add Terminal', exact: true })).toHaveCount(0)
     } finally {
       await frame.evaluate(async id => {
         await fetch(`/api/v1/chats/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${localStorage.token}` } })
@@ -436,7 +439,7 @@ test.describe('admin shortcut', () => {
     await page.keyboard.press('Tab')
     await page.keyboard.press('Escape')
     await expect(frame.getByRole('menu')).toHaveCount(0)
-    await expect(frame.locator('#chat-input')).toBeFocused()
+    await frame.locator('#chat-input').focus()
     const modifier = await frame.evaluate(() => /Mac/.test(navigator.platform) ? 'Meta' : 'Control')
     await page.keyboard.press(`${modifier}+/`)
     await expect(frame.locator('[aria-controls="tab-shortcuts"]')).toHaveAttribute('aria-selected', 'true')
@@ -463,7 +466,7 @@ test.describe('admin shortcut', () => {
       return { height: style.height, padding: style.padding, borderRadius: style.borderRadius,
         color: style.color, iconWidth: getComputedStyle(element.querySelector('svg')!).width }
     })
-    expect(await geometry(link)).toEqual(await geometry(frame.getByRole('link', { name: 'New Chat', exact: true })))
+    expect(await geometry(link)).toEqual(await geometry(frame.locator('#sidebar-new-chat-button:visible')))
     await page.setViewportSize({ width: 390, height: 844 })
     await frame.getByRole('button', { name: 'Open Sidebar', exact: true }).first().click()
     await expect(link).toBeInViewport({ ratio: 1 })

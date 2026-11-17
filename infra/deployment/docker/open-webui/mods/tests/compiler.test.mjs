@@ -227,6 +227,6 @@ test('publication ZIPs bind source and host and separate metadata from frontend 
   assert.deepEqual(Object.keys(publication.files).sort(), ['files/frontend/frontend/Menu.svelte.mjs', 'publication.json']);
   const metadata = JSON.parse(await publication.file('publication.json').async('string'));
   assert.equal(metadata.source_revision, first.source_revision);
-  assert.equal(metadata.compatibility.python, '3.11');
+  assert.equal(metadata.compatibility.python, '3.12');
   assert.equal(metadata.replacements[target], 'frontend/frontend/Menu.svelte.mjs');
 });

@@ -200,7 +200,7 @@ schmaler pulsierender Balken, der unter der Denk-Anzeige wie ein einzelnes `|` w
 
 Bearbeiten Sie `infrastructure/openwebui/mods/bundled/streaming-indicator/style.css` in Core. Die Initialisierung
 installiert geänderte mitgelieferte Quellen. Administratoren können den Mod pro Mandant aktivieren oder deaktivieren.
-Die Regeln beziehen sich auf das Markup von Open WebUI v0.11.4. Ändert ein Upgrade dieses Markup, erscheint wieder der
+Die Regeln beziehen sich auf das Markup von Open WebUI v0.12.5. Ändert ein Upgrade dieses Markup, erscheint wieder der
 native Balken. Prüfen Sie daher nach jedem Open-WebUI-Upgrade die Anzeige und das Verhalten bei reduzierter Bewegung.
 
 ## Konfiguration und Deployment

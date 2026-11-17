@@ -44,31 +44,62 @@ class LiteLLMProxySettings(EnvironmentSettings):
         ),
     ] = 5.0
 
-    USER_MAX_BUDGET: Annotated[float | None, Field(description="Budget available to a user in one period")] = None
+    USER_MAX_BUDGET: Annotated[
+        float | None,
+        Field(description="Budget available to a user in one period. A change reaches existing users too."),
+    ] = None
     USER_SOFT_BUDGET: Annotated[
-        float | None, Field(description="Get alerts when user crosses given budget, doesn't block requests.")
+        float | None,
+        Field(
+            description="Get alerts when user crosses given budget, doesn't block requests. Applies to users created "
+            "after it is set: LiteLLM cannot change it on an existing user."
+        ),
     ] = None
     USER_MAX_PARALLEL_REQUESTS: Annotated[
         int | None,
         Field(
             description="Rate limit a user based on the number of parallel requests. "
-            "Raises 429 error, if user's parallel requests > x."
+            "Raises 429 error, if user's parallel requests > x. Applies to users created after it is set: LiteLLM "
+            "cannot remove it from an existing user."
         ),
     ] = None
     USER_TPM_LIMIT: Annotated[
-        int | None, Field(description="Specify tpm limit for a given user (Tokens per minute)")
+        int | None,
+        Field(
+            description="Specify tpm limit for a given user (Tokens per minute). A change reaches existing users too."
+        ),
     ] = None
     USER_RPM_LIMIT: Annotated[
-        int | None, Field(description="Specify rpm limit for a given user (Requests per minute)")
+        int | None,
+        Field(
+            description="Specify rpm limit for a given user (Requests per minute). A change reaches existing users too."
+        ),
     ] = None
     USER_BUDGET_DURATION: Annotated[
-        int | None,
+        str | None,
         Field(
             description="Budget is reset at the end of specified duration. If not set, budget is never reset. "
             'You can set duration as seconds ("30s"), minutes ("30m"), hours ("30h"), days ("30d"), '
-            'months ("1mo").'
+            'months ("1mo"). A change reaches existing users too, and starts their budget period anew.'
         ),
     ] = None
+
+    USER_RECONCILE_INTERVAL_SECONDS: Annotated[
+        float,
+        Field(
+            gt=0,
+            description="How often the API brings LiteLLM's users in line with Keycloak: it pushes changed limits, "
+            "blocks the keys of disabled users and deletes users removed from Keycloak. Runs once per interval "
+            "across all API replicas.",
+        ),
+    ] = 300.0
+    USER_RECONCILE_EXEMPT_USER_IDS: Annotated[
+        str,
+        Field(
+            description="Comma-separated LiteLLM user ids the reconciliation leaves alone although Keycloak has no "
+            "such user. Development sets the test identity here, whose key test processes cache for hours.",
+        ),
+    ] = ""
 
     def get_internal_base_url(self) -> str:
         """Langfuse dials the registered connection itself, from a container that may not share BASE_URL's vantage."""
@@ -77,6 +108,10 @@ class LiteLLMProxySettings(EnvironmentSettings):
     @property
     def authorization_header(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"}
+
+    @property
+    def user_ids_exempt_from_reconciliation(self) -> set[str]:
+        return {user_id.strip() for user_id in self.USER_RECONCILE_EXEMPT_USER_IDS.split(",") if user_id.strip()}
 
     @staticmethod
     def client_is_closed(client: Any) -> bool:

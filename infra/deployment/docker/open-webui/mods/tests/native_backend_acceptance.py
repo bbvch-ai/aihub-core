@@ -11,7 +11,6 @@ import tempfile
 import unittest
 from io import BytesIO
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
@@ -29,7 +28,8 @@ from aihub_mods.global_mod_runtime import GlobalModRuntime
 from aihub_mods.global_mod_store import GlobalModStore
 from aihub_mods.mod_compiler import ModCompiler
 from aihub_mods.mod_selection import ModSelection
-from open_webui.models.users import Users
+from open_webui.models.auths import Auths
+from open_webui.models.chats import ChatModel
 from open_webui.tasks import item_tasks, tasks
 from open_webui.utils.auth import create_token
 
@@ -42,7 +42,8 @@ class NativeBackendAcceptance(unittest.IsolatedAsyncioTestCase):
         self.compatibility = json.loads(host.compatibility)
         self.requests: list[httpx.Request] = []
         self.hub_available = True
-        self.users = {tenant: f"{tenant}-{uuid4().hex}" for tenant in ("one", "two")}
+        self.emails = {tenant: f"{tenant}-{uuid4().hex}@example.test" for tenant in ("one", "two")}
+        self.users: dict[str, str] = {}
         self.tokens: dict[str, str] = {}
         self.source = self._archive({
             "mod.json": json.dumps({"format": 1, "id": "native-info", "name": "Native information", "version": "1",
@@ -61,9 +62,12 @@ class NativeBackendAcceptance(unittest.IsolatedAsyncioTestCase):
         }
         await host.client.http.aclose()
         host.client.http = httpx.AsyncClient(base_url="http://hub", transport=httpx.MockTransport(self._respond))
-        for tenant, user_id in self.users.items():
-            self.assertIsNotNone(await Users.insert_new_user(id=user_id, name=tenant, email=user_id + "@example.test", role="user"))
-            self.tokens[tenant] = create_token({"id": user_id})
+        for tenant, email in self.emails.items():
+            user = await Auths.insert_new_auth(email=email, password="!", name=tenant, role="user")
+            self.assertIsNotNone(user)
+            self.users[tenant] = user.id
+            auth = await Auths.get_auth_by_id(user.id)
+            self.tokens[tenant] = create_token({"id": user.id, "session_stamp": auth.session_stamp})
         self.client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://native")
 
     async def asyncTearDown(self) -> None:
@@ -97,7 +101,7 @@ class NativeBackendAcceptance(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(request.headers["x-openwebui-signature"], hmac.new(
             host.client.signing_secret, f"name:{name},email:{email}".encode(), hashlib.sha256,
         ).hexdigest())
-        tenant = next((tenant for tenant, user_id in self.users.items() if email == user_id + "@example.test"), None)
+        tenant = next((tenant for tenant, user_email in self.emails.items() if email == user_email), None)
         if tenant is None or request.url.path.split("/")[3] not in {"active", tenant}:
             return httpx.Response(403)
         selected = self.snapshots[tenant]
@@ -171,9 +175,11 @@ class NativeBackendAcceptance(unittest.IsolatedAsyncioTestCase):
         chat_id = "owned-chat"
         url = f"/api/tasks/chat/{chat_id}/stop"
         result = {"status": True, "message": "Stopped tasks."}
-        with patch("open_webui.main.Chats.get_chat_by_id", AsyncMock(return_value=SimpleNamespace(user_id=self.users["one"]))), \
-             patch("open_webui.main.stop_item_tasks", AsyncMock(return_value=result)) as stop_chat, \
-             patch("open_webui.main.stop_task", AsyncMock()) as stop_task, \
+        chat = ChatModel(id=chat_id, user_id=self.users["one"], title="Owned chat", created_at=0, updated_at=0,
+                         chat={"history": {"messages": {"other": {"user_id": self.users["two"], "meta": {"task_id": "other-task"}}}}})
+        with patch("open_webui.main.Chats.get_chat_by_id", AsyncMock(return_value=chat)), \
+             patch("open_webui.main.list_task_ids_by_item_id", AsyncMock(return_value=["owned-task", "other-task"])), \
+             patch("open_webui.main.stop_task", AsyncMock(return_value=result)) as stop_task, \
              patch.object(app.state, "redis", None, create=True):
             unauthenticated = await self.client.post(url, headers={
                 "X-AIHub-Mod-View": "a" * 32, "X-AIHub-Mod-Tenant": "one",
@@ -181,14 +187,14 @@ class NativeBackendAcceptance(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(unauthenticated.status_code, 401)
             other_user = await self.client.post(url, headers=self._headers("two", "b" * 32))
             self.assertEqual(other_user.status_code, 404)
-            stop_chat.assert_not_awaited()
+            stop_task.assert_not_awaited()
             stopped = await self.client.post(url, headers=self._headers("one", "a" * 32))
             self.assertEqual(stopped.status_code, 200, stopped.text)
             self.assertEqual(stopped.json(), result)
-            stop_chat.assert_awaited_once_with(None, chat_id)
+            stop_task.assert_awaited_once_with(None, "owned-task")
             admin_only = await self.client.post("/api/tasks/stop/owned-task", headers=self._headers("one", "a" * 32))
             self.assertEqual(admin_only.status_code, 401, admin_only.text)
-            stop_task.assert_not_awaited()
+            stop_task.assert_awaited_once_with(None, "owned-task")
         self.assertEqual(self.requests, [])
 
     async def test_lazy_native_target_publishes_and_activates_before_import(self) -> None:

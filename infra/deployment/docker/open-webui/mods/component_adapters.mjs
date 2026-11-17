@@ -17,7 +17,8 @@ export function adaptComponentProps(source, id, changes) {
     replace(fallback, fallback.replace("'general'", 'availableSettings[0].id'));
   } else if (id === 'src/lib/components/chat/MessageInput/Commands/SlashCommands.svelte') {
     replace('export let canCompact = false;', 'export let canCompact = false;\n\texport let canSettings = true;');
-    replace("...('settings'.startsWith(query.toLowerCase())", "...(canSettings && 'settings'.startsWith(query.toLowerCase())");
+    replace("...($visibleControls['chat.settings_command'] && 'settings'.startsWith(query.toLowerCase())",
+      "...(canSettings && $visibleControls['chat.settings_command'] && 'settings'.startsWith(query.toLowerCase())");
   } else if (id === 'src/lib/components/chat/MessageInput/TerminalMenu.svelte') {
     replace('export let disabled = false;', 'export let disabled = false;\n\texport let canConfigureDirect = true;');
     const action = "showSettings.set('tools');";

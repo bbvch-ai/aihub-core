@@ -216,7 +216,7 @@ function resolveElementOptions(
     return optionsResolver(element)
   }
   const labelKey = (element.optionLabel as string | undefined) ?? 'label'
-  return (element.options as unknown[] | undefined)?.map(option => {
+  return (element.options as unknown[] | undefined)?.map((option) => {
     if (!option || typeof option !== 'object' || Array.isArray(option)) return option
     const entry = option as Record<string, unknown>
     return entry[labelKey] && typeof entry[labelKey] === 'object'
@@ -287,6 +287,16 @@ const EXCLUDED_FIELDS = new Set([
   'value',
 ])
 
+function localizeInputProperties(element: FormElement, locale: string): Record<string, unknown> {
+  const properties: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(element)) {
+    if (EXCLUDED_FIELDS.has(key)) continue
+    if (value === undefined || value === null) continue
+    properties[key] = isLocaleStringObject(value) ? getLocalizedString(value, locale) : value
+  }
+  return properties
+}
+
 function buildNodeProperties(
   element: FormElement,
   formkitType: unknown,
@@ -310,14 +320,7 @@ function buildNodeProperties(
 
   // `preserve: true` keeps the input's value in the form context when an `if:`
   // condition (nullable toggle or backend-supplied `condition_if`) unmounts it.
-  const cleanNode: Record<string, unknown> = { $formkit: formkitType, preserve: true }
-
-  // Pass through all properties except excluded ones
-  for (const [key, value] of Object.entries(element)) {
-    if (EXCLUDED_FIELDS.has(key)) continue
-    if (value === undefined || value === null) continue
-    cleanNode[key] = isLocaleStringObject(value) ? getLocalizedString(value, locale) : value
-  }
+  const cleanNode: Record<string, unknown> = { $formkit: formkitType, preserve: true, ...localizeInputProperties(element, locale) }
 
   // Apply transformations for localized fields
   if (label) cleanNode.label = label

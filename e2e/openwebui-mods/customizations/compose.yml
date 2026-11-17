@@ -18,6 +18,7 @@ services:
       ENABLE_VERSION_UPDATE_CHECK: 'false'
       ENABLE_OLLAMA_API: 'false'
       ENABLE_OPENAI_API: 'false'
+      ENABLE_DIRECT_INTEGRATIONS: 'true'
     volumes:
       - ./native_fixture.py:/fixtures/native_fixture.py:ro
       - ../../../packages/core/swiss_ai_hub/core/infrastructure/openwebui/mods/bundled:/bundled:ro

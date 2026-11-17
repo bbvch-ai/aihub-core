@@ -348,7 +348,7 @@ def test_unverified_default_adapter_does_not_publish(
     compatibility: dict,
     storage: MagicMock,
 ) -> None:
-    response = client.post(BASE + "/configuration", headers=headers(), json={**compatibility, "openwebui": "0.12.5"})
+    response = client.post(BASE + "/configuration", headers=headers(), json={**compatibility, "openwebui": "0.0.0"})
     assert response.status_code == 409
     assert "installation" in response.json()["detail"]
     storage.put_object.assert_not_called()
