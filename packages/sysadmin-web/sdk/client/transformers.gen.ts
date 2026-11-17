@@ -5,6 +5,7 @@ import type {
   GetAccessCapabilitiesResponse,
   GetTenantResponse,
   ListTenantsResponse,
+  ProvisionTenantResponse,
   UpdateTenantMetadataResponse,
 } from "./types.gen";
 
@@ -38,6 +39,13 @@ export const getTenantResponseTransformer = async (
 export const updateTenantMetadataResponseTransformer = async (
   data: any,
 ): Promise<UpdateTenantMetadataResponse> => {
+  data = tenantResponseSchemaResponseTransformer(data);
+  return data;
+};
+
+export const provisionTenantResponseTransformer = async (
+  data: any,
+): Promise<ProvisionTenantResponse> => {
   data = tenantResponseSchemaResponseTransformer(data);
   return data;
 };

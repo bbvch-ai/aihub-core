@@ -83,6 +83,7 @@ config:
     help: Strumenti che questo agente non offre mai.
   approval_tool:
     label: Strumento
+    with_default: '%{tool} (predefinito: %{policy})'
   approval_policy:
     label: Approvazione
   policies:

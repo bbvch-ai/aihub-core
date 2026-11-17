@@ -140,3 +140,19 @@ direct visits. `DEFAULT_LOCALE` is `en-US` for the same reason.
 
 The locale list in the loader is copied from OpenWebUI's `src/lib/i18n/locales/languages.json`. Recheck it after
 OpenWebUI upgrades. `e2e/disclaimer/locale.spec.ts` covers the repair in the browser suite above.
+
+## PDF export of multi-model chats
+
+The loader also disables OpenWebUI's **Download → PDF document (.pdf)** entry for chats with a turn answered by several
+models side by side. Stock OpenWebUI copies the chat for the PDF before those side-by-side answers have rendered, so the
+file holds the questions but no answers ([open-webui/open-webui#19226](https://github.com/open-webui/open-webui/issues/19226),
+unchanged up to v0.13.3). The JSON and plain text downloads are unaffected and stay available.
+
+When a chat menu opens, the loader reads that chat from `GET /api/v1/chats/{id}` and greys out the PDF entry if any
+message in its history names more than one model; a click on it then starts nothing. The entry is found in both the
+chat's own menu and the sidebar's chat menus by its label, which keeps `.pdf` in every OpenWebUI translation, following
+the `.txt` entry. It runs in the AI Hub frame and on direct visits. Only OpenWebUI admins see the Download menu, because
+`USER_PERMISSIONS_CHAT_EXPORT` is `False`.
+
+`e2e/disclaimer/pdf-export.spec.ts` covers it in the browser suite above. After OpenWebUI upgrades, export a
+side-by-side chat as PDF with this part of the loader removed, and drop it once the answers appear in the file.

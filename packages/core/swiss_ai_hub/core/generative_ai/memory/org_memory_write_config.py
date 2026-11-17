@@ -8,6 +8,7 @@ from swiss_ai_hub.core.form.elements.tenant_select import TenantSelect
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.memory.memory_settings import MemorySettings
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 
 
 class OrgMemoryWriteConfig(Form):
@@ -30,7 +31,7 @@ class OrgMemoryWriteConfig(Form):
     tenant_id: Annotated[
         str | TenantSelect,
         Field(description="Tenant ID for organization-memory scoping."),
-    ] = Field(default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID)
+    ] = Field(default_factory=lambda: StartupTenantSettings().ID)
     default_tenant_namespace: Annotated[
         str | InputText | None,
         Field(

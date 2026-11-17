@@ -6,6 +6,7 @@ and a waiting step never hangs. Images are left out, since they already reach th
 """
 
 import asyncio
+import re
 from unittest.mock import AsyncMock, PropertyMock, patch
 
 import pytest
@@ -86,12 +87,14 @@ async def _read(
     cite_sources: bool = True,
     first_page: int | None = None,
     last_page: int | None = None,
+    code_sandbox_offered: bool = False,
 ) -> list:
     config = _config()
+    request = AttachedFiles.read(files, HISTORY, query, reserve_tokens, cite_sources, first_page, last_page)
     with patch.object(ConversationFields, "input_budget", new_callable=PropertyMock, return_value=budget):
         return await AttachedFiles.read_step(
             LLMWrappingAgent(),
-            request=AttachedFiles.read(files, HISTORY, query, reserve_tokens, cite_sources, first_page, last_page),
+            request=request.model_copy(update={"code_sandbox_offered": code_sandbox_offered}),
             topic=AgentInstanceTopic(
                 agent_class="LLMWrappingAgent",
                 agent_id="files-test",
@@ -243,6 +246,52 @@ async def test_a_file_too_large_keeps_the_sections_relevant_to_the_query():
     assert "Sentence number 3999" in content
     assert "Sentence number 0 " not in content
     assert "excerpts" in (read.block[-1].content or "")
+
+
+def _kept_and_total(note: str) -> tuple[int, int]:
+    kept, total = re.search(r"(\d+) of (?:the )?(\d+) sections", note).groups()
+    return int(kept), int(total)
+
+
+@pytest.mark.asyncio
+async def test_a_cut_file_is_noted_with_how_many_of_its_sections_the_model_got():
+    """Told only that the relevant parts fit, models summed the sections shown and called it the file's total."""
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(LONG_TEXT))):
+        _, read = await _read([_file("handbook.pdf")], budget=2_000, query="What does the last sentence say?")
+
+    note = read.block[-1].content or ""
+    kept, total = _kept_and_total(note)
+    assert 0 < kept < total
+    assert "The file has 3 pages." in note
+    assert "run_command" not in note
+
+
+@pytest.mark.asyncio
+async def test_a_file_cut_to_its_beginning_is_noted_with_its_section_count_too():
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(LONG_TEXT))):
+        _, read = await _read([_file("handbook.pdf")], budget=2_000)
+
+    kept, total = _kept_and_total(read.block[-1].content or "")
+    assert 0 < kept < total
+
+
+@pytest.mark.asyncio
+async def test_with_the_code_sandbox_a_cut_file_points_figures_over_the_whole_file_to_code():
+    """With code on, a model offered to run it instead of running it, and answered from the excerpt meanwhile."""
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(LONG_TEXT))):
+        _, read = await _read([_file("handbook.pdf")], budget=2_000, query="Total?", code_sandbox_offered=True)
+
+    note = read.block[-1].content or ""
+    assert "run_command" in note
+    assert "without asking the user first" in note
+
+
+@pytest.mark.asyncio
+async def test_a_file_that_fits_whole_gets_no_cut_note_even_with_the_code_sandbox():
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document("text"))):
+        _, read = await _read([_file("handbook.pdf")], code_sandbox_offered=True)
+
+    assert all("run_command" not in (message.content or "") for message in read.block)
 
 
 @pytest.mark.asyncio

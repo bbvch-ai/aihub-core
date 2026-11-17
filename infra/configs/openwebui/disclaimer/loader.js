@@ -58,6 +58,87 @@
   };
 })();
 
+// OpenWebUI's PDF export copies the chat before side-by-side answers have rendered, so a chat with a multi-model turn
+// downloads without its answers (open-webui/open-webui#19226, unfixed up to v0.13.3). Its PDF entry is disabled until
+// that is fixed upstream; the JSON and plain text exports still hold every answer.
+(() => {
+  const guard = 'data-aihub-pdf-guard';
+  const blockedHint = 'PDF export is unavailable for chats with several models side by side. Use plain text instead.';
+  let menuChatId = null;
+  let scheduled = false;
+
+  // The sidebar opens one chat's menu while another chat is shown, so remember which chat the menu was opened for.
+  function rememberMenuChat(event) {
+    if (!(event.target instanceof Element) || event.target.closest('[role="menu"]')) return;
+    const sidebarLink = event.target.closest('#sidebar-chat-group')?.querySelector('a[href^="/c/"]');
+    const path = sidebarLink ? new URL(sidebarLink.href).pathname : location.pathname;
+    menuChatId = path.match(/^\/c\/([^/]+)/)?.[1] ?? null;
+  }
+
+  async function hasMultiModelTurn(chatId) {
+    const response = await fetch(`/api/v1/chats/${chatId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    if (!response.ok) throw new Error(`Chat lookup failed: ${response.status}`);
+    const { chat } = await response.json();
+    return Object.values(chat?.history?.messages ?? {}).some(message => message.models?.length > 1);
+  }
+
+  function setState(button, state) {
+    button.setAttribute(guard, state);
+    const blocked = state !== 'allowed';
+    button.setAttribute('aria-disabled', String(blocked));
+    button.style.opacity = blocked ? '0.5' : '';
+    button.style.cursor = blocked ? 'not-allowed' : '';
+    button.title = state === 'blocked' ? blockedHint : '';
+  }
+
+  // Every OpenWebUI translation keeps the file extensions in these export labels.
+  function isPdfEntry(button) {
+    return /\.pdf\b/i.test(button.textContent) && /\.txt\b/i.test(button.previousElementSibling?.textContent ?? '');
+  }
+
+  function guardPdfEntries() {
+    scheduled = false;
+    for (const button of document.querySelectorAll(`[role="menu"] button:not([${guard}])`)) {
+      if (!isPdfEntry(button)) continue;
+      if (!menuChatId) {
+        setState(button, 'allowed');
+        continue;
+      }
+      setState(button, 'checking');
+      hasMultiModelTurn(menuChatId)
+        .then(multiModel => setState(button, multiModel ? 'blocked' : 'allowed'))
+        .catch((error) => {
+          console.warn('[AI Hub PDF export]', error);
+          setState(button, 'allowed');
+        });
+    }
+  }
+
+  function scheduleGuard() {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(guardPdfEntries);
+  }
+
+  // Capture runs before OpenWebUI's own click handler on the entry, so the export never starts.
+  function blockGuardedClick(event) {
+    if (!(event.target instanceof Element)) return;
+    const entry = event.target.closest(`[${guard}="blocked"], [${guard}="checking"]`);
+    if (!entry) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+
+  document.addEventListener('pointerdown', rememberMenuChat, true);
+  document.addEventListener('keydown', rememberMenuChat, true);
+  document.addEventListener('click', blockGuardedClick, true);
+  new MutationObserver(() => {
+    if (document.querySelector('[role="menu"]')) scheduleGuard();
+  }).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
 (() => {
   if (window.parent === window) return;
 

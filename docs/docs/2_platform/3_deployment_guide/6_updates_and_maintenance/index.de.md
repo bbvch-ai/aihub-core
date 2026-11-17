@@ -273,7 +273,7 @@ auf der Festplatte frei. Beide sind gegenseitig exklusiv mit Backups über die T
 Run-Coordinators.
 
 Das sorgt dafür, dass der Postgres-Footprint eines 5 Jahre alten Deployments mit dem eines 3 Monate alten vergleichbar
-bleibt. Siehe [Backup und Wiederherstellung](../4_backup_and_recovery/#continuous-postgres-maintenance) für
+bleibt. Siehe [Backup und Wiederherstellung](../4_backup_and_recovery/#kontinuierliche-postgres-wartung) für
 Aufbewahrungsfristen und den `MAINTENANCE_DISABLED` Kill-Switch.
 
 ______________________________________________________________________

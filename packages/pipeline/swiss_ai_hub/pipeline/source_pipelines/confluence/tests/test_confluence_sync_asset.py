@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from dagster import AssetKey
-from swiss_ai_hub.core.network import SourceHostGuard
+from swiss_ai_hub.core.network import PublicHostGuard
 
 from swiss_ai_hub.pipeline.assets.factories.structured_to_data_lake.structured_sync_factory import (
     structured_sync_factory,
@@ -30,7 +30,7 @@ _ID_LIST = re.compile(r"^id in \((.*)\)$")
 @pytest.fixture(autouse=True)
 def external_site(monkeypatch: pytest.MonkeyPatch) -> None:
     """The fake site's name must never reach a real resolver; the guard has tests of its own."""
-    monkeypatch.setattr(SourceHostGuard, "require_public", lambda url, allowed_hosts, allow_list_variable: None)
+    monkeypatch.setattr(PublicHostGuard, "require_public", lambda url, allowed_hosts, allow_list_variable: None)
 
 
 @pytest.fixture

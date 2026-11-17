@@ -1,6 +1,8 @@
+import asyncio
 from typing import Annotated, Self
 
 from fastapi import Depends, Query, Security
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
@@ -16,10 +18,10 @@ from swiss_ai_hub.api.routes.file.file_service import FileService
 
 class FileController(TenantScopedController):
     """
-    A controller that manages secure access to files stored in Azure Blob Storage.
+    A controller that manages secure access to files stored in S3.
 
-    Instead of proxying files, this controller generates a temporary, secure Azure SAS
-    URL and redirects the client, offloading the bandwidth to Azure.
+    Instead of proxying files, this controller generates a temporary presigned URL and
+    redirects the client, offloading the bandwidth to the storage.
     """
 
     name = ApiLocaleString.from_i18n_path("api.controllers.file.name")
@@ -36,12 +38,18 @@ class FileController(TenantScopedController):
         async def get_file_url(
             container: str,
             file_path: str,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ) -> SignedUrlDto:
-            """Generates a short-lived secure link to the blob resource, and returns the URL."""
-            sas_url = s3_service.generate_sas_url(container, file_path)
-            return SignedUrlDto(url=sas_url)
+            """Generates a short-lived link to a knowledge document or figure, or to a file attached to an agent.
+
+            The caller needs read access to the knowledge namespace or the agent owning the object; objects of any
+            other bucket are never signed.
+            """
+            url = await asyncio.to_thread(
+                lambda: FileService.get_file_url(AccessChecker.from_user(user), container, file_path, s3_service)
+            )
+            return SignedUrlDto(url=url)
 
         return self
 

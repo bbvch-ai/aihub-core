@@ -158,6 +158,15 @@ class ChatService:
         await asyncio.sleep(drain_grace_seconds)
 
     @staticmethod
+    def ensure_answered_by_run_user(external_event: ExternalAgentEvent, user: UserIdentity) -> None:
+        """Refuses another thread member's answer to a run's question with a 403 before any subscriber is started,
+        since the distributor's refusal would surface as a 500 and leave the subscriber running."""
+        try:
+            ExternalAgentEventDistributor.refuse_answer_from_another_user(external_event, user)
+        except PermissionError as refused:
+            raise HTTPException(status_code=403, detail=str(refused)) from refused
+
+    @staticmethod
     async def _initialize_interaction(
         user: UserIdentity,
         agent_class: str,
@@ -278,6 +287,7 @@ class ChatService:
             subscribe_to_thread=True,
             locale=locale,
         )
+        ChatService.ensure_answered_by_run_user(external_event, user)
 
         stop_signal = asyncio.Event()
         chunk_queue = asyncio.Queue()
@@ -393,6 +403,7 @@ class ChatService:
         external_agent_event_distributor: ExternalAgentEventDistributor,
         aihub_headers: dict[str, str] | None = None,
     ):
+        ChatService.ensure_answered_by_run_user(external_event, user)
         stop_signal = asyncio.Event()
         chunk_events: list[ChunkEvent | ThoughtEvent] = []
         costs = LLMCosts.from_zero()

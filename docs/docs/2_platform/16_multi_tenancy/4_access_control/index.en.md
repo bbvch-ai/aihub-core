@@ -161,11 +161,13 @@ AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS="text-generation/Apertus-70B-Instruc
 # tenant until a sysadmin grants it.
 AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES="LLMWrappingAgent,FewShotAgent,RAGAgent"
 
-# Automatic user signup
-AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
-AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
-FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
+# Roles given to a tenant's first member and to every later member
+AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES='AIHubAdmin,AIHubUser'
+AIHUB_USER_SIGNUP_REGULAR_USER_ROLES='AIHubUser'
 ```
+
+The default roles and the signup settings are described in
+[Default Roles and New-User Role Assignment](../../11_access_management/3_default_roles/).
 
 ### What a new tenant starts with
 
@@ -195,6 +197,18 @@ folder in it, including folders a sync or ingestion pipeline creates later — a
 role holding the same two rules to hand on to others. A database created by a sysadmin outside any tenant, and the
 legacy `defaultknowledge` / `sharedknowledge` databases, reach a tenant only once the sysadmin ticks them in its tenant
 editor.
+
+**Processes** follow the same reasoning. The tenant gets `aihub.admin.process`, which is what creating a process
+instance is guarded on, and no existing instance. Instances are stored deployment-wide too, so `aihub.admin.process.>`
+would let the tenant list, start, edit and delete every other tenant's processes. Each instance a tenant creates is
+added to its own ceiling as `aihub.admin.process.<Class>.<id>`, and the creator gets a `ProcessAdmin.<Class>.<id>` role
+holding that rule. Deleting the instance removes both.
+
+Tenants configured before this change still carry `aihub.admin.process.>` and therefore still reach every instance; the
+platform cannot tell which tenant built which, so it does not narrow them on its own. At startup it only adds the bare
+`aihub.admin.process` root next to every `aihub.admin.process.>` it finds, in ceilings and roles alike, so creating an
+instance keeps working. To scope such a tenant, replace its process wildcard in the tenant editor with the instances it
+owns.
 
 Agents use an allow list where models use exclusions because the two rosters differ in kind. Model names vary between
 CPU and GPU deployments, so a fixed list would leave a GPU tenant with no chat model. Agent class names are fixed at
@@ -238,10 +252,11 @@ When creating access rules:
 requires at least one further segment. Some permissions are guarded on a bare root precisely because the resource does
 not exist yet: creating a knowledge database is checked against `aihub.admin.knowledge`, since a database that has not
 been created cannot be named by a rule. A rule set that should cover both has to carry both forms, which is why
-`AIHubKnowledgeAdmin` is seeded with `aihub.admin.knowledge` *and* `aihub.admin.knowledge.>`. This applies to tenant
-ceilings as much as to roles: a ceiling holding only the `.>` form caps the root permission away from every role in the
-tenant. The reverse holds one level down: `aihub.admin.knowledge.hr-docs` alone does not reach the folder
-`aihub.admin.knowledge.hr-docs.policies`, which is why a newly created database is granted with its `.>` form too.
+`AIHubKnowledgeAdmin` is seeded with `aihub.admin.knowledge` *and* `aihub.admin.knowledge.>`, and `AIHubProcessAdmin`
+with `aihub.admin.process` *and* `aihub.admin.process.>`. This applies to tenant ceilings as much as to roles: a ceiling
+holding only the `.>` form caps the root permission away from every role in the tenant. The reverse holds one level
+down: `aihub.admin.knowledge.hr-docs` alone does not reach the folder `aihub.admin.knowledge.hr-docs.policies`, which is
+why a newly created database is granted with its `.>` form too.
 
 **Prohibited**:
 

@@ -38,16 +38,6 @@
             show-clear
             class="w-48"
           />
-          <Select
-            v-model="userSearchId"
-            :options="userOptions"
-            option-label="label"
-            option-value="value"
-            :aria-label="t('thread.list.filter.user_name_placeholder')"
-            :placeholder="t('thread.list.filter.user_name_placeholder')"
-            show-clear
-            class="w-48"
-          />
         </div>
         <InputText
           v-model="searchQuery"
@@ -99,14 +89,11 @@ const {
   setSort,
   searchQuery,
   agentInstanceId,
-  userSearchId,
   status,
   dateRange,
 } = useThreads()
 
 const { agentInstances } = useAgentInstances()
-
-const { users } = useUsers()
 
 const onSort = ({ field, order }: { field: string, order: 1 | -1 }) =>
   setSort(field as ThreadSortField, order)
@@ -130,16 +117,6 @@ const agentInstanceOptions = computed(() => {
   return agentInstances.value.map(agentInstance => ({
     label: agentInstance.agent_config.name,
     value: agentInstance.agent_config.agent_id,
-  }))
-},
-)
-
-const userOptions = computed(() => {
-  if (!users.value) return []
-
-  return users.value.map(user => ({
-    label: user.name,
-    value: user.id,
   }))
 },
 )

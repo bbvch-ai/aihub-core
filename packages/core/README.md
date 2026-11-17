@@ -55,7 +55,7 @@ All distributions share the `swiss_ai_hub.*` [native (PEP 420) namespace](https:
 ## Links
 
 - **Source & issues**: https://github.com/bbvch-ai/aihub-core
-- **Documentation**: https://bbvch-ai.github.io/aihub-core/
+- **Documentation**: https://docs.ai-hub.bbv.ch/
 
 ## License
 

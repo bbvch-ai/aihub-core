@@ -50,8 +50,9 @@ fail.
 
 **build_image**: Two separate `docker/build-push-action@v6` steps controlled by `if: ${{ inputs.ssh_key != '' }}`. When
 `ssh_key` is provided, the build gets SSH access to private repos during Docker build. When empty, a simpler step runs
-with just `VERSION` build-arg. Tags: `ghcr.io/{owner}/{repo}/{image_name}:{version}` with optional `secondary_tag`
-(nightly/latest).
+with the `VERSION` build-arg plus the optional `build_args` input (one `KEY=VALUE` per line; the Presidio analyzer's GPU
+image passes its CUDA torch index this way). Tags: `ghcr.io/{owner}/{repo}/{image_name}:{version}` with optional
+`secondary_tag` (nightly/latest).
 
 **lint_backend**: Uses `ruff format` via reviewdog. Aligned with local development (`make pr-ready` also uses
 `ruff format`).

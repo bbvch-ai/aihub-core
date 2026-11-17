@@ -7,7 +7,7 @@ from dlt.extract import DltResource, DltSource
 from swiss_ai_hub.core.form import Checkbox, ChipsInput, InputNumber, InputText, Password, Select
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import StructuredPipelineSettings
-from swiss_ai_hub.core.network import SourceHostGuard
+from swiss_ai_hub.core.network import PublicHostGuard
 
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_client import MediaWikiClient
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_request_error import MediaWikiRequestError
@@ -176,7 +176,7 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
         """Downloads with the session the sync signed in with. A file stored on another host than the wiki's, as
         Wikimedia's are, is checked against the address guard first."""
         if urlsplit(reference.download_url).netloc != urlsplit(options.site_url()).netloc:
-            SourceHostGuard.require_public(
+            PublicHostGuard.require_public(
                 reference.download_url, StructuredPipelineSettings().private_host_allow_list(), _ALLOW_LIST_VARIABLE
             )
         try:

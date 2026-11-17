@@ -54,27 +54,6 @@
       >
         {{ t('event.retrieveMemory.noMemories') }}
       </div>
-
-      <!-- Knowledge Graph Section -->
-      <div
-        v-if="event.event.relations?.length"
-        class="flex flex-col gap-3"
-      >
-        <div class="flex items-center gap-2 text-sm font-semibold text-surface-700 dark:text-surface-300">
-          <Icon
-            name="lucide:network"
-            class="size-4"
-          />
-          <span>{{ t('event.retrieveMemory.relations') }} ({{ event.event.relations.length }})</span>
-        </div>
-
-        <div class="rounded-lg border border-surface-200 dark:border-surface-700">
-          <MemoryGraph
-            :relations="event.event.relations"
-            height="300px"
-          />
-        </div>
-      </div>
     </div>
   </EventDisplayBase>
 </template>

@@ -310,5 +310,5 @@ class AnalysisCompleteEvent(ControlEvent):
 ::: warning Die Stop-Ereignis-Einschränkung
 Kein Schritt darf von `StopEvent` oder einer seiner Unterklassen als Eingabeparameter abhängen. Wenn ein `StopEvent`
 emittiert wird, wird die Ausführung beendet und nachfolgende Schritte werden nicht geplant. Einzelheiten und das
-korrekte Muster finden Sie im [Ausführungsmodell](../9_execution_model/#the-dangling-stop-violation).
+korrekte Muster finden Sie im [Ausführungsmodell](../9_execution_model/#die-dangling-stop-verletzung).
 :::

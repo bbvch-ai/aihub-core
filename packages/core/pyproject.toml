@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-core"
-version = "0.325.0"
+version = "0.326.0"
 description = "Foundational shared library for the Swiss AI Hub platform: event-driven Swiss AI Agent Protocol, auth, and AI/ML utilities."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -110,7 +110,7 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/bbvch-ai/aihub-core"
 Repository = "https://github.com/bbvch-ai/aihub-core"
-Documentation = "https://bbvch-ai.github.io/aihub-core/"
+Documentation = "https://docs.ai-hub.bbv.ch/"
 Issues = "https://github.com/bbvch-ai/aihub-core/issues"
 
 [build-system]

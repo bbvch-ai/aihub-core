@@ -1,9 +1,10 @@
 """REST API server for analyzer.
 
-Presidio's stock server (presidio-analyzer 2.2.364, presidio_analyzer/app.py, MIT) plus two changes: every route but
+Presidio's stock server (presidio-analyzer 2.2.364, presidio_analyzer/app.py, MIT) plus three changes: every route but
 /health requires `Authorization: Bearer <ANALYZER_API_KEY>`, because the stock server has no authentication and the
-texts it receives are the personal data the platform protects; and the GLiNER recognizer chunks long texts with
-WordAlignedTextChunker, whose chunks never start inside a word.
+texts it receives are the personal data the platform protects; the GLiNER recognizer chunks long texts with
+WordAlignedTextChunker, whose chunks never start inside a word; and BatchedGLiNERRecognizer sends the chunks of one
+text to GLiNER `GLINER_BATCH_SIZE` at a time instead of one call per chunk.
 """
 
 import hmac
@@ -23,6 +24,7 @@ from presidio_analyzer import (
 )
 from presidio_analyzer.predefined_recognizers import GLiNERRecognizer
 from werkzeug.exceptions import HTTPException
+from batched_gliner_recognizer import BatchedGLiNERRecognizer
 from word_aligned_text_chunker import WordAlignedTextChunker
 
 DEFAULT_PORT = "3000"
@@ -78,11 +80,14 @@ class Server:
             nlp_engine_conf_file=nlp_engine_conf_file,
             recognizer_registry_conf_file=recognizer_registry_conf_file,
         ).create_engine()
-        for recognizer in self.engine.registry.recognizers:
+        recognizers = self.engine.registry.recognizers
+        for index, recognizer in enumerate(recognizers):
             if isinstance(recognizer, GLiNERRecognizer):
                 chunker = recognizer.text_chunker
                 recognizer.text_chunker = WordAlignedTextChunker(
                     chunk_size=chunker.chunk_size, chunk_overlap=chunker.chunk_overlap)
+                recognizers[index] = BatchedGLiNERRecognizer.from_recognizer(
+                    recognizer, batch_size=int(os.environ["GLINER_BATCH_SIZE"]))
 
         self.batch_engine = BatchAnalyzerEngine(self.engine)
         self.logger.info(WELCOME_MESSAGE)

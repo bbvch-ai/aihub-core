@@ -155,8 +155,6 @@ class ThreadEntity(Document):
             criteria["name"] = {"$regex": re.escape(filters.search), "$options": "i"}
         if filters.agent_id:
             criteria[_AGENT_ID_PATH] = filters.agent_id
-        if filters.user_search_id:
-            criteria["$and"] = [{_USER_ID_PATH: filters.user_search_id}]
         if filters.status_thread_ids is not None:
             criteria["_id"] = {"$in": [ObjectId(thread_id) for thread_id in filters.status_thread_ids]}
         created_at: dict[str, datetime] = {}

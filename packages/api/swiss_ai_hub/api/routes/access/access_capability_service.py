@@ -59,8 +59,8 @@ class _SubtreePolicy(StrEnum):
 
 # Keyed by service name, exactly like ``_resource_resolvers``, and deliberately a table rather than a branch:
 # a family absent here gets no wildcard companion at all, which is already true of every instance-level,
-# resource-wide and service-gate row. ``process`` is absent because its class guard is an existence query
-# with no grantable rule, so the policy would be inert for it anyway.
+# resource-wide and service-gate row. ``process`` is absent because it has no class-level guard: creating an
+# instance is guarded on the bare process root, so the policy would be inert for it anyway.
 _CLASS_SUBTREE_POLICIES: dict[str, _SubtreePolicy] = {
     "agent": _SubtreePolicy.REVOKED,
     "knowledge": _SubtreePolicy.GRANTED,

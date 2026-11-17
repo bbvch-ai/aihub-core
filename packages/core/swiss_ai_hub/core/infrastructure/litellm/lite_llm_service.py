@@ -6,6 +6,7 @@ import openai
 from cachetools import TTLCache
 
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_customer_service import LiteLLMCustomerService
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 
 
@@ -144,6 +145,10 @@ class LiteLLMService:
         Scoped to the user's key, and callers must not close it — see `LiteLLMProxySettings.httpx_client`.
 
         `with_options` copies the shared client while reusing its underlying httpx client, so per-user
-        authentication costs an object rather than a connection pool.
+        authentication costs an object rather than a connection pool. It also books every call to the user's acting
+        tenant (`LiteLLMCustomerService`).
         """
-        return LiteLLMProxySettings().openai_aclient.with_options(api_key=await LiteLLMService.api_key_for_user(user))
+        return LiteLLMProxySettings().openai_aclient.with_options(
+            api_key=await LiteLLMService.api_key_for_user(user),
+            default_headers=await LiteLLMCustomerService.header_for(user),
+        )

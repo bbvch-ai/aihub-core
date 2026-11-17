@@ -70,12 +70,6 @@ interfaces.
 Users can share conversations with colleagues, enabling collaborative AI interaction. Shared conversations maintain full
 context, allowing recipients to review history and continue conversations.
 
-Users can annotate AI responses with feedback - marking responses as helpful or problematic, providing correction
-guidance, or adding contextual notes.
-
-For deployments enabling community interaction, users can participate in leaderboards recognizing productive usage,
-share effective prompts or interaction patterns, and learn from colleagues' successful applications.
-
 Multiple users can work within shared workspace environments, accessing common conversation histories, shared knowledge
 bases, and collaborative interactions that support team-based work patterns.
 

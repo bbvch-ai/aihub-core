@@ -72,7 +72,6 @@ class ThreadController(TenantScopedController):
             t: Annotated[LocaleHandler, Depends(use_locale)],
             search: Annotated[str | None, Query(description="Search by thread name")] = None,
             agent_id: Annotated[str | None, Query(description="Filter by agent id")] = None,
-            user_id: Annotated[str | None, Query(description="Filter by user id")] = None,
             status: Annotated[
                 str | None,
                 Query(description="Filter by status: active, completed, failed", pattern="^(active|completed|failed)$"),
@@ -108,7 +107,6 @@ class ThreadController(TenantScopedController):
                 sort_order=sort_order,
                 search=search,
                 agent_id=agent_id,
-                user_search_id=user_id,
                 status=status,
                 from_date=from_date,
                 to_date=to_date,

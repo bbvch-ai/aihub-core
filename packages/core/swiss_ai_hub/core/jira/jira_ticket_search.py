@@ -14,7 +14,7 @@ from swiss_ai_hub.core.jira.jira_project_not_found_error import JiraProjectNotFo
 from swiss_ai_hub.core.jira.jira_request_error import JiraRequestError
 from swiss_ai_hub.core.jira.jira_ticket import JiraTicket
 from swiss_ai_hub.core.jira.jira_version import JiraVersion
-from swiss_ai_hub.core.network.source_host_guard import SourceHostGuard
+from swiss_ai_hub.core.network.public_host_guard import PublicHostGuard
 
 _PROJECT_KEY = re.compile(r"^[A-Z][A-Z0-9_]*$")
 _REFUSED_SIGN_IN = (401, 403)
@@ -104,7 +104,7 @@ class JiraTicketSearch:
     async def _require_public_host(base_url: str) -> None:
         """An agent administrator sets the URL, and agents reach the platform's own services."""
         try:
-            await SourceHostGuard.require_public_async(
+            await PublicHostGuard.require_public_async(
                 base_url, JiraSettings().private_host_allow_list(), JiraSettings.ALLOW_LIST_VARIABLE
             )
         except ValueError as refused:

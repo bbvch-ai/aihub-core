@@ -158,7 +158,7 @@ updates:
         patterns: ['*']
 
   # ============================================================================
-  # Docker base images — one entry per Dockerfile
+  # Docker base images — one directory per Dockerfile (globs cover agent/pipeline apps)
   # ============================================================================
   # NOTE: `python` is excluded because Python releases (e.g. 3.13 → 3.14) are
   # classified as semver-minor by Docker tags but really are feature releases.
@@ -168,14 +168,19 @@ updates:
   - package-ecosystem: docker
     directories:
       - /packages/api
+      - /packages/agent/app/*
       - /packages/bot
       - /packages/backup
       - /packages/pipeline
+      - /packages/pipeline/app/*
       - /packages/web
       - /packages/sysadmin-api
       - /packages/sysadmin-web
-      - /infra/deployment/docker/playwright
+      - /infra/deployment/docker/mineru
       - /infra/deployment/docker/open-terminal
+      - /infra/deployment/docker/open-webui
+      - /infra/deployment/docker/playwright
+      - /infra/deployment/docker/postgres
       - /infra/deployment/docker/presidio-analyzer
     schedule:
       interval: monthly

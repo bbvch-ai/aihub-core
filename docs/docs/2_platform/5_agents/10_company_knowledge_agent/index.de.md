@@ -78,7 +78,7 @@ Dieser Agent baut auf zwei anderen auf, daher müssen beide Konfigurationen zuer
 
 1. **Alles, was der Assistent für Dokumentenintelligenz benötigt.** Eine gefüllte Wissensdatenbank, ein passendes
    Embedding-Modell und ein Chat-Modell – siehe die
-   [Voraussetzungen](../5_document_intelligence_assistant/#before-you-start-prerequisites) dieses Agenten. Der Agent für
+   [Voraussetzungen](../5_document_intelligence_assistant/#bevor-sie-beginnen-voraussetzungen) dieses Agenten. Der Agent für
    Unternehmenswissen teilt sich dieselbe Retrieval-Konfiguration.
 2. **Ein konfiguriertes Expertenkoordinator-Agentenprofil.** Das Eskalationsziel muss bereits existieren und
    funktionieren, einschliesslich des verbundenen Teams-/Slack-Bots. Richten Sie zuerst den
@@ -107,7 +107,7 @@ Der Agent wird als **Blueprint** geliefert, aus dem Sie konfigurierte **Profile*
 ## Konfigurationsreferenz
 
 Der Agent für Unternehmenswissen verfügt über **die gesamte Konfiguration des
-[Assistenten für Dokumentenintelligenz](../5_document_intelligence_assistant/#configuration-reference)** –
+[Assistenten für Dokumentenintelligenz](../5_document_intelligence_assistant/#konfigurationsreferenz)** –
 Profilidentität, Sprachmodell, Wissensquellen, Reranking, Kontext-Ausreichendheits-Guard, Eignungs-Guard,
 Benutzerspeicher, Organisationsspeicher, Prompts und Eingabebudget. Beziehen Sie sich auf diese Seite für all diese
 Felder; sie verhalten sich hier identisch.
@@ -122,7 +122,7 @@ Darüber hinaus fügt er eine einzige neue Einstellung für die Eskalation hinzu
 
 ::: warning Kontext-Ausreichendheits-Guard aktivieren
 Eine Eskalation erfolgt nur, wenn der
-[Kontext-Ausreichendheits-Guard](../5_document_intelligence_assistant/#context-sufficiency-guard-optional) entscheidet,
+[Kontext-Ausreichendheits-Guard](../5_document_intelligence_assistant/#kontext-suffizienz-guard-optional) entscheidet,
 dass der abgerufene Kontext nicht ausreicht. Ist dieser Guard deaktiviert, wird der Agent fast immer nur aus Dokumenten
 antworten und den Expertenpfad nie erreichen – was den Zweck dieses Blueprints zunichtemachen würde.
 :::

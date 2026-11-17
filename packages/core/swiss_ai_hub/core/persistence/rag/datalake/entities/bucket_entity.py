@@ -1,5 +1,5 @@
 import re
-from typing import Self
+from typing import Annotated, Self
 
 from bson import ObjectId
 from mongoengine import BooleanField, DictField, Document, EmbeddedDocumentField, StringField, ValidationError
@@ -41,7 +41,8 @@ class BucketEntity(Document):
     # axis next to ``ingestor``: the ingestor says how files are processed, the source says where they come from.
     source = StringField(required=False, default=None)
     # The source pipeline's own settings for this database, shaped by the form it announced. Secret fields
-    # are stored encrypted by the API; the pipeline decrypts them per run.
+    # are stored encrypted by the API; the pipeline decrypts them per run, and writes back only an OAuth token
+    # its source refreshed, through ``replace_source_secret``.
     source_configuration = DictField(default=dict)
     # Soft-delete: excluded from every enumeration path, and hard-deleted last, by the teardown job.
     deleting = BooleanField(default=False)
@@ -175,6 +176,39 @@ class BucketEntity(Document):
         bucket.source_configuration = source_configuration or {}
         bucket.save()
         return bucket
+
+    @classmethod
+    def replace_source_secret(
+        cls,
+        *,
+        bucket_name: Annotated[str, "Database whose source configuration holds the secret"],
+        source: Annotated[str, "Source pipeline the database must still be filled by"],
+        backend_type: Annotated[str, "Backend the configuration must still select"],
+        path: Annotated[str, "Dotted path of the secret inside source_configuration"],
+        expected: Annotated[str, "Stored value the caller read, encrypted"],
+        replacement: Annotated[str, "Value to store instead, encrypted"],
+        db_alias: Annotated[str, "Mongoengine connection alias"] = "default",
+    ) -> bool:
+        """Compare-and-set of one secret, for the source pipeline writing back a token its source refreshed.
+
+        One atomic ``update_one`` instead of a document save, so a user who replaced the source, switched it to
+        another backend or deleted the database in the meantime is never overwritten: the filter no longer matches
+        and nothing is written. Only the one path is set, so a concurrent edit of any other field survives.
+        """
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            collection = SwitchedBucket._get_collection()
+        field = f"source_configuration.{path}"
+        result = collection.update_one(
+            {
+                "bucket_name": bucket_name,
+                "source": source,
+                "deleting": {"$ne": True},
+                "source_configuration.backend_type": backend_type,
+                field: expected,
+            },
+            {"$set": {field: replacement}},
+        )
+        return result.matched_count == 1
 
     @classmethod
     def carry_over_retired_model_columns(cls, db_alias: str = "default") -> int:

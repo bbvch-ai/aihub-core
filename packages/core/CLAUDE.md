@@ -95,8 +95,8 @@ packages/core/swiss_ai_hub/core/
 │   └── translations/                # YAML files: {scope}/{name}.{locale}.yml
 ├── imap/                            # Mail config + MIME parsing (MailParser, ParsedMessage, ImapClientConfig)
 ├── jira/                            # Read-only Jira for agents: JiraConnectionConfig, JiraTicketSearch, JiraHtml (shared with the pipeline)
-├── mcp/                             # MCP client configuration (McpClientConfig StepConfig)
-├── network/                         # SourceHostGuard: refuses admin-set URLs that point inside the platform (SSRF)
+├── mcp/                             # MCP client configuration (McpClientConfig StepConfig, McpSettings allow-list)
+├── network/                         # PublicHostGuard: refuses admin-set URLs that point inside the platform (SSRF)
 ├── infrastructure/                  # External service settings (Pydantic BaseSettings)
 │   ├── api/                         # AIHubSettings (buckets, CORS, OpenAI endpoint)
 │   ├── nats/                        # NatsSettings (broker connection)
@@ -106,7 +106,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── s3/                          # S3StorageSettings (SeaweedFS)
 │   ├── neo4j/                       # Neo4jSettings (graph DB)
 │   ├── langfuse/                    # LangfuseSettings + LangfuseProvisioner
-│   ├── litellm/                     # LiteLLMProxySettings + LiteLLMService
+│   ├── litellm/                     # LiteLLMProxySettings + LiteLLMService (user key) + LiteLLMCustomerService (acting tenant as LiteLLM customer, ADR 2026_11_09)
 │   ├── opentelemetry/               # SmartTracer + trace_fn decorator
 │   ├── logging/                     # Logging setup (enable_logging())
 │   ├── mineru/                      # MineruSettings (document parsing)
@@ -573,6 +573,12 @@ sends the dialog's answers as JSON in the response event itself, and a typed rep
 cancelled dialog) takes the path above. Its `HumanInTheLoopChoiceQuestion` (1–3 `HumanInTheLoopChoiceOption`, the
 recommended one first) and option lengths are capped as OpenWebUI's `request:user_input` caps them.
 
+**Only the run's user answers**: `ExternalAgentEventDistributor.refuse_answer_from_another_user` refuses a HITL response
+from a thread member who did not start the run (`PersistedAgentEventEntity.user_id_of_run`, read from the persisted
+control StartEvent) before anything is published, so a refused answer is never stored and never closes a request.
+`ChatService.ensure_answered_by_run_user` turns that into a 403 before a subscriber starts. A run without a known user
+(scheduled, or its StartEvent never persisted) accepts any member, and the agent checks `responded_by` again.
+
 **Vector store — children are not persisted**: `PartitionAwareMilvusVectorStore.add` strips `NodeRelationship.CHILD`
 before serializing. LlamaIndex packs every relationship into `_node_content` inside Milvus' dynamic field, which is
 capped at 65536 bytes, and a hierarchical summary node carries one entry per descendant — so a wide summary tree fails
@@ -801,7 +807,7 @@ Rules, each guarding a failure that would otherwise be silent:
   the search.
 - **Retries are bounded**: 429, 502, 503, 504 and refused connections, at most four attempts, honouring `Retry-After`
   (seconds or a date). A wait over 30 s fails at once instead of stalling the chat; read timeouts are not retried.
-- **No redirects, and only public hosts.** `SourceHostGuard` (`network/`) runs before the first request; an operator
+- **No redirects, and only public hosts.** `PublicHostGuard` (`network/`) runs before the first request; an operator
   allows an internal Jira with `JIRA_ALLOWED_PRIVATE_HOSTS` (`JiraSettings`), which the `release_notes_agent` container
   receives (`.env.dev`: `localhost`, `.env.prod`: empty).
 - **Classic API tokens only on Cloud.** Scoped tokens and service accounts answer only at

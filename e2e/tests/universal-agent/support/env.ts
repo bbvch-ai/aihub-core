@@ -9,6 +9,9 @@ export const OPENWEBUI_URL = (process.env.E2E_OPENWEBUI_URL ?? `https://openwebu
 export const API_URL = (process.env.E2E_API_URL ?? `https://${DOMAIN}/api/v1`).replace(/\/$/, '')
 export const TENANT = process.env.E2E_TENANT ?? 'default'
 export const API_TOKEN = process.env.E2E_API_TOKEN ?? ''
+/** Another member of the tenant, for the shared-thread spec: an API bearer token and the user's id. */
+export const SECOND_USER_TOKEN = process.env.E2E_SECOND_USER_TOKEN ?? ''
+export const SECOND_USER_ID = process.env.E2E_SECOND_USER_ID ?? ''
 
 export const OPENWEBUI_EMAIL = process.env.E2E_OPENWEBUI_EMAIL ?? 'e2e-test@swiss-ai-hub.ch'
 export const OPENWEBUI_PASSWORD = process.env.E2E_OPENWEBUI_PASSWORD ?? 'e2e-test-password'

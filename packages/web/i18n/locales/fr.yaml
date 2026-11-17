@@ -147,7 +147,6 @@ thread:
       completed: Terminé
       failed: Échoué
       agent_name_placeholder: Filtrer par agent
-      user_name_placeholder: Filtrer par utilisateur
       date_range_placeholder: Filtrer par date
   utils:
     pendingTypes:
@@ -252,7 +251,6 @@ event:
   retrieveMemory:
     title: Mémoire récupérée
     memories: Mémoires
-    relations: Graphe de connaissances
     score: Pertinence
     noMemories: Aucune mémoire récupérée
   storeMemory:
@@ -260,9 +258,6 @@ event:
     added: Ajouté
     updated: Mis à jour
     deleted: Supprimé
-    addedRelations: relations ajoutées
-    deletedRelations: relations supprimées
-    relationChanges: Modifications des relations
     noChanges: Aucune modification
   addMemoryToChatHistory:
     summary: "{count} message de mémoire ajouté à l'historique | {count} messages\
@@ -1083,9 +1078,6 @@ lib:
         de la requête. La clé réservée `namespace` n'est jamais autorisée.
 memory:
   title: Souvenirs
-  graph:
-    title: Graphe de connaissances
-    no_results: Aucun souvenir trouvé
   list:
     title: Liste des souvenirs
     no_results: Aucun souvenir trouvé
@@ -1146,8 +1138,6 @@ openwebui:
   memories:
     title: Souvenirs de l'Agent
     select_agent: Sélectionner l'Agent
-    list: Liste
-    graph: Graphe
     user_memories: Souvenirs de l'Utilisateur
     org_memories: Souvenirs de l'Organisation
 tenant:

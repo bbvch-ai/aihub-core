@@ -61,6 +61,13 @@
       the tenant group. Group membership is additive — logging in via
       multiple IDPs accumulates tenant memberships.
 
+   Federated users: every identity provider needs the Hardcoded Role mapper
+   "aihub-federated-user-role" (AIHubFederatedUser, sync mode FORCE), which
+   denies its users the password form and password reset (see
+   managed/40-auth-flows.json.j2). keycloak-entrypoint.sh adds it on every
+   start to identity providers that lack it, including ones added in the admin
+   console, and grants the role to users linked before the mapper existed.
+
    Note: ${CLAIM.preferred_username} in the username-mapper is a Keycloak
    IdP mapper template, not an environment variable — it must stay literal.
 -#}
@@ -159,6 +166,15 @@
         "claim": "roles",
         "claim.value": "AIHubSysAdmin",
         "role": "AIHubSysAdmin"
+      }
+    },
+    {
+      "name": "aihub-federated-user-role",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-hardcoded-role-idp-mapper",
+      "config": {
+        "syncMode": "FORCE",
+        "role": "AIHubFederatedUser"
       }
     }
   ]

@@ -148,7 +148,6 @@ thread:
       completed: Abgeschlossen
       failed: Fehlgeschlagen
       agent_name_placeholder: Nach Agent filtern
-      user_name_placeholder: Nach Benutzer filtern
       date_range_placeholder: Nach Datum filtern
   utils:
     pendingTypes:
@@ -264,7 +263,6 @@ event:
   retrieveMemory:
     title: Erinnerung abgerufen
     memories: Erinnerungen
-    relations: Wissensgraph
     score: Relevanz
     noMemories: Keine Erinnerungen abgerufen
   storeMemory:
@@ -272,9 +270,6 @@ event:
     added: Hinzugefügt
     updated: Aktualisiert
     deleted: Gelöscht
-    addedRelations: hinzugefügte Beziehungen
-    deletedRelations: gelöschte Beziehungen
-    relationChanges: Beziehungsänderungen
     noChanges: Keine Änderungen
     chars: '{count} Zeichen'
     sourceDocument: '{count} Quelldokument | {count} Quelldokumente'
@@ -1081,9 +1076,6 @@ lib:
         reservierte Schlüssel `namespace` ist nie erlaubt.
 memory:
   title: Erinnerungen
-  graph:
-    title: Wissensgraph
-    no_results: Keine Erinnerungen gefunden
   list:
     title: Erinnerungsliste
     no_results: Keine Erinnerungen gefunden
@@ -1146,8 +1138,6 @@ openwebui:
   memories:
     title: Agent-Erinnerungen
     select_agent: Agent auswählen
-    list: Liste
-    graph: Graph
     user_memories: Benutzererinnerungen
     org_memories: Organisationserinnerungen
 tenant:

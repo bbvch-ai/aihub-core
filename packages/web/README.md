@@ -430,7 +430,7 @@ from a template at startup so the same image works in any environment.
 ```dockerfile
 # 1. Build the static SPA. ENV must be unset (or anything other than 'dev') so
 #    the layer emits the <script src="/config.js"> tag that loads runtime config.
-FROM node:22-alpine AS build
+FROM node:24.22.1-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -456,6 +456,10 @@ location = /config.js {
 }
 location / { try_files $uri /index.html; }
 ```
+
+If you send a `Content-Security-Policy` with `script-src 'self'`, add the hashes of the inline scripts Nuxt writes into
+the generated HTML. `docker/csp-script-hashes.mjs <public dir>` prints them; the Swiss AI Hub images run it after the
+build and render the policy in `docker/start.sh`.
 
 ______________________________________________________________________
 

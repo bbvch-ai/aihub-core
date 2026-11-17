@@ -21,3 +21,10 @@ config:
   timeout:
     label: Zeitlimit (Sekunden)
     help: Maximale Wartezeit auf eine Antwort vom MCP-Server.
+  forward_tenant_id_header:
+    label: Mandanten-ID-Header weiterleiten
+    help: Optional. Wenn gesetzt, wird die externe ID des aktiven Mandanten bei jedem
+      MCP-Request unter diesem Header-Namen mitgesendet. Der Wert wird serverseitig
+      ermittelt, nicht im Profil gepflegt. Läufe ohne Mandanten-ID schlagen fehl,
+      statt ohne Header zu senden. Nur mit Authentifizierung «Benutzer-Token». Leer
+      lassen zum Deaktivieren. Beispiel - X-LCDM-Tenant.

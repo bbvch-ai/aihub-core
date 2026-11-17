@@ -32,6 +32,15 @@ class ReadAttachedFilesEvent(ControlAndDisplayEvent):
             )
         ),
     ] = []
+    code_sandbox_offered: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether the model can run code on the files in the sandbox, so a file cut down to fit is noted with "
+                "the instruction to compute figures over the whole file there."
+            )
+        ),
+    ] = False
     history: Annotated[
         list[ChatMessage], Field(description="The history the files will be composed into, for sizing them.")
     ] = []

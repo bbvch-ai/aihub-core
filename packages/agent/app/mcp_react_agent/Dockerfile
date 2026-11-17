@@ -26,6 +26,7 @@ COPY packages/agent/app/${AGENT} ./packages/agent/app/${AGENT}
 COPY packages/agent/swiss_ai_hub ./packages/agent/swiss_ai_hub
 COPY packages/agent/pyproject.toml ./packages/agent/pyproject.toml
 COPY packages/agent/LICENSE ./packages/agent/LICENSE
+COPY packages/agent/README.md ./packages/agent/README.md
 COPY packages/core ./packages/core
 
 # Install dependencies with cache mount

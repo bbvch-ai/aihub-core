@@ -1,5 +1,5 @@
 import pytest
-from swiss_ai_hub.core.network import SourceHostGuard
+from swiss_ai_hub.core.network import PublicHostGuard
 
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_client import MediaWikiClient
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_request_error import MediaWikiRequestError
@@ -23,7 +23,7 @@ def guarded(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     """The addresses the guard was asked about; the fake site's name never reaches a real resolver."""
     checked: list[str] = []
     monkeypatch.setattr(
-        SourceHostGuard, "require_public", lambda url, allowed_hosts, allow_list_variable: checked.append(url)
+        PublicHostGuard, "require_public", lambda url, allowed_hosts, allow_list_variable: checked.append(url)
     )
     return checked
 
