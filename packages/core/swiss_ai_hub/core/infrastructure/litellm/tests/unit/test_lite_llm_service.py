@@ -344,9 +344,10 @@ def test_the_key_follows_from_the_user_and_the_master_key_together() -> None:
     another key and generation, or the key would follow from the user id alone.
     """
     user = _user("same-user")
+    one_process, another_process = _settings(), _settings()
 
-    assert LiteLLMService.generate_key_for_user(user, _settings()) == LiteLLMService.generate_key_for_user(
-        user, _settings()
+    assert LiteLLMService.generate_key_for_user(user, one_process) == LiteLLMService.generate_key_for_user(
+        user, another_process
     )
     assert LiteLLMService.generate_key_for_user(user, _settings("sk-first")) != LiteLLMService.generate_key_for_user(
         user, _settings("sk-second")
@@ -364,8 +365,10 @@ def test_the_key_no_longer_follows_from_the_user_id_alone() -> None:
 
 
 def test_keys_are_not_derived_without_a_master_key() -> None:
+    user, without_master_key = _user("any-user"), _settings(None)
+
     with pytest.raises(ValueError, match="LITE_LLM_PROXY_API_KEY"):
-        LiteLLMService.generate_key_for_user(_user("any-user"), _settings(None))
+        LiteLLMService.generate_key_for_user(user, without_master_key)
 
 
 @pytest.mark.asyncio
