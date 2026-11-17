@@ -74,7 +74,7 @@ class FileController(TenantScopedController):
             thread_id: str,
             container: str,
             file_path: str,
-            _requested_as_image: Annotated[None, Depends(FigureAccess.ensure_requested_as_image)],
+            _requested_from_openwebui: Annotated[None, Depends(FigureAccess.ensure_requested_from_openwebui)],
             user: Annotated[UserIdentity, Depends(session_viewer)],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
             redis: Annotated[Redis, Depends(use_redis)],

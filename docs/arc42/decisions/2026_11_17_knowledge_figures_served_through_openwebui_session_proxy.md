@@ -44,10 +44,11 @@ the agent put it in.
   endpoint whose it is, so OpenWebUI's sign-out applies. It builds the Hub identity in the tenant named in the path from
   the user's e-mail, as the signed-header handler does, refuses disabled Keycloak users and never grants sysadmin
   rights. Lookups are cached by the token's hash for a minute; the cookie is never logged.
-- **Only an image tag on OpenWebUI's pages.** The route requires `Sec-Fetch-Site: same-origin` and
-  `Sec-Fetch-Dest: image`, which browsers set themselves. The API allows credentialed CORS from every host of the
-  domain, and this is its only route authenticated by an ambient cookie, so script on another host of the same site
-  must not be able to read a figure.
+- **Only OpenWebUI's own pages.** The route requires `Sec-Fetch-Site: same-origin` and a `Sec-Fetch-Dest` of
+  `image` (the source shows it) or `document` (the user opens it in a new tab), headers browsers set themselves. The
+  API allows credentialed CORS from every host of the domain, and this is its only route authenticated by an ambient
+  cookie, so script on another host of the same site must not be able to read a figure; a script's request is never
+  an image or a document. A URL pasted into the address bar is not same-origin and is refused as well.
 - **Access, checked on every load.** The viewer may view the thread (the rule of the thread endpoints); the figure
   appears in a grounding result the agent sent to that thread, read from the events the platform already persists; and
   the viewer may still use the agent that sent it. A figure node's text comes from the document, and a markdown file

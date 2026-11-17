@@ -33,20 +33,25 @@ class FigureAccess:
     GROUNDING_EVENT_NAMES: ClassVar[tuple[str, ...]] = ("KnowledgeSearchedEvent", "InOrderNodeCombinerEvent")
     FIGURE_CONTENT_TYPE: ClassVar[str] = "figure"
     RASTER_EXTENSIONS: ClassVar[frozenset[str]] = frozenset({"jpg", "jpeg", "png", "webp", "gif", "bmp"})
+    ALLOWED_FETCH_DESTINATIONS: ClassVar[frozenset[str]] = frozenset({"image", "document"})
     CACHE_SECONDS: ClassVar[int] = 300
     _CACHE_PREFIX: ClassVar[str] = "figure_access:"
     # A figure node holds exactly one image; its folder path may contain spaces and brackets, which ingestion keeps.
     _FIGURE: ClassVar[re.Pattern[str]] = re.compile(r"\s*!\[[^\]]*\]\((s3://.+)\)\s*", re.DOTALL)
 
     @staticmethod
-    def ensure_requested_as_image(request: Request) -> None:
-        """Only an image tag on OpenWebUI's own pages may load a figure.
+    def ensure_requested_from_openwebui(request: Request) -> None:
+        """Only OpenWebUI's own pages may load a figure: an image tag, or opening the image in a new tab.
 
         The browser sets these headers itself, so script on another host of the same site cannot read a figure with
-        the viewer's cookie, even where CORS would let it.
+        the viewer's cookie, even where CORS would let it: a script's request is never an image or a document. A URL
+        pasted into the address bar is not same-origin and is refused too.
         """
         headers = request.headers
-        if headers.get("sec-fetch-site") != "same-origin" or headers.get("sec-fetch-dest") != "image":
+        if (
+            headers.get("sec-fetch-site") != "same-origin"
+            or headers.get("sec-fetch-dest") not in FigureAccess.ALLOWED_FETCH_DESTINATIONS
+        ):
             raise FigureAccess._not_available()
 
     @staticmethod

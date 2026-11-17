@@ -184,21 +184,25 @@ def _request(**headers: str) -> Request:
     return Request({"type": "http", "headers": raw})
 
 
-def test_should_accept_an_image_tag_on_the_same_origin() -> None:
-    FigureAccess.ensure_requested_as_image(_request(sec_fetch_site="same-origin", sec_fetch_dest="image"))
+@pytest.mark.parametrize("destination", ["image", "document"])
+def test_should_accept_an_image_tag_or_a_new_tab_opened_from_the_same_origin(destination: str) -> None:
+    FigureAccess.ensure_requested_from_openwebui(_request(sec_fetch_site="same-origin", sec_fetch_dest=destination))
 
 
 @pytest.mark.parametrize(
     "headers",
     [
         {},
+        {"sec_fetch_site": "none", "sec_fetch_dest": "document"},
         {"sec_fetch_site": "same-site", "sec_fetch_dest": "image"},
+        {"sec_fetch_site": "same-site", "sec_fetch_dest": "document"},
         {"sec_fetch_site": "same-origin", "sec_fetch_dest": "empty"},
+        {"sec_fetch_site": "same-origin", "sec_fetch_dest": "iframe"},
         {"sec_fetch_site": "cross-site", "sec_fetch_dest": "image"},
     ],
 )
-def test_should_refuse_anything_but_a_same_origin_image_tag(headers: dict[str, str]) -> None:
+def test_should_refuse_a_pasted_url_a_script_or_another_site(headers: dict[str, str]) -> None:
     with pytest.raises(HTTPException) as error:
-        FigureAccess.ensure_requested_as_image(_request(**headers))
+        FigureAccess.ensure_requested_from_openwebui(_request(**headers))
 
     assert error.value.status_code == 403

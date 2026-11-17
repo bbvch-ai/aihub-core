@@ -229,8 +229,9 @@ into a thread. A client may name a new thread itself (the OpenWebUI pipe derives
 `2026_11_17_knowledge_figures_served_through_openwebui_session_proxy`): the pipe links each figure of a knowledge
 source to `/hub-figures/<tenant>/<thread>/<bucket>/<key>` on OpenWebUI's host, which Traefik rewrites to
 `/api/v1/<tenant>/files/figures/...`. The viewer comes from OpenWebUI's session cookie (`OpenWebuiSessionAuthHandler`),
-not a bearer token, so the route is out of the OpenAPI schema and only answers same-origin image requests
-(`Sec-Fetch-*`). `FigureAccess` grants a figure when the viewer may view the thread (`ThreadAccess.can_view_entity`,
+not a bearer token, so the route is out of the OpenAPI schema and only answers requests OpenWebUI's own pages make:
+an image tag or opening the image in a new tab (`Sec-Fetch-Site: same-origin`, `Sec-Fetch-Dest` `image` or
+`document`). `FigureAccess` grants a figure when the viewer may view the thread (`ThreadAccess.can_view_entity`,
 which skips building the thread DTO), the figure sits in its own document's figure folder inside a grounding node the
 thread's persisted events hold, and the viewer may still use the agent that sent it. `FigureImage` bounds size and
 pixels, re-encodes, and adds the response headers. Text in a source follows the same rule, which is why namespace
