@@ -1072,12 +1072,18 @@ class HumanInTheLoopHandler(EventHandler):
             return True
 
         if hitl_type == "confirmation":
+            event_names = [event.get("_event_name"), *event.get("_parent_event_names", [])]
+            message = (
+                self._tool_approval_message(question)
+                if "ToolApprovalRequestEvent" in event_names
+                else self._capped_markdown(question)
+            )
             result = await context.caller(
                 {
                     "type": "confirmation",
                     "data": {
                         "title": "Agent Question",
-                        "message": question,
+                        "message": message,
                     },
                 }
             )
@@ -1087,7 +1093,7 @@ class HumanInTheLoopHandler(EventHandler):
                     "type": "input",
                     "data": {
                         "title": "Agent Question",
-                        "message": question,
+                        "message": self._capped_markdown(question),
                         "placeholder": "Enter your response...",
                     },
                 }
@@ -1099,6 +1105,29 @@ class HumanInTheLoopHandler(EventHandler):
             await self._send_response(result, event, context)
 
         return True
+
+    @staticmethod
+    def _tool_approval_message(question: Annotated[str, "Tool approval question"]) -> Annotated[str, "Dialog HTML"]:
+        """OpenWebUI's confirm dialog cannot scroll, so a long tool input would push its buttons off-screen; the input
+        goes into a capped, scrollable box and is escaped because it is model-written code, not markdown."""
+        lines = html.escape(question).split("\n")
+        box_style = (
+            "max-height:50vh;overflow:auto;white-space:{wrap};font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"
+            "font-size:12px;margin:.5rem 0;padding:.5rem;border-radius:.5rem;"
+            "background:rgba(127,127,127,.1);border:1px solid rgba(127,127,127,.25)"
+        )
+        if len(lines) < 3:
+            everything = "\n".join(lines)
+            return f'<pre style="{box_style.format(wrap="pre-wrap")}">{everything}</pre>'
+        middle = "\n".join(lines[1:-1])
+        return "\n\n".join(
+            [f"<p>{lines[0]}</p>", f'<pre style="{box_style.format(wrap="pre")}">{middle}</pre>', f"<p>{lines[-1]}</p>"]
+        )
+
+    @staticmethod
+    def _capped_markdown(question: Annotated[str, "Agent question"]) -> Annotated[str, "Dialog markdown"]:
+        """Keeps any long question from pushing OpenWebUI's dialog buttons off-screen while still rendering markdown."""
+        return f'<div style="max-height:60vh;overflow-y:auto">\n\n{question}\n\n</div>'
 
     @staticmethod
     async def _send_response(

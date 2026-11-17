@@ -1,7 +1,7 @@
 ---
 title: Universal Agent
 description: Ein Assistent, der selbst entscheidet, ob er Ihr Wissen durchsucht, angehängte Dateien liest oder sich an Gespeichertes erinnert, und so lange weitermacht, bis er antworten kann.
-source_sha: 7a54f7c19191e082ffa8f431c39194d7d1cf8b8142d0f7f12347e53ec8a88141
+source_sha: dc93f17381dc2b65c607ef5396c4dff608bcaeb3b8e90d0d0a2a3fcb6de5ee24
 ---
 
 # Universal Agent
@@ -85,7 +85,8 @@ Werkzeuge.
 Ein Profil begrenzt, wie viele Entscheidungen und Werkzeugaufrufe eine Antwort umfassen darf. Am Limit antwortet der
 Agent mit dem, was er gefunden hat, und sagt, dass er vorzeitig aufgehört hat. Jedes Werkzeug kann so eingestellt
 werden, dass es vor der Ausführung die Freigabe des Benutzers braucht — jedes Mal, einmal pro Antwort oder einmal pro
-Unterhaltung.
+Unterhaltung. Die Freigabefrage zeigt die Eingabe des Aufrufs genau so, wie das Modell sie geschrieben hat; ein langer
+Befehl lässt sich in einem eigenen Feld scrollen.
 
 ## Was er *nicht* tut
 

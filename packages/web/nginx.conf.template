@@ -36,19 +36,22 @@ server {
     # /_nuxt chunks, and a browser that cached the old shell requests dead chunk hashes
     # (404) so the app half-loads (e.g. login provider buttons never render). This bites
     # every browser after every deploy. Hashed assets under /_nuxt stay immutable-cached.
-    # A location-level add_header drops every server-level one, so the security headers are repeated here.
+    # A location-level add_header drops every server-level one, so the security headers (including the
+    # Content-Security-Policy and HSTS) are repeated here.
     location / {
         add_header Cache-Control "no-store" always;
         add_header X-Frame-Options "SAMEORIGIN" always;
         add_header X-Content-Type-Options "nosniff" always;
-        add_header X-XSS-Protection "1; mode=block" always;
         add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header Content-Security-Policy "${CONTENT_SECURITY_POLICY}" always;
         try_files $uri /index.html;
     }
 
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Content-Security-Policy "${CONTENT_SECURITY_POLICY}" always;
 }

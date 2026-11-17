@@ -77,7 +77,8 @@ answers without its tools.
 
 A profile bounds how many decisions and tool calls one answer may take. At the limit, the agent answers with what it has
 found and says that it stopped early. Any tool can be set to need the user's approval before it runs — every time, once
-per answer, or once per conversation.
+per answer, or once per conversation. The approval question shows the call's input exactly as the model wrote it; a long
+command scrolls in its own box.
 
 ## What it does *not* do
 
