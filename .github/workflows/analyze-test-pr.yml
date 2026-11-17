@@ -181,10 +181,14 @@ jobs:
           push: false
           build-args: VERSION=ci
           # A registry cache, not the Actions cache: these layers run to several GB and would evict the uv and pnpm
-          # caches from the repository's 10 GB budget. Only main writes it, so pull requests cannot overwrite it.
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/buildcache:${{
-            matrix.cache_scope }}
-          cache-to: ${{ github.event_name == 'push' && format('type=registry,ref=ghcr.io/{0}/buildcache:{1},mode=max,ignore-error=true', github.repository, matrix.cache_scope) || '' }}
+          # caches from the repository's 10 GB budget. A pull request writes its own ref, so its next push reuses its
+          # layers, and falls back to main's ref, which only main writes.
+          cache-from: |
+            type=registry,ref=ghcr.io/${{ github.repository }}/buildcache:${{ matrix.cache_scope }}${{ github.event.pull_request.number && format('-pr-{0}', github.event.pull_request.number) || '' }}
+            type=registry,ref=ghcr.io/${{ github.repository }}/buildcache:${{ matrix.cache_scope }}
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/buildcache:${{
+            matrix.cache_scope }}${{ github.event.pull_request.number && format('-pr-{0}',
+            github.event.pull_request.number) || '' }},mode=max,ignore-error=true
   env-check:
     name: Env / Compose Consistency
     runs-on: ubuntu-24.04-arm

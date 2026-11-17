@@ -56,10 +56,12 @@ image passes its CUDA torch index this way). Tags: `ghcr.io/{owner}/{repo}/{imag
 `ghcr.io/{owner}/{repo}/buildcache:{scope}` (`mode=max`, write errors ignored). It is a registry cache because the
 layers run to several GB and would otherwise evict the uv and pnpm entries from the 10 GB Actions cache. Release builds
 and the PR `build-images` job in `analyze-test-pr.yml` use the same scopes (`agent` for all agent images, `pipeline` for
-the pipeline apps, the image name otherwise), so they share layers; only pushes to `main` and releases write it.
-`build-agents.yml` builds the shared builder stage once (`warm-dependency-cache`) before its matrix starts. The Python
-Dockerfiles install third-party dependencies (`uv sync --no-install-workspace` on the manifests) before copying source
-and declare build args after that layer, so only a lockfile or manifest change reinstalls them.
+the pipeline apps, the image name otherwise), so they share layers; pushes to `main` and releases write it. A pull
+request reads and writes its own `{scope}-pr-{number}` ref first, so its later pushes reuse its earlier layers, and
+falls back to `main`'s ref. `build-agents.yml` builds the shared builder stage once (`warm-dependency-cache`) before its
+matrix starts. The Python Dockerfiles install third-party dependencies (`uv sync --no-install-workspace` on the
+manifests) before copying source and declare build args after that layer, so only a lockfile or manifest change
+reinstalls them.
 
 **Merge gate**: no test check is required on `main`; the required SonarCloud checks are. `sonarcloud-scan` therefore
 needs `test-modules`, `merge-shards` and `build-images` and runs only when none failed (skipped is fine), so a failing
