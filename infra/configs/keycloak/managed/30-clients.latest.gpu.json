@@ -380,6 +380,37 @@
       "clientAuthenticatorType": "client-secret",
       "secret": "$(env:KEYCLOAK_API_SERVICE_CLIENT_SECRET)",
       "protocol": "openid-connect"
+    },
+    {
+      "clientId": "$(env:KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID)",
+      "name": "External Knowledge Writer",
+      "description": "Client-credentials client for an external system that uploads documents into tenant knowledge databases through the API. It can only reach the tenants whose groups its service-account user is a member of (operational config, not managed here).",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET)",
+      "protocol": "openid-connect",
+      "defaultClientScopes": [
+        "profile",
+        "tenants"
+      ],
+      "protocolMappers": [
+        {
+          "name": "account-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "account",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
     }
   ]
 }

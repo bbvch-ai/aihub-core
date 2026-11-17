@@ -62,13 +62,38 @@ paths as a token claim, which the API uses to resolve a user's tenants (see ADR
 
 ## Clients
 
-| Client                                                     | Type                 | Used by                                                                                                          |
-| ---------------------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `aihub-frontend`                                           | Public, PKCE         | Main web UI **and** sysadmin web UI (same realm cookie → shared SSO)                                             |
-| `openwebui`                                                | Confidential         | Open WebUI chat interface (OIDC login, receives the `roles` claim)                                               |
-| `oauth2-proxy-dagster` / `-datalake` / `-attu` / `-backup` | Confidential         | The oauth2-proxy sidecars in front of the admin UIs; access restricted via the `roles` claim (`AIHubSysAdmin`)   |
-| `langfuse`                                                 | Confidential, PKCE   | Langfuse native Keycloak SSO; carries the `langfuse-sysadmin-gate` marker scope                                  |
-| `aihub-api-service`                                        | Service account only | The API backend; holds `realm-management` roles (`manage-users`, `view-groups`, …) for user/group administration |
+| Client                                                                      | Type                 | Used by                                                                                                          |
+| --------------------------------------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `aihub-frontend`                                                            | Public, PKCE         | Main web UI **and** sysadmin web UI (same realm cookie → shared SSO)                                             |
+| `openwebui`                                                                 | Confidential         | Open WebUI chat interface (OIDC login, receives the `roles` claim)                                               |
+| `oauth2-proxy-dagster` / `-datalake` / `-attu` / `-backup`                  | Confidential         | The oauth2-proxy sidecars in front of the admin UIs; access restricted via the `roles` claim (`AIHubSysAdmin`)   |
+| `langfuse`                                                                  | Confidential, PKCE   | Langfuse native Keycloak SSO; carries the `langfuse-sysadmin-gate` marker scope                                  |
+| `aihub-api-service`                                                         | Service account only | The API backend; holds `realm-management` roles (`manage-users`, `view-groups`, …) for user/group administration |
+| `KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID` (default `external-knowledge-writer`) | Service account only | An external system that uploads documents into tenant knowledge databases (see below)                            |
+
+### External knowledge writer
+
+An external system, such as a document management system, can upload documents into a tenant's knowledge databases
+through `POST /api/v1/{tenant}/knowledge/databases/{db}/namespaces/{ns}/documents/upload/initiate` and `.../validate`.
+It signs in with the client-credentials grant of a managed confidential client. Its client id comes from
+`KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID` and its secret from `KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET`. The client has the
+`profile` and `tenants` default scopes and an audience mapper that adds `account`, which the API requires in every
+access token. Because the client is managed, every deploy keeps it. A client created by hand in the admin console is
+deleted on the next start.
+
+The client only grants a token. What the token may reach is operational config, kept in Keycloak and the API, and no
+deploy touches it:
+
+1. **Tenants**: add the client's service-account user (`service-account-<client id>`, admin console → Clients → the
+   client → Service account roles → the user link → Groups) to the group `/tenants/<tenant-id>` of each tenant it writes
+   to. The `tenants` claim then names those tenants, and the API creates the tenant membership on the first call.
+2. **Role in the tenant**: the API gives a new member the signup roles (`AIHUB_USER_SIGNUP_REGULAR_USER_ROLES`), or the
+   admin roles if it is the tenant's first member. Do not make the writer a tenant's first member, and check in the
+   tenant's user administration that its role lets it upload to the knowledge databases it needs.
+
+Changing `KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID` replaces the client, and with it the service-account user, so its group
+memberships have to be set again. A deployment that does not use the writer keeps the client with no tenant groups: its
+tokens reach no tenant.
 
 ## Client scopes
 
