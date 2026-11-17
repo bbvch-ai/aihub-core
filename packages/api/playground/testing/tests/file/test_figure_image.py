@@ -1,6 +1,8 @@
 import io
+from unittest.mock import MagicMock
 
 import pytest
+from botocore.exceptions import ClientError
 from fastapi import HTTPException
 from PIL import Image
 
@@ -62,3 +64,43 @@ def test_should_serve_with_headers_that_forbid_sniffing_and_scripts() -> None:
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["content-security-policy"] == "default-src 'none'; sandbox"
     assert response.headers["content-type"] == "image/jpeg"
+
+
+def _storage(head: Exception | int) -> MagicMock:
+    s3_service = MagicMock()
+    if isinstance(head, Exception):
+        s3_service.file_size.side_effect = head
+    else:
+        s3_service.file_size.return_value = head
+        s3_service.download_file.return_value = _stored("PNG")
+    return s3_service
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("code", ["404", "NoSuchKey"])
+async def test_should_answer_404_for_a_figure_whose_document_was_removed(code: str) -> None:
+    missing = ClientError({"Error": {"Code": code}}, "HeadObject")
+
+    with pytest.raises(HTTPException) as error:
+        await FigureImage.from_storage(_storage(missing), "bucket", "a/__figures__/doc/figure.png")
+
+    assert error.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_should_not_download_a_figure_larger_than_the_limit() -> None:
+    s3_service = _storage(FigureImage.MAX_STORED_BYTES + 1)
+
+    with pytest.raises(HTTPException) as error:
+        await FigureImage.from_storage(s3_service, "bucket", "a/__figures__/doc/figure.png")
+
+    assert error.value.status_code == 415
+    s3_service.download_file.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_should_let_other_storage_errors_through() -> None:
+    denied = ClientError({"Error": {"Code": "AccessDenied"}}, "HeadObject")
+
+    with pytest.raises(ClientError):
+        await FigureImage.from_storage(_storage(denied), "bucket", "a/__figures__/doc/figure.png")

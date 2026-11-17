@@ -2,6 +2,7 @@ import asyncio
 import io
 from typing import Annotated, ClassVar, Self
 
+from botocore.exceptions import ClientError
 from fastapi import HTTPException, Response, status
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel
@@ -31,6 +32,7 @@ class FigureImage(BaseModel):
         "Cache-Control": "private, max-age=300",
     }
     _decoding: ClassVar[asyncio.Semaphore] = asyncio.Semaphore(MAX_CONCURRENT_DECODES)
+    _MISSING_OBJECT_CODES: ClassVar[frozenset[str]] = frozenset({"404", "NoSuchKey", "NotFound"})
 
     content: Annotated[bytes, "The encoded image"]
     media_type: Annotated[str, "Its MIME type"]
@@ -62,7 +64,14 @@ class FigureImage(BaseModel):
 
     @classmethod
     def _load(cls, s3_service: S3AnonymousFileAccessService, container: str, file_path: str) -> Self:
-        if s3_service.file_size(container, file_path) > cls.MAX_STORED_BYTES:
+        """A chat keeps its figure links after the document is removed, so a missing figure is expected, not a fault."""
+        try:
+            size = s3_service.file_size(container, file_path)
+        except ClientError as error:
+            if error.response.get("Error", {}).get("Code") in cls._MISSING_OBJECT_CODES:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This figure no longer exists.")
+            raise
+        if size > cls.MAX_STORED_BYTES:
             raise cls._unsupported("Figure is too large")
         return cls.from_stored(s3_service.download_file(container, file_path))
 
