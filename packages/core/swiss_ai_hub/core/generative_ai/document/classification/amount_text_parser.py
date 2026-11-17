@@ -6,15 +6,16 @@ from typing import ClassVar
 class AmountTextParser:
     """Reads an amount written with any of the separators used in Switzerland, the EU and English-speaking countries.
 
-    `12'496.36`, `12’496.36`, `12.496,36`, `12 496,36` and `12,496.36` are all 12496.36; the Swiss `1'250.–` is
-    1250.00. A minus touching the number (`-500`, `CHF -500`, `500-`) or its currency (`-CHF 500`), or brackets around
-    the number alone (`(500.00)`), make it negative. A spaced dash is a separator ("Betrag - CHF 500") and a bracketed
+    `12'496.36`, `12’496.36`, `12.496,36`, `12 496,36` and `12,496.36` are all 12496.36, with any space NFKC folds
+    into a plain one (no-break, narrow no-break, thin) as the thousands separator; the Swiss `1'250.–` is 1250.00.
+    A minus touching the number (`-500`, `CHF -500`, `500-`) or its currency (`-CHF 500`), or brackets around the
+    number alone (`(500.00)`), make it negative. A spaced dash is a separator ("Betrag - CHF 500") and a bracketed
     total with its currency ("Total (CHF 500.00)") an aside, so neither is read as a sign. With one separator, three
     digits after it mean thousands, as no currency is written with three decimals.
     """
 
     _ZERO_CENTS: ClassVar[re.Pattern[str]] = re.compile(r"([.,])\s?-{1,2}(?!\d)")
-    _NUMBER: ClassVar[re.Pattern[str]] = re.compile(r"\d(?:[\d'’  .,]*\d)?")
+    _NUMBER: ClassVar[re.Pattern[str]] = re.compile(r"\d(?:[\d'’ .,]*\d)?")
     _MINUS_BEFORE: ClassVar[re.Pattern[str]] = re.compile(r"(?:^|[^\w-])-(?:[a-z$€£.]{1,4}\s?)?$", re.IGNORECASE)
     _MINUS_AFTER: ClassVar[re.Pattern[str]] = re.compile(r"^-(?!\d)")
 
@@ -27,7 +28,7 @@ class AmountTextParser:
         match = cls._NUMBER.search(text)
         if match is None:
             return None
-        value = cls._value(re.sub(r"['’  ]", "", match[0]))
+        value = cls._value(re.sub(r"['’ ]", "", match[0]))
         if value is None:
             return None
         before, after = text[: match.start()], text[match.end() :]

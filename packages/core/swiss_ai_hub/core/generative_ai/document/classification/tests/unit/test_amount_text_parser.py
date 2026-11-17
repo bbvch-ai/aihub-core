@@ -50,3 +50,10 @@ def test_a_spaced_dash_or_a_bracketed_total_with_its_currency_is_no_sign(raw: st
 @pytest.mark.parametrize("raw", ["", "gratis", None])
 def test_text_without_a_number_is_no_amount(raw: str | None) -> None:
     assert AmountTextParser.parse(raw) is None
+
+
+@pytest.mark.parametrize(
+    "space", ["\u00a0", "\u202f", "\u2009", "\u2007"], ids=["no-break", "narrow", "thin", "figure"]
+)
+def test_a_typographic_space_groups_thousands_like_a_plain_one(space: str) -> None:
+    assert AmountTextParser.parse(f"CHF 12{space}496,36") == 12496.36
