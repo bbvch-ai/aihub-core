@@ -197,17 +197,15 @@ class TestEnforcement:
 
     def test_the_copied_text_of_a_classified_value_is_not_a_filter_key(self):
         retrievers = [_retriever("bucket_a", ["ns1"])]
-        with pytest.raises(ValueError, match="not allowed on bucket 'bucket_a'"):
-            narrow_retrievers(
-                retrievers,
-                [],
-                [
-                    BucketMetadataFilters(
-                        bucket_name="bucket_a",
-                        filters=[MetadataFilterPair(key="document_date_raw", value="14. März 2025")],
-                    )
-                ],
+        copied_text_filter = [
+            BucketMetadataFilters(
+                bucket_name="bucket_a",
+                filters=[MetadataFilterPair(key="document_date_raw", value="14. März 2025")],
             )
+        ]
+
+        with pytest.raises(ValueError, match="not allowed on bucket 'bucket_a'"):
+            narrow_retrievers(retrievers, [], copied_text_filter)
 
     def test_reserved_namespace_key_raises(self):
         retrievers = [_retriever("bucket_a", ["ns1"], allowed=["namespace"])]
