@@ -302,6 +302,26 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage_database")
+    def request_classification(self, route: str = "/databases/{database}/classification") -> Self:
+        @self.router.post(route, tags=self.tags, summary="Request classification of a database's documents")
+        async def request_classification(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> DatabaseResponse:
+            """
+            Asks the ingestion pipeline to classify the documents the database already holds, from their stored
+            text: those ingested before classification existed, or classified by an older version. Returns the
+            database with the pending request; 409 when its pipeline does not classify or it switched classification
+            off.
+            """
+            if database in self._non_browsable_database_names:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            return KnowledgeService.request_classification(database, t)
+
+        return self
+
     @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.create")
     def create_database(self, route: str = "/databases/{database}") -> Self:
         @self.router.post(route, tags=self.tags)

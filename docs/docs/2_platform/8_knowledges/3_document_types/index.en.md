@@ -72,7 +72,10 @@ default.
   a backfill.
 - Documents ingested before classification existed, or before the list of types changed, are classified by a backfill
   from the text already stored, without being parsed or embedded again. It runs when it is requested for a knowledge
-  database; when only the reading of copied values improved, it reads the stored copies again without asking a model.
+  database; when only the reading of copied values improved, it reads the stored copies again without asking a model. A
+  knowledge administrator requests it with **Classify existing documents** (the tag button next to the database's name
+  on the Knowledge page). A clock shows instead while the request waits for the pipeline. Each document that still needs
+  a type costs one model call.
 - The type and attributes are filter metadata only. They are not part of the text that is embedded or shown to a model,
   so search results for existing content do not change.
 - Every knowledge database can be filtered by `document_type`, `document_types` and each attribute's value, in vector

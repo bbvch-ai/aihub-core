@@ -35,6 +35,22 @@
               severity="secondary"
               @click="openSourceModal(database)"
             />
+            <i
+              v-if="database.deletable && database.classification_requested_at"
+              class="pi pi-clock text-surface-400 dark:text-surface-500"
+              :title="t('knowledge.classification.pending', { date: formatRequestedAt(database.classification_requested_at) })"
+            />
+            <Button
+              v-else-if="database.deletable && database.classification_available"
+              v-tooltip.top="t('knowledge.classification.request')"
+              icon="pi pi-tags"
+              rounded
+              text
+              size="small"
+              severity="secondary"
+              :disabled="isRequestingClassification"
+              @click="confirmClassification(database)"
+            />
             <Button
               v-if="database.deletable"
               v-tooltip.top="t('knowledge.delete_database')"
@@ -159,6 +175,45 @@ const selectedDatabaseForSource = ref<DatabaseDto | null>(null)
 const openSourceModal = (database: DatabaseDto) => {
   selectedDatabaseForSource.value = database
   sourceModalVisible.value = true
+}
+
+const confirm = useConfirm()
+const { mutateAsync: requestDatabaseClassification, isLoading: isRequestingClassification }
+  = useRequestClassification()
+
+const formatRequestedAt = (requestedAt: Date) => useDateFormat(requestedAt, 'DD.MM.YYYY HH:mm').value
+
+const confirmClassification = (database: DatabaseDto) => {
+  confirm.require({
+    header: t('knowledge.classification.confirm.header'),
+    message: t('knowledge.classification.confirm.message', {
+      name: database.display_name || capitalCase(database.name),
+    }),
+    icon: 'pi pi-tags',
+    rejectLabel: t('common.actions.cancel'),
+    acceptLabel: t('knowledge.classification.confirm.accept'),
+    accept: () => requestClassificationOf(database.name),
+  })
+}
+
+const requestClassificationOf = async (database: string) => {
+  try {
+    await requestDatabaseClassification({ database, tenantId: tenantId.value })
+    toast.add({
+      severity: 'success',
+      summary: t('knowledge.classification.requested.summary'),
+      detail: t('knowledge.classification.requested.detail'),
+      life: 3000,
+    })
+  }
+  catch {
+    toast.add({
+      severity: 'error',
+      summary: t('knowledge.classification.error.summary'),
+      detail: t('knowledge.classification.error.detail'),
+      life: 5000,
+    })
+  }
 }
 
 const toNamespace = (database_name: string, namespace: NamespaceDto) => {

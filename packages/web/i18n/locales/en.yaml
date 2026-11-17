@@ -625,6 +625,19 @@ knowledge:
       description: The source syncs this database once a day, so its collections appear
         here after the next scheduled sync. If they still do not, check the source
         settings.
+  classification:
+    request: Classify existing documents
+    pending: 'Classification requested {date}; the documents are classified on the pipeline''s next run.'
+    confirm:
+      header: Classify existing documents
+      message: 'The documents of {name} that have no type yet, or were classified by an older version, are given a type and attributes from their stored text. Each of them costs one model call; documents that are up to date are skipped.'
+      accept: Classify
+    requested:
+      summary: Classification requested
+      detail: The pipeline classifies the documents shortly.
+    error:
+      summary: Classification could not be requested
+      detail: Please try again later.
   manual_management:
     description: Collections can be created and managed manually
   pipeline: 'Pipeline: {name}'

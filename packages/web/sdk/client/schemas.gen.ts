@@ -7741,6 +7741,27 @@ export const DatabaseDTOSchema = {
       description:
         "Identifier of the ingestion pipeline that processes this database, as served by GET /knowledge/ingestors. Visible to anyone who can see the database, so a database-level rule holder learns how it is configured without seeing its namespaces.",
     },
+    classification_available: {
+      type: "boolean",
+      title: "Classification Available",
+      description:
+        "Whether the documents of this database can be classified (#2346): false for a legacy or unassigned pipeline, and for a database whose configuration switched classification off.",
+      default: false,
+    },
+    classification_requested_at: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Classification Requested At",
+      description:
+        "When classification of the documents already ingested was requested (UTC); null when none is pending. Cleared by the pipeline once its backfill ran.",
+    },
     namespaces: {
       items: {
         $ref: "#/components/schemas/NamespaceDTO",
@@ -7830,6 +7851,27 @@ export const DatabaseResponseSchema = {
       ],
       title: "Description",
       description: "A brief description of the database's contents.",
+    },
+    classification_available: {
+      type: "boolean",
+      title: "Classification Available",
+      description:
+        "Whether the documents of this database can be classified (#2346): false for a legacy or unassigned pipeline, and for a database whose configuration switched classification off.",
+      default: false,
+    },
+    classification_requested_at: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Classification Requested At",
+      description:
+        "When classification of the documents already ingested was requested (UTC); null when none is pending. Cleared by the pipeline once its backfill ran.",
     },
   },
   type: "object",

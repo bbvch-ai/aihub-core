@@ -632,6 +632,19 @@ knowledge:
       description: La sorgente sincronizza questo database una volta al giorno, quindi
         le sue collezioni compaiono qui dopo la prossima sincronizzazione pianificata.
         Se ancora non compaiono, controlla le impostazioni della sorgente.
+  classification:
+    request: Classifica i documenti esistenti
+    pending: 'Classificazione richiesta il {date}; i documenti vengono classificati alla prossima esecuzione della pipeline.'
+    confirm:
+      header: Classifica i documenti esistenti
+      message: 'Ai documenti di {name} che non hanno ancora un tipo, o che sono stati classificati da una versione precedente, vengono assegnati un tipo e degli attributi dal testo salvato. Ognuno costa una chiamata al modello; i documenti aggiornati vengono saltati.'
+      accept: Classifica
+    requested:
+      summary: Classificazione richiesta
+      detail: La pipeline classifica i documenti a breve.
+    error:
+      summary: Non è stato possibile richiedere la classificazione
+      detail: Riprova più tardi.
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
   pipeline: 'Pipeline: {name}'

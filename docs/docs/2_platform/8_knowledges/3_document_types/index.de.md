@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: 9dd8db0871a60cdb67e7907eec6d731f4bfb009a576a8108c25d88a5525ecfbe
+source_sha: feb589d0f6450d7c8a8f18dae216d891dee481de69b7c307ba3cd08758690f9c
 ---
 
 # Dokumenttypen und Attribute
@@ -77,7 +77,10 @@ schaltet das aus; standardmässig ist sie eingeschaltet.
 - Dokumente, die aufgenommen wurden, bevor es die Klassifizierung gab oder bevor sich die Liste der Typen änderte,
   klassifiziert ein Backfill aus dem bereits gespeicherten Text, ohne sie erneut zu parsen oder einzubetten. Er läuft,
   wenn er für eine Wissensdatenbank angefordert wird; hat sich nur das Lesen übernommener Werte verbessert, liest er die
-  gespeicherten Kopien erneut, ohne ein Modell zu fragen.
+  gespeicherten Kopien erneut, ohne ein Modell zu fragen. Eine Wissensadministratorin oder ein Wissensadministrator
+  fordert ihn mit **Bestehende Dokumente klassifizieren** an (die Etiketten-Schaltfläche neben dem Namen der Datenbank
+  auf der Seite Wissen). Solange die Anforderung auf die Pipeline wartet, wird stattdessen eine Uhr angezeigt. Jedes
+  Dokument, das noch einen Typ braucht, kostet einen Modellaufruf.
 - Typ und Attribute sind reine Filter-Metadaten. Sie gehören nicht zum Text, der eingebettet oder einem Modell gezeigt
   wird, daher ändern sich die Suchergebnisse für bestehende Inhalte nicht.
 - Jede Wissensdatenbank lässt sich nach `document_type`, `document_types` und dem Wert jedes Attributs filtern, in der

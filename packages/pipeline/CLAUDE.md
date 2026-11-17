@@ -879,7 +879,8 @@ text in the doc store, without parsing or embedding again.
   value, so a changed type keeps nothing stale. A database being deleted is left alone.
 - **One document failing never fails the run**; its id is in the report and it stays owed. Infrastructure errors fail
   the run.
-- **Started by a request, not a schedule.** `BucketEntity.classification_requested_at` (set through the API, #2484) is
+- **Started by a request, not a schedule.** `BucketEntity.classification_requested_at` (set by
+  `POST /knowledge/databases/{database}/classification`, the Knowledge page's "Classify existing documents" button) is
   the work queue, like `deleting`: `DocumentClassificationBackfillSensorFor_…` starts one run per requested database
   (never two at once, a run key numbered by attempt so a failed run is driven again) with `dry_run: false` and the
   request time, and the run clears exactly that request (`BucketEntity.clear_classification_request`), so one made

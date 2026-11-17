@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
@@ -42,4 +43,18 @@ class DatabaseDTO(BaseModel):
             "rule holder learns how it is configured without seeing its namespaces.",
         ),
     ]
+    classification_available: Annotated[
+        bool,
+        Field(
+            description="Whether the documents of this database can be classified (#2346): false for a legacy or "
+            "unassigned pipeline, and for a database whose configuration switched classification off.",
+        ),
+    ] = False
+    classification_requested_at: Annotated[
+        datetime | None,
+        Field(
+            description="When classification of the documents already ingested was requested (UTC); null when none "
+            "is pending. Cleared by the pipeline once its backfill ran.",
+        ),
+    ] = None
     namespaces: Annotated[list[NamespaceDTO], Field(..., description="List of namespaces")]
