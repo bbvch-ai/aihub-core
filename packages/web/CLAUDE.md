@@ -42,7 +42,7 @@ packages/web/
 ├── sdk/client/              # Auto-generated HeyAPI TypeScript client (NEVER edit)
 ├── themes/                  # aihub-theme.ts (PrimeVue Aura preset customization)
 ├── types/                   # Shared TypeScript types (NavItem, DashboardWidget, etc.)
-└── utils/                   # Plain helpers with no Vue/Nuxt context (apiResponseGuard — SDK onResponse hook; ssoSessionCheck — once-per-session SSO probe flag)
+└── utils/                   # Plain helpers with no Vue/Nuxt context (apiResponseGuard — SDK onResponse hook; ssoSessionCheck — once-per-session SSO probe flag; markdownSanitizeSchema — MDC allowlist)
 ```
 
 ## Auth and locale
@@ -209,6 +209,26 @@ Uses **VueUse `useWebSocket`** — NOT Socket.IO:
 - New events pushed directly into Pinia-Colada cache via `queryCache.setQueryData()` (no refetch)
 - Terminal events (`StopEvent`, `ExceptionEvent`) trigger `queryCache.invalidateQueries()`
 - Auto-reconnect: `{ retries: -1, delay: 1000 }`
+
+## Markdown Rendering
+
+`MarkdownRenderer` (`<MDC>`) renders chat messages, LLM output, ingested documents and user files. `nuxt.config.ts`
+registers `rehype-sanitize` with `utils/markdownSanitizeSchema.ts`, a strict allowlist: prose tags, tables, code, our
+`markdown-figure`/`markdown-table` MDC components, and only `http(s)`/`mailto`/relative links (`s3` for images, which
+`ResolveImageComponent` presigns). A new MDC component or HTML tag renders only once it is added there. The schema is
+serialised into MDC's generated config, so it must stay plain JSON.
+
+## Content-Security-Policy
+
+The production images serve `nginx.conf.template`; `docker/start.sh` builds the whole policy into
+`CONTENT_SECURITY_POLICY` from the Keycloak, OpenWebUI and WebSocket origins in the container env and the inline-script
+hashes from `docker/csp-script-hashes.mjs` (computed at build). A `location` with its own `add_header` drops every
+server-level header, so each such block repeats the CSP and HSTS lines (`location /` serves every HTML route).
+`script-src` has no `'unsafe-inline'`/`'unsafe-eval'`: never add code that evaluates strings or injects inline scripts.
+Icons fall back to the Iconify API, so its hosts are in `connect-src`. `img-src` and `connect-src` name the S3 origin
+from `S3_STORAGE_PUBLIC_ENDPOINT` (presigned figure URLs, knowledge uploads), so markdown cannot load images from other
+hosts to leak data; without that variable they fall back to `https:`. A UI feature that shows external images needs a
+new origin in `start.sh`.
 
 ## Event Display System
 

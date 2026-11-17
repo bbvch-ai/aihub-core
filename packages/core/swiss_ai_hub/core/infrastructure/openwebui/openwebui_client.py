@@ -289,8 +289,7 @@ class OpenWebuiClient:
         Concurrent syncs can race the list→create window, and OpenWebUI signals a taken id with
         HTTP 401 MODEL_ID_TAKEN — the same status as a genuine permission denial, so the body's
         ``detail`` is inspected rather than the status code. Falling back to update reconciles
-        name/meta/base_model_id and leaves access grants untouched (the update endpoint ignores
-        an absent ``access_grants``).
+        name/meta/base_model_id and leaves access grants to ``update_model_access``.
         """
         model_data.setdefault("params", {})
         response = await http.post(
@@ -359,23 +358,15 @@ class OpenWebuiClient:
         model_id: str,
         access_grants: list[AccessGrant],
     ) -> dict[str, Any]:
-        model = await self.get_model(http, model_id)
-        form = {
-            "id": model["id"],
-            "name": model["name"],
-            "meta": model.get("meta", {}),
-            "params": model.get("params", {}),
-            # An explicit [] is required to clear access — OpenWebUI's update endpoint treats a
-            # null access_grants as "leave untouched", so sending None here would let a revoked
-            # grant silently survive instead of being cleared.
-            "access_grants": [g.model_dump() for g in access_grants],
-        }
-        if model.get("base_model_id"):
-            form["base_model_id"] = model["base_model_id"]
+        """Replaces the model's grants; an empty list clears them.
+
+        Since OpenWebUI 0.12.4, ``/model/update`` ignores ``access_grants``, so a revoked grant sent there survives
+        without an error. The dedicated endpoint applies them on every version we run.
+        """
         response = await http.post(
-            f"{self._base_url}{MODELS_ENDPOINT}/model/update",
+            f"{self._base_url}{MODELS_ENDPOINT}/model/access/update",
             headers=self._jwt_headers,
-            json=form,
+            json={"id": model_id, "access_grants": [g.model_dump() for g in access_grants]},
         )
         _raise_with_detail(response)
         return response.json()
@@ -413,19 +404,26 @@ class OpenWebuiClient:
         _raise_with_detail(response)
         return response.json()
 
-    async def update_knowledge(
-        self,
-        http: httpx.AsyncClient,
-        knowledge_id: str,
-        name: str,
-        description: str,
-        access_grants: list[AccessGrant],
-    ) -> None:
-        """Replaces name, description and grants; an explicit [] clears the grants, as for models."""
+    async def update_knowledge(self, http: httpx.AsyncClient, knowledge_id: str, name: str, description: str) -> None:
+        """Replaces name and description and keeps the grants, which ``update_knowledge_access`` owns.
+
+        OpenWebUI embeds the name and description again on every call, so a grant-only change should not come here.
+        """
         response = await http.post(
             f"{self._base_url}{KNOWLEDGE_ENDPOINT}/{knowledge_id}/update",
             headers=self._jwt_headers,
-            json={"name": name, "description": description, "access_grants": [g.model_dump() for g in access_grants]},
+            json={"name": name, "description": description},
+        )
+        _raise_with_detail(response)
+
+    async def update_knowledge_access(
+        self, http: httpx.AsyncClient, knowledge_id: str, access_grants: list[AccessGrant]
+    ) -> None:
+        """Replaces the entry's grants; an empty list clears them. Same reason as ``update_model_access``."""
+        response = await http.post(
+            f"{self._base_url}{KNOWLEDGE_ENDPOINT}/{knowledge_id}/access/update",
+            headers=self._jwt_headers,
+            json={"access_grants": [g.model_dump() for g in access_grants]},
         )
         _raise_with_detail(response)
 
