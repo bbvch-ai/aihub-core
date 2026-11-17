@@ -35,7 +35,9 @@ def _ref_doc(doc_id: str, excluded: list[str] | None = None, **metadata: Any) ->
 
 def _current(**overrides: Any) -> dict[str, Any]:
     return {
+        "document_type": DocumentType.INVOICE.value,
         "document_classification_version": DocumentTypeCatalog.VERSION,
+        "document_type_version": DocumentTypeCatalog.type_definition(DocumentType.INVOICE).version,
         "document_normalizer_version": DocumentValueNormalizer.VERSION,
         **overrides,
     }
@@ -57,6 +59,8 @@ class TestWorkOf:
         [
             (_ref_doc("new"), BackfillWork.CLASSIFY),
             (_ref_doc("old", **_current(document_classification_version=0)), BackfillWork.CLASSIFY),
+            (_ref_doc("older-type", **_current(document_type_version=0)), BackfillWork.CLASSIFY),
+            (_ref_doc("no-type-version", **_current(document_type_version=None)), BackfillWork.CLASSIFY),
             (_ref_doc("parser", **_current(document_normalizer_version=0)), BackfillWork.RENORMALIZE),
             (_ref_doc("done", **_current()), BackfillWork.UP_TO_DATE),
             (_ref_doc("jira", excluded=["issue_type"]), BackfillWork.SYNCED_RECORD),

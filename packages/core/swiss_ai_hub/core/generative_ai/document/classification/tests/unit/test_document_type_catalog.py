@@ -64,6 +64,7 @@ def test_metadata_keys_are_unique_and_do_not_collide_with_platform_keys() -> Non
         node_metadata.DOCUMENT_TYPE,
         node_metadata.DOCUMENT_TYPES,
         node_metadata.DOCUMENT_CLASSIFICATION_VERSION,
+        node_metadata.DOCUMENT_TYPE_VERSION,
         node_metadata.DOCUMENT_NORMALIZER_VERSION,
     }
     platform_keys = {
@@ -73,6 +74,55 @@ def test_metadata_keys_are_unique_and_do_not_collide_with_platform_keys() -> Non
     assert len(keys) == len(set(keys))
     assert all(isinstance(key, str) and type(key) is str for key in keys)
     assert not set(keys) & platform_keys
+
+
+def _with_other_at_version(version: int) -> tuple:
+    return tuple(
+        definition.model_copy(update={"version": version}) if definition.type == DocumentType.OTHER else definition
+        for definition in DocumentTypeCatalog.TYPES
+    )
+
+
+def _current(document_type: DocumentType) -> dict:
+    return {
+        "classification_version": DocumentTypeCatalog.VERSION,
+        "document_type": document_type.value,
+        "type_version": DocumentTypeCatalog.type_definition(document_type).version,
+    }
+
+
+def test_every_type_starts_at_version_one_or_later() -> None:
+    assert all(definition.version >= 1 for definition in DocumentTypeCatalog.TYPES)
+
+
+def test_a_document_classified_with_the_current_versions_is_not_classified_again() -> None:
+    assert not DocumentTypeCatalog.needs_classification(**_current(DocumentType.INVOICE))
+    assert not DocumentTypeCatalog.needs_classification(**_current(DocumentType.OTHER))
+
+
+@pytest.mark.parametrize(
+    "stored",
+    [
+        {"classification_version": None, "document_type": None, "type_version": None},
+        {**_current(DocumentType.INVOICE), "classification_version": DocumentTypeCatalog.VERSION - 1},
+        {**_current(DocumentType.INVOICE), "type_version": None},
+        {**_current(DocumentType.INVOICE), "type_version": 0},
+        {**_current(DocumentType.INVOICE), "document_type": "credit_note_removed_since"},
+    ],
+    ids=["unclassified", "older-catalog", "no-type-version", "older-type", "unknown-type"],
+)
+def test_an_outdated_or_unknown_classification_is_classified_again(stored: dict) -> None:
+    assert DocumentTypeCatalog.needs_classification(**stored)
+
+
+def test_adding_a_type_raises_others_version_and_redoes_only_the_documents_marked_other(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    invoice, other = _current(DocumentType.INVOICE), _current(DocumentType.OTHER)
+    monkeypatch.setattr(DocumentTypeCatalog, "TYPES", _with_other_at_version(other["type_version"] + 1))
+
+    assert DocumentTypeCatalog.needs_classification(**other)
+    assert not DocumentTypeCatalog.needs_classification(**invoice)
 
 
 def test_value_keys_leave_out_only_the_copied_text() -> None:

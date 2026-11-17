@@ -38,9 +38,15 @@ stores it (#2481). Further types follow in #2485.
    exactly as written. `DocumentValueNormalizer` drops text that is not in the document, stores attributes that do not
    apply as absent, reads dates, periods, amounts, currencies and tax IDs into one form, and checks a Swiss UID's check
    digit. Unreadable text keeps its copy with an empty value (`_raw` key), and dates keep their precision.
-5. **Two versions per document.** `document_classification_version` rises when the set or a meaning changes, and
-   documents are classified again. `document_normalizer_version` rises when a parser changes, and values are read again
-   from the stored copies without a model call.
+5. **Versions per document, at the narrowest level a change needs.** Re-classifying costs a model call per document, so
+   a change redoes only the documents it can affect:
+   - `document_type_version` is the version of the document's own type. Changing a type's definition raises it and
+     redoes that type's documents only. `other` means "none of the listed types", so adding a type raises `other`'s
+     version and redoes the documents marked `other`, not every invoice.
+   - `document_classification_version` rises for a change that can affect any document (a shared attribute's meaning,
+     the prompt's rules) and redoes every document.
+   - `document_normalizer_version` rises when a parser changes, and values are read again from the stored copies without
+     a model call.
 6. **The database's own text model.** The classifier takes the model as an argument; ingestion passes the knowledge
    database's text model rather than a deployment-wide one, so no document reaches a model its database did not approve.
    An optional override can follow if measured cost demands it.
@@ -60,8 +66,9 @@ rest, where totals and payment terms often stand.
   calling self-billing Gutschriften invoices made the model take a plain credit note for one and swap issuer and
   recipient; a credit note type (#2485) is where the two are told apart.
 - Every ingested document costs one more model call, through the PII guardrail for external models. #2482 measures it.
-- With only `invoice` and `other`, everything that is not an invoice is `other`. Adding a type raises the classification
-  version, and documents marked `other` are classified again.
+- With only `invoice` and `other`, everything that is not an invoice is `other`. Adding a type raises `other`'s version,
+  so only documents marked `other` are classified again. A type carved out of an existing one (say, credit notes out of
+  invoices) narrows that type too, so its version rises as well.
 - An attribute a parser cannot read stays empty, and the share of such values per attribute shows which formats to
   support next (#2481 reports it).
 - Prompts for ingestion stay English, like table refinement's: ingestion has no user language.

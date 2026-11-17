@@ -12,6 +12,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     DOCUMENT_CLASSIFICATION_VERSION,
     DOCUMENT_NORMALIZER_VERSION,
     DOCUMENT_TYPE,
+    DOCUMENT_TYPE_VERSION,
     DOCUMENT_TYPES,
 )
 
@@ -65,6 +66,7 @@ class DocumentClassification(BaseModel):
             DOCUMENT_TYPE: self.document_type.value,
             DOCUMENT_TYPES: [document_type.value for document_type in self.document_types],
             DOCUMENT_CLASSIFICATION_VERSION: DocumentTypeCatalog.VERSION,
+            DOCUMENT_TYPE_VERSION: DocumentTypeCatalog.type_definition(self.document_type).version,
             DOCUMENT_NORMALIZER_VERSION: DocumentValueNormalizer.VERSION,
             **self.values,
         }

@@ -104,7 +104,13 @@ Rules that keep values from being guessed:
 - **Amounts in every convention.** `12'496.36`, `12.496,36`, `12 496,36` and `12,496.36` are the same amount; the Swiss
   `1'250.–` is 1250.00. A negative total keeps its sign. A bare `$` is not read as a currency.
 
-Each document also records `document_classification_version` and `document_normalizer_version`. When the list of types
-or the meaning of an attribute changes, the classification version rises and the documents are classified again. When
-only the reading of copied text improves, the normaliser version rises and values are read again from the stored text,
-without asking a model.
+Each document also records the versions it was classified with, so a later change redoes only the documents it can
+affect:
+
+- `document_type_version`: the version of the document's own type. When a type's definition changes, only documents of
+  that type are classified again. Adding a type changes what `other` means, so only documents marked `other` are
+  classified again.
+- `document_classification_version`: rises for a change that can affect every document, such as the meaning of a shared
+  attribute; then all documents are classified again.
+- `document_normalizer_version`: rises when only the reading of copied text improves; values are read again from the
+  stored text, without asking a model.

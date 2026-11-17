@@ -12,9 +12,15 @@ class DocumentTypeDefinition(BaseModel):
     `attributes` decides applicability: an attribute outside it is stored empty whatever the model returns, so a
     filter on it never matches this type. `meanings` overrides an attribute's general meaning only where the general
     one is ambiguous for this type, such as which date of an invoice is its date.
+
+    Raise `version` when a change could classify this type's documents differently, so a backfill redoes only them.
+    `OTHER` is "none of the listed types", so adding a type, or narrowing one, raises `OTHER`'s version.
     """
 
     type: Annotated[DocumentType, Field(description="The type")]
+    version: Annotated[
+        int, Field(ge=1, description="Raised when documents of this type may be classified differently")
+    ] = 1
     description: Annotated[str, Field(description="What a document of this type is, as the model is told")]
     excludes: Annotated[
         list[str], Field(description="Documents that resemble this type but are not, as the model is told")

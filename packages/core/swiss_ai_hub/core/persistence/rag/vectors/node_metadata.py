@@ -33,6 +33,7 @@ IS_INGESTED: str = "is_ingested"
 DOCUMENT_TYPE: str = "document_type"
 DOCUMENT_TYPES: str = "document_types"
 DOCUMENT_CLASSIFICATION_VERSION: str = "document_classification_version"
+DOCUMENT_TYPE_VERSION: str = "document_type_version"
 DOCUMENT_NORMALIZER_VERSION: str = "document_normalizer_version"
 
 # Node level - Metadata

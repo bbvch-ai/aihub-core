@@ -65,6 +65,7 @@ class Metadata(DynamicEmbeddedDocument):
     document_type = StringField(required=False)
     document_types = ListField(StringField(), required=False)
     document_classification_version = IntField(required=False)
+    document_type_version = IntField(required=False)
     document_normalizer_version = IntField(required=False)
 
 

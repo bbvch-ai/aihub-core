@@ -14,6 +14,8 @@ from swiss_ai_hub.core.persistence import (
     DOCUMENT_CLASSIFICATION_VERSION,
     DOCUMENT_NORMALIZER_VERSION,
     DOCUMENT_TITLE,
+    DOCUMENT_TYPE,
+    DOCUMENT_TYPE_VERSION,
     HASH,
     NAMESPACE,
     SOURCE,
@@ -36,9 +38,10 @@ class DocumentClassificationBackfillService:
     """Classifies the documents a database ingested before classification, from their stored text (#2483).
 
     Nothing is parsed or embedded again. A document is classified with the database's text model when it has no
-    classification or one of an older `DocumentTypeCatalog.VERSION`; when only `DocumentValueNormalizer.VERSION` is
-    newer, its kept copies are read again without a model. Records synced with frontmatter are left alone, as at
-    ingestion.
+    classification, or one `DocumentTypeCatalog.needs_classification` finds outdated: an older catalog `VERSION` or an
+    older version of its own type, so adding a type redoes only the documents marked `other`. When only
+    `DocumentValueNormalizer.VERSION` is newer, its kept copies are read again without a model. Records synced with
+    frontmatter are left alone, as at ingestion.
 
     Each document's nodes are written before its record, and the record only while its content is the one read: the
     record's versions are what marks a document done, so a failure leaves it owed. Only nodes of the version read are
@@ -87,8 +90,11 @@ class DocumentClassificationBackfillService:
         excluded = set(ref_doc.data.excluded_embed_metadata_keys or [])
         if excluded - set(DocumentTypeCatalog.metadata_keys()):
             return BackfillWork.SYNCED_RECORD
-        classification_version = metadata.get(DOCUMENT_CLASSIFICATION_VERSION)
-        if classification_version is None or classification_version < DocumentTypeCatalog.VERSION:
+        if DocumentTypeCatalog.needs_classification(
+            classification_version=metadata.get(DOCUMENT_CLASSIFICATION_VERSION),
+            document_type=metadata.get(DOCUMENT_TYPE),
+            type_version=metadata.get(DOCUMENT_TYPE_VERSION),
+        ):
             return BackfillWork.CLASSIFY
         if (metadata.get(DOCUMENT_NORMALIZER_VERSION) or 0) < DocumentValueNormalizer.VERSION:
             return BackfillWork.RENORMALIZE

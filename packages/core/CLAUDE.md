@@ -776,8 +776,12 @@ last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadat
   orders allow), periods, amounts (Swiss, EU and English separators), currencies (a bare `$` stays unread) and tax IDs
   (a Swiss UID must pass its check digit). Each attribute keeps its copy under `<key>_raw`, dates their
   `<key>_precision`, and an unreadable copy has an empty value.
-- **Versions.** Raise `DocumentTypeCatalog.VERSION` when a stored document would be classified differently, and
-  `DocumentValueNormalizer.VERSION` when a parser reads stored copies differently; a backfill redoes the older ones.
+- **Versions, at the narrowest level.** Each re-classified document costs a model call, so raise only what a change
+  needs. A type's `DocumentTypeDefinition.version` when only its documents could be classified differently, and
+  `OTHER`'s when a type is added or narrowed: only `other` documents can move into the new one.
+  `DocumentTypeCatalog.VERSION` when any document could, such as a shared attribute's meaning or the prompt's rules.
+  `DocumentValueNormalizer.VERSION` when a parser reads stored copies differently, which needs no model.
+  `DocumentTypeCatalog.needs_classification` holds the rule the backfill applies.
 - **Separate from record fields.** The keys are kept out of embedded text like frontmatter keys, so
   `IngestedNode.from_llama_index_node` takes them into `document_classification` before it builds `record_fields`.
   `KnowledgeDocumentSummary` lists `document_type`, `document_types` and `document_attributes` (values without copies).

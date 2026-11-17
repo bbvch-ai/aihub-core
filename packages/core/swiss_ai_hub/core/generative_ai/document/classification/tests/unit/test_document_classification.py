@@ -133,6 +133,7 @@ def test_the_stored_metadata_carries_the_type_and_the_versions_it_was_made_with(
     assert metadata["document_type"] == "invoice"
     assert metadata["document_types"] == ["invoice"]
     assert metadata["document_classification_version"] == DocumentTypeCatalog.VERSION
+    assert metadata["document_type_version"] == DocumentTypeCatalog.type_definition(DocumentType.INVOICE).version
     assert metadata["document_normalizer_version"] == DocumentValueNormalizer.VERSION
     assert set(metadata) <= set(DocumentTypeCatalog.metadata_keys())
     assert all(type(key) is str for key in metadata)

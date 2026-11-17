@@ -11,6 +11,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     DOCUMENT_CLASSIFICATION_VERSION,
     DOCUMENT_NORMALIZER_VERSION,
     DOCUMENT_TYPE,
+    DOCUMENT_TYPE_VERSION,
     DOCUMENT_TYPES,
 )
 
@@ -22,8 +23,14 @@ class DocumentTypeCatalog:
     """The closed set of document types and their attributes, and everything built from it.
 
     The output schema's descriptions, the prompt, the stored metadata keys and the documentation all come from here, so
-    adding a type or an attribute changes this file and nothing that lists keys by hand. Raise `VERSION` whenever a
-    change would classify a stored document differently; a backfill re-classifies every document of an older version.
+    adding a type or an attribute changes this file and nothing that lists keys by hand.
+
+    Two levels of version decide what a backfill re-classifies, one model call per document:
+
+    - a type's own `version`, when a change could classify only that type's documents differently. Adding a type
+      raises `OTHER`'s, since only documents marked `OTHER` can now be of the new type;
+    - `VERSION`, when a change could classify any document differently, such as a shared attribute's meaning or the
+      prompt's rules. It re-classifies every document, so prefer a type's version whenever the change allows.
     """
 
     VERSION: ClassVar[int] = 1
@@ -171,6 +178,17 @@ class DocumentTypeCatalog:
         return next(definition for definition in cls.ATTRIBUTES if definition.attribute == attribute)
 
     @classmethod
+    def needs_classification(
+        cls, classification_version: int | None, document_type: str | None, type_version: int | None
+    ) -> bool:
+        """Whether a document classified with these stored versions would now be classified differently."""
+        if classification_version is None or classification_version < cls.VERSION:
+            return True
+        if document_type not in DocumentType:
+            return True
+        return (type_version or 0) < cls.type_definition(DocumentType(document_type)).version
+
+    @classmethod
     def applicable(cls, document_type: DocumentType) -> list[DocumentAttributeDefinition]:
         """The attributes that apply to a type, in the catalog's order."""
         wanted = set(cls.type_definition(document_type).attributes)
@@ -189,6 +207,7 @@ class DocumentTypeCatalog:
             DOCUMENT_TYPE,
             DOCUMENT_TYPES,
             DOCUMENT_CLASSIFICATION_VERSION,
+            DOCUMENT_TYPE_VERSION,
             DOCUMENT_NORMALIZER_VERSION,
             *attribute_keys,
         ]

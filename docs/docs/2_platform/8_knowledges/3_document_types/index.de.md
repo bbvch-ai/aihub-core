@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: feb589d0f6450d7c8a8f18dae216d891dee481de69b7c307ba3cd08758690f9c
+source_sha: 8255af5a11a8bbaa5a17cbea66c82ae6342c1d6b495463e9d5f5a22aa368a728
 ---
 
 # Dokumenttypen und Attribute
@@ -114,7 +114,13 @@ Regeln, die verhindern, dass Werte geraten werden:
   Schweizer `1'250.–` ist 1250.00. Ein negativer Endbetrag behält sein Vorzeichen. Ein alleinstehendes `$` wird nicht
   als Währung gelesen.
 
-Jedes Dokument hält zudem `document_classification_version` und `document_normalizer_version` fest. Wenn sich die Liste
-der Typen oder die Bedeutung eines Attributs ändert, steigt die Klassifizierungsversion und die Dokumente werden erneut
-klassifiziert. Wenn nur das Lesen des übernommenen Texts besser wird, steigt die Normalizer-Version und die Werte werden
-aus dem gespeicherten Text erneut gelesen, ohne ein Modell zu fragen.
+Jedes Dokument hält zudem die Versionen fest, mit denen es klassifiziert wurde, damit eine spätere Änderung nur die
+Dokumente erneut bearbeitet, die sie betreffen kann:
+
+- `document_type_version`: die Version des eigenen Typs des Dokuments. Ändert sich die Definition eines Typs, werden nur
+  Dokumente dieses Typs erneut klassifiziert. Ein neuer Typ ändert die Bedeutung von `other`, daher werden nur die als
+  `other` markierten Dokumente erneut klassifiziert.
+- `document_classification_version`: steigt bei einer Änderung, die jedes Dokument betreffen kann, etwa der Bedeutung
+  eines gemeinsamen Attributs; dann werden alle Dokumente erneut klassifiziert.
+- `document_normalizer_version`: steigt, wenn nur das Lesen des übernommenen Texts besser wird; die Werte werden aus dem
+  gespeicherten Text erneut gelesen, ohne ein Modell zu fragen.

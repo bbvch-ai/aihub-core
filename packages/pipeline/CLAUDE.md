@@ -864,10 +864,12 @@ See core's `document/classification/` and ADR `2026_11_13_closed_document_types_
 `services/document_classification_backfill_service.py`) classifies the documents a database ingested before, from the
 text in the doc store, without parsing or embedding again.
 
-- **What each document owes** (`BackfillWork`): no or an older `document_classification_version` → classified with the
-  database's text model; the current one with an older `document_normalizer_version` → its `_raw` copies read again by
-  `DocumentClassification.renormalized()`, no model call; records synced with frontmatter (an excluded key that is not a
-  classification key) → left alone, as at ingestion. A second run has nothing to do.
+- **What each document owes** (`BackfillWork`): no classification, or one `DocumentTypeCatalog.needs_classification`
+  finds outdated (an older `document_classification_version`, or an older `document_type_version` of its own type, so
+  adding a type redoes only the documents marked `other`) → classified with the database's text model; the current one
+  with an older `document_normalizer_version` → its `_raw` copies read again by `DocumentClassification.renormalized()`,
+  no model call; records synced with frontmatter (an excluded key that is not a classification key) → left alone, as at
+  ingestion. A second run has nothing to do.
 - **Nodes first, record last.** `PartitionAwareMilvusVectorStore.rewrite_document_metadata` patches the dynamic keys and
   `_node_content` (llama-index rebuilds a node from the latter alone) of the nodes carrying the content hash it read,
   and extends their exclusion lists; then `RefDoc.set_classification` writes the record, only while its content hash is
