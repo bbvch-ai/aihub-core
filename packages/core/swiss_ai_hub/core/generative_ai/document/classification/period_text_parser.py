@@ -40,7 +40,7 @@ class PeriodTextParser:
     _NUMERIC_MONTH_TO_MONTH: ClassVar[re.Pattern[str]] = re.compile(
         rf"\b(\d{{1,2}})[./](\d{{4}}){_TO}(\d{{1,2}})[./](\d{{4}})\b"
     )
-    _FULL_DATES: ClassVar[tuple[re.Pattern[str], ...]] = (
+    _FULL_DATE_PATTERNS: ClassVar[tuple[re.Pattern[str], ...]] = (
         _P.ISO_PATTERN,
         _P.NUMERIC_PATTERN,
         _P.DAY_MONTH_NAME_PATTERN,
@@ -67,7 +67,7 @@ class PeriodTextParser:
         """Every complete date in the text, in the order written; a reversed pair is then no period at all."""
         found = sorted(
             (match.start(), DateTextParser.parse(match[0]))
-            for pattern in cls._FULL_DATES
+            for pattern in cls._FULL_DATE_PATTERNS
             for match in pattern.finditer(text)
         )
         return [parsed for _, parsed in found if parsed is not None]
@@ -75,7 +75,7 @@ class PeriodTextParser:
     @classmethod
     def _without_full_dates(cls, text: str) -> str:
         """The text with every complete date taken out, so a month named inside one is not counted twice."""
-        for pattern in cls._FULL_DATES:
+        for pattern in cls._FULL_DATE_PATTERNS:
             text = pattern.sub(" ", text)
         return text
 
