@@ -29,6 +29,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.classification.document_classifier import DocumentClassifier
     from swiss_ai_hub.core.generative_ai.document.classification.document_type import DocumentType
     from swiss_ai_hub.core.generative_ai.document.classification.document_type_catalog import DocumentTypeCatalog
+    from swiss_ai_hub.core.generative_ai.document.classification.document_value_normalizer import (
+        DocumentValueNormalizer,
+    )
     from swiss_ai_hub.core.generative_ai.document.extraction.document_extractor import DocumentExtractor
     from swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver import DocumentTitleDeriver
     from swiss_ai_hub.core.generative_ai.document.extraction.extracted_document import ExtractedDocument
@@ -250,6 +253,7 @@ __all__ = [
     "DocumentClassifier",
     "DocumentType",
     "DocumentTypeCatalog",
+    "DocumentValueNormalizer",
     "DocumentExtractor",
     "DocumentLoaderSelector",
     "DocumentTitleDeriver",
@@ -343,6 +347,7 @@ _LAZY_IMPORTS = {
     "DocumentClassifier": "swiss_ai_hub.core.generative_ai.document.classification.document_classifier",
     "DocumentType": "swiss_ai_hub.core.generative_ai.document.classification.document_type",
     "DocumentTypeCatalog": "swiss_ai_hub.core.generative_ai.document.classification.document_type_catalog",
+    "DocumentValueNormalizer": "swiss_ai_hub.core.generative_ai.document.classification.document_value_normalizer",
     "DocumentExtractor": "swiss_ai_hub.core.generative_ai.document.extraction.document_extractor",
     "DocumentLoaderSelector": "swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector",
     "DocumentTitleDeriver": "swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver",

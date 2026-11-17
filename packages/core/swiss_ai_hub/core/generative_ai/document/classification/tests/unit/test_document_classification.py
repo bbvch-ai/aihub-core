@@ -136,3 +136,25 @@ def test_the_stored_metadata_carries_the_type_and_the_versions_it_was_made_with(
     assert metadata["document_normalizer_version"] == DocumentValueNormalizer.VERSION
     assert set(metadata) <= set(DocumentTypeCatalog.metadata_keys())
     assert all(type(key) is str for key in metadata)
+
+
+def test_renormalizing_reads_the_kept_copies_again_without_a_model() -> None:
+    """A value a previous parser left empty is filled from the copy kept beside it (#2483)."""
+    stored = _classified().to_metadata()
+    stored["document_date"] = None
+    stored["document_date_precision"] = None
+    stored["document_normalizer_version"] = 0
+
+    renormalized = DocumentClassification.renormalized(stored, _INVOICE)
+
+    assert renormalized.document_type == DocumentType.INVOICE
+    assert renormalized.values["document_date"] == "2025-03-14"
+    assert renormalized.values["document_issuer"] == "Hooli AG"
+    assert renormalized.to_metadata()["document_normalizer_version"] == DocumentValueNormalizer.VERSION
+
+
+def test_renormalizing_keeps_the_secondary_types() -> None:
+    stored = _classified().to_metadata()
+    stored["document_types"] = ["invoice", "invoice"]
+
+    assert DocumentClassification.renormalized(stored, _INVOICE).document_types == [DocumentType.INVOICE]

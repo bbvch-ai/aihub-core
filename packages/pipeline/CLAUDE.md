@@ -61,6 +61,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── source_pipeline_registration_sensor.py # Stage-1 counterpart: announce a source pipeline (+ shared id/label gate)
 │   │   ├── source_bucket_cleanup_sensor.py # Forget databases a source pipeline no longer fills (partitions + remote)
 │   │   ├── knowledge_teardown_sensor.py   # Run teardown for databases/folders flagged `deleting`
+│   │   ├── document_classification_backfill_sensor.py # Run the classification backfill for databases that requested it
 │   │   ├── single_flight_run_guard.py     # "Is a run of this job already queued or running?"
 │   │   └── nats/
 │   │       ├── nats_document_uploaded_sensor.py  # NATS event-driven triggers
@@ -82,11 +83,13 @@ packages/pipeline/                        # SDK framework
 │   ├── services/
 │   │   ├── knowledge_teardown_service.py  # Destroys a database/namespace across every store
 │   │   ├── default_partition_repair_service.py # Provisions the collection, moves nodes stranded in `_default`
-│   │   └── orphaned_node_repair_service.py # Deletes vector nodes whose document has no record and no file
+│   │   ├── orphaned_node_repair_service.py # Deletes vector nodes whose document has no record and no file
+│   │   └── document_classification_backfill_service.py # Classifies already ingested documents from their stored text
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
 │   ├── jobs/knowledge_teardown_job.py     # {ingestor}_knowledge_teardown
 │   ├── jobs/repair_orphaned_nodes_job.py  # {ingestor}_repair_orphaned_nodes (manual, dry run by default)
+│   ├── jobs/backfill_document_classification_job.py # {ingestor}_backfill_document_classification (sensor or manual dry run)
 │   ├── executors/factory.py               # default_process_executor (in-process)
 │   ├── automation/all_deps_completed.py   # AutomationCondition for all-deps-ready
 │   ├── types/                             # Domain types (Pydantic models)
@@ -856,6 +859,32 @@ See core's `document/classification/` and ADR `2026_11_13_closed_document_types_
   `document_classification_version`, so a backfill (#2483) finds it.
 - **Filterable everywhere.** Retrieval accepts `DocumentTypeCatalog.filter_keys()` on every database without listing
   them in `allowed_metadata_filter_fields`; the listing exposes them on `KnowledgeDocumentSummary`.
+
+**Backfill** (#2483): `{ingestor}_backfill_document_classification` (`jobs/` → `ops/repair/` →
+`services/document_classification_backfill_service.py`) classifies the documents a database ingested before, from the
+text in the doc store, without parsing or embedding again.
+
+- **What each document owes** (`BackfillWork`): no or an older `document_classification_version` → classified with the
+  database's text model; the current one with an older `document_normalizer_version` → its `_raw` copies read again by
+  `DocumentClassification.renormalized()`, no model call; records synced with frontmatter (an excluded key that is not a
+  classification key) → left alone, as at ingestion. A second run has nothing to do.
+- **Nodes first, record last.** `PartitionAwareMilvusVectorStore.rewrite_document_metadata` patches the dynamic keys and
+  `_node_content` (llama-index rebuilds a node from the latter alone) of the nodes carrying the content hash it read,
+  and extends their exclusion lists; then `RefDoc.set_classification` writes the record, only while its content hash is
+  still that one (`RefDoc.text_of` checks it before Milvus is touched too). If the record write finds the document
+  changed or removed, the rows just written are deleted again: they can only be the old version's, which ingestion or
+  removal had replaced or deleted, so nothing deleted comes back and a re-ingested document's new nodes are never
+  touched. A removal caught between deleting the nodes and deleting the record can still leave rows behind;
+  `{ingestor}_repair_orphaned_nodes` removes them. Every classification key is written, `None` where the new type has no
+  value, so a changed type keeps nothing stale. A database being deleted is left alone.
+- **One document failing never fails the run**; its id is in the report and it stays owed. Infrastructure errors fail
+  the run.
+- **Started by a request, not a schedule.** `BucketEntity.classification_requested_at` (set through the API, #2484) is
+  the work queue, like `deleting`: `DocumentClassificationBackfillSensorFor_…` starts one run per requested database
+  (never two at once, a run key numbered by attempt so a failed run is driven again) with `dry_run: false` and the
+  request time, and the run clears exactly that request (`BucketEntity.clear_classification_request`), so one made
+  meanwhile starts the next run. A launch by hand needs the `aihub/bucket` tag and is a dry run unless
+  `ops: {backfill_document_classification_op: {config: {dry_run: false}}}`.
 
 ## Per-Database Configuration
 

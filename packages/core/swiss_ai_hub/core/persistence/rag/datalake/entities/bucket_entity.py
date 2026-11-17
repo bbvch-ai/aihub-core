@@ -1,8 +1,17 @@
 import re
+from datetime import UTC, datetime
 from typing import Annotated, Self
 
 from bson import ObjectId
-from mongoengine import BooleanField, DictField, Document, EmbeddedDocumentField, StringField, ValidationError
+from mongoengine import (
+    BooleanField,
+    DateTimeField,
+    DictField,
+    Document,
+    EmbeddedDocumentField,
+    StringField,
+    ValidationError,
+)
 from mongoengine.context_managers import switch_db
 
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
@@ -46,6 +55,10 @@ class BucketEntity(Document):
     source_configuration = DictField(default=dict)
     # Soft-delete: excluded from every enumeration path, and hard-deleted last, by the teardown job.
     deleting = BooleanField(default=False)
+    # When classification of the documents already ingested was requested; None when nothing is owed. Like
+    # `deleting`, the flag is the work queue: the pipeline's backfill sensor runs a backfill while it is set, and the
+    # run clears only the request it started from, so one made during the run is served by the next.
+    classification_requested_at = DateTimeField(required=False, default=None)
 
     @staticmethod
     def _validate_name(name: str, field_name: str) -> None:
@@ -233,6 +246,37 @@ class BucketEntity(Document):
             collection.update_one({"_id": row["_id"]}, update)
             carried += 1
         return carried
+
+    @classmethod
+    def request_classification(cls, bucket_id: str, db_alias: str = "default") -> datetime:
+        """Ask for the database's already ingested documents to be classified; returns the request's time.
+
+        Naive UTC at millisecond precision, as Mongo stores it, so the run that serves the request can clear exactly
+        that request and no later one.
+        """
+        now = datetime.now(UTC).replace(tzinfo=None)
+        requested_at = now.replace(microsecond=now.microsecond // 1000 * 1000)
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            SwitchedBucket.objects(id=bucket_id).update_one(set__classification_requested_at=requested_at)
+        return requested_at
+
+    @classmethod
+    def get_classification_requested_buckets(cls, db_alias: str = "default") -> list["BucketEntity"]:
+        """Buckets whose already ingested documents are owed a classification, not counting those being deleted."""
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return list(
+                SwitchedBucket.objects(classification_requested_at__ne=None, deleting=False).order_by("bucket_name")
+            )
+
+    @classmethod
+    def clear_classification_request(cls, bucket_name: str, requested_at: datetime, db_alias: str = "default") -> bool:
+        """Clear the request a backfill served; a newer request made while it ran stays. Returns whether it cleared."""
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return bool(
+                SwitchedBucket.objects(bucket_name=bucket_name, classification_requested_at=requested_at).update_one(
+                    unset__classification_requested_at=True
+                )
+            )
 
     @classmethod
     def mark_deleting(cls, bucket_id: str, db_alias: str = "default") -> Self:

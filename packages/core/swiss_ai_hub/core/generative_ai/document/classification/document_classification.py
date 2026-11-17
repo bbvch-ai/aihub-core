@@ -41,6 +41,24 @@ class DocumentClassification(BaseModel):
             values=DocumentValueNormalizer.normalize(answer.document_type, answer, document_text),
         )
 
+    @classmethod
+    def renormalized(cls, stored_metadata: dict[str, Any], document_text: str) -> Self:
+        """The classification a document already has, with its kept copies read again by the current normaliser.
+
+        No model call: the type and the text the model copied are stored, so a better parser can fill values a
+        previous one left empty. The copies are checked against the text again, as at classification time.
+        """
+        primary = DocumentType(stored_metadata[DOCUMENT_TYPE])
+        answer = DocumentClassificationAnswer(
+            document_type=primary,
+            secondary_types=[DocumentType(value) for value in stored_metadata.get(DOCUMENT_TYPES) or []][1:],
+            **{
+                definition.key: stored_metadata.get(definition.raw_key)
+                for definition in DocumentTypeCatalog.extracted_attributes()
+            },
+        )
+        return cls.from_answer(answer, document_text)
+
     def to_metadata(self) -> dict[str, Any]:
         """The metadata to store on the document and every node, stamped with the versions it was produced with."""
         return {

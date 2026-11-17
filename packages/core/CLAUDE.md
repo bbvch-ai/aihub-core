@@ -783,6 +783,13 @@ last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadat
   `KnowledgeDocumentSummary` lists `document_type`, `document_types` and `document_attributes` (values without copies).
 - **Filterable on every database.** `narrow_retrievers` accepts `DocumentTypeCatalog.filter_keys()` (types and values,
   never the `_raw` copies) without a retriever listing them in `allowed_metadata_filter_fields`.
+- **Backfill primitives** (used by the pipeline's backfill, #2483): `BucketEntity.request_classification` /
+  `get_classification_requested_buckets` / `clear_classification_request` (the request is a naive-UTC millisecond time,
+  so a run clears only the one it served); `RefDoc.list_classification_states` (metadata and exclusions, no text),
+  `RefDoc.text_of(…, content_hash)` and `RefDoc.set_classification` (one atomic `$set` + `$addToSet`, only while the
+  content hash matches); `PartitionAwareMilvusVectorStore.rewrite_document_metadata` (patches dynamic keys and
+  `_node_content` of the nodes of one content hash, returns their ids per partition, nothing embedded again);
+  `DocumentClassification.renormalized` (kept copies, current parser, no model).
 - **The synthetic evaluation sample is kept from yamlfix** (`tests/evaluation/synthetic/`, excluded in the root
   `format-yaml` target and the YAML edit hook): yamlfix deletes the blank lines inside its literal text blocks, which
   would change the documents the classifier is measured on.

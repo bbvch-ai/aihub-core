@@ -28,6 +28,7 @@ from swiss_ai_hub.pipeline.ingestors.document_ingestion_config import DocumentIn
 from swiss_ai_hub.pipeline.io.routed_doc_store_io_manager import RoutedDocStoreIOManager
 from swiss_ai_hub.pipeline.io.routed_s3_data_lake_io_manager import RoutedS3DataLakeIOManager
 from swiss_ai_hub.pipeline.io.vector_store_io_manager import VectorStoreIOManager
+from swiss_ai_hub.pipeline.jobs.backfill_document_classification_job import backfill_document_classification_job
 from swiss_ai_hub.pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from swiss_ai_hub.pipeline.jobs.knowledge_teardown_job import knowledge_teardown_job
 from swiss_ai_hub.pipeline.jobs.repair_orphaned_nodes_job import repair_orphaned_nodes_job
@@ -41,6 +42,9 @@ from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_reso
 from swiss_ai_hub.pipeline.resources.parser.recursive_summary_parser_resource import RecursiveSummaryParserResource
 from swiss_ai_hub.pipeline.resources.parser.table_refinement_resource import TableRefinementResource
 from swiss_ai_hub.pipeline.schedules.per_bucket_schedule import per_bucket_observe_schedule
+from swiss_ai_hub.pipeline.sensors.document_classification_backfill_sensor import (
+    document_classification_backfill_sensor,
+)
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 from swiss_ai_hub.pipeline.sensors.ingestor_registration_sensor import ingestor_registration_sensor
 from swiss_ai_hub.pipeline.sensors.knowledge_teardown_sensor import knowledge_teardown_sensor
@@ -126,6 +130,7 @@ def document_ingestion_pipeline_definitions(
     )
     teardown_job = knowledge_teardown_job(source_location_name=ingestor)
     repair_job = repair_orphaned_nodes_job(source_location_name=ingestor)
+    backfill_job = backfill_document_classification_job(source_location_name=ingestor)
 
     announced_config = config or DocumentIngestionConfig.as_form(
         llm_model=settings.LLM_MODEL,
@@ -161,12 +166,13 @@ def document_ingestion_pipeline_definitions(
             default_automation_sensor(assets),
             nats_document_uploaded_sensor(observe_job, ingestor=ingestor),
             knowledge_teardown_sensor(teardown_job, ingestor=ingestor),
+            document_classification_backfill_sensor(backfill_job, ingestor=ingestor),
             run_after_success_sensor(monitored_job=observe_job, triggered_job=remove_job, require_bucket_tag=True),
             registration_sensor,
             *run_failure_notification_sensors_from_settings(),
         ],
         executor=default_process_executor(),
-        jobs=[observe_job, remove_job, teardown_job, repair_job],
+        jobs=[observe_job, remove_job, teardown_job, repair_job, backfill_job],
         schedules=[
             per_bucket_observe_schedule(
                 observe_job,

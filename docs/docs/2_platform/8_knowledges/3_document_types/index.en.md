@@ -70,6 +70,9 @@ default.
 - Records synced from Jira, Confluence or MediaWiki are not classified: their own fields already say what they are.
 - If the model call fails, the document is ingested without a type and stays fully searchable. It is classified later by
   a backfill.
+- Documents ingested before classification existed, or before the list of types changed, are classified by a backfill
+  from the text already stored, without being parsed or embedded again. It runs when it is requested for a knowledge
+  database; when only the reading of copied values improved, it reads the stored copies again without asking a model.
 - The type and attributes are filter metadata only. They are not part of the text that is embedded or shown to a model,
   so search results for existing content do not change.
 - Every knowledge database can be filtered by `document_type`, `document_types` and each attribute's value, in vector

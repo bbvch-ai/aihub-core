@@ -29,6 +29,10 @@ _RAW_NAMESPACE = "__data__.metadata.namespace"
 _RAW_IS_INGESTED = "__data__.metadata.is_ingested"
 _RAW_SOURCE = "__data__.metadata.source"
 _RAW_TEXT = "__data__.text"
+_RAW_CONTENT_HASH = "__data__.metadata.content_hash"
+_RAW_METADATA = "__data__.metadata"
+_RAW_EXCLUDED_EMBED = "__data__.excluded_embed_metadata_keys"
+_RAW_EXCLUDED_LLM = "__data__.excluded_llm_metadata_keys"
 # What a summary needs from a row: type, metadata and mimetype, never either copy of the text
 _SUMMARY_FIELDS = {"__type__": 1, "__data__.metadata": 1, "__data__.mimetype": 1}
 _PROJECT = "$project"
@@ -623,3 +627,59 @@ class RefDoc(Document):
         """
         with switch_db(cls, db_alias) as SwitchedRefDoc:
             return bool(SwitchedRefDoc.objects(id=doc_id).update_one(set__data__metadata__is_ingested=True))
+
+    @classmethod
+    @trace_fn
+    def list_classification_states(cls, db_alias: str) -> list["RefDoc"]:
+        """Every fully ingested document of a database with its metadata and embedding exclusions, without text.
+
+        What a classification backfill decides its work from: the versions a document was classified with, and
+        whether frontmatter excluded keys of its own, which marks a synced record. Read straight from the alias's
+        database, as `list_ingested_summaries` does, and in source order so a run's progress is reproducible.
+        """
+        rows = (
+            get_db(db_alias)[cls._meta["collection"]]
+            .find(
+                {_RAW_IS_INGESTED: {"$ne": False}, "__type__": {"$ne": "placeholder"}},
+                {"__type__": 1, _RAW_METADATA: 1, _RAW_EXCLUDED_EMBED: 1},
+            )
+            .sort(_RAW_SOURCE, 1)
+        )
+        return [cls._from_son(son) for son in rows]
+
+    @classmethod
+    @trace_fn
+    def text_of(cls, db_alias: str, doc_id: str, content_hash: str) -> str | None:
+        """The parsed text of one document, or None when it is gone or its content changed since it was listed."""
+        row = get_db(db_alias)[cls._meta["collection"]].find_one(
+            {"_id": doc_id, _RAW_CONTENT_HASH: content_hash}, {_RAW_TEXT: 1}
+        )
+        return row["__data__"].get("text", "") if row else None
+
+    @classmethod
+    @trace_fn
+    def set_classification(
+        cls,
+        db_alias: str,
+        doc_id: str,
+        content_hash: str,
+        metadata: dict[str, Any],
+        excluded_keys: list[str],
+    ) -> bool:
+        """Write a document's classification, unless its content changed since it was read; returns whether it did.
+
+        One atomic update of only these keys, like `mark_ingested`, so a concurrent re-ingestion is never reverted.
+        The content hash guards the case where it already happened: a re-ingested document is classified by
+        ingestion itself, and values read from its old text must not overwrite those.
+        """
+        result = get_db(db_alias)[cls._meta["collection"]].update_one(
+            {"_id": doc_id, _RAW_CONTENT_HASH: content_hash},
+            {
+                "$set": {f"{_RAW_METADATA}.{key}": value for key, value in metadata.items()},
+                "$addToSet": {
+                    _RAW_EXCLUDED_EMBED: {"$each": excluded_keys},
+                    _RAW_EXCLUDED_LLM: {"$each": excluded_keys},
+                },
+            },
+        )
+        return result.matched_count == 1
