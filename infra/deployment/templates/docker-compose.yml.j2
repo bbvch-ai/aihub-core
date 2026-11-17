@@ -3476,10 +3476,21 @@ services:
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.middlewares=security-headers@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
+      # Knowledge figures in OpenWebUI sources, on OpenWebUI's own origin so the browser sends its session cookie
+      # (ADR 2026_11_17_knowledge_figures_served_through_openwebui_session_proxy).
+      - "traefik.http.routers.api-figures.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/hub-figures/`)"
+      - "traefik.http.routers.api-figures.priority=6100"
+      - "traefik.http.routers.api-figures.entrypoints=websecure"
+      - "traefik.http.routers.api-figures.service=api"
+      - "traefik.http.routers.api-figures.middlewares=api-figures-path,security-headers@file"
+      - "traefik.http.middlewares.api-figures-path.replacepathregex.regex=^/hub-figures/([A-Za-z0-9_-]+)/([a-f0-9]{24})/([a-z0-9][a-z0-9.-]*)/(.+)$$"
+      - "traefik.http.middlewares.api-figures-path.replacepathregex.replacement=/api/v1/$$1/files/figures/$$2/$$3/$$4"
       {%- if stage not in ['local', 'build'] %}
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api-figures.tls.certresolver=letsencrypt"
       {%- else %}
       - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.api-figures.tls=true"
       {%- endif %}
     networks:
       - proxy
