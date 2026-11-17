@@ -31,9 +31,10 @@
           <Badge
             v-for="access_rule in role.access_rules"
             :key="access_rule"
+            v-tooltip.top="longTextTooltip(access_rule)"
             :value="access_rule"
             severity="secondary"
-            class="border border-surface-200 dark:border-surface-700"
+            class="!inline-block max-w-full truncate border border-surface-200 dark:border-surface-700"
           />
         </div>
       </div>
