@@ -294,8 +294,12 @@ class LLMConfig(LiteLLMBase[ResilientOpenAILike]):
         token_counter = TokenCountingHandler(tokenizer=self.token_counter)
         cost_tracker = LLMCostTracker(
             token_counter=token_counter,
-            prompt_tokens_costs_per_thousand=model_info["model_info"]["input_cost_per_token"] * 1000,
-            completion_tokens_costs_per_thousand=model_info["model_info"]["output_cost_per_token"] * 1000,
+            prompt_tokens_costs_per_thousand=LLMCostTracker.per_thousand(
+                model_info["model_info"].get("input_cost_per_token")
+            ),
+            completion_tokens_costs_per_thousand=LLMCostTracker.per_thousand(
+                model_info["model_info"].get("output_cost_per_token")
+            ),
         )
 
         default_headers = {}

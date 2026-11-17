@@ -27,7 +27,7 @@ class LLMCostTracker:
     token_handler = TokenCountingHandler()
     cost_tracker = LLMCostTracker(
         token_counter=token_handler,
-        prompt_tokens_costs_per_thousand=0.002,       # e.g., $0.002 per 1k prompt tokens
+        prompt_tokens_costs_per_thousand=0.002,       # e.g., CHF 0.002 per 1k prompt tokens
         completion_tokens_costs_per_thousand=0.002,   # e.g., same rate for completions
         embedding_tokens_costs_per_thousand=0.0005,   # cheaper for embeddings
     )
@@ -50,6 +50,11 @@ class LLMCostTracker:
         self._prompt_tokens_costs_per_thousand = prompt_tokens_costs_per_thousand
         self._completion_tokens_costs_per_thousand = completion_tokens_costs_per_thousand
         self._embedding_tokens_costs_per_thousand = embedding_tokens_costs_per_thousand
+
+    @staticmethod
+    def per_thousand(cost_per_token: float | None) -> float:
+        """LiteLLM reports no price for a model it has none configured for, and such a model costs nothing."""
+        return (cost_per_token or 0) * 1000
 
     def get_total_costs(self) -> LLMCosts:
         """
