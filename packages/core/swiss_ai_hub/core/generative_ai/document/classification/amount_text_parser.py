@@ -37,19 +37,24 @@ class AmountTextParser:
 
     @classmethod
     def _value(cls, number: str) -> float | None:
-        last_dot, last_comma = number.rfind("."), number.rfind(",")
-        if last_dot >= 0 and last_comma >= 0:
-            decimal = "." if last_dot > last_comma else ","
-        elif last_dot >= 0 or last_comma >= 0:
-            separator = "." if last_dot >= 0 else ","
-            decimal = None if cls._is_thousands(number, separator) else separator
-        else:
-            decimal = None
+        decimal = cls._decimal_separator(number)
         integer_part, _, fraction = number.rpartition(decimal) if decimal else (number, "", "")
         digits = re.sub(r"[.,]", "", integer_part)
         if not digits.isdigit() or (fraction and not fraction.isdigit()):
             return None
         return float(f"{digits}.{fraction}" if fraction else digits)
+
+    @classmethod
+    def _decimal_separator(cls, number: str) -> str | None:
+        """The separator before the decimals: the later one when both kinds appear, a lone one unless it groups
+        thousands, and none when the number has no separator."""
+        last_dot, last_comma = number.rfind("."), number.rfind(",")
+        if last_dot >= 0 and last_comma >= 0:
+            return "." if last_dot > last_comma else ","
+        if last_dot < 0 and last_comma < 0:
+            return None
+        separator = "." if last_dot >= 0 else ","
+        return None if cls._is_thousands(number, separator) else separator
 
     @classmethod
     def _is_thousands(cls, number: str, separator: str) -> bool:
