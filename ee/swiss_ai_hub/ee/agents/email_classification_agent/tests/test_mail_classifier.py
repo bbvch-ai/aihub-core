@@ -472,6 +472,7 @@ def test_the_unused_fallback_folder_constrains_nothing_when_uncategorised_mail_i
 def test_a_failure_folder_equal_to_the_inbox_is_still_rejected_when_uncategorised_mail_is_kept():
     settings = _keeping()
     settings.failure_folder = "INBOX"
+    drafting = _no_drafting()
 
     with pytest.raises(ValueError, match="equals the inbox folder"):
-        MailTriageValidator.validate(settings, _no_drafting(), "INBOX", _counter)
+        MailTriageValidator.validate(settings, drafting, "INBOX", _counter)

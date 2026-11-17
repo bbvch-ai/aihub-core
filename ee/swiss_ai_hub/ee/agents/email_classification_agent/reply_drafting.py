@@ -205,7 +205,6 @@ class ReplyDrafting:
             await displayer.display_thought(
                 f"No knowledge agent is configured — drafting {len(to_draft)} reply/replies from the messages alone."
             )
-            return
 
     @staticmethod
     async def _compose_grounded(
