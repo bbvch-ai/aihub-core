@@ -40,6 +40,6 @@ class DocumentClassifier:
         """The model call alone, so a caller can tell the model's failures from those of the code reading its answer."""
         return await llm.astructured_predict(
             DocumentClassificationAnswer,
-            DocumentClassificationPrompt.template(),
+            DocumentClassificationPrompt.prompt_template(),
             **DocumentClassificationPrompt.arguments(title, DocumentOpeningText.of(text)),
         )

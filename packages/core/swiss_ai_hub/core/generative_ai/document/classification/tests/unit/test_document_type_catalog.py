@@ -134,7 +134,7 @@ def test_value_keys_leave_out_only_the_copied_text() -> None:
 
 
 def test_the_prompt_names_every_type_and_every_attribute_the_model_fills() -> None:
-    messages = DocumentClassificationPrompt.template().format_messages(
+    messages = DocumentClassificationPrompt.prompt_template().format_messages(
         **DocumentClassificationPrompt.arguments("scan.pdf", "text")
     )
     system = messages[0].content
