@@ -1,18 +1,22 @@
 import asyncio
 from typing import Annotated, Self
 
-from fastapi import Depends, Query, Security
+from fastapi import Depends, Query, Response, Security
+from redis.asyncio import Redis
+from swiss_ai_hub.core.auth import OpenWebuiSessionAuthHandler
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
-from swiss_ai_hub.core.infrastructure import use_s3_service
+from swiss_ai_hub.core.infrastructure import use_redis, use_s3_service
 from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.file.dto.signed_url_dto import SignedUrlDto
+from swiss_ai_hub.api.routes.file.figure_access import FigureAccess
+from swiss_ai_hub.api.routes.file.figure_image import FigureImage
 from swiss_ai_hub.api.routes.file.file_service import FileService
 
 
@@ -50,6 +54,35 @@ class FileController(TenantScopedController):
                 lambda: FileService.get_file_url(AccessChecker.from_user(user), container, file_path, s3_service)
             )
             return SignedUrlDto(url=url)
+
+        return self
+
+    def get_figure(
+        self,
+        route: str = "/figures/{thread_id}/{container}/{file_path:path}",
+        viewer: OpenWebuiSessionAuthHandler | None = None,
+    ) -> Self:
+        """Serves knowledge figures to OpenWebUI's sources, reached from its origin under `/hub-figures`.
+
+        Left out of the OpenAPI schema: only an image tag in OpenWebUI calls it, with the session cookie as credential.
+        """
+        session_viewer = viewer or OpenWebuiSessionAuthHandler()
+
+        @self.router.get(route, tags=self.tags, summary="Knowledge figure in a source", include_in_schema=False)
+        async def get_figure(
+            tenant_id: str,
+            thread_id: str,
+            container: str,
+            file_path: str,
+            _requested_as_image: Annotated[None, Depends(FigureAccess.ensure_requested_as_image)],
+            user: Annotated[UserIdentity, Depends(session_viewer)],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+            redis: Annotated[Redis, Depends(use_redis)],
+        ) -> Response:
+            """The figure, re-encoded, when the viewer may read the source an agent showed it in."""
+            await FigureAccess.ensure_may_view(tenant_id, thread_id, container, file_path, user, redis)
+            figure = await FigureImage.from_storage(s3_service, container, file_path)
+            return figure.to_response()
 
         return self
 
