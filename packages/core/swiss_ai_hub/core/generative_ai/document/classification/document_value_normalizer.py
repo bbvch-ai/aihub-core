@@ -30,7 +30,7 @@ class DocumentValueNormalizer:
     re-reads every document's kept text without calling a model.
     """
 
-    VERSION: ClassVar[int] = 1
+    VERSION: ClassVar[int] = 2
 
     @classmethod
     def normalize(
