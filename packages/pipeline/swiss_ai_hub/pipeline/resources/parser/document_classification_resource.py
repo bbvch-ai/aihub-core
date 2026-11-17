@@ -1,6 +1,9 @@
 from dagster import ConfigurableResource
 from llama_index.core.llms import LLM
 from swiss_ai_hub.core.generative_ai import DocumentClassification, DocumentClassifier
+from swiss_ai_hub.core.generative_ai.document.classification.document_classification_answer import (
+    DocumentClassificationAnswer,
+)
 from swiss_ai_hub.core.persistence import DOCUMENT_TITLE
 
 from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
@@ -14,8 +17,14 @@ class DocumentClassificationResource(ConfigurableResource):
     chose, so the caller resolves the model per run and passes it in.
     """
 
-    def classify(self, ref_doc: RefDocDocument, llm: LLM) -> tuple[RefDocDocument, DocumentClassification]:
-        """The document with its classification as metadata, and the classification, for the run's own metadata."""
+    def answer(self, ref_doc: RefDocDocument, llm: LLM) -> DocumentClassificationAnswer:
+        """What the model copied from the document: the one step that depends on the model being up and well behaved."""
         title = ref_doc.metadata.get(DOCUMENT_TITLE) or ref_doc.uri.rsplit("/", 1)[-1]
-        classification = run_async(DocumentClassifier.classify(ref_doc.text, title, llm))
+        return run_async(DocumentClassifier.answer(ref_doc.text, title, llm))
+
+    def apply(
+        self, ref_doc: RefDocDocument, answer: DocumentClassificationAnswer
+    ) -> tuple[RefDocDocument, DocumentClassification]:
+        """The document with the answer read into its metadata, and the classification, for the run's own metadata."""
+        classification = DocumentClassification.from_answer(answer, ref_doc.text)
         return ref_doc.with_classification(classification.to_metadata()), classification

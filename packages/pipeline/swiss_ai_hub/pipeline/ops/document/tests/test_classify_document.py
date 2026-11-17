@@ -3,7 +3,10 @@
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
+import httpx
+import pytest
 from dagster import build_op_context
+from openai import APIConnectionError
 from swiss_ai_hub.core.generative_ai import DocumentTypeCatalog
 from swiss_ai_hub.core.generative_ai.document.classification.document_classification_answer import (
     DocumentClassificationAnswer,
@@ -56,7 +59,7 @@ class TestClassifyDocument:
         result, _ = _classify(_ref_doc(), resource, opted_in=False)
 
         assert result.metadata == {"source": "s3://finance/invoices/re-1.pdf"}
-        resource.classify.assert_not_called()
+        resource.answer.assert_not_called()
 
     def test_a_record_synced_with_its_own_fields_is_not_classified(self) -> None:
         resource = Mock()
@@ -64,7 +67,7 @@ class TestClassifyDocument:
         result, _ = _classify(_ref_doc(excluded_embed_metadata_keys=["issue_type"]), resource)
 
         assert "document_type" not in result.metadata
-        resource.classify.assert_not_called()
+        resource.answer.assert_not_called()
 
     def test_a_document_is_classified_with_its_own_databases_text_model(self) -> None:
         llm = _llm_answering(document_reference_number="RE-1", document_issuer="Hooli AG")
@@ -98,3 +101,23 @@ class TestClassifyDocument:
 
         assert result.metadata == {"source": "s3://finance/invoices/re-1.pdf"}
         assert result.excluded_embed_metadata_keys == []
+
+    def test_an_unreachable_model_leaves_the_document_unclassified_instead_of_failing_ingestion(self) -> None:
+        llm = Mock()
+        llm.astructured_predict = AsyncMock(
+            side_effect=APIConnectionError(request=httpx.Request("POST", "http://litellm:4000/v1/chat/completions"))
+        )
+
+        result, _ = _classify(_ref_doc(), DocumentClassificationResource(), llm=llm)
+
+        assert "document_type" not in result.metadata
+
+    def test_a_fault_reading_the_answer_fails_the_run_instead_of_hiding_as_unclassified(self) -> None:
+        with (
+            patch(
+                "swiss_ai_hub.pipeline.resources.parser.document_classification_resource.DocumentClassification.from_answer",
+                side_effect=KeyError("document_date"),
+            ),
+            pytest.raises(KeyError),
+        ):
+            _classify(_ref_doc(), DocumentClassificationResource(), llm=_llm_answering(document_issuer="Hooli AG"))

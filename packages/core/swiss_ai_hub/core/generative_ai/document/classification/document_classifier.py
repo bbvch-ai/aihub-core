@@ -28,9 +28,18 @@ class DocumentClassifier:
         title: Annotated[str, "The document's title or filename"],
         llm: Annotated[LLM, "Model that classifies; the caller pins it to a deterministic temperature"],
     ) -> DocumentClassification:
-        answer = await llm.astructured_predict(
+        return DocumentClassification.from_answer(await DocumentClassifier.answer(text, title, llm), text)
+
+    @staticmethod
+    @trace_fn
+    async def answer(
+        text: Annotated[str, "The document's whole parsed text"],
+        title: Annotated[str, "The document's title or filename"],
+        llm: Annotated[LLM, "Model that classifies; the caller pins it to a deterministic temperature"],
+    ) -> DocumentClassificationAnswer:
+        """The model call alone, so a caller can tell the model's failures from those of the code reading its answer."""
+        return await llm.astructured_predict(
             DocumentClassificationAnswer,
             DocumentClassificationPrompt.template(),
             **DocumentClassificationPrompt.arguments(title, DocumentOpeningText.of(text)),
         )
-        return DocumentClassification.from_answer(answer, text)
