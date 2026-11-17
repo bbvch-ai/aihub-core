@@ -80,7 +80,6 @@ watch([tenant, tenantsAreLoading], ([newTenant, loading]) => {
     name: newTenant.name,
     description: newTenant.description,
     access_rules: newTenant.access_rules,
-    chat_disclaimer: newTenant.chat_disclaimer,
   })
   saveFailed.value = false
 }, { immediate: true })

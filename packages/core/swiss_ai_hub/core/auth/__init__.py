@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
     from swiss_ai_hub.core.auth.access.access_level import AccessLevel
     from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
+    from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_auth_handler import OpenWebuiAuthHandler
     from swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler import (
         TokenAndOauth2Handler,
     )
@@ -28,6 +29,7 @@ __all__ = [
     "AccessChecker",
     "AccessLevel",
     "AuthHandler",
+    "OpenWebuiAuthHandler",
     "KeycloakAdminService",
     "KeycloakGroup",
     "KeycloakSettings",
@@ -44,6 +46,7 @@ _LAZY_IMPORTS = {
     "AccessChecker": "swiss_ai_hub.core.auth.access.access_checker",
     "AccessLevel": "swiss_ai_hub.core.auth.access.access_level",
     "AuthHandler": "swiss_ai_hub.core.auth.dependencies.auth_handler",
+    "OpenWebuiAuthHandler": "swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_auth_handler",
     "KeycloakAdminService": "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service",
     "KeycloakGroup": "swiss_ai_hub.core.auth.keycloak.models.keycloak_group",
     "KeycloakSettings": "swiss_ai_hub.core.auth.keycloak.keycloak_settings",

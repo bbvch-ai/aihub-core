@@ -2,3 +2,7 @@
 tenant_admin:
   name: Administration des tenants
   description: Créer, modifier et supprimer des tenants (administrateurs système uniquement)
+openwebui_mods:
+  name: Modifications d’Open WebUI
+  description: Gérer les paquets de modifications d’Open WebUI (administrateurs système
+    uniquement)

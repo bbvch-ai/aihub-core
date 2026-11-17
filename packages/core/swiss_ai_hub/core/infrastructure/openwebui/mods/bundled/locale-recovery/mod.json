@@ -1,0 +1,8 @@
+{
+  "format": 1,
+  "id": "aihub-locale-recovery",
+  "name": "Saved language recovery",
+  "version": "1.0.0",
+  "description": "Repairs unsupported saved language codes before Open WebUI initializes its translations.",
+  "bootstrap": "bootstrap.js"
+}

@@ -155,10 +155,8 @@ metadata. The tenant immediately becomes **Active** and is selectable by its mem
 
 ![The newly created tenant shown as Active in the Tenants list](../../../../media/platform/creating_tenants/05_tenant_active.png)
 
-> The **Overview** tab also holds the tenant's **chat disclaimer**: a short notice shown below the chat input in
-> OpenWebUI, in German, English, French and Italian, up to 100 characters per language. Leave it unset and the tenant
-> shows the platform's translated default. The notice follows the user's language, falling back to German and then to
-> the first translation that exists.
+The tenant's Open WebUI settings page manages chat modifications, including the localized Chat disclaimer. See
+[Open WebUI modifications](../../10_chat_ui/16_openwebui_mods/) for configuration.
 
 > There is no separate "Scope" field on the create form. Tenant boundaries are expressed through **Access Rules**, which
 > you can set at creation time or edit later from the tenant's **Overview** tab.

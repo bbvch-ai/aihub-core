@@ -31,14 +31,14 @@ formkit config. Do NOT duplicate any of those here.
 
 What belongs here:
 
-- Sysadmin-only pages (tenant CRUD)
+- Sysadmin-only pages (tenant CRUD and tenant/global Open WebUI modifications)
 - Components used ONLY by sysadmin pages (`TenantAdmin/{Card,Configure,Edit}.vue`)
 - Composables used ONLY by sysadmin pages (`tenant-admin/use*`)
 - The `sysadmin.vue` layout used by sysadmin pages (top bar with "Exit"). Opted-in per page via
   `definePageMeta({ layout: 'sysadmin' })`. We deliberately do NOT name it `default.vue` because that would override the
   web layer's own `default.vue` and pollute every inherited route with the sysadmin shell.
 - The `sysadmin.global.ts` middleware that gates sysadmin access
-- The `tenant_admin:` i18n scope (4 locale files)
+- The `tenant_admin:` and `openwebui_mods:` i18n scopes (4 locale files)
 - The SDK against `swiss-ai-hub-sysadmin-api` (auto-generated, never edit)
 
 What does NOT belong here:
@@ -50,27 +50,23 @@ What does NOT belong here:
 ## Routing model
 
 `sysadmin-web` inherits all of `@swiss-ai-hub/web`'s pages via the Layer extension. That includes the regular admin UI
-routes (`/[tenant]/service/*`, `/select-tenant`, `/auth/*`). This is intentional: it keeps sysadmin-web minimal AND lets
-sysadmin users follow inherited links seamlessly. The `middleware/sysadmin.global.ts` middleware verifies the user is a
-sysadmin on every request; non-sysadmins are bounced to the main app's tenant selector via a cross-origin
-`window.location.replace()` using `runtimeConfig.public.mainApp.url` (the main UI origin, not the API origin — they
-differ in dev).
+routes (`/[tenant]/service/*`, `/select-tenant`, `/auth/*`). The `middleware/sysadmin.global.ts` middleware checks the
+same-origin identity endpoint on navigation and confines sysadmin users to this app's management sections. Auth routes
+and the terminal `/{locale}/sysadmin-required` page bypass the check. Authenticated users without the sysadmin role
+see that terminal page; a failed identity check redirects to this origin's login page.
 
-The sysadmin-specific routes added by this package live at `/tenants/*` (no leading `/sysadmin/` prefix — the entire app
-IS the sysadmin app, so the URL doesn't need to re-declare that fact).
+The sysadmin-specific routes live at `/{locale}/tenants/*` and `/{locale}/openwebui`. Other inherited routes redirect
+sysadmins to the tenant list. The Exit button returns to the main UI using `runtimeConfig.public.mainApp.url`.
 
 ## SDK strategy
 
-Two backends are in play:
+`swiss-ai-hub-sysadmin-api` (AGPL-3.0-or-later) serves same-origin requests at `sysadmin.${DOMAIN}/api/v1/*`. The local
+SDK in `sdk/client/` is generated from its OpenAPI spec and used by the sysadmin composables. The role gate also uses
+this SDK: `getMyIdentity` calls `/api/v1/active/my-account/identity`, without a cross-origin main-API request.
 
-- `swiss-ai-hub-sysadmin-api` (AGPL-3.0-or-later) — same-origin at `sysadmin.${DOMAIN}/api/v1/*`. The local SDK in
-  `sdk/client/` is generated from its OpenAPI spec and used by the tenant-admin composables.
-- `swiss-ai-hub-api` (main API, Apache-2.0) — cross-origin at `${DOMAIN}/api/v1/*`. Used for ONE call: `getMyTenants`
-  for the sysadmin role check in `middleware/sysadmin.global.ts`. We do NOT generate a second SDK for one call — the
-  middleware uses `$fetch` against `runtimeConfig.public.mainApi.url` (the API origin) for that check. Cross-origin
-  browser redirects (non-sysadmin bounce, Exit button, 403 handler) use `runtimeConfig.public.mainApp.url` instead (the
-  UI origin). In dev these differ: API is `localhost:8000`, UI is `localhost:3333`; in prod both are `${DOMAIN}`. The
-  `composables/useMainAppNavigation.ts` composable owns the `mainApp.url` redirect contract.
+Inherited web composables use the web SDK with the same `/api/v1` base URL, so sysadmin-api must mount each endpoint
+they need. The `mainApp.url` setting is the main UI origin for browser navigation, owned by
+`composables/useMainAppNavigation.ts`; it is not an API base URL.
 
 Regenerate the local SDK with `pnpm generate-sdk` after changing sysadmin-api endpoints (requires sysadmin-api on port
 8001 — `cd packages/sysadmin-api && make run-dev`).
@@ -96,11 +92,11 @@ no plugin override needed here.
 ## Essential files
 
 - Layer config: `nuxt.config.ts` (`extends: ['@swiss-ai-hub/web']`)
-- App entry: `.app/nuxt.config.ts` (runtimeConfig including `mainApi.url` + `mainApp.url`, dev proxy → :8001)
-- Sysadmin-api SDK init: `app.vue` (sets sysadmin-api `client.baseURL = '/api/v1'` + 403 → `mainApp.url` redirect)
-- Sysadmin gate: `middleware/sysadmin.global.ts` (cross-origin `getMyTenants` check via `mainApi.url`)
-- Main-app redirect: `composables/useMainAppNavigation.ts` (`mainApp.url` cross-origin redirect — Exit button +
-  non-sysadmin bounce)
+- App entry: `.app/nuxt.config.ts` (runtimeConfig including the same-origin `apiBaseUrl`, OIDC and `mainApp.url`, dev proxy → :8001)
+- Sysadmin-api SDK init: `plugins/sysadmin-api-client.client.ts` (sets auth/base URL before route middleware);
+  `app.vue` adds the error toast handler
+- Sysadmin gate: `middleware/sysadmin.global.ts` (same-origin `getMyIdentity` role check and route confinement)
+- Main-app redirect: `composables/useMainAppNavigation.ts` (`mainApp.url` cross-origin navigation for the Exit button)
 - Sysadmin layout: `layouts/sysadmin.vue`
 - ESLint config: `eslint.config.js` (Nuxt + import/order + SonarJS; no Tailwind linting by design)
 - License terms: `LICENSE` (AGPL-3.0-or-later)

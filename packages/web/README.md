@@ -26,6 +26,10 @@ administrators configure agents, manage knowledge bases, monitor processes, insp
 and build dashboards. It is **not** the chat UI (that's [Open-WebUI](https://github.com/open-webui/open-webui)) and not
 the backend API.
 
+The embedded chat sends its confirmed tenant and locale to the Open WebUI mod host through an origin/window-checked
+bridge. Native authentication authorizes the selected mods; configuration changes offer a reload notice. See
+[Open WebUI modifications](https://docs.ai-hub.bbv.ch/docs/2_platform/10_chat_ui/16_openwebui_mods/).
+
 The admin UI is built with [Nuxt 3](https://nuxt.com/), [Vue 3](https://vuejs.org/), [PrimeVue](https://primevue.org/),
 and [Tailwind CSS](https://tailwindcss.com/). It is published as a
 **[Nuxt layer](https://nuxt.com/docs/getting-started/layers)** -- a mechanism that lets you inherit an entire Nuxt

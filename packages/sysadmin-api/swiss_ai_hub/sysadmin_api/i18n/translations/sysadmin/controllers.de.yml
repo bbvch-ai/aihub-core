@@ -2,3 +2,6 @@
 tenant_admin:
   name: Tenant-Verwaltung
   description: Tenants erstellen, bearbeiten und löschen (nur Systemadministratoren)
+openwebui_mods:
+  name: Open-WebUI-Anpassungen
+  description: Open-WebUI-Mod-Pakete verwalten (nur Systemadministratoren)

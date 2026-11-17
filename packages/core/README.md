@@ -26,6 +26,10 @@ pipelines, processes, and bot integrations with the Python SDK; the platform pro
 service** — it provides the **Swiss AI Agent Protocol** (typed, event-driven messaging over NATS), authentication &
 multi-tenancy, the Form configuration system, and shared AI/ML utilities. Every higher-level package imports it.
 
+Its Open WebUI infrastructure validates and stores mod archives and defines tenant selections. Bundled packages are
+found through their manifests; `OPENWEBUI_MODS_DEFAULTS` supplies initial enablement until a tenant saves its settings.
+Custom mods retain their selected publication. See the [mod contract](https://docs.ai-hub.bbv.ch/docs/3_sdk/6_feature_overview/1_openwebui_mods/).
+
 ## You usually don't install this directly
 
 Install the package for **what you're building** — each one depends on `swiss-ai-hub-core` and pulls it in

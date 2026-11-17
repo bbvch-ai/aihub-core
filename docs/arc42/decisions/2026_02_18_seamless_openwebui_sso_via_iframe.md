@@ -1,5 +1,9 @@
 # Seamless OpenWebUI SSO via Direct OAuth Login in Iframe
 
+Update 2026-11-13: The direct OAuth entrypoint remains in use. AI Hub now builds the derived host described in
+[Open WebUI runtime mod packages](2026_10_30_openwebui_runtime_mod_packages.md). The stock-image requirement below
+records the original SSO decision; runtime mods add host instrumentation without changing this login approach.
+
 ## Context
 
 Swiss AI Hub embeds OpenWebUI (the chat interface) in an iframe within the Admin UI at `/service/openai`. Users

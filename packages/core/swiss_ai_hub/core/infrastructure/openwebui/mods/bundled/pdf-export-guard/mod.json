@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "id": "aihub-pdf-export-guard",
+  "name": "Multi-model PDF export guard",
+  "version": "1.0.0",
+  "description": "Disables incomplete native PDF exports for chats with side-by-side model answers. Text and JSON exports remain available.",
+  "replacements": {
+    "src/lib/components/layout/Navbar/Menu.svelte": "NavbarMenu.svelte",
+    "src/lib/components/layout/Sidebar/ChatMenu.svelte": "SidebarMenu.svelte",
+    "src/lib/components/common/DropdownSub.svelte": "ExportMenu.svelte"
+  }
+}

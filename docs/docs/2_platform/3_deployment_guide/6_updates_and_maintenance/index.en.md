@@ -216,7 +216,8 @@ never run two OpenWebUI versions against the same database at once.
 After the update:
 
 - Users who never picked a language now start in English, whatever their browser's language. `openwebui-init` moves a
-  default language of `de` stored by earlier releases to `en-US`. Users pick theirs under **Settings > General**.
+  default language of `de` stored by earlier releases to `en-US`. When the Account menu cleanup mod is disabled, users
+  can pick theirs under **Settings > General**.
 - A browser that opened the chat in the days before the update can still load the previous OpenWebUI from its cache.
   A hard reload (`Ctrl+Shift+R`, or `Cmd+Shift+R` on macOS) loads the new one. From 0.12.5 on, OpenWebUI tells
   browsers to check for a newer page on every visit, so later updates no longer need this.

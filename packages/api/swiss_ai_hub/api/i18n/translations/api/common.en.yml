@@ -1,6 +1,5 @@
 ---
 test: This is an english test
-default_chat_disclaimer: AI can make mistakes. Please verify answers.
 output_budget_exhausted: The model used its entire output budget on reasoning and produced no answer. Try a shorter input or a model without reasoning.
 translation:
   prompt: |

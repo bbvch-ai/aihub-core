@@ -10,7 +10,7 @@ import { getMyIdentity } from '~/sdk/client'
 //
 //  2. Surface confinement: this app extends the web layer and therefore
 //     inherits ALL of web's pages. A focused extender keeps the user inside
-//     its own section — anything outside /tenants/* is redirected there.
+//     its own tenant and global Open WebUI management sections.
 //
 // Redirects are returned as plain locations, not via navigateTo(): they follow
 // an await, and if another navigation finished meanwhile navigateTo() would
@@ -19,7 +19,7 @@ import { getMyIdentity } from '~/sdk/client'
 
 const AUTH_PATH = /^\/(en|de|fr|it)\/auth(\/|$)/
 const SYSADMIN_REQUIRED_PATH = /^\/(en|de|fr|it)\/sysadmin-required(\/|$)/
-const SYSADMIN_SECTION = /^\/(en|de|fr|it)\/tenants(\/|$)/
+const SYSADMIN_SECTION = /^\/(en|de|fr|it)\/(tenants|openwebui)(\/|$)/
 
 export default defineNuxtRouteMiddleware(async (to) => {
   // OIDC callback / silent-renew must complete before we can ask anything;

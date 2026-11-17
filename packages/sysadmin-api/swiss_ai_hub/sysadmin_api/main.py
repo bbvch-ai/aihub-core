@@ -18,6 +18,7 @@ from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.routes import HealthController
 
 from swiss_ai_hub.sysadmin_api import SysadminAccessController, SysadminApiRunner, TenantAdminController
+from swiss_ai_hub.sysadmin_api.routes.openwebui_mods.openwebui_mod_controller import OpenWebuiModController
 
 enable_logging()
 
@@ -30,6 +31,16 @@ auth = TokenAndOauth2Handler.from_auth_settings()
 
 runner.mount(
     HealthController(auth=auth).get_health(),
+    OpenWebuiModController(auth=auth)
+    .get_host()
+    .global_configuration()
+    .catalog()
+    .get_builtins()
+    .install_builtin()
+    .get_configuration()
+    .replace_configuration()
+    .inspect()
+    .install(),
     TenantAdminController(auth=auth)
     .list_tenants()
     .list_unconfigured_tenants()

@@ -166,6 +166,9 @@ Mitglieder auswählbar.
 
 ![Der neu erstellte Mandant wird in der Mandantenliste als „Aktiv“ angezeigt](../../../../media/platform/creating_tenants/05_tenant_active.png)
 
+Die Open-WebUI-Einstellungen des Mandanten verwalten Chat-Modifikationen, einschliesslich des lokalisierten Mods
+Chat disclaimer. Die Konfiguration ist unter [Open WebUI-Modifikationen](../../10_chat_ui/16_openwebui_mods/) beschrieben.
+
 > Es gibt kein separates „Umfang“-Feld im Erstellungsformular. Mandantengrenzen werden durch **Zugriffsregeln**
 > ausgedrückt, die Sie zum Zeitpunkt der Erstellung festlegen oder später über die Registerkarte **Übersicht** des
 > Mandanten bearbeiten können.

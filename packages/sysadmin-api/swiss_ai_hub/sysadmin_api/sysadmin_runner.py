@@ -6,10 +6,11 @@ from typing import Self
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from starlette.applications import Starlette
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
 from swiss_ai_hub.api.i18n.middleware.i18n_middleware import I18nMiddleware
-from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, NatsSettings, RedisSettings
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, NatsSettings, RedisSettings, create_s3_client
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
 from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
 from swiss_ai_hub.core.routes import Controller
@@ -23,22 +24,23 @@ class SysadminApiRunner:
 
     Deliberately does NOT inherit ``swiss_ai_hub.api.ApiRunner``. The main API's
     runner builds an MCP server and wires a lifespan that connects Milvus, S3,
-    Neo4j, WebSocket plumbing, discovery services and provisioners — none of
-    which the sysadmin plane needs, and inheriting it forced a fragile
+    Neo4j, WebSocket plumbing, discovery services and provisioners; inheriting it forced a fragile
     "lite vs full lifespan" override.
 
     This runner builds a plain FastAPI app mounted under ``/api/v1`` with a
-    deliberately medium-sized lifespan: **MongoDB + NATS + Redis**. That set is
+    deliberately medium-sized lifespan: **MongoDB + NATS + Redis + S3**. That set is
     enough to mount any ``packages/api`` controller that doesn't depend on
-    Milvus / S3 / WebSocket / discovery (currently: ``UserController``,
+    Milvus / WebSocket / discovery (currently: ``UserController``,
     ``RoleController``, ``MyAccountController.get_my_identity``,
-    ``MyTenantController.get_my_tenants``, ``AuthProviderController``). NATS isn't actively used by the mounted
+    ``MyTenantController.get_my_tenants``, ``AuthProviderController``, ``OpenWebuiModController``).
+    S3 stores uploaded mod archives.
+    NATS isn't actively used by the mounted
     controllers' code paths today — it's wired because ``use_nats`` is a
     declared dependency on a handful of endpoints (e.g. ``UserController.get_user``)
     and FastAPI resolves dependencies eagerly. ``I18nMiddleware`` is wired so
     ``use_locale`` resolves cleanly for the same reason.
 
-    Adding more infra (Milvus, S3, Neo4j, WebSocket, discovery) here is fine
+    Adding more infra (Milvus, Neo4j, WebSocket, discovery) here is fine
     when a future mounted controller needs it — match the source pattern in
     ``packages/api/.../lifetime_manager.py`` and extend the closure below.
     """
@@ -116,14 +118,14 @@ class SysadminApiRunner:
 
         @asynccontextmanager
         async def lifespan(_: Starlette) -> AsyncGenerator:
-            """MongoDB + NATS + Redis lifespan for sysadmin-api.
+            """MongoDB + NATS + Redis + S3 lifespan for sysadmin-api.
 
             The closure captures ``api_app`` so resources land on the inner
             FastAPI app's ``state`` — that's the app FastAPI dependencies
             (``use_nats``, ``use_redis``) reach via ``request.app.state``.
             """
             print(AIHubSettings().startup_banner)
-            logger.info("Sysadmin API starting: MongoDB + NATS + Redis")
+            logger.info("Sysadmin API starting: MongoDB + NATS + Redis + S3")
             connect(
                 db=AIHubSettings().MONGO_MAIN_DB_NAME,
                 host=MongoSettings().CONNECTION_STRING.get_secret_value(),
@@ -139,9 +141,12 @@ class SysadminApiRunner:
             AccessChangeHook.connect(OpenWebuiProvisioner(redis=redis))
 
             try:
+                api_app.state.s3_client = await run_in_threadpool(create_s3_client)
                 yield
             finally:
                 logger.info("Sysadmin API shutting down")
+                if hasattr(api_app.state, "s3_client"):
+                    await run_in_threadpool(api_app.state.s3_client.close)
                 await nc.drain()
                 await redis.close()
                 disconnect()

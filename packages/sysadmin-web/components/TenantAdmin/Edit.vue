@@ -26,19 +26,6 @@
       </FloatLabel>
     </div>
 
-    <FormKit
-      v-model="tenant.chat_disclaimer"
-      type="localeInput"
-      name="chat_disclaimer"
-      input-type="textarea"
-      :allow-translation="false"
-      :label="t('tenant_admin.form.chat_disclaimer')"
-      :help="t('tenant_admin.form.chat_disclaimer_help')"
-      :placeholder="{ en: t('tenant_admin.form.chat_disclaimer') }"
-      :max-length="100"
-      validation="localeRequired|localeMaxLength:100"
-    />
-
     <AccessRulesEditor
       v-model:rules="accessRules"
       :initial-rules="initialAccessRules"

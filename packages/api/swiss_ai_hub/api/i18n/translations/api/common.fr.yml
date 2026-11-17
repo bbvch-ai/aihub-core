@@ -1,6 +1,5 @@
 ---
 test: Ceci est un test français
-default_chat_disclaimer: L’IA peut faire des erreurs. Veuillez vérifier les réponses.
 output_budget_exhausted: Le modèle a utilisé tout son budget de sortie pour raisonner et n’a produit aucune réponse. Essayez une saisie plus courte ou un modèle sans raisonnement.
 translation:
   prompt: |

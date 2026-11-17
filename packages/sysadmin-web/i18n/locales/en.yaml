@@ -1,6 +1,55 @@
 ---
+http_error:
+  code:
+    409: Conflicting changes. Review the current settings before saving.
+    413: This file is too large.
+    415: This file type is not supported.
+    422: Some submitted values are invalid.
+openwebui_mods:
+  global:
+    settings_help: These values are available to the globally activated backend code. Do not include secrets.
+    navigation: Global Open WebUI mods
+    title: Global Open WebUI modifications
+    description: Manage backend changes across all tenants, including work without
+      a signed-in user. Frontend changes remain tenant-specific.
+    catalog_help: 'These installed packages support global backend activation.'
+    mod_restart: Changing this package requires an Open WebUI restart.
+    pending: Saved startup changes are waiting for an Open WebUI restart. The previous
+      configuration remains active.
+    ready: Active on all {total} workers.
+    applying: 'Applying saved changes: {ready} of {total} workers ready.'
+    restart: Restart to apply saved changes
+    restarting: Waiting for Open WebUI to restart…
+    restart_confirm: Restart Open WebUI for all tenants? Active chats and background
+      jobs may be interrupted. Only saved changes will be applied.
+    restart_error: The restart could not be confirmed. Check the current status before
+      trying again.
+    restart_timeout: Restart recovery has not been confirmed after two minutes. Check
+      the Open WebUI logs and reload the status.
+  catalog_help: 'Installed packages are shared by all tenants. Enable them separately for each tenant.'
+  automatic_version: Updated with AI Hub
+  title: Open WebUI settings
+  description: Choose modifications for this tenant. Saved changes apply when users
+    next reload chat.
+  enable: Enable {name}
+  settings: Settings
+  settings_help: These values are available to the mod in the browser; do not include secrets.
+  retry: Retry
+  saved: Open WebUI settings saved
+  save_error: Could not save. Your changes are still here.
+  load_error: Could not load modifications. Please try again.
+  upload: Upload ZIP
+  upload_error: Could not upload this package.
+  backend_notice: This package includes Python code that runs inside Open WebUI. Only
+    enable code you trust.
+  frontend_notice: This package runs code in users’ chat sessions. Only enable code
+    you trust.
+  install: 'Install'
+  replace: 'Replace installed mod'
+  installed: '{name} installed'
+  replace_help: 'This replaces version {version} wherever this mod is enabled. Saved settings are kept. Active users may need to reload.'
 tenant_admin:
-  title: Tenant Administration
+  title: System Administration
   exit: Exit
   tenants_title: Tenants
   select_description: Manage tenants, access rules, and system settings.
@@ -39,8 +88,6 @@ tenant_admin:
       now would create a tenant with no access — check that the platform API and model
       gateway are reachable.
   form:
-    chat_disclaimer: Chat disclaimer
-    chat_disclaimer_help: Shown below the chat input. Up to 100 characters per language.
     name: Tenant Name
     description: Description
   table:

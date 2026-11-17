@@ -50,7 +50,7 @@ async def test_configure_tenant_persists_metadata_last(monkeypatch: pytest.Monke
     fake_entity.name = "My Tenant"
     fake_entity.description = "desc"
     fake_entity.access_rules = []
-    fake_entity.chat_disclaimer = None
+    fake_entity.lcdm_tenant_id = None
     fake_entity.created_at = datetime.now(UTC)
     fake_entity.updated_at = datetime.now(UTC)
 
@@ -221,7 +221,7 @@ async def test_configure_tenant_retry_after_midflight_failure_completes_cleanly(
     fake_entity.name = "My Tenant"
     fake_entity.description = "desc"
     fake_entity.access_rules = []
-    fake_entity.chat_disclaimer = None
+    fake_entity.lcdm_tenant_id = None
     fake_entity.created_at = datetime.now(UTC)
     fake_entity.updated_at = datetime.now(UTC)
 
@@ -257,7 +257,7 @@ async def test_configure_tenant_assigns_superuser(monkeypatch: pytest.MonkeyPatc
     fake_entity.name = "My Tenant"
     fake_entity.description = "desc"
     fake_entity.access_rules = []
-    fake_entity.chat_disclaimer = None
+    fake_entity.lcdm_tenant_id = None
     fake_entity.created_at = datetime.now(UTC)
     fake_entity.updated_at = datetime.now(UTC)
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", lambda **_kwargs: fake_entity)
@@ -289,7 +289,7 @@ async def test_configure_tenant_normalizes_dotted_model_rule(monkeypatch: pytest
         entity.name = "My Tenant"
         entity.description = "desc"
         entity.access_rules = kwargs["access_rules"]
-        entity.chat_disclaimer = None
+        entity.lcdm_tenant_id = None
         entity.created_at = datetime.now(UTC)
         entity.updated_at = datetime.now(UTC)
         return entity

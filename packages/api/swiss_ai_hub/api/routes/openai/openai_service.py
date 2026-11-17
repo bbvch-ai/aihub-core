@@ -35,7 +35,7 @@ from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
 from swiss_ai_hub.core.generative_ai import LLMCosts
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
-from swiss_ai_hub.core.persistence import PersistedAgentEventEntity, TenantMetadataEntity
+from swiss_ai_hub.core.persistence import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes import ChatService, JsonResources, StreamingResources
 
@@ -75,14 +75,6 @@ class OpenaiService:
     """
 
     STREAM_END: ClassVar[str] = "data: [DONE]\n\n"
-
-    @staticmethod
-    @trace_fn
-    async def get_chat_disclaimer(tenant_id: str, t: LocaleHandler) -> str:
-        tenant = await asyncio.to_thread(TenantMetadataEntity.get_metadata_by_tenant_id, tenant_id)
-        if tenant is None or tenant.chat_disclaimer is None:
-            return t("api.common.default_chat_disclaimer")
-        return t.extract(tenant.chat_disclaimer.to_locale_string()) or ""
 
     @staticmethod
     @trace_fn

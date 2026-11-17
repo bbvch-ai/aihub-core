@@ -1,9 +1,10 @@
 <template>
   <div class="content">
     <FormKit
-      id="form"
+      :id="formId"
       v-model="data"
-      type="form"
+      :type="embedded ? 'group' : 'form'"
+      :actions="!embedded"
       :submit-label="props.submitLabel ?? t('common.actions.save')"
       :submit-attrs="{
         inputClass: 'p-button p-component w-full',
@@ -12,6 +13,7 @@
         validationVisibility: 'blur',
       }"
       @submit="submitHandler"
+      @node="trackValidity"
     >
       <FormKitSchema
         :schema="schema"
@@ -53,10 +55,10 @@ import {
 } from '@core/composables/form/useFormKitTransform'
 import { cloneDeep } from 'lodash-es'
 
-import type { FormkitElement } from '@core/sdk/client'
-import type { FormKitSchemaDefinition } from '@formkit/core'
+import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const formId = useId()
 
 // Fields with a known platform issue, keyed by the backend element id. Frontend-only on
 // purpose: the notice is temporary and carries no config semantics, so it stays out of the
@@ -66,23 +68,22 @@ const FIELD_WARNING_KEYS: Record<string, string> = {
 }
 
 const props = defineProps<{
-  form: FormkitElement[]
+  form: FormElement[]
   initialData?: Record<string, unknown>
   // Every caller so far is saving a configuration; the incident form is sending a report.
   submitLabel?: string
+  embedded?: boolean
 }>()
 
-// Clone so the form model never shares references with the Pinia-Colada cache: otherwise
-// FormKit's write-backs mutate the cached object and the watcher loops on its own mutations.
+// FormKit mutates its model; keep those changes out of cached API responses.
 function hydrate(raw: Record<string, unknown>): Record<string, unknown> {
-  return hydrateFormData(cloneDeep(raw), props.form as FormElement[])
+  return hydrateFormData(cloneDeep(raw), props.form)
 }
 
 const data = ref<Record<string, unknown>>(hydrate(props.initialData || {}))
 
-// Seed from `initialData` only once. A save refetches the query, so `initialData` becomes a new
-// object; re-hydrating then would reassign `data`, which FormKit's `v-model` re-commits in a
-// slightly different shape and reassigns again — an infinite render loop that froze the tab.
+// Seed once: refetches replace initialData, and reapplying it would reset edits and trigger
+// FormKit's write-backs again. Remount the component to reset the form explicitly.
 let formSeeded = !!(props.initialData && Object.keys(props.initialData).length > 0)
 
 watch(() => props.initialData, (newData) => {
@@ -95,12 +96,27 @@ watch(() => props.initialData, (newData) => {
 
 const emit = defineEmits<{
   submit: [Record<string, unknown>]
+  change: [Record<string, unknown>]
+  valid: [boolean]
 }>()
+
+watch(data, () => {
+  if (props.embedded) emit('change', serializeFormData(data.value, props.form))
+}, { deep: true })
+
+function trackValidity(node: FormKitNode) {
+  const stop = watch(
+    () => [node.context?.state.valid, node.context?.state.settled],
+    ([valid, settled]) => emit('valid', Boolean(valid && settled)),
+    { immediate: true },
+  )
+  onBeforeUnmount(stop)
+}
 
 function createLabelPattern(): RegExp {
   const keys = Object.keys(data.value)
   if (keys.length === 0) return /(?!)/ // Never matches
-  return new RegExp(keys.map(key => `\\$${key}`).join('|'), 'g')
+  return new RegExp(keys.map(key => `\\$${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).join('|'), 'g')
 }
 
 function replaceLabelVariables(label: string): string {
@@ -117,14 +133,15 @@ function fieldWarning(element: FormElement): string | undefined {
 }
 
 const schema = computed<FormKitSchemaDefinition>(() => {
-  return buildFormKitSchema(props.form as FormElement[], {
+  return buildFormKitSchema(props.form, {
+    locale: locale.value,
     labelTransform: replaceLabelVariables,
     fieldWarning,
   })
 })
 
 const repeaterElements = computed<RepeaterConfig[]>(() => {
-  return extractRepeaterConfigs(props.form as FormElement[])
+  return extractRepeaterConfigs(props.form, locale.value)
 })
 
 function getRepeaterData(path: string): Record<string, unknown>[] {
@@ -136,7 +153,7 @@ function setRepeaterData(path: string, value: Record<string, unknown>[]): void {
 }
 
 async function submitHandler() {
-  emit('submit', serializeFormData(data.value, props.form as FormElement[]))
+  emit('submit', serializeFormData(data.value, props.form))
 }
 </script>
 

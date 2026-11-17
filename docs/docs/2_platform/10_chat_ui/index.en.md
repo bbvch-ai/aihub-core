@@ -21,7 +21,7 @@ chat infrastructure.
 
 ## Custom extensions
 
-The Swiss AI Hub extends Open WebUI's functionality in three main ways.
+The Swiss AI Hub extends Open WebUI with platform integrations and configurable mods.
 
 The interface embeds directly into the Swiss AI Hub suite rather than running as a separate application. Users access
 chat capabilities through unified navigation without switching contexts or re-authenticating.
@@ -31,6 +31,9 @@ informed the response. This source attribution enables verification of AI-genera
 
 Custom tracing shows step-by-step agent execution, including reasoning chains, tool invocations, and decision points.
 This visibility supports debugging and regulatory compliance requirements.
+
+System administrators can also install [Open WebUI modifications](16_openwebui_mods/) for individual tenants or
+global backend behavior.
 
 ## Deployment considerations
 
