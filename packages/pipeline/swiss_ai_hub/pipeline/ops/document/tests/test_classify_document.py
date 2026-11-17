@@ -113,6 +113,9 @@ class TestClassifyDocument:
         assert "document_type" not in result.metadata
 
     def test_a_fault_reading_the_answer_fails_the_run_instead_of_hiding_as_unclassified(self) -> None:
+        ref_doc, resource = _ref_doc(), DocumentClassificationResource()
+        llm = _llm_answering(document_issuer="Hooli AG")
+
         with (
             patch(
                 "swiss_ai_hub.pipeline.resources.parser.document_classification_resource.DocumentClassification.from_answer",
@@ -120,4 +123,4 @@ class TestClassifyDocument:
             ),
             pytest.raises(KeyError),
         ):
-            _classify(_ref_doc(), DocumentClassificationResource(), llm=_llm_answering(document_issuer="Hooli AG"))
+            _classify(ref_doc, resource, llm=llm)
