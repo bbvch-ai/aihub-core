@@ -108,6 +108,8 @@ class KnowledgeController(TenantScopedController):
                             source_configuration=db.source_configuration if manages_database else {},
                             deletable=db.deletable,
                             ingestor=db.ingestor,
+                            classification_available=db.classification_available and manages_database,
+                            classification_requested_at=db.classification_requested_at,
                             namespaces=accessible_namespaces,
                         )
                     )
