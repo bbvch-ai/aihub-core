@@ -21,7 +21,11 @@ class LiteLLMProxySettings(EnvironmentSettings):
     BASE_URL: Annotated[str, Field(description="The base URL of the model.")]
     API_KEY: Annotated[
         SecretStr | None,
-        Field(description="API key for authentication. If not provided, other authentication methods will be used."),
+        Field(
+            description="The LiteLLM master key. Each user's LiteLLM key is derived from it, so a new master key "
+            "gives every user a new key; the keys derived from the old one stay valid until they are removed in "
+            "LiteLLM."
+        ),
     ] = None
 
     INTERNAL_BASE_URL: Annotated[
