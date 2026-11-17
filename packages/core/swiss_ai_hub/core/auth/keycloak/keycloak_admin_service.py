@@ -55,6 +55,29 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def get_enabled_by_user_id() -> dict[str, bool]:
+        """Whether each user in the realm is enabled, keyed by user id. Without `first` or `max`, python-keycloak
+        fetches every page. A user without `enabled` raises: reading it as enabled would unblock a disabled user."""
+        admin = _create_admin()
+        users = await admin.a_get_users(query={"briefRepresentation": True})
+        return {user["id"]: user["enabled"] for user in users}
+
+    @staticmethod
+    @trace_fn
+    async def user_exists(keycloak_user_id: str) -> bool:
+        """False only when Keycloak answers 404. Any other error propagates: callers delete what this says is gone, so
+        an outage must not read as absence."""
+        admin = _create_admin()
+        try:
+            await admin.a_get_user(keycloak_user_id)
+        except KeycloakGetError as error:
+            if error.response_code == 404:
+                return False
+            raise
+        return True
+
+    @staticmethod
+    @trace_fn
     async def get_user_by_id(keycloak_user_id: str) -> KeycloakUser:
         admin = _create_admin()
         data = await admin.a_get_user(keycloak_user_id)
