@@ -159,7 +159,9 @@ collapsed thought, so the answer starts where the work ends. While the agent gat
 including when a long conversation is being condensed to fit the model.
 
 - **Approvals**: a tool an admin marked for approval asks a yes/no confirmation in the chat that names the tool and what
-  the call does. A declined tool is not requested again for that answer, and the model answers without it.
+  the call does. The call's input, such as a command the model wrote, is shown exactly as written, not as formatted
+  text, in a box that scrolls when it is long, so the Confirm and Cancel buttons stay on screen. A declined tool is not
+  requested again for that answer, and the model answers without it.
 - **Toggles decide what is offered**: a tool that needs Code Interpreter or My Files is offered only while that toggle
   is on. See [Chat toggles for agents](#chat-toggles-for-agents).
 - **Limits**: a profile caps how often the model may decide and how many calls it may make. At the cap the model answers

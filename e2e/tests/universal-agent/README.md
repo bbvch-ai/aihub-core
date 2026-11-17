@@ -87,6 +87,7 @@ time rather than committed.
 | B1/B2 | `tool-approval.spec.ts`          | "Agent Question" dialog per call; Confirm runs and answers, Cancel runs nothing and the chat goes on  |
 | B3    | `tool-approval.spec.ts`          | `send_process_input` asks before every input; Confirm types `print(6*7)` and the answer says 42       |
 | B4    | `tool-approval.spec.ts`          | No approval rules: `run_command` still asks by default, Cancel runs nothing                           |
+| B5    | `tool-approval.spec.ts`          | 1280×600: a 60-line command scrolls in its box, Confirm and Cancel in the viewport before any click   |
 | C1/C2 | `code-interpreter.spec.ts`       | `run_command` and the exact total; `display_file`, a PNG on the answer that downloads as `image/png`  |
 | D1    | `knowledge.spec.ts`              | `search_knowledge` call, a knowledge source, the expected fact                                        |
 | E1/E2 | `attached-files.spec.ts`         | `<name> (partial)` vs plain source names; `broken.pdf: <error>` status, the good file answers         |
