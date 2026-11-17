@@ -2,8 +2,10 @@
 
 import ipaddress
 import logging
+import math
 import re
 from collections.abc import Coroutine
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
 
@@ -25,6 +27,8 @@ LOOPBACK_HOSTNAMES: frozenset[str] = frozenset({"localhost", "0.0.0.0", "::", "[
 
 ALLOWLIST_SETTING = "LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST"
 LANGFUSE_SERVICES = "langfuse-web and langfuse-worker"
+
+MODELS_PAGE_SIZE = 100
 
 
 class LangfuseProvisioner:
@@ -139,25 +143,36 @@ class LangfuseProvisioner:
     async def _register_model_definitions(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
     ) -> None:
-        """Langfuse can't auto-calculate costs for custom model names.
+        """Langfuse can't price custom model names, so each gets a definition with LiteLLM's prices.
 
-        We register per-token prices from LiteLLM since custom names don't match the built-in pricing database.
+        Langfuse prices a generation with the newest definition of its model that started before it. A changed price
+        therefore gets a new definition starting now, and older traces keep the price they were made at.
         """
+        current_prices = await self._fetch_custom_model_prices(client)
         registered = 0
 
         for entry in litellm_models:
             model_name = entry.get("model_name")
             model_info = entry.get("model_info", {})
             input_cost = model_info.get("input_cost_per_token")
-            output_cost = model_info.get("output_cost_per_token")
+            output_cost = model_info.get("output_cost_per_token") or 0
 
-            if not model_name or input_cost is None or output_cost is None:
+            if not model_name or input_cost is None:
                 continue
 
-            if await self._create_model_definition(client, model_name, input_cost, output_cost):
+            known_prices = current_prices.get(model_name)
+            if known_prices is not None and self._same_prices(known_prices, (input_cost, output_cost)):
+                continue
+
+            start_date = None if known_prices is None else datetime.now(UTC)
+            if await self._create_model_definition(client, model_name, input_cost, output_cost, start_date):
                 registered += 1
 
         logger.info(f"Langfuse provisioning: Registered {registered} model definitions with pricing")
+
+    @staticmethod
+    def _same_prices(known: tuple[float, float], configured: tuple[float, float]) -> bool:
+        return all(math.isclose(a, b, rel_tol=1e-9, abs_tol=0) for a, b in zip(known, configured, strict=True))
 
     async def _create_default_prompt(self, client: httpx.AsyncClient) -> None:
         """Maps dataset ``question`` field to a user message for the OpenAI-compatible agent endpoint."""
@@ -186,6 +201,41 @@ class LangfuseProvisioner:
         response.raise_for_status()
 
         return response.json().get("data", [])
+
+    async def _fetch_custom_model_prices(self, client: httpx.AsyncClient) -> dict[str, tuple[float, float]]:
+        """The input and output price of the newest custom definition of each model name."""
+        newest: dict[str, dict[str, Any]] = {}
+        page, total_pages = 1, 1
+
+        while page <= total_pages:
+            response = await client.get(
+                f"{self._base_url}/api/public/models",
+                params={"page": page, "limit": MODELS_PAGE_SIZE},
+                auth=self._auth,
+            )
+            response.raise_for_status()
+            body = response.json()
+            for model in body.get("data", []):
+                if not model.get("isLangfuseManaged") and self._starts_later(model, newest.get(model["modelName"])):
+                    newest[model["modelName"]] = model
+            total_pages = body.get("meta", {}).get("totalPages", 1)
+            page += 1
+
+        return {name: self._default_tier_prices(model) for name, model in newest.items()}
+
+    @staticmethod
+    def _starts_later(model: dict[str, Any], other: dict[str, Any] | None) -> bool:
+        if other is None:
+            return True
+        return (model.get("startDate") or "") > (other.get("startDate") or "")
+
+    @staticmethod
+    def _default_tier_prices(model: dict[str, Any]) -> tuple[float, float]:
+        prices = model.get("prices") or {}
+        return (
+            (prices.get("input") or {}).get("price") or 0,
+            (prices.get("output") or {}).get("price") or 0,
+        )
 
     # ------------------------------------------------------------------
     # Langfuse API helpers
@@ -229,6 +279,7 @@ class LangfuseProvisioner:
         model_name: str,
         input_cost_per_token: float,
         output_cost_per_token: float,
+        start_date: datetime | None = None,
     ) -> bool:
         url = f"{self._base_url}/api/public/models"
         match_pattern = f"(?i)^({re.escape(model_name)})$"
@@ -240,6 +291,8 @@ class LangfuseProvisioner:
             "inputPrice": input_cost_per_token,
             "outputPrice": output_cost_per_token,
         }
+        if start_date is not None:
+            model_data["startDate"] = start_date.isoformat()
 
         response = await client.post(url, json=model_data, auth=self._auth)
 

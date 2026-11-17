@@ -1,6 +1,6 @@
 ---
 title: Kostenkontrolle
-source_sha: 287ec719e1b9ccfb76fd2f44cc121289841fe54497c0899e314ea178f2edd130
+source_sha: adc3a71968238d27faaa572662887d4b5f3f0a00356138445a61f32d99a4fb04
 ---
 
 # Kostenkontrolle
@@ -110,8 +110,10 @@ erneut in den Token-Summen erscheinen. Ein Aufruf eines Modells, der fehlschläg
 | Langfuse          | Traces                                        | Der Usage im Trace, bepreist über Modelldefinitionen, die aus den Preisen von LiteLLM erstellt wurden                                      |
 
 Der LiteLLM Spend Log ist der Betrag, der mit Rechnungen verglichen werden sollte: Er umfasst jeden Aufruf über den
-Proxy. Hub-Kostenevents umfassen nur Agent-Runs, und Langfuse behält die Preise, die ein Modell bei der ersten
-Erstellung seiner Definition hatte.
+Proxy. Hub-Kostenevents umfassen nur Agent-Runs. Langfuse bepreist jeden Trace zu dem Preis, der galt, als der Trace
+entstand: Die Hub API legt bei jedem Start, an dem sie einen geänderten Preis findet, eine Definition mit dem neuen Preis
+an, die ab diesem Zeitpunkt gilt. Modelle, die pro Sekunde Audio bepreist werden, etwa Transkription, werden in Langfuse
+nicht bepreist.
 
 ### Preise der Docker-Compose-Deployments
 
