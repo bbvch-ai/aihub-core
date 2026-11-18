@@ -1096,6 +1096,30 @@ class TestRequestForm:
         assert request.instructions == "only Hooli hardware"
         ask.assert_awaited_once()
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("dropped", "written", "cleared"),
+        [
+            ("where", "rows", {"selection": KnowledgeDocumentSelection(any_of=[KnowledgeDocumentCriteria()])}),
+            ("documents", "rows", {"document_condition": None}),
+            ("rows", "columns", {"instructions": None}),
+        ],
+    )
+    async def test_a_part_dropped_next_to_a_written_one_stays_dropped_after_the_second_reading(
+        self, dropped: str, written: str, cleared: dict[str, Any]
+    ):
+        """The second reading sees the first message too and may bring the dropped part back (e2e S8c)."""
+        place = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        understood = _reading(place, document_condition="from Hooli")
+        answer = json.dumps(
+            {dropped: {"type": "option", "option_index": 1}, written: {"type": "other", "text": "only hardware lines"}}
+        )
+
+        request, ask, _ = await _discover(understood, answer=answer, reread=understood)
+
+        assert ask.await_count == 2
+        assert {field: getattr(request, field) for field in cleared} == cleared
+
     def test_the_lines_without_a_condition_name_every_document_at_the_location(self):
         """A correction of the rows alone sends these lines, so the second reading keeps the condition null."""
         lines = ExtractionRequestParts.of(_reading(), T).lines(T)
