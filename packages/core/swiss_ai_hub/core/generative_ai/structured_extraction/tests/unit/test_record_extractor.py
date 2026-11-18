@@ -1,11 +1,13 @@
 import asyncio
 import re
 from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from llama_index.core.prompts.rich import RichPromptTemplate
 from pydantic import BaseModel
 
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document import KnowledgeDocument
@@ -19,6 +21,8 @@ from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 pytestmark = pytest.mark.unit
 
 _LINE = re.compile(r"Position (\d+): (\w+) item costs (\d+) CHF\.")
+
+_FIXTURES = Path(__file__).parent / "fixtures"
 
 _SCHEMA = RecordSchema(
     fields=[
@@ -333,3 +337,29 @@ async def test_a_record_carrying_only_its_match_mark_is_dropped() -> None:
     )
 
     assert [record.values for record in result.records] == [{"position": 1, "amount": 5.0, "record_match": "unsure"}]
+
+
+def _rendered_prompt(locale: str, instructions: str, document_condition: str) -> str:
+    """Every message of the extraction prompt, as the fixtures captured from main hold it."""
+    t = LocaleHandler(locale)
+    schema = _SCHEMA.with_match() if instructions else _SCHEMA
+    messages = RichPromptTemplate(t("lib.prompt.structured_extraction.extraction_prompt")).format_messages(
+        fields=schema.fields,
+        field_names=", ".join(schema.field_names),
+        instructions=instructions,
+        document_condition=document_condition,
+        title="Acme invoice",
+        text="Position 7: hardware item costs 700 CHF.",
+        position=2,
+        total=3,
+        opening="Invoice INV-7 from Acme AG.",
+    )
+    return "\n".join(f"[{message.role.value}]\n{message.content}" for message in messages) + "\n"
+
+
+@pytest.mark.parametrize("locale", ["en", "de", "fr", "it"])
+@pytest.mark.parametrize(("variant", "instructions"), [("plain", ""), ("instructions", "only hardware")])
+def test_the_prompt_without_a_condition_equals_main(locale: str, variant: str, instructions: str) -> None:
+    expected = (_FIXTURES / f"extraction_prompt_{locale}_{variant}.txt").read_text()
+
+    assert _rendered_prompt(locale, instructions, document_condition="") == expected
