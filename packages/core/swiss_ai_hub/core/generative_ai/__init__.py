@@ -169,6 +169,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result import (
         DocumentExtractionResult,
     )
+    from swiss_ai_hub.core.generative_ai.structured_extraction.document_match import DocumentMatch
     from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record import ExtractedRecord, RecordValue
     from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_csv import ExtractedTableCsv
     from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_file import ExtractedTableFile
@@ -226,6 +227,7 @@ __all__ = [
     "KnowledgeSemanticRanking",
     "KnowledgeSemanticSearchUnavailableError",
     "DocumentExtractionResult",
+    "DocumentMatch",
     "ExtractedRecord",
     "RecordValue",
     "InvalidRecordSchemaError",
@@ -373,6 +375,7 @@ _LAZY_IMPORTS = {
     "KnowledgeSemanticRanking": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_ranking",
     "KnowledgeSemanticSearchUnavailableError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search_unavailable_error",
     "DocumentExtractionResult": "swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result",
+    "DocumentMatch": "swiss_ai_hub.core.generative_ai.structured_extraction.document_match",
     "ExtractedRecord": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record",
     "RecordValue": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record",
     "InvalidRecordSchemaError": "swiss_ai_hub.core.generative_ai.structured_extraction.invalid_record_schema_error",

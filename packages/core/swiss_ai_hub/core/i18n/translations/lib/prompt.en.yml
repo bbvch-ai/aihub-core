@@ -1646,6 +1646,11 @@ structured_extraction:
     {{ instructions }}
     </instructions>
     {% endif %}
+    {% if document_condition %}
+    <document_condition>
+    {{ document_condition }}
+    </document_condition>
+    {% endif %}
     <rules>
     1. Every record has every one of these fields: {{ field_names }}. Set a field to null when the excerpt does not state it. Never guess a value.
     2. Copy values as written in the document, converted only to the field's type.
@@ -1656,6 +1661,9 @@ structured_extraction:
     7. The document opening only supplies values that apply to every record. Never extract a record from it.
     {% if instructions %}
     8. The instructions decide which records to keep. Keep every record that may meet them: set record_match to "yes" when it clearly does and to "unsure" when you are not certain. Leave out only records that clearly do not. A condition on the whole document, such as its supplier, party or year, applies to every record in it: when the document clearly does not meet it, keep no record. Instructions that do not say which records to keep, such as "all rows" or "one row per contract", keep every record.
+    {% endif %}
+    {% if document_condition %}
+    {% if instructions %}9{% else %}8{% endif %}. The document condition decides whether the whole document counts. This excerpt is the start of the document: judge the document against the condition from the excerpt and the title before you extract. Set document_match.verdict to "no" only when the excerpt or the title states a fact that contradicts the condition, such as another supplier or party, a date outside the period, or the word draft or unsigned. When the fact the condition asks about is not in the excerpt, the verdict is "unsure", never "no". Set it to "yes" when the excerpt shows that the document meets the condition. In document_match.reason, name or quote the fact that decided it in one short sentence, e.g. "Supplier: Initech AG." When the verdict is "yes" or "unsure", extract every record as if there were no document condition; when it is "no", return no records.
     {% endif %}
     </rules>
     {% endchat %}

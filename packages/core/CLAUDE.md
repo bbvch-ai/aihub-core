@@ -736,7 +736,7 @@ read no agent configuration:
 - **`RecordSchemaBuilder.build(description, llm, t)`** returns a validated `RecordSchema`: primitive fields only, at
   most `DEFAULT_MAX_FIELDS`, names normalised to snake_case. It calls a copy of `llm` at temperature zero and raises
   `InvalidRecordSchemaError` (a `ValueError`) rather than degrading, since without a schema there is nothing to extract.
-- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None, *, limiter=None, max_windows=None, row_terms=None)`**
+- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None, *, limiter=None, max_windows=None, row_terms=None, document_condition=None)`**
   returns a `DocumentExtractionResult` whose records carry `RecordProvenance`. `instructions` is the filter ("only
   hardware"); filters never become fields. The document must be loaded whole. Windows run side by side under the
   caller's `limiter` (one by one without). With `max_windows` a longer document is read in part: `WindowSelection` keeps
@@ -750,6 +750,15 @@ read no agent configuration:
   `RecordMerger` drops overlap copies between adjacent windows only. Every later window is also shown the document's
   opening (`DOCUMENT_OPENING_TOKENS`, at most half a window), so header values such as an invoice number reach records
   far below the header.
+- **Document condition:** with `document_condition` ("only contracts with Hooli"), window 0 runs first and alone with a
+  records model whose first field is `DocumentMatch` (`verdict` "yes" / "no" / "unsure", `reason`); the prompt's
+  condition block and rule appear only then, so without a condition the prompt is main's (pinned by
+  `tests/unit/fixtures/`). Only a stated contradicting fact gives "no": the document is then
+  `DocumentExtractionResult.skipped_by` (no records, `skipped`, never `failed`) and its other windows are not read.
+  "yes" and "unsure" read the other windows side by side as before, without the condition, and the result carries the
+  `document_match`. Each verdict is set on the current span (`extraction.document.path`,
+  `extraction.document_condition.verdict`, `.reason`) and logged, so false skips can be sampled later. ADR
+  `2026_11_18_document_condition_judged_in_the_first_extraction_window`.
 - **Failure:** malformed output fails that document as a whole with a `failure_reason`, never with a partial list.
   Infrastructure errors still raise.
 

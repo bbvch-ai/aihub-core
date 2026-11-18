@@ -98,3 +98,13 @@ def test_schema_survives_a_json_round_trip_so_it_can_travel_on_an_event() -> Non
     schema = _schema(("amount", "number", "Line amount"))
 
     assert RecordSchema.model_validate_json(schema.model_dump_json()) == schema
+
+
+def test_the_judged_records_model_puts_the_document_match_first() -> None:
+    schema = _schema(("amount", "number", "Line amount"))
+
+    judged = schema.to_records_model(judged=True)
+
+    assert list(judged.model_fields) == ["document_match", "records"]
+    assert list(judged.model_json_schema()["properties"]) == ["document_match", "records"]
+    assert list(schema.to_records_model().model_fields) == ["records"]

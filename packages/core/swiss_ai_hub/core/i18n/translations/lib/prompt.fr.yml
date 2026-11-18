@@ -1646,6 +1646,11 @@ structured_extraction:
     {{ instructions }}
     </instructions>
     {% endif %}
+    {% if document_condition %}
+    <document_condition>
+    {{ document_condition }}
+    </document_condition>
+    {% endif %}
     <rules>
     1. Chaque enregistrement possède chacun de ces champs : {{ field_names }}. Mettez un champ à null lorsque l'extrait ne l'indique pas. Ne devinez jamais une valeur.
     2. Copiez les valeurs telles qu'elles figurent dans le document, converties uniquement dans le type du champ.
@@ -1656,6 +1661,9 @@ structured_extraction:
     7. Le début du document ne fournit que des valeurs qui s'appliquent à chaque enregistrement. N'en extrayez jamais un enregistrement.
     {% if instructions %}
     8. Les instructions décident quels enregistrements garder. Gardez chaque enregistrement qui pourrait les remplir : mettez record_match à "yes" quand il les remplit clairement et à "unsure" quand vous n'êtes pas sûr. N'omettez que les enregistrements qui ne les remplissent clairement pas. Une condition sur le document entier, comme son fournisseur, une partie ou une année, s'applique à chacun de ses enregistrements : quand le document ne la remplit clairement pas, ne gardez aucun enregistrement. Des instructions qui ne disent pas quels enregistrements garder, comme « toutes les lignes » ou « une ligne par contrat », gardent chaque enregistrement.
+    {% endif %}
+    {% if document_condition %}
+    {% if instructions %}9{% else %}8{% endif %}. La condition sur le document décide si le document entier compte. Cet extrait est le début du document : jugez le document d'après l'extrait et le titre avant d'extraire. Mettez document_match.verdict à "no" seulement quand l'extrait ou le titre énonce un fait qui contredit la condition, comme un autre fournisseur ou une autre partie, une date hors de la période, ou le mot brouillon ou non signé. Quand le fait sur lequel porte la condition ne figure pas dans l'extrait, le verdict est "unsure", jamais "no". Mettez-le à "yes" quand l'extrait montre que le document remplit la condition. Dans document_match.reason, nommez ou citez le fait décisif en une courte phrase, p. ex. « Fournisseur : Initech AG. » Quand le verdict est "yes" ou "unsure", extrayez chaque enregistrement comme s'il n'y avait pas de condition sur le document ; quand il est "no", ne retournez aucun enregistrement.
     {% endif %}
     </rules>
     {% endchat %}

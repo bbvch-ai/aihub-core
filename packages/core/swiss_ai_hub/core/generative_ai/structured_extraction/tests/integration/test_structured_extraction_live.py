@@ -9,6 +9,7 @@ import asyncio
 import os
 from collections import Counter
 from datetime import UTC, datetime
+from unittest.mock import patch
 
 import pytest
 from llama_index.llms.openai_like import OpenAILike
@@ -93,6 +94,10 @@ def _long_contract() -> str:
         399: "Position 6: Rack cabinet 42U with cabling, 1290.00 CHF.",
     }
     return "\n\n".join(lines.get(n, filler.format(n=n)) for n in range(400))
+
+
+def _contract_header(supplier: str) -> str:
+    return f"# Contract HW-2025-117\n\nSupplier: {supplier}\nClient: Acme Engineering GmbH\n\n"
 
 
 def _llm() -> tuple[LLMConfig, OpenAILike, LLMCostTracker]:
@@ -217,6 +222,104 @@ async def test_long_markdown_table_is_extracted_once_per_row_with_exact_amounts(
     assert result.window_count > 1
     assert {record.values["position"]: record.values["amount"] for record in result.records} == amounts
     assert len(result.records) == len(amounts)
+
+
+@pytest.mark.asyncio
+async def test_an_invoice_from_another_supplier_is_skipped_with_its_reason() -> None:
+    llm_config, llm, _ = _llm()
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(_INVOICE),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        document_condition="only invoices from Hooli",
+    )
+
+    assert result.skipped, result.document_match
+    assert result.records == []
+    assert "Helvetic" in result.document_match.reason
+
+
+@pytest.mark.asyncio
+async def test_an_invoice_from_the_named_supplier_is_extracted() -> None:
+    llm_config, llm, _ = _llm()
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(_INVOICE),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        document_condition="only invoices from Helvetic IT Supplies",
+    )
+
+    assert not result.skipped, result.document_match
+    assert sorted(record.values["position"] for record in result.records) == [1, 2, 3, 4, 5, 6, 7]
+
+
+@pytest.mark.asyncio
+async def test_an_invoice_without_a_supplier_line_in_its_opening_is_unsure() -> None:
+    """An absent fact is not a contradiction, so the document is read and its rows are checked by a person."""
+    llm_config, llm, _ = _llm()
+    invoice = _INVOICE.replace("Supplier: Helvetic IT Supplies AG, Bahnhofstrasse 10, 8001 Zürich\n", "")
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(invoice),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        document_condition="only invoices from Hooli",
+    )
+
+    assert result.document_match.verdict == "unsure", result.document_match
+    assert sorted(record.values["position"] for record in result.records) == [1, 2, 3, 4, 5, 6, 7]
+
+
+@pytest.mark.slow
+@pytest.mark.asyncio
+async def test_a_long_contract_failing_the_condition_is_read_in_one_call() -> None:
+    llm_config, llm, _ = _llm()
+    predict = type(llm).astructured_predict
+
+    with patch.object(type(llm), "astructured_predict", autospec=True, side_effect=predict) as calls:
+        result = await RecordExtractor.extract(
+            _LINE_SCHEMA,
+            _document(_contract_header("Initech AG") + _long_contract(), title="Hardware contract"),
+            llm,
+            llm_config,
+            LocaleHandler("en"),
+            limiter=_windows_at_once(),
+            document_condition="only contracts with Hooli",
+        )
+
+    assert result.window_count > 1
+    assert result.skipped, result.document_match
+    assert calls.await_count == 1
+
+
+@pytest.mark.slow
+@pytest.mark.asyncio
+async def test_a_long_contract_signed_on_its_last_page_is_unsure_not_skipped() -> None:
+    llm_config, llm, _ = _llm()
+    signature = "\n\nSigned for the client: Anna Muster, Zürich, 2025-03-20. Signed for the supplier: Beat Keller."
+    text = _contract_header("Helvetic IT Supplies AG") + _long_contract() + signature
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(text, title="Hardware contract"),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        limiter=_windows_at_once(),
+        document_condition="only signed versions",
+    )
+
+    assert result.window_count > 1
+    assert result.document_match.verdict == "unsure", result.document_match
+    assert [record.values["position"] for record in result.records] == [1, 2, 3, 4, 5, 6]
 
 
 @pytest.mark.skipif(not _CONSISTENCY_MODELS, reason="set STRUCTURED_EXTRACTION_CONSISTENCY_MODELS to measure")

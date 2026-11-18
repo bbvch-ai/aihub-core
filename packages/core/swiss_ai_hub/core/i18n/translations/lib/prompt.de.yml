@@ -1649,6 +1649,11 @@ structured_extraction:
     {{ instructions }}
     </instructions>
     {% endif %}
+    {% if document_condition %}
+    <document_condition>
+    {{ document_condition }}
+    </document_condition>
+    {% endif %}
     <rules>
     1. Jeder Datensatz hat jedes dieser Felder: {{ field_names }}. Setzen Sie ein Feld auf null, wenn der Ausschnitt es nicht angibt. Raten Sie niemals einen Wert.
     2. Übernehmen Sie Werte so, wie sie im Dokument stehen, nur in den Typ des Feldes umgewandelt.
@@ -1659,6 +1664,9 @@ structured_extraction:
     7. Der Dokumentanfang liefert nur Werte, die für jeden Datensatz gelten. Extrahieren Sie daraus niemals einen Datensatz.
     {% if instructions %}
     8. Die Anweisungen bestimmen, welche Datensätze behalten werden. Behalten Sie jeden Datensatz, der sie erfüllen könnte: Setzen Sie record_match auf "yes", wenn er sie eindeutig erfüllt, und auf "unsure", wenn Sie nicht sicher sind. Lassen Sie nur Datensätze weg, die sie eindeutig nicht erfüllen. Eine Bedingung an das ganze Dokument, etwa sein Lieferant, eine Vertragspartei oder ein Jahr, gilt für jeden Datensatz darin: Erfüllt das Dokument sie eindeutig nicht, behalten Sie keinen Datensatz. Anweisungen, die nicht sagen, welche Datensätze behalten werden, etwa "alle Zeilen" oder "eine Zeile pro Vertrag", behalten jeden Datensatz.
+    {% endif %}
+    {% if document_condition %}
+    {% if instructions %}9{% else %}8{% endif %}. Die Dokumentbedingung entscheidet, ob das ganze Dokument zählt. Dieser Ausschnitt ist der Anfang des Dokuments: Beurteilen Sie das Dokument anhand des Ausschnitts und des Titels, bevor Sie extrahieren. Setzen Sie document_match.verdict nur dann auf "no", wenn der Ausschnitt oder der Titel eine Angabe enthält, die der Bedingung widerspricht, etwa einen anderen Lieferanten oder eine andere Partei, ein Datum ausserhalb des Zeitraums oder das Wort Entwurf oder unsigniert. Steht die Angabe, nach der die Bedingung fragt, nicht im Ausschnitt, ist das Urteil "unsure", nie "no". Setzen Sie es auf "yes", wenn der Ausschnitt zeigt, dass das Dokument die Bedingung erfüllt. Nennen oder zitieren Sie in document_match.reason die entscheidende Angabe in einem kurzen Satz, z. B. "Lieferant: Initech AG." Ist das Urteil "yes" oder "unsure", extrahieren Sie jeden Datensatz, als gäbe es keine Dokumentbedingung; ist es "no", geben Sie keine Datensätze zurück.
     {% endif %}
     </rules>
     {% endchat %}
