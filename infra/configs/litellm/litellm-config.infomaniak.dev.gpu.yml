@@ -72,6 +72,8 @@ model_list:
       # images in one request were all read (prompt tokens grew by 6 per 32x32 image), and mineru-vllm-server sets
       # no --limit-mm-per-prompt.
       # What bounds this model is its 8192-token window, which the input-size guard already enforces.
+      input_cost_per_token: 0
+      output_cost_per_token: 0
 
   # ===================================================================
   # Embedding Models
