@@ -20113,7 +20113,7 @@ export const ModelInfoDTOSchema = {
         },
       ],
       title: "Input Cost Per Token",
-      description: "Cost per input token in CHF",
+      description: "Cost per million input tokens in CHF",
     },
     output_cost_per_token: {
       anyOf: [
@@ -20125,7 +20125,7 @@ export const ModelInfoDTOSchema = {
         },
       ],
       title: "Output Cost Per Token",
-      description: "Cost per output token in CHF",
+      description: "Cost per million output tokens in CHF",
     },
     cache_creation_input_token_cost: {
       anyOf: [

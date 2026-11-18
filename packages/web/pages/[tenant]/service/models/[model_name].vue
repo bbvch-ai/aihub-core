@@ -49,7 +49,7 @@
             </span>
             <span class="text-lg font-light">
               {{
-                isDefined(model?.model_info?.input_cost_per_token) ? `$${model.model_info.input_cost_per_token.toFixed(2)}` : t('models.modelDetails.notSpecified')
+                isDefined(model?.model_info?.input_cost_per_token) ? `${model.model_info.input_cost_per_token.toFixed(2)} ${t('costs.table.currency')}` : t('models.modelDetails.notSpecified')
               }}
             </span>
           </div>
@@ -59,7 +59,7 @@
             </span>
             <span class="text-lg font-light">
               {{
-                isDefined(model?.model_info?.output_cost_per_token) ? `$${model.model_info.output_cost_per_token.toFixed(2)}` : t('models.modelDetails.notSpecified')
+                isDefined(model?.model_info?.output_cost_per_token) ? `${model.model_info.output_cost_per_token.toFixed(2)} ${t('costs.table.currency')}` : t('models.modelDetails.notSpecified')
               }}
             </span>
           </div>
