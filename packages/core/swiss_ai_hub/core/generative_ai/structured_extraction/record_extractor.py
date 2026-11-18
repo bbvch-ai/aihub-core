@@ -5,6 +5,7 @@ from typing import Annotated, Any
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
 from opentelemetry import trace
+from pydantic import BaseModel
 
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document import KnowledgeDocument
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
@@ -90,19 +91,13 @@ class RecordExtractor:
         )
         opening = RecordExtractor._opening(document.text, window_tokens, llm_config) if len(windows) > 1 else ""
         positions = WindowSelection.choose(windows, max_windows or len(windows), row_terms)
-        judged_model = schema.to_records_model(judged=True) if document_condition else None
         call = ExtractionWindowCall(
-            llm,
-            schema.to_records_model(),
-            prompt,
-            prompt_args,
-            windows,
-            opening,
-            limiter or asyncio.Semaphore(1),
-            judged_model,
+            llm, schema.to_records_model(), prompt, prompt_args, windows, opening, limiter or asyncio.Semaphore(1)
         )
         if document_condition and positions:
-            return await RecordExtractor._judged_first(call, positions, provenance)
+            return await RecordExtractor._judged_first(
+                call, schema.to_records_model(judged=True), positions, provenance
+            )
         outcomes = await RecordExtractor._side_by_side(call, positions)
         return RecordExtractor._result(provenance, positions, outcomes, len(windows))
 
@@ -121,14 +116,17 @@ class RecordExtractor:
 
     @staticmethod
     async def _judged_first(
-        call: ExtractionWindowCall, positions: list[int], provenance: RecordProvenance
+        call: ExtractionWindowCall,
+        judged_model: type[BaseModel],
+        positions: list[int],
+        provenance: RecordProvenance,
     ) -> DocumentExtractionResult:
         """Window 0 alone, then the other windows side by side only when the document may meet the condition.
 
         `positions[0] == 0` always, because `WindowSelection.choose` returns every window or a set containing 0.
         """
         window_count = len(call.windows)
-        judged = await call.judged()
+        judged = await call.judged(judged_model)
         if isinstance(judged, ValueError):
             return RecordExtractor._result(provenance, positions[:1], [judged], window_count)
         match, first = judged

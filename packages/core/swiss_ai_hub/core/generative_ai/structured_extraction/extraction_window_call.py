@@ -28,7 +28,6 @@ class ExtractionWindowCall:
         windows: list[str],
         opening: str,
         limiter: asyncio.Semaphore | None,
-        judged_model: type[BaseModel] | None = None,
     ) -> None:
         self.llm = llm
         self.records_model = records_model
@@ -37,7 +36,6 @@ class ExtractionWindowCall:
         self.windows = windows
         self.opening = opening
         self.limiter = limiter
-        self.judged_model = judged_model
 
     async def records(self, position: int) -> list[dict[str, RecordValue]] | ValueError:
         """Records of one window, without the all-null ones strict mode lets a model emit for "nothing here"."""
@@ -46,14 +44,15 @@ class ExtractionWindowCall:
             return result
         return self._kept(result.records)
 
-    async def judged(self) -> tuple[DocumentMatch, list[dict[str, RecordValue]]] | ValueError:
-        """The first window's verdict on the document condition, with its records.
+    async def judged(
+        self, judged_model: type[BaseModel]
+    ) -> tuple[DocumentMatch, list[dict[str, RecordValue]]] | ValueError:
+        """The first window's verdict on the document condition, with its records; `judged_model` is
+        `RecordSchema.to_records_model(judged=True)`.
 
         Only the first window is judged: the start of a document is where its supplier, parties and date stand.
         """
-        if self.judged_model is None:
-            raise ValueError("A window can only be judged with a model that carries a document match.")
-        result = await self._predict(self.judged_model, self._window_args(0, judging=True))
+        result = await self._predict(judged_model, self._window_args(0, judging=True))
         if isinstance(result, ValueError):
             return result
         return result.document_match, self._kept(result.records)
