@@ -61,6 +61,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── source_pipeline_registration_sensor.py # Stage-1 counterpart: announce a source pipeline (+ shared id/label gate)
 │   │   ├── source_bucket_cleanup_sensor.py # Forget databases a source pipeline no longer fills (partitions + remote)
 │   │   ├── knowledge_teardown_sensor.py   # Run teardown for databases/folders flagged `deleting`
+│   │   ├── document_classification_backfill_sensor.py # Run the classification backfill for databases that requested it
 │   │   ├── single_flight_run_guard.py     # "Is a run of this job already queued or running?"
 │   │   └── nats/
 │   │       ├── nats_document_uploaded_sensor.py  # NATS event-driven triggers
@@ -82,11 +83,13 @@ packages/pipeline/                        # SDK framework
 │   ├── services/
 │   │   ├── knowledge_teardown_service.py  # Destroys a database/namespace across every store
 │   │   ├── default_partition_repair_service.py # Provisions the collection, moves nodes stranded in `_default`
-│   │   └── orphaned_node_repair_service.py # Deletes vector nodes whose document has no record and no file
+│   │   ├── orphaned_node_repair_service.py # Deletes vector nodes whose document has no record and no file
+│   │   └── document_classification_backfill_service.py # Classifies already ingested documents from their stored text
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
 │   ├── jobs/knowledge_teardown_job.py     # {ingestor}_knowledge_teardown
 │   ├── jobs/repair_orphaned_nodes_job.py  # {ingestor}_repair_orphaned_nodes (manual, dry run by default)
+│   ├── jobs/backfill_document_classification_job.py # {ingestor}_backfill_document_classification (sensor or manual dry run)
 │   ├── executors/factory.py               # default_process_executor (in-process)
 │   ├── automation/all_deps_completed.py   # AutomationCondition for all-deps-ready
 │   ├── types/                             # Domain types (Pydantic models)
@@ -171,8 +174,9 @@ processing chain regardless of origin:
   `DefaultPartitionRepairService`: the database's Milvus collection is created with the embedding model's width if
   missing, a half-built one gets its missing partitions, and nodes stranded in `_default` move to their namespace
   partition (#1923). A document partition is what starts an ingestion run, so none meets a half-built collection.
-- `documents_factory` → parse (MinerU) → apply a `.md` file's frontmatter → `RefDocDocument` → MongoDB, flagged
-  `is_ingested=False` (see [Markdown Frontmatter](#markdown-frontmatter))
+- `documents_factory` → parse (MinerU) → apply a `.md` file's frontmatter → figure descriptions → table refinement →
+  classification → `RefDocDocument` → MongoDB, flagged `is_ingested=False` (see
+  [Markdown Frontmatter](#markdown-frontmatter) and [Document Classification](#document-classification))
 - `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus, which flips `is_ingested=True`
 - `summary_nodes_factory` (optional) → hierarchical summaries → Milvus
 - `removed_documents_factory` → cleanup orphaned documents: vector nodes first, then figures, then the MongoDB record.
@@ -211,13 +215,14 @@ is derived from `ingestor`, because asset keys are unique per Dagster deployment
 to the instance. That is what lets a second pipeline *type* be deployed alongside this one.
 
 `settings` is a `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`, read from the environment when omitted)
-carrying the text, embedding and vision models, the three enrichment flags and the observation schedule. The models and
+carrying the text, embedding and vision models, the four enrichment flags and the observation schedule. The models and
 enrichment flags are **deployment defaults**, not the graph's shape: they pre-fill the form the pipeline announces, and
 are what a database that stores no value of its own falls back to at run time. The builder registers them under its
 `ingestor` (`model_builders.register_deployment_defaults`), so a run falls back to the settings the pipeline was built
 with rather than re-reading the environment: a model named in code wins over the deployment's variables. The asset graph
-is identical for every database (`summary_nodes` always exists, and table refinement and figure descriptions are always
-in the `documents` graph), and each enrichment op decides per run from the bucket's configuration whether it has work.
+is identical for every database (`summary_nodes` always exists, and table refinement, figure descriptions and document
+classification are always in the `documents` graph), and each enrichment op decides per run from the bucket's
+configuration whether it has work.
 
 Every pipeline built here registers itself: a sensor upserts an `IngestorEntity` carrying labels, form and schema, so
 the API's `GET /knowledge/ingestors` can offer it in the create-database dialog and validate what users submit. See
@@ -364,17 +369,17 @@ only `RcloneSyncConfig.offered_backends()` (`_TESTED_BACKENDS` = `s3`, `drive`, 
 `RCLONE_LOCAL_SOURCE_ROOT` is set), each under a translated label; a `model_validator` refuses any other backend when a
 stored configuration is read, because the API validates against the announced schema only. `outbound_urls()` names the
 hosts a backend connects to (S3/Azure `endpoint`, SFTP `host`), and `rclone_remote_for_bucket` passes each through
-`PublicHostGuard` before the remote is created (`RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts).
-With an S3 endpoint set, `to_rclone_source_config` sends a path-style provider (`_PATH_STYLE_S3_PROVIDERS`, checked
-against the rclone image; any other provider, `AWS` included, goes out as `Other`), because in virtual-hosted style
-rclone contacts `<bucket>.<endpoint host>`, a name the check never sees; the stored provider is untouched. An access
-point ARN as the root path is refused with an endpoint, since the client derives its host from the ARN. The Drive key file is refused when any key folding to `token_uri` (Go's JSON decoder
-ignores case, Kelvin sign included) names a host other than Google's. rclone's setup still asks questions in
-non-interactive mode: `RcloneClient` answers the fixed ones (`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered
-with the stored `drive_id` through ephemeral `config_*` parameters (rclone then checks the drive against Microsoft Graph
-while creating the remote), and a step rclone fails raises its `Error` text. The Drive service-account key is a
-`SecretFileInput` (core form element, treated as a secret by `SecretFieldWalker`). Adding a backend = one `Form`
-subclass + one field on `RcloneSyncConfig` + labels in
+`PublicHostGuard` before the remote is created (`RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts). With an S3
+endpoint set, `to_rclone_source_config` sends a path-style provider (`_PATH_STYLE_S3_PROVIDERS`, checked against the
+rclone image; any other provider, `AWS` included, goes out as `Other`), because in virtual-hosted style rclone contacts
+`<bucket>.<endpoint host>`, a name the check never sees; the stored provider is untouched. An access point ARN as the
+root path is refused with an endpoint, since the client derives its host from the ARN. The Drive key file is refused
+when any key folding to `token_uri` (Go's JSON decoder ignores case, Kelvin sign included) names a host other than
+Google's. rclone's setup still asks questions in non-interactive mode: `RcloneClient` answers the fixed ones
+(`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered with the stored `drive_id` through ephemeral `config_*`
+parameters (rclone then checks the drive against Microsoft Graph while creating the remote), and a step rclone fails
+raises its `Error` text. The Drive service-account key is a `SecretFileInput` (core form element, treated as a secret by
+`SecretFieldWalker`). Adding a backend = one `Form` subclass + one field on `RcloneSyncConfig` + labels in
 `packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
 
 **Per-run resolution** (`util/source_builders.py`, the Stage-1 sibling of `model_builders` / `store_builders`):
@@ -807,8 +812,10 @@ and a converted file opening with a horizontal rule must not be taken for YAML. 
 - Values: text, int64, finite floats; `true`/`false`, dates and list items are stored as **text**. llama-index's
   `MetadataFilter` rejects booleans, so a flag must be stored the way a filter can name it. Null, maps and nested lists
   are skipped.
-- `MarkdownFrontmatter.PLATFORM_KEYS` (all of `DEFAULT_METADATA` plus llama-index/Milvus internals) are refused, so a
-  Jira `type: Bug` cannot replace the content/summary `type` every retrieval filters on. Adapters write `issue_type`.
+- `MarkdownFrontmatter.PLATFORM_KEYS` (all of `DEFAULT_METADATA`, llama-index/Milvus internals and every key
+  classification writes, `DocumentTypeCatalog.metadata_keys()`) are refused, so a Jira `type: Bug` cannot replace the
+  content/summary `type` every retrieval filters on, and a record's own `document_type` cannot pass for classification.
+  Adapters write `issue_type`.
 - `MAX_METADATA_BYTES` (8 KiB, file order) caps the custom metadata: each node stores its metadata twice in Milvus' 64
   KiB dynamic field (keys + `_node_content`).
 
@@ -832,6 +839,59 @@ numbers keep plain equality, booleans are compared as `"true"`/`"false"`. Covere
 
 **Not retroactive.** Applying the op changes no data version upstream, so markdown ingested before it keeps its
 frontmatter chunks until the file changes or is re-uploaded.
+
+## Document Classification
+
+`ops/document/classify_document.py` runs in `documents_factory` after table refinement (#2482). It assigns each document
+one type of the closed set in core's `DocumentTypeCatalog` (`invoice`, `other`) and reads that type's attributes with
+one call of the database's own text model (`build_language_model(bucket)`), through `DocumentClassificationResource`.
+See core's `document/classification/` and ADR `2026_11_13_closed_document_types_and_attributes_at_ingestion`.
+
+- **Switched per database** by `with_document_classification` (`DOCUMENT_INGESTION_WITH_DOCUMENT_CLASSIFICATION`, on by
+  default), like the other enrichment flags.
+- **Records synced with frontmatter are skipped.** A non-empty `excluded_embed_metadata_keys` before this op can only
+  come from the frontmatter step, and such a record (Jira, Confluence, MediaWiki) says what it is through its own
+  fields.
+- **Metadata only.** `RefDocDocument.with_classification()` adds every key of `DocumentTypeCatalog.metadata_keys()` to
+  both exclusion lists, which chunks and summary nodes inherit, so embeddings do not change and a backfill never embeds
+  again. `IngestedNode` takes the keys into `document_classification` before it reads frontmatter `record_fields`.
+- **An enrichment, never a failure.** A failed call is logged and the document is ingested unclassified, without
+  `document_classification_version`, so a backfill (#2483) finds it.
+- **Filterable everywhere.** Retrieval accepts `DocumentTypeCatalog.filter_keys()` on every database without listing
+  them in `allowed_metadata_filter_fields`; the listing exposes them on `KnowledgeDocumentSummary`.
+
+**Backfill** (#2483): `{ingestor}_backfill_document_classification` (`jobs/` → `ops/repair/` →
+`services/document_classification_backfill_service.py`) classifies the documents a database ingested before, from the
+text in the doc store, without parsing or embedding again.
+
+- **What each document owes** (`BackfillWork`): no classification, or one `DocumentTypeCatalog.needs_classification`
+  finds outdated (an older `document_classification_version`, or an older `document_type_version` of its own type, so
+  adding a type redoes only the documents marked `other`) → classified with the database's text model; the current one
+  with an older `document_normalizer_version` → its `_raw` copies read again by `DocumentClassification.renormalized()`,
+  no model call; records synced with frontmatter (an excluded key that is not a classification key) → left alone, as at
+  ingestion. A second run has nothing to do.
+- **Nodes first, record last.** `PartitionAwareMilvusVectorStore.rewrite_document_metadata` patches the dynamic keys and
+  `_node_content` (llama-index rebuilds a node from the latter alone) of the nodes carrying the content hash it read,
+  and extends their exclusion lists; then `RefDoc.set_classification` writes the record, only while its content hash is
+  still that one (`RefDoc.text_of` checks it before Milvus is touched too). If the record write finds the document
+  changed or removed, the rows just written are deleted again: they can only be the old version's, which ingestion or
+  removal had replaced or deleted, so nothing deleted comes back and a re-ingested document's new nodes are never
+  touched. A removal caught between deleting the nodes and deleting the record can still leave rows behind;
+  `{ingestor}_repair_orphaned_nodes` removes them. Every classification key is written, `None` where the new type has no
+  value, so a changed type keeps nothing stale. A database being deleted is left alone.
+- **One document failing never fails the run**; its id is in the report and it stays owed. Infrastructure errors fail
+  the run.
+- **Started by a request, not a schedule.** `BucketEntity.classification_requested_at` (set by
+  `POST /knowledge/databases/{database}/classification`, the Knowledge page's "Classify existing documents" button) is
+  the work queue, like `deleting`: `DocumentClassificationBackfillSensorFor_…` starts one run per requested database
+  (never two at once, a run launched by hand included, since both carry `aihub/bucket`; a run key numbered by attempt so
+  a failed run is driven again) with `dry_run: false` and the request time, and the run clears exactly that request
+  (`BucketEntity.clear_classification_request`), so one made meanwhile starts the next run. Runs carry their request
+  time (`aihub/classification_requested_at`), so attempts are counted per request: after `MAX_ATTEMPTS_PER_REQUEST` (3)
+  runs of one request failed, the sensor stops and keeps the request as failed
+  (`BucketEntity.fail_classification_request` → `classification_failed_at`, shown as a warning on the Knowledge page),
+  instead of starting a run every tick through an outage. A new request starts over. A launch by hand needs the
+  `aihub/bucket` tag and is a dry run unless `ops: {backfill_document_classification_op: {config: {dry_run: false}}}`.
 
 ## Per-Database Configuration
 

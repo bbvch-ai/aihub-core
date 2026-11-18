@@ -632,6 +632,20 @@ knowledge:
       description: "La source synchronise cette base de données une fois par jour\
         \ : ses collections apparaissent ici après la prochaine synchronisation planifiée.\
         \ Si elles n'apparaissent toujours pas, vérifiez les paramètres de la source."
+  classification:
+    failed: 'Le classement demandé le {date} a échoué plusieurs fois et a été arrêté. Demandez-le à nouveau ou demandez à un administrateur de vérifier le pipeline.'
+    request: Classer les documents existants
+    pending: 'Classement demandé le {date} ; les documents sont classés lors de la prochaine exécution du pipeline.'
+    confirm:
+      header: Classer les documents existants
+      message: 'Les documents de {name} qui n''ont pas encore de type, ou qui ont été classés par une version antérieure, reçoivent un type et des attributs à partir de leur texte enregistré. Chacun d''eux coûte un appel au modèle ; les documents à jour sont ignorés.'
+      accept: Classer
+    requested:
+      summary: Classement demandé
+      detail: Le pipeline classe les documents sous peu.
+    error:
+      summary: Le classement n'a pas pu être demandé
+      detail: Veuillez réessayer plus tard.
   manual_management:
     description: Les collections peuvent être créées et gérées manuellement
   pipeline: 'Pipeline : {name}'

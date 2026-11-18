@@ -9,14 +9,18 @@ import {
 } from "./client";
 import { client } from "./client.gen";
 import {
+  createDatabaseResponseTransformer,
   createDatasetResponseTransformer,
   createTokenEndpointResponseTransformer,
   getAccessCapabilitiesResponseTransformer,
   getAgentEventTimeseriesResponseTransformer,
+  getDatabasesResponseTransformer,
   getDatasetResponseTransformer,
   getDatasetsResponseTransformer,
   getNotificationsResponseTransformer,
   listTokensEndpointResponseTransformer,
+  requestClassificationResponseTransformer,
+  updateDatabaseSourceResponseTransformer,
   updateDatasetResponseTransformer,
   updateNotificationResponseTransformer,
   updateNotificationsBulkResponseTransformer,
@@ -313,6 +317,9 @@ import type {
   RemoveUserFromThreadData,
   RemoveUserFromThreadError,
   RemoveUserFromThreadResponse,
+  RequestClassificationData,
+  RequestClassificationError,
+  RequestClassificationResponse,
   ResolveOpenwebuiReferencesData,
   ResolveOpenwebuiReferencesError,
   ResolveOpenwebuiReferencesResponse,
@@ -3072,6 +3079,7 @@ export const createDatabase = <
     CreateDatabaseError,
     DefaultT
   >({
+    responseTransformer: createDatabaseResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
@@ -3107,6 +3115,7 @@ export const updateDatabaseSource = <
     UpdateDatabaseSourceError,
     DefaultT
   >({
+    responseTransformer: updateDatabaseSourceResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
@@ -3117,6 +3126,41 @@ export const updateDatabaseSource = <
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Request classification of a database's documents
+ *
+ * Asks the ingestion pipeline to classify the documents the database already holds, from their stored
+ * text: those ingested before classification existed, or classified by an older version. Returns the
+ * database with the pending request; 409 when its pipeline does not classify or it switched classification
+ * off.
+ */
+export const requestClassification = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends RequestClassificationResponse =
+    RequestClassificationResponse,
+>(
+  options: Options<
+    TComposable,
+    RequestClassificationData,
+    RequestClassificationResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    RequestClassificationResponse | DefaultT,
+    RequestClassificationError,
+    DefaultT
+  >({
+    responseTransformer: requestClassificationResponseTransformer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/classification",
+    ...options,
   });
 
 /**
@@ -3236,6 +3280,7 @@ export const getDatabases = <
     unknown,
     DefaultT
   >({
+    responseTransformer: getDatabasesResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },

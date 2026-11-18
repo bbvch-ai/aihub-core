@@ -66,7 +66,8 @@ format-md:
 
 format-yaml:
 	@echo "Formatting YAML files..."
-	@uv run yamlfix $$(git ls-files '*.yaml' '*.yml' | grep -v 'pnpm-lock.yaml')
+	@# Synthetic evaluation documents are text in YAML literal blocks; yamlfix deletes their blank lines.
+	@uv run yamlfix $$(git ls-files '*.yaml' '*.yml' | grep -v 'pnpm-lock.yaml' | grep -v '/tests/evaluation/synthetic/')
 
 format-md-win:
 	@echo "Formatting markdown files..."

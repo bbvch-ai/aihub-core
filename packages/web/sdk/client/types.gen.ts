@@ -5246,6 +5246,24 @@ export type DatabaseDto = {
    */
   ingestor: string;
   /**
+   * Classification Available
+   *
+   * Whether the documents of this database can be classified (#2346): false for a legacy or unassigned pipeline, and for a database whose configuration switched classification off.
+   */
+  classification_available?: boolean;
+  /**
+   * Classification Requested At
+   *
+   * When classification of the documents already ingested was requested (UTC); null when none is pending. Cleared by the pipeline once its backfill ran.
+   */
+  classification_requested_at?: Date | null;
+  /**
+   * Classification Failed At
+   *
+   * The request (UTC) the pipeline gave up on after its backfill runs kept failing; null when the last request did not fail. Cleared by a new request.
+   */
+  classification_failed_at?: Date | null;
+  /**
    * Namespaces
    *
    * List of namespaces
@@ -5309,6 +5327,24 @@ export type DatabaseResponse = {
    * A brief description of the database's contents.
    */
   description?: string | null;
+  /**
+   * Classification Available
+   *
+   * Whether the documents of this database can be classified (#2346): false for a legacy or unassigned pipeline, and for a database whose configuration switched classification off.
+   */
+  classification_available?: boolean;
+  /**
+   * Classification Requested At
+   *
+   * When classification of the documents already ingested was requested (UTC); null when none is pending. Cleared by the pipeline once its backfill ran.
+   */
+  classification_requested_at?: Date | null;
+  /**
+   * Classification Failed At
+   *
+   * The request (UTC) the pipeline gave up on after its backfill runs kept failing; null when the last request did not fail. Cleared by a new request.
+   */
+  classification_failed_at?: Date | null;
 };
 
 /**
@@ -9310,6 +9346,14 @@ export type IngestedNode = {
    */
   record_fields?: {
     [key: string]: string | number | number | Array<string>;
+  };
+  /**
+   * Document Classification
+   *
+   * The document's type and attributes from ingestion's classification, under their metadata keys; empty for a document that was not classified.
+   */
+  document_classification?: {
+    [key: string]: unknown;
   };
   /**
    * Score
@@ -26790,6 +26834,14 @@ export type IngestedNodeWritable = {
     [key: string]: string | number | number | Array<string>;
   };
   /**
+   * Document Classification
+   *
+   * The document's type and attributes from ingestion's classification, under their metadata keys; empty for a document that was not classified.
+   */
+  document_classification?: {
+    [key: string]: unknown;
+  };
+  /**
    * Score
    *
    * Score representing the relevance of the document.
@@ -38201,6 +38253,44 @@ export type UpdateDatabaseSourceResponses = {
 
 export type UpdateDatabaseSourceResponse =
   UpdateDatabaseSourceResponses[keyof UpdateDatabaseSourceResponses];
+
+export type RequestClassificationData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/classification";
+};
+
+export type RequestClassificationErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type RequestClassificationError =
+  RequestClassificationErrors[keyof RequestClassificationErrors];
+
+export type RequestClassificationResponses = {
+  /**
+   * Successful Response
+   */
+  200: DatabaseResponse;
+};
+
+export type RequestClassificationResponse =
+  RequestClassificationResponses[keyof RequestClassificationResponses];
 
 export type DeleteNamespaceData = {
   body?: never;

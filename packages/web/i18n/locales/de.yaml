@@ -631,6 +631,20 @@ knowledge:
       description: Die Quelle synchronisiert diese Datenbank einmal täglich, ihre
         Sammlungen erscheinen hier also nach der nächsten geplanten Synchronisierung.
         Fehlen sie danach noch, prüfen Sie die Einstellungen der Quelle.
+  classification:
+    failed: 'Die am {date} angeforderte Klassifizierung ist mehrmals fehlgeschlagen und wurde abgebrochen. Fordern Sie sie erneut an oder bitten Sie eine Administratorin oder einen Administrator, die Pipeline zu prüfen.'
+    request: Bestehende Dokumente klassifizieren
+    pending: 'Klassifizierung angefordert am {date}; die Dokumente werden beim nächsten Lauf der Pipeline klassifiziert.'
+    confirm:
+      header: Bestehende Dokumente klassifizieren
+      message: 'Die Dokumente von {name}, die noch keinen Typ haben oder mit einer älteren Version klassifiziert wurden, erhalten aus ihrem gespeicherten Text einen Typ und Attribute. Jedes davon kostet einen Modellaufruf; aktuelle Dokumente werden übersprungen.'
+      accept: Klassifizieren
+    requested:
+      summary: Klassifizierung angefordert
+      detail: Die Pipeline klassifiziert die Dokumente in Kürze.
+    error:
+      summary: Klassifizierung konnte nicht angefordert werden
+      detail: Bitte versuchen Sie es später erneut.
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
   pipeline: 'Pipeline: {name}'

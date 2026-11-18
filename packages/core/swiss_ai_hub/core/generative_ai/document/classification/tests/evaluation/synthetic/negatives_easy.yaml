@@ -1,0 +1,281 @@
+# Documents plainly unlike invoices: letters, reports, manuals, meeting minutes, policies and a presentation. All must
+# be classified `other`. Some mention invoices or amounts, as real ones do. Every company and person is made up.
+
+- id: letter-de-1
+  kind: easy_negative
+  title: Brief_Adressaenderung.pdf
+  text: |
+    Muster Treuhand GmbH · Spitalgasse 4 · 3011 Bern
+
+    Alpenglück Bürobedarf AG
+    Marktgasse 30, 3011 Bern
+
+    Bern, 2. September 2025
+
+    **Neue Adresse ab 1. Oktober 2025**
+
+    Sehr geehrte Damen und Herren
+
+    Wir ziehen um: Ab 1. Oktober 2025 finden Sie uns an der Laupenstrasse 18, 3008 Bern. Bitte senden Sie Ihre
+    Rechnungen ab diesem Datum an die neue Adresse.
+
+    Freundliche Grüsse
+    Petra Keller, Geschäftsführerin
+
+- id: letter-fr-1
+  kind: easy_negative
+  title: lettre_resiliation.pdf
+  text: |
+    Atelier Rousseau Sàrl, Rue du Rhône 21, 1204 Genève
+
+    Alpenfunk Télécom SA
+    Avenue de la Gare 18, 1003 Lausanne
+
+    Genève, le 15 octobre 2025
+
+    **Résiliation de l'abonnement Business Fibre, contrat n° C-118204**
+
+    Madame, Monsieur,
+
+    Par la présente, nous résilions notre abonnement pour le 31 décembre 2025, conformément au délai de préavis.
+    Nous vous prions de nous confirmer la date de fin par écrit.
+
+    Veuillez agréer nos salutations distinguées.
+    Claire Rousseau
+
+- id: letter-en-1
+  kind: easy_negative
+  title: Letter_of_Recommendation_Weber.pdf
+  text: |
+    Brightwater Analytics Ltd
+    12 Canal Street, Manchester M1 3HE
+
+    3 November 2025
+
+    To whom it may concern,
+
+    It is my pleasure to recommend Daniel Weber, who worked with us as a data analyst from 2021 to 2025. Daniel was
+    reliable, curious and well liked by our clients.
+
+    Yours faithfully,
+    Sarah Whitfield, Managing Director
+
+- id: letter-it-1
+  kind: easy_negative
+  title: lettera_invito_evento.pdf
+  text: |
+    Studio Bellavista Sagl
+    Piazza Riforma 3, 6900 Lugano
+
+    Lugano, 1 ottobre 2025
+
+    Gentili clienti,
+
+    abbiamo il piacere di invitarvi all'inaugurazione del nostro nuovo studio giovedì 23 ottobre 2025 alle ore 18:00.
+    Seguirà un aperitivo. Vi preghiamo di confermare la vostra presenza entro il 15 ottobre.
+
+    Cordiali saluti,
+    Giulia Bernasconi
+
+- id: letter-de-2
+  kind: easy_negative
+  title: Email_Rueckfrage_Rechnung.eml
+  note: A mail asking about an invoice is not an invoice.
+  text: |
+    # Rückfrage zu Ihrer Rechnung 2025-1142
+
+    Von: Petra Keller <p.keller@muster-treuhand.example>
+    An: buchhaltung@alpenglueck.example
+    Datum: 26.05.2025
+
+    Guten Tag
+
+    Auf Ihrer Rechnung 2025-1142 über CHF 1'082.08 sind vier Toner verrechnet, geliefert wurden aber nur drei.
+    Können Sie das bitte prüfen und uns eine korrigierte Rechnung senden?
+
+    Besten Dank und freundliche Grüsse
+    Petra Keller
+
+- id: report-de-1
+  kind: easy_negative
+  title: Jahresbericht_2024.pdf
+  text: |
+    # Jahresbericht 2024
+    Bergwerk Bau AG
+
+    ## Das Wichtigste in Kürze
+    Der Umsatz stieg um 6 % auf CHF 48,2 Mio. Wir haben 14 Projekte abgeschlossen, darunter die Sanierung von drei
+    Schulhäusern. Die Zahl der Mitarbeitenden wuchs auf 212.
+
+    ## Ausblick
+    Für 2025 erwarten wir eine stabile Auftragslage im öffentlichen Hochbau.
+
+- id: report-en-1
+  kind: easy_negative
+  title: Data_Quality_Audit_Report.pdf
+  text: |
+    # Data Quality Audit – Final Report
+    Prepared by Brightwater Analytics Ltd for Hooli AG · February 2025
+
+    ## Findings
+    1. 4.2% of customer records have no country code.
+    2. Duplicate invoices were found in the ERP export for 2023 (37 cases).
+    3. Order dates are missing on 1.1% of orders.
+
+    ## Recommendations
+    Introduce validation on entry and a monthly duplicate check.
+
+- id: report-fr-1
+  kind: easy_negative
+  title: rapport_activite_T3.pdf
+  text: |
+    # Rapport d'activité – 3e trimestre 2025
+    Lemanic Services SA
+
+    Au troisième trimestre, nous avons repris l'entretien de deux nouveaux immeubles de bureaux à Lausanne. Le taux de
+    satisfaction de la clientèle atteint 92 %. Les absences pour maladie ont diminué de 1,4 point.
+
+- id: report-de-2
+  kind: easy_negative
+  title: Projektstatus_Atlas_KW12.pdf
+  text: |
+    # Projektstatus „Atlas" – KW 12/2025
+
+    | Arbeitspaket | Status | Fertig |
+    |---|---|---:|
+    | UI-Design | in Arbeit | 70 % |
+    | Backend-API | in Arbeit | 55 % |
+    | Tests | offen | 0 % |
+
+    Risiko: Die Schnittstelle zum Rechnungsmodul ist noch nicht spezifiziert.
+
+- id: manual-de-1
+  kind: easy_negative
+  title: Bedienungsanleitung_Kaffeemaschine.pdf
+  text: |
+    # Bedienungsanleitung Kaffeevollautomat CV-500
+
+    ## Inbetriebnahme
+    1. Wassertank füllen.
+    2. Bohnenbehälter füllen.
+    3. Gerät mit der Taste ⏻ einschalten und Spülvorgang abwarten.
+
+    ## Entkalken
+    Das Gerät meldet „Entkalken", sobald nötig. Verwenden Sie nur das mitgelieferte Entkalkungsmittel.
+
+- id: manual-en-1
+  kind: easy_negative
+  title: VPN_Setup_Guide.pdf
+  text: |
+    # VPN Setup Guide
+
+    1. Install the VPN client from the company portal.
+    2. Enter the server address vpn.hooli.example.
+    3. Sign in with your company account and approve the request on your phone.
+
+    If the connection fails, restart the client and check that your clock is correct.
+
+- id: manual-it-1
+  kind: easy_negative
+  title: manuale_stampante.pdf
+  text: |
+    # Manuale d'uso – Stampante multifunzione MF-220
+
+    ## Sostituzione del toner
+    1. Aprire lo sportello anteriore.
+    2. Estrarre la cartuccia esaurita.
+    3. Inserire la nuova cartuccia fino allo scatto e chiudere lo sportello.
+
+- id: minutes-de-1
+  kind: easy_negative
+  title: Protokoll_Teamsitzung_2025-03-11.pdf
+  text: |
+    # Protokoll Teamsitzung Buchhaltung
+    Datum: 11.03.2025 · Anwesend: P. Keller, M. Huber, S. Graf
+
+    1. Rechnungseingang: Die Rechnungen von Hooli AG werden ab April digital über die Plattform eingelesen.
+    2. Ferienplanung: Bis Ende März im Kalender eintragen.
+    3. Nächste Sitzung: 25.03.2025
+
+- id: minutes-fr-1
+  kind: easy_negative
+  title: PV_assemblee_generale_2025.pdf
+  text: |
+    # Procès-verbal de l'assemblée générale ordinaire
+    Lemanic Services SA · 18 juin 2025
+
+    1. Le rapport annuel 2024 est approuvé à l'unanimité.
+    2. Les comptes annuels 2024 sont approuvés ; le bénéfice de CHF 312'400 est reporté à nouveau.
+    3. Décharge est donnée au conseil d'administration.
+
+- id: minutes-en-1
+  kind: easy_negative
+  title: Kickoff_Meeting_Notes.pdf
+  text: |
+    # Kickoff meeting – Dashboard redesign
+    10 January 2025 · Attendees: S. Whitfield, D. Weber, M. Huber (Hooli AG)
+
+    - Scope agreed: three dashboards, monthly refresh.
+    - Budget as per quotation Q-1183.
+    - Next steps: data access by 20 January.
+
+- id: policy-de-1
+  kind: easy_negative
+  title: Spesenreglement_2025.pdf
+  text: |
+    # Spesenreglement 2025
+    Muster Treuhand GmbH
+
+    1. Spesen werden nur gegen Originalbeleg (Quittung oder Rechnung) vergütet.
+    2. Verpflegung auswärts: höchstens CHF 30.00 pro Mahlzeit.
+    3. Bahnreisen: 2. Klasse; ab 2 Stunden Fahrzeit 1. Klasse.
+
+    Gültig ab 1. Januar 2025.
+
+- id: policy-en-1
+  kind: easy_negative
+  title: Information_Security_Policy.pdf
+  text: |
+    # Information Security Policy
+    Version 3.1 · Effective 1 March 2025
+
+    1. All devices must use full-disk encryption.
+    2. Passwords must be stored in the company password manager.
+    3. Incidents must be reported to security@hooli.example within one hour.
+
+- id: policy-fr-1
+  kind: easy_negative
+  title: reglement_teletravail.pdf
+  text: |
+    # Règlement sur le télétravail
+    Atelier Rousseau Sàrl · en vigueur dès le 1er septembre 2025
+
+    Le télétravail est possible jusqu'à deux jours par semaine, après accord de la direction. Les frais de connexion
+    internet sont remboursés forfaitairement à hauteur de CHF 30.– par mois.
+
+- id: presentation-en-1
+  kind: easy_negative
+  title: Q3_Sales_Review.pptx
+  text: |
+    # Q3 Sales Review
+
+    ## Slide 1 – Highlights
+    - Revenue up 8% year on year
+    - 12 new customers, 3 lost
+
+    ## Slide 2 – Pipeline
+    - Open offers: 41, total value CHF 1.2 m
+    - Average days to invoice after delivery: 6
+
+- id: other-de-1
+  kind: easy_negative
+  title: Arbeitsvertrag_Muster.pdf
+  text: |
+    # Arbeitsvertrag
+
+    zwischen Muster Treuhand GmbH, Spitalgasse 4, 3011 Bern (Arbeitgeberin)
+    und Simon Graf, Lorrainestrasse 9, 3013 Bern (Arbeitnehmer)
+
+    1. Stellenantritt: 1. April 2025
+    2. Funktion: Sachbearbeiter Buchhaltung, 80 %
+    3. Lohn: CHF 5'600.00 brutto pro Monat, 13 Monatslöhne

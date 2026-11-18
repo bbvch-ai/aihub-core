@@ -7741,6 +7741,41 @@ export const DatabaseDTOSchema = {
       description:
         "Identifier of the ingestion pipeline that processes this database, as served by GET /knowledge/ingestors. Visible to anyone who can see the database, so a database-level rule holder learns how it is configured without seeing its namespaces.",
     },
+    classification_available: {
+      type: "boolean",
+      title: "Classification Available",
+      description:
+        "Whether the documents of this database can be classified (#2346): false for a legacy or unassigned pipeline, and for a database whose configuration switched classification off.",
+      default: false,
+    },
+    classification_requested_at: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Classification Requested At",
+      description:
+        "When classification of the documents already ingested was requested (UTC); null when none is pending. Cleared by the pipeline once its backfill ran.",
+    },
+    classification_failed_at: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Classification Failed At",
+      description:
+        "The request (UTC) the pipeline gave up on after its backfill runs kept failing; null when the last request did not fail. Cleared by a new request.",
+    },
     namespaces: {
       items: {
         $ref: "#/components/schemas/NamespaceDTO",
@@ -7830,6 +7865,41 @@ export const DatabaseResponseSchema = {
       ],
       title: "Description",
       description: "A brief description of the database's contents.",
+    },
+    classification_available: {
+      type: "boolean",
+      title: "Classification Available",
+      description:
+        "Whether the documents of this database can be classified (#2346): false for a legacy or unassigned pipeline, and for a database whose configuration switched classification off.",
+      default: false,
+    },
+    classification_requested_at: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Classification Requested At",
+      description:
+        "When classification of the documents already ingested was requested (UTC); null when none is pending. Cleared by the pipeline once its backfill ran.",
+    },
+    classification_failed_at: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Classification Failed At",
+      description:
+        "The request (UTC) the pipeline gave up on after its backfill runs kept failing; null when the last request did not fail. Cleared by a new request.",
     },
   },
   type: "object",
@@ -13814,6 +13884,14 @@ export const IngestedNodeSchema = {
       title: "Record Fields",
       description:
         "Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.",
+      default: {},
+    },
+    document_classification: {
+      additionalProperties: true,
+      type: "object",
+      title: "Document Classification",
+      description:
+        "The document's type and attributes from ingestion's classification, under their metadata keys; empty for a document that was not classified.",
       default: {},
     },
     score: {
@@ -40392,6 +40470,14 @@ export const IngestedNodeWritableSchema = {
       title: "Record Fields",
       description:
         "Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.",
+      default: {},
+    },
+    document_classification: {
+      additionalProperties: true,
+      type: "object",
+      title: "Document Classification",
+      description:
+        "The document's type and attributes from ingestion's classification, under their metadata keys; empty for a document that was not classified.",
       default: {},
     },
     score: {

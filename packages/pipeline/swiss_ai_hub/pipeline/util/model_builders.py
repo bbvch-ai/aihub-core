@@ -61,6 +61,7 @@ def _deployment_defaults(entity: BucketEntity | None) -> dict:
         "with_summary_nodes": settings.WITH_SUMMARY_NODES,
         "with_table_refinement": settings.WITH_TABLE_REFINEMENT,
         "with_figure_descriptions": settings.WITH_FIGURE_DESCRIPTIONS,
+        "with_document_classification": settings.WITH_DOCUMENT_CLASSIFICATION,
     }
 
 

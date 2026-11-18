@@ -67,6 +67,37 @@ def test_a_node_without_a_language_has_none():
     assert IngestedNode.from_llama_index_node(_stored_node({}, [])).language is None
 
 
+_CLASSIFICATION = {
+    "document_type": "invoice",
+    "document_types": ["invoice"],
+    "document_classification_version": 1,
+    "document_date": "2025-03-14",
+    "document_date_raw": "14. März 2025",
+    "document_issuer": "Hooli AG",
+}
+
+
+def test_classification_keys_are_not_record_fields_although_they_are_kept_out_of_the_embedding():
+    """Ingestion excludes classification keys from the embedded text like frontmatter keys, but they are not a
+    record's fields and must not be shown as such."""
+    node = IngestedNode.from_llama_index_node(
+        _stored_node({**_RECORD_FIELDS, **_CLASSIFICATION}, [*_RECORD_FIELDS, *_CLASSIFICATION])
+    )
+
+    assert node.record_fields == _RECORD_FIELDS
+    assert node.document_classification == _CLASSIFICATION
+    assert node.metadata == {PAGE: 0, "content_hash": "abc"}
+
+
+def test_classification_goes_back_into_the_llama_index_metadata():
+    node = IngestedNode.from_llama_index_node(_stored_node(_CLASSIFICATION, list(_CLASSIFICATION)))
+
+    converted = node.to_llama_index_node_with_score()
+
+    for key, value in _CLASSIFICATION.items():
+        assert converted.node.metadata[key] == value
+
+
 def test_the_record_fields_go_back_into_the_llama_index_metadata():
     """The reranker scores the llama-index node's text with its metadata, so it keeps seeing the fields."""
     node = IngestedNode.from_llama_index_node(_stored_node(_RECORD_FIELDS, list(_RECORD_FIELDS)))

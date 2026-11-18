@@ -2,6 +2,7 @@ import logging
 import re
 import uuid
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import HTTPException
@@ -190,6 +191,9 @@ class KnowledgeService:
                     source_configuration=KnowledgeService._masked_source_configuration(bucket),
                     deletable=KnowledgeService._is_database_deletable(bucket),
                     ingestor=bucket.ingestor,
+                    classification_available=KnowledgeService._is_classification_available(bucket),
+                    classification_requested_at=KnowledgeService._as_utc(bucket.classification_requested_at),
+                    classification_failed_at=KnowledgeService._as_utc(bucket.classification_failed_at),
                     namespaces=namespaces,
                 )
             )
@@ -686,6 +690,9 @@ class KnowledgeService:
             source_configuration=KnowledgeService._masked_source_configuration(bucket),
             display_name=KnowledgeService._safe_extract_locale_string(bucket.name, t),
             description=KnowledgeService._safe_extract_locale_string(bucket.description, t),
+            classification_available=KnowledgeService._is_classification_available(bucket),
+            classification_requested_at=KnowledgeService._as_utc(bucket.classification_requested_at),
+            classification_failed_at=KnowledgeService._as_utc(bucket.classification_failed_at),
         )
 
     @staticmethod
@@ -1033,6 +1040,49 @@ class KnowledgeService:
                 status = "failed"
             results.append(DocumentDeletionResult(document_id=document_id, status=status))
         return BatchDeleteDocumentsResponse(results=results)
+
+    @staticmethod
+    @trace_fn
+    def request_classification(database: str, t: LocaleHandler) -> DatabaseResponse:
+        """Ask the pipeline to classify the documents this database already holds (#2483, #2484).
+
+        Only marks the request on the database's row: the pipeline's backfill sensor starts the run and clears the
+        request when it finished. Asking again while one is pending only moves its time, so it cannot start a second
+        run. Documents that are already classified with the current version are not classified again.
+        """
+        try:
+            bucket = BucketEntity.get_bucket_by_db_name(database)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Database '{database}' not found.") from None
+        if bucket.deleting:
+            raise HTTPException(status_code=404, detail=f"Database '{database}' not found.")
+        if not KnowledgeService._is_classification_available(bucket):
+            raise HTTPException(
+                status_code=409, detail=f"Documents of database '{database}' are not classified by its pipeline."
+            )
+        BucketEntity.request_classification(str(bucket.id))
+        return KnowledgeService._database_response(BucketEntity.get_bucket_by_db_name(database), t)
+
+    @staticmethod
+    def _as_utc(stored: datetime | None) -> datetime | None:
+        """Mongo hands back naive UTC; marked as UTC, a client does not read it as its own local time."""
+        return stored.replace(tzinfo=UTC) if stored else None
+
+    @staticmethod
+    def _is_classification_available(bucket: BucketEntity) -> bool:
+        """A pipeline built by `document_ingestion_pipeline_definitions` classifies, unless the database opted out.
+
+        Legacy and unassigned databases have no such pipeline. A database without the setting stored predates it and
+        follows the deployment default, which is on.
+        """
+        unclassified_ingestors = (
+            IngestorType.DEFAULT_RAG.value,
+            IngestorType.SHARED_RAG.value,
+            IngestorType.UNASSIGNED.value,
+        )
+        if bucket.ingestor in unclassified_ingestors:
+            return False
+        return (bucket.configuration or {}).get("with_document_classification") is not False
 
     @staticmethod
     def _is_legacy_bucket(bucket: BucketEntity) -> bool:
