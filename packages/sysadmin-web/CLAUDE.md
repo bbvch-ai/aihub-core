@@ -96,11 +96,15 @@ no plugin override needed here.
 ## Essential files
 
 - Layer config: `nuxt.config.ts` (`extends: ['@swiss-ai-hub/web']`)
-- App entry: `.app/nuxt.config.ts` (runtimeConfig including `mainApi.url` + `mainApp.url`, dev proxy → :8001)
+- App entry: `.app/nuxt.config.ts` (runtimeConfig including `mainApi.url`, `mainApp.url` and `litellm.url`, dev proxy →
+  :8001)
 - Sysadmin-api SDK init: `app.vue` (sets sysadmin-api `client.baseURL = '/api/v1'` + 403 → `mainApp.url` redirect)
 - Sysadmin gate: `middleware/sysadmin.global.ts` (cross-origin `getMyTenants` check via `mainApi.url`)
 - Main-app redirect: `composables/useMainAppNavigation.ts` (`mainApp.url` cross-origin redirect — Exit button +
   non-sysadmin bounce)
+- LLM usage links: `composables/useLiteLlmUsage.ts` (`litellm.url` from `LITELLM_ADMIN_URL`; empty hides the header
+  link and the one on each tenant's overview. LiteLLM v1.106.4 cannot open Customer Usage filtered from a URL, so both
+  land on its usage page)
 - Sysadmin layout: `layouts/sysadmin.vue`
 - ESLint config: `eslint.config.js` (Nuxt + import/order + SonarJS; no Tailwind linting by design)
 - License terms: `LICENSE` (AGPL-3.0-or-later)

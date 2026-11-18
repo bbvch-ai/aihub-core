@@ -49,6 +49,7 @@ export default defineNuxtPlugin(() => {
   assign(group('ws'), 'endpoint', injected.WS_ENDPOINT)
   assign(group('sysadmin'), 'url', injected.SYSADMIN_URL)
   assign(group('mainApp'), 'url', injected.MAIN_APP_URL)
+  assign(group('litellm'), 'url', injected.LITELLM_ADMIN_URL)
   if (injected.API_BASE_URL) publicConfig.apiBaseUrl = injected.API_BASE_URL
   // The version actually deployed. A release is promoted by retagging the exact
   // `-rc.N` build that was tested, so whatever was baked into the bundle at build

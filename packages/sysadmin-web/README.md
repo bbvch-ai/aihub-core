@@ -52,6 +52,9 @@ Only sysadmin-specific assets live here:
   (e.g. `https://${DOMAIN}` in prod, `http://localhost:8000` in dev).
 - Auth: same Keycloak realm + same `aihub-frontend` client as `@swiss-ai-hub/web`. The Keycloak SSO cookie makes silent
   renew transparent across `${DOMAIN}` and `sysadmin.${DOMAIN}`.
+- LLM usage: `LITELLM_ADMIN_URL` (the LiteLLM admin origin, `https://litellm.${DOMAIN}` in compose,
+  `http://localhost:4000` by default in dev) shows links to LiteLLM's usage page in the header and on each tenant's
+  overview. Unset, the links are hidden.
 - Dev port: `pnpm dev` binds Nuxt to `localhost:3334` and proxies `/api/v1` to the sysadmin-api on `localhost:8001`.
 
 ## Commands
