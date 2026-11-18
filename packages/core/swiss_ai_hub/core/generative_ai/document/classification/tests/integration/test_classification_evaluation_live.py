@@ -34,7 +34,7 @@ from swiss_ai_hub.core.generative_ai.document.classification.tests.evaluation.cl
 )
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.external]
 
 _MODEL = os.environ.get("DOCUMENT_CLASSIFICATION_TEST_MODEL") or os.environ.get(
     "DOCUMENT_INGESTION_LLM_MODEL", "text-generation/gemma-4-31B-it"
