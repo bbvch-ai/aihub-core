@@ -225,6 +225,18 @@ into a thread. A client may name a new thread itself (the OpenWebUI pipe derives
 `ThreadService.get_or_create_thread_to_post_in` creates for the caller. Scheduled-run thread ids are keyed with
 `AIHUB_CONFIG_ENCRYPTION_KEY` (`ThreadEntity.scheduled_thread_id`), so no client can compute one and claim it first.
 
+**Knowledge figures in OpenWebUI** (`FileController.get_figure`, ADR
+`2026_11_17_knowledge_figures_served_through_openwebui_session_proxy`): the pipe links each figure of a knowledge
+source to `/hub-figures/<tenant>/<thread>/<bucket>/<key>` on OpenWebUI's host, which Traefik rewrites to
+`/api/v1/<tenant>/files/figures/...`. The viewer comes from OpenWebUI's session cookie (`OpenWebuiSessionAuthHandler`),
+not a bearer token, so the route is out of the OpenAPI schema and only answers requests OpenWebUI's own pages make:
+an image tag or opening the image in a new tab (`Sec-Fetch-Site: same-origin`, `Sec-Fetch-Dest` `image` or
+`document`). `FigureAccess` grants a figure when the viewer may view the thread (`ThreadAccess.can_view_entity`,
+which skips building the thread DTO), the figure sits in its own document's figure folder inside a grounding node the
+thread's persisted events hold, and the viewer may still use the agent that sent it. `FigureImage` bounds size and
+pixels, re-encodes, and adds the response headers. Text in a source follows the same rule, which is why namespace
+access is deliberately not checked.
+
 **Access capability catalog**: `AccessController` (`routes/access/`, served at `/access/capabilities` &
 `/access/presets`) builds the human-readable capability table shown in the role and tenant-ceiling editors (and
 read-only on the user page). It introspects each controller's routes at runtime and derives each capability's access
