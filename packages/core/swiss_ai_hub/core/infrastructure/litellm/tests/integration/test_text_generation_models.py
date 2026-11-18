@@ -17,7 +17,7 @@ import pytest
 
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.external]
 
 _TEXT_GEN_PREFIX = "text-generation/"
 _UNREACHABLE_SENTINEL = "__litellm_unreachable__"

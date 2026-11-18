@@ -21,6 +21,8 @@ from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewSh
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 from swiss_ai_hub.agent.steps.prompting.few_shot_step.few_shot_step_config import FewShotStepConfig
 
+pytestmark = pytest.mark.external
+
 scenarios("features/few_shot_agent.feature")
 
 enable_logging()
