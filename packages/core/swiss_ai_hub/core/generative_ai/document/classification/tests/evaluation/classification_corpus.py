@@ -17,7 +17,7 @@ class ClassificationCorpus:
     list of cases. Real documents are confidential and stay outside the repository; a label file names them. It is
     JSON Lines, one case per line:
 
-        {"file": "zugferd/acme-0042.pdf", "kind": "invoice", "expected": {"document_date": "2025-03-14", ...}}
+        {"file": "zugferd/acme-0042.pdf", "type": "invoice", "expected": {"document_date": "2025-03-14", ...}}
 
     `file` is relative to the label file. Markdown and text files are read as they are; any other file is parsed the
     way ingestion parses it (MinerU for PDFs, through `DocumentExtractor`), so the classifier sees the same text.
@@ -47,7 +47,7 @@ class ClassificationCorpus:
             cases.append(
                 ClassificationCase(
                     id=label["file"],
-                    kind=label["kind"],
+                    type=label["type"],
                     title=path.name,
                     text=await cls._text(path),
                     expected=label.get("expected", {}),

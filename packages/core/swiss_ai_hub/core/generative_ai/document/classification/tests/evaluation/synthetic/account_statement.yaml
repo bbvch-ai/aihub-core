@@ -1,0 +1,271 @@
+# Bank, card and open-items statements, in German, French, Italian and English. Every company and person is made up;
+# every Swiss UID passes its check digit. `expected` holds each value as stored (ISO dates, numbers, ISO currency
+# codes), and None where the document does not state it.
+
+- id: statement-de-1
+  type: account_statement
+  title: Kontoauszug_2025-03.pdf
+  note: A bank account statement with totals and a period.
+  text: |
+    # Bank Seeland Genossenschaft
+    Kontoauszug März 2025
+
+    Kontoinhaber: Muster Treuhand GmbH · Konto CH12 3456 7890 1234 5678 9
+    Periode: 01.03.2025 – 31.03.2025
+
+    | Datum | Text | Belastung | Gutschrift | Saldo |
+    |---|---|---:|---:|---:|
+    | 01.03.2025 | Saldovortrag | | | 48'220.15 |
+    | 05.03.2025 | Zahlung Alpenglück Bürobedarf AG | 1'082.08 | | 47'138.07 |
+    | 20.03.2025 | Honorar Mandant 1044 | | 6'500.00 | 53'638.07 |
+    | 31.03.2025 | Kontoführungsgebühr | 15.00 | | 53'623.07 |
+
+    Saldo per 31.03.2025: CHF 53'623.07
+  expected:
+    document_date: "2025-03-31"
+    document_reference_number: null
+    document_issuer: Bank Seeland Genossenschaft
+    document_recipient: Muster Treuhand GmbH
+    document_total_amount: 53623.07
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: "2025-03-01"
+    document_period_end: "2025-03-31"
+
+- id: statement-de-2
+  type: account_statement
+  title: Kontoauszug_Debitoren_Seeblick.pdf
+  note: A supplier's statement of open items listing several invoices.
+  text: |
+    # Rhyfall Elektro GmbH
+    Kontoauszug offene Posten · Stand 31.05.2025
+
+    Kunde: Seeblick Hotel AG, Kundennummer 10-2231
+
+    | Beleg | Datum | Betrag CHF | Fällig |
+    |---|---|---:|---|
+    | Rechnung 88341 | 17.03.2025 | 3'080.85 | 16.04.2025 |
+    | Gutschrift GU-2025-014 | 28.03.2025 | -194.58 | – |
+    | Mahngebühr | 15.05.2025 | 20.00 | 25.05.2025 |
+
+    **Total offen CHF 2'906.27**
+  expected:
+    document_date: "2025-05-31"
+    document_reference_number: null
+    document_issuer: Rhyfall Elektro GmbH
+    document_recipient: Seeblick Hotel AG
+    document_total_amount: 2906.27
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+
+- id: statement-fr-1
+  type: account_statement
+  title: releve_compte_2025-04.pdf
+  note: A French account statement.
+  text: |
+    # Banque du Léman SA
+    Relevé de compte – avril 2025
+
+    Titulaire : Atelier Rousseau Sàrl · IBAN CH56 0483 5012 3456 7800 9
+    Période : du 1er au 30 avril 2025
+
+    Solde au 1er avril 2025 : CHF 12'450.30
+    Total des débits : CHF 3'210.75
+    Total des crédits : CHF 7'800.00
+    Solde au 30 avril 2025 : CHF 17'039.55
+  expected:
+    document_date: "2025-04-30"
+    document_reference_number: null
+    document_issuer: Banque du Léman SA
+    document_recipient: Atelier Rousseau Sàrl
+    document_total_amount: 17039.55
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: "2025-04-01"
+    document_period_end: "2025-04-30"
+
+- id: statement-en-1
+  type: account_statement
+  title: Credit_Card_Statement_2025-02.pdf
+  note: An English credit card statement with an amount due and a due date.
+  text: |
+    # Northgate Card Services
+    Statement for Brightwater Analytics Ltd · Card ending 4821
+    Statement period: 1 February 2025 – 28 February 2025
+
+    Previous balance £1,204.50
+    Payments received -£1,204.50
+    New purchases £2,318.90
+    **New balance £2,318.90**
+    Minimum payment due £69.57 by 25 March 2025
+  expected:
+    document_date: "2025-02-28"
+    document_reference_number: null
+    document_issuer: Northgate Card Services
+    document_recipient: Brightwater Analytics Ltd
+    document_total_amount: 2318.90
+    document_currency: GBP
+    document_due_date: "2025-03-25"
+    document_period_start: "2025-02-01"
+    document_period_end: "2025-02-28"
+
+- id: statement-de-3
+  type: account_statement
+  title: Kontoauszug_2025-09_Nr9.pdf
+  note: A German bank statement with its own statement number, a period and a creation date; the IBAN is not its number.
+  text: |
+    # Hanseatische Privatbank Lindholm AG
+    Ballindamm 14, 20095 Hamburg
+
+    Grünfeld Werkzeugbau GmbH
+    Am Kanal 7
+    21079 Hamburg
+
+    ## Kontoauszug Nr. 9/2025
+    Erstellt am 01.10.2025 · Blatt 1 von 1
+    IBAN DE44 2005 0550 1234 5678 90 · BIC HPLKDEHHXXX · Kontokorrent
+    Zeitraum: 01.09.2025 bis 30.09.2025
+
+    | Buchungstag | Wert | Vorgang | Soll EUR | Haben EUR |
+    |---|---|---|---:|---:|
+    | 01.09.2025 | 01.09.2025 | Dauerauftrag Miete Halle 3, Hafenimmobilien KG | 3.250,00 | |
+    | 08.09.2025 | 08.09.2025 | Gutschrift Nordwerft Maschinenbau GmbH, RE 2025-0712 | | 9.800,00 |
+    | 15.09.2025 | 16.09.2025 | Überweisung Stahlhandel Brinkmann, Lieferung 08/25 | 1.874,66 | |
+    | 30.09.2025 | 30.09.2025 | Lastschrift Versicherung Betriebshaftpflicht | 210,00 | |
+
+    Alter Kontostand vom 31.08.2025: 18.452,30 EUR
+    Summe Soll: 5.334,66 EUR · Summe Haben: 9.800,00 EUR
+    **Neuer Kontostand vom 30.09.2025: 22.917,64 EUR**
+
+    Bitte prüfen Sie diesen Auszug. Einwendungen sind innerhalb von sechs Wochen nach Zugang zu erheben.
+  expected:
+    document_date: "2025-10-01"
+    document_reference_number: 9/2025
+    document_issuer: Hanseatische Privatbank Lindholm AG
+    document_recipient: Grünfeld Werkzeugbau GmbH
+    document_total_amount: 22917.64
+    document_currency: EUR
+    document_due_date: null
+    document_period_start: "2025-09-01"
+    document_period_end: "2025-09-30"
+
+- id: statement-it-1
+  type: account_statement
+  title: estratto_conto_EC-2025-Q3-0417.pdf
+  note: An Italian quarterly estratto conto; its own number is kept, the account number and IBAN are not.
+  text: |
+    # Banca del Verbano Ticinese SA
+    Piazza Grande 9, 6600 Locarno
+
+    Gelateria Ceresio di Marta Fontana
+    Lungolago 14
+    6900 Lugano
+
+    ## Estratto conto n. EC-2025-Q3-0417
+    Locarno, 1 ottobre 2025
+    Conto corrente 220-481.715-03 · IBAN CH93 0076 2011 6238 5295 7
+    Periodo: 01.07.2025 – 30.09.2025
+
+    | Data | Descrizione | Addebito CHF | Accredito CHF |
+    |---|---|---:|---:|
+    | 01.07.2025 | Saldo iniziale | | 7'815.40 |
+    | 18.07.2025 | Accredito incassi POS luglio | | 4'200.00 |
+    | 05.08.2025 | Pagamento Latteria Valle Maggia SA | 1'150.00 | |
+    | 29.08.2025 | Addebito diretto Elettricità Lugano | 86.35 | |
+    | 30.09.2025 | Spese tenuta conto trimestre | 12.00 | |
+
+    **Saldo finale al 30.09.2025: CHF 10'767.05**
+
+    In assenza di contestazioni entro 30 giorni l'estratto si considera approvato.
+  expected:
+    document_date: "2025-10-01"
+    document_reference_number: EC-2025-Q3-0417
+    document_issuer: Banca del Verbano Ticinese SA
+    document_recipient: Gelateria Ceresio di Marta Fontana
+    document_total_amount: 10767.05
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: "2025-07-01"
+    document_period_end: "2025-09-30"
+
+- id: statement-en-2
+  type: account_statement
+  title: Statement_of_Account_ST-2025-1031.pdf
+  note: An English supplier's statement of open items; the total is the amount due, the invoices are listed but not chased.
+  text: |
+    # Pennine Packaging Ltd
+    Mill Lane, Hebden Bridge HX7 8AD · Company No. 08814429
+
+    Ashcombe Garden Centres Ltd
+    Accounts Payable
+    Station Road, Ashcombe EX7 0QA
+
+    ## Statement of Account
+    Statement No.: ST-2025-1031
+    Statement date: 31 October 2025
+    Customer account: ASH-0042
+
+    | Date | Reference | Description | Debit | Credit | Balance |
+    |---|---|---|---:|---:|---:|
+    | 12/09/2025 | INV-40871 | Corrugated boxes, assorted | £1,250.00 | | £1,250.00 |
+    | 03/10/2025 | INV-41022 | Plant trays, 5,000 units | £860.40 | | £2,110.40 |
+    | 15/10/2025 | CN-0391 | Credit for damaged trays | | £120.00 | £1,990.40 |
+
+    | Current | 30 days | 60 days | 90+ days |
+    |---:|---:|---:|---:|
+    | £860.40 | £1,130.00 | £0.00 | £0.00 |
+
+    **Amount due: £1,990.40**
+    Payment due by 14 November 2025 · Sort code 20-45-77 · Account 43910288
+  expected:
+    document_date: "2025-10-31"
+    document_reference_number: ST-2025-1031
+    document_issuer: Pennine Packaging Ltd
+    document_recipient: Ashcombe Garden Centres Ltd
+    document_total_amount: 1990.40
+    document_currency: GBP
+    document_due_date: "2025-11-14"
+    document_period_start: null
+    document_period_end: null
+
+- id: statement-fr-2
+  type: account_statement
+  title: releve_carte_credit_2025-10.pdf
+  note: A French credit card statement; the total is the amount due, not the minimum payment, and the card number is not its number.
+  text: |
+    # Cartes Lémaniques SA
+    Case postale 412, 1211 Genève 3
+
+    Madame Claire Dufaux
+    Chemin du Crêt 15
+    1295 Mies
+
+    ## Relevé de carte de crédit n° 2025-10-558214
+    Date du relevé : 15.10.2025
+    Carte n° 4921 •••• •••• 7730 · Titulaire : Claire Dufaux
+    Période : du 16.09.2025 au 15.10.2025
+
+    | Date | Commerçant | Montant CHF |
+    |---|---|---:|
+    | 16.09.2025 | Solde précédent | 980.20 |
+    | 22.09.2025 | Votre paiement, merci | -980.20 |
+    | 24.09.2025 | Librairie du Vieux-Bourg, Nyon | 129.00 |
+    | 02.10.2025 | Hôtel des Alpes Vaudoises, Villars | 845.60 |
+    | 07.10.2025 | Voyages Horizon Léman, Genève | 312.25 |
+    | 11.10.2025 | Station-service du Jura, Gland | 56.00 |
+
+    **Montant à payer : CHF 1'342.85**
+    Paiement minimum : CHF 67.15
+    À payer jusqu'au 05.11.2025
+  expected:
+    document_date: "2025-10-15"
+    document_reference_number: 2025-10-558214
+    document_issuer: Cartes Lémaniques SA
+    document_recipient: Claire Dufaux
+    document_total_amount: 1342.85
+    document_currency: CHF
+    document_due_date: "2025-11-05"
+    document_period_start: "2025-09-16"
+    document_period_end: "2025-10-15"

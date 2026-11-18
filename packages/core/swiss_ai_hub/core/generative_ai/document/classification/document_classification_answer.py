@@ -31,3 +31,6 @@ class DocumentClassificationAnswer(BaseModel):
     document_related_references: Annotated[
         list[str] | None, Field(description="Numbers of other documents this one refers to")
     ]
+    document_valid_until: Annotated[str | None, Field(description="Text of the date until which an offer is valid")]
+    document_notice_period: Annotated[str | None, Field(description="Text of the notice period")]
+    document_service_levels: Annotated[list[str] | None, Field(description="Each agreed service level, as written")]

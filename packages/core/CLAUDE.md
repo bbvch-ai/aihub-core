@@ -464,14 +464,14 @@ Key methods:
 
 `AuthHandler` (abstract) → extracts/validates credentials from HTTP requests → returns `UserIdentity`.
 
-| Handler                       | Mechanism                                    |
-| ----------------------------- | -------------------------------------------- |
-| `KeycloakAuthHandler`         | Keycloak OIDC (JWT + JWKS)                   |
-| `TokenAuthHandler`            | Simple token validation                      |
-| `BearerAuthHandler`           | Bearer token header                          |
-| `TokenAndOauth2Handler`       | Combined token + OAuth2                      |
-| `OpenWebuiAuthHandler`        | OpenWebUI session integration                |
-| `OpenWebuiSessionAuthHandler` | OpenWebUI's session cookie, one route only   |
+| Handler                       | Mechanism                                  |
+| ----------------------------- | ------------------------------------------ |
+| `KeycloakAuthHandler`         | Keycloak OIDC (JWT + JWKS)                 |
+| `TokenAuthHandler`            | Simple token validation                    |
+| `BearerAuthHandler`           | Bearer token header                        |
+| `TokenAndOauth2Handler`       | Combined token + OAuth2                    |
+| `OpenWebuiAuthHandler`        | OpenWebUI session integration              |
+| `OpenWebuiSessionAuthHandler` | OpenWebUI's session cookie, one route only |
 
 `OpenWebuiSessionAuthHandler` identifies whoever views something the API serves on OpenWebUI's own origin (knowledge
 figures in sources, ADR `2026_11_17_knowledge_figures_served_through_openwebui_session_proxy`): it checks the `token`
@@ -775,10 +775,14 @@ not mapped back to them yet.
 makes one structured-output call on `DocumentOpeningText.of(text)` (first two pages capped at 8,000 characters, plus the
 last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadata()` is what ingestion stores:
 
-- **`DocumentTypeCatalog` is the only list.** Types (`invoice`, `other`), shared attributes, which apply to which type
-  and per-type meanings; the prompt, `metadata_keys()` (every stored key, for exclusion lists, frontmatter reservation
-  and filters) and `value_keys()` come from it. `DocumentClassificationAnswer` must have one field per non-derived
-  attribute; a catalog test checks it.
+- **`DocumentTypeCatalog` is the only list.** Types (13 since #2485: `invoice`, `credit_note`, `offer`, `order`,
+  `delivery_note`, `receipt`, `account_statement`, `payment_reminder`, `contract`, `service_level_agreement`, `letter`,
+  `report`, `other`), shared attributes, which apply to which type and per-type meanings (only where a type's differs:
+  the prompt names types sharing a meaning together, so keep overrides that merely restate the general meaning out); the
+  prompt, `metadata_keys()` (every stored key, for exclusion lists, frontmatter reservation and filters) and
+  `value_keys()` come from it. `DocumentClassificationAnswer` must have one field per non-derived attribute; a catalog
+  test checks it. The evaluation (`tests/evaluation/`, one synthetic YAML per type, at least 8 documents each) measures
+  recall and precision per type and wrong-plus-guessed values per type and attribute.
 - **The model copies, code reads.** `DocumentValueNormalizer` drops copied text that `RawValueLocator` cannot find in
   the whole document, stores no attribute the type lacks, and reads dates (`DateTextParser`; a slash date both orders
   allow only in the order `SlashDateOrder` the normaliser settles from the document's unambiguous slash dates, else day

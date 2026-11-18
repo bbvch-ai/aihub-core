@@ -1,0 +1,241 @@
+# Letters and e-mails of no other type, in German, French, Italian and English. Every company and person is made up;
+# every Swiss UID passes its check digit. `expected` holds each value as stored (ISO dates, numbers, ISO currency
+# codes), and None where the document does not state it.
+
+- id: letter-de-1
+  type: letter
+  title: Brief_Adressaenderung.pdf
+  text: |
+    Muster Treuhand GmbH · Spitalgasse 4 · 3011 Bern
+
+    Alpenglück Bürobedarf AG
+    Marktgasse 30, 3011 Bern
+
+    Bern, 2. September 2025
+
+    **Neue Adresse ab 1. Oktober 2025**
+
+    Sehr geehrte Damen und Herren
+
+    Wir ziehen um: Ab 1. Oktober 2025 finden Sie uns an der Laupenstrasse 18, 3008 Bern. Bitte senden Sie Ihre
+    Rechnungen ab diesem Datum an die neue Adresse.
+
+    Freundliche Grüsse
+    Petra Keller, Geschäftsführerin
+  expected:
+    document_date: "2025-09-02"
+    document_reference_number: null
+    document_issuer: Muster Treuhand GmbH
+    document_recipient: Alpenglück Bürobedarf AG
+    document_related_references: null
+
+- id: letter-fr-1
+  type: letter
+  title: lettre_resiliation.pdf
+  note: A termination letter is a letter, not a contract; the contract it terminates is a related reference.
+  text: |
+    Atelier Rousseau Sàrl, Rue du Rhône 21, 1204 Genève
+
+    Alpenfunk Télécom SA
+    Avenue de la Gare 18, 1003 Lausanne
+
+    Genève, le 15 octobre 2025
+
+    **Résiliation de l'abonnement Business Fibre, contrat n° C-118204**
+
+    Madame, Monsieur,
+
+    Par la présente, nous résilions notre abonnement pour le 31 décembre 2025, conformément au délai de préavis.
+    Nous vous prions de nous confirmer la date de fin par écrit.
+
+    Veuillez agréer nos salutations distinguées.
+    Claire Rousseau
+  expected:
+    document_date: "2025-10-15"
+    document_reference_number: null
+    document_issuer: Atelier Rousseau Sàrl
+    document_recipient: Alpenfunk Télécom SA
+    document_related_references: [C-118204]
+
+- id: letter-en-1
+  type: letter
+  title: Letter_of_Recommendation_Weber.pdf
+  note: A recommendation addressed "to whom it may concern" has no recipient; the person recommended is not one.
+  text: |
+    Brightwater Analytics Ltd
+    12 Canal Street, Manchester M1 3HE
+
+    3 November 2025
+
+    To whom it may concern,
+
+    It is my pleasure to recommend Daniel Weber, who worked with us as a data analyst from 2021 to 2025. Daniel was
+    reliable, curious and well liked by our clients.
+
+    Yours faithfully,
+    Sarah Whitfield, Managing Director
+  expected:
+    document_date: "2025-11-03"
+    document_reference_number: null
+    document_issuer: Brightwater Analytics Ltd
+    document_recipient: null
+    document_related_references: null
+
+- id: letter-it-1
+  type: letter
+  title: lettera_invito_evento.pdf
+  note: An invitation to clients in general names no recipient.
+  text: |
+    Studio Bellavista Sagl
+    Piazza Riforma 3, 6900 Lugano
+
+    Lugano, 1 ottobre 2025
+
+    Gentili clienti,
+
+    abbiamo il piacere di invitarvi all'inaugurazione del nostro nuovo studio giovedì 23 ottobre 2025 alle ore 18:00.
+    Seguirà un aperitivo. Vi preghiamo di confermare la vostra presenza entro il 15 ottobre.
+
+    Cordiali saluti,
+    Giulia Bernasconi
+  expected:
+    document_date: "2025-10-01"
+    document_reference_number: null
+    document_issuer: Studio Bellavista Sagl
+    document_recipient: null
+    document_related_references: null
+
+- id: letter-de-2
+  type: letter
+  title: Email_Rueckfrage_Rechnung.eml
+  note: A mail asking about an invoice is not an invoice; with no organisation named, the sender is the person.
+  text: |
+    # Rückfrage zu Ihrer Rechnung 2025-1142
+
+    Von: Petra Keller <p.keller@muster-treuhand.example>
+    An: buchhaltung@alpenglueck.example
+    Datum: 26.05.2025
+
+    Guten Tag
+
+    Auf Ihrer Rechnung 2025-1142 über CHF 1'082.08 sind vier Toner verrechnet, geliefert wurden aber nur drei.
+    Können Sie das bitte prüfen und uns eine korrigierte Rechnung senden?
+
+    Besten Dank und freundliche Grüsse
+    Petra Keller
+  expected:
+    document_date: "2025-05-26"
+    document_reference_number: null
+    document_issuer: Petra Keller
+    document_recipient: null
+    document_related_references: ["2025-1142"]
+
+- id: letter-fr-2
+  type: letter
+  title: confirmation_resiliation_CM-2022-117.pdf
+  note: The letter's "Notre référence" is its own number; the contract it names is a related reference.
+  text: |
+    # Gérance Lavaux SA
+    Chemin des Vignes 5 · 1095 Lutry · Tél. 021 791 44 20
+
+    Boulangerie Rochat Sàrl
+    À l'att. de M. Julien Rochat
+    Rue du Bourg 12
+    1003 Lausanne
+
+    Notre référence : GL/2025/0418
+    Votre lettre du : 28 octobre 2025
+
+    Lutry, le 12 novembre 2025
+
+    **Confirmation de la résiliation du contrat d'entretien n° CM-2022-117**
+
+    Monsieur,
+
+    Nous accusons réception de votre lettre du 28 octobre 2025 et vous confirmons la résiliation du contrat d'entretien
+    n° CM-2022-117 pour les locaux de la Rue du Bourg 12. Le contrat prendra fin le 31 mars 2026, au terme du délai de
+    préavis de trois mois. Les prestations restent dues jusqu'à cette date.
+
+    Nous vous remercions de la confiance accordée et restons volontiers à votre disposition.
+
+    Veuillez agréer, Monsieur, nos salutations distinguées.
+
+    Gérance Lavaux SA
+    Nathalie Chappuis, responsable clientèle
+  expected:
+    document_date: "2025-11-12"
+    document_reference_number: GL/2025/0418
+    document_issuer: Gérance Lavaux SA
+    document_recipient: Boulangerie Rochat Sàrl
+    document_related_references: [CM-2022-117]
+
+- id: letter-it-2
+  type: letter
+  title: Conferma_appuntamento.eml
+  note: An e-mail confirming an appointment is a letter; its sender is the company in the signature.
+  text: |
+    # Conferma appuntamento – dichiarazione d'imposta 2024
+
+    Da: Marco Rezzonico <m.rezzonico@fiduciaria-lepontia.example>
+    A: Anna Lepori <anna.lepori@example.ch>
+    Data: 04.03.2025
+
+    Gentile signora Lepori,
+
+    come concordato telefonicamente, le confermo l'appuntamento di martedì 11 marzo 2025 alle ore 14:30 presso il
+    nostro ufficio per la compilazione della dichiarazione d'imposta 2024.
+
+    La preghiamo di portare con sé il certificato di salario, gli estratti conto al 31.12.2024 e le ricevute delle
+    spese mediche. Se l'orario non le dovesse convenire, ci contatti entro venerdì.
+
+    Cordiali saluti
+
+    Marco Rezzonico
+    Fiduciaria Lepontia SA
+    Via Nassa 15, 6900 Lugano
+    Tel. 091 922 18 40
+  expected:
+    document_date: "2025-03-04"
+    document_reference_number: null
+    document_issuer: Fiduciaria Lepontia SA
+    document_recipient: Anna Lepori
+    document_related_references: null
+
+- id: letter-de-3
+  type: letter
+  title: Kuendigung_Zusatzversicherung.pdf
+  note: A private person writing to an organisation is the issuer; the policy is related, the customer number is not.
+  text: |
+    Thomas Imhof
+    Lindenweg 14
+    4500 Solothurn
+
+    Einschreiben
+
+    Krankenkasse Aarvita AG
+    Kundendienst
+    Postfach
+    4502 Solothurn
+
+    Solothurn, 18. August 2025
+
+    **Kündigung der Spitalzusatzversicherung, Police Nr. 88-402-117**
+
+    Kundennummer: K-339184
+
+    Sehr geehrte Damen und Herren
+
+    Hiermit kündige ich meine Spitalzusatzversicherung gemäss Police Nr. 88-402-117 fristgerecht auf den
+    31. Dezember 2025. Die Grundversicherung möchte ich bei Ihnen behalten.
+
+    Bitte bestätigen Sie mir die Kündigung schriftlich.
+
+    Freundliche Grüsse
+
+    Thomas Imhof
+  expected:
+    document_date: "2025-08-18"
+    document_reference_number: null
+    document_issuer: Thomas Imhof
+    document_recipient: Krankenkasse Aarvita AG
+    document_related_references: [88-402-117]

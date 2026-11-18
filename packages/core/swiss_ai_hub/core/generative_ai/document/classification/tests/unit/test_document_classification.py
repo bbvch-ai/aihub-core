@@ -44,6 +44,9 @@ _ANSWER: dict[str, Any] = {
     "document_due_date": "Zahlbar innert 30 Tagen netto",
     "document_period": "Februar 2025",
     "document_related_references": ["LS-8812", "PO-3333"],
+    "document_valid_until": None,
+    "document_notice_period": None,
+    "document_service_levels": None,
 }
 
 
@@ -99,6 +102,16 @@ def test_a_value_that_is_not_in_the_document_is_dropped_with_its_text() -> None:
     assert values["document_related_references"] == ["LS-8812"]
 
 
+def test_an_e_mail_address_is_not_stored_as_a_name_but_keeps_its_text() -> None:
+    text = _INVOICE + "\nAn: buchhaltung@muster.example\n"
+
+    values = _classified(text, document_recipient="buchhaltung@muster.example").values
+
+    assert values["document_recipient"] is None
+    assert values["document_recipient_raw"] == "buchhaltung@muster.example"
+    assert values["document_parties"] == ["Hooli AG"]
+
+
 def test_a_tax_id_failing_its_check_keeps_its_text_but_no_value() -> None:
     text = _INVOICE.replace("CHE-123.456.788", "CHE-123.456.789")
 
@@ -119,6 +132,79 @@ def test_another_type_stores_no_invoice_attributes_whatever_the_model_filled() -
 
     assert classification.values == {}
     assert classification.document_types == [DocumentType.OTHER]
+
+
+_SLA = """# Nebelhorn Hosting AG
+Industriestrasse 9, 6300 Zug
+
+Kunde: Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+## Service Level Agreement SLA-2025-14
+Anhang 2 zum Rahmenvertrag RV-2024-031 · Zug, 2. Mai 2025
+
+Laufzeit: 1. Juni 2025 bis 31. Mai 2027
+Kündigungsfrist: 6 Monate auf Ende der Laufzeit
+
+| Service Level | Zusage |
+|---|---|
+| Verfügbarkeit | 99,9 % pro Monat |
+| Reaktionszeit Priorität 1 | 30 Minuten |
+"""
+
+
+def test_a_service_level_agreement_stores_its_own_attributes_and_none_of_an_invoice() -> None:
+    answer = {
+        **_ANSWER,
+        "document_type": DocumentType.SERVICE_LEVEL_AGREEMENT,
+        "document_date": "2. Mai 2025",
+        "document_reference_number": "SLA-2025-14",
+        "document_issuer": "Nebelhorn Hosting AG",
+        "document_recipient": "Seeblick Hotel AG",
+        "document_period": "1. Juni 2025 bis 31. Mai 2027",
+        "document_notice_period": "6 Monate auf Ende der Laufzeit",
+        "document_service_levels": ["99,9 % pro Monat", "Reaktionszeit Priorität 1 | 30 Minuten"],
+        "document_related_references": ["RV-2024-031"],
+        "document_total_amount": "CHF 12'496.36",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), _SLA).values
+
+    assert values["document_period_start"] == "2025-06-01"
+    assert values["document_period_end"] == "2027-05-31"
+    assert values["document_notice_period"] == "6 Monate auf Ende der Laufzeit"
+    assert values["document_service_levels"] == ["99,9 % pro Monat", "Reaktionszeit Priorität 1 | 30 Minuten"]
+    assert values["document_related_references"] == ["RV-2024-031"]
+    assert values["document_parties"] == ["Nebelhorn Hosting AG", "Seeblick Hotel AG"]
+    assert "document_total_amount" not in values
+    assert "document_due_date" not in values
+
+
+def test_an_offer_reads_its_validity_as_a_date() -> None:
+    text = "# Offerte OF-2025-221\nSchaffhausen, 20.02.2025 · gültig bis 31.03.2025\nOffertsumme CHF 3'080.85"
+    answer = {
+        **_ANSWER,
+        "document_type": DocumentType.OFFER,
+        "document_date": "20.02.2025",
+        "document_reference_number": "OF-2025-221",
+        "document_valid_until": "31.03.2025",
+        "document_total_amount": "CHF 3'080.85",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_valid_until"] == "2025-03-31"
+    assert values["document_valid_until_precision"] == "day"
+    assert values["document_total_amount"] == 3080.85
+    assert "document_due_date" not in values
+
+
+def test_a_contract_with_a_service_level_annex_carries_both_types() -> None:
+    classification = _classified(
+        document_type=DocumentType.CONTRACT, secondary_types=[DocumentType.SERVICE_LEVEL_AGREEMENT]
+    )
+
+    assert classification.document_types == [DocumentType.CONTRACT, DocumentType.SERVICE_LEVEL_AGREEMENT]
+    assert "document_service_levels" not in classification.values
 
 
 def test_secondary_types_exclude_the_primary_type_and_other() -> None:

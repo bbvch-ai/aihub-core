@@ -843,9 +843,10 @@ frontmatter chunks until the file changes or is re-uploaded.
 ## Document Classification
 
 `ops/document/classify_document.py` runs in `documents_factory` after table refinement (#2482). It assigns each document
-one type of the closed set in core's `DocumentTypeCatalog` (`invoice`, `other`) and reads that type's attributes with
-one call of the database's own text model (`build_language_model(bucket)`), through `DocumentClassificationResource`.
-See core's `document/classification/` and ADR `2026_11_13_closed_document_types_and_attributes_at_ingestion`.
+one type of the closed set in core's `DocumentTypeCatalog` (`invoice`, `contract`, … `other`) and reads that type's
+attributes with one call of the database's own text model (`build_language_model(bucket)`), through
+`DocumentClassificationResource`. See core's `document/classification/` and ADR
+`2026_11_13_closed_document_types_and_attributes_at_ingestion`.
 
 - **Switched per database** by `with_document_classification` (`DOCUMENT_INGESTION_WITH_DOCUMENT_CLASSIFICATION`, on by
   default), like the other enrichment flags.

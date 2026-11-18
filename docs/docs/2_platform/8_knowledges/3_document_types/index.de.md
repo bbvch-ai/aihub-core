@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: e6a3a95b6f8fa28675e8536273978e669c9c44dd84e8b66d32d21998315a6a73
+source_sha: 6aa478e477b26334967775221386cc4a39ad5fa6e1ffda94d39756e2c6ca91a8
 ---
 
 # Dokumenttypen und Attribute
@@ -17,23 +17,90 @@ jeden Mandanten und jede Wissensdatenbank gleich.
 
 ## Typen
 
-| Typ       | Ein Dokument dieses Typs…                                                                                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `invoice` | fordert die Bezahlung von Waren oder Dienstleistungen, die geliefert oder vereinbart wurden, und nennt einen Betrag, den der Empfänger dem Aussteller schuldet. Dazu gehören Teil-, Schluss- und Akontorechnungen, QR-Rechnungen sowie Strom- und Telekomrechnungen. |
-| `other`   | ist alles andere.                                                                                                                                                                                                                                                    |
+| Typ                       | Ein Dokument dieses Typs…                                                                                                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `invoice`                 | fordert die Bezahlung von Waren oder Dienstleistungen, die geliefert oder vereinbart wurden. Dazu gehören Teil-, Schluss- und Akontorechnungen, QR-Rechnungen sowie Strom- und Telekomrechnungen. |
+| `credit_note`             | mindert, storniert oder vergütet einen Betrag, statt einen zu fordern: Gutschriften, Stornorechnungen, Rechnungskorrekturen mit negativem Total und eine Gutschrift nach § 14 UStG.               |
+| `offer`                   | bietet Waren oder Dienstleistungen zu einem genannten Preis an, bevor sie bestellt sind: Angebote, Offerten, Kostenvoranschläge und Proforma-Rechnungen.                                          |
+| `order`                   | erteilt oder bestätigt eine Bestellung: Bestellungen des Käufers und Auftragsbestätigungen des Lieferanten.                                                                                       |
+| `delivery_note`           | begleitet gelieferte Ware oder bestätigt ihre Lieferung: Lieferscheine und Packlisten.                                                                                                            |
+| `receipt`                 | bestätigt eine bereits geleistete Zahlung: Kassenbons, Quittungen und Zahlungsbestätigungen.                                                                                                      |
+| `account_statement`       | listet Bewegungen, Saldo oder offene Posten eines Kontos auf: Bank- und Kreditkartenauszüge sowie der Auszug offener Posten eines Lieferanten.                                                    |
+| `payment_reminder`        | fordert die Bezahlung überfälliger Rechnungen: Zahlungserinnerungen, Mahnungen und Überfälligkeitsmitteilungen.                                                                                   |
+| `contract`                | hält eine Vereinbarung zwischen benannten Parteien fest: Verträge, Rahmen-, Arbeits-, Miet- und Lizenzverträge sowie Nachträge.                                                                   |
+| `service_level_agreement` | legt die Service Levels fest, die ein Anbieter zusagt, etwa Verfügbarkeit und Reaktionszeiten: ein eigenständiges SLA oder ein SLA-Anhang.                                                        |
+| `letter`                  | ist ein Brief oder eine E-Mail ohne anderen Typ: Mitteilungen, Anfragen, Bestätigungen, Kündigungen und Einladungen.                                                                              |
+| `report`                  | berichtet über Ergebnisse, Stand oder Befunde: Jahres- und Quartalsberichte, Projektstatus-, Prüf- und Inspektionsberichte.                                                                       |
+| `other`                   | ist alles andere, zum Beispiel Protokolle, Anleitungen, Reglemente, Präsentationen, Formulare und Ausschreibungen.                                                                                |
 
-Keine Rechnungen, obwohl sie ähnlich aussehen: Angebote und Offerten, Auftragsbestätigungen (auch mit Total),
-Lieferscheine, Quittungen für eine bereits geleistete Zahlung, Gutschriften, Zahlungserinnerungen, Kontoauszüge und
-Proforma-Rechnungen. Sie sind `other`, bis die Liste einen Typ für sie hat. Auch eine Gutschrift ist `other`, selbst
-eine vom Leistungsempfänger nach § 14 UStG ausgestellte Gutschrift im Sinne einer Abrechnung: Das Wort bezeichnet auch
-eine Rechnungskorrektur, und beide werden unterschieden, sobald die Liste einen Typ für Gutschriften hat.
+Eine Schlussrechnung bleibt eine Rechnung, wenn die abgezogenen Akontozahlungen ihr Total negativ machen; eine Korrektur
+einer früheren Rechnung mit negativem Total ist eine Gutschrift. Ein QR-Zahlteil allein, ohne seine Rechnung, ist
+`other`. Ein Angebot, eine Bestellung, eine Rechnung oder ein Vertrag in Briefform ist von diesem Typ, nicht ein Brief.
 
 Ein Dokument hat einen **primären Typ**, nämlich den, der es als Ganzes beschreibt. Es kann zusätzlich bis zu drei
-**sekundäre Typen** aufführen, zum Beispiel eine Rechnung, die zugleich ihr Lieferschein ist. Attribute gehören immer
-zum primären Typ; ein sekundärer Typ macht das Dokument nur zusätzlich unter diesem Typ auffindbar. Ein Dokument, das
-die Nummer eines anderen Dokuments lediglich erwähnt, ist nicht vom Typ dieses Dokuments.
+**sekundäre Typen** aufführen, zum Beispiel eine Rechnung, die zugleich ihr Lieferschein ist, oder ein Vertrag mit
+SLA-Anhang (`contract`, mit `service_level_agreement` als sekundärem Typ). Attribute gehören immer zum primären Typ; ein
+sekundärer Typ macht das Dokument nur zusätzlich unter diesem Typ auffindbar. Ein Dokument, das die Nummer eines anderen
+Dokuments lediglich erwähnt, ist nicht vom Typ dieses Dokuments.
 
-## Attribute von Rechnungen
+## Attribute je Typ
+
+Attribute sind über die Typen hinweg gemeinsam, sodass ein Filter wie «datiert 2025» oder «Aussteller Hooli AG» bei
+jedem Typ wirkt, der das Attribut hat. Jeder Typ hat nur die Attribute, die für ihn sinnvoll sind:
+
+| Attribut                      | Rechnung, Gutschrift | Offerte | Bestellung | Lieferschein | Quittung | Auszug | Mahnung | Vertrag | SLA | Brief | Bericht |
+| ----------------------------- | :------------------: | :-----: | :--------: | :----------: | :------: | :----: | :-----: | :-----: | :-: | :---: | :-----: |
+| `document_date`               |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |    ✓    |
+| `document_reference_number`   |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |         |
+| `document_issuer`             |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |    ✓    |
+| `document_issuer_tax_id`      |          ✓           |    ✓    |     ✓      |              |    ✓     |        |         |         |     |       |         |
+| `document_recipient`          |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |         |
+| `document_parties`            |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |         |
+| `document_total_amount`       |          ✓           |    ✓    |     ✓      |              |    ✓     |   ✓    |    ✓    |    ✓    |     |       |         |
+| `document_currency`           |          ✓           |    ✓    |     ✓      |              |    ✓     |   ✓    |    ✓    |    ✓    |     |       |         |
+| `document_due_date`           |          ✓           |         |     ✓      |              |          |   ✓    |    ✓    |         |     |       |         |
+| `document_period_start`/`end` |          ✓           |         |            |              |          |   ✓    |         |    ✓    |  ✓  |       |    ✓    |
+| `document_related_references` |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |        |    ✓    |    ✓    |  ✓  |   ✓   |         |
+| `document_valid_until`        |                      |    ✓    |            |              |          |        |         |         |     |       |         |
+| `document_notice_period`      |                      |         |            |              |          |        |         |    ✓    |  ✓  |       |         |
+| `document_service_levels`     |                      |         |            |              |          |        |         |         |  ✓  |       |         |
+
+Wo ein Attribut für einen Typ etwas Bestimmtes bedeutet:
+
+- **Aussteller und Empfänger.** Der Aussteller ist die Partei, die das Dokument sendet; der Empfänger die Partei, an die
+  es gerichtet ist. Bei einer Bestellung ist der Aussteller der Käufer, bei einer Auftragsbestätigung der Lieferant. Bei
+  einem Vertrag oder SLA ist der Aussteller die Partei, welche die Ware, Leistung, Räume, Lizenz oder Stelle
+  bereitstellt (Lieferant, Auftragnehmer, Vermieter, Lizenzgeber, Arbeitgeber, Dienstleister), der Empfänger die andere
+  Partei. Bei einer Quittung ist der Aussteller der Händler und der Empfänger der Zahlende, nur wenn er genannt ist. Bei
+  einer Gutschrift nach § 14 UStG ist der Aussteller der Käufer, der sie ausstellt.
+- **Total.** Bei einer Gutschrift der gutgeschriebene Betrag mit seinem Vorzeichen wie geschrieben; bei einem Auszug der
+  Schlusssaldo oder der fällige Betrag; bei einer Mahnung der jetzt zu zahlende Betrag inklusive Gebühren und Zinsen;
+  bei einem Vertrag der Vertragswert oder sonst die wiederkehrende Gebühr, Miete oder der Lohn.
+- **Fälligkeitsdatum.** Bei einer Bestellung das Lieferdatum; bei einer Mahnung die neue Zahlungsfrist; bei einer
+  Gutschrift das Datum, an dem sie ausbezahlt wird.
+- **Referenznummer.** Die eigene Nummer eines Auszugs, nie eine Kontonummer oder IBAN; die eigene Nummer einer Mahnung,
+  nie die Nummer der gemahnten Rechnung (diese ist eine verwandte Referenz); die eigene Referenz eines Briefs, etwa
+  «Unser Zeichen».
+- **Zeitraum.** Bei einem Vertrag oder SLA seine Laufzeit, nur wenn Beginn und Ende genannt sind. Ein unbefristeter
+  Vertrag hat keinen Zeitraum, aber meist eine Kündigungsfrist.
+- **Gültig bis**, **Kündigungsfrist** und **Service Levels** sind mit diesen Typen neu: das Datum, bis zu dem eine
+  Offerte gilt; die Kündigungsfrist eines Vertrags oder SLA, wie geschrieben aufbewahrt; und bis zu fünf Service Levels,
+  die ein SLA zusagt, wie geschrieben übernommen («Verfügbarkeit 99,9 % pro Monat»).
+
+Die Typen und ihre Bedeutungen folgen [UBL 2.1](https://docs.oasis-open.org/ubl/os-UBL-2.1/UBL-2.1.html) und den
+Peppol-Dokumenten [Gutschrift](https://docs.peppol.eu/poacc/billing/3.0/syntax/ubl-creditnote/tree/),
+[Bestellung](https://docs.peppol.eu/poacc/upgrade-3/syntax/Order/tree/),
+[Bestellantwort](https://docs.peppol.eu/poacc/upgrade-3/syntax/OrderResponse/tree/) und
+[Lieferavis](https://docs.peppol.eu/poacc/upgrade-3/syntax/DespatchAdvice/tree/), den
+Azure-Document-Intelligence-Modellen für
+[Quittungen](https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/receipt),
+[Kontoauszüge](https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/bank-statement) und
+[Verträge](https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/contract), dem
+Vertragsdatensatz [CUAD](https://www.atticusprojectai.org/cuad), dem Schweizer Obligationenrecht zum Verzug
+([Art. 102 OR](https://www.fedlex.admin.ch/eli/cc/27/317_321_377/de#art_102)) und den
+[EU-Leitlinien zur Standardisierung von Cloud-SLAs](https://digital-strategy.ec.europa.eu/en/news/cloud-service-level-agreement-standardisation-guidelines).
+
+## Attribute von Rechnungen im Detail
 
 | Attribut                      | Werttyp   | Bedeutung                                                                                                                                                                                        | Beispiel: übernommen → gespeichert           |
 | ----------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
@@ -114,6 +181,8 @@ Regeln, die verhindern, dass Werte geraten werden:
   Dokuments CHF, EUR oder eine andere Nicht-Dollar-Währung ist, da der Monat zuerst die US-Reihenfolge ist. Bei USD,
   einem alleinstehenden `$`, ohne Währung oder bei widersprüchlichen Schrägstrich-Daten bleibt es leer, und nur der Text
   wird aufbewahrt.
+- **Ein Name ist nie eine E-Mail-Adresse.** Ein Aussteller oder Empfänger, der als blosse E-Mail-Adresse übernommen
+  wurde, wird leer gespeichert, sein Text bleibt erhalten: Die Adresse bezeichnet ein Postfach, nicht eine Partei.
 - **Steuer-IDs werden geprüft.** Eine Schweizer UID muss ihre Prüfziffer bestehen. Eine EU-MWST-Nummer muss dem Format
   ihres Landes entsprechen. Eine deutsche Steuernummer hat keine einheitliche Form und wird nur als Text aufbewahrt.
 - **Beträge in jeder Schreibweise.** `12'496.36`, `12.496,36`, `12 496,36` und `12,496.36` sind derselbe Betrag; das

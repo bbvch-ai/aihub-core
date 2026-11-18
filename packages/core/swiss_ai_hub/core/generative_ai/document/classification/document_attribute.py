@@ -19,3 +19,6 @@ class DocumentAttribute(StrEnum):
     DUE_DATE = "document_due_date"
     PERIOD = "document_period"
     RELATED_REFERENCES = "document_related_references"
+    VALID_UNTIL = "document_valid_until"
+    NOTICE_PERIOD = "document_notice_period"
+    SERVICE_LEVELS = "document_service_levels"

@@ -1,0 +1,243 @@
+# Documents of no type in the set: minutes, manuals, policies, presentations and stand-alone payment parts, in German,
+# French, Italian and English. Every company and person is made up; every Swiss UID passes its check digit. `expected`
+# holds each value as stored (ISO dates, numbers, ISO currency codes), and None where the document does not state it.
+
+- id: receipt-qr-payment-part-only-de
+  type: other
+  title: Zahlteil_scan.pdf
+  note: A QR payment part on its own, without the invoice it belongs to, is not an invoice.
+  text: |
+    ✂ Empfangsschein
+
+    Konto / Zahlbar an
+    CH44 3199 9123 0008 8901 2
+    Holzwerk Brunner GmbH
+    Sägestrasse 4
+    6300 Zug
+
+    Referenz
+    00 00000 00000 02026 11800 00016
+
+    Zahlbar durch
+    Lena Kramer
+    Bahnhofweg 9
+    6340 Baar
+
+    Währung CHF Betrag 1 599.90
+    Annahmestelle
+
+    Zahlteil
+    Währung CHF Betrag 1 599.90
+
+- id: manual-de-1
+  type: other
+  title: Bedienungsanleitung_Kaffeemaschine.pdf
+  text: |
+    # Bedienungsanleitung Kaffeevollautomat CV-500
+
+    ## Inbetriebnahme
+    1. Wassertank füllen.
+    2. Bohnenbehälter füllen.
+    3. Gerät mit der Taste ⏻ einschalten und Spülvorgang abwarten.
+
+    ## Entkalken
+    Das Gerät meldet „Entkalken", sobald nötig. Verwenden Sie nur das mitgelieferte Entkalkungsmittel.
+
+- id: manual-en-1
+  type: other
+  title: VPN_Setup_Guide.pdf
+  text: |
+    # VPN Setup Guide
+
+    1. Install the VPN client from the company portal.
+    2. Enter the server address vpn.hooli.example.
+    3. Sign in with your company account and approve the request on your phone.
+
+    If the connection fails, restart the client and check that your clock is correct.
+
+- id: manual-it-1
+  type: other
+  title: manuale_stampante.pdf
+  text: |
+    # Manuale d'uso – Stampante multifunzione MF-220
+
+    ## Sostituzione del toner
+    1. Aprire lo sportello anteriore.
+    2. Estrarre la cartuccia esaurita.
+    3. Inserire la nuova cartuccia fino allo scatto e chiudere lo sportello.
+
+- id: minutes-de-1
+  type: other
+  title: Protokoll_Teamsitzung_2025-03-11.pdf
+  text: |
+    # Protokoll Teamsitzung Buchhaltung
+    Datum: 11.03.2025 · Anwesend: P. Keller, M. Huber, S. Graf
+
+    1. Rechnungseingang: Die Rechnungen von Hooli AG werden ab April digital über die Plattform eingelesen.
+    2. Ferienplanung: Bis Ende März im Kalender eintragen.
+    3. Nächste Sitzung: 25.03.2025
+
+- id: minutes-fr-1
+  type: other
+  title: PV_assemblee_generale_2025.pdf
+  text: |
+    # Procès-verbal de l'assemblée générale ordinaire
+    Lemanic Services SA · 18 juin 2025
+
+    1. Le rapport annuel 2024 est approuvé à l'unanimité.
+    2. Les comptes annuels 2024 sont approuvés ; le bénéfice de CHF 312'400 est reporté à nouveau.
+    3. Décharge est donnée au conseil d'administration.
+
+- id: minutes-en-1
+  type: other
+  title: Kickoff_Meeting_Notes.pdf
+  text: |
+    # Kickoff meeting – Dashboard redesign
+    10 January 2025 · Attendees: S. Whitfield, D. Weber, M. Huber (Hooli AG)
+
+    - Scope agreed: three dashboards, monthly refresh.
+    - Budget as per quotation Q-1183.
+    - Next steps: data access by 20 January.
+
+- id: policy-de-1
+  type: other
+  title: Spesenreglement_2025.pdf
+  text: |
+    # Spesenreglement 2025
+    Muster Treuhand GmbH
+
+    1. Spesen werden nur gegen Originalbeleg (Quittung oder Rechnung) vergütet.
+    2. Verpflegung auswärts: höchstens CHF 30.00 pro Mahlzeit.
+    3. Bahnreisen: 2. Klasse; ab 2 Stunden Fahrzeit 1. Klasse.
+
+    Gültig ab 1. Januar 2025.
+
+- id: policy-en-1
+  type: other
+  title: Information_Security_Policy.pdf
+  text: |
+    # Information Security Policy
+    Version 3.1 · Effective 1 March 2025
+
+    1. All devices must use full-disk encryption.
+    2. Passwords must be stored in the company password manager.
+    3. Incidents must be reported to security@hooli.example within one hour.
+
+- id: policy-fr-1
+  type: other
+  title: reglement_teletravail.pdf
+  text: |
+    # Règlement sur le télétravail
+    Atelier Rousseau Sàrl · en vigueur dès le 1er septembre 2025
+
+    Le télétravail est possible jusqu'à deux jours par semaine, après accord de la direction. Les frais de connexion
+    internet sont remboursés forfaitairement à hauteur de CHF 30.– par mois.
+
+- id: presentation-en-1
+  type: other
+  title: Q3_Sales_Review.pptx
+  text: |
+    # Q3 Sales Review
+
+    ## Slide 1 – Highlights
+    - Revenue up 8% year on year
+    - 12 new customers, 3 lost
+
+    ## Slide 2 – Pipeline
+    - Open offers: 41, total value CHF 1.2 m
+    - Average days to invoice after delivery: 6
+
+- id: tender-de-1
+  type: other
+  title: Ausschreibung_Unterhaltsreinigung_2026.pdf
+  note: A call for tenders asks for prices instead of stating them, so it is not an offer.
+  text: |
+    # Gemeinde Hinterbrunnen
+    Bauverwaltung · Dorfstrasse 2 · 5612 Hinterbrunnen
+
+    ## Ausschreibung Unterhaltsreinigung Schulanlage 2026
+    Einladungsverfahren · Dossier-Nr. HB-AUS-2025-09
+
+    Die Gemeinde Hinterbrunnen lädt Sie ein, ein Angebot für die Unterhaltsreinigung der Schulanlage Hinterbrunnen
+    für die Zeit vom 1. Januar bis 31. Dezember 2026 einzureichen.
+
+    ### Leistungsverzeichnis
+    | Pos | Leistung | Menge | Einheitspreis CHF | Betrag CHF |
+    |---|---|---:|---:|---:|
+    | 1 | Unterhaltsreinigung Schulhaus, 5 × pro Woche | 2'400 m² | | |
+    | 2 | Unterhaltsreinigung Turnhalle, 3 × pro Woche | 800 m² | | |
+    | 3 | Grundreinigung in den Sommerferien | pauschal | | |
+    | | **Total exkl. MWST** | | | |
+
+    ### Eingabe
+    Eingabefrist: 15. Dezember 2025, 12:00 Uhr, bei der Bauverwaltung (Poststempel nicht massgebend).
+    Zuschlagskriterien: Preis 60 %, Referenzen 25 %, Qualitätskonzept 15 %.
+
+    Auskünfte: Martin Zbinden, Bauverwalter, 056 633 12 40
+
+- id: terms-de-1
+  type: other
+  title: AGB_Velorado_2025.pdf
+  note: General terms and conditions not agreed between named parties are not a contract.
+  text: |
+    # Allgemeine Geschäftsbedingungen (AGB)
+    Velorado Zweirad GmbH · Stand: März 2025
+
+    ## 1. Geltungsbereich
+    Diese AGB gelten für alle Kauf-, Reparatur- und Serviceverträge zwischen der Velorado Zweirad GmbH und ihren
+    Kundinnen und Kunden. Abweichende Bedingungen gelten nur, wenn sie schriftlich vereinbart wurden.
+
+    ## 2. Preise und Zahlung
+    Es gelten die Preise am Tag der Bestellung, in CHF inkl. MWST. Rechnungen sind innert 30 Tagen netto zahlbar.
+
+    ## 3. Gewährleistung
+    Auf neue Velos gewähren wir 2 Jahre Garantie, auf Rahmen 5 Jahre. Verschleissteile sind ausgenommen.
+
+    ## 4. Serviceabo
+    Das Serviceabo verlängert sich jeweils um ein Jahr, wenn es nicht mit einer Frist von einem Monat auf das Ende der
+    Laufzeit gekündigt wird.
+
+    ## 5. Gerichtsstand
+    Gerichtsstand ist Winterthur. Es gilt schweizerisches Recht.
+
+- id: orderform-de-1
+  type: other
+  title: Bestellformular_Drucksachen.pdf
+  note: A blank order form names no buyer and orders nothing, so it is not an order.
+  text: |
+    # Bestellformular Drucksachen
+    Druckerei Felsbach AG · Gewerbestrasse 8 · 9000 St. Gallen · bestellung@druckerei-felsbach.example
+
+    ## Besteller
+    Firma: ______________________________
+    Name, Vorname: ______________________
+    Strasse, Nr.: _______________________
+    PLZ, Ort: ___________________________
+    E-Mail: _____________________________
+
+    ## Artikel
+    | Artikel-Nr. | Bezeichnung | Preis CHF | Menge | Total CHF |
+    |---|---|---:|---:|---:|
+    | VK-100 | Visitenkarten, 100 Stk., 4-farbig | 49.00 | | |
+    | BP-A4 | Briefpapier A4, 500 Blatt | 129.00 | | |
+    | CV-C5 | Couverts C5 mit Fenster, 500 Stk. | 98.00 | | |
+    | | **Total** | | | |
+
+    Preise inkl. MWST, zuzüglich Versand CHF 9.00. Lieferung innert 5 Arbeitstagen nach Gut zum Druck.
+
+    Datum: ______________ Unterschrift: ______________________
+
+- id: minutes-it-1
+  type: other
+  title: Verbale_riunione_direzione_2025-06-17.pdf
+  note: Minutes stay minutes although they discuss a contract and an invoice.
+  text: |
+    # Verbale della riunione di direzione
+    Studio Bellavista Sagl · 17 giugno 2025 · Presenti: G. Bernasconi, P. Ferrari, L. Cattaneo
+
+    1. **Contratto di manutenzione n. CM-2023-12 con Clivento SA**: il contratto scade il 31 dicembre 2025. Si decide
+       di chiedere un'offerta a due altri fornitori prima di rinnovarlo. Responsabile: P. Ferrari.
+    2. **Fattura 2025-0877 di Clivento SA** (CHF 3'412.50): l'intervento del 2 maggio è stato fatturato due volte.
+       L. Cattaneo contesterà la fattura per iscritto e ne sospende il pagamento.
+    3. **Inaugurazione dello studio**: data fissata al 23 ottobre 2025; inviti entro fine settembre.
+    4. Prossima riunione: 8 luglio 2025.

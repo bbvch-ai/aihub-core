@@ -31,8 +31,10 @@ class DocumentValueNormalizer:
     re-reads every document's kept text without calling a model.
     """
 
-    VERSION: ClassVar[int] = 2
+    VERSION: ClassVar[int] = 3
     _SLASH_DATE: ClassVar[re.Pattern[str]] = re.compile(r"\b(\d{1,2})/(\d{1,2})/(?:\d{4}|\d{2})\b")
+    _E_MAIL: ClassVar[re.Pattern[str]] = re.compile(r"<?[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+>?")
+    _NAMES: ClassVar[frozenset[DocumentAttribute]] = frozenset({DocumentAttribute.ISSUER, DocumentAttribute.RECIPIENT})
 
     @classmethod
     def normalize(
@@ -112,8 +114,15 @@ class DocumentValueNormalizer:
             case AttributeValueType.TEXT_LIST:
                 items = cls._distinct(raw or [])
                 return {definition.key: items[: definition.max_items] or None, definition.raw_key: raw}
+            case _ if definition.attribute in cls._NAMES:
+                return {definition.key: cls._name(raw), definition.raw_key: raw}
             case _:
                 return {definition.key: raw, definition.raw_key: raw}
+
+    @classmethod
+    def _name(cls, raw: _Raw) -> _Raw:
+        """A party's name, never a bare e-mail address: an address names a mailbox, not who sent or receives."""
+        return None if isinstance(raw, str) and cls._E_MAIL.fullmatch(raw) else raw
 
     @classmethod
     def _complete_currency(cls, values: dict[str, Any]) -> None:

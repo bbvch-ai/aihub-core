@@ -144,3 +144,23 @@ def test_the_prompt_names_every_type_and_every_attribute_the_model_fills() -> No
     for definition in DocumentTypeCatalog.extracted_attributes():
         assert f'<attribute name="{definition.key}">' in system
     assert "The issue date (Rechnungsdatum)" in system
+
+
+def test_the_prompt_names_types_sharing_a_meaning_together_and_each_meaning_once() -> None:
+    for attribute in DocumentTypeCatalog.prompt_attributes():
+        meanings = [group["meaning"] for group in attribute["meanings"]]
+        types = [document_type for group in attribute["meanings"] for document_type in group["types"]]
+
+        assert len(meanings) == len(set(meanings)), attribute["name"]
+        assert len(types) == len(set(types)), attribute["name"]
+
+    dates = next(
+        attribute for attribute in DocumentTypeCatalog.prompt_attributes() if attribute["name"] == "document_date"
+    )
+    assert ["contract", "service_level_agreement"] in [group["types"] for group in dates["meanings"]]
+
+
+def test_adding_the_types_of_2485_re_classifies_only_documents_marked_other() -> None:
+    assert DocumentTypeCatalog.type_definition(DocumentType.OTHER).version == 2
+    assert DocumentTypeCatalog.needs_classification(DocumentTypeCatalog.VERSION, "other", 1)
+    assert not DocumentTypeCatalog.needs_classification(DocumentTypeCatalog.VERSION, "invoice", 1)
