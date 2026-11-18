@@ -18,11 +18,15 @@ PREVIEW_BYTES = 150_000
 # the file keeps it whole.
 CELL_CHARACTERS = 1_000
 CELL_CUT_MARK = "…"
+# The summary's worst case without notices (counts, preview, criteria, condition, the skipped and failed blocks full,
+# three file lists full) stays about 5 kB below its cap, so only notices are ever cut.
 SUMMARY_BYTES = 30_000
 FAILED_FILES_LISTED = 30
-FAILED_LIST_BYTES = 15_000
-LISTED_BYTES = 5_000
+FAILED_LIST_BYTES = 8_000
+SKIPPED_LIST_BYTES = 5_000
+LISTED_BYTES = 3_000
 CRITERIA_CHARACTERS = 1_000
+CONDITION_CHARACTERS = 500
 # Row files are read side by side, a bounded number at once, so a thousand documents neither run one by one nor open
 # a thousand connections.
 ROW_FILES_AT_ONCE = 16
@@ -54,6 +58,7 @@ class ExtractionTable:
         ]
         table, shown = ExtractionTable.preview(columns, found)
         failed = [result for result in ordered if result.failure_reason is not None]
+        skipped = [result for result in ordered if result.skipped_reason is not None]
         stored = (
             await ExtractionFileStore.put_table(run.extraction_id, ExtractionTable._filename(run), columns, found)
             if found
@@ -67,6 +72,7 @@ class ExtractionTable:
             summary=ExtractionTable._summary(run, ordered, failed, len(found), shown, unsure, t),
             file_count=len(ordered),
             failed_count=len(failed),
+            skipped_count=len(skipped),
             row_count=shown,
             total_row_count=len(found),
             truncated=run.cut_short,
@@ -167,6 +173,8 @@ class ExtractionTable:
         unsure: int,
         t: LocaleHandler,
     ) -> str:
+        """Counts first and notices last, the failed files before the notices: `capped` cuts from the end, and only
+        notices can grow beyond what the budgets below hold."""
         key = "agent.record_extraction.summary"
         if run.sample:
             counted = "sample_counts_ceiling" if run.above_ceiling else "sample_counts"
@@ -178,18 +186,47 @@ class ExtractionTable:
             lines.append(t(f"{key}.preview", shown=shown, rows=found))
         if run.criteria:
             lines.append(t(f"{key}.criteria", criteria=run.criteria))
-        empty = [result.document.path for result in results if not result.row_count and result.failure_reason is None]
-        if empty:
-            lines.append(t(f"{key}.no_rows", files=ExtractionTable._listed(empty, t)))
+        lines.extend(ExtractionTable._document_lines(run, results, t))
         if unsure:
             lines.append(t(f"{key}.unsure", count=unsure))
         partly_read = [result.document.path for result in results if result.partly_read]
         if partly_read:
             lines.append(t(f"{key}.partly_read", files=ExtractionTable._listed(partly_read, t)))
-        lines.extend(run.notices)
         if failed:
-            lines.append(ExtractionTable._failed_files(failed, t))
+            entries = [(result.document.path, result.failure_reason or "") for result in failed]
+            lines.append(
+                ExtractionTable._with_reasons(
+                    entries, t(f"{key}.failed_files"), f"{key}.failed_more", FAILED_LIST_BYTES, t
+                )
+            )
+        lines.extend(run.notices)
         return ExtractionTable.capped("\n\n".join(lines))
+
+    @staticmethod
+    def _document_lines(run: ExtractionRun, results: list[DocumentExtractedEvent], t: LocaleHandler) -> list[str]:
+        """The document condition and what it left out or left open, then the documents that yielded no rows."""
+        key = "agent.record_extraction.summary"
+        lines: list[str] = []
+        if run.document_condition:
+            condition = run.document_condition
+            if len(condition) > CONDITION_CHARACTERS:
+                condition = condition[: CONDITION_CHARACTERS - 1] + "…"
+            lines.append(t(f"{key}.document_condition", condition=condition))
+        skipped = [(result.document.path, result.skipped_reason) for result in results if result.skipped_reason]
+        if skipped:
+            header = t(f"{key}.skipped", count=len(skipped))
+            lines.append(ExtractionTable._with_reasons(skipped, header, f"{key}.skipped_more", SKIPPED_LIST_BYTES, t))
+        empty = [
+            result.document.path
+            for result in results
+            if not result.row_count and result.failure_reason is None and result.skipped_reason is None
+        ]
+        if empty:
+            lines.append(t(f"{key}.no_rows", files=ExtractionTable._listed(empty, t)))
+        document_unsure = [result.document.path for result in results if result.document_unsure]
+        if document_unsure:
+            lines.append(t(f"{key}.documents_unsure", files=ExtractionTable._listed(document_unsure, t)))
+        return lines
 
     @staticmethod
     def _listed(entries: list[str], t: LocaleHandler) -> str:
@@ -208,24 +245,30 @@ class ExtractionTable:
         return f"{', '.join(listed)}, {more}"
 
     @staticmethod
-    def _failed_files(failed: list[DocumentExtractedEvent], t: LocaleHandler) -> str:
-        """The failed files with their reasons, as many as fit, and how many more there are."""
-        key = "agent.record_extraction.summary"
+    def _with_reasons(
+        entries: list[tuple[str, str]],
+        header: str,
+        more_key: str,
+        limit_bytes: int,
+        t: LocaleHandler,
+    ) -> str:
+        """The files with their reasons under a header, as many as fit, and how many more there are."""
         listed: list[str] = []
         size = 0
-        for result in failed[:FAILED_FILES_LISTED]:
-            entry = f"- {result.document.path}: {result.failure_reason}"
+        for path, reason in entries[:FAILED_FILES_LISTED]:
+            entry = f"- {path}: {reason}"
             size += ExtractionTable.serialized_bytes(entry)
-            if size > FAILED_LIST_BYTES:
+            if size > limit_bytes:
                 break
             listed.append(entry)
-        if len(listed) < len(failed):
-            listed.append(t(f"{key}.failed_more", count=len(failed) - len(listed)))
-        return f"{t(f'{key}.failed_files')}\n\n" + "\n".join(listed)
+        if len(listed) < len(entries):
+            listed.append(t(more_key, count=len(entries) - len(listed)))
+        return f"{header}\n\n" + "\n".join(listed)
 
     @staticmethod
     def capped(summary: str) -> str:
-        """The summary within its share of the largest event; only notices from a model can make it this long."""
+        """The summary within its share of the largest event; only notices from a model can make it this long, and as
+        they come last, they are the part that gives way."""
         while ExtractionTable.serialized_bytes(summary) > SUMMARY_BYTES:
             summary = summary[: int(len(summary) * 0.9)].rstrip() + "…"
         return summary

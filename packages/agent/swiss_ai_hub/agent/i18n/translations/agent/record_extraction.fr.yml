@@ -55,6 +55,11 @@ table:
   path: Chemin
   filename: Fichier
 summary:
+  document_condition: "**Condition sur le document :** %{condition}"
+  skipped: "**Ignorés, condition sur le document non remplie :** %{count} documents"
+  skipped_more: "…et %{count} autres documents ignorés, chacun avec sa raison dans la progression ci-dessus."
+  documents_unsure: "**Incertain s'ils remplissent la condition sur le document, lus et marqués à vérifier :** %{files}"
+  interpretation_documents: "**Colonnes :** %{columns} · **Documents :** %{documents} · **Lignes conservées :** %{kept}"
   no_rows: '**Aucune ligne de :** %{files}'
   unsure: '**Incertain :** %{count} lignes ne remplissent peut-être pas la condition
     ; elles sont gardées et marquées dans la colonne Correspondance pour que vous
@@ -97,6 +102,8 @@ facets:
   first: Ce sont les dossiers et années des %{total} premiers documents par chemin
     ; il y en a d’autres.
 progress:
+  skipped: "%{done} sur %{files} · %{path} : ignoré, %{reason}"
+  skipped_unknown: "ne remplit pas la condition sur le document"
   partial: '%{path} est long : seules ses parties pertinentes sont lues.'
   plan: Extraction de %{fields} de %{files} documents, environ %{minutes} minutes
     (%{criteria}).
@@ -120,10 +127,19 @@ form:
     anything_description: "Lire chaque document du périmètre de cet agent"
     everything: "tous les documents du périmètre"
     line: "**Emplacement :** %{value}"
+  documents:
+    header: "Condition sur le document"
+    question: "Quels documents comptent ? J'ai compris : %{value}."
+    hint: "Une condition que le document entier doit remplir, vérifiée à son début, p. ex. de Lieferant GmbH · daté du T1 2026 · seulement les versions signées. Les documents qui ne la remplissent clairement pas sont ignorés et listés."
+    anything: "Chaque document"
+    anything_description: "Lire chaque document de l'emplacement"
+    everything: "chaque document de l'emplacement"
+    line: "**Condition sur le document :** %{value}"
   rows:
     header: "Condition de filtre"
     question: "Quels enregistrements le tableau doit-il garder ? J'ai compris : %{value}."
     hint: "Une condition sur les enregistrements, pas un calcul, p. ex. de Lieferant GmbH · datées de 2018 · seulement le matériel."
+    hint_with_documents: "Une condition sur chaque enregistrement, pas sur le document entier ni un calcul, p. ex. seulement le matériel · montants supérieurs à CHF 1'000 · lignes de Lieferant GmbH sur un relevé."
     anything: "Chaque ligne"
     anything_description: "Garder chaque ligne des documents"
     everything: "chaque ligne"

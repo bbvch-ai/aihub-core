@@ -56,6 +56,11 @@ table:
   path: Percorso
   filename: File
 summary:
+  document_condition: "**Condizione sul documento:** %{condition}"
+  skipped: "**Saltati, condizione sul documento non soddisfatta:** %{count} documenti"
+  skipped_more: "…e altri %{count} documenti saltati, ciascuno con il motivo nell'avanzamento qui sopra."
+  documents_unsure: "**Incerto se soddisfano la condizione sul documento, letti e segnati da verificare:** %{files}"
+  interpretation_documents: "**Colonne:** %{columns} · **Documenti:** %{documents} · **Righe mantenute:** %{kept}"
   no_rows: '**Nessuna riga da:** %{files}'
   unsure: '**Incerto:** %{count} righe potrebbero non soddisfare la condizione; sono
     mantenute e segnate nella colonna Corrispondenza perché possiate verificarle.'
@@ -96,6 +101,8 @@ facets:
   first: Sono le cartelle e gli anni dei primi %{total} documenti per percorso; ce
     ne sono altri.
 progress:
+  skipped: "%{done} di %{files} · %{path}: saltato, %{reason}"
+  skipped_unknown: "non soddisfa la condizione sul documento"
   partial: '%{path} è lungo: vengono lette solo le parti pertinenti.'
   plan: Estrazione di %{fields} da %{files} documenti, circa %{minutes} minuti (%{criteria}).
   sample: '%{total} documenti corrispondono; estraggo un campione da %{files} di essi
@@ -118,10 +125,19 @@ form:
     anything_description: "Leggere ogni documento nell'ambito di questo agente"
     everything: "tutti i documenti nell'ambito"
     line: "**Posizione:** %{value}"
+  documents:
+    header: "Condizione sul documento"
+    question: "Quali documenti contano? Ho capito: %{value}."
+    hint: "Una condizione che l'intero documento deve soddisfare, verificata all'inizio, p. es. di Lieferant GmbH · datato T1 2026 · solo versioni firmate. I documenti che chiaramente non la soddisfano sono saltati ed elencati."
+    anything: "Ogni documento"
+    anything_description: "Leggere ogni documento della posizione"
+    everything: "ogni documento della posizione"
+    line: "**Condizione sul documento:** %{value}"
   rows:
     header: "Condizione di filtro"
     question: "Quali record deve tenere la tabella? Ho capito: %{value}."
     hint: "Una condizione sui record, non un calcolo, p. es. di Lieferant GmbH · datate 2018 · solo voci hardware."
+    hint_with_documents: "Una condizione su ogni record, non sull'intero documento né un calcolo, p. es. solo voci hardware · importi oltre CHF 1'000 · righe di Lieferant GmbH su un estratto conto."
     anything: "Ogni riga"
     anything_description: "Tenere ogni riga dei documenti"
     everything: "ogni riga"

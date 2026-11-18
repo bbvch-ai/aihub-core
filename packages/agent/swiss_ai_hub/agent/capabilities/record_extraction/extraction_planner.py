@@ -184,11 +184,13 @@ class ExtractionPlanner:
 
     @staticmethod
     def _semantic_query(request: ExtractRecordsEvent, config: RecordExtractionFields) -> str | None:
-        """What the wanted documents are about, to rank them by meaning: the terms that identify them and the condition
-        on their rows, in the user's words. Not after a discovery search, whose model already ranked what it chose."""
+        """What the wanted documents are about, to rank them by meaning: the terms that identify them and the
+        conditions on them and their rows, in the user's words. Not after a discovery search, whose model already
+        ranked what it chose."""
         if config.knowledge_documents.discovery is True:
             return None
-        return " ".join(part for part in (request.document_terms, request.instructions, request.fields) if part) or None
+        parts = (request.document_terms, request.document_condition, request.instructions, request.fields)
+        return " ".join(part for part in parts if part) or None
 
     @staticmethod
     def _sample_notices(
@@ -210,7 +212,9 @@ class ExtractionPlanner:
                 total=len(documents),
                 minutes=ExtractionEstimate.minutes(documents, config.record_extraction.max_parallel_extractions),
             ),
-            t(f"{_SUMMARY}.interpretation", columns=columns, kept=kept),
+            t(f"{_SUMMARY}.interpretation_documents", columns=columns, documents=request.document_condition, kept=kept)
+            if request.document_condition
+            else t(f"{_SUMMARY}.interpretation", columns=columns, kept=kept),
             *SelectionFacets.lines(documents, t, counted=not selected.truncated),
         ]
         notices.append(
@@ -253,6 +257,7 @@ class ExtractionPlanner:
             show_collection=ExtractionPlanner._spans_collections(documents),
             tool_call_id=request.tool_call_id,
             collections=request.collections,
+            document_condition=request.document_condition,
         )
 
     @staticmethod

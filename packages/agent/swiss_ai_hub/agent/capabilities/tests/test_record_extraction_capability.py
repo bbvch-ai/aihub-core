@@ -30,6 +30,7 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
     DocumentExtractionResult,
+    DocumentMatch,
     ExtractedTableFile,
     ExtractedTableMarkup,
     ExtractionFileStore,
@@ -431,6 +432,83 @@ class TestTable:
 
         assert ExtractedTableMarkup.condensed(table.table) == "[A table of 1 extracted rows was shown here.]"
 
+    @pytest.mark.asyncio
+    async def test_skipped_documents_are_listed_with_reasons_and_counted_apart_from_failures(self, store: _Store):
+        run = _run(file_count=4, document_condition="only invoices from Hooli")
+        results = [
+            _result(run, "a.pdf", [{"item": "Rack", "amount": 1}], store),
+            _result(run, "b.pdf", skipped_reason="Supplier: Initech AG"),
+            _result(run, "c.pdf", failure_reason="boom"),
+            _result(run, "d.pdf"),
+        ]
+
+        table = await ExtractionTable.assemble(run, results, T)
+
+        assert (table.file_count, table.failed_count, table.skipped_count) == (4, 1, 1)
+        assert "**Document condition:** only invoices from Hooli" in table.summary
+        assert "**Skipped, not meeting the document condition:** 1 documents\n\n- b.pdf: Supplier: Initech AG" in (
+            table.summary
+        )
+        assert "**No rows from:** d.pdf\n" in table.summary + "\n"
+        assert "**Files that could not be extracted:**\n\n- c.pdf: boom" in table.summary
+
+    @pytest.mark.asyncio
+    async def test_a_long_skipped_list_says_how_many_more(self, store: _Store):
+        run = _run(file_count=200, document_condition="only invoices from Hooli")
+        reason = "Lieferant: Müller & Söhne AG, Zürich, " + "ü" * 150
+        results = [_result(run, f"invoices/{index:03d}.pdf", skipped_reason=reason) for index in range(200)]
+
+        table = await ExtractionTable.assemble(run, results, T)
+
+        assert table.skipped_count == 200
+        assert "**Skipped, not meeting the document condition:** 200 documents" in table.summary
+        listed = table.summary.count(f": {reason}")
+        assert 0 < listed < 200
+        assert f"…and {200 - listed} more skipped documents, each named with its reason in the progress above." in (
+            table.summary
+        )
+
+    @pytest.mark.asyncio
+    async def test_an_unsure_document_shows_the_match_column_and_is_named(self, store: _Store):
+        run = _run(file_count=1, document_condition="only invoices from Hooli")
+        rows = [{"item": "Rack", "amount": 1.0, RecordSchema.MATCH_FIELD: RecordSchema.MATCH_UNSURE}]
+
+        table = await ExtractionTable.assemble(run, [_result(run, "a.pdf", rows, store, document_unsure=True)], T)
+
+        assert table.columns[-1] == "Match"
+        assert "| Rack | 1.0 | unsure, please check |" in table.table
+        assert "**Unsure whether they meet the document condition, read and marked for checking:** a.pdf" in (
+            table.summary
+        )
+
+    @pytest.mark.asyncio
+    async def test_the_failed_block_stands_before_the_notices(self, store: _Store):
+        run = _run(file_count=1, notices=["A notice from the caller."])
+
+        table = await ExtractionTable.assemble(run, [_result(run, "a.pdf", failure_reason="boom")], T)
+
+        assert table.summary.index("- a.pdf: boom") < table.summary.index("A notice from the caller.")
+
+    @pytest.mark.asyncio
+    async def test_without_a_condition_only_the_failed_block_moved(self, store: _Store):
+        run = _run(file_count=3, criteria="path matches `invoices/**`", notices=["note"])
+        results = [
+            _result(run, "a.pdf", [{"item": "Rack", "amount": 1}], store),
+            _result(run, "b.pdf", failure_reason="boom"),
+            _result(run, "c.pdf"),
+        ]
+
+        table = await ExtractionTable.assemble(run, results, T)
+
+        assert table.skipped_count == 0
+        assert table.summary == (
+            "**Files:** 3 · **Rows found:** 1 · **Files that failed:** 1\n\n"
+            "**Selected:** path matches `invoices/**`\n\n"
+            "**No rows from:** c.pdf\n\n"
+            "**Files that could not be extracted:**\n\n- b.pdf: boom\n\n"
+            "note"
+        )
+
 
 def _request(path: str = "invoices/2025/a.pdf") -> DocumentExtractionRequestedEvent:
     return DocumentExtractionRequestedEvent(run=_run(file_count=1), document=_summary(path), record_schema=SCHEMA)
@@ -512,6 +590,15 @@ async def _extract_document(
 
 def _provenance() -> RecordProvenance:
     return RecordProvenance.from_summary(_summary("invoices/2025/a.pdf"))
+
+
+def _conditioned_request() -> DocumentExtractionRequestedEvent:
+    run = _run(file_count=1, document_condition="only invoices from Hooli")
+    return DocumentExtractionRequestedEvent(run=run, document=_summary("invoices/2025/a.pdf"), record_schema=SCHEMA)
+
+
+def _skipped(reason: str = "Supplier: Initech AG") -> DocumentExtractionResult:
+    return DocumentExtractionResult.skipped_by(_provenance(), DocumentMatch(verdict="no", reason=reason), 1)
 
 
 class TestDocumentExtraction:
@@ -642,6 +729,56 @@ class TestDocumentExtraction:
         assert len(still) >= 2
         assert still[0] == "Still reading invoices/2025/a.pdf (1 min)."
         assert _thoughts(displayer)[-1] == "1 of 1 · invoices/2025/a.pdf: 0 rows"
+
+    @pytest.mark.asyncio
+    async def test_a_skipped_document_stores_no_rows_and_is_not_a_failure(self, store: _Store):
+        result = await _extract_document(_skipped(), request=_conditioned_request())
+
+        store.put_rows.assert_not_awaited()
+        assert (result.rows_key, result.row_count, result.failure_reason) == (None, 0, None)
+        assert result.skipped_reason == "Supplier: Initech AG"
+
+    @pytest.mark.asyncio
+    async def test_the_progress_names_a_skipped_document_with_its_reason(self, store: _Store):
+        displayer = _displayer()
+
+        await _extract_document(_skipped(), request=_conditioned_request(), displayer=displayer)
+
+        assert _thoughts(displayer) == ["1 of 1 · invoices/2025/a.pdf: skipped, Supplier: Initech AG"]
+
+    @pytest.mark.asyncio
+    async def test_a_skip_without_a_reason_gets_the_default(self, store: _Store):
+        result = await _extract_document(_skipped(reason=" \n "), request=_conditioned_request())
+
+        assert result.skipped_reason == "does not meet the document condition"
+
+    @pytest.mark.asyncio
+    async def test_reasons_cannot_break_the_summary_list(self, store: _Store):
+        skipped = await _extract_document(_skipped(reason="# Supplier:\n\n- Initech AG\n| x |"))
+        failed = await _extract_document(DocumentExtractionResult.failed_with(_provenance(), "\n- boom\n\n## next", 1))
+
+        assert skipped.skipped_reason == "Supplier: - Initech AG | x |"
+        assert failed.failure_reason == "boom ## next"
+
+    @pytest.mark.asyncio
+    async def test_the_condition_is_passed_to_the_extractor(self, store: _Store):
+        extract = AsyncMock(return_value=DocumentExtractionResult.succeeded(_provenance(), [], 1))
+
+        await _extract_document(extract, request=_conditioned_request())
+
+        assert extract.await_args.kwargs["document_condition"] == "only invoices from Hooli"
+
+    @pytest.mark.asyncio
+    async def test_an_unsure_documents_rows_are_marked_for_checking(self, store: _Store):
+        unsure = DocumentMatch(verdict="unsure", reason="The excerpt names no supplier.")
+        rows = [{"item": "Rack", "amount": 1.0}, {"item": "Cable", "amount": 2.0, RecordSchema.MATCH_FIELD: "yes"}]
+        extracted = DocumentExtractionResult.succeeded(_provenance(), rows, 1, document_match=unsure)
+
+        result = await _extract_document(extracted, request=_conditioned_request())
+
+        assert result.document_unsure
+        assert (result.row_count, result.unsure_count) == (2, 2)
+        assert [row[RecordSchema.MATCH_FIELD] for row in store.stored_rows[result.rows_key]] == ["unsure", "unsure"]
 
 
 class TestHeartbeat:
@@ -784,6 +921,34 @@ class TestPlanning:
             answer = await ExtractionPlanner.plan(_extract_request(), _config(), _displayer(), T, _Thread(), None)
 
         assert answer.summary.startswith("The table could not be extracted: no columns")
+
+    @pytest.mark.asyncio
+    async def test_the_document_condition_rides_on_every_documents_run(self):
+        documents = [_summary("invoices/2025/a.pdf"), _summary("invoices/2025/b.pdf")]
+        with (
+            patch(
+                f"{PLANNER}.KnowledgeDocumentSelector.resolve",
+                AsyncMock(return_value=KnowledgeDocumentSelectionResult(documents=documents)),
+            ),
+            patch(f"{PLANNER}.RecordSchemaBuilder.build", AsyncMock(return_value=SCHEMA)),
+            patch.object(LLMConfig, "get_model_info", return_value={}),
+            patch.object(LLMConfig, "cost_reporting_llm", return_value=_schema_llm()),
+        ):
+            planned = await ExtractionPlanner.plan(
+                _extract_request(document_condition="only invoices from Hooli"),
+                _config(),
+                _displayer(),
+                T,
+                _Thread(),
+                None,
+            )
+
+        assert [request.run.document_condition for request in planned] == ["only invoices from Hooli"] * 2
+
+    def test_the_semantic_query_includes_the_document_condition(self):
+        request = _extract_request(document_terms="Hooli", document_condition="from Q1 2026", instructions="hardware")
+
+        assert ExtractionPlanner._semantic_query(request, _config()) == "Hooli from Q1 2026 hardware item, amount"
 
     def test_a_stored_profile_with_the_removed_limits_still_validates(self):
         config = RecordExtractionConfig.model_validate(
@@ -1007,6 +1172,16 @@ class TestAsATool:
         assert "confirm_sample" in properties
         assert "document_terms" in properties
         assert "continue_pending" not in properties
+
+    def test_the_tool_arguments_have_no_document_condition(self):
+        """The Universal Agent keeps conditions on whole documents in the row condition (#2347 follow-up)."""
+        from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_arguments import ExtractRecordsArguments
+        from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_tool_arguments import (
+            ExtractRecordsToolArguments,
+        )
+
+        assert "document_condition" not in ExtractRecordsToolArguments.model_json_schema()["properties"]
+        assert "document_condition" not in ExtractRecordsArguments.model_fields
 
     @pytest.mark.asyncio
     async def test_one_answer_confirms_once_and_a_redelivered_call_still_runs(self):
