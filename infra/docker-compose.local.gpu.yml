@@ -1890,34 +1890,14 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    # OpenAI-compatible inference paths stay public behind LiteLLM's own key auth; the UI and every admin route on
-    # the same host go through oauth2proxy-litellm (router litellm-admin, lower priority).
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.litellm-api.rule=Host(`litellm.${DOMAIN}`) && (Path(`/v1/chat/completions`)
-        || Path(`/v1/completions`) || Path(`/v1/embeddings`) || Path(`/v1/models`)
-        || Path(`/v1/model/info`) || PathPrefix(`/v1/audio/`) || PathPrefix(`/v1/images/`)
-        || Path(`/v1/rerank`) || Path(`/v1/moderations`) || Path(`/v1/responses`)
-        || PathPrefix(`/v1/responses/`) || Path(`/v1/messages`) || PathPrefix(`/v1/messages/`)
-        || Path(`/v1/files`) || PathPrefix(`/v1/files/`) || Path(`/v1/batches`) ||
-        PathPrefix(`/v1/batches/`) || Path(`/v1/realtime`) || PathPrefix(`/v1/realtime/`)
-        || Path(`/v1/videos`) || PathPrefix(`/v1/videos/`) || Path(`/chat/completions`)
-        || Path(`/completions`) || Path(`/embeddings`) || Path(`/models`) || Path(`/model/info`)
-        || PathPrefix(`/audio/`) || PathPrefix(`/images/`) || Path(`/rerank`) || Path(`/v2/rerank`)
-        || Path(`/moderations`) || Path(`/responses`) || PathPrefix(`/responses/`)
-        || Path(`/health/liveliness`) || Path(`/health/liveness`))
-      - traefik.http.routers.litellm-api.priority=6000
-      - traefik.http.routers.litellm-api.entrypoints=websecure
-      - traefik.http.routers.litellm-api.middlewares=security-headers@file
-      - traefik.http.routers.litellm-api.service=litellm-api
-      - traefik.http.services.litellm-api.loadbalancer.server.port=4000
-      - traefik.http.routers.litellm-api.tls=true
     networks:
       - backend
       - data  # For PostgreSQL access
       - pii-detection  # Caller of the Presidio analyzer
-      - proxy  # Traefik ingress for the inference paths, and outbound internet to the model providers
+      # Outbound internet to the model providers only. LiteLLM has no Traefik router of its own: a user's key used
+      # from outside would skip the Hub's model access rules, so all of litellm.${DOMAIN} goes through
+      # oauth2proxy-litellm, and the Hub's services call LiteLLM inside the Docker network.
+      - proxy
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-litellm:
     container_name: oauth2proxy-litellm
@@ -3110,7 +3090,17 @@ services:
       - traefik.http.routers.api.entrypoints=websecure
       - traefik.http.routers.api.middlewares=security-headers@file
       - traefik.http.services.api.loadbalancer.server.port=8000
+      # Knowledge figures in OpenWebUI sources, on OpenWebUI's own origin so the browser sends its session cookie
+      # (ADR 2026_11_17_knowledge_figures_served_through_openwebui_session_proxy).
+      - traefik.http.routers.api-figures.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/hub-figures/`)
+      - traefik.http.routers.api-figures.priority=6100
+      - traefik.http.routers.api-figures.entrypoints=websecure
+      - traefik.http.routers.api-figures.service=api
+      - traefik.http.routers.api-figures.middlewares=api-figures-path,security-headers@file
+      - traefik.http.middlewares.api-figures-path.replacepathregex.regex=^/hub-figures/([A-Za-z0-9_-]+)/([a-f0-9]{24})/([a-z0-9][a-z0-9.-]*)/(.+)$$
+      - traefik.http.middlewares.api-figures-path.replacepathregex.replacement=/api/v1/$$1/files/figures/$$2/$$3/$$4
       - traefik.http.routers.api.tls=true
+      - traefik.http.routers.api-figures.tls=true
     networks:
       - proxy
       - backend

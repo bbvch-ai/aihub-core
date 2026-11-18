@@ -186,6 +186,16 @@ class S3AnonymousFileAccessService:
         finally:
             body.close()
 
+    @trace_fn
+    def file_size(self, container: str, file_path: str) -> int:
+        """Size in bytes, read from the object's metadata, so a caller can refuse an object before downloading it."""
+        if not container or not container.strip():
+            raise ValueError(_CONTAINER_NAME_EMPTY_ERROR)
+        if not file_path or not file_path.strip():
+            raise ValueError(_FILE_PATH_EMPTY_ERROR)
+
+        return self._s3_client.head_object(Bucket=container, Key=file_path)["ContentLength"]
+
     def verify_file_exists(self, container: str, file_path: str) -> bool:
         """
         Verify that a file exists in S3/MinIO storage.

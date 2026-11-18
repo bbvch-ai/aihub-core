@@ -818,6 +818,14 @@ class EventContext:
         self.chat_id = chat_id
         self.message_id = message_id
         self.redis = redis
+        self._figure_links: Optional[FigureLinks] = None
+
+    async def figure_links(self) -> "FigureLinks":
+        """Built on the first figure only: the route needs the concrete tenant, which costs one call to the AI-Hub."""
+        if self._figure_links is None:
+            tenant_id = await self.stream_service.active_tenant_id(self.headers)
+            self._figure_links = FigureLinks(tenant_id, self.thread_id)
+        return self._figure_links
 
     async def emit_source(
         self,
@@ -1289,13 +1297,74 @@ class RetrieverEventHandler(EventHandler):
         return True
 
 
+class FigureLinks:
+    """Points the figures of knowledge sources at the AI-Hub's figure route on Open WebUI's own origin.
+
+    Open WebUI shows only relative, same-origin, data and web images, so an `s3://` figure would show its logo. The
+    route serves a figure to whoever is signed in to Open WebUI and may still view the thread and use the agent that
+    showed it, so the path holds no credential. Like the route, only a figure in its own document's figure folder is
+    linked; any other reference becomes a caption.
+    """
+
+    ROUTE = "/hub-figures"
+    FIGURES_DIRECTORY = "__figures__"
+    RASTER_EXTENSIONS = frozenset({"jpg", "jpeg", "png", "webp", "gif", "bmp"})
+    # A figure node holds exactly one image; its folder path may contain spaces and brackets, which ingestion keeps.
+    _FIGURE = re.compile(r"\s*!\[([^\]]*)\]\((s3://([^/]+)/(.+))\)\s*", re.DOTALL)
+    _FOLDER_UNSAFE = re.compile(r"[\s.%#?&=+/\\]")
+
+    def __init__(
+        self,
+        tenant_id: Annotated[Optional[str], "The concrete tenant the viewer acts in"],
+        thread_id: Annotated[Optional[str], "AI-Hub thread the sources belong to"],
+    ) -> None:
+        self._tenant_id = tenant_id
+        self._thread_id = thread_id
+
+    @staticmethod
+    def is_figure(node: Annotated[dict[str, Any], "Grounding node"]) -> bool:
+        return node.get("content_type") == "figure"
+
+    def rewrite(
+        self, node: Annotated[dict[str, Any], "Grounding node"]
+    ) -> Annotated[str, "The node's content with each figure linked or captioned"]:
+        content = node.get("content", "")
+        match = self._FIGURE.fullmatch(content) if self.is_figure(node) else None
+        if match is None:
+            return content
+        return self._linked(match, self.figures_folder(node.get("source") or ""), node)
+
+    @classmethod
+    def figures_folder(
+        cls, source: Annotated[str, "`s3://` URI of the document"]
+    ) -> Annotated[str, "Where ingestion stored its figures, or '' for a source that is no stored file"]:
+        """Mirrors `create_figures_folder_name` in swiss_ai_hub.core, which named the folder at ingestion."""
+        if not source.startswith("s3://") or "/" not in source.removeprefix("s3://"):
+            return ""
+        base_path, file_name = source.rsplit("/", 1)
+        return f"{base_path}/{cls.FIGURES_DIRECTORY}/{cls._FOLDER_UNSAFE.sub('_', file_name)}"
+
+    def _linked(self, match: re.Match, folder: str, node: dict[str, Any]) -> str:
+        alt, reference, bucket, key = match.groups()
+        extension = key.rsplit(".", 1)[-1].lower() if "." in key else ""
+        if (
+            not (self._tenant_id and self._thread_id and folder)
+            or not reference.startswith(f"{folder}/")
+            or extension not in self.RASTER_EXTENSIONS
+        ):
+            return f"*{alt or 'Figure'} ({GroundingNodesEventHandler.display_name(node)})*"
+        segments = [self._tenant_id, self._thread_id, bucket, *key.split("/")]
+        path = "/".join(urllib.parse.quote(segment, safe="") for segment in segments)
+        return f"![{alt}]({self.ROUTE}/{path})"
+
+
 class GroundingNodesEventHandler(EventHandler):
     """Lists the knowledge documents the answer is grounded in as sources, one per document: a knowledge agent's own
     retrieval, and the collections the user referenced with `#`.
 
     The grounding nodes are exactly what the model reads, after reranking and with carried prior-turn documents, so
     every document it can cite is listed and none it never saw. Chunks of one document share the document's
-    citation id and become one source holding each chunk.
+    citation id and become one source holding each chunk. Figures are linked through `FigureLinks`.
     """
 
     async def can_handle(
@@ -1309,16 +1378,19 @@ class GroundingNodesEventHandler(EventHandler):
         event: Annotated[dict[str, Any], "Grounding nodes event"],
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
+        grounding_nodes = event.get("grounding_nodes") or []
+        figure_links = await context.figure_links() if any(map(FigureLinks.is_figure, grounding_nodes)) else None
         documents: dict[str, list[dict[str, Any]]] = {}
-        for node in event.get("grounding_nodes") or []:
+        for node in grounding_nodes:
             documents.setdefault(node.get("citation_id") or node.get("source", ""), []).append(node)
         for citation_id, nodes in documents.items():
-            await context.emit_source(self.source_data(nodes), citation_id)
+            await context.emit_source(self.source_data(nodes, figure_links), citation_id)
         return True
 
     @staticmethod
     def source_data(
         nodes: Annotated[list[dict[str, Any]], "Nodes of one document"],
+        figure_links: Annotated[Optional[FigureLinks], "Links the figures among the nodes, if any"] = None,
     ) -> Annotated[dict[str, Any], "Source data structure"]:
         first = nodes[0]
         reference_url = GroundingNodesEventHandler.document_link(first)
@@ -1327,7 +1399,7 @@ class GroundingNodesEventHandler(EventHandler):
                 "name": GroundingNodesEventHandler.display_name(first),
                 "id": first.get("document_id", ""),
             },
-            "document": [node.get("content", "") for node in nodes],
+            "document": [figure_links.rewrite(node) if figure_links else node.get("content", "") for node in nodes],
             "metadata": [GroundingNodesEventHandler._node_metadata(node, reference_url) for node in nodes],
         }
         if reference_url:
@@ -1842,6 +1914,14 @@ class StreamingService:
         self._base_url = base_url
         self._timeout = timeout
         self._event_processor = EventProcessorFactory.create_chain()
+
+    async def active_tenant_id(
+        self, headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"]
+    ) -> Annotated[str, "The tenant the user acts in, by id rather than the `active` alias"]:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(f"{self._base_url}/api/v1/my-tenants/active", headers=headers)
+            response.raise_for_status()
+            return response.json()["id"]
 
     def build_endpoint_url(
         self,

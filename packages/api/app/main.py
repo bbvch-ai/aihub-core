@@ -140,7 +140,7 @@ runner.mount(
     .batch_delete_documents()
     .delete_namespace()
     .delete_database(),
-    FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
+    FileController(auth=auth).get_file_url().get_figure().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     IncidentController(auth=auth).get_incident_availability().get_incident_form().create_incident(),
     UserKnowledgeController(auth=auth)

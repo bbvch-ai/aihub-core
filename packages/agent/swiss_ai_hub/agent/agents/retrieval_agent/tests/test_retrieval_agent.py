@@ -25,6 +25,8 @@ from swiss_ai_hub.agent.agents.retrieval_agent.events.retrieval_response_event i
 from swiss_ai_hub.agent.agents.retrieval_agent.retrieval_agent import RetrievalAgent
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
+pytestmark = pytest.mark.external
+
 enable_logging()
 
 

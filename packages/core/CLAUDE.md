@@ -464,13 +464,21 @@ Key methods:
 
 `AuthHandler` (abstract) → extracts/validates credentials from HTTP requests → returns `UserIdentity`.
 
-| Handler                 | Mechanism                     |
-| ----------------------- | ----------------------------- |
-| `KeycloakAuthHandler`   | Keycloak OIDC (JWT + JWKS)    |
-| `TokenAuthHandler`      | Simple token validation       |
-| `BearerAuthHandler`     | Bearer token header           |
-| `TokenAndOauth2Handler` | Combined token + OAuth2       |
-| `OpenWebuiAuthHandler`  | OpenWebUI session integration |
+| Handler                       | Mechanism                                    |
+| ----------------------------- | -------------------------------------------- |
+| `KeycloakAuthHandler`         | Keycloak OIDC (JWT + JWKS)                   |
+| `TokenAuthHandler`            | Simple token validation                      |
+| `BearerAuthHandler`           | Bearer token header                          |
+| `TokenAndOauth2Handler`       | Combined token + OAuth2                      |
+| `OpenWebuiAuthHandler`        | OpenWebUI session integration                |
+| `OpenWebuiSessionAuthHandler` | OpenWebUI's session cookie, one route only   |
+
+`OpenWebuiSessionAuthHandler` identifies whoever views something the API serves on OpenWebUI's own origin (knowledge
+figures in sources, ADR `2026_11_17_knowledge_figures_served_through_openwebui_session_proxy`): it checks the `token`
+cookie's signature locally with `OpenWebuiSettings.SECRET_KEY`, asks OpenWebUI's session endpoint
+(`OpenWebuiSessionLookup`) whose it is, refuses disabled Keycloak users, never sets `is_sys_admin`, and caches the
+identity by the token's hash for a minute. It is meant for image-style GET routes only; any route that changes state
+must keep a bearer token, since the cookie arrives without the caller's intent.
 
 Tests and playground servers use `TestAuthHandler` from `swiss_ai_hub.core.testing.auth_utils`, which bypasses token
 parsing and returns a fixed identity built from the constants in `test_identity.py`. It lives under `core.testing` — not

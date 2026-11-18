@@ -19,10 +19,15 @@ WORKDIR /app
 
 # Copy workspace config + relevant packages
 COPY pyproject.toml uv.lock ./
+
+# Third-party dependencies first, so a source change does not reinstall them.
+COPY packages/pipeline/pyproject.toml packages/pipeline/README.md packages/pipeline/LICENSE ./packages/pipeline/
+COPY packages/core/pyproject.toml packages/core/README.md packages/core/LICENSE ./packages/core/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-workspace --package swiss-ai-hub-pipeline
+
 COPY packages/pipeline ./packages/pipeline
 COPY packages/core ./packages/core
-
-# Install dependencies with cache mount
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --package swiss-ai-hub-pipeline
 
