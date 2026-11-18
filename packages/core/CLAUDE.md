@@ -217,7 +217,7 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   ├── StartEvent, StopEvent (workflow lifecycle)                 [events/agent/control/]
 │   ├── HumanInTheLoopRequest/Response (HITL)                     [events/agent/hitl/]
 │   │   ├── Input, Confirmation, Chat requests (popup, yes/no, next chat message answers)
-│   │   └── QuestionsRequest (a Chat request + ≤5 HumanInTheLoopChoiceQuestion: OpenWebUI's dialog, else `question` as text)
+│   │   └── QuestionsRequest (a Chat request + ≤6 HumanInTheLoopChoiceQuestion: OpenWebUI's dialog, else `question` as text)
 │   ├── AgentInTheLoopRequest/Response (AITL)                     [events/agent/aitl/]
 │   ├── BotInTheLoopRequest/Response (BITL)                       [events/agent/bitl/]
 │   ├── SemanticEvent (OpenInference tracing)                     [events/agent/semantic/]
