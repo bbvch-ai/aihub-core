@@ -304,7 +304,7 @@ execution adds `SandboxFileDisplayedEvent` (`events/agent/sandbox/`) when an age
 | `HumanInTheLoopInputRequestEvent`        | `HumanInTheLoopRequestEvent`     | Popup with text input field                                                                          |
 | `HumanInTheLoopConfirmationRequestEvent` | `HumanInTheLoopRequestEvent`     | Yes/No button selection                                                                              |
 | `HumanInTheLoopChatRequestEvent`         | `HumanInTheLoopRequestEvent`     | Chat message (fallback)                                                                              |
-| `HumanInTheLoopQuestionsRequestEvent`    | `HumanInTheLoopChatRequestEvent` | Up to 5 choice questions: OpenWebUI's `request:user_input` dialog, `question` as chat text elsewhere |
+| `HumanInTheLoopQuestionsRequestEvent`    | `HumanInTheLoopChatRequestEvent` | Up to 6 choice questions: OpenWebUI's `request:user_input` dialog, `question` as chat text elsewhere |
 | `HumanInTheLoopResponseEvent[T]`         | `ControlAndDisplayEvent`         | Human replied (generic T)                                                                            |
 | `AgentInTheLoopRequestEvent`             | `ControlAndDisplayEvent`         | Delegate to another agent                                                                            |
 | `AgentInTheLoopResponseEvent`            | `ControlAndDisplayEvent`         | Delegated agent result                                                                               |
