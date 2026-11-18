@@ -215,8 +215,9 @@ class FakeLangfuseModels:
 
     PAGE_SIZE = 2
 
-    def __init__(self, *definitions: dict) -> None:
+    def __init__(self, *definitions: dict, failing: frozenset[tuple[str, str]] = frozenset()) -> None:
         self.definitions = {definition["id"]: definition for definition in definitions}
+        self.failing = failing
         self.created = 0
 
     def handle(self, request: httpx.Request) -> httpx.Response:
@@ -227,9 +228,16 @@ class FakeLangfuseModels:
             data = rows[(page - 1) * self.PAGE_SIZE : page * self.PAGE_SIZE]
             return httpx.Response(200, json={"data": data, "meta": {"page": page, "totalPages": pages}})
         if request.method == "DELETE":
-            del self.definitions[request.url.path.rsplit("/", maxsplit=1)[-1]]
+            model_id = request.url.path.rsplit("/", maxsplit=1)[-1]
+            if model_id not in self.definitions:
+                return httpx.Response(404, json={"message": "Model not found"})
+            if ("DELETE", self.definitions[model_id]["modelName"]) in self.failing:
+                return httpx.Response(503, json={"message": "Service unavailable"})
+            del self.definitions[model_id]
             return httpx.Response(200, json={"message": "Model successfully deleted"})
         body = json.loads(request.content)
+        if ("POST", body["modelName"]) in self.failing:
+            return httpx.Response(500, json={"message": "Internal server error"})
         if any(not d["isLangfuseManaged"] and d["modelName"] == body["modelName"] for d in self.definitions.values()):
             return httpx.Response(400, json={"message": f"Model name '{body['modelName']}' already exists in project"})
         self.created += 1
@@ -311,6 +319,39 @@ class TestRegisterModelDefinitions:
 
         assert "builtin" in langfuse.definitions
         assert langfuse.custom_prices() == {GEMMA: (0.001, 0.002)}
+
+    @pytest.mark.asyncio
+    async def test_a_definition_another_process_already_deleted_is_still_replaced(
+        self, provisioner: LangfuseProvisioner
+    ) -> None:
+        """Two API processes starting together both read the old definition; the second delete answers 404."""
+        langfuse = FakeLangfuseModels()
+        stale = {GEMMA: _definition("old", GEMMA, 0.0002, 0.0004)}
+
+        with patch.object(provisioner, "_fetch_custom_models", return_value=stale):
+            await _register(provisioner, langfuse, [GEMMA_PRICED])
+
+        assert langfuse.custom_prices() == {GEMMA: (0.001, 0.002)}
+
+    @pytest.mark.asyncio
+    async def test_a_failing_model_does_not_stop_the_others(self, provisioner: LangfuseProvisioner) -> None:
+        embedding = {"model_name": "embedding/bge-m3", "model_info": {"input_cost_per_token": 0.0001}}
+        langfuse = FakeLangfuseModels(_definition("old", GEMMA, 0.0002, 0.0004), failing=frozenset({("DELETE", GEMMA)}))
+
+        await _register(provisioner, langfuse, [GEMMA_PRICED, embedding])
+
+        assert langfuse.custom_prices() == {GEMMA: (0.0002, 0.0004), "embedding/bge-m3": (0.0001, 0)}
+
+    @pytest.mark.asyncio
+    async def test_a_definition_deleted_but_not_recreated_is_reported_as_an_error(
+        self, provisioner: LangfuseProvisioner, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        langfuse = FakeLangfuseModels(_definition("old", GEMMA, 0.0002, 0.0004), failing=frozenset({("POST", GEMMA)}))
+
+        with caplog.at_level(logging.ERROR, logger=PROVISIONER_MODULE):
+            await _register(provisioner, langfuse, [GEMMA_PRICED])
+
+        assert [record.levelno for record in caplog.records if GEMMA in record.getMessage()] == [logging.ERROR]
 
 
 class TestCreatePrompt:
