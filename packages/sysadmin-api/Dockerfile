@@ -1,6 +1,5 @@
 # Build stage
 FROM python:3.13-slim AS builder
-ARG VERSION
 
 COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /uvx /bin/
 
@@ -22,11 +21,17 @@ WORKDIR /app
 # sysadmin-api depends on swiss-ai-hub-core and swiss-ai-hub-api as workspace deps,
 # so all three must be present.
 COPY pyproject.toml uv.lock ./
+
+# Third-party dependencies first, so a source change does not reinstall them.
+COPY packages/core/pyproject.toml packages/core/README.md packages/core/LICENSE ./packages/core/
+COPY packages/api/pyproject.toml packages/api/README.md packages/api/LICENSE ./packages/api/
+COPY packages/sysadmin-api/pyproject.toml packages/sysadmin-api/README.md packages/sysadmin-api/LICENSE ./packages/sysadmin-api/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-workspace --package swiss-ai-hub-sysadmin-api
+
 COPY packages/core ./packages/core
 COPY packages/api ./packages/api
 COPY packages/sysadmin-api ./packages/sysadmin-api
-
-# Install dependencies with cache mount
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --package swiss-ai-hub-sysadmin-api
 

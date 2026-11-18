@@ -96,6 +96,10 @@ Services accessible from outside the Docker network:
 - **seaweedfs-s3**: S3-compatible storage API
 - **oauth2proxy-**\*: Authentication proxies
 
+`litellm` joins `proxy` too, but only to reach the model providers. It has no Traefik router, so nothing from outside
+reaches it except through `oauth2proxy-litellm`: a LiteLLM key used from outside would skip the Hub's model access
+rules.
+
 ### Backend Network Services
 
 Internal application and processing services:

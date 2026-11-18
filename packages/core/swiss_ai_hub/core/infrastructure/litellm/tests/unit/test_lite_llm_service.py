@@ -1,10 +1,12 @@
 import asyncio
+import hashlib
 import json
 from collections.abc import Callable, Iterator
 from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
+from pydantic import SecretStr
 
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
@@ -15,17 +17,19 @@ pytestmark = pytest.mark.unit
 
 class _RecordingTransport(httpx.MockTransport):
     """
-    MockTransport that records every request path and JSON body so call expectations can be asserted.
+    MockTransport that records every request path, full URL and JSON body so call expectations can be asserted.
 
     A path mapped to a list answers with its responses in order, for a path asked twice with different outcomes.
     """
 
     def __init__(self, responses: dict[str, httpx.Response | list[httpx.Response]]) -> None:
         self.requests: list[tuple[str, str]] = []
+        self.urls: list[str] = []
         self.bodies: dict[str, dict] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
             self.requests.append((request.method, request.url.path))
+            self.urls.append(str(request.url))
             if request.content:
                 self.bodies[request.url.path] = json.loads(request.content)
             response = responses[request.url.path]
@@ -39,16 +43,12 @@ def _user(user_id: str, email: str = "ada@example.com") -> UserIdentity:
 
 
 def _key_found() -> httpx.Response:
-    return httpx.Response(200, json={"key": "sk-irrelevant", "info": {}})
-
-
-def _key_deleted() -> httpx.Response:
-    """What LiteLLM v1.106 answers for a deleted key: a 200 served from its archive, not a 404."""
-    return httpx.Response(200, json={"key": "sk-irrelevant", "info": {"status": "deleted"}})
+    return httpx.Response(200, json={"key": ["sk-irrelevant"], "info": [{"user_id": "irrelevant"}]})
 
 
 def _key_missing() -> httpx.Response:
-    return httpx.Response(404, json={"error": {"message": "Key not found in database"}})
+    """What LiteLLM answers for a key that is not live, deleted ones included: a 200 with no info, not a 404."""
+    return httpx.Response(200, json={"key": ["sk-irrelevant"], "info": []})
 
 
 def _duplicate_alias() -> httpx.Response:
@@ -63,7 +63,7 @@ def _duplicate_alias() -> httpx.Response:
 
 def _provisioning_responses(email_holders: list[dict]) -> dict[str, httpx.Response | list[httpx.Response]]:
     return {
-        "/key/info": _key_missing(),
+        "/v2/key/info": _key_missing(),
         "/user/info": httpx.Response(404, json={"error": "not found"}),
         "/user/list": httpx.Response(200, json={"users": email_holders}),
         "/user/update": httpx.Response(200, json={}),
@@ -72,8 +72,8 @@ def _provisioning_responses(email_holders: list[dict]) -> dict[str, httpx.Respon
     }
 
 
-def _settings() -> LiteLLMProxySettings:
-    return LiteLLMProxySettings(BASE_URL="http://litellm:4000", API_KEY="sk-master")
+def _settings(master_key: str | None = "sk-master") -> LiteLLMProxySettings:
+    return LiteLLMProxySettings(BASE_URL="http://litellm:4000", API_KEY=master_key)
 
 
 @pytest.fixture(autouse=True)
@@ -86,6 +86,7 @@ def _clear_cache() -> Iterator[None]:
 
 def _patched_settings(transport: _RecordingTransport) -> MagicMock:
     settings = MagicMock()
+    settings.API_KEY = SecretStr("sk-master")
     settings.httpx_aclient = httpx.AsyncClient(base_url="http://litellm:4000", transport=transport)
     for attr in (
         "USER_MAX_BUDGET",
@@ -110,16 +111,15 @@ async def _run(transport: _RecordingTransport, user: UserIdentity) -> str:
 
 @pytest.mark.asyncio
 async def test_existing_key_is_returned_without_provisioning() -> None:
-    """Keys issued under an earlier alias format resolve the same way, so they need no migration."""
     user = _user("existing-user")
     transport = _RecordingTransport(
-        {"/user/info": httpx.Response(200, json={"user_id": "existing-user"}), "/key/info": _key_found()}
+        {"/user/info": httpx.Response(200, json={"user_id": "existing-user"}), "/v2/key/info": _key_found()}
     )
 
     key = await _run(transport, user)
 
-    assert key == LiteLLMService.generate_key_for_user(user)
-    assert transport.requests == [("GET", "/user/info"), ("GET", "/key/info")]
+    assert key == LiteLLMService.generate_key_for_user(user, _settings())
+    assert transport.requests == [("GET", "/user/info"), ("POST", "/v2/key/info")]
 
 
 @pytest.mark.asyncio
@@ -133,23 +133,8 @@ async def test_user_without_a_key_recovers() -> None:
 
     key = await _run(transport, user)
 
-    assert key == LiteLLMService.generate_key_for_user(user)
-    assert transport.requests == [("GET", "/user/info"), ("GET", "/key/info"), ("POST", "/key/generate")]
-
-
-@pytest.mark.asyncio
-async def test_deleted_key_is_created_again() -> None:
-    """Without reading the status, a key deleted in LiteLLM v1.106 would count as existing and never come back."""
-    user = _user("deleted-key-user")
-    transport = _RecordingTransport(
-        _provisioning_responses(email_holders=[])
-        | {"/user/info": httpx.Response(200, json={"user_id": "deleted-key-user"}), "/key/info": _key_deleted()}
-    )
-
-    key = await _run(transport, user)
-
-    assert key == LiteLLMService.generate_key_for_user(user)
-    assert transport.requests == [("GET", "/user/info"), ("GET", "/key/info"), ("POST", "/key/generate")]
+    assert key == LiteLLMService.generate_key_for_user(user, _settings())
+    assert transport.requests == [("GET", "/user/info"), ("POST", "/v2/key/info"), ("POST", "/key/generate")]
 
 
 @pytest.mark.asyncio
@@ -159,16 +144,16 @@ async def test_key_without_a_user_row_gets_its_row() -> None:
     or rate limits; an existing key must not stop the row from being created.
     """
     user = _user("key-without-row")
-    transport = _RecordingTransport(_provisioning_responses(email_holders=[]) | {"/key/info": _key_found()})
+    transport = _RecordingTransport(_provisioning_responses(email_holders=[]) | {"/v2/key/info": _key_found()})
 
     key = await _run(transport, user)
 
-    assert key == LiteLLMService.generate_key_for_user(user)
+    assert key == LiteLLMService.generate_key_for_user(user, _settings())
     assert transport.requests == [
         ("GET", "/user/info"),
         ("GET", "/user/list"),
         ("POST", "/user/new"),
-        ("GET", "/key/info"),
+        ("POST", "/v2/key/info"),
     ]
 
 
@@ -179,12 +164,12 @@ async def test_absent_user_is_created_with_a_key() -> None:
 
     key = await _run(transport, user)
 
-    assert key == LiteLLMService.generate_key_for_user(user)
+    assert key == LiteLLMService.generate_key_for_user(user, _settings())
     assert transport.requests == [
         ("GET", "/user/info"),
         ("GET", "/user/list"),
         ("POST", "/user/new"),
-        ("GET", "/key/info"),
+        ("POST", "/v2/key/info"),
         ("POST", "/key/generate"),
     ]
 
@@ -199,12 +184,12 @@ async def test_user_new_conflict_still_generates_the_key() -> None:
 
     key = await _run(transport, user)
 
-    assert key == LiteLLMService.generate_key_for_user(user)
+    assert key == LiteLLMService.generate_key_for_user(user, _settings())
     assert transport.requests == [
         ("GET", "/user/info"),
         ("GET", "/user/list"),
         ("POST", "/user/new"),
-        ("GET", "/key/info"),
+        ("POST", "/v2/key/info"),
         ("POST", "/key/generate"),
     ]
 
@@ -220,19 +205,19 @@ async def test_key_generate_rejection_is_success_when_the_key_exists(rejection: 
     user = _user("racing-key-user")
     transport = _RecordingTransport(
         _provisioning_responses(email_holders=[])
-        | {"/key/info": [_key_missing(), _key_found()], "/key/generate": rejection()}
+        | {"/v2/key/info": [_key_missing(), _key_found()], "/key/generate": rejection()}
     )
 
     key = await _run(transport, user)
 
-    assert key == LiteLLMService.generate_key_for_user(user)
+    assert key == LiteLLMService.generate_key_for_user(user, _settings())
     assert transport.requests == [
         ("GET", "/user/info"),
         ("GET", "/user/list"),
         ("POST", "/user/new"),
-        ("GET", "/key/info"),
+        ("POST", "/v2/key/info"),
         ("POST", "/key/generate"),
-        ("GET", "/key/info"),
+        ("POST", "/v2/key/info"),
     ]
 
 
@@ -241,14 +226,14 @@ async def test_key_generate_rejection_propagates_without_caching_when_the_key_is
     user = _user("rejected-user")
     transport = _RecordingTransport(
         _provisioning_responses(email_holders=[])
-        | {"/key/info": [_key_missing(), _key_missing()], "/key/generate": _duplicate_alias()}
+        | {"/v2/key/info": [_key_missing(), _key_missing()], "/key/generate": _duplicate_alias()}
     )
 
     with pytest.raises(httpx.HTTPStatusError) as error:
         await _run(transport, user)
 
     assert error.value.response.status_code == 400
-    assert transport.requests[-2:] == [("POST", "/key/generate"), ("GET", "/key/info")]
+    assert transport.requests[-2:] == [("POST", "/key/generate"), ("POST", "/v2/key/info")]
     assert user.id not in LiteLLMService._user_cache
 
 
@@ -267,7 +252,7 @@ async def test_email_held_by_a_deleted_account_is_released_before_the_user_is_cr
         ("GET", "/user/list"),
         ("POST", "/user/update"),
         ("POST", "/user/new"),
-        ("GET", "/key/info"),
+        ("POST", "/v2/key/info"),
         ("POST", "/key/generate"),
     ]
     assert transport.bodies["/user/update"] == {
@@ -316,6 +301,74 @@ async def test_key_alias_is_unique_for_users_sharing_a_display_name() -> None:
         aliases.append(transport.bodies["/key/generate"]["key_alias"])
 
     assert aliases[0] != aliases[1]
+
+
+@pytest.mark.asyncio
+async def test_key_carries_the_generation_of_its_master_key() -> None:
+    """The user's earlier key keeps its alias, and LiteLLM would refuse a second key under it."""
+    user = _user("generation-user")
+    transport = _RecordingTransport(_provisioning_responses(email_holders=[]))
+
+    await _run(transport, user)
+
+    generation = LiteLLMService.key_generation(_settings())
+    assert transport.bodies["/key/generate"]["key_alias"] == (
+        f"Ada Lovelace (generation-user) - Auto Generated Key {generation}"
+    )
+    assert transport.bodies["/key/generate"]["metadata"] == {"swiss_ai_hub_key_generation": generation}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "responses",
+    [
+        _provisioning_responses(email_holders=[]),
+        {"/user/info": httpx.Response(200, json={"user_id": "url-user"}), "/v2/key/info": _key_found()},
+    ],
+    ids=["new-user", "existing-user"],
+)
+async def test_no_request_carries_the_key_in_its_url(responses: dict[str, httpx.Response]) -> None:
+    """URLs are written to logs and traces, which are kept longer and read by more people than the key itself."""
+    user = _user("url-user")
+    transport = _RecordingTransport(responses)
+
+    key = await _run(transport, user)
+
+    assert [url for url in transport.urls if key in url] == []
+    assert transport.bodies["/v2/key/info"] == {"keys": [key]}
+
+
+def test_the_key_follows_from_the_user_and_the_master_key_together() -> None:
+    """
+    One pair must give one key in every process, or concurrent first requests mint two. Another master key must give
+    another key and generation, or the key would follow from the user id alone.
+    """
+    user = _user("same-user")
+    one_process, another_process = _settings(), _settings()
+
+    assert LiteLLMService.generate_key_for_user(user, one_process) == LiteLLMService.generate_key_for_user(
+        user, another_process
+    )
+    assert LiteLLMService.generate_key_for_user(user, _settings("sk-first")) != LiteLLMService.generate_key_for_user(
+        user, _settings("sk-second")
+    )
+    assert LiteLLMService.key_generation(_settings("sk-first")) != LiteLLMService.key_generation(_settings("sk-second"))
+
+
+def test_the_key_no_longer_follows_from_the_user_id_alone() -> None:
+    """The derivation before, which anyone who knew a user's id could repeat."""
+    user = _user("known-id")
+
+    assert LiteLLMService.generate_key_for_user(user, _settings()) != (
+        f"sk-{hashlib.sha256(user.id.encode('utf-8')).hexdigest()[:16]}"
+    )
+
+
+def test_keys_are_not_derived_without_a_master_key() -> None:
+    user, without_master_key = _user("any-user"), _settings(None)
+
+    with pytest.raises(ValueError, match="LITE_LLM_PROXY_API_KEY"):
+        LiteLLMService.generate_key_for_user(user, without_master_key)
 
 
 @pytest.mark.asyncio
@@ -406,7 +459,7 @@ async def test_the_users_key_overrides_the_shared_clients_master_key() -> None:
         {"/user/info": httpx.Response(500, json={"error": "boom"})},
         {
             "/user/info": httpx.Response(200, json={"user_id": "erroring-user"}),
-            "/key/info": httpx.Response(500, json={"error": "boom"}),
+            "/v2/key/info": httpx.Response(500, json={"error": "boom"}),
         },
     ],
     ids=["user-info", "key-info"],

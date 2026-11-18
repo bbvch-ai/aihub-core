@@ -52,7 +52,7 @@ dependencies = [
     "redis>=5.2.1",
     "openai>=1.76.2",
     "cachetools>=5.5.2",
-    "markitdown[docx,outlook,pptx,xls,xlsx]>=0.1.4",
+    "markitdown[docx,outlook,pptx,xls,xlsx]>=0.1.9",
     "boto3>=1.41.5",
     "llama-index-embeddings-openai-like>=0.2.2",
     "opentelemetry-exporter-otlp-proto-grpc>=1.39.1",
@@ -163,6 +163,7 @@ markers = [
     "unit: hermetic test using fakes; safe to run anywhere",
     "integration: requires real external services; opt-in",
     "flaky: mark a test as flaky (may fail intermittently)",
+    "external: calls a third-party provider (Swiss LLM Cloud); excluded from PR checks, run by external-tests.yml",
     "beanie: runs on the shared session loop against the Beanie test database (see swiss_ai_hub.core.testing.beanie_isolation)",
 ]
 addopts = "--strict-markers"

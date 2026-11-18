@@ -1,10 +1,10 @@
-// Temporary adapter for stock OpenWebUI v0.11.4. See infra/deployment/openwebui-disclaimer.md.
+// Temporary adapter for stock OpenWebUI v0.12.5. See infra/deployment/openwebui-disclaimer.md.
 
-// OpenWebUI falls back from a saved language only to that same language, so a code it ships no translation for, such
-// as "de" from an earlier DEFAULT_LOCALE or a browser's "de-CH", loads none and settings show their raw keys. Such a
-// saved language becomes en-US before OpenWebUI reads it.
+// A saved language code OpenWebUI ships no translation for, such as "de" from an earlier DEFAULT_LOCALE or a browser's
+// "de-CH", becomes en-US before OpenWebUI reads it. OpenWebUI 0.11.4 loaded no translation for one and showed raw
+// settings keys. 0.12 maps it to a shipped language itself, so the repair now only keeps such browsers in English.
 (() => {
-  // OpenWebUI v0.11.4 src/lib/i18n/locales/languages.json; recheck on upgrades.
+  // OpenWebUI v0.12.5 src/lib/i18n/locales/languages.json; recheck on upgrades.
   const shipped = new Set([
     'en-US', 'en-GB', 'ar', 'ar-BH', 'az-AZ', 'eu-ES', 'bn-BD', 'bs-BA', 'bo-TB', 'bg-BG', 'ca-ES', 'ceb-PH', 'hr-HR',
     'cs-CZ', 'da-DK', 'nl-NL', 'et-EE', 'fi-FI', 'fo-FO', 'fr-CA', 'fr-FR', 'gl-ES', 'ka-GE', 'de-DE', 'el-GR', 'he-IL',
@@ -31,7 +31,7 @@
 
   function showStatus(text) {
     // The overlay's own status line: "Listening...", "Thinking..." or "Tap to interrupt".
-    const anchor = document.querySelector('button.z-10 > div.line-clamp-1.text-sm.font-normal');
+    const anchor = document.querySelector('div.z-10.line-clamp-1.text-sm.font-normal[role="status"]');
     if (!anchor) return;
     let line = anchor.parentElement.querySelector('[data-aihub-tts-status]');
     if (!line) {

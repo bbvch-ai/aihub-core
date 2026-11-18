@@ -33,7 +33,7 @@ deployment/
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
 │       ├── s3-ttl-init.sh.j2          # Bucket expiry as filer TTL rules (never S3 lifecycle, see ADR 2026_10_27)
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
-│       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account + Code Interpreter prompt)
+│       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account + default language + Code Interpreter prompt)
 │       ├── openwebui-code-interpreter-prompt.txt  # Replaces OpenWebUI's Code Interpreter prompt (no /mnt/uploads links)
 │       ├── ferretdb-init.sh.j2        # FerretDB PG init (read-only role of the knowledge content search)
 │       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)
@@ -114,6 +114,12 @@ on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. Li
 more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollback path are in ADR
 `docs/arc42/decisions/2026_10_22_litellm_follows_plain_release_tags.md`. See ADR
 `docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.
+
+A LiteLLM upgrade also re-runs
+`uv run pytest -m integration swiss_ai_hub/core/infrastructure/litellm/tests/integration/test_user_key_provisioning.py`
+in `packages/core`: the Hub finds a user's key through `/v2/key/info`, which is outside LiteLLM's published schema. If
+that stops finding keys, every user's first request after a restart fails. See ADR
+`docs/arc42/decisions/2026_11_17_litellm_user_keys_derived_from_the_master_key.md`.
 
 `tenant_attribution.py` (also mounted next to `custom_callbacks.py` and listed under `callbacks`) books every call that
 names no LiteLLM customer to `no-tenant`. The Hub names the acting tenant as the customer on the calls it makes for a
@@ -580,11 +586,16 @@ and the VM's real `host.name`), and a second tailer would ingest every line twic
 - Docker provider via `docker-socket-proxy` (never direct Docker socket access)
 - `local`/`build`: mkcert self-signed certs — generate with `make local-cert`
 - `nightly`/`latest`: Let's Encrypt ACME auto-renewal
-- Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth. LiteLLM splits its
-  host: the `litellm-api` router (priority 6000, on `litellm` itself) takes only the OpenAI-compatible inference paths
-  and the liveness probes, which LiteLLM guards with its own API keys; the `litellm-admin` catch-all (priority 1000, on
-  `oauth2proxy-litellm`) takes the UI and every management route. A new public LiteLLM endpoint goes into the
-  `litellm-api` rule, never a management route
+- Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth. All of
+  `litellm.${DOMAIN}` goes through `oauth2proxy-litellm` (router `litellm-admin`, priority 1000), inference paths
+  included: `litellm` itself carries no Traefik labels and sits on `proxy` only for outbound traffic. Do not give it a
+  public router again: a user's LiteLLM key used from outside skips the Hub's model access rules, and the keys derived
+  from the user id alone in earlier releases are still valid. External clients use the Hub's `/api/v1/active/openai`
+- The `api` container carries a second router, `api-figures` (priority 6100): `/hub-figures/` on the **OpenWebUI**
+  host, rewritten by `replacePathRegex` to the API's figure route, so the browser sends OpenWebUI's session cookie with
+  figure requests from sources. The regex accepts only a tenant id, a 24-character thread id and a bucket name before
+  the key; keep it that strict. k8s deployments need the same rule in their ingress, and the `dev` stage (no Traefik)
+  has none, so figures show only on `local`/`build` and deployed stages
 - The oauth2-proxy image is upstream `quay.io/oauth2-proxy/oauth2-proxy`, mirrored under the pinned tag in
   `compose-config.yml`. Our only change, the sign-in button colour, is `templates/oauth2-proxy/sign_in.html`, mounted
   via `OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR`: on a version bump, copy upstream's `pkg/app/pagewriter/sign_in.html` of the

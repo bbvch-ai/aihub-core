@@ -18,6 +18,7 @@ from swiss_ai_hub.core.generative_ai.utils.image_processor import (
     embed_images_as_base64,
     extract_and_upload_images,
     extract_base64_images_from_markdown,
+    image_marker,
     strip_base64_images_from_markdown,
 )
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
@@ -32,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 _PPTX_SLIDE_PATH = re.compile(r"ppt/slides/slide\d+\.xml$")
 _XLSX_WORKSHEET_PATH = re.compile(r"xl/worksheets/sheet\d+\.xml$")
+_PPTX_UNEMBEDDED_PICTURE = re.compile(r"!\[([^\]]*)\]\((\w*\.jpg)\)")
 
 
 class MarkItDownLoader(BaseReader):
@@ -225,15 +227,27 @@ class MarkItDownLoader(BaseReader):
         HTML skips the cache: it only arrives as an email body from `EmlLoader`, and converts in milliseconds, so a
         storage round trip and an entry per email would cost more than they save.
         """
-        if os.path.splitext(filename)[1].lower() == ".html":
+        extension = os.path.splitext(filename)[1].lower()
+        if extension == ".html":
             return await asyncio.to_thread(self._convert_to_markdown_sync, file_bytes, filename)
-        cached = await self.parse_cache.get(file_bytes, filename)
-        if cached is not None:
+        markdown = await self.parse_cache.get(file_bytes, filename)
+        if markdown is not None:
             logger.info(f"[MarkItDownLoader] {filename}: served from the parse cache")
-            return cached
-        markdown = await asyncio.to_thread(self._convert_to_markdown_sync, file_bytes, filename)
-        await self.parse_cache.put(file_bytes, filename, markdown)
+        else:
+            markdown = await asyncio.to_thread(self._convert_to_markdown_sync, file_bytes, filename)
+            await self.parse_cache.put(file_bytes, filename, markdown)
+        if extension == ".pptx":
+            return self._mark_unembedded_pictures(markdown)
         return markdown
+
+    @staticmethod
+    def _mark_unembedded_pictures(markdown: str) -> str:
+        """
+        markitdown names a picture whose image is not stored in the deck (a linked picture) after its shape, as
+        `![alt](Picture2.jpg)`, and that reference points nowhere. It becomes the marker a skipped image leaves.
+        Applied after the parse cache, so the cache keeps markitdown's own output.
+        """
+        return _PPTX_UNEMBEDDED_PICTURE.sub(lambda match: image_marker(match.group(1)), markdown)
 
     def _convert_to_markdown_sync(self, file_bytes: bytes, filename: str) -> str:
         """Synchronous helper for the conversion (runs in thread pool)."""
@@ -271,6 +285,7 @@ class MarkItDownLoader(BaseReader):
             return embed_images_as_base64(
                 markdown_content=cleaned_md,
                 images=images,
+                source_file=source_file,
             )
         else:
             return await extract_and_upload_images(

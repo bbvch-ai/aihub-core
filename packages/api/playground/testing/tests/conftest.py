@@ -34,6 +34,9 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers", f"{BEANIE_MARKER}: runs on the shared session loop against the Beanie test database"
     )
+    config.addinivalue_line(
+        "markers", "external: calls a third-party provider (Swiss LLM Cloud); excluded from PR checks"
+    )
 
 
 @pytest.fixture(scope="session")

@@ -170,6 +170,57 @@ docker compose exec seaweedfs-master sh -c 'echo volume.growth.resume | weed she
 
 Snapshot all `seaweedfs-*` volumes and etcd together before upgrading SeaweedFS, and restore them together.
 
+### OpenWebUI 0.12.5
+
+The release that moves OpenWebUI from 0.11.4 to 0.12.5 changes OpenWebUI's database on first start. An older OpenWebUI
+cannot run against it afterwards, and going back to 0.11.4 means restoring the database. Before `docker compose up -d`:
+
+1. Back up OpenWebUI's database:
+
+   ```bash
+   docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -Fc openwebui' > openwebui-before-0.12.5.dump
+   ```
+
+2. List OpenWebUI's own Milvus collections. Collections without the `open_webui_` prefix belong to the knowledge
+   databases and are not touched.
+
+   ```bash
+   docker compose exec open-webui sh -c 'curl -s -X POST "$MILVUS_URI/v2/vectordb/collections/list" \
+     -H "Authorization: Bearer $MILVUS_TOKEN" -H "Content-Type: application/json" \
+     -d "{\"dbName\":\"$MILVUS_DB\"}"' | grep -o 'open_webui_[a-z0-9_]*'
+   ```
+
+   On its first start, OpenWebUI copies each of these into a new collection and only finishes starting once every copy
+   is done. If the list is not empty, back up Milvus as well, and let the first start run a single OpenWebUI worker:
+   every worker starts the copy, and the eight workers of a production deployment could drop each other's copies.
+   Create `openwebui-one-worker.yml` next to `docker-compose.yml`:
+
+   ```yaml
+   services:
+     open-webui:
+       environment:
+         UVICORN_WORKERS: "1"
+   ```
+
+   Then start OpenWebUI alone, wait until it is healthy, and continue with the full update:
+
+   ```bash
+   docker compose pull
+   docker compose -f docker-compose.yml -f openwebui-one-worker.yml up -d --wait open-webui
+   docker compose up -d
+   ```
+
+`docker compose up -d` stops the old OpenWebUI container before it starts the new one, which the migrations require:
+never run two OpenWebUI versions against the same database at once.
+
+After the update:
+
+- Users who never picked a language now start in English, whatever their browser's language. `openwebui-init` moves a
+  default language of `de` stored by earlier releases to `en-US`. Users pick theirs under **Settings > General**.
+- A browser that opened the chat in the days before the update can still load the previous OpenWebUI from its cache.
+  A hard reload (`Ctrl+Shift+R`, or `Cmd+Shift+R` on macOS) loads the new one. From 0.12.5 on, OpenWebUI tells
+  browsers to check for a newer page on every visit, so later updates no longer need this.
+
 ### Customer code updates
 
 Customer code can be updated independently when the core version pin remains unchanged. Update the customer image tags

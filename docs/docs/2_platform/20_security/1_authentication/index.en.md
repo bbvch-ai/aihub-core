@@ -182,22 +182,18 @@ Internal admin services (Dagster, Attu, SeaweedFS, Backup, LiteLLM) are protecte
 full OIDC login flow against Keycloak before forwarding authenticated requests to the upstream service. Only users with
 the `AIHubSysAdmin` role can access these services, and the session cookie is `Secure`.
 
-`litellm.<domain>` is split by path. The OpenAI-compatible inference routes go straight to LiteLLM, which checks the
-caller's LiteLLM API key itself: `/chat/completions`, `/completions`, `/embeddings`, `/models`, `/model/info`,
-`/audio/*`, `/images/*`, `/rerank`, `/moderations`, `/responses[/*]` (each also under `/v1/`), `/v1/messages[/*]`,
-`/v1/files[/*]`, `/v1/batches[/*]`, `/v1/realtime[/*]`, `/v1/videos[/*]`, `/v2/rerank` and the liveness probes
-`/health/liveliness` and `/health/liveness`. Every other path on the host, including the management routes LiteLLM keeps
-under `/v1/` (`/v1/agents`, `/v1/access_group`), `/ui`, `/key/*`, `/user/*`, `/team/*`, `/model/new`, `/config/*`,
-`/spend/*`, `/global/*`, `/sso/*` and `/`, goes through `oauth2proxy-litellm` and needs an SSO session with
-`AIHubSysAdmin` before LiteLLM's own login.
+Every path on `litellm.<domain>` goes through `oauth2proxy-litellm`, the OpenAI-compatible inference routes included,
+and needs an SSO session with `AIHubSysAdmin` before LiteLLM's own login. LiteLLM has no public route of its own: the
+Hub's services call it inside the Docker network, and a LiteLLM key used from outside would skip the Hub's model access
+rules and usage limits. Clients outside the Hub use the Hub's
+[OpenAI-compatible API](../../18_api/1_openai_compatible_api/) instead.
 
-| Request                                                        | Result                                       |
-| -------------------------------------------------------------- | -------------------------------------------- |
-| `POST /v1/chat/completions` with `Authorization: Bearer <key>` | LiteLLM answers, no SSO                      |
-| `POST /chat/completions` without a key                         | `401` from LiteLLM, no SSO                   |
-| `GET /health/liveliness`                                       | `200` from LiteLLM                           |
-| `GET /ui/`                                                     | `302` to the Keycloak login                  |
-| `POST /key/generate` (even with the master key)                | `302`/`401` from OAuth2 Proxy, never LiteLLM |
+| Request to `litellm.<domain>` without an SSO session | Result                                        |
+| ---------------------------------------------------- | --------------------------------------------- |
+| `POST /v1/chat/completions` with a LiteLLM key       | OAuth2 Proxy sign-in, never LiteLLM           |
+| `GET /v1/models` without a key                       | OAuth2 Proxy sign-in, never LiteLLM           |
+| `GET /ui/`                                           | OAuth2 Proxy sign-in, then the Keycloak login |
+| `POST /key/generate` with the master key             | OAuth2 Proxy sign-in, never LiteLLM           |
 
 The image is the upstream OAuth2 Proxy release pinned in `compose-config.yml` and mirrored to the platform registry. The
 sign-in button colour comes from `infra/deployment/templates/oauth2-proxy/sign_in.html`, mounted as a custom template;
@@ -205,6 +201,29 @@ re-copy upstream's `sign_in.html` of the new version into it when bumping the ta
 
 Due to the split-horizon networking in Docker deployments (containers use internal hostnames, browsers use external
 URLs), OIDC discovery is skipped and endpoints are configured explicitly.
+
+## LiteLLM Keys
+
+Every model call the Hub makes for a user carries that user's own LiteLLM key, which books the call to the user's budget
+and spend (see [Cost Control](../../14_cost_control/)). The Hub creates the key on the user's first request. It derives
+the key from the LiteLLM master key with HMAC-SHA256, so the key cannot be computed from the user id or from anything
+else other users can see. Users never see their key.
+
+Earlier releases derived the key from the user id alone. Those keys stay valid, so agents built on an older release keep
+working. Because LiteLLM has no public route, they can only be used from inside the Docker network.
+
+These containers of a Docker Compose deployment hold the master key:
+
+| Container                                                                                                                | Variable                                                                   | Why                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `litellm`                                                                                                                | `LITELLM_MASTER_KEY`                                                       | It is LiteLLM's own master key                                            |
+| `mineru-api`                                                                                                             | `MINERU_VL_API_KEY`                                                        | Calls its vision-language model through LiteLLM                           |
+| `api`, every agent container, and the code servers of the `default_rag`, `shared_rag` and `document_ingestion` pipelines | `LITE_LLM_PROXY_API_KEY`, in most of them also `MINERU_VLM_SERVER_API_KEY` | Create LiteLLM users, derive their keys, and make calls that have no user |
+
+The [environment variables reference](../../3_deployment_guide/9_environment_variables/) names each container. Being
+able to compute every user's key gives these containers nothing new, since the master key can already create a key for
+any user. A new master key gives every user a new key on their next request; the keys derived from the old one stay
+valid until they are removed in LiteLLM.
 
 ## Langfuse Access
 

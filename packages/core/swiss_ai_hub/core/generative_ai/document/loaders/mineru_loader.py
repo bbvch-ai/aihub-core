@@ -475,6 +475,7 @@ class MineruLoader(BaseReader):
                 md_content = embed_images_as_base64(
                     markdown_content=md_content,
                     images=images,
+                    source_file=file,
                 )
             else:
                 md_content = await extract_and_upload_images(

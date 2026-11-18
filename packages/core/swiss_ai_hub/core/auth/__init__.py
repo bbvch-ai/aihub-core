@@ -4,6 +4,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
     from swiss_ai_hub.core.auth.access.access_level import AccessLevel
     from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
+    from swiss_ai_hub.core.auth.dependencies.open_webui_session_auth_handler.open_webui_session_auth_handler import (
+        OpenWebuiSessionAuthHandler,
+    )
     from swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler import (
         TokenAndOauth2Handler,
     )
@@ -32,6 +35,7 @@ __all__ = [
     "KeycloakGroup",
     "KeycloakSettings",
     "KeycloakUser",
+    "OpenWebuiSessionAuthHandler",
     "SuperuserSettings",
     "TenantIdentity",
     "TokenAuthHandler",
@@ -48,6 +52,9 @@ _LAZY_IMPORTS = {
     "KeycloakGroup": "swiss_ai_hub.core.auth.keycloak.models.keycloak_group",
     "KeycloakSettings": "swiss_ai_hub.core.auth.keycloak.keycloak_settings",
     "KeycloakUser": "swiss_ai_hub.core.auth.keycloak.models.keycloak_user",
+    "OpenWebuiSessionAuthHandler": (
+        "swiss_ai_hub.core.auth.dependencies.open_webui_session_auth_handler.open_webui_session_auth_handler"
+    ),
     "SuperuserSettings": "swiss_ai_hub.core.auth.superuser_settings",
     "TenantIdentity": "swiss_ai_hub.core.auth.identity.tenant_identity",
     "TokenAuthHandler": "swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler",
