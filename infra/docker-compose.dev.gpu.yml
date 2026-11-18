@@ -777,6 +777,9 @@ services:
       # local cache removes that warm-up. NOTE: if Keycloak is ever run multi-node/HA, this must
       # become conditional (local cache does not replicate sessions across nodes).
       KC_CACHE: local
+      # CVE-2026-114938 (Java4Shell): the JDK's AVX-512 Base64 decoder corrupts memory on input Keycloak
+      # decodes before authentication. Drop once the Keycloak image ships a vendor-fixed OpenJDK.
+      JAVA_OPTS_APPEND: -XX:-UseBASE64Intrinsics
       # Superuser (interactive Keycloak-seeded admin) — passed to realm template
       SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
