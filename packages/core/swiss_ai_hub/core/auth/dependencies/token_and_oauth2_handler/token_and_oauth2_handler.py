@@ -7,6 +7,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_auth_handler import KeycloakAuthHandler
 from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_auth_handler import OpenWebuiAuthHandler
+from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_signature_rejected_error import (
+    OpenWebuiSignatureRejectedError,
+)
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
@@ -15,7 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class TokenAndOauth2Handler:
-    """A composite authentication handler that sequentially attempts both OAuth2 and Bearer auth strategies."""
+    """A composite authentication handler that sequentially attempts both OAuth2 and Bearer auth strategies.
+
+    A rejected OpenWebUI signature ends the attempt instead of falling through, see ``OpenWebuiSignatureRejectedError``.
+    """
 
     def __init__(self, bearer_handlers: list[AuthHandler], oauth2_handlers: list[KeycloakAuthHandler]):
         self.bearer_handlers = bearer_handlers
@@ -32,6 +38,8 @@ class TokenAndOauth2Handler:
         for bearer_handler in self.bearer_handlers:
             try:
                 return await bearer_handler(request, bearer_token)
+            except OpenWebuiSignatureRejectedError:
+                raise
             except Exception as e:
                 failures.append(self._log_failure("Bearer", bearer_handler, e))
 

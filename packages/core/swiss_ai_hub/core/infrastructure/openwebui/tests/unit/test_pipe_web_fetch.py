@@ -137,7 +137,9 @@ class TestWebReferences:
     async def test_a_referenced_page_is_never_uploaded_as_a_file(self, pipe: Any) -> None:
         """Open WebUI's copy of the text is dropped; the agent reads the page itself, through our browser."""
         pipe.Files.get_file_by_id = AsyncMock()
-        service = pipe.FileProcessingService("http://api", "http://s3", "key", "secret")
+        service = pipe.FileProcessingService(
+            "http://api", pipe.AuthenticationService("signing-secret", "api-key"), "http://s3", "key", "secret"
+        )
         scope = pipe.TemporaryUploadScope(user_id="user-1", thread_id="t1")
 
         attachments = await service._resolve_all([_web_item(ARTICLE)], "RAGAgent/hr", scope)
