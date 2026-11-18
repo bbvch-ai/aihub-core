@@ -177,9 +177,10 @@ def test_a_signature_made_when_the_dialog_opened_would_be_refused(
     auth = pipe.AuthenticationService(SIGNING_SECRET, "api-key")
     request = httpx.Request("POST", "http://api/chat", headers=auth.prepare_headers(USER_NAME, USER_EMAIL))
     pipe_clock[0] -= AN_HOUR
+    signed_an_hour_ago = auth.sign_request(request)
 
     with pytest.raises(OpenWebuiSignatureRejectedError, match="Expired"):
-        _check_with_the_api(api_handler, auth.sign_request(request))
+        _check_with_the_api(api_handler, signed_an_hour_ago)
 
 
 @pytest.mark.asyncio
