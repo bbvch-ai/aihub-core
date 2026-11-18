@@ -1,6 +1,6 @@
 ---
 title: RAG-Aufnahmepipeline
-source_sha: dd46e27e562d4bbac99229aebb918e8f63449c59df0a53e905c2c7d57eac3b6c
+source_sha: 79dbbd546cfea17a77ef270df9affba1291d5f7d1a3123dd55d48a4fef14c5a9
 ---
 
 # RAG-Aufnahmepipeline
@@ -15,7 +15,9 @@ Die Pipeline verarbeitet Dokumente in fünf Stufen:
 
 1. Document Parsing extrahiert Textinhalte und -strukturen aus PDFs, Word-Dokumenten, PowerPoint-Präsentationen und
    anderen Formaten. Der Parser identifiziert Überschriften, Absätze, Listen und Tabellen, während die
-   Dokumentorganisation erhalten bleibt.
+   Dokumentorganisation erhalten bleibt. Bilder, die er nicht lesen kann, etwa verknüpfte Bilder, SVG-Grafiken ohne
+   PNG-Ersatz oder WMF/EMF-Cliparts, werden übersprungen: Ihr Alternativtext bleibt erhalten, und der Rest des Dokuments
+   wird verarbeitet.
 
 2. Chunking teilt große Dokumente in kleinere Text-Chunks auf. Die Pipeline verwendet einen strukturellen Parser, der
    den Text an Überschriftengrenzen und Absatzumbrüchen statt an willkürlichen Zeichenanzahlen aufteilt, um

@@ -1,11 +1,23 @@
 import io
+import struct
+from collections.abc import Iterator
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import fsspec
 import pytest
 from botocore.exceptions import ClientError, EndpointConnectionError
+from fsspec.implementations.memory import MemoryFileSystem
+from llama_index.core.schema import Document
 from openpyxl import Workbook
+from PIL import Image
+from pptx import Presentation
+from pptx.opc.constants import RELATIONSHIP_TYPE
+from pptx.opc.package import Part
+from pptx.opc.packuri import PackURI
+from pptx.oxml.ns import qn
+from pptx.util import Inches
 
 from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
 from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_parse_cache import MarkItDownParseCache
@@ -13,6 +25,17 @@ from swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket import 
 
 DOCX_BYTES = b"docx-bytes"
 IMAGE = "data:image/png;base64,iVBORw0KGgo="
+SECRET = "The secret test word is PINEAPPLE."
+SVG = b'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>'
+SVG_BLIP_EXTENSION = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}"
+SVG_BLIP = "{http://schemas.microsoft.com/office/drawing/2016/SVG/main}svgBlip"
+EMF = (
+    struct.pack("<II", 1, 108)
+    + struct.pack("<iiii", 0, 0, 99, 99)
+    + struct.pack("<iiii", 0, 0, 2646, 2646)
+    + b" EMF"
+    + struct.pack("<IIIHHIIIiiii", 0x10000, 108, 1, 1, 0, 0, 0, 0, 1920, 1080, 508, 286)
+)
 
 
 @pytest.fixture(autouse=True)
@@ -35,6 +58,72 @@ def loader(markitdown: MagicMock, monkeypatch: pytest.MonkeyPatch) -> MarkItDown
     loader = MarkItDownLoader()
     monkeypatch.setattr(loader, "_get_converter", lambda: markitdown)
     return loader
+
+
+@pytest.fixture
+def memory_fs() -> Iterator[MemoryFileSystem]:
+    fs = fsspec.filesystem("memory")
+    yield fs
+    fs.store.clear()
+    fs.pseudo_dirs[:] = [""]
+
+
+def png_bytes() -> bytes:
+    buffer = io.BytesIO()
+    Image.new("RGB", (8, 8), "red").save(buffer, "PNG")
+    return buffer.getvalue()
+
+
+def deck(picture: str) -> bytes:
+    """
+    A one-slide deck whose picture is `embedded` (a PNG), `linked` (r:link, no image in the deck, also without
+    `descr`), `svg` (an SVG without the PNG fallback PowerPoint usually writes) or `emf`.
+    """
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[5])
+    slide.shapes.title.text = "Quarterly figures"
+    slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1)).text_frame.text = SECRET
+    shape = slide.shapes.add_picture(io.BytesIO(png_bytes()), Inches(1), Inches(2))
+    shape._element._nvXxPr.cNvPr.set("descr", "company logo")
+    blip = shape._element.blipFill.find(qn("a:blip"))
+    match picture:
+        case "linked" | "linked_without_descr":
+            if picture == "linked_without_descr":
+                del shape._element._nvXxPr.cNvPr.attrib["descr"]
+            del blip.attrib[qn("r:embed")]
+            link = slide.part.relate_to("file:///C:/logo.png", RELATIONSHIP_TYPE.IMAGE, is_external=True)
+            blip.set(qn("r:link"), link)
+        case "svg":
+            part = Part(PackURI("/ppt/media/image99.svg"), "image/svg+xml", slide.part.package, SVG)
+            del blip.attrib[qn("r:embed")]
+            extensions = blip.makeelement(qn("a:extLst"), {})
+            extension = extensions.makeelement(qn("a:ext"), {"uri": SVG_BLIP_EXTENSION})
+            extension.append(
+                extension.makeelement(SVG_BLIP, {qn("r:embed"): slide.part.relate_to(part, RELATIONSHIP_TYPE.IMAGE)})
+            )
+            extensions.append(extension)
+            blip.append(extensions)
+        case "emf":
+            part = Part(PackURI("/ppt/media/image98.emf"), "image/x-emf", slide.part.package, EMF)
+            blip.set(qn("r:embed"), slide.part.relate_to(part, RELATIONSHIP_TYPE.IMAGE))
+    buffer = io.BytesIO()
+    presentation.save(buffer)
+    return buffer.getvalue()
+
+
+async def load_deck(mode: str, content: bytes, fs: MemoryFileSystem) -> list[Document]:
+    loader = MarkItDownLoader()
+    match mode:
+        case "api_s3":
+            return await loader.aload_data_from_bytes(content, "deck.pptx", fs=fs)
+        case "api_base64":
+            return await loader.aload_data_from_bytes(content, "deck.pptx", embed_base64=True)
+        case "pipeline":
+            fs.pipe_file("/lake/docs/deck.pptx", content)
+            return await loader.aload_data("/lake/docs/deck.pptx", fs=fs)
+        case "without_images":
+            return await loader.aload_data_from_bytes(content, "deck.pptx", include_images=False)
+    raise ValueError(mode)
 
 
 def xlsx_bytes() -> bytes:
@@ -184,3 +273,66 @@ def test_a_new_markitdown_release_starts_fresh(monkeypatch: pytest.MonkeyPatch):
     )
 
     assert MarkItDownParseCache.settings_fingerprint() != fingerprint
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["api_s3", "api_base64", "pipeline", "without_images"])
+@pytest.mark.parametrize("picture", ["linked", "svg", "emf"])
+async def test_a_deck_whose_picture_cannot_be_kept_still_loads(mode: str, picture: str, memory_fs: MemoryFileSystem):
+    documents = await load_deck(mode, deck(picture), memory_fs)
+
+    text = documents[0].text
+    assert SECRET in text
+    assert "[image: company logo]" in text
+    assert ".jpg)" not in text
+    assert "svg+xml" not in text
+    assert "x-wmf" not in text
+    assert "x-emf" not in text
+    assert not [path for path in memory_fs.find("/") if "__figures__" in path]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["api_s3", "pipeline"])
+async def test_an_embedded_picture_is_still_stored_as_a_figure(mode: str, memory_fs: MemoryFileSystem):
+    documents = await load_deck(mode, deck("embedded"), memory_fs)
+
+    assert SECRET in documents[0].text
+    assert "<figure>![Figure 1](s3://" in documents[0].text
+    assert [path for path in memory_fs.find("/") if "__figures__" in path and path.endswith(".png")]
+
+
+@pytest.mark.asyncio
+async def test_a_linked_picture_without_a_description_is_named_after_its_shape(memory_fs: MemoryFileSystem):
+    documents = await load_deck("api_s3", deck("linked_without_descr"), memory_fs)
+
+    assert "[image: Picture " in documents[0].text
+    assert ".jpg)" not in documents[0].text
+
+
+@pytest.mark.parametrize(
+    ("markdown", "expected"),
+    [
+        ("![logo](Picture2.jpg)", "[image: logo]"),
+        ("![](Picture2.jpg)", "[image]"),
+        ("![](.jpg)", "[image]"),
+        ("![diagram](arch.png)", "![diagram](arch.png)"),
+        (f"![x]({IMAGE})", f"![x]({IMAGE})"),
+        ("![x](https://a/b.jpg)", "![x](https://a/b.jpg)"),
+    ],
+)
+def test_only_markitdowns_name_for_an_unembedded_picture_is_marked(markdown: str, expected: str):
+    assert MarkItDownLoader._mark_unembedded_pictures(markdown) == expected
+
+
+@pytest.mark.asyncio
+async def test_unembedded_pictures_are_marked_in_decks_only_and_after_the_cache(
+    loader: MarkItDownLoader, markitdown: MagicMock, in_memory_parse_cache: dict[str, bytes]
+):
+    markitdown.convert.return_value = SimpleNamespace(text_content="# Slide\n\n![x](Picture2.jpg)")
+
+    word = await loader.aload_data_from_bytes(b"word", "a.docx", include_images=False)
+    deck_documents = await loader.aload_data_from_bytes(b"deck", "a.pptx", include_images=False)
+
+    assert word[0].text == "# Slide\n\n![x](Picture2.jpg)"
+    assert deck_documents[0].text == "# Slide\n\n[image: x]"
+    assert in_memory_parse_cache[loader.parse_cache.object_key(b"deck", "a.pptx")] == b"# Slide\n\n![x](Picture2.jpg)"

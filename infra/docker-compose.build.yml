@@ -1707,34 +1707,14 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    # OpenAI-compatible inference paths stay public behind LiteLLM's own key auth; the UI and every admin route on
-    # the same host go through oauth2proxy-litellm (router litellm-admin, lower priority).
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.litellm-api.rule=Host(`litellm.${DOMAIN}`) && (Path(`/v1/chat/completions`)
-        || Path(`/v1/completions`) || Path(`/v1/embeddings`) || Path(`/v1/models`)
-        || Path(`/v1/model/info`) || PathPrefix(`/v1/audio/`) || PathPrefix(`/v1/images/`)
-        || Path(`/v1/rerank`) || Path(`/v1/moderations`) || Path(`/v1/responses`)
-        || PathPrefix(`/v1/responses/`) || Path(`/v1/messages`) || PathPrefix(`/v1/messages/`)
-        || Path(`/v1/files`) || PathPrefix(`/v1/files/`) || Path(`/v1/batches`) ||
-        PathPrefix(`/v1/batches/`) || Path(`/v1/realtime`) || PathPrefix(`/v1/realtime/`)
-        || Path(`/v1/videos`) || PathPrefix(`/v1/videos/`) || Path(`/chat/completions`)
-        || Path(`/completions`) || Path(`/embeddings`) || Path(`/models`) || Path(`/model/info`)
-        || PathPrefix(`/audio/`) || PathPrefix(`/images/`) || Path(`/rerank`) || Path(`/v2/rerank`)
-        || Path(`/moderations`) || Path(`/responses`) || PathPrefix(`/responses/`)
-        || Path(`/health/liveliness`) || Path(`/health/liveness`))
-      - traefik.http.routers.litellm-api.priority=6000
-      - traefik.http.routers.litellm-api.entrypoints=websecure
-      - traefik.http.routers.litellm-api.middlewares=security-headers@file
-      - traefik.http.routers.litellm-api.service=litellm-api
-      - traefik.http.services.litellm-api.loadbalancer.server.port=4000
-      - traefik.http.routers.litellm-api.tls=true
     networks:
       - backend
       - data  # For PostgreSQL access
       - pii-detection  # Caller of the Presidio analyzer
-      - proxy  # Traefik ingress for the inference paths, and outbound internet to the model providers
+      # Outbound internet to the model providers only. LiteLLM has no Traefik router of its own: a user's key used
+      # from outside would skip the Hub's model access rules, so all of litellm.${DOMAIN} goes through
+      # oauth2proxy-litellm, and the Hub's services call LiteLLM inside the Docker network.
+      - proxy
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-litellm:
     container_name: oauth2proxy-litellm
@@ -2032,7 +2012,7 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.12.5-playwright1.63.0-1
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
@@ -2254,6 +2234,9 @@ services:
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: true
       WEB_LOADER_ENGINE: playwright
       PLAYWRIGHT_WS_URL: ws://playwright:3000
+      # Attach Webpage first fetches the page itself, and without a user agent it sends aiohttp's default, which
+      # Wikipedia refuses with 403. Wikimedia asks for a name and a contact.
+      USER_AGENT: Swiss-AI-Hub (+https://docs.ai-hub.bbv.ch/)
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 

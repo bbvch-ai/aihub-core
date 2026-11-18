@@ -1,9 +1,6 @@
 # Build stage
 FROM python:3.13-slim AS builder
 
-ARG AGENT=email_classification_agent
-ARG VERSION
-
 COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /uvx /bin/
 
 ENV PYTHONUNBUFFERED=1 \
@@ -20,21 +17,24 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# Copy workspace config, the enterprise package and the open packages it builds on
+# Third-party dependencies first: this layer is identical for every agent and only rebuilds when the lockfile
+# or a package manifest changes, so the agent images share it through the build cache.
 COPY pyproject.toml uv.lock ./
-COPY ee/app/__init__.py ./ee/app/__init__.py
-COPY ee/app/${AGENT} ./ee/app/${AGENT}
-COPY ee/swiss_ai_hub ./ee/swiss_ai_hub
-COPY ee/pyproject.toml ./ee/pyproject.toml
-COPY ee/LICENSE ./ee/LICENSE
-COPY ee/README.md ./ee/README.md
-COPY packages/agent/swiss_ai_hub ./packages/agent/swiss_ai_hub
-COPY packages/agent/pyproject.toml ./packages/agent/pyproject.toml
-COPY packages/agent/LICENSE ./packages/agent/LICENSE
-COPY packages/agent/README.md ./packages/agent/README.md
-COPY packages/core ./packages/core
+COPY packages/core/pyproject.toml packages/core/README.md packages/core/LICENSE ./packages/core/
+COPY packages/agent/pyproject.toml packages/agent/README.md packages/agent/LICENSE ./packages/agent/
+COPY ee/pyproject.toml ee/README.md ee/LICENSE ./ee/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-workspace --package swiss-ai-hub-ee
 
-# Install dependencies with cache mount
+COPY packages/core ./packages/core
+COPY packages/agent/swiss_ai_hub ./packages/agent/swiss_ai_hub
+COPY ee/swiss_ai_hub ./ee/swiss_ai_hub
+COPY ee/app/__init__.py ./ee/app/__init__.py
+
+# Declared after the shared layers: build args take part in the cache key of every later RUN.
+ARG AGENT=email_classification_agent
+COPY ee/app/${AGENT} ./ee/app/${AGENT}
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --package swiss-ai-hub-ee
 
@@ -42,14 +42,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Runtime stage
 FROM python:3.13-slim AS runtime
 
-ARG AGENT=email_classification_agent
-ENV AGENT_NAME=${AGENT}
-ARG VERSION
-
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    PATH="/app/.venv/bin:$PATH" \
-    AIHUB_VERSION=${VERSION}
+    PATH="/app/.venv/bin:$PATH"
 
 # Setup users
 ARG USERNAME=user
@@ -65,6 +60,11 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
     curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+ARG AGENT=email_classification_agent
+ARG VERSION
+ENV AGENT_NAME=${AGENT} \
+    AIHUB_VERSION=${VERSION}
 
 WORKDIR /app
 
