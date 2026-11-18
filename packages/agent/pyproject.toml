@@ -90,5 +90,6 @@ markers = [
     "integration: mark a test as an integration test",
     "experimental: mark a test as experimental",
     "flaky: mark a test as flaky (may fail intermittently)",
+    "external: calls a third-party provider (Swiss LLM Cloud); excluded from PR checks, run by external-tests.yml",
 ]
 addopts = "--strict-markers"

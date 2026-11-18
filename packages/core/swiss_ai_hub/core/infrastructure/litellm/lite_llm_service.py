@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 from typing import Any, ClassVar
 
 import httpx
@@ -14,12 +15,38 @@ from swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_limits import LiteLL
 
 class LiteLLMService:
     _user_cache: ClassVar[TTLCache] = TTLCache(maxsize=1024, ttl=21600)
+    _KEY_DERIVATION_LABEL: ClassVar[bytes] = b"swiss-ai-hub/litellm-user-key\x00"
+    _KEY_GENERATION_LABEL: ClassVar[bytes] = b"swiss-ai-hub/litellm-user-key-generation"
 
     @staticmethod
-    def generate_key_for_user(user: UserIdentity) -> str:
-        sha256_hash = hashlib.sha256()
-        sha256_hash.update(user.id.encode("utf-8"))
-        return f"sk-{sha256_hash.hexdigest()[:16]}"
+    def generate_key_for_user(user: UserIdentity, litellm_proxy: LiteLLMProxySettings) -> str:
+        """
+        Keyed by the master key, so only its holders can compute a user's key, and they can mint a key for anyone
+        anyway. A key derived from the user id alone could be computed by anyone who knew the id.
+        """
+        digest = hmac.new(
+            LiteLLMService._derivation_secret(litellm_proxy),
+            LiteLLMService._KEY_DERIVATION_LABEL + user.id.encode("utf-8"),
+            hashlib.sha256,
+        )
+        return f"sk-{digest.hexdigest()}"
+
+    @staticmethod
+    def key_generation(litellm_proxy: LiteLLMProxySettings) -> str:
+        """
+        Names the master key a user's key was derived from without revealing anything about it. A new master key
+        gives every user a new key while the earlier keys stay valid, and LiteLLM requires their aliases to differ.
+        """
+        digest = hmac.new(
+            LiteLLMService._derivation_secret(litellm_proxy), LiteLLMService._KEY_GENERATION_LABEL, hashlib.sha256
+        )
+        return digest.hexdigest()[:8]
+
+    @staticmethod
+    def _derivation_secret(litellm_proxy: LiteLLMProxySettings) -> bytes:
+        if litellm_proxy.API_KEY is None:
+            raise ValueError("LITE_LLM_PROXY_API_KEY is not set, and users' LiteLLM keys are derived from it")
+        return litellm_proxy.API_KEY.get_secret_value().encode("utf-8")
 
     @staticmethod
     async def api_key_for_user(user: UserIdentity) -> str:
@@ -28,12 +55,12 @@ class LiteLLMService:
         if user.id in LiteLLMService._user_cache:
             return LiteLLMService._user_cache[user.id]
 
-        api_key = LiteLLMService.generate_key_for_user(user)
+        api_key = LiteLLMService.generate_key_for_user(user, litellm_proxy)
 
         client = litellm_proxy.httpx_aclient
         await LiteLLMService._create_user_if_absent(client, litellm_proxy, user)
         if not await LiteLLMService._key_exists(client, api_key):
-            await LiteLLMService._generate_key(client, user, api_key)
+            await LiteLLMService._generate_key(client, litellm_proxy, user, api_key)
 
         LiteLLMService._user_cache[user.id] = api_key
         return api_key
@@ -45,13 +72,13 @@ class LiteLLMService:
         each is checked on its own rather than inferred from the other: a key without its row carries no budget or
         rate limits, and a row without its key fails every request.
 
-        From LiteLLM v1.106 on, a deleted key still answers 200, from an archive, with status "deleted".
+        The key travels in the body, because URLs end up in logs and traces. LiteLLM hashes it itself and searches only
+        live keys, so a deleted key is not found and a blocked one is. The endpoint is not in
+        LiteLLM's published schema: if an upgrade drops it, every lookup fails loudly instead of minting keys again.
         """
-        key_response = await client.get("/key/info", params={"key": api_key})
-        if key_response.status_code == 404:
-            return False
+        key_response = await client.post("/v2/key/info", json={"keys": [api_key]})
         key_response.raise_for_status()
-        return key_response.json()["info"].get("status") != "deleted"
+        return bool(key_response.json()["info"])
 
     @staticmethod
     async def _create_user_if_absent(
@@ -114,15 +141,24 @@ class LiteLLMService:
         return holder["user_id"] != user.id and holder_email.strip().lower() == user.email.strip().lower()
 
     @staticmethod
-    async def _generate_key(client: httpx.AsyncClient, user: UserIdentity, api_key: str) -> None:
+    async def _generate_key(
+        client: httpx.AsyncClient, litellm_proxy: LiteLLMProxySettings, user: UserIdentity, api_key: str
+    ) -> None:
         """
         A concurrent first-login request may create the same deterministic key first. LiteLLM reports that as a
         duplicate alias (400) rather than a conflict, so a failure is accepted whenever the key exists afterwards.
         """
-        # LiteLLM requires unique aliases across all keys, and display names are not unique.
+        generation = LiteLLMService.key_generation(litellm_proxy)
+        # LiteLLM requires unique aliases across all keys: display names are not unique, and the keys of earlier
+        # generations, including those derived from the user id alone, keep theirs.
         key_response = await client.post(
             "/key/generate",
-            json={"key_alias": f"{user.name} ({user.id}) - Auto Generated Key", "user_id": user.id, "key": api_key},
+            json={
+                "key_alias": f"{user.name} ({user.id}) - Auto Generated Key {generation}",
+                "user_id": user.id,
+                "key": api_key,
+                "metadata": {"swiss_ai_hub_key_generation": generation},
+            },
         )
         if key_response.is_error and not await LiteLLMService._key_exists(client, api_key):
             key_response.raise_for_status()

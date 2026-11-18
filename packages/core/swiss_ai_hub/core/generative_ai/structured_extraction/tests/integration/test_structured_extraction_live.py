@@ -24,7 +24,7 @@ from swiss_ai_hub.core.generative_ai.structured_extraction.record_schema import 
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_schema_builder import RecordSchemaBuilder
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.external]
 
 _MODEL = os.environ.get("STRUCTURED_EXTRACTION_TEST_MODEL", "text-generation/gemma-4-31B-it")
 _CONSISTENCY_MODELS = [m for m in os.environ.get("STRUCTURED_EXTRACTION_CONSISTENCY_MODELS", "").split(",") if m]
