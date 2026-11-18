@@ -260,6 +260,25 @@ async def test_an_invoice_from_the_named_supplier_is_extracted() -> None:
 
 
 @pytest.mark.asyncio
+async def test_a_qualifying_invoice_still_keeps_only_the_rows_the_instructions_ask_for() -> None:
+    """The judged window must not read "as if there were no document condition" as "keep every row"."""
+    llm_config, llm, _ = _llm()
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(_INVOICE),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        instructions="Only hardware positions. Software licences and subscriptions are not hardware.",
+        document_condition="only invoices from Helvetic IT Supplies",
+    )
+
+    assert result.document_match.verdict == "yes", result.document_match
+    assert sorted(record.values["position"] for record in result.records) == [1, 2, 3, 5, 7]
+
+
+@pytest.mark.asyncio
 async def test_an_invoice_without_a_supplier_line_in_its_opening_is_unsure() -> None:
     """An absent fact is not a contradiction, so the document is read and its rows are checked by a person."""
     llm_config, llm, _ = _llm()
