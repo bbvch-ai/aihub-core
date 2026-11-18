@@ -63,8 +63,7 @@ licenses.
   names and pull credentials for every customer, and belongs to the move to a private repository.
 - The default deployment still includes both agents: the generated compose files start them with every other service,
   without a profile or other opt-in, and the Kubernetes chart deploys them too. An operator without a bbv AI Hub
-  Enterprise License has to remove them from the deployment; making them opt-in for licensed instances is separate
-  work.
+  Enterprise License has to remove them from the deployment; making them opt-in for licensed instances is separate work.
 - Releases of both agents before this decision stay under Apache-2.0; the grant cannot be withdrawn.
 - A later paid feature is licensed by moving it into `ee/`; no further license file or SPDX identifier is needed.
 - CI tests, lints and scans `ee` as its own scope with its own Sonar project, and the version bump covers it.
