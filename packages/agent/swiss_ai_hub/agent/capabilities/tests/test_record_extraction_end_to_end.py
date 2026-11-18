@@ -24,6 +24,7 @@ from swiss_ai_hub.core.events.agent import ExtractRecordsEvent, RecordsExtracted
 from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
     DocumentExtractionResult,
+    DocumentMatch,
     ExtractedTableFile,
     ExtractionFileStore,
     KnowledgeDocument,
@@ -85,7 +86,8 @@ class TablesConfig(RecordExtractionFields, AgentConfig):
 
 
 class TablesAgent(Agent):
-    """Calls the extraction the way a blueprint does: "two" starts two at once, "yes" confirms a sample."""
+    """Calls the extraction the way a blueprint does: "two" starts two at once, "yes" confirms a sample, "only Hooli"
+    extracts with a document condition."""
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString(en="Tables")
     description: ClassVar[AgentLocaleString] = AgentLocaleString(en="Extraction fixture")
@@ -95,6 +97,12 @@ class TablesAgent(Agent):
         text = event.messages[-1].content
         if text == "yes":
             return [RecordExtraction.confirm_sample([FINANCE])]
+        if text == "only Hooli":
+            return [
+                RecordExtraction.extract(
+                    _selection(text), "item, amount", [FINANCE], document_condition="only invoices from Hooli"
+                )
+            ]
         terms = ["ACME AG", "Globex"] if text == "two" else [text]
         return [RecordExtraction.extract(_selection(term), "item, amount", [FINANCE]) for term in terms]
 
@@ -173,10 +181,13 @@ def _stub(monkeypatch: pytest.MonkeyPatch, selections: dict[str, list[KnowledgeD
     async def load(collections, document_id, start=None, end=None):
         return KnowledgeDocument(summary=by_id[document_id], text="Rack 310", text_length=8, start=0, end=8)
 
-    async def extract(schema, document, llm, llm_config, t, instructions=None, **_):
+    async def extract(schema, document, llm, llm_config, t, instructions=None, **kwargs):
         if gate is not None and document.summary.path.endswith("b.pdf"):
             await gate.wait()
         provenance = RecordProvenance.from_summary(document.summary)
+        if kwargs.get("document_condition") and document.summary.path.endswith("b.pdf"):
+            match = DocumentMatch(verdict="no", reason="Supplier: Initech AG")
+            return DocumentExtractionResult.skipped_by(provenance, match, 1)
         return DocumentExtractionResult.succeeded(provenance, [{"item": document.summary.path, "amount": 1.0}], 1)
 
     @asynccontextmanager
@@ -233,6 +244,23 @@ async def test_every_document_is_extracted_and_joined_into_one_table(monkeypatch
     assert tables[0].file.filename == f"table-{tables[0].extraction_id}.csv"
     assert len(store.tables[tables[0].extraction_id]) == 2
     assert all(result.rows_key in store.stored for result in _control(runner, DocumentExtractedEvent))
+    assert len(_control(runner, StopEvent)) == 1
+
+
+@async_test
+async def test_a_document_failing_the_condition_is_skipped_and_the_table_still_joins(monkeypatch):
+    _stub(monkeypatch, {"only Hooli": [_document("invoices/a.pdf"), _document("invoices/b.pdf")]})
+    runner = AgentTestRunner(agent_type=TablesAgent, agent_config=_config())
+
+    async with runner.test_run(delay_before_stop=30) as topic:
+        await runner.send_event_from_topic(topic=topic, start_event=_message("only Hooli"))
+
+    assert not runner.has_exception_event
+    tables = _control(runner, RecordsExtractedEvent)
+    assert len(tables) == 1
+    table = tables[0]
+    assert (table.file_count, table.skipped_count, table.failed_count, table.total_row_count) == (2, 1, 0, 1)
+    assert "- invoices/b.pdf: Supplier: Initech AG" in table.summary
     assert len(_control(runner, StopEvent)) == 1
 
 

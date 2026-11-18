@@ -36,7 +36,7 @@ class ExtractionRequestAnswers(BaseModel):
         reading = ExtractionRequestAnswers._with_options(understood, answers).model_copy(update=chosen)
         written = {
             key: text
-            for key in ("where", "rows", "columns")
+            for key in ("where", "documents", "rows", "columns")
             if (text := ExtractionForm.written(answers.get(key))) is not None
         }
         if not written:
@@ -70,6 +70,8 @@ class ExtractionRequestAnswers(BaseModel):
         update: dict[str, Any] = {}
         if ExtractionForm.dropped(answers.get("where")):
             update["locations"] = []
+        if ExtractionForm.dropped(answers.get("documents")):
+            update["document_condition"] = None
         if ExtractionForm.dropped(answers.get("rows")):
             update["instructions"] = None
         return understood.model_copy(update=update)
