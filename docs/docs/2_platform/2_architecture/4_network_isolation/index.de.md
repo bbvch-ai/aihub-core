@@ -73,6 +73,10 @@ Services, die von außerhalb des Docker-Netzwerks zugänglich sind:
 - **seaweedfs-s3**: S3-kompatible Speicher-API
 - **oauth2proxy-**\*: Authentifizierungs-Proxys
 
+`litellm` ist ebenfalls im `proxy`-Netzwerk, aber nur, um die Modell-Anbieter zu erreichen. Es hat keinen eigenen
+Traefik-Router, von aussen ist es also nur über `oauth2proxy-litellm` erreichbar: Ein LiteLLM-Schlüssel, der von aussen
+verwendet wird, würde die Modell-Zugriffsregeln des Hubs umgehen.
+
 ### Backend-Netzwerk-Services
 
 Interne Anwendungs- und Verarbeitungs-Services:
