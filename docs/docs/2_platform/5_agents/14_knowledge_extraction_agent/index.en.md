@@ -146,12 +146,12 @@ ignored: a profile that had the search switched on reads every document until **
 :::
 
 ::: tip Which mode for which profile
-Reading every document is the safe default: nothing is missed, but each document's rows are judged by the extraction
-model on its own. When a request names one supplier or party among many in the same folders (*"Acme's 2025 hardware"*
-over every supplier's invoices), that judgement now and then keeps a row from another supplier's document, and every
-document costs a model call. For profiles used for such exact, narrow requests over large mixed collections, switch on
-**Discovery mode**: only the documents the search selects are read, which is faster and cheaper, at the risk that a
-document the search does not find is missing.
+Reading every document is the safe default: nothing is missed. When a request names one supplier or party among many in
+the same folders (*"Acme's 2025 hardware"* over every supplier's invoices), the **Document Condition** skips each other
+supplier's document after its first part, so its rows never reach the table; but every document still costs at least one
+model call, and a document whose start does not name its supplier is read whole and marked for checking. For profiles
+used for such exact, narrow requests over large mixed collections, switch on **Discovery mode**: only the documents the
+search selects are read, which is faster and cheaper, at the risk that a document the search does not find is missing.
 :::
 
 ### Long documents

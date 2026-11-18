@@ -395,15 +395,15 @@ the model:
   `2026_10_26_whole_scope_extraction_and_tables_by_reference`.
   - **One answer extracts the whole selection.** There are no parts and no *continue*. A selection of more than
     `SAMPLE_ABOVE_DOCUMENTS` (100, fixed) first extracts a sample of five documents picked by `ExtractionSample` (ranked
-    by meaning on `document_terms` + `instructions` + `fields` unless `knowledge_documents.discovery` is on, whose model
-    already ranked; a ranking that fails, times out or places none falls back to documents matching `document_terms` and
-    `row_terms` in one id-only scan each; then `SelectionFacets.sample`), with the columns, the row condition, the
-    estimate (`ExtractionEstimate`) and facets; the same order puts the likeliest first when a selection above 100 is
-    extracted whole (`ExtractionPlanner._whole`). The selection and its schema wait per thread in
-    `SampleAwaitingConfirmation`, and `confirm_sample(...)` (the Knowledge Extraction Agent's request reading, the
-    Universal Agent's `extract_records(confirm_sample=true)`) re-resolves and extracts it whole with the sample's
-    columns. An answer that showed a sample cannot confirm it (`_ANSWER_USED_KEY` in the run context). Above the ceiling
-    only narrowing is offered and the facets carry no counts.
+    by meaning on `document_terms` + `document_condition` + `instructions` + `fields` unless
+    `knowledge_documents.discovery` is on, whose model already ranked; a ranking that fails, times out or places none
+    falls back to documents matching `document_terms` and `row_terms` in one id-only scan each; then
+    `SelectionFacets.sample`), with the columns, the row condition, the estimate (`ExtractionEstimate`) and facets; the
+    same order puts the likeliest first when a selection above 100 is extracted whole (`ExtractionPlanner._whole`). The
+    selection and its schema wait per thread in `SampleAwaitingConfirmation`, and `confirm_sample(...)` (the Knowledge
+    Extraction Agent's request reading, the Universal Agent's `extract_records(confirm_sample=true)`) re-resolves and
+    extracts it whole with the sample's columns. An answer that showed a sample cannot confirm it (`_ANSWER_USED_KEY` in
+    the run context). Above the ceiling only narrowing is offered and the facets carry no counts.
   - **Every document in its own step**, in parallel. `ExtractionSlots` bounds per replica both the model calls (`calls`,
     passed to core's `RecordExtractor` as its window limiter) and the documents held at once (`documents`), as separate
     semaphores. A document longer than `max_document_chars` is read in at most 12 windows chosen by `row_terms` (ADR

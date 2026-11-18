@@ -1,7 +1,7 @@
 ---
 title: Wissensextraktions-Agent
 description: Sammelt Datensätze aus vielen Wissensdokumenten in einer Tabelle, etwa jede Hardware-Position auf den Rechnungen 2025 eines Lieferanten, jede Zeile mit der Datei, aus der sie stammt.
-source_sha: 126dab1164055406fe5023ba5863cf56b38bfaf9d23f8d15cddd2d601494fa08
+source_sha: b9c849104c4316631b076da1f16478098314e364b0f352f2e016d51cff397116
 ---
 
 # Wissensextraktions-Agent
@@ -163,13 +163,14 @@ bis der **Discovery-Modus** wieder angekreuzt ist.
 :::
 
 ::: tip Welcher Modus für welches Profil
-Jedes Dokument zu lesen ist der sichere Standard: Nichts wird übersehen, aber die Zeilen jedes Dokuments beurteilt das
-Extraktionsmodell für sich allein. Nennt eine Anfrage einen Lieferanten oder eine Vertragspartei unter vielen in
-denselben Ordnern (*"die Hardware von Acme 2025"* über die Rechnungen aller Lieferanten), behält diese Beurteilung ab
-und zu eine Zeile aus dem Dokument eines anderen Lieferanten, und jedes Dokument kostet einen Modellaufruf. Für Profile,
-die für solche genauen, engen Anfragen über grosse gemischte Sammlungen genutzt werden, schalten Sie den
-**Discovery-Modus** ein: Nur die Dokumente, die die Suche auswählt, werden gelesen, was schneller und günstiger ist, mit
-dem Risiko, dass ein Dokument fehlt, das die Suche nicht findet.
+Jedes Dokument zu lesen ist der sichere Standard: Nichts wird übersehen. Nennt eine Anfrage einen Lieferanten oder eine
+Vertragspartei unter vielen in denselben Ordnern (*"die Hardware von Acme 2025"* über die Rechnungen aller Lieferanten),
+überspringt die **Dokumentbedingung** das Dokument jedes anderen Lieferanten nach seinem ersten Teil, sodass seine
+Zeilen nie in die Tabelle gelangen; doch jedes Dokument kostet weiterhin mindestens einen Modellaufruf, und ein
+Dokument, dessen Anfang seinen Lieferanten nicht nennt, wird ganz gelesen und zur Prüfung markiert. Für Profile, die für
+solche genauen, engen Anfragen über grosse gemischte Sammlungen genutzt werden, schalten Sie den **Discovery-Modus**
+ein: Nur die Dokumente, die die Suche auswählt, werden gelesen, was schneller und günstiger ist, mit dem Risiko, dass
+ein Dokument fehlt, das die Suche nicht findet.
 :::
 
 ### Lange Dokumente
