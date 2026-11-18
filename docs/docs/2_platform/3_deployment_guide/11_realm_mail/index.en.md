@@ -1,6 +1,6 @@
 ---
 title: Realm mail and invitations
-description: How Keycloak sends invitation and password-reset mail from the platform mailbox through Microsoft 365, how operators set it up, and how administrators invite users by email.
+description: How Keycloak sends invitation and password-reset mail through Microsoft 365, what the customer sets up in its own tenant, and how operators configure the deployment.
 ---
 
 # Realm mail and invitations
@@ -39,43 +39,36 @@ refers to it as `${vault.smtp-client-secret}`.
 
 ## Microsoft 365 setup
 
-These steps need an Entra administrator and an Exchange Online administrator of the tenant that owns the mailbox.
+The sending mailbox and the Entra app that sends as it belong to the Microsoft 365 tenant that owns the sender address.
+For a customer deployment, that is the **customer's** tenant, so the customer's Entra and Exchange administrators set it
+up, not the operator. In short, they:
 
-1. **Register an app** in Microsoft Entra ID (App registrations → New registration). No redirect URI is needed.
+1. Create a shared mailbox to send from.
+2. Register an Entra app with the application permission *Office 365 Exchange Online* → `SMTP.SendAsApp` and grant
+   admin consent.
+3. Create a client secret.
+4. Register the app in Exchange Online (`New-ServicePrincipal`), give it `FullAccess` to the mailbox only, and allow SMTP
+   AUTH on the mailbox.
+5. Send the operator the tenant ID, client ID, client secret (over an encrypted channel), mailbox address and secret
+   expiry date.
 
-2. **Add the permission** *Office 365 Exchange Online* → *Application permissions* → `SMTP.SendAsApp`, and grant admin
-   consent.
-
-3. **Create a client secret** (Certificates & secrets) and note its value and expiry date.
-
-4. **Register the app with Exchange Online** and give it access to the mailbox, in Exchange Online PowerShell:
-
-   ```powershell
-   Connect-ExchangeOnline
-   New-ServicePrincipal -AppId <application-client-id> -ObjectId <enterprise-application-object-id>
-   Add-MailboxPermission -Identity "noreply.ai-hub@bbv.ch" -User <enterprise-application-object-id> -AccessRights FullAccess
-   ```
-
-   The object id is the one of the **enterprise application** (service principal), not of the app registration.
-
-5. **Allow SMTP AUTH** on the mailbox:
-
-   ```powershell
-   Set-CASMailbox -Identity "noreply.ai-hub@bbv.ch" -SmtpClientAuthenticationDisabled $false
-   ```
+Send the customer's administrators the step-by-step guide [Microsoft 365 setup (customer)](./1_microsoft_365_setup/). It
+includes a test that proves the setup before anything changes on the platform.
 
 ## Deployment configuration
 
-Set these variables in the deployment's `.env` (see [Environment variables](../9_environment_variables/)):
+Set these variables in the deployment's `.env` (see [Environment variables](../9_environment_variables/)), using the
+values the customer sent:
 
-| Variable                      | Value                                         |
-| ----------------------------- | --------------------------------------------- |
-| `KEYCLOAK_SMTP_TENANT_ID`     | Directory (tenant) id of the mailbox's tenant |
-| `KEYCLOAK_SMTP_CLIENT_ID`     | Application (client) id of the app            |
-| `KEYCLOAK_SMTP_CLIENT_SECRET` | The client secret                             |
-| `KEYCLOAK_SMTP_MAILBOX`       | The sending mailbox (`noreply.ai-hub@bbv.ch`) |
+| Variable                      | Value                                                            |
+| ----------------------------- | ---------------------------------------------------------------- |
+| `KEYCLOAK_SMTP_TENANT_ID`     | Directory (tenant) id of the mailbox's tenant                    |
+| `KEYCLOAK_SMTP_CLIENT_ID`     | Application (client) id of the app                               |
+| `KEYCLOAK_SMTP_CLIENT_SECRET` | The client secret, from the deployment's secret store            |
+| `KEYCLOAK_SMTP_MAILBOX`       | The sending mailbox (default `noreply.ai-hub@bbv.ch`)            |
 
-In the Microsoft 365 setup above, use this mailbox wherever `noreply.ai-hub@bbv.ch` appears.
+`KEYCLOAK_SMTP_MAILBOX` must be exactly the mailbox the app has access to; another address fails with
+`554 5.2.252 SendAsDenied`. Note the secret's expiry date (see [Secret rotation](#secret-rotation-and-a-new-app)).
 
 Then restart Keycloak (`docker compose up -d keycloak`).
 
@@ -90,21 +83,12 @@ allowed (see [Network requirements](../7_network_requirements/)).
 
 ## Invite a user by email
 
-Invitations use Keycloak's own admin-triggered mail. A Keycloak administrator does this in the admin console
-(`https://auth.<domain>/admin`, realm **aihub**):
+Invitations use Keycloak's own admin-triggered mail: a Keycloak administrator creates the user, adds the tenant group
+and `AIHubAccess`, and sends a *Credential Reset* with **Update Password** and **Verify Email**. The person verifies the
+address, sets a password and signs in with email and password, also on instances whose tenants otherwise log in through
+Entra.
 
-1. **Users** → **Add user**. Enter the email address (and optionally first and last name), leave *Email verified* off,
-   and choose **Create**.
-2. On the new user's **Groups** tab, choose **Join Group** and select the tenant under `tenants`.
-3. On the **Role mapping** tab, choose **Assign role** → *Filter by realm roles* and assign `AIHubAccess`. Without it,
-   sign-in is denied.
-4. On the **Credentials** tab, choose **Credential Reset**, select the actions **Update Password** and **Verify Email**,
-   pick a link lifetime, and choose **Send Email**.
-
-The person receives a mail from the sending mailbox with a link. Opening it verifies the address and lets them set a
-password; afterwards they sign in with email and password, also on instances whose tenants otherwise log in through
-Entra. To resend an invitation, repeat step 4. A tenant role (for example `AIHubUser`) is assigned in the platform's
-admin UI under the tenant's users, as for every other user.
+The step-by-step guide with screenshots and a demo video is [Invite users by email](./2_invite_users/).
 
 ## Users who sign in through Entra ID never use a password
 
