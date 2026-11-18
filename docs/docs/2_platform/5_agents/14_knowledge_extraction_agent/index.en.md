@@ -31,26 +31,28 @@ flowchart LR
     F --> G[Table preview,<br/>summary and CSV]
 ```
 
-1. **Read the request.** One model call reads the message: the columns the user asks for, which rows to keep, any
-   folder, file or year the user names, and any calculation asked for. A follow-up such as *"the same for 2024"* is read
-   with the conversation.
+1. **Read the request.** One model call reads the message: the columns the user asks for, which documents count (the
+   document condition), which rows to keep, any folder, file or year the user names, and any calculation asked for. A
+   follow-up such as *"the same for 2024"* is read with the conversation.
 2. **Confirm the request.** Before any document is read, the agent shows what it understood in a form, and the user
    confirms or corrects it (see [The request form](#the-request-form)). What the user confirms is what is read and
    extracted.
 3. **Take every document in scope.** Every document in the profile's collections and path filter is read, narrowed only
    by the confirmed location. A file the user names, by its path or only by its name, with or without the extension,
    means that file alone, not the folder it is in. No search decides which documents count, so a document is never
-   missed because it words things differently from the request. A supplier or a topic is a condition on the rows, not a
-   place: *"from Acme"* keeps Acme's rows, it does not pick documents. With [Discovery mode](#discovery-mode) on, the
-   model searches for the documents instead.
+   missed because it words things differently from the request. A supplier, a party, a status or a period that dates the
+   document is not a place but a *document condition* (*"from Acme"*, *"signed versions only"*, *"dated Q1 2026"*),
+   checked at the start of each document. A value the rows carry themselves, such as the supplier on each line of a
+   statement, stays a condition on the rows. A year the folder already names only narrows the location. With
+   [Discovery mode](#discovery-mode) on, the model searches for the documents instead.
 4. **Design the columns.** The columns are designed from the user's words, such as *date, item, amount, currency*. A
    condition like *"only hardware"* decides which rows are kept and never becomes a column.
 5. **Extract.** Every document is read and its matching records are extracted, many documents at the same time.
    Documents are read in overlapping parts, so a line on the last page is found and a line at the boundary between parts
    is not counted twice. A row that may not meet the condition is kept and marked *unsure* in a **Match** column, so a
-   person can check it instead of it being dropped. A condition on the whole document, such as its supplier, party or
-   year, applies to every row in it: a document that clearly does not meet it gives no rows and is listed under "No rows
-   from".
+   person can check it instead of it being dropped. A document whose start contradicts the document condition, for
+   example by naming another supplier, is not read further: it gives no rows and is listed with its reason under
+   "Skipped". A document whose start does not settle it is read whole, and its rows are marked *unsure, please check*.
 6. **Answer.** The answer shows the first rows of the table (up to 100), followed by the summary, and the whole table as
    a CSV file: attached to the answer in the chat, a download link through the API. A document that could not be read is
    listed under the table with the reason; the other documents' rows are unaffected. Documents that were read but gave
@@ -58,20 +60,21 @@ flowchart LR
 
 The chat shows each step as it happens: a line saying how many documents will be read, which columns the table has and
 about how long it takes; a line when a long document starts; one line per document as it is extracted, with its first
-rows ("12 of 150 · invoice.pdf: 3 rows — Laptop X1, 1,200; Dock D2, 180"); and, while a document takes more than a
-minute, a line saying it is still being read. An answer can take many minutes when many documents are read; the progress
-shows it is alive.
+rows ("12 of 150 · invoice.pdf: 3 rows — Laptop X1, 1,200; Dock D2, 180") or why it was skipped ("14 of 150 ·
+initech-0412.pdf: skipped, Supplier: Initech AG"); and, while a document takes more than a minute, a line saying it is
+still being read. An answer can take many minutes when many documents are read; the progress shows it is alive.
 
 ### The request form
 
 A misread part of a request used to show only in the finished table, after every document had been read. So every new
-table request is first asked back, in three parts:
+table request is first asked back, in four parts:
 
-| Part                  | What it says                                                                                             | Alternative   |
-| --------------------- | -------------------------------------------------------------------------------------------------------- | ------------- |
-| **Location**          | The folders, files or years to read. The hint lists the scope's largest folders with their counts.       | All documents |
-| **Filter Condition**  | Which records the table keeps, such as *from Acme* or *only hardware items*.                             | Every row     |
-| **Values to extract** | The table's columns, which decide what a row is: an invoice number and a total give one row per invoice. | —             |
+| Part                   | What it says                                                                                                             | Alternative    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------- |
+| **Location**           | The folders, files or years to read. The hint lists the scope's largest folders with their counts.                       | All documents  |
+| **Document Condition** | Which documents count, such as *from Acme*, *signed versions only* or *dated Q1 2026*; checked at each document's start. | Every document |
+| **Filter Condition**   | Which records the table keeps, such as *only hardware items*, or the lines of one supplier on a statement.               | Every row      |
+| **Values to extract**  | The table's columns, which decide what a row is: an invoice number and a total give one row per invoice.                 | —              |
 
 With **Discovery mode** on, two more parts follow: **Exact keyword(s)**, words the wanted documents literally contain (a
 supplier's name, an invoice number), and **Semantic keyword(s)**, what the documents are about (*supplier invoice with
@@ -131,7 +134,7 @@ from the table. The search is bounded by **Maximum Decisions** and **Maximum Too
 selects by folder and checks the request's conditions in each document, and the answer says so.
 
 Whatever the search chose, the confirmed parts decide: the confirmed **Location** replaces any path the search set, and
-the confirmed **Values to extract** and **Filter Condition** are what is extracted.
+the confirmed **Values to extract**, **Document Condition** and **Filter Condition** are what is extracted.
 
 Without Discovery mode, ranking by meaning only decides which documents are sampled and read first; no document is ever
 left out because of its rank.
@@ -158,6 +161,9 @@ in its relevant parts: its opening, which states what every row shares, and the 
 are. Its rows are marked **(partly read)** next to the file name, and the summary lists it under "Partly read (rows may
 be missing)", because a line in a part that was not read is not found. See the ADR
 `2026_10_21_partial_reads_of_long_documents_in_record_extraction`.
+
+A long document that fails the document condition is read only in its first part: its start decides, and its other parts
+are not read at all. See the ADR `2026_11_18_document_condition_judged_in_the_first_extraction_window`.
 
 ## What it does *not* do
 
