@@ -363,3 +363,51 @@
     New purchases £2,318.90
     **New balance £2,318.90**
     Minimum payment due £69.57 by 25 March 2025
+
+- id: credit-correction-negative-de
+  kind: hard_negative
+  title: Rechnungskorrektur_RK-2026-07.pdf
+  note: A correction of an earlier invoice with a negative total works as a credit note, so it is not an invoice.
+  text: |
+    # Holzwerk Brunner GmbH
+    Sägestrasse 4, 6300 Zug · UID CHE-271.828.189 MWST
+
+    Lena Kramer, Bahnhofweg 9, 6340 Baar
+
+    ## Rechnungskorrektur Nr. RK-2026-07
+    zu Rechnung HB-2026-118 vom 12.10.2026 · Datum 20.10.2026
+
+    | Pos | Beschreibung | Betrag CHF |
+    |-----|--------------|-----------:|
+    | 1 | Minderlieferung: 1 Regalboden weniger | -50.00 |
+    | | MWST 8.1 % | -4.05 |
+    | | **Korrekturbetrag** | **-54.05** |
+
+    Der Betrag wird Ihnen zurückerstattet.
+
+- id: receipt-qr-payment-part-only-de
+  kind: hard_negative
+  title: Zahlteil_scan.pdf
+  note: A QR payment part on its own, without the invoice it belongs to, is not an invoice.
+  text: |
+    ✂ Empfangsschein
+
+    Konto / Zahlbar an
+    CH44 3199 9123 0008 8901 2
+    Holzwerk Brunner GmbH
+    Sägestrasse 4
+    6300 Zug
+
+    Referenz
+    00 00000 00000 02026 11800 00016
+
+    Zahlbar durch
+    Lena Kramer
+    Bahnhofweg 9
+    6340 Baar
+
+    Währung CHF Betrag 1 599.90
+    Annahmestelle
+
+    Zahlteil
+    Währung CHF Betrag 1 599.90

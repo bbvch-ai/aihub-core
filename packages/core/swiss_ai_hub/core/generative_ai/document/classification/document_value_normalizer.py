@@ -16,6 +16,7 @@ from swiss_ai_hub.core.generative_ai.document.classification.document_type impor
 from swiss_ai_hub.core.generative_ai.document.classification.document_type_catalog import DocumentTypeCatalog
 from swiss_ai_hub.core.generative_ai.document.classification.period_text_parser import PeriodTextParser
 from swiss_ai_hub.core.generative_ai.document.classification.raw_value_locator import RawValueLocator
+from swiss_ai_hub.core.generative_ai.document.classification.slash_date_order import SlashDateOrder
 from swiss_ai_hub.core.generative_ai.document.classification.tax_id_text_parser import TaxIdTextParser
 
 type _Raw = str | list[str] | None
@@ -31,6 +32,7 @@ class DocumentValueNormalizer:
     """
 
     VERSION: ClassVar[int] = 2
+    _SLASH_DATE: ClassVar[re.Pattern[str]] = re.compile(r"\b(\d{1,2})/(\d{1,2})/(?:\d{4}|\d{2})\b")
 
     @classmethod
     def normalize(
@@ -38,11 +40,12 @@ class DocumentValueNormalizer:
     ) -> dict[str, Any]:
         """The stored keys and values of every attribute that applies to `document_type`; explicit None when unknown."""
         applicable = DocumentTypeCatalog.applicable(document_type)
+        slash_order = cls._slash_order(answer, document_text)
         values: dict[str, Any] = {}
         for definition in applicable:
             if not definition.is_derived:
                 raw = cls._located(getattr(answer, definition.attribute.value), document_text)
-                values |= cls._stored(definition, raw)
+                values |= cls._stored(definition, raw, slash_order)
         cls._complete_currency(values)
         cls._drop_own_number(values)
         for definition in applicable:
@@ -61,17 +64,39 @@ class DocumentValueNormalizer:
         return raw.strip() if RawValueLocator.appears_in(raw, document_text) else None
 
     @classmethod
-    def _stored(cls, definition: DocumentAttributeDefinition, raw: _Raw) -> dict[str, Any]:
+    def _slash_order(cls, answer: DocumentClassificationAnswer, document_text: str) -> SlashDateOrder | None:
+        """The order the document writes slash dates in, for the ones both orders allow.
+
+        The document's own unambiguous slash dates settle it (`17/11/2017` is day first, `11/17/2017` month first);
+        when they disagree, none is read. Without such a date, a currency whose countries write day first settles it,
+        and USD, a bare `$` or no currency leave it unread, since month first is the US order.
+        """
+        orders = {
+            SlashDateOrder.DAY_FIRST if int(first) > 12 else SlashDateOrder.MONTH_FIRST
+            for first, second in cls._SLASH_DATE.findall(document_text)
+            if (int(first) > 12) != (int(second) > 12)
+        }
+        if orders:
+            return orders.pop() if len(orders) == 1 else None
+        currency = CurrencyTextParser.parse(
+            cls._located(answer.document_currency, document_text)
+        ) or CurrencyTextParser.parse(cls._located(answer.document_total_amount, document_text))
+        return SlashDateOrder.DAY_FIRST if currency is not None and currency != "USD" else None
+
+    @classmethod
+    def _stored(
+        cls, definition: DocumentAttributeDefinition, raw: _Raw, slash_order: SlashDateOrder | None
+    ) -> dict[str, Any]:
         match definition.value_type:
             case AttributeValueType.DATE:
-                parsed = DateTextParser.parse(raw)
+                parsed = DateTextParser.parse(raw, slash_order)
                 return {
                     definition.key: parsed.start.isoformat() if parsed else None,
                     definition.raw_key: raw,
                     definition.precision_key: parsed.precision.value if parsed else None,
                 }
             case AttributeValueType.PERIOD:
-                period = PeriodTextParser.parse(raw)
+                period = PeriodTextParser.parse(raw, slash_order)
                 return {
                     definition.start_key: period.start.isoformat() if period else None,
                     definition.end_key: period.end.isoformat() if period else None,

@@ -65,6 +65,15 @@ rest, where totals and payment terms often stand.
 - Every German "Gutschrift" is `other`, a self-billing one under § 14 UStG included. The evaluation (#2481) showed that
   calling self-billing Gutschriften invoices made the model take a plain credit note for one and swap issuer and
   recipient; a credit note type (#2485) is where the two are told apart.
+- Two more boundaries, set on 2026-11-18 after testing 141 sample documents (ZUGFeRD/Factur-X, scans, generated Swiss QR
+  invoices): a correction of an earlier invoice whose total is negative works as a credit note and is `other`, while a
+  final invoice whose deducted advance payments make its total negative stays an invoice; a QR payment part on its own,
+  without the invoice it belongs to, is `other`.
+- A slash date both orders allow (`05/11/2026`) is read in the order the document itself shows: its other slash dates
+  settle it when one of them allows only one order (`11/17/2026` is month first). Without such a date, it is read day
+  first when the document's currency is CHF, EUR or another non-dollar currency, and stays empty with USD, a bare `$`,
+  no currency or contradicting dates: month first is the US order. A French sample written month first under English
+  labels showed that the currency alone is not enough.
 - Every ingested document costs one more model call, through the PII guardrail for external models. #2482 measures it.
 - With only `invoice` and `other`, everything that is not an invoice is `other`. Adding a type raises `other`'s version,
   so only documents marked `other` are classified again. A type carved out of an existing one (say, credit notes out of

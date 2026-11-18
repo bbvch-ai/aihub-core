@@ -159,3 +159,72 @@ def test_renormalizing_keeps_the_secondary_types() -> None:
     stored["document_types"] = ["invoice", "invoice"]
 
     assert DocumentClassification.renormalized(stored, _INVOICE).document_types == [DocumentType.INVOICE]
+
+
+_SLASH_DATED = """# Imprimerie du Léman SA
+Facture F-2026-344 du 05/11/2026
+Total {total}
+{extra}
+"""
+
+
+@pytest.mark.parametrize(
+    ("total", "currency", "read"),
+    [
+        ("CHF 562.10", None, "2026-11-05"),
+        ("562.10 EUR", None, "2026-11-05"),
+        ("$562.10", None, None),
+        ("USD 562.10", None, None),
+        ("562.10", None, None),
+    ],
+    ids=["chf", "eur", "bare-dollar", "usd", "no-currency"],
+)
+def test_an_ambiguous_slash_date_is_day_first_only_on_a_non_dollar_document(
+    total: str, currency: str | None, read: str | None
+) -> None:
+    text = _SLASH_DATED.format(total=total, extra="")
+    classification = _classified(
+        text,
+        document_date="05/11/2026",
+        document_total_amount=total,
+        document_currency=currency,
+        document_reference_number="F-2026-344",
+        document_issuer="Imprimerie du Léman SA",
+        document_issuer_tax_id=None,
+        document_recipient=None,
+        document_due_date=None,
+        document_period=None,
+        document_related_references=None,
+    )
+
+    assert classification.values["document_date"] == read
+    assert classification.values["document_date_raw"] == "05/11/2026"
+
+
+@pytest.mark.parametrize(
+    ("total", "extra", "read"),
+    [
+        ("EUR 562.10", "Paid by transfer on 11/17/2026", "2026-05-11"),
+        ("$562.10", "Delivered 17/11/2026", "2026-11-05"),
+        ("CHF 562.10", "Delivered 17/11/2026, paid 11/18/2026", None),
+    ],
+    ids=["page-says-month-first", "page-says-day-first", "page-contradicts-itself"],
+)
+def test_the_documents_own_unambiguous_slash_dates_settle_the_order_before_its_currency(
+    total: str, extra: str, read: str | None
+) -> None:
+    classification = _classified(
+        _SLASH_DATED.format(total=total, extra=extra),
+        document_date="05/11/2026",
+        document_total_amount=total,
+        document_currency=None,
+        document_reference_number="F-2026-344",
+        document_issuer="Imprimerie du Léman SA",
+        document_issuer_tax_id=None,
+        document_recipient=None,
+        document_due_date=None,
+        document_period=None,
+        document_related_references=None,
+    )
+
+    assert classification.values["document_date"] == read

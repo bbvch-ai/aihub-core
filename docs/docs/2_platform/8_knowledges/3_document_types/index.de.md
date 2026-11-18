@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: 7a3887a542cf99ec89161aefd57a16e20fb6b903a6577d205ef2270a27ff84b2
+source_sha: e6a3a95b6f8fa28675e8536273978e669c9c44dd84e8b66d32d21998315a6a73
 ---
 
 # Dokumenttypen und Attribute
@@ -107,9 +107,13 @@ Regeln, die verhindern, dass Werte geraten werden:
 
 - **Nicht im Dokument, nicht gespeichert.** Text, den das Modell übernommen hat, der im Dokument aber nicht vorkommt,
   wird verworfen.
-- **Mehrdeutige Daten bleiben leer.** `03/04/2025` kann März oder April sein, daher wird nur der Text aufbewahrt. Daten
-  mit Punkten oder Bindestrichen werden mit dem Tag zuerst gelesen; ein Datum mit Schrägstrichen nur, wenn eine
-  Reihenfolge unmöglich ist.
+- **Mehrdeutige Daten werden nur in der Reihenfolge des Dokuments gelesen.** Daten mit Punkten oder Bindestrichen werden
+  mit dem Tag zuerst gelesen. Ein Datum mit Schrägstrichen wie `03/04/2025` kann März oder April sein. Die übrigen
+  Schrägstrich-Daten des Dokuments entscheiden, wenn eines davon nur eine Reihenfolge zulässt (`17/11/2025`: Tag zuerst,
+  `11/17/2025`: Monat zuerst). Gibt es kein solches Datum, wird mit dem Tag zuerst gelesen, wenn die Währung des
+  Dokuments CHF, EUR oder eine andere Nicht-Dollar-Währung ist, da der Monat zuerst die US-Reihenfolge ist. Bei USD,
+  einem alleinstehenden `$`, ohne Währung oder bei widersprüchlichen Schrägstrich-Daten bleibt es leer, und nur der Text
+  wird aufbewahrt.
 - **Steuer-IDs werden geprüft.** Eine Schweizer UID muss ihre Prüfziffer bestehen. Eine EU-MWST-Nummer muss dem Format
   ihres Landes entsprechen. Eine deutsche Steuernummer hat keine einheitliche Form und wird nur als Text aufbewahrt.
 - **Beträge in jeder Schreibweise.** `12'496.36`, `12.496,36`, `12 496,36` und `12,496.36` sind derselbe Betrag; das

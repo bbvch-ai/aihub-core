@@ -33,7 +33,7 @@ class DocumentTypeCatalog:
       prompt's rules. It re-classifies every document, so prefer a type's version whenever the change allows.
     """
 
-    VERSION: ClassVar[int] = 1
+    VERSION: ClassVar[int] = 2
     MAX_SECONDARY_TYPES: ClassVar[int] = 3
 
     ATTRIBUTES: ClassVar[tuple[DocumentAttributeDefinition, ...]] = (
@@ -88,7 +88,8 @@ class DocumentTypeCatalog:
             description=(
                 "Requests payment for goods or services that were delivered or agreed, and states an amount the "
                 "recipient owes the issuer. Includes partial, final and advance-payment invoices, QR-bills, and "
-                "utility and telecom bills."
+                "utility and telecom bills. A final invoice stays an invoice when the advance payments it deducts "
+                "make its total negative."
             ),
             excludes=[
                 "offers and quotes",
@@ -96,6 +97,9 @@ class DocumentTypeCatalog:
                 "delivery notes",
                 "receipts for a payment already made (Quittung, Kassenbon)",
                 "credit notes and every Gutschrift, including a self-billing one the buyer issues under § 14 UStG",
+                "a correction of an earlier invoice (Rechnungskorrektur, facture rectificative) whose total is "
+                "negative, which works as a credit note",
+                "a QR payment part (Zahlteil, section paiement) on its own, without the invoice it belongs to",
                 "payment reminders (Mahnung)",
                 "account statements",
                 "pro-forma invoices",

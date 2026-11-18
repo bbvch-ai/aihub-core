@@ -7,6 +7,7 @@ from typing import ClassVar
 
 from swiss_ai_hub.core.generative_ai.document.classification.date_precision import DatePrecision
 from swiss_ai_hub.core.generative_ai.document.classification.normalized_date import NormalizedDate
+from swiss_ai_hub.core.generative_ai.document.classification.slash_date_order import SlashDateOrder
 
 type _Builder = Callable[[re.Match[str]], NormalizedDate | None]
 
@@ -16,7 +17,8 @@ class DateTextParser:
 
     Never guesses: a slash date whose day and month could be swapped (03/04/2025) and a date that does not exist come
     back as None, and the copied text is kept for a later parser. Dots and dashes are read day first, as everywhere in
-    Switzerland and the EU; a slash date is read whichever way only one order allows.
+    Switzerland and the EU; a slash date is read whichever way only one order allows, or in the order the caller knows
+    the document uses (`slash_order`).
     """
 
     MONTHS: ClassVar[dict[str, int]] = {
@@ -54,12 +56,12 @@ class DateTextParser:
     _YEAR: ClassVar[re.Pattern[str]] = re.compile(r"^(\d{4})$")
 
     @classmethod
-    def parse(cls, raw: str | None) -> NormalizedDate | None:
+    def parse(cls, raw: str | None, slash_order: SlashDateOrder | None = None) -> NormalizedDate | None:
         """The first date the text states, at the precision it states it; None when there is none or it is ambiguous."""
         if not raw:
             return None
         text = cls.normalized(raw)
-        for pattern, builder in cls._builders():
+        for pattern, builder in cls._builders(slash_order):
             match = pattern.search(text)
             if match:
                 return builder(match)
@@ -104,10 +106,10 @@ class DateTextParser:
         )
 
     @classmethod
-    def _builders(cls) -> list[tuple[re.Pattern[str], _Builder]]:
+    def _builders(cls, slash_order: SlashDateOrder | None) -> list[tuple[re.Pattern[str], _Builder]]:
         return [
             (cls.ISO_PATTERN, lambda m: cls.day(int(m[1]), int(m[2]), int(m[3]))),
-            (cls.NUMERIC_PATTERN, cls._numeric_day),
+            (cls.NUMERIC_PATTERN, lambda m: cls._numeric_day(m, slash_order)),
             (cls.DAY_MONTH_NAME_PATTERN, lambda m: cls.day(cls.full_year(m[3]), cls.MONTHS[m[2]], int(m[1]))),
             (cls.MONTH_NAME_DAY_PATTERN, lambda m: cls.day(int(m[3]), cls.MONTHS[m[1]], int(m[2]))),
             (cls._QUARTER, cls._quarter_of),
@@ -117,13 +119,19 @@ class DateTextParser:
         ]
 
     @classmethod
-    def _numeric_day(cls, match: re.Match[str]) -> NormalizedDate | None:
+    def _numeric_day(cls, match: re.Match[str], slash_order: SlashDateOrder | None) -> NormalizedDate | None:
         first, separator, second, year = int(match[1]), match[2], int(match[3]), cls.full_year(match[4])
         if separator != "/" or first > 12:
             return cls.day(year, second, first)
         if second > 12 or first == second:
             return cls.day(year, first, second)
-        return None
+        match slash_order:
+            case SlashDateOrder.DAY_FIRST:
+                return cls.day(year, second, first)
+            case SlashDateOrder.MONTH_FIRST:
+                return cls.day(year, first, second)
+            case _:
+                return None
 
     @classmethod
     def _quarter_of(cls, match: re.Match[str]) -> NormalizedDate:

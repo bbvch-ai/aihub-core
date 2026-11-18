@@ -7,6 +7,7 @@ import pytest
 
 from swiss_ai_hub.core.generative_ai.document.classification.date_precision import DatePrecision
 from swiss_ai_hub.core.generative_ai.document.classification.date_text_parser import DateTextParser
+from swiss_ai_hub.core.generative_ai.document.classification.slash_date_order import SlashDateOrder
 
 pytestmark = pytest.mark.unit
 
@@ -93,3 +94,16 @@ def test_payment_terms_with_a_date_give_that_date() -> None:
 def test_two_digit_years_before_70_are_this_century() -> None:
     assert DateTextParser.full_year("25") == 2025
     assert DateTextParser.full_year("99") == 1999
+
+
+def test_an_ambiguous_slash_date_is_read_only_in_the_order_the_caller_gives() -> None:
+    assert DateTextParser.parse("05/11/2026") is None
+    assert DateTextParser.parse("05/11/2026", SlashDateOrder.DAY_FIRST).start == date(2026, 11, 5)
+    assert DateTextParser.parse("05/11/2026", SlashDateOrder.MONTH_FIRST).start == date(2026, 5, 11)
+
+
+@pytest.mark.parametrize(("raw", "day"), [("13/11/2026", date(2026, 11, 13)), ("11/13/2026", date(2026, 11, 13))])
+def test_a_slash_date_only_one_order_allows_keeps_that_order_either_way(raw: str, day: date) -> None:
+    assert DateTextParser.parse(raw).start == day
+    assert DateTextParser.parse(raw, SlashDateOrder.DAY_FIRST).start == day
+    assert DateTextParser.parse(raw, SlashDateOrder.MONTH_FIRST).start == day

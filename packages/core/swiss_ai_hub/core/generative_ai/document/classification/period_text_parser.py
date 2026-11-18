@@ -4,6 +4,7 @@ from typing import ClassVar
 from swiss_ai_hub.core.generative_ai.document.classification.date_precision import DatePrecision
 from swiss_ai_hub.core.generative_ai.document.classification.date_text_parser import DateTextParser
 from swiss_ai_hub.core.generative_ai.document.classification.normalized_date import NormalizedDate
+from swiss_ai_hub.core.generative_ai.document.classification.slash_date_order import SlashDateOrder
 
 _P = DateTextParser
 _TO = r"\s*(?:-|bis|au|à|al|a|to|until|through)\s*"
@@ -49,24 +50,24 @@ class PeriodTextParser:
     _MONTH_NAME: ClassVar[re.Pattern[str]] = re.compile(rf"\b(?:{_P.MONTH_PATTERN})\b")
 
     @classmethod
-    def parse(cls, raw: str | None) -> NormalizedDate | None:
+    def parse(cls, raw: str | None, slash_order: SlashDateOrder | None = None) -> NormalizedDate | None:
         if not raw:
             return None
         text = DateTextParser.normalized(raw)
         if written_range := cls._shortened_range(text) or cls._month_range(text):
             return written_range
-        dates = cls._full_dates(text)
+        dates = cls._full_dates(text, slash_order)
         if len(dates) >= 2:
             return cls._range(dates[0], dates[-1])
         if len(dates) + len(cls._MONTH_NAME.findall(cls._without_full_dates(text))) >= 2:
             return None
-        return DateTextParser.parse(raw)
+        return DateTextParser.parse(raw, slash_order)
 
     @classmethod
-    def _full_dates(cls, text: str) -> list[NormalizedDate]:
+    def _full_dates(cls, text: str, slash_order: SlashDateOrder | None) -> list[NormalizedDate]:
         """Every complete date in the text, in the order written; a reversed pair is then no period at all."""
         found = sorted(
-            (match.start(), DateTextParser.parse(match[0]))
+            (match.start(), DateTextParser.parse(match[0], slash_order))
             for pattern in cls._FULL_DATE_PATTERNS
             for match in pattern.finditer(text)
         )

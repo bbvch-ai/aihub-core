@@ -592,3 +592,268 @@
     document_period_start: null
     document_period_end: null
     document_related_references: null
+
+- id: invoice-sender-line-heading-de
+  kind: boundary_invoice
+  title: Rechnung_HB-2026-118.pdf
+  note: >-
+    The supplier appears only in the letterhead, the sender line above the address and the UID; the customer's name is
+    a heading, as MinerU renders an address block. The heading is the recipient, not the issuer.
+  text: |
+    Holzwerk Brunner GmbH
+    Holzwerk Brunner GmbH · Sägestrasse 4 · 6300 Zug
+
+    # Lena Kramer
+    Bahnhofweg 9
+    6340 Baar
+
+    Rechnung # HB-2026-118 vom 12.10.2026
+
+    | # | Produkt | MWST | Einzelpreis | Summe |
+    |---|---------|------|-------------|-------|
+    | 1,00 | Massanfertigung Wandregal Eiche | 8.1% | 1'480,00 CHF | 1'480,00 CHF |
+
+    Zuzügl. MWST: 119,90 CHF
+    Summe inkl. MWST: 1'599,90 CHF
+
+    Zahlbar bis 11.11.2026.
+    UID: CHE-271.828.189 MWST · IBAN CH93 0076 2011 6238 5295 7
+  expected:
+    document_date: "2026-10-12"
+    document_reference_number: HB-2026-118
+    document_issuer: Holzwerk Brunner GmbH
+    document_issuer_tax_id: CHE271828189
+    document_recipient: Lena Kramer
+    document_total_amount: 1599.90
+    document_currency: CHF
+    document_due_date: "2026-11-11"
+    document_period_start: null
+    document_period_end: null
+    document_related_references: null
+
+- id: invoice-sender-line-two-columns-de
+  kind: boundary_invoice
+  title: Rechnung_HB-2026-131.pdf
+  note: >-
+    A two-column letter flattened into one: the supplier's phone and e-mail follow the customer's address. They belong
+    to the issuer, so the name below the sender line is still the recipient.
+  text: |
+    Holzwerk Brunner GmbH
+
+    Sägestrasse 4
+
+    6300 Zug
+
+    Holzwerk Brunner GmbH Sägestrasse 4 6300 Zug
+
+    Lena Kramer
+
+    Bahnhofweg 9
+
+    6340 Baar
+
+    Tel. 041 711 22 33
+
+    info@holzwerk-brunner.example
+
+    Rechnung # HB-2026-131 vom 26.10.2026
+
+    | # | Produkt | MWST | Summe |
+    |---|---------|------|-------|
+    | 1,00 | Reparatur Schranktür | 8.1% | 240,00 CHF |
+
+    Summe inkl. MWST: 259,45 CHF
+
+    Bitte überweisen Sie bis zum 25.11.2026.
+
+    UID: CHE-271.828.189 MWST · IBAN CH93 0076 2011 6238 5295 7
+  expected:
+    document_date: "2026-10-26"
+    document_reference_number: HB-2026-131
+    document_issuer: Holzwerk Brunner GmbH
+    document_issuer_tax_id: CHE271828189
+    document_recipient: Lena Kramer
+    document_total_amount: 259.45
+    document_currency: CHF
+    document_due_date: "2026-11-25"
+    document_period_start: null
+    document_period_end: null
+    document_related_references: null
+
+- id: invoice-sender-line-heading-fr
+  kind: boundary_invoice
+  title: Facture_AR-2026-0412.pdf
+  note: The same layout in French; the addressee in a heading is the recipient.
+  text: |
+    Atelier Rhône Sàrl
+    Atelier Rhône Sàrl, Quai du Seujet 22, 1201 Genève
+
+    ## Madame Claire Favre
+    Chemin des Vignes 3
+    1260 Nyon
+
+    Facture n° AR-2026-0412 – Genève, le 3 novembre 2026
+
+    | Désignation | Montant |
+    |-------------|--------:|
+    | Restauration d'une commode Louis XV | 782,00 CHF |
+    | TVA 8.1 % | 63,30 CHF |
+
+    Montant total : 845,30 CHF
+    Payable jusqu'au 3 décembre 2026.
+    IDE CHE-161.803.394 TVA
+  expected:
+    document_date: "2026-11-03"
+    document_reference_number: AR-2026-0412
+    document_issuer: Atelier Rhône Sàrl
+    document_issuer_tax_id: CHE161803394
+    document_recipient: Madame Claire Favre
+    document_total_amount: 845.30
+    document_currency: CHF
+    document_due_date: "2026-12-03"
+    document_period_start: null
+    document_period_end: null
+    document_related_references: null
+
+- id: invoice-previous-balance-de
+  kind: boundary_invoice
+  title: Beitragsrechnung_VB-2026-4471.pdf
+  note: >-
+    The amount to pay adds an unpaid balance from the previous period; the invoice's own total is the premium of this
+    period alone. The policy is the contract the invoice refers to.
+  text: |
+    # Helvetia-Nova Versicherungen AG
+    Bundesplatz 7, 3011 Bern · UID CHE-577.215.667 MWST
+
+    Herr Jonas Wyss
+    Lindenweg 14
+    3600 Thun
+
+    ## Beitragsrechnung Nr. VB-2026-4471
+    Bern, 02.10.2026
+    Police 44.812.330 · Versicherungsperiode 01.10.2026 – 31.12.2026
+
+    | Beschreibung | Betrag CHF |
+    |--------------|-----------:|
+    | Quartalsbeitrag Hausrat inkl. Stempelabgabe | 310.00 |
+    | Offener Saldo aus Vorperiode | 310.00 |
+    | **Zu zahlender Betrag** | **620.00** |
+
+    Zahlbar bis 31.10.2026.
+  expected:
+    document_date: "2026-10-02"
+    document_reference_number: VB-2026-4471
+    document_issuer: Helvetia-Nova Versicherungen AG
+    document_issuer_tax_id: CHE577215667
+    document_recipient: Herr Jonas Wyss
+    document_total_amount: 310.00
+    document_currency: CHF
+    document_due_date: "2026-10-31"
+    document_period_start: "2026-10-01"
+    document_period_end: "2026-12-31"
+    document_related_references: ["44.812.330"]
+
+- id: invoice-previous-balance-fr
+  kind: boundary_invoice
+  title: Facture_TC-88213.pdf
+  note: A telecom bill adding an unpaid earlier balance; the total is this period's own amount.
+  text: |
+    # Télécom Lémanique SA
+    Avenue de la Gare 18, 1003 Lausanne · IDE CHE-271.828.189 TVA
+
+    Monsieur Luc Perret
+    Rue du Midi 6
+    1800 Vevey
+
+    ## Facture n° TC-88213 du 02.11.2026
+    Période de facturation : octobre 2026
+
+    | Libellé | Montant |
+    |---------|--------:|
+    | Abonnement fibre et mobile, TVA incluse | CHF 89.90 |
+    | Solde antérieur impayé | CHF 89.90 |
+    | **Total à payer** | **CHF 179.80** |
+
+    À payer jusqu'au 02.12.2026.
+  expected:
+    document_date: "2026-11-02"
+    document_reference_number: TC-88213
+    document_issuer: Télécom Lémanique SA
+    document_issuer_tax_id: CHE271828189
+    document_recipient: Monsieur Luc Perret
+    document_total_amount: 89.90
+    document_currency: CHF
+    document_due_date: "2026-12-02"
+    document_period_start: "2026-10-01"
+    document_period_end: "2026-10-31"
+    document_related_references: null
+
+- id: invoice-slash-date-chf-fr
+  kind: boundary_invoice
+  title: Facture_F-2026-410.pdf
+  note: >-
+    A slash date both orders allow, on a CHF invoice with no other slash date: read day first, as in Switzerland and
+    the EU. A USD invoice keeps it unread (invoice-ambiguous-us-date-en).
+  text: |
+    # Imprimerie du Léman SA
+    Avenue de Rhodanie 40, 1007 Lausanne · IDE CHE-161.803.394 TVA
+
+    Café des Arts Sàrl
+    Rue du Bourg 9, 1003 Lausanne
+
+    ## Facture n° F-2026-410
+    Date : 05/11/2026 · Échéance : 05/12/2026
+
+    | Désignation | Montant |
+    |-------------|--------:|
+    | Affiches A2, 50 exemplaires | 520,00 |
+    | TVA 8.1 % | 42,10 |
+
+    Total TTC CHF 562,10
+  expected:
+    document_date: "2026-11-05"
+    document_reference_number: F-2026-410
+    document_issuer: Imprimerie du Léman SA
+    document_issuer_tax_id: CHE161803394
+    document_recipient: Café des Arts Sàrl
+    document_total_amount: 562.10
+    document_currency: CHF
+    document_due_date: "2026-12-05"
+    document_period_start: null
+    document_period_end: null
+    document_related_references: null
+
+- id: invoice-slash-date-month-first-eur
+  kind: boundary_invoice
+  title: Invoice_FX-2026-0057.pdf
+  note: >-
+    A EUR invoice written in the US order: its own 11/17/2026 can only be month first, so 11/03/2026 is 3 November,
+    whatever the currency suggests.
+  text: |
+    # Lumière Export SAS
+    12 rue de la Paix, 75002 Paris · VAT FR11999999998
+
+    Bill to: Alpine Retail GmbH, Kärntner Strasse 5, 1010 Wien
+
+    ## Invoice FX-2026-0057
+    | Invoice Date | 11/03/2026 |
+    | Due Date | 12/03/2026 |
+
+    | Item | Amount |
+    |------|-------:|
+    | Lamps, 20 units | 1,240.00 € |
+
+    Total due: 1,240.00 €
+    Partial payment received 11/17/2026: 0.00 €
+  expected:
+    document_date: "2026-11-03"
+    document_reference_number: FX-2026-0057
+    document_issuer: Lumière Export SAS
+    document_issuer_tax_id: FR11999999998
+    document_recipient: Alpine Retail GmbH
+    document_total_amount: 1240.00
+    document_currency: EUR
+    document_due_date: "2026-12-03"
+    document_period_start: null
+    document_period_end: null
+    document_related_references: null

@@ -98,8 +98,11 @@ mismatch. An attribute that does not apply to a type is not stored on documents 
 Rules that keep values from being guessed:
 
 - **Not in the document, not stored.** Text the model copied that the document does not contain is dropped.
-- **Ambiguous dates stay empty.** `03/04/2025` could be March or April, so only its text is kept. Dates with dots or
-  dashes are read day first; a slash date only when one order is impossible.
+- **Ambiguous dates are read only in the document's own order.** Dates with dots or dashes are read day first. A slash
+  date such as `03/04/2025` could be March or April. The document's other slash dates settle it when one of them allows
+  only one order (`17/11/2025` is day first, `11/17/2025` month first). Without such a date, it is read day first on a
+  document whose currency is CHF, EUR or another non-dollar currency, since month first is the US order, and stays
+  empty, with only its text kept, with USD, a bare `$`, no currency, or slash dates that contradict each other.
 - **Tax IDs are checked.** A Swiss UID must pass its check digit. An EU VAT number must match its country's format. A
   German tax office number (Steuernummer) has no standard form and is kept as text only.
 - **Amounts in every convention.** `12'496.36`, `12.496,36`, `12 496,36` and `12,496.36` are the same amount; the Swiss
