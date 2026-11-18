@@ -356,12 +356,14 @@ event:
   extraction:
     fields: Spalten
     instructions: Zu behaltende Zeilen
+    documentCondition: Zählende Dokumente
     criteria: Ausgewählte Dokumente
     collections: Sammlungen
     notices: Hinweise
     documentIds: '{count} gewählte Dokumente'
     files: Dateien
     failedFiles: Fehlgeschlagene Dateien
+    skippedFiles: Wegen der Dokumentbedingung übersprungene Dateien
     rows: Gezeigte / gefundene Zeilen
     truncated: Gekürzt
     confirmed: Extrahiert alle vom Benutzer bestätigten Dokumente

@@ -354,12 +354,14 @@ event:
   extraction:
     fields: Colonnes
     instructions: Lignes à garder
+    documentCondition: Documents retenus
     criteria: Documents sélectionnés
     collections: Collections
     notices: Remarques
     documentIds: '{count} documents choisis'
     files: Fichiers
     failedFiles: Fichiers en échec
+    skippedFiles: Fichiers ignorés selon la condition sur le document
     rows: Lignes affichées / trouvées
     truncated: Écourté
     confirmed: Extrait tous les documents confirmés par l'utilisateur
