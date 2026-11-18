@@ -1,4 +1,5 @@
 import logging
+import re
 
 from redis.asyncio import Redis
 from swiss_ai_hub.core.auth import UserIdentity
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 FAILURE_REASON_CHARACTERS = 300
 SKIP_REASON_CHARACTERS = 200
+_LEADING_MARKERS = re.compile(r"^(?:[#>|]+ ?|[-*+] )+")
 # A document this long takes several extraction calls, so its start is announced: the chat otherwise shows nothing
 # from it for minutes. About three windows of a mid-sized model.
 LONG_DOCUMENT_CHARACTERS = 40_000
@@ -176,8 +178,9 @@ class DocumentRecordExtraction:
     @staticmethod
     def _one_line(reason: str, limit: int) -> str:
         """Model output taken from document text must not break the summary's markdown list: one line, no leading
-        heading, list, table or quote marker."""
-        return " ".join(reason.split()).lstrip("#-|*> ")[:limit]
+        heading, table or quote marker and no leading list bullet. Emphasis such as `**Supplier:**` is kept whole, since
+        stripping only its opening stars would leave the rest of the summary line bold."""
+        return _LEADING_MARKERS.sub("", " ".join(reason.split()))[:limit]
 
     @staticmethod
     async def _report(

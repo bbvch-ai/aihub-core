@@ -470,16 +470,21 @@ class TestTable:
 
     @pytest.mark.asyncio
     async def test_an_unsure_document_shows_the_match_column_and_is_named(self, store: _Store):
-        run = _run(file_count=1, document_condition="only invoices from Hooli")
+        run = _run(file_count=2, document_condition="only invoices from Hooli")
         rows = [{"item": "Rack", "amount": 1.0, RecordSchema.MATCH_FIELD: RecordSchema.MATCH_UNSURE}]
+        results = [
+            _result(run, "a.pdf", rows, store, document_unsure=True),
+            _result(run, "b.pdf", document_unsure=True),
+        ]
 
-        table = await ExtractionTable.assemble(run, [_result(run, "a.pdf", rows, store, document_unsure=True)], T)
+        table = await ExtractionTable.assemble(run, results, T)
 
         assert table.columns[-1] == "Match"
         assert "| Rack | 1.0 | unsure, please check |" in table.table
-        assert "**Unsure whether they meet the document condition, read and marked for checking:** a.pdf" in (
-            table.summary
+        assert "**Unsure whether they meet the document condition, read and marked for checking:** a.pdf\n" in (
+            table.summary + "\n"
         )
+        assert "**No rows from:** b.pdf\n" in table.summary + "\n"
 
     @pytest.mark.asyncio
     async def test_the_failed_block_stands_before_the_notices(self, store: _Store):
@@ -756,9 +761,11 @@ class TestDocumentExtraction:
     async def test_reasons_cannot_break_the_summary_list(self, store: _Store):
         skipped = await _extract_document(_skipped(reason="# Supplier:\n\n- Initech AG\n| x |"))
         failed = await _extract_document(DocumentExtractionResult.failed_with(_provenance(), "\n- boom\n\n## next", 1))
+        emphasised = await _extract_document(_skipped(reason="**Supplier:** Initech AG"))
 
         assert skipped.skipped_reason == "Supplier: - Initech AG | x |"
         assert failed.failure_reason == "boom ## next"
+        assert emphasised.skipped_reason == "**Supplier:** Initech AG"
 
     @pytest.mark.asyncio
     async def test_the_condition_is_passed_to_the_extractor(self, store: _Store):

@@ -223,7 +223,8 @@ class ExtractionTable:
         ]
         if empty:
             lines.append(t(f"{key}.no_rows", files=ExtractionTable._listed(empty, t)))
-        document_unsure = [result.document.path for result in results if result.document_unsure]
+        # An unsure document without rows has nothing to check; it is named under "No rows from" only.
+        document_unsure = [result.document.path for result in results if result.document_unsure and result.row_count]
         if document_unsure:
             lines.append(t(f"{key}.documents_unsure", files=ExtractionTable._listed(document_unsure, t)))
         return lines
