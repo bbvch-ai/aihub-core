@@ -5,7 +5,6 @@ import logging
 import math
 import re
 from collections.abc import Coroutine
-from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
 
@@ -145,10 +144,10 @@ class LangfuseProvisioner:
     ) -> None:
         """Langfuse can't price custom model names, so each gets a definition with LiteLLM's prices.
 
-        Langfuse prices a generation with the newest definition of its model that started before it. A changed price
-        therefore gets a new definition starting now, and older traces keep the price they were made at.
+        Langfuse keeps one definition per model name and stores each generation's cost when it ingests it. A changed
+        price therefore replaces the definition, and generations already ingested keep the cost they were given.
         """
-        current_prices = await self._fetch_custom_model_prices(client)
+        current = await self._fetch_custom_models(client)
         registered = 0
 
         for entry in litellm_models:
@@ -160,12 +159,13 @@ class LangfuseProvisioner:
             if not model_name or input_cost is None:
                 continue
 
-            known_prices = current_prices.get(model_name)
-            if known_prices is not None and self._same_prices(known_prices, (input_cost, output_cost)):
-                continue
+            known = current.get(model_name)
+            if known is not None:
+                if self._same_prices(self._default_tier_prices(known), (input_cost, output_cost)):
+                    continue
+                await self._delete_model_definition(client, known["id"])
 
-            start_date = None if known_prices is None else datetime.now(UTC)
-            if await self._create_model_definition(client, model_name, input_cost, output_cost, start_date):
+            if await self._create_model_definition(client, model_name, input_cost, output_cost):
                 registered += 1
 
         logger.info(f"Langfuse provisioning: Registered {registered} model definitions with pricing")
@@ -202,9 +202,9 @@ class LangfuseProvisioner:
 
         return response.json().get("data", [])
 
-    async def _fetch_custom_model_prices(self, client: httpx.AsyncClient) -> dict[str, tuple[float, float]]:
-        """The input and output price of the newest custom definition of each model name."""
-        newest: dict[str, dict[str, Any]] = {}
+    async def _fetch_custom_models(self, client: httpx.AsyncClient) -> dict[str, dict[str, Any]]:
+        """The project's own model definitions by model name; Langfuse's built-in ones are never touched."""
+        custom: dict[str, dict[str, Any]] = {}
         page, total_pages = 1, 1
 
         while page <= total_pages:
@@ -215,19 +215,17 @@ class LangfuseProvisioner:
             )
             response.raise_for_status()
             body = response.json()
-            for model in body.get("data", []):
-                if not model.get("isLangfuseManaged") and self._starts_later(model, newest.get(model["modelName"])):
-                    newest[model["modelName"]] = model
+            custom.update(
+                {model["modelName"]: model for model in body.get("data", []) if not model.get("isLangfuseManaged")}
+            )
             total_pages = body.get("meta", {}).get("totalPages", 1)
             page += 1
 
-        return {name: self._default_tier_prices(model) for name, model in newest.items()}
+        return custom
 
-    @staticmethod
-    def _starts_later(model: dict[str, Any], other: dict[str, Any] | None) -> bool:
-        if other is None:
-            return True
-        return (model.get("startDate") or "") > (other.get("startDate") or "")
+    async def _delete_model_definition(self, client: httpx.AsyncClient, model_id: str) -> None:
+        response = await client.delete(f"{self._base_url}/api/public/models/{model_id}", auth=self._auth)
+        response.raise_for_status()
 
     @staticmethod
     def _default_tier_prices(model: dict[str, Any]) -> tuple[float, float]:
@@ -279,7 +277,6 @@ class LangfuseProvisioner:
         model_name: str,
         input_cost_per_token: float,
         output_cost_per_token: float,
-        start_date: datetime | None = None,
     ) -> bool:
         url = f"{self._base_url}/api/public/models"
         match_pattern = f"(?i)^({re.escape(model_name)})$"
@@ -291,8 +288,6 @@ class LangfuseProvisioner:
             "inputPrice": input_cost_per_token,
             "outputPrice": output_cost_per_token,
         }
-        if start_date is not None:
-            model_data["startDate"] = start_date.isoformat()
 
         response = await client.post(url, json=model_data, auth=self._auth)
 

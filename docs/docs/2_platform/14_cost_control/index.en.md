@@ -107,9 +107,9 @@ price.
 | Langfuse          | traces                                   | the usage in the trace, priced from model definitions created from LiteLLM's prices                                |
 
 The LiteLLM spend log is the one to compare with invoices: it covers every call through the proxy. Hub cost events cover
-agent runs only. Langfuse prices each trace at the price that applied when the trace was made: the Hub API adds a
-definition with the new price, valid from that moment, each time it starts and finds a price changed. Models priced per
-second of audio, such as transcription, are not priced in Langfuse.
+agent runs only. Langfuse stores each generation's cost when it records it: when the Hub API starts and finds a price
+changed in LiteLLM, it replaces that model's definition in Langfuse, and generations recorded before keep the cost they
+were given. Models priced per second of audio, such as transcription, are not priced in Langfuse.
 
 ### Prices of the Docker Compose deployments
 

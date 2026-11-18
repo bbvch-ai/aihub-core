@@ -1,8 +1,8 @@
 """Tests for LangfuseProvisioner — Langfuse auto-provisioning on API startup."""
 
+import json
 import logging
-from datetime import UTC, datetime
-from unittest.mock import ANY, AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
@@ -201,15 +201,53 @@ GEMMA = "text-generation/gemma-4-31B-it"
 GEMMA_PRICED = {"model_name": GEMMA, "model_info": {"input_cost_per_token": 0.001, "output_cost_per_token": 0.002}}
 
 
-async def _register(
-    provisioner: LangfuseProvisioner, litellm_models: list[dict], current_prices: dict[str, tuple[float, float]]
-) -> MagicMock:
-    with (
-        patch.object(provisioner, "_fetch_custom_model_prices", return_value=current_prices),
-        patch.object(provisioner, "_create_model_definition", return_value=True) as mock_create,
-    ):
-        await provisioner._register_model_definitions(AsyncMock(spec=httpx.AsyncClient), litellm_models)
-    return mock_create
+def _definition(model_id: str, name: str, input_price: float, output_price: float, *, managed: bool = False) -> dict:
+    return {
+        "id": model_id,
+        "modelName": name,
+        "isLangfuseManaged": managed,
+        "prices": {"input": {"price": input_price}, "output": {"price": output_price}},
+    }
+
+
+class FakeLangfuseModels:
+    """Answers the model endpoints as Langfuse 3.225 does: one custom definition per model name in a project."""
+
+    PAGE_SIZE = 2
+
+    def __init__(self, *definitions: dict) -> None:
+        self.definitions = {definition["id"]: definition for definition in definitions}
+        self.created = 0
+
+    def handle(self, request: httpx.Request) -> httpx.Response:
+        if request.method == "GET":
+            page = int(request.url.params["page"])
+            rows = list(self.definitions.values())
+            pages = max(1, -(-len(rows) // self.PAGE_SIZE))
+            data = rows[(page - 1) * self.PAGE_SIZE : page * self.PAGE_SIZE]
+            return httpx.Response(200, json={"data": data, "meta": {"page": page, "totalPages": pages}})
+        if request.method == "DELETE":
+            del self.definitions[request.url.path.rsplit("/", maxsplit=1)[-1]]
+            return httpx.Response(200, json={"message": "Model successfully deleted"})
+        body = json.loads(request.content)
+        if any(not d["isLangfuseManaged"] and d["modelName"] == body["modelName"] for d in self.definitions.values()):
+            return httpx.Response(400, json={"message": f"Model name '{body['modelName']}' already exists in project"})
+        self.created += 1
+        model_id = f"new-{self.created}"
+        self.definitions[model_id] = _definition(model_id, body["modelName"], body["inputPrice"], body["outputPrice"])
+        return httpx.Response(200, json=self.definitions[model_id])
+
+    def custom_prices(self) -> dict[str, tuple[float, float]]:
+        return {
+            d["modelName"]: (d["prices"]["input"]["price"], d["prices"]["output"]["price"])
+            for d in self.definitions.values()
+            if not d["isLangfuseManaged"]
+        }
+
+
+async def _register(provisioner: LangfuseProvisioner, langfuse: FakeLangfuseModels, litellm_models: list[dict]) -> None:
+    async with httpx.AsyncClient(transport=httpx.MockTransport(langfuse.handle)) as client:
+        await provisioner._register_model_definitions(client, litellm_models)
 
 
 class TestRegisterModelDefinitions:
@@ -217,101 +255,62 @@ class TestRegisterModelDefinitions:
 
     @pytest.mark.asyncio
     async def test_registers_models_with_pricing(self, provisioner: LangfuseProvisioner) -> None:
-        litellm_models = [
-            GEMMA_PRICED,
-            {
-                "model_name": "embedding/bge-m3",
-                "model_info": {"input_cost_per_token": 0.0001, "output_cost_per_token": 0.0},
-            },
-        ]
+        langfuse = FakeLangfuseModels()
+        embedding = {"model_name": "embedding/bge-m3", "model_info": {"input_cost_per_token": 0.0001}}
 
-        mock_create = await _register(provisioner, litellm_models, {})
+        await _register(provisioner, langfuse, [GEMMA_PRICED, embedding])
 
-        assert mock_create.call_count == 2
+        assert langfuse.custom_prices() == {GEMMA: (0.001, 0.002), "embedding/bge-m3": (0.0001, 0)}
 
     @pytest.mark.asyncio
     async def test_skips_models_without_pricing(self, provisioner: LangfuseProvisioner) -> None:
+        langfuse = FakeLangfuseModels()
         litellm_models = [
             {"model_name": GEMMA, "model_info": {}},
             {"model_name": "reranker/bge", "model_info": {"mode": "rerank", "input_cost_per_token": None}},
         ]
 
-        mock_create = await _register(provisioner, litellm_models, {})
+        await _register(provisioner, langfuse, litellm_models)
 
-        mock_create.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_a_model_priced_by_input_only_is_registered_with_a_free_output(
-        self, provisioner: LangfuseProvisioner
-    ) -> None:
-        reranker = {"model_name": "reranker/bge", "model_info": {"mode": "rerank", "input_cost_per_token": 7.7e-09}}
-
-        mock_create = await _register(provisioner, [reranker], {})
-
-        mock_create.assert_called_once_with(ANY, "reranker/bge", 7.7e-09, 0, None)
+        assert langfuse.custom_prices() == {}
 
     @pytest.mark.asyncio
-    async def test_a_new_model_is_priced_from_its_first_trace(self, provisioner: LangfuseProvisioner) -> None:
-        mock_create = await _register(provisioner, [GEMMA_PRICED], {})
+    async def test_an_unchanged_price_is_left_alone(self, provisioner: LangfuseProvisioner) -> None:
+        langfuse = FakeLangfuseModels(_definition("old", GEMMA, 0.001, 0.002))
 
-        mock_create.assert_called_once_with(ANY, GEMMA, 0.001, 0.002, None)
+        await _register(provisioner, langfuse, [GEMMA_PRICED])
 
-    @pytest.mark.asyncio
-    async def test_an_unchanged_price_is_not_registered_again(self, provisioner: LangfuseProvisioner) -> None:
-        mock_create = await _register(provisioner, [GEMMA_PRICED], {GEMMA: (0.001, 0.002)})
-
-        mock_create.assert_not_called()
+        assert list(langfuse.definitions) == ["old"]
 
     @pytest.mark.asyncio
-    async def test_a_changed_price_applies_from_now_on(self, provisioner: LangfuseProvisioner) -> None:
-        """Older traces keep the price they were made at, so the new definition starts now."""
-        before = datetime.now(UTC)
+    async def test_a_changed_price_replaces_the_definition(self, provisioner: LangfuseProvisioner) -> None:
+        """Langfuse refuses a second definition with the same name, so the old one has to go first."""
+        langfuse = FakeLangfuseModels(_definition("old", GEMMA, 0.0002, 0.0004))
 
-        mock_create = await _register(provisioner, [GEMMA_PRICED], {GEMMA: (0.0002, 0.0004)})
+        await _register(provisioner, langfuse, [GEMMA_PRICED])
 
-        start_date = mock_create.call_args.args[4]
-        assert start_date >= before
-
-
-class TestFetchCustomModelPrices:
-    @staticmethod
-    def _model(name: str, start_date: str | None, input_price: float, *, managed: bool = False) -> dict:
-        return {
-            "modelName": name,
-            "startDate": start_date,
-            "isLangfuseManaged": managed,
-            "prices": {"input": {"price": input_price}, "output": {"price": input_price * 2}},
-        }
+        assert langfuse.custom_prices() == {GEMMA: (0.001, 0.002)}
 
     @pytest.mark.asyncio
-    async def test_reads_the_newest_custom_definition_of_each_model_across_pages(
-        self, provisioner: LangfuseProvisioner
-    ) -> None:
-        pages = {
-            "1": [self._model(GEMMA, None, 0.1), self._model("gpt-4o", None, 9.0, managed=True)],
-            "2": [self._model(GEMMA, "2026-11-17T00:00:00Z", 0.3), self._model(GEMMA, "2026-10-01T00:00:00Z", 0.2)],
-        }
+    async def test_a_definition_on_a_later_page_is_found(self, provisioner: LangfuseProvisioner) -> None:
+        langfuse = FakeLangfuseModels(
+            _definition("a", "embedding/bge-m3", 0.0001, 0),
+            _definition("b", "reranker/bge", 0.00001, 0),
+            _definition("old", GEMMA, 0.0002, 0.0004),
+        )
 
-        def answer(request: httpx.Request) -> httpx.Response:
-            page = request.url.params["page"]
-            return httpx.Response(200, json={"data": pages[page], "meta": {"page": int(page), "totalPages": 2}})
+        await _register(provisioner, langfuse, [GEMMA_PRICED])
 
-        async with httpx.AsyncClient(transport=httpx.MockTransport(answer)) as client:
-            prices = await provisioner._fetch_custom_model_prices(client)
+        assert langfuse.custom_prices()[GEMMA] == (0.001, 0.002)
 
-        assert prices == {GEMMA: (0.3, 0.6)}
-
-
-class TestCreateModelDefinitionStartDate:
     @pytest.mark.asyncio
-    async def test_a_start_date_is_sent_when_given(self, provisioner: LangfuseProvisioner) -> None:
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-        mock_client.post.return_value = _ok_response(201)
-        start_date = datetime(2026, 11, 17, tzinfo=UTC)
+    async def test_langfuses_own_definitions_are_never_deleted(self, provisioner: LangfuseProvisioner) -> None:
+        langfuse = FakeLangfuseModels(_definition("builtin", GEMMA, 0.5, 0.5, managed=True))
 
-        await provisioner._create_model_definition(mock_client, GEMMA, 0.001, 0.002, start_date)
+        await _register(provisioner, langfuse, [GEMMA_PRICED])
 
-        assert mock_client.post.call_args.kwargs["json"]["startDate"] == start_date.isoformat()
+        assert "builtin" in langfuse.definitions
+        assert langfuse.custom_prices() == {GEMMA: (0.001, 0.002)}
 
 
 class TestCreatePrompt:
