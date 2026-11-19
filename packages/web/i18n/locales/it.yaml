@@ -1268,7 +1268,7 @@ token:
       e generane uno nuovo.
     copy: Copia
     copied: Copiato
-    usage: 'Invialo con ogni richiesta API nell''header Authorization: Bearer <token>.'
+    usage: Invialo con ogni richiesta API nell'header Authorization, dopo la parola Bearer e uno spazio.
     done: Fine
   revoke:
     button: Revoca
@@ -1277,4 +1277,3 @@ token:
     cancel: Annulla
     proceed: Revoca
     success: Token revocato
-    error: Non è stato possibile revocare il token

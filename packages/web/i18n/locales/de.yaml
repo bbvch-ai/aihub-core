@@ -1274,7 +1274,7 @@ token:
       es verlieren, widerrufen Sie es und generieren Sie ein neues.
     copy: Kopieren
     copied: Kopiert
-    usage: 'Senden Sie es bei jeder API-Anfrage im Header Authorization: Bearer <token>.'
+    usage: Senden Sie es bei jeder API-Anfrage im Authorization-Header, nach dem Wort Bearer und einem Leerzeichen.
     done: Fertig
   revoke:
     button: Widerrufen
@@ -1283,4 +1283,3 @@ token:
     cancel: Abbrechen
     proceed: Widerrufen
     success: Token widerrufen
-    error: Das Token konnte nicht widerrufen werden

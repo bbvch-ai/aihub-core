@@ -44,7 +44,7 @@ any client still using it. Revoke a token as soon as you suspect it has leaked, 
 Send the `sk-` token as a bearer credential on every API request:
 
 ```bash
-curl https://<your-deployment>/api/v1/active/agents/ \
+curl https://<your-deployment>/api/v1/active/agents/instances \
   -H "Authorization: Bearer sk-..."
 ```
 

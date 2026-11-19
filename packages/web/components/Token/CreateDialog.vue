@@ -3,7 +3,7 @@
     v-model:visible="visible"
     modal
     :header="created ? t('token.created.title') : t('token.create.title')"
-    :style="{ width: '35rem' }"
+    :style="{ width: '40rem' }"
     :closable="!isCreating"
     @after-hide="reset"
   >
@@ -33,7 +33,7 @@
           <Button
             :icon="copied ? 'pi pi-check' : 'pi pi-copy'"
             :label="copied ? t('token.created.copied') : t('token.created.copy')"
-            @click="copy(created.token)"
+            @click="copyToken(created.token)"
           />
         </InputGroup>
       </div>
@@ -72,6 +72,8 @@
           option-value="value"
           :allow-empty="false"
           :disabled="isCreating"
+          class="flex-wrap"
+          :pt="{ pcToggleButton: { label: { class: 'whitespace-nowrap' } } }"
         />
         <DatePicker
           v-if="expiryChoice === CUSTOM_EXPIRY"
@@ -173,16 +175,25 @@ const handleCreate = async () => {
   isCreating.value = true
   error.value = ''
   try {
-    created.value = await createToken({
-      request: { name: name.value.trim(), expiry_date: expiryDate.value! },
-      tenantId: tenantId.value!,
-    })
+    created.value = await createToken({ name: name.value.trim(), expiresAt: expiryDate.value!, tenantId: tenantId.value! })
   }
   catch {
     error.value = t('token.create.error')
   }
   finally {
     isCreating.value = false
+  }
+}
+
+const copyToken = async (token: string) => {
+  try {
+    await copy(token)
+  }
+  catch {
+    // A browser that refuses clipboard access still lets the user copy a selection by hand.
+    const input = document.getElementById('created-token-value') as HTMLInputElement | null
+    input?.focus()
+    input?.select()
   }
 }
 

@@ -1253,7 +1253,7 @@ token:
       generate a new one.
     copy: Copy
     copied: Copied
-    usage: 'Send it with every API request as the header Authorization: Bearer <token>.'
+    usage: Send it with every API request in the Authorization header, after the word Bearer and a space.
     done: Done
   revoke:
     button: Revoke
@@ -1262,4 +1262,3 @@ token:
     cancel: Cancel
     proceed: Revoke
     success: Token revoked
-    error: The token could not be revoked

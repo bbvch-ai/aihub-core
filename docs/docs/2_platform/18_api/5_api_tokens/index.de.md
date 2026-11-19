@@ -1,7 +1,7 @@
 ---
 title: API-Token
 description: Generieren, prüfen und widerrufen Sie persönliche API-Token, um REST API-Anfragen zu authentifizieren.
-source_sha: 3915e56200d854a682122735353c985e4d5e8064611e20a760f64a8101048680
+source_sha: 256681263ce528de0f4fb12e0f24f1cf3a6b75e2cd913f62ae2fa78b248b42b8
 ---
 
 # API-Token
@@ -48,7 +48,7 @@ dass es offengelegt wurde, und widerrufen Sie Token, die Sie nicht mehr verwende
 Senden Sie das `sk-`-Token als Bearer-Anmeldeinformation bei jeder API-Anfrage:
 
 ```bash
-curl https://<your-deployment>/api/v1/active/agents/ \
+curl https://<your-deployment>/api/v1/active/agents/instances \
   -H "Authorization: Bearer sk-..."
 ```
 

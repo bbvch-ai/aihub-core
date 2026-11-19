@@ -1271,7 +1271,7 @@ token:
       révoquez-le et générez-en un nouveau.
     copy: Copier
     copied: Copié
-    usage: 'Envoyez-le avec chaque requête API dans l''en-tête Authorization: Bearer <token>.'
+    usage: Envoyez-le avec chaque requête API dans l'en-tête Authorization, après le mot Bearer et une espace.
     done: Terminé
   revoke:
     button: Révoquer
@@ -1280,4 +1280,3 @@ token:
     cancel: Annuler
     proceed: Révoquer
     success: Jeton révoqué
-    error: Le jeton n'a pas pu être révoqué

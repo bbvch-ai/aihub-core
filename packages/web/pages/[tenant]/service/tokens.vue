@@ -57,13 +57,8 @@ const confirmRevoke = (token: TokenResponse) => {
     rejectProps: { label: t('token.revoke.cancel'), severity: 'secondary', outlined: true },
     acceptProps: { label: t('token.revoke.proceed'), severity: 'danger' },
     accept: async () => {
-      try {
-        await revokeToken({ tokenId: token.id, tenantId: tenantId.value! })
-        toast.add({ severity: 'success', summary: t('token.revoke.success'), detail: token.name, life: 3000 })
-      }
-      catch {
-        toast.add({ severity: 'error', summary: t('token.revoke.error'), detail: token.name, life: 5000 })
-      }
+      await revokeToken({ tokenId: token.id, tenantId: tenantId.value! })
+      toast.add({ severity: 'success', summary: t('token.revoke.success'), detail: token.name, life: 3000 })
     },
   })
 }
