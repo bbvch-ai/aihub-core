@@ -117,9 +117,9 @@ one is replaced by a silent 10 ms clip, so the panel moves on and returns to "Li
 and "Voice reply unavailable, answer shown as text" appears below the panel's own status line. The text clears when
 speech succeeds.
 
-The status line is located through the panel's markup, `div.z-10.line-clamp-1.text-sm.font-normal[role="status"]`. Recheck the
-selector and the speech endpoint after OpenWebUI upgrades, and remove this part of the script once OpenWebUI stops
-retrying failed speech without limit.
+The status line is located through the panel's markup, `div.z-10.line-clamp-1.text-sm.font-normal[role="status"]`.
+Recheck the selector and the speech endpoint after OpenWebUI upgrades, and remove this part of the script once OpenWebUI
+stops retrying failed speech without limit.
 
 To check it, set `AUDIO_TTS_ENGINE=openai` with an unreachable `AUDIO_TTS_OPENAI_API_BASE_URL` on a disposable OpenWebUI
 container that mounts the loader. Calling the speech endpoint from the browser console should make one request and
@@ -127,9 +127,9 @@ return `audio/wav`.
 
 ## Interface language
 
-The loader also repairs the language OpenWebUI saved in the browser (`localStorage.locale`). OpenWebUI v0.11.4 fell
-back from a saved language only to that same language, so a code it ships no translation for loaded no translation at
-all, and the Settings dialog and the chat's Controls panel showed raw keys such as
+The loader also repairs the language OpenWebUI saved in the browser (`localStorage.locale`). OpenWebUI v0.11.4 fell back
+from a saved language only to that same language, so a code it ships no translation for loaded no translation at all,
+and the Settings dialog and the chat's Controls panel showed raw keys such as
 `settings.personal.general.parameters.streamChatResponse.label`. Two kinds of browsers hit this: those where OpenWebUI
 v0.11.3 or earlier saved `de` from the former `DEFAULT_LOCALE`, and those whose own language is a regional code
 OpenWebUI does not ship, such as `de-CH` or `it-CH`, from their second visit on.
@@ -150,8 +150,9 @@ OpenWebUI upgrades. `e2e/disclaimer/locale.spec.ts` covers the repair in the bro
 
 The loader also disables OpenWebUI's **Download → PDF document (.pdf)** entry for chats with a turn answered by several
 models side by side. Stock OpenWebUI copies the chat for the PDF before those side-by-side answers have rendered, so the
-file holds the questions but no answers ([open-webui/open-webui#19226](https://github.com/open-webui/open-webui/issues/19226),
-unchanged up to v0.13.3). The JSON and plain text downloads are unaffected and stay available.
+file holds the questions but no answers
+([open-webui/open-webui#19226](https://github.com/open-webui/open-webui/issues/19226), unchanged up to v0.13.3). The
+JSON and plain text downloads are unaffected and stay available.
 
 When a chat menu opens, the loader reads that chat from `GET /api/v1/chats/{id}` and greys out the PDF entry if any
 message in its history names more than one model; a click on it then starts nothing. The entry is found in both the

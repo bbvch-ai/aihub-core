@@ -14,12 +14,12 @@ Microsoft to apply the permissions.
 
 ## Who does what
 
-| Customer (Microsoft 365 tenant)                                                             | Operator (Swiss AI-Hub deployment)                                                       |
-| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Creates the sending mailbox                                                                 | Receives the values from [step 8](#step-8-send-the-values-to-the-operator)               |
-| Registers the Entra app and grants it `SMTP.SendAsApp` with admin consent                   | Stores the client secret in the deployment's secret store                                 |
-| Registers the app in Exchange Online, gives it the mailbox, allows SMTP AUTH on the mailbox | Sets the `KEYCLOAK_SMTP_*` variables and restarts Keycloak                               |
-| Creates the client secret and renews it before it expires                                   | Updates the secret when the customer sends a new one                                     |
+| Customer (Microsoft 365 tenant)                                                             | Operator (Swiss AI-Hub deployment)                                                               |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Creates the sending mailbox                                                                 | Receives the values from [step 8](#step-8-send-the-values-to-the-operator)                       |
+| Registers the Entra app and grants it `SMTP.SendAsApp` with admin consent                   | Stores the client secret in the deployment's secret store                                        |
+| Registers the app in Exchange Online, gives it the mailbox, allows SMTP AUTH on the mailbox | Sets the `KEYCLOAK_SMTP_*` variables and restarts Keycloak                                       |
+| Creates the client secret and renews it before it expires                                   | Updates the secret when the customer sends a new one                                             |
 | Allows the sender address in its own mail filters, if needed                                | Allows outbound traffic to Microsoft (see [Network requirements](../../7_network_requirements/)) |
 
 The examples below use `noreply.ai-hub@contoso.com` as the sending mailbox. Replace it with the customer's address.
@@ -29,7 +29,7 @@ The examples below use `noreply.ai-hub@contoso.com` as the sending mailbox. Repl
 | You need                                                                                 | For                                      |
 | ---------------------------------------------------------------------------------------- | ---------------------------------------- |
 | **Application Administrator** (or Cloud Application Administrator) in Microsoft Entra ID | Registering the app and its secret       |
-| **Privileged Role Administrator** or **Global Administrator**                             | Granting admin consent to the permission |
+| **Privileged Role Administrator** or **Global Administrator**                            | Granting admin consent to the permission |
 | **Exchange Administrator**                                                               | The mailbox and the PowerShell steps     |
 | PowerShell 7 with the `ExchangeOnlineManagement` module                                  | Steps 5 and 6                            |
 
@@ -63,8 +63,8 @@ If a suitable mailbox already exists, skip this step.
 
 ## Step 3: Add the SMTP permission
 
-The app needs exactly one permission. It lets the app send mail over SMTP, and only as mailboxes it is given access to in
-step 6.
+The app needs exactly one permission. It lets the app send mail over SMTP, and only as mailboxes it is given access to
+in step 6.
 
 1. In the app, open **API permissions** → **Add a permission** → **APIs my organization uses**.
 2. Search for **Office 365 Exchange Online** and select it.
@@ -190,13 +190,13 @@ afterwards: it contains the secret.
 
 ## Step 8: Send the values to the operator
 
-| Value                   | From                          | Becomes                       |
-| ----------------------- | ----------------------------- | ----------------------------- |
-| Directory (tenant) ID   | Step 2                        | `KEYCLOAK_SMTP_TENANT_ID`     |
-| Application (client) ID | Step 2                        | `KEYCLOAK_SMTP_CLIENT_ID`     |
-| Client secret value     | Step 4                        | `KEYCLOAK_SMTP_CLIENT_SECRET` |
-| Sending mailbox address | Step 1                        | `KEYCLOAK_SMTP_MAILBOX`       |
-| Secret expiry date      | Step 4                        | Reminder to renew the secret  |
+| Value                   | From   | Becomes                       |
+| ----------------------- | ------ | ----------------------------- |
+| Directory (tenant) ID   | Step 2 | `KEYCLOAK_SMTP_TENANT_ID`     |
+| Application (client) ID | Step 2 | `KEYCLOAK_SMTP_CLIENT_ID`     |
+| Client secret value     | Step 4 | `KEYCLOAK_SMTP_CLIENT_SECRET` |
+| Sending mailbox address | Step 1 | `KEYCLOAK_SMTP_MAILBOX`       |
+| Secret expiry date      | Step 4 | Reminder to renew the secret  |
 
 The tenant ID, client ID and mailbox are not secret. Send the **client secret** only through a password manager share or
 another encrypted channel agreed with the operator, never by plain email, chat or ticket.
@@ -206,11 +206,11 @@ The operator then follows [Deployment configuration](../#deployment-configuratio
 
 ## Troubleshooting
 
-| Message                                                    | Cause                                                                                              | Fix                                                                                         |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `AADSTS7000215: Invalid client secret`                     | Wrong value (the Secret ID was copied) or expired secret                                           | Create a new secret (step 4) and send it to the operator                                    |
-| `AADSTS700016: Application ... was not found in directory` | Wrong tenant ID, or the app lives in another tenant                                                | Use the Directory (tenant) ID of the app's own tenant                                       |
-| Token has no `roles` claim                                 | Admin consent missing                                                                              | Grant admin consent (step 3)                                                                |
-| `535 5.7.3 Authentication unsuccessful`                    | Service principal not registered, no mailbox permission, SMTP AUTH off, or changes not applied yet | Re-check steps 5 and 6, then wait up to an hour                                             |
-| `554 5.2.252 SendAsDenied`                                 | The sender address differs from the mailbox the app has access to                                  | Send the operator the exact mailbox address from step 6                                     |
+| Message                                                    | Cause                                                                                              | Fix                                                                                        |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `AADSTS7000215: Invalid client secret`                     | Wrong value (the Secret ID was copied) or expired secret                                           | Create a new secret (step 4) and send it to the operator                                   |
+| `AADSTS700016: Application ... was not found in directory` | Wrong tenant ID, or the app lives in another tenant                                                | Use the Directory (tenant) ID of the app's own tenant                                      |
+| Token has no `roles` claim                                 | Admin consent missing                                                                              | Grant admin consent (step 3)                                                               |
+| `535 5.7.3 Authentication unsuccessful`                    | Service principal not registered, no mailbox permission, SMTP AUTH off, or changes not applied yet | Re-check steps 5 and 6, then wait up to an hour                                            |
+| `554 5.2.252 SendAsDenied`                                 | The sender address differs from the mailbox the app has access to                                  | Send the operator the exact mailbox address from step 6                                    |
 | Connection timeout on port 587                             | Outbound SMTP blocked by a firewall                                                                | Allow `smtp.office365.com:587` (see [Network requirements](../../7_network_requirements/)) |

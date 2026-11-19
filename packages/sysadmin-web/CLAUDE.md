@@ -102,9 +102,9 @@ no plugin override needed here.
 - Sysadmin gate: `middleware/sysadmin.global.ts` (cross-origin `getMyTenants` check via `mainApi.url`)
 - Main-app redirect: `composables/useMainAppNavigation.ts` (`mainApp.url` cross-origin redirect — Exit button +
   non-sysadmin bounce)
-- LLM usage links: `composables/useLiteLlmUsage.ts` (`litellm.url` from `LITELLM_ADMIN_URL`; empty hides the header
-  link and the one on each tenant's overview. LiteLLM v1.106.4 cannot open Customer Usage filtered from a URL, so both
-  land on its usage page)
+- LLM usage links: `composables/useLiteLlmUsage.ts` (`litellm.url` from `LITELLM_ADMIN_URL`; empty hides the header link
+  and the one on each tenant's overview. LiteLLM v1.106.4 cannot open Customer Usage filtered from a URL, so both land
+  on its usage page)
 - Sysadmin layout: `layouts/sysadmin.vue`
 - ESLint config: `eslint.config.js` (Nuxt + import/order + SonarJS; no Tailwind linting by design)
 - License terms: `LICENSE` (AGPL-3.0-or-later)

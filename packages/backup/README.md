@@ -112,9 +112,9 @@ In production the backup plane runs as **three containers from one image**, form
 Because it needs the Docker containers API and the platform's stateful services, the canonical deployment is the
 platform's own backup compose. See
 [`infra/deployment`](https://github.com/bbvch-ai/aihub-core/tree/main/infra/deployment) and the
-[documentation](https://docs.ai-hub.bbv.ch/) for the full container setup, retention config, and the
-`BACKUP_*` environment variables. If you run your own variant, mirror that three-container shape and give the code
-server a `DOCKER_HOST` that allows the `/containers/...` API (including POST).
+[documentation](https://docs.ai-hub.bbv.ch/) for the full container setup, retention config, and the `BACKUP_*`
+environment variables. If you run your own variant, mirror that three-container shape and give the code server a
+`DOCKER_HOST` that allows the `/containers/...` API (including POST).
 
 ## Extending — add a service to back up
 

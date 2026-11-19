@@ -50,7 +50,8 @@ die keine Plattformfunktionen benötigt.
 Die Betroffenenrechte funktionieren ähnlich wie bei der DSGVO mit geringfügigen Unterschieden. Die Antwortzeit beträgt
 30 Tage anstatt 1 Monat. Die Terminologie „Recht auf Vergessenwerden“ wird nicht verwendet, aber das Recht auf Löschung
 besteht. Die Anforderungen an die Datenportabilität sind einfacher als bei der DSGVO. Siehe
-[DSGVO-Dokumentation](../2_gdpr/#rechte-der-betroffenen-personen) für Details, wie die Plattform diese Rechte unterstützt.
+[DSGVO-Dokumentation](../2_gdpr/#rechte-der-betroffenen-personen) für Details, wie die Plattform diese Rechte
+unterstützt.
 
 ### Meldung von Datenschutzverletzungen
 
