@@ -329,6 +329,7 @@ async def replace_s3_paths_with_signed_urls(
     Used for API responses where the client needs direct access to images
     without S3 credentials. The signed URLs expire after the specified lifetime.
     """
+
     def replace_with_signed_url(match: re.Match) -> str:
         alt_text = match.group(1)
         bucket = match.group(3)

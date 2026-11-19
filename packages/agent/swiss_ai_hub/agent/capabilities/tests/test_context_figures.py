@@ -1,4 +1,4 @@
-"""Figures in the composed context reach the model on the question, held to the profile's and the model's image rules."""
+"""Figures in the composed context reach the model on the question, held to the profile's and model's image rules."""
 
 from unittest.mock import patch
 
@@ -63,7 +63,8 @@ class TestContextFigures:
         with _model():
             system, question = ContextFigures.on_question(_history(FIGURE_A), _llm(accept_images=False))
 
-        assert _urls(system) == [] and _urls(question) == []
+        assert _urls(system) == []
+        assert _urls(question) == []
 
     def test_a_model_that_cannot_read_images_drops_the_figures(self) -> None:
         with _model(supports_vision=False):
