@@ -436,6 +436,54 @@ async def test_a_german_date_only_condition_keeps_a_gutschrift_dated_inside_the_
     assert match.verdict == "yes", match
 
 
+_DRAFT_SPEC = """# Payment Service Specification
+
+Document status: DRAFT
+Author: Platform Engineering department
+Version: 0.3
+
+## Requirements
+
+REQ-1: The service shall confirm every payment within two seconds.
+REQ-2: The service shall keep an audit log of every refund for ten years.
+REQ-3: The service shall reject payments above CHF 50,000 without a second approval.
+"""
+_REQUIREMENT_SCHEMA = RecordSchema(
+    fields=[
+        RecordField(name="requirement_id", type="string", description="Identifier of the requirement, e.g. REQ-1"),
+        RecordField(name="text", type="string", description="What the requirement demands"),
+    ]
+)
+
+
+async def _judged_spec(condition: str) -> DocumentMatch | None:
+    llm_config, llm, _ = _llm()
+    result = await RecordExtractor.extract(
+        _REQUIREMENT_SCHEMA,
+        _document(_DRAFT_SPEC, title="Payment Service Specification"),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        document_condition=condition,
+    )
+    return result.document_match
+
+
+@pytest.mark.asyncio
+async def test_a_draft_meets_a_condition_that_asks_for_no_status() -> None:
+    """Drafts are routine for specifications and policies; only a condition on status may fail them (review M1)."""
+    match = await _judged_spec("documents written by the Platform Engineering department")
+
+    assert match.verdict == "yes", match
+
+
+@pytest.mark.asyncio
+async def test_a_draft_fails_a_condition_that_asks_for_approved_documents() -> None:
+    match = await _judged_spec("only approved, final documents")
+
+    assert match.verdict == "no", match
+
+
 @pytest.mark.slow
 @pytest.mark.asyncio
 async def test_a_long_contract_naming_its_supplier_only_after_the_first_window_is_unsure() -> None:
