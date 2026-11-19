@@ -21,4 +21,7 @@ class DocumentType(StrEnum):
     SERVICE_LEVEL_AGREEMENT = "service_level_agreement"
     LETTER = "letter"
     REPORT = "report"
+    DOCUMENTATION = "documentation"
+    POLICY = "policy"
+    EMAIL_THREAD = "email_thread"
     OTHER = "other"

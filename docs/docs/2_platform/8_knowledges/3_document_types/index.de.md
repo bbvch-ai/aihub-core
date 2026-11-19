@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: 6aa478e477b26334967775221386cc4a39ad5fa6e1ffda94d39756e2c6ca91a8
+source_sha: 1aafe1db0da70e0da8ac2f097aaca99804232938a58b76e43ea1468173de6ada
 ---
 
 # Dokumenttypen und Attribute
@@ -17,25 +17,33 @@ jeden Mandanten und jede Wissensdatenbank gleich.
 
 ## Typen
 
-| Typ                       | Ein Dokument dieses Typs…                                                                                                                                                                         |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `invoice`                 | fordert die Bezahlung von Waren oder Dienstleistungen, die geliefert oder vereinbart wurden. Dazu gehören Teil-, Schluss- und Akontorechnungen, QR-Rechnungen sowie Strom- und Telekomrechnungen. |
-| `credit_note`             | mindert, storniert oder vergütet einen Betrag, statt einen zu fordern: Gutschriften, Stornorechnungen, Rechnungskorrekturen mit negativem Total und eine Gutschrift nach § 14 UStG.               |
-| `offer`                   | bietet Waren oder Dienstleistungen zu einem genannten Preis an, bevor sie bestellt sind: Angebote, Offerten, Kostenvoranschläge und Proforma-Rechnungen.                                          |
-| `order`                   | erteilt oder bestätigt eine Bestellung: Bestellungen des Käufers und Auftragsbestätigungen des Lieferanten.                                                                                       |
-| `delivery_note`           | begleitet gelieferte Ware oder bestätigt ihre Lieferung: Lieferscheine und Packlisten.                                                                                                            |
-| `receipt`                 | bestätigt eine bereits geleistete Zahlung: Kassenbons, Quittungen und Zahlungsbestätigungen.                                                                                                      |
-| `account_statement`       | listet Bewegungen, Saldo oder offene Posten eines Kontos auf: Bank- und Kreditkartenauszüge sowie der Auszug offener Posten eines Lieferanten.                                                    |
-| `payment_reminder`        | fordert die Bezahlung überfälliger Rechnungen: Zahlungserinnerungen, Mahnungen und Überfälligkeitsmitteilungen.                                                                                   |
-| `contract`                | hält eine Vereinbarung zwischen benannten Parteien fest: Verträge, Rahmen-, Arbeits-, Miet- und Lizenzverträge sowie Nachträge.                                                                   |
-| `service_level_agreement` | legt die Service Levels fest, die ein Anbieter zusagt, etwa Verfügbarkeit und Reaktionszeiten: ein eigenständiges SLA oder ein SLA-Anhang.                                                        |
-| `letter`                  | ist ein Brief oder eine E-Mail ohne anderen Typ: Mitteilungen, Anfragen, Bestätigungen, Kündigungen und Einladungen.                                                                              |
-| `report`                  | berichtet über Ergebnisse, Stand oder Befunde: Jahres- und Quartalsberichte, Projektstatus-, Prüf- und Inspektionsberichte.                                                                       |
-| `other`                   | ist alles andere, zum Beispiel Protokolle, Anleitungen, Reglemente, Präsentationen, Formulare und Ausschreibungen.                                                                                |
+| Typ                       | Ein Dokument dieses Typs…                                                                                                                                                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `invoice`                 | fordert die Bezahlung von Waren oder Dienstleistungen, die geliefert oder vereinbart wurden. Dazu gehören Teil-, Schluss- und Akontorechnungen, QR-Rechnungen sowie Strom- und Telekomrechnungen.                                          |
+| `credit_note`             | mindert, storniert oder vergütet einen Betrag, statt einen zu fordern: Gutschriften, Stornorechnungen, Rechnungskorrekturen mit negativem Total und eine Gutschrift nach § 14 UStG.                                                        |
+| `offer`                   | bietet Waren oder Dienstleistungen zu einem genannten Preis an, bevor sie bestellt sind: Angebote, Offerten, Kostenvoranschläge und Proforma-Rechnungen.                                                                                   |
+| `order`                   | erteilt oder bestätigt eine Bestellung: Bestellungen des Käufers und Auftragsbestätigungen des Lieferanten.                                                                                                                                |
+| `delivery_note`           | begleitet gelieferte Ware oder bestätigt ihre Lieferung: Lieferscheine und Packlisten.                                                                                                                                                     |
+| `receipt`                 | bestätigt eine bereits geleistete Zahlung: Kassenbons, Quittungen und Zahlungsbestätigungen.                                                                                                                                               |
+| `account_statement`       | listet Bewegungen, Saldo oder offene Posten eines Kontos auf: Bank- und Kreditkartenauszüge sowie der Auszug offener Posten eines Lieferanten.                                                                                             |
+| `payment_reminder`        | fordert die Bezahlung überfälliger Rechnungen: Zahlungserinnerungen, Mahnungen und Überfälligkeitsmitteilungen.                                                                                                                            |
+| `contract`                | hält eine Vereinbarung zwischen benannten Parteien fest: Verträge, Rahmen-, Arbeits-, Miet- und Lizenzverträge sowie Nachträge.                                                                                                            |
+| `service_level_agreement` | legt die Service Levels fest, die ein Anbieter zusagt, etwa Verfügbarkeit und Reaktionszeiten: ein eigenständiges SLA oder ein SLA-Anhang.                                                                                                 |
+| `letter`                  | ist ein einzelner Brief oder eine einzelne E-Mail ohne anderen Typ: Mitteilungen, Anfragen, Bestätigungen, Kündigungen und Einladungen.                                                                                                    |
+| `report`                  | berichtet über Ergebnisse, Stand oder Befunde: Jahres- und Quartalsberichte, Projektstatus-, Prüf- und Inspektionsberichte.                                                                                                                |
+| `documentation`           | erklärt, wie man ein Produkt, ein System oder einen Ablauf installiert, nutzt, betreibt oder wartet: Handbücher, Anleitungen, Leitfäden, technische Dokumentationen und Spezifikationen, technisch oder nicht.                             |
+| `policy`                  | setzt Regeln, die Mitarbeitende, Mitglieder oder Kundinnen und Kunden befolgen müssen: Reglemente, Richtlinien, Weisungen, Verhaltenskodizes, Personalhandbücher, die Arbeitszeit oder Ferien regeln, und Allgemeine Geschäftsbedingungen. |
+| `email_thread`            | ist ein Verlauf mehrerer E-Mails, Antworten oder Weiterleitungen in einem Dokument, etwa ein exportierter Thread oder ein Postfachverlauf.                                                                                                 |
+| `other`                   | ist alles andere, zum Beispiel Protokolle, Präsentationen, Formulare und Ausschreibungen.                                                                                                                                                  |
 
 Eine Schlussrechnung bleibt eine Rechnung, wenn die abgezogenen Akontozahlungen ihr Total negativ machen; eine Korrektur
 einer früheren Rechnung mit negativem Total ist eine Gutschrift. Ein QR-Zahlteil allein, ohne seine Rechnung, ist
 `other`. Ein Angebot, eine Bestellung, eine Rechnung oder ein Vertrag in Briefform ist von diesem Typ, nicht ein Brief.
+Ein Verlauf mehrerer E-Mails ist ein `email_thread`; eine einzelne E-Mail ist ein `letter`. Ein Reglement, eine
+Richtlinie oder eine Weisung, die Regeln setzt, ist eine `policy`, nicht `documentation`, auch mit Versionsnummer oder
+wenn sie erklärt, was zu tun ist; ebenso ein Personalhandbuch, das Arbeitszeit, Ferien oder Verhalten regelt. Allgemeine
+Geschäftsbedingungen, die nicht zwischen genannten Parteien vereinbart sind, sind eine `policy`, kein `contract`, und
+ein Anhang, der Service Levels zusagt, ist ein `service_level_agreement`, auch wenn er Leistungsbeschreibung heisst.
 
 Ein Dokument hat einen **primären Typ**, nämlich den, der es als Ganzes beschreibt. Es kann zusätzlich bis zu drei
 **sekundäre Typen** aufführen, zum Beispiel eine Rechnung, die zugleich ihr Lieferschein ist, oder ein Vertrag mit
@@ -48,22 +56,24 @@ Dokuments lediglich erwähnt, ist nicht vom Typ dieses Dokuments.
 Attribute sind über die Typen hinweg gemeinsam, sodass ein Filter wie «datiert 2025» oder «Aussteller Hooli AG» bei
 jedem Typ wirkt, der das Attribut hat. Jeder Typ hat nur die Attribute, die für ihn sinnvoll sind:
 
-| Attribut                      | Rechnung, Gutschrift | Offerte | Bestellung | Lieferschein | Quittung | Auszug | Mahnung | Vertrag | SLA | Brief | Bericht |
-| ----------------------------- | :------------------: | :-----: | :--------: | :----------: | :------: | :----: | :-----: | :-----: | :-: | :---: | :-----: |
-| `document_date`               |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |    ✓    |
-| `document_reference_number`   |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |         |
-| `document_issuer`             |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |    ✓    |
-| `document_issuer_tax_id`      |          ✓           |    ✓    |     ✓      |              |    ✓     |        |         |         |     |       |         |
-| `document_recipient`          |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |         |
-| `document_parties`            |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |         |
-| `document_total_amount`       |          ✓           |    ✓    |     ✓      |              |    ✓     |   ✓    |    ✓    |    ✓    |     |       |         |
-| `document_currency`           |          ✓           |    ✓    |     ✓      |              |    ✓     |   ✓    |    ✓    |    ✓    |     |       |         |
-| `document_due_date`           |          ✓           |         |     ✓      |              |          |   ✓    |    ✓    |         |     |       |         |
-| `document_period_start`/`end` |          ✓           |         |            |              |          |   ✓    |         |    ✓    |  ✓  |       |    ✓    |
-| `document_related_references` |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |        |    ✓    |    ✓    |  ✓  |   ✓   |         |
-| `document_valid_until`        |                      |    ✓    |            |              |          |        |         |         |     |       |         |
-| `document_notice_period`      |                      |         |            |              |          |        |         |    ✓    |  ✓  |       |         |
-| `document_service_levels`     |                      |         |            |              |          |        |         |         |  ✓  |       |         |
+| Attribut                      | Rechnung, Gutschrift | Offerte | Bestellung | Lieferschein | Quittung | Auszug | Mahnung | Vertrag | SLA | Brief | Bericht | Dokumentation | Reglement | E-Mail-Verlauf |
+| ----------------------------- | :------------------: | :-----: | :--------: | :----------: | :------: | :----: | :-----: | :-----: | :-: | :---: | :-----: | :-----------: | :-------: | :------------: |
+| `document_date`               |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |    ✓    |       ✓       |     ✓     |       ✓        |
+| `document_reference_number`   |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |         |       ✓       |     ✓     |                |
+| `document_issuer`             |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |    ✓    |       ✓       |     ✓     |                |
+| `document_issuer_tax_id`      |          ✓           |    ✓    |     ✓      |              |    ✓     |        |         |         |     |       |         |               |           |                |
+| `document_recipient`          |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |         |               |           |                |
+| `document_parties`            |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |   ✓    |    ✓    |    ✓    |  ✓  |   ✓   |         |               |           |       ✓        |
+| `document_total_amount`       |          ✓           |    ✓    |     ✓      |              |    ✓     |   ✓    |    ✓    |    ✓    |     |       |         |               |           |                |
+| `document_currency`           |          ✓           |    ✓    |     ✓      |              |    ✓     |   ✓    |    ✓    |    ✓    |     |       |         |               |           |                |
+| `document_due_date`           |          ✓           |         |     ✓      |              |          |   ✓    |    ✓    |         |     |       |         |               |           |                |
+| `document_period_start`/`end` |          ✓           |         |            |              |          |   ✓    |         |    ✓    |  ✓  |       |    ✓    |               |           |                |
+| `document_related_references` |          ✓           |    ✓    |     ✓      |      ✓       |    ✓     |        |    ✓    |    ✓    |  ✓  |   ✓   |         |               |           |       ✓        |
+| `document_valid_until`        |                      |    ✓    |            |              |          |        |         |         |     |       |         |               |           |                |
+| `document_notice_period`      |                      |         |            |              |          |        |         |    ✓    |  ✓  |       |         |               |           |                |
+| `document_service_levels`     |                      |         |            |              |          |        |         |         |  ✓  |       |         |               |           |                |
+| `document_product`            |                      |         |            |              |          |        |         |         |     |       |         |       ✓       |           |                |
+| `document_participants`       |                      |         |            |              |          |        |         |         |     |       |         |               |           |       ✓        |
 
 Wo ein Attribut für einen Typ etwas Bestimmtes bedeutet:
 
@@ -72,7 +82,9 @@ Wo ein Attribut für einen Typ etwas Bestimmtes bedeutet:
   einem Vertrag oder SLA ist der Aussteller die Partei, welche die Ware, Leistung, Räume, Lizenz oder Stelle
   bereitstellt (Lieferant, Auftragnehmer, Vermieter, Lizenzgeber, Arbeitgeber, Dienstleister), der Empfänger die andere
   Partei. Bei einer Quittung ist der Aussteller der Händler und der Empfänger der Zahlende, nur wenn er genannt ist. Bei
-  einer Gutschrift nach § 14 UStG ist der Aussteller der Käufer, der sie ausstellt.
+  einer Gutschrift nach § 14 UStG ist der Aussteller der Käufer, der sie ausstellt. Bei einer Dokumentation ist der
+  Aussteller der Hersteller, Herausgeber oder die Organisation, die sie verfasst hat, oder die Autorin oder der Autor,
+  wenn keine Organisation genannt ist. Bei einem Reglement ist der Aussteller die Organisation, welche die Regeln setzt.
 - **Total.** Bei einer Gutschrift der gutgeschriebene Betrag mit seinem Vorzeichen wie geschrieben; bei einem Auszug der
   Schlusssaldo oder der fällige Betrag; bei einer Mahnung der jetzt zu zahlende Betrag inklusive Gebühren und Zinsen;
   bei einem Vertrag der Vertragswert oder sonst die wiederkehrende Gebühr, Miete oder der Lohn.
@@ -80,12 +92,23 @@ Wo ein Attribut für einen Typ etwas Bestimmtes bedeutet:
   Gutschrift das Datum, an dem sie ausbezahlt wird.
 - **Referenznummer.** Die eigene Nummer eines Auszugs, nie eine Kontonummer oder IBAN; die eigene Nummer einer Mahnung,
   nie die Nummer der gemahnten Rechnung (diese ist eine verwandte Referenz); die eigene Referenz eines Briefs, etwa
-  «Unser Zeichen».
+  «Unser Zeichen»; bei einer Dokumentation oder einem Reglement die Dokumentnummer, und nur wenn es keine gibt, die
+  Versions- oder Release-Nummer ohne das Wort «Version».
+- **Datum.** Bei einer Dokumentation ihr Erscheinungs- oder Revisionsdatum; bei einem Reglement das Datum, ab dem es
+  gilt, sonst sein Ausgabe- oder Revisionsdatum; bei einem E-Mail-Verlauf das Datum der neuesten Nachricht.
 - **Zeitraum.** Bei einem Vertrag oder SLA seine Laufzeit, nur wenn Beginn und Ende genannt sind. Ein unbefristeter
   Vertrag hat keinen Zeitraum, aber meist eine Kündigungsfrist.
 - **Gültig bis**, **Kündigungsfrist** und **Service Levels** sind mit diesen Typen neu: das Datum, bis zu dem eine
   Offerte gilt; die Kündigungsfrist eines Vertrags oder SLA, wie geschrieben aufbewahrt; und bis zu fünf Service Levels,
   die ein SLA zusagt, wie geschrieben übernommen («Verfügbarkeit 99,9 % pro Monat»).
+- **Produkt** gilt nur für Dokumentationen: das Produkt, System oder die Dienstleistung, die sie dokumentiert, mit dem
+  Namen wie geschrieben, sodass ein Filter «die Handbücher zur AquaTherm WP 12» findet. Leer, wenn sie keines nennt;
+  weder ein beschriebener Arbeitsablauf noch der eigene Titel eines Handbuchs ist ein Produkt.
+- **Beteiligte** gilt nur für E-Mail-Verläufe: bis zu zehn Personen und Organisationen, die eine Nachricht des Verlaufs
+  senden oder empfangen, mit dem Namen, den eine Kopfzeile oder Signatur angibt, einschliesslich des Unternehmens, das
+  eine Signatur für eine Person nennt. Eine E-Mail-Adresse oder eine Domain ist nie ein Beteiligter.
+- **Parteien** führt Aussteller und Empfänger auf, oder die Beteiligten eines E-Mail-Verlaufs, sodass ein einziger
+  Parteien-Filter die Rechnungen, Verträge und Korrespondenz eines Unternehmens gleichermassen findet.
 
 Die Typen und ihre Bedeutungen folgen [UBL 2.1](https://docs.oasis-open.org/ubl/os-UBL-2.1/UBL-2.1.html) und den
 Peppol-Dokumenten [Gutschrift](https://docs.peppol.eu/poacc/billing/3.0/syntax/ubl-creditnote/tree/),
@@ -99,6 +122,15 @@ Azure-Document-Intelligence-Modellen für
 Vertragsdatensatz [CUAD](https://www.atticusprojectai.org/cuad), dem Schweizer Obligationenrecht zum Verzug
 ([Art. 102 OR](https://www.fedlex.admin.ch/eli/cc/27/317_321_377/de#art_102)) und den
 [EU-Leitlinien zur Standardisierung von Cloud-SLAs](https://digital-strategy.ec.europa.eu/en/news/cloud-service-level-agreement-standardisation-guidelines).
+
+### E-Mail-Verläufe und Personendaten
+
+Beteiligte sind Namen von Personen und werden wie geschrieben gespeichert, wie der Empfänger eines Briefs. Ein aus einem
+internen Postfach exportierter Verlauf legt deshalb Namen von Mitarbeitenden in den Filter-Metadaten jedes Chunks ab.
+Ist das Textmodell der Wissensdatenbank ein externes Modell hinter dem PII-Guardrail, sieht das Modell `<PERSON_1>`
+statt eines Namens; dieser Platzhalter steht nicht im Dokument, wird daher verworfen, und die Beteiligten bleiben leer.
+Ob Beteiligte interner E-Mails überhaupt gespeichert werden sollen, ist ein offener Entscheid der oder des
+Datenschutzverantwortlichen.
 
 ## Attribute von Rechnungen im Detail
 
@@ -181,8 +213,11 @@ Regeln, die verhindern, dass Werte geraten werden:
   Dokuments CHF, EUR oder eine andere Nicht-Dollar-Währung ist, da der Monat zuerst die US-Reihenfolge ist. Bei USD,
   einem alleinstehenden `$`, ohne Währung oder bei widersprüchlichen Schrägstrich-Daten bleibt es leer, und nur der Text
   wird aufbewahrt.
-- **Ein Name ist nie eine E-Mail-Adresse.** Ein Aussteller oder Empfänger, der als blosse E-Mail-Adresse übernommen
-  wurde, wird leer gespeichert, sein Text bleibt erhalten: Die Adresse bezeichnet ein Postfach, nicht eine Partei.
+- **Ein Name ist nie eine E-Mail-Adresse.** Eine E-Mail-Adresse, die mit einem Aussteller, Empfänger oder Beteiligten
+  übernommen wurde, wird aus dem gespeicherten Namen entfernt («Anna Meier <anna@example.ch>» wird als «Anna Meier»
+  gespeichert), und eine ohne Namen übernommene wird leer gespeichert, ihr Text bleibt erhalten: Die Adresse bezeichnet
+  ein Postfach, nicht eine Partei. Ebenso wird ein Name verworfen, den das Dokument nur innerhalb einer E-Mail-Adresse
+  schreibt («Northpeak» aus billing@northpeak.example).
 - **Steuer-IDs werden geprüft.** Eine Schweizer UID muss ihre Prüfziffer bestehen. Eine EU-MWST-Nummer muss dem Format
   ihres Landes entsprechen. Eine deutsche Steuernummer hat keine einheitliche Form und wird nur als Text aufbewahrt.
 - **Beträge in jeder Schreibweise.** `12'496.36`, `12.496,36`, `12 496,36` und `12,496.36` sind derselbe Betrag; das

@@ -47,6 +47,8 @@ _ANSWER: dict[str, Any] = {
     "document_valid_until": None,
     "document_notice_period": None,
     "document_service_levels": None,
+    "document_product": None,
+    "document_participants": None,
 }
 
 
@@ -177,6 +179,95 @@ def test_a_service_level_agreement_stores_its_own_attributes_and_none_of_an_invo
     assert values["document_parties"] == ["Nebelhorn Hosting AG", "Seeblick Hotel AG"]
     assert "document_total_amount" not in values
     assert "document_due_date" not in values
+
+
+_THREAD = """**Von:** Lea Brunner <lea.brunner@seeblick.example>
+**Gesendet:** Dienstag, 4. März 2025 09:12
+**An:** support@nebelhorn.example
+**Betreff:** AW: Ausfall Buchungssystem, Ticket T-4471
+
+Guten Morgen, das System läuft wieder. Danke! Lea Brunner, Seeblick Hotel AG
+
+**Von:** Nebelhorn Hosting AG Support <support@nebelhorn.example>
+**Gesendet:** Montag, 3. März 2025 18:40
+**An:** Lea Brunner <lea.brunner@seeblick.example>
+**Cc:** buchhaltung@seeblick.example
+
+Wir haben die Störung behoben (SLA-2025-14).
+"""
+
+_THREAD_ANSWER: dict[str, Any] = {
+    **{key: None for key in _ANSWER},
+    "document_type": DocumentType.EMAIL_THREAD,
+    "secondary_types": [],
+    "document_date": "4. März 2025",
+    "document_participants": [
+        "Lea Brunner <lea.brunner@seeblick.example>",
+        "Nebelhorn Hosting AG Support",
+        "buchhaltung@seeblick.example",
+        "Lea Brunner",
+    ],
+    "document_related_references": ["T-4471", "SLA-2025-14"],
+    "document_issuer": "Nebelhorn Hosting AG",
+}
+
+
+def test_an_e_mail_thread_stores_its_participants_by_name_and_lists_them_as_parties() -> None:
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**_THREAD_ANSWER), _THREAD).values
+
+    assert values["document_date"] == "2025-03-04"
+    assert values["document_participants"] == ["Lea Brunner", "Nebelhorn Hosting AG Support"]
+    assert values["document_participants_raw"] == _THREAD_ANSWER["document_participants"]
+    assert values["document_parties"] == ["Lea Brunner", "Nebelhorn Hosting AG Support"]
+    assert values["document_related_references"] == ["T-4471", "SLA-2025-14"]
+    assert "document_issuer" not in values
+
+
+def test_a_thread_whose_participants_are_only_e_mail_addresses_has_no_participants_and_no_parties() -> None:
+    answer = {**_THREAD_ANSWER, "document_participants": ["support@nebelhorn.example", "buchhaltung@seeblick.example"]}
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), _THREAD).values
+
+    assert values["document_participants"] is None
+    assert values["document_parties"] is None
+
+
+def test_a_name_written_only_inside_an_e_mail_address_is_dropped_with_its_text_kept() -> None:
+    answer = {**_THREAD_ANSWER, "document_participants": ["Buchhaltung", "Lea Brunner"]}
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), _THREAD).values
+
+    assert values["document_participants"] == ["Lea Brunner"]
+    assert values["document_participants_raw"] == ["Buchhaltung", "Lea Brunner"]
+
+
+def test_a_name_copied_with_its_e_mail_address_keeps_the_name() -> None:
+    text = _INVOICE + "\nAn: Muster Treuhand GmbH <buchhaltung@muster.example>\n"
+
+    values = _classified(text, document_recipient="Muster Treuhand GmbH <buchhaltung@muster.example>").values
+
+    assert values["document_recipient"] == "Muster Treuhand GmbH"
+    assert values["document_parties"] == ["Hooli AG", "Muster Treuhand GmbH"]
+
+
+def test_documentation_stores_the_product_it_documents() -> None:
+    text = "# Benutzerhandbuch Kassensystem Orbis POS 4\nDok.-Nr. HB-ORB-040 · Ausgabe 03/2025\nKassenwerk AG"
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.DOCUMENTATION,
+        "secondary_types": [],
+        "document_date": "03/2025",
+        "document_reference_number": "HB-ORB-040",
+        "document_issuer": "Kassenwerk AG",
+        "document_product": "Kassensystem Orbis POS 4",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_product"] == "Kassensystem Orbis POS 4"
+    assert values["document_date"] == "2025-03-01"
+    assert values["document_date_precision"] == "month"
+    assert "document_parties" not in values
 
 
 def test_an_offer_reads_its_validity_as_a_date() -> None:

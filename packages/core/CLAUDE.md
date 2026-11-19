@@ -775,19 +775,22 @@ not mapped back to them yet.
 makes one structured-output call on `DocumentOpeningText.of(text)` (first two pages capped at 8,000 characters, plus the
 last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadata()` is what ingestion stores:
 
-- **`DocumentTypeCatalog` is the only list.** Types (13 since #2485: `invoice`, `credit_note`, `offer`, `order`,
+- **`DocumentTypeCatalog` is the only list.** Types (16 since #2485: `invoice`, `credit_note`, `offer`, `order`,
   `delivery_note`, `receipt`, `account_statement`, `payment_reminder`, `contract`, `service_level_agreement`, `letter`,
-  `report`, `other`), shared attributes, which apply to which type and per-type meanings (only where a type's differs:
-  the prompt names types sharing a meaning together, so keep overrides that merely restate the general meaning out); the
-  prompt, `metadata_keys()` (every stored key, for exclusion lists, frontmatter reservation and filters) and
-  `value_keys()` come from it. `DocumentClassificationAnswer` must have one field per non-derived attribute; a catalog
-  test checks it. The evaluation (`tests/evaluation/`, one synthetic YAML per type, at least 8 documents each) measures
-  recall and precision per type and wrong-plus-guessed values per type and attribute.
+  `report`, `documentation`, `policy`, `email_thread`, `other`), shared attributes, which apply to which type and
+  per-type meanings (only where a type's differs: the prompt names types sharing a meaning together, so keep overrides
+  that merely restate the general meaning out); the prompt, `metadata_keys()` (every stored key, for exclusion lists,
+  frontmatter reservation and filters) and `value_keys()` come from it. `DocumentClassificationAnswer` must have one
+  field per non-derived attribute; a catalog test checks it. The evaluation (`tests/evaluation/`, one synthetic YAML per
+  type, at least 8 documents each) measures recall and precision per type and wrong-plus-guessed values per type and
+  attribute.
 - **The model copies, code reads.** `DocumentValueNormalizer` drops copied text that `RawValueLocator` cannot find in
   the whole document, stores no attribute the type lacks, and reads dates (`DateTextParser`; a slash date both orders
   allow only in the order `SlashDateOrder` the normaliser settles from the document's unambiguous slash dates, else day
   first unless the currency is USD, a bare `$` or unknown), periods, amounts (Swiss, EU and English separators),
-  currencies (a bare `$` stays unread) and tax IDs (a Swiss UID must pass its check digit). Each attribute keeps its
+  currencies (a bare `$` stays unread) and tax IDs (a Swiss UID must pass its check digit). Names (issuer, recipient, a
+  thread's participants) lose any e-mail address copied with them; a bare address is stored empty. `document_parties` is
+  derived from issuer, recipient and participants, and a type lists it when it has any of them. Each attribute keeps its
   copy under `<key>_raw`, dates their `<key>_precision`, and an unreadable copy has an empty value.
 - **Versions, at the narrowest level.** Each re-classified document costs a model call, so raise only what a change
   needs. A type's `DocumentTypeDefinition.version` when only its documents could be classified differently, and

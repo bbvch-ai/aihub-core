@@ -34,7 +34,9 @@ class DocumentValueNormalizer:
     VERSION: ClassVar[int] = 3
     _SLASH_DATE: ClassVar[re.Pattern[str]] = re.compile(r"\b(\d{1,2})/(\d{1,2})/(?:\d{4}|\d{2})\b")
     _E_MAIL: ClassVar[re.Pattern[str]] = re.compile(r"<?[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+>?")
-    _NAMES: ClassVar[frozenset[DocumentAttribute]] = frozenset({DocumentAttribute.ISSUER, DocumentAttribute.RECIPIENT})
+    _NAMES: ClassVar[frozenset[DocumentAttribute]] = frozenset(
+        {DocumentAttribute.ISSUER, DocumentAttribute.RECIPIENT, DocumentAttribute.PARTICIPANTS}
+    )
 
     @classmethod
     def normalize(
@@ -50,11 +52,20 @@ class DocumentValueNormalizer:
                 values |= cls._stored(definition, raw, slash_order)
         cls._complete_currency(values)
         cls._drop_own_number(values)
+        cls._drop_names_only_in_addresses(values, document_text)
         for definition in applicable:
             if definition.is_derived:
-                sources = [values.get(source) for source in definition.derived_from]
-                values[definition.key] = cls._distinct(sources) or None
+                values[definition.key] = cls._derived(definition, values)
         return values
+
+    @classmethod
+    def _derived(cls, definition: DocumentAttributeDefinition, values: dict[str, Any]) -> list[str] | None:
+        """The distinct values of the sources the type has; a source the type lacks counts as unknown."""
+        sources: list[str | None] = []
+        for source in definition.derived_from:
+            value = values.get(source)
+            sources.extend(value if isinstance(value, list) else [value])
+        return cls._distinct(sources) or None
 
     @classmethod
     def _located(cls, raw: _Raw, document_text: str) -> _Raw:
@@ -112,7 +123,7 @@ class DocumentValueNormalizer:
             case AttributeValueType.TAX_ID:
                 return {definition.key: TaxIdTextParser.parse(raw), definition.raw_key: raw}
             case AttributeValueType.TEXT_LIST:
-                items = cls._distinct(raw or [])
+                items = cls._distinct((cls._name(raw) if definition.attribute in cls._NAMES else raw) or [])
                 return {definition.key: items[: definition.max_items] or None, definition.raw_key: raw}
             case _ if definition.attribute in cls._NAMES:
                 return {definition.key: cls._name(raw), definition.raw_key: raw}
@@ -121,8 +132,28 @@ class DocumentValueNormalizer:
 
     @classmethod
     def _name(cls, raw: _Raw) -> _Raw:
-        """A party's name, never a bare e-mail address: an address names a mailbox, not who sent or receives."""
-        return None if isinstance(raw, str) and cls._E_MAIL.fullmatch(raw) else raw
+        """A party's name without e-mail addresses: an address names a mailbox, not who sends or receives.
+
+        "Anna Meier <anna@example.ch>" keeps "Anna Meier"; a bare address keeps nothing.
+        """
+        if isinstance(raw, list):
+            return [name for name in (cls._name(item) for item in raw) if isinstance(name, str)]
+        if raw is None or not cls._E_MAIL.search(raw):
+            return raw
+        return cls._E_MAIL.sub("", raw).strip(" ,;:()<>\"'") or None
+
+    @classmethod
+    def _drop_names_only_in_addresses(cls, values: dict[str, Any], document_text: str) -> None:
+        """A name the document writes only inside an e-mail address ("northpeak" in billing@northpeak.example) was
+        made up from the mailbox, so it is dropped while its copied text is kept."""
+        text_without_addresses = cls._E_MAIL.sub(" ", document_text)
+        for attribute in cls._NAMES:
+            value = values.get(attribute)
+            if isinstance(value, str) and not RawValueLocator.appears_in(value, text_without_addresses):
+                values[attribute] = None
+            elif isinstance(value, list):
+                kept = [name for name in value if RawValueLocator.appears_in(name, text_without_addresses)]
+                values[attribute] = kept or None
 
     @classmethod
     def _complete_currency(cls, values: dict[str, Any]) -> None:

@@ -35,10 +35,21 @@ def test_a_type_overrides_only_the_meaning_of_attributes_that_apply_to_it() -> N
         assert set(definition.meanings) <= set(definition.attributes), definition.type
 
 
-def test_a_derived_attribute_applies_only_with_its_sources() -> None:
+def test_a_derived_attribute_applies_only_with_one_of_its_sources() -> None:
     for type_definition in DocumentTypeCatalog.TYPES:
         for attribute in DocumentTypeCatalog.applicable(type_definition.type):
-            assert set(attribute.derived_from) <= set(type_definition.attributes), attribute.attribute
+            if attribute.is_derived:
+                assert set(attribute.derived_from) & set(type_definition.attributes), attribute.attribute
+
+
+def test_parties_cover_issuer_and_recipient_or_the_participants_of_a_thread() -> None:
+    def parties_sources(document_type: DocumentType) -> set[DocumentAttribute]:
+        type_attributes = set(DocumentTypeCatalog.type_definition(document_type).attributes)
+        parties = DocumentTypeCatalog.attribute_definition(DocumentAttribute.PARTIES)
+        return set(parties.derived_from) & type_attributes
+
+    assert parties_sources(DocumentType.INVOICE) == {DocumentAttribute.ISSUER, DocumentAttribute.RECIPIENT}
+    assert parties_sources(DocumentType.EMAIL_THREAD) == {DocumentAttribute.PARTICIPANTS}
 
 
 def test_other_has_no_attributes() -> None:

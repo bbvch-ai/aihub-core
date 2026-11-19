@@ -11,13 +11,13 @@ class AttributeComparison:
     """Compares one stored value with its label, ignoring only differences no filter would notice: case and spacing
     of text, the order of a list, and rounding below half a cent.
 
-    A passage copied as written, such as a notice period or a service level, has no one right extent: "trois mois" and
-    "trois mois avant son échéance" state the same period. It matches when either contains the other. A list of
-    passages that misses some but invents none is incomplete, not wrong.
+    A passage copied as written, such as a notice period, a service level or a product name, has no one right extent:
+    "trois mois" and "trois mois avant son échéance" state the same period. It matches when either contains the
+    other. A list of passages that misses some but invents none is incomplete, not wrong.
     """
 
     PASSAGE_KEYS: ClassVar[frozenset[str]] = frozenset(
-        {DocumentAttribute.NOTICE_PERIOD.value, DocumentAttribute.SERVICE_LEVELS.value}
+        {DocumentAttribute.NOTICE_PERIOD.value, DocumentAttribute.SERVICE_LEVELS.value, DocumentAttribute.PRODUCT.value}
     )
 
     @classmethod

@@ -22,3 +22,5 @@ class DocumentAttribute(StrEnum):
     VALID_UNTIL = "document_valid_until"
     NOTICE_PERIOD = "document_notice_period"
     SERVICE_LEVELS = "document_service_levels"
+    PRODUCT = "document_product"
+    PARTICIPANTS = "document_participants"

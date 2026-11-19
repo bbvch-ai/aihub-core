@@ -407,3 +407,44 @@
       - resolve them within 6 hours
       - within 4 business hours of a request
       - at least 4.2 out of 5 per quarter
+
+- id: sla-de-leistungsbeschreibung-1
+  type: service_level_agreement
+  title: Anhang_B_Leistungsbeschreibung_Managed_Backup.pdf
+  note: A "Leistungsbeschreibung" annex that commits to service levels is an SLA, not documentation of the service.
+  text: |
+    # Anhang B – Leistungsbeschreibung und Service Levels Managed Backup
+    zum Dienstleistungsvertrag DV-2025-208
+
+    Anbieterin: Datenhafen Ost AG, Rorschacherstrasse 50, 9000 St. Gallen
+    Kundin: Gemeindeverwaltung Wilerberg, Dorfplatz 1, 9535 Wilerberg
+
+    ## 1. Leistungsumfang
+    Die Anbieterin sichert jede Nacht die Server und Datenbanken der Kundin in ihr Rechenzentrum in St. Gallen.
+    Sicherungen werden 30 Tage aufbewahrt, Monatssicherungen 12 Monate.
+
+    ## 2. Service Levels
+
+    | Kennzahl | Zusage |
+    |---|---|
+    | Erfolgreiche tägliche Sicherung | 98 % der Sicherungen pro Monat |
+    | Wiederherstellung einzelner Dateien | innert 4 Stunden |
+    | Reaktionszeit bei Störungen | 1 Stunde während der Servicezeiten |
+
+    ## 3. Gutschriften
+    Wird eine Zusage verfehlt, schreibt die Anbieterin der Kundin 10 % der Monatspauschale gut.
+
+    St. Gallen, 12. August 2025
+  expected:
+    document_date: "2025-08-12"
+    document_reference_number: null
+    document_issuer: Datenhafen Ost AG
+    document_recipient: Gemeindeverwaltung Wilerberg
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [DV-2025-208]
+    document_notice_period: null
+    document_service_levels:
+      - Erfolgreiche tägliche Sicherung | 98 % der Sicherungen pro Monat
+      - Wiederherstellung einzelner Dateien | innert 4 Stunden
+      - Reaktionszeit bei Störungen | 1 Stunde während der Servicezeiten

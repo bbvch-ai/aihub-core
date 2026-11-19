@@ -19,8 +19,14 @@ pytestmark = pytest.mark.unit
 
 _CASES = ClassificationCorpus.synthetic()
 _TYPED = [case for case in _CASES if case.type != DocumentType.OTHER]
-_TEXT_KEYS = ["document_reference_number", "document_issuer", "document_recipient", "document_notice_period"]
-_LIST_KEYS = ["document_related_references", "document_service_levels"]
+_TEXT_KEYS = [
+    "document_reference_number",
+    "document_issuer",
+    "document_recipient",
+    "document_notice_period",
+    "document_product",
+]
+_LIST_KEYS = ["document_related_references", "document_service_levels", "document_participants"]
 _MIN_CASES_PER_TYPE = 8
 
 

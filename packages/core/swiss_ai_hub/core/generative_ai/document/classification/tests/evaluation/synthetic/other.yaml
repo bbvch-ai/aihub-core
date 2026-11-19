@@ -1,5 +1,5 @@
-# Documents of no type in the set: minutes, manuals, policies, presentations and stand-alone payment parts, in German,
-# French, Italian and English. Every company and person is made up; every Swiss UID passes its check digit. `expected`
+# Documents of no type in the set: minutes, presentations and stand-alone payment parts, in German, French,
+# Italian and English. Every company and person is made up; every Swiss UID passes its check digit. `expected`
 # holds each value as stored (ISO dates, numbers, ISO currency codes), and None where the document does not state it.
 
 - id: receipt-qr-payment-part-only-de
@@ -28,43 +28,6 @@
 
     Zahlteil
     Währung CHF Betrag 1 599.90
-
-- id: manual-de-1
-  type: other
-  title: Bedienungsanleitung_Kaffeemaschine.pdf
-  text: |
-    # Bedienungsanleitung Kaffeevollautomat CV-500
-
-    ## Inbetriebnahme
-    1. Wassertank füllen.
-    2. Bohnenbehälter füllen.
-    3. Gerät mit der Taste ⏻ einschalten und Spülvorgang abwarten.
-
-    ## Entkalken
-    Das Gerät meldet „Entkalken", sobald nötig. Verwenden Sie nur das mitgelieferte Entkalkungsmittel.
-
-- id: manual-en-1
-  type: other
-  title: VPN_Setup_Guide.pdf
-  text: |
-    # VPN Setup Guide
-
-    1. Install the VPN client from the company portal.
-    2. Enter the server address vpn.hooli.example.
-    3. Sign in with your company account and approve the request on your phone.
-
-    If the connection fails, restart the client and check that your clock is correct.
-
-- id: manual-it-1
-  type: other
-  title: manuale_stampante.pdf
-  text: |
-    # Manuale d'uso – Stampante multifunzione MF-220
-
-    ## Sostituzione del toner
-    1. Aprire lo sportello anteriore.
-    2. Estrarre la cartuccia esaurita.
-    3. Inserire la nuova cartuccia fino allo scatto e chiudere lo sportello.
 
 - id: minutes-de-1
   type: other
@@ -98,40 +61,6 @@
     - Scope agreed: three dashboards, monthly refresh.
     - Budget as per quotation Q-1183.
     - Next steps: data access by 20 January.
-
-- id: policy-de-1
-  type: other
-  title: Spesenreglement_2025.pdf
-  text: |
-    # Spesenreglement 2025
-    Muster Treuhand GmbH
-
-    1. Spesen werden nur gegen Originalbeleg (Quittung oder Rechnung) vergütet.
-    2. Verpflegung auswärts: höchstens CHF 30.00 pro Mahlzeit.
-    3. Bahnreisen: 2. Klasse; ab 2 Stunden Fahrzeit 1. Klasse.
-
-    Gültig ab 1. Januar 2025.
-
-- id: policy-en-1
-  type: other
-  title: Information_Security_Policy.pdf
-  text: |
-    # Information Security Policy
-    Version 3.1 · Effective 1 March 2025
-
-    1. All devices must use full-disk encryption.
-    2. Passwords must be stored in the company password manager.
-    3. Incidents must be reported to security@hooli.example within one hour.
-
-- id: policy-fr-1
-  type: other
-  title: reglement_teletravail.pdf
-  text: |
-    # Règlement sur le télétravail
-    Atelier Rousseau Sàrl · en vigueur dès le 1er septembre 2025
-
-    Le télétravail est possible jusqu'à deux jours par semaine, après accord de la direction. Les frais de connexion
-    internet sont remboursés forfaitairement à hauteur de CHF 30.– par mois.
 
 - id: presentation-en-1
   type: other
@@ -174,31 +103,6 @@
     Zuschlagskriterien: Preis 60 %, Referenzen 25 %, Qualitätskonzept 15 %.
 
     Auskünfte: Martin Zbinden, Bauverwalter, 056 633 12 40
-
-- id: terms-de-1
-  type: other
-  title: AGB_Velorado_2025.pdf
-  note: General terms and conditions not agreed between named parties are not a contract.
-  text: |
-    # Allgemeine Geschäftsbedingungen (AGB)
-    Velorado Zweirad GmbH · Stand: März 2025
-
-    ## 1. Geltungsbereich
-    Diese AGB gelten für alle Kauf-, Reparatur- und Serviceverträge zwischen der Velorado Zweirad GmbH und ihren
-    Kundinnen und Kunden. Abweichende Bedingungen gelten nur, wenn sie schriftlich vereinbart wurden.
-
-    ## 2. Preise und Zahlung
-    Es gelten die Preise am Tag der Bestellung, in CHF inkl. MWST. Rechnungen sind innert 30 Tagen netto zahlbar.
-
-    ## 3. Gewährleistung
-    Auf neue Velos gewähren wir 2 Jahre Garantie, auf Rahmen 5 Jahre. Verschleissteile sind ausgenommen.
-
-    ## 4. Serviceabo
-    Das Serviceabo verlängert sich jeweils um ein Jahr, wenn es nicht mit einer Frist von einem Monat auf das Ende der
-    Laufzeit gekündigt wird.
-
-    ## 5. Gerichtsstand
-    Gerichtsstand ist Winterthur. Es gilt schweizerisches Recht.
 
 - id: orderform-de-1
   type: other

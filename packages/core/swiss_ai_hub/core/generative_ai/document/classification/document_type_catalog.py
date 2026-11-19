@@ -59,8 +59,8 @@ class DocumentTypeCatalog:
         DocumentAttributeDefinition(
             attribute=_A.PARTIES,
             value_type=_V.TEXT_LIST,
-            meaning="Every party the document names as issuer or recipient",
-            derived_from=[_A.ISSUER, _A.RECIPIENT],
+            meaning="Every party the document names as issuer, recipient or participant",
+            derived_from=[_A.ISSUER, _A.RECIPIENT, _A.PARTICIPANTS],
         ),
         DocumentAttributeDefinition(
             attribute=_A.TOTAL_AMOUNT, value_type=_V.AMOUNT, meaning="The final total amount the document states"
@@ -101,6 +101,24 @@ class DocumentTypeCatalog:
                 "copied as written"
             ),
             max_items=5,
+        ),
+        DocumentAttributeDefinition(
+            attribute=_A.PRODUCT,
+            value_type=_V.TEXT,
+            meaning=(
+                "The product, system or service the document documents, by its name as written; null when it names "
+                "none, and never a work process it describes or the document's own title such as a handbook's"
+            ),
+        ),
+        DocumentAttributeDefinition(
+            attribute=_A.PARTICIPANTS,
+            value_type=_V.TEXT_LIST,
+            meaning=(
+                "Every person or organisation that sends or receives a message of the conversation, by the name a "
+                "header or signature gives, and the organisation a signature names for a person; never an e-mail "
+                "address or a domain, and never a party a message only mentions"
+            ),
+            max_items=10,
         ),
     )
 
@@ -513,7 +531,7 @@ class DocumentTypeCatalog:
             excludes=[
                 "a service level agreement on its own, which is a service_level_agreement",
                 "an offer or an order confirmation",
-                "general terms and conditions, or a policy, not agreed between named parties",
+                "general terms and conditions, or a policy, not agreed between named parties, which is a policy",
             ],
             cue_words=[
                 "Vertrag",
@@ -608,10 +626,13 @@ class DocumentTypeCatalog:
         DocumentTypeDefinition(
             type=DocumentType.LETTER,
             description=(
-                "A letter or e-mail that is not of another type in this list: notices, requests, confirmations, "
-                "terminations, invitations and recommendations."
+                "A single letter or e-mail that is not of another type in this list: notices, requests, "
+                "confirmations, terminations, invitations and recommendations."
             ),
-            excludes=["an offer, order, invoice, reminder or contract sent as a letter, which is that type"],
+            excludes=[
+                "an offer, order, invoice, reminder or contract sent as a letter, which is that type",
+                "a conversation of several e-mails, replies or forwards kept in one document, which is an email_thread",
+            ],
             cue_words=[
                 "Brief",
                 "Schreiben",
@@ -677,11 +698,130 @@ class DocumentTypeCatalog:
             },
         ),
         DocumentTypeDefinition(
+            type=DocumentType.DOCUMENTATION,
+            description=(
+                "Explains how to install, use, operate or maintain a product, system or process: product and user "
+                "handbooks, manuals, guides, technical documentation and specifications, technical or not."
+            ),
+            excludes=[
+                "a policy, guideline, directive, regulation or set of terms that sets rules employees or customers "
+                "must follow, which is a policy, even when it has a version number or explains what to do",
+                "a report of results or findings, which is a report",
+                "a service level agreement",
+                "a slide presentation",
+            ],
+            cue_words=[
+                "Handbuch",
+                "Benutzerhandbuch",
+                "Bedienungsanleitung",
+                "Anleitung",
+                "Dokumentation",
+                "Spezifikation",
+                "manuel",
+                "mode d'emploi",
+                "guide d'utilisation",
+                "manuale",
+                "istruzioni",
+                "manual",
+                "handbook",
+                "user guide",
+                "documentation",
+                "specification",
+            ],
+            attributes=[_A.DATE, _A.REFERENCE_NUMBER, _A.ISSUER, _A.PRODUCT],
+            meanings={
+                _A.DATE: "Its publication or revision date",
+                _A.REFERENCE_NUMBER: (
+                    "Its document number (Dok.-Nr., Document No.); its version or release number as written, without "
+                    'the word "Version", only when it has no document number'
+                ),
+                _A.ISSUER: (
+                    "The manufacturer, publisher or organisation that wrote it, or the author when no organisation "
+                    "is named"
+                ),
+            },
+        ),
+        DocumentTypeDefinition(
+            type=DocumentType.POLICY,
+            description=(
+                "Sets rules that employees, members or customers must follow: policies, guidelines, directives, "
+                "regulations, codes of conduct, staff handbooks that set working hours, holidays or conduct, and "
+                "general terms and conditions."
+            ),
+            excludes=[
+                "an agreement between named parties, which is a contract",
+                "a document that explains how to use a product or do a task without setting rules, which is "
+                "documentation",
+                "a letter or e-mail announcing a rule, which is a letter",
+            ],
+            cue_words=[
+                "Reglement",
+                "Richtlinie",
+                "Weisung",
+                "Verhaltenskodex",
+                "AGB",
+                "règlement",
+                "directive",
+                "conditions générales",
+                "regolamento",
+                "direttiva",
+                "condizioni generali",
+                "policy",
+                "guideline",
+                "code of conduct",
+                "terms and conditions",
+            ],
+            attributes=[_A.DATE, _A.REFERENCE_NUMBER, _A.ISSUER],
+            meanings={
+                _A.DATE: (
+                    "The date it takes effect (gültig ab, en vigueur dès, in vigore dal, effective); else the date it "
+                    "was issued or revised"
+                ),
+                _A.REFERENCE_NUMBER: (
+                    "Its document number; its version number as written, without the word "
+                    '"Version", only when it has no document number'
+                ),
+                _A.ISSUER: "The organisation that sets the rules",
+            },
+        ),
+        DocumentTypeDefinition(
+            type=DocumentType.EMAIL_THREAD,
+            description=(
+                "A conversation of several e-mails, replies or forwards kept in one document, such as an exported "
+                "thread or a mailbox history."
+            ),
+            excludes=["a single letter or e-mail, which is a letter"],
+            cue_words=[
+                "Von:",
+                "Gesendet:",
+                "AW:",
+                "WG:",
+                "De :",
+                "Envoyé :",
+                "TR :",
+                "Da:",
+                "Inviato:",
+                "From:",
+                "Sent:",
+                "RE:",
+                "Fwd:",
+                "e-mail thread",
+            ],
+            attributes=[_A.DATE, _A.PARTICIPANTS, _A.PARTIES, _A.RELATED_REFERENCES],
+            meanings={
+                _A.DATE: "The date of the latest message",
+                _A.RELATED_REFERENCES: (
+                    "Numbers of the contracts, invoices, orders or tickets the conversation refers to; not a customer "
+                    "number"
+                ),
+            },
+        ),
+        DocumentTypeDefinition(
             type=DocumentType.OTHER,
             version=2,
             description=(
-                "Any document that is not of another type in this list, such as meeting minutes, manuals, policies, "
-                "presentations, forms and tenders."
+                "Any document that is not of another type in this list, such as meeting minutes, presentations, "
+                "forms and tenders."
             ),
         ),
     )
