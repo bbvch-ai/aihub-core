@@ -203,12 +203,14 @@ def load_config():
         return yaml.safe_load(f)
 
 
-# Licenses for the images we publish ourselves. The repo's open-source split lives in
+# Licenses for the images we publish ourselves. The repo's license split lives in
 # LICENSES.md — this dict mirrors the per-package license assignment so the rendered
 # compose files can carry an inline `# License:` comment per service. Keys are the
 # compose service-name prefix (= the published image name). Generic placeholders in
 # `licenses.config.json#own_images` (e.g. "agent", "process", "pipeline") that have no
 # corresponding compose service are omitted.
+# The images built from ee/ carry the bbv AI Hub Enterprise License in ee/LICENSE.
+ENTERPRISE_LICENSE = "LicenseRef-bbv-AI-Hub-Enterprise"
 OWN_IMAGE_LICENSES = {
     "api": "Apache-2.0",
     "bot": "Apache-2.0",
@@ -217,10 +219,10 @@ OWN_IMAGE_LICENSES = {
     "sysadmin-api": "AGPL-3.0-or-later",
     "sysadmin-web": "AGPL-3.0-or-later",
     "imap_agent": "Apache-2.0",
-    "email_classification_agent": "Apache-2.0",
+    "email_classification_agent": ENTERPRISE_LICENSE,
     "release_notes_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
-    "universal_agent": "Apache-2.0",
+    "universal_agent": ENTERPRISE_LICENSE,
     "web_fetch_agent": "Apache-2.0",
     "knowledge_extraction_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",

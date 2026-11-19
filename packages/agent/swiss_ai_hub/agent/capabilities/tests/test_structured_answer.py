@@ -29,7 +29,6 @@ from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMW
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
 from swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent import McpReactAgent
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
-from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalAgent
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.conversation.structured_answer import StructuredAnswer
 from swiss_ai_hub.agent.capabilities.requested_response_schema import RequestedResponseSchema
@@ -215,7 +214,7 @@ class TestConversationWithASchema:
 
 
 class TestSupport:
-    @pytest.mark.parametrize("blueprint", [LLMWrappingAgent, FewShotAgent, McpReactAgent, UniversalAgent])
+    @pytest.mark.parametrize("blueprint", [LLMWrappingAgent, FewShotAgent, McpReactAgent])
     def test_blueprints_completing_on_an_llm_stop_support_a_response_schema(self, blueprint):
         assert blueprint.supports_response_schema()
 

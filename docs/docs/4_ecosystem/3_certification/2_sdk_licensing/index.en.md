@@ -40,6 +40,13 @@ This helps prevent a situation where the community maintains the UI while third 
 interface without contributing their improvements back. The backup-and-restore orchestration service is licensed the
 same way, for the same reason.
 
+## Enterprise agents: bbv AI Hub Enterprise License
+
+A few paid agents of bbv AI Hub — today the Universal Agent and the Email Classification Agent — are not open source.
+They live in the `ee/` folder of the repository under the bbv AI Hub Enterprise License: using them needs an agreement
+with bbv Software Services and a valid license, while copying and modifying them for development and testing is free.
+The open core described above runs without them, and nothing in it depends on them.
+
 ## The goal
 
 The objective of this license split is to:

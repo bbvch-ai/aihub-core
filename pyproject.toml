@@ -65,6 +65,7 @@ members = [
     "packages/backup",
     "packages/sysadmin-api",
     "packages/meta",
+    "ee",
 ]
 
 [tool.uv.sources]
@@ -76,6 +77,7 @@ swiss-ai-hub-bot = { workspace = true }
 swiss-ai-hub-pipeline = { workspace = true }
 swiss-ai-hub-process = { workspace = true }
 swiss-ai-hub-sysadmin-api = { workspace = true }
+swiss-ai-hub-ee = { workspace = true }
 
 # Ruff config for files outside the per-package scopes (root-level scripts and
 # `infra/`). Each `packages/*/pyproject.toml` defines its own `[tool.ruff]` and

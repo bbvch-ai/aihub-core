@@ -7,7 +7,8 @@
     "packages/process",
     "packages/pipeline",
     "packages/backup",
-    "packages/sysadmin-api"
+    "packages/sysadmin-api",
+    "ee"
   ],
   "web_project": "packages/web",
   "output_file": "LICENSE_REPORT.md",
