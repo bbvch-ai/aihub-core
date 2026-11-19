@@ -1366,6 +1366,23 @@ class TestRequestReading:
 
         assert example in prompt
 
+    @pytest.mark.parametrize(
+        ("locale", "example"),
+        [
+            ("en", '"Q4 2018" as "dated between 1 October 2018 and 31 December 2018"'),
+            ("de", '"Q4 2018" als "datiert zwischen dem 1. Oktober 2018 und dem 31. Dezember 2018"'),
+            ("fr", "« T4 2018 » comme « daté entre le 1er octobre 2018 et le 31 décembre 2018 »"),
+            ("it", '"T4 2018" come "datato tra il 1° ottobre 2018 e il 31 dicembre 2018"'),
+        ],
+    )
+    def test_a_period_in_the_document_condition_is_written_as_explicit_dates(self, locale: str, example: str):
+        """The judge got a terse "Q4 2018" wrong for September documents; explicit dates leave nothing to infer."""
+        prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.read_request")
+        description = ExtractionRequestPlainAnswer.model_fields["document_condition"].description
+
+        assert example in prompt
+        assert "'Q4 2018' as 'dated between 1 October 2018 and 31 December 2018'" in description
+
     def test_the_plain_fallback_keeps_the_document_condition(self):
         plain = ExtractionRequestPlainAnswer(
             is_table_request=True,

@@ -41,9 +41,9 @@ class ExtractionRequestPlainAnswer(BaseModel):
         Field(
             description="Which documents count, in the user's words: a condition the whole document meets or fails, "
             "such as its supplier or party, its number, its status or version, or the period that dates it, e.g. "
-            "'contracts with Hooli', 'only signed versions', 'from Q1 2026'. Null when every document at the "
-            "locations counts, when a location already expresses the period exactly, or when the rows carry the value "
-            "themselves."
+            "'contracts with Hooli', 'only signed versions'. A period is written as explicit dates, e.g. 'Q4 2018' as "
+            "'dated between 1 October 2018 and 31 December 2018'. Null when every document at the locations counts, "
+            "when a location already expresses the period exactly, or when the rows carry the value themselves."
         ),
     ] = None
     instructions: Annotated[
