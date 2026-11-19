@@ -25,7 +25,7 @@ scope=$(echo "$relative_path" | cut -d'/' -f1-2)
 
 # Only format files within known scopes
 case "$scope" in
-  packages/core|packages/agent|packages/api|packages/bot|packages/pipeline|packages/process)
+  packages/core|packages/agent|packages/api|packages/bot|packages/pipeline|packages/process|ee/*)
     cd "$REPO_ROOT" 2>/dev/null || exit 0
     uv run ruff format "$file_path" 2>/dev/null
     uv run ruff check --fix --ignore F401 "$file_path" 2>/dev/null

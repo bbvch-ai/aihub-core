@@ -261,6 +261,8 @@ jobs:
             sonar_project_key: aihub-core_process-core
           - folder: packages/sysadmin-api
             sonar_project_key: aihub-core_sysadmin-api
+          - folder: ee
+            sonar_project_key: aihub-core_ee
     steps:
       - name: SonarCloud Scan
         uses: bbvch-ai/aihub-core/.github/actions/sonarcloud_scan@main

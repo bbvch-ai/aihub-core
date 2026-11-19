@@ -32,3 +32,7 @@ document_ingestion:
     with_figure_descriptions:
       label: Descrivi le figure
       help: Genera una descrizione testuale per ogni figura e immagine.
+    with_document_classification:
+      label: Classifica i documenti
+      help: Assegna a ogni documento un tipo (fattura o altro) e leggine gli attributi,
+        come data, emittente e totale, affinché gli agenti possano filtrarli.

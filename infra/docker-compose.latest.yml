@@ -3291,7 +3291,7 @@ services:
       - data
       - storage
       - browser  # Caller of the Playwright browser zone (web fetch)
-  # License: Apache-2.0 — own image (see LICENSES.md)
+  # License: LicenseRef-bbv-AI-Hub-Enterprise — own image (see LICENSES.md)
   universal_agent:
     container_name: universal-agent
     restart: always
@@ -4228,7 +4228,7 @@ services:
       - data
       - storage
       - egress  # Outbound access to external IMAP servers
-  # License: Apache-2.0 — own image (see LICENSES.md)
+  # License: LicenseRef-bbv-AI-Hub-Enterprise — own image (see LICENSES.md)
   email_classification_agent:
     container_name: email-classification-agent
     restart: always
@@ -4624,6 +4624,7 @@ services:
       DOCUMENT_INGESTION_WITH_SUMMARY_NODES: ${DOCUMENT_INGESTION_WITH_SUMMARY_NODES}
       DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT: ${DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT}
       DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS: ${DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS}
+      DOCUMENT_INGESTION_WITH_DOCUMENT_CLASSIFICATION: ${DOCUMENT_INGESTION_WITH_DOCUMENT_CLASSIFICATION}
       DOCUMENT_INGESTION_OBSERVE_JOB_HOUR: ${DOCUMENT_INGESTION_OBSERVE_JOB_HOUR}
       DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE: ${DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE}
 

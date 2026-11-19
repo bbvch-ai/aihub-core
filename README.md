@@ -15,8 +15,8 @@ what cloud AI platforms promise, but where you own every layer.
 [![PyPI](https://img.shields.io/pypi/v/swiss-ai-hub-core?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/swiss-ai-hub-core/)
 [![npm](https://img.shields.io/npm/v/@swiss-ai-hub/web?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@swiss-ai-hub/web)
 
-[Get started](#quick-start) · [Documentation](https://docs.ai-hub.bbv.ch/) ·
-[Discord](https://discord.gg/wArT8zDB) · [Releases](https://github.com/bbvch-ai/aihub-core/releases)
+[Get started](#quick-start) · [Documentation](https://docs.ai-hub.bbv.ch/) · [Discord](https://discord.gg/wArT8zDB) ·
+[Releases](https://github.com/bbvch-ai/aihub-core/releases)
 
 </div>
 
@@ -447,13 +447,15 @@ Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and ope
 
 ## License
 
-Swiss AI Hub is **fully open-source** under a **dual-license model** — each published artifact carries its own license,
-and the per-package `LICENSE` file is authoritative for its subtree:
+Swiss AI Hub is an **open-core** project. Its core is open source under a **dual-license model** — each published
+artifact carries its own license, and the per-package `LICENSE` file is authoritative for its subtree:
 
 - **Apache-2.0** — the platform runtime and shared code (`packages/core`, `agent`, `api`, `bot`, `pipeline`, `process`,
   and the repository root). See [LICENSE](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSE).
 - **AGPL-3.0-or-later** — the frontend (`packages/web`), the multi-tenant administration plane (`packages/sysadmin-api`,
   `packages/sysadmin-web`), and the backup service (`packages/backup`).
+- **bbv AI Hub Enterprise License** — the paid agents in `ee/` (Universal Agent, Email Classification Agent). They need
+  a bbv AI Hub Enterprise License to use; the open core runs without them.
 
 The split is intentional: the backend stays **permissive** so you can build and run proprietary agents and extensions
 without any obligation to disclose them, while the **copyleft** components (the UI, the administration plane, and the

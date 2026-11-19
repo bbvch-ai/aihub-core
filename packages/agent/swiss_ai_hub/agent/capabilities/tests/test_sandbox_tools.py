@@ -15,7 +15,6 @@ from swiss_ai_hub.core.infrastructure import ConversationAttachments, OpenTermin
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
-from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalAgent
 from swiss_ai_hub.agent.capabilities.sandbox import sandbox_workspace
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_tools import SandboxTools
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_workspace import SandboxWorkspace
@@ -281,9 +280,6 @@ class TestOffer:
 
         assert {tool_set.options(name).chat_feature for name in tool_set.names()} == {ChatFeature.CODE_INTERPRETER}
 
-    def test_the_universal_agent_offers_the_code_interpreter_toggle(self) -> None:
-        assert ChatFeature.CODE_INTERPRETER in UniversalAgent.supported_features()
-
     def test_commands_their_input_and_file_writes_ask_on_every_call_by_default(self) -> None:
         tool_set = ToolSet.of((SandboxTools,))
 
@@ -375,4 +371,3 @@ class TestUserFiles:
         tool_set = ToolSet.of((UserFilesTools,))
 
         assert {tool_set.options(name).chat_feature for name in tool_set.names()} == {ChatFeature.USER_FILES}
-        assert ChatFeature.USER_FILES in UniversalAgent.supported_features()

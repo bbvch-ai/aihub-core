@@ -1,0 +1,396 @@
+# Sales documents that resemble invoices but do not request payment for something delivered: offers, order
+# confirmations (even with a total), delivery notes and pro-forma invoices. All must be classified `other`.
+# Every company and person is made up.
+
+- id: offer-de-1
+  kind: hard_negative
+  title: Offerte_OF-2025-221.pdf
+  note: An offer with VAT and a total.
+  text: |
+    # Rhyfall Elektro GmbH
+    Mühlentalstrasse 5, 8200 Schaffhausen · MWST CHE-314.159.269
+
+    Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+    ## Offerte OF-2025-221
+    Schaffhausen, 20.02.2025 · gültig bis 31.03.2025
+
+    | Pos | Artikel | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 1 | LED-Panel 60x60, 4000 K | 24 | 2'160.00 |
+    | 2 | Montage, Stunden (geschätzt) | 6 | 690.00 |
+
+    Total exkl. MWST CHF 2'850.00 · MWST 8.1 % CHF 230.85
+    **Offertsumme CHF 3'080.85**
+
+    Gerne erwarten wir Ihre Bestellung.
+
+- id: offer-fr-1
+  kind: hard_negative
+  title: devis_D-2025-044.pdf
+  note: A French quote with a validity date.
+  text: |
+    # Atelier Rousseau Sàrl
+    Rue du Rhône 21, 1204 Genève · CHE-273.849.506 TVA
+
+    Lemanic Services SA, Chemin des Vignes 4, 1009 Pully
+
+    ## Devis n° D-2025-044
+    Genève, le 4 mars 2025 · valable 30 jours
+
+    Refonte de l'identité visuelle : logo, papeterie, gabarits de présentation
+    Forfait CHF 6'500.00 · TVA 8,1 % CHF 526.50
+    **Total TTC CHF 7'026.50**
+
+    Bon pour accord, date et signature : ____________________
+
+- id: offer-it-1
+  kind: hard_negative
+  title: offerta_2025_19.pdf
+  note: An Italian offer.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano
+
+    Spett. Studio Bellavista Sagl, Piazza Riforma 3, 6900 Lugano
+
+    ## Offerta n. 2025/19
+    Lugano, 2 settembre 2025
+
+    Trasloco uffici Lugano–Bellinzona, incluso imballaggio: CHF 1'660.00 IVA esclusa
+    IVA 8,1 %: CHF 134.46
+    **Totale offerta: CHF 1'794.46**
+
+    L'offerta è valida fino al 30 settembre 2025.
+
+- id: offer-en-1
+  kind: hard_negative
+  title: Quote_Q-1183.pdf
+  note: An English quotation in GBP.
+  text: |
+    # Brightwater Analytics Ltd
+    12 Canal Street, Manchester M1 3HE · VAT Reg. No. GB 123 4567 89
+
+    Prepared for: Hooli AG, Zürich
+
+    ## Quotation Q-1183
+    Date: 10 January 2025 · Valid until: 10 February 2025
+
+    | Description | Amount GBP |
+    |---|---:|
+    | Data quality audit (estimated 30 days) | 4,200.00 |
+    | Dashboard maintenance, monthly | 650.00 |
+
+    **Total quoted £4,850.00**
+    To accept this quotation, please sign and return.
+
+- id: offer-de-2
+  kind: hard_negative
+  title: Angebot_2025-0117.pdf
+  note: A German offer whose wording mentions "Rechnung" for later billing.
+  text: |
+    # Nordlicht Software GmbH
+    Leopoldstraße 90, 80802 München
+
+    Hooli AG, Bahnhofstrasse 10, 8001 Zürich
+
+    ## Angebot 2025-0117
+    München, 15.08.2025
+
+    Wartung Plattform „Nordstern", Q4 2025: 7.800,00 EUR netto
+    Die Rechnungsstellung erfolgt nach Auftragserteilung quartalsweise im Voraus.
+
+    Bindefrist: 15.09.2025
+
+- id: offer-de-3
+  kind: hard_negative
+  title: Kostenvoranschlag_KV-88.pdf
+  note: A cost estimate with totals and payment terms.
+  text: |
+    # Bergwerk Bau AG
+    Industriestrasse 44, 3600 Thun
+
+    Gemeinde Grünfeld, Bauverwaltung, Dorfplatz 1, 3612 Grünfeld
+
+    ## Kostenvoranschlag KV-88
+    Thun, 12.11.2024
+
+    Sanierung Schulhaus Grünfeld, Werksumme gemäss Leistungsverzeichnis CHF 280'000.00 exkl. MWST
+    Zahlungsplan: 3 Akontozahlungen à 30 %, Rest mit der Schlussrechnung.
+    Zahlungskonditionen: 30 Tage netto.
+
+- id: order-confirmation-de-1
+  kind: hard_negative
+  title: Auftragsbestaetigung_AB-77120.pdf
+  note: An order confirmation that ends with a total and VAT (C2).
+  text: |
+    # Rhyfall Elektro GmbH
+    Mühlentalstrasse 5, 8200 Schaffhausen · MWST CHE-314.159.269
+
+    Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+    ## Auftragsbestätigung AB-77120
+    Schaffhausen, 03.03.2025 · Ihre Bestellung BE-77120 vom 02.03.2025
+
+    Wir bestätigen Ihre Bestellung mit Dank:
+
+    | Pos | Artikel | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 1 | LED-Panel 60x60, 4000 K | 24 | 2'160.00 |
+    | 2 | Montage, Stunden | 6 | 690.00 |
+
+    Total inkl. 8.1 % MWST CHF 3'080.85
+    Voraussichtlicher Liefertermin: KW 11. Die Rechnung folgt mit der Lieferung.
+
+- id: order-confirmation-fr-1
+  kind: hard_negative
+  title: confirmation_commande_CC-5521.pdf
+  note: A French order confirmation with a total.
+  text: |
+    # Alpenfunk Télécom SA
+    Avenue de la Gare 18, 1003 Lausanne
+
+    Atelier Rousseau Sàrl, Rue du Rhône 21, 1204 Genève
+
+    ## Confirmation de commande CC-5521
+    Lausanne, le 10 février 2025
+
+    Abonnement Business Fibre 1 Gbit/s, mise en service le 1er mars 2025 : CHF 89.00 par mois
+    Frais d'installation uniques : CHF 149.00
+    Total de la première facture estimé : CHF 255.90 TTC
+
+    Votre première facture vous parviendra début avril.
+
+- id: order-confirmation-en-1
+  kind: hard_negative
+  title: Order_Confirmation_SO-2025-4410.pdf
+  note: An English sales order confirmation.
+  text: |
+    # Quillfeather Supplies Inc.
+    880 Market Street, San Francisco, CA 94102
+
+    Customer: Brightwater Analytics Ltd
+
+    ## Sales Order Confirmation SO-2025-4410
+    Order date: March 2, 2025
+
+    | Item | Qty | Amount |
+    |---|---:|---:|
+    | Ergonomic office chair | 4 | $1,596.00 |
+    | Shipping | 1 | $120.00 |
+
+    Order total: USD 1,716.00
+    Estimated ship date: March 9, 2025. An invoice will be issued upon shipment.
+
+- id: order-confirmation-it-1
+  kind: hard_negative
+  title: conferma_ordine_ORD-5521.pdf
+  note: An Italian order confirmation.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano
+
+    Studio Bellavista Sagl, Piazza Riforma 3, 6900 Lugano
+
+    ## Conferma d'ordine ORD-5521
+    Lugano, 5 settembre 2025
+
+    Confermiamo il trasporto mobili ufficio Lugano–Bellinzona per il 12 settembre 2025.
+    Importo concordato: CHF 1'794.46 IVA inclusa.
+    La fattura seguirà dopo l'esecuzione.
+
+- id: order-confirmation-de-2
+  kind: hard_negative
+  title: Bestellbestaetigung_44871.pdf
+  note: An online shop order confirmation with "Rechnungsadresse" and a total.
+  text: |
+    # Alpenglück Bürobedarf AG – Onlineshop
+    Bestellbestätigung Nr. 44871 vom 19.05.2025
+
+    Rechnungsadresse: Muster Treuhand GmbH, Spitalgasse 4, 3011 Bern
+    Lieferadresse: wie Rechnungsadresse
+
+    | Artikel | Menge | Betrag CHF |
+    |---|---:|---:|
+    | Kopierpapier A4, 80 g, Karton | 10 | 389.00 |
+    | Toner HP 26X | 4 | 612.00 |
+
+    Bestellsumme inkl. MWST CHF 1'082.08
+    Zahlungsart: Kauf auf Rechnung. Die Rechnung liegt der Lieferung bei.
+
+- id: order-confirmation-de-3
+  kind: hard_negative
+  title: AB_2025_301.pdf
+  note: An order confirmation for design work with a fixed price.
+  text: |
+    # Atelier Lindenhof GmbH
+    Lindenhofstrasse 8, 8001 Zürich
+
+    Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+    ## Auftragsbestätigung AU-2025-301
+    Zürich, 01.07.2025
+
+    Neugestaltung Speisekarten Herbst 2025, Pauschalpreis CHF 2'400.00 exkl. MWST
+    Abgabe der Druckdaten bis 15.08.2025. Verrechnung nach Abgabe.
+
+- id: delivery-note-de-1
+  kind: hard_negative
+  title: Lieferschein_LS-8812.pdf
+  note: A delivery note without prices.
+  text: |
+    # Hooli AG
+    Bahnhofstrasse 10, 8001 Zürich
+
+    Muster Treuhand GmbH, Spitalgasse 4, 3011 Bern
+
+    ## Lieferschein LS-8812
+    Lieferdatum: 03.02.2025 · Ihre Bestellung PO-3333
+
+    | Pos | Artikel | Menge |
+    |---|---|---:|
+    | 1 | Notebook ThinkPad T14 | 3 |
+    | 2 | Docking Station USB-C | 3 |
+
+    Ware in einwandfreiem Zustand erhalten: ____________________
+
+- id: delivery-note-de-2
+  kind: hard_negative
+  title: Lieferschein_22091.pdf
+  note: A delivery note that lists unit prices and a goods value.
+  text: |
+    # Kaffeerösterei Elbstrand e.K.
+    Hafenstraße 9, 20457 Hamburg
+
+    Nordlicht Software GmbH, Leopoldstraße 90, 80802 München
+
+    ## Lieferschein 22091
+    Versanddatum: 10.06.2025
+
+    | Artikel | Menge | Einzelpreis |
+    |---|---:|---:|
+    | Espresso Hausmischung 1 kg | 12 | 24,90 € |
+    | Filterkaffee Äthiopien 1 kg | 6 | 27,50 € |
+
+    Warenwert 463,80 € netto. Die Rechnung erhalten Sie separat per E-Mail.
+
+- id: delivery-note-fr-1
+  kind: hard_negative
+  title: bon_de_livraison_BL-3310.pdf
+  note: A French delivery note.
+  text: |
+    # Lemanic Services SA
+    Chemin des Vignes 4, 1009 Pully
+
+    Alpenglück Bürobedarf AG, Marktgasse 30, 3011 Bern
+
+    ## Bon de livraison BL-3310
+    Date de livraison : 14 janvier 2025
+
+    | Article | Quantité |
+    |---|---:|
+    | Produit de nettoyage multi-surfaces 5 L | 8 |
+    | Sacs poubelle 110 L, rouleau | 20 |
+
+    Reçu en bon état, signature : ____________________
+
+- id: delivery-note-en-1
+  kind: hard_negative
+  title: Packing_Slip_SO-2025-4410.pdf
+  note: An English packing slip.
+  text: |
+    # Quillfeather Supplies Inc.
+    Packing Slip for Order SO-2025-4410
+
+    Ship to: Brightwater Analytics Ltd, 12 Canal Street, Manchester M1 3HE
+    Ship date: March 9, 2025 · Carrier: Atlas Freight · Tracking 1Z 999 AA1 01 2345 6784
+
+    | Item | Qty shipped |
+    |---|---:|
+    | Ergonomic office chair | 4 |
+
+- id: delivery-note-it-1
+  kind: hard_negative
+  title: bolla_di_consegna_BC-778.pdf
+  note: An Italian delivery note.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano
+
+    Destinatario: Studio Bellavista Sagl, Piazza Riforma 3, 6900 Lugano
+
+    ## Bolla di consegna BC-778
+    Data: 12 settembre 2025 · Rif. ordine ORD-5521
+
+    Colli consegnati: 34 · Peso totale: 1'280 kg
+    Firma del destinatario: ____________________
+
+- id: proforma-de-1
+  kind: hard_negative
+  title: Proforma_PF-2025-09.pdf
+  note: A pro-forma invoice requests no payment (C2).
+  text: |
+    # Hooli AG
+    Bahnhofstrasse 10, 8001 Zürich · MWST CHE-602.198.749 MWST
+
+    Brightwater Analytics Ltd, 12 Canal Street, Manchester M1 3HE
+
+    ## Proforma-Rechnung PF-2025-09
+    Zürich, 05.05.2025
+
+    Nur für Zollzwecke – keine Zahlung erforderlich.
+
+    | Artikel | Menge | Warenwert CHF |
+    |---|---:|---:|
+    | Server Rack 42U, gebraucht | 1 | 450.00 |
+
+    Gesamtwarenwert CHF 450.00 · Ursprungsland: Schweiz
+
+- id: proforma-en-1
+  kind: hard_negative
+  title: Proforma_Invoice_PI-3021.pdf
+  note: An English pro-forma invoice for a prepayment request, explicitly not a VAT invoice.
+  text: |
+    # Brightwater Analytics Ltd
+    12 Canal Street, Manchester M1 3HE
+
+    Customer: Hooli AG, Bahnhofstrasse 10, 8001 Zürich
+
+    ## PRO FORMA INVOICE PI-3021
+    Date: 2 June 2025
+
+    Annual analytics licence 2025/26: £12,000.00
+
+    This pro forma invoice is not a tax invoice. A VAT invoice will be issued once the licence is activated.
+
+- id: proforma-fr-1
+  kind: hard_negative
+  title: facture_proforma_FP-118.pdf
+  note: A French pro-forma invoice.
+  text: |
+    # Atelier Rousseau Sàrl
+    Rue du Rhône 21, 1204 Genève
+
+    Client : Lemanic Services SA, Chemin des Vignes 4, 1009 Pully
+
+    ## Facture pro forma FP-118
+    Genève, le 20 juin 2025
+
+    Brochure de présentation, 500 exemplaires : CHF 3'800.00 HT
+    Document sans valeur comptable, établi à titre indicatif.
+
+- id: proforma-de-2
+  kind: hard_negative
+  title: Proformarechnung_2025-77.pdf
+  note: A German pro-forma for an export shipment.
+  text: |
+    # Kaffeerösterei Elbstrand e.K.
+    Hafenstraße 9, 20457 Hamburg
+
+    Empfänger: Seeblick Hotel AG, Uferweg 2, 6006 Luzern, Schweiz
+
+    ## Proformarechnung 2025-77
+    Datum: 01.09.2025
+
+    Espresso Hausmischung 1 kg × 40, Warenwert 996,00 €
+    Proformarechnung für die Verzollung. Die Handelsrechnung folgt nach Lieferung.

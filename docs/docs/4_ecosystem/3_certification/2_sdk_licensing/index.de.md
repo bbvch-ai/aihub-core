@@ -1,6 +1,6 @@
 ---
 title: SDK-Lizenzierung
-source_sha: e5347335f26229cf324e8f2973ec1c5bcd08454452151c6cf4b470c0e1eff532
+source_sha: 99ee7168466d12522e4a53267ec3272d0843f3a6ad301bc5127261f39e3ffbae
 ---
 
 # Warum das Backend und die UI unterschiedliche Lizenzen verwenden
@@ -43,6 +43,14 @@ geteilt werden.
 Dies hilft, eine Situation zu verhindern, in der die Community die UI pflegt, während Dritte proprietäre Forks der
 Benutzeroberfläche erstellen, ohne ihre Verbesserungen zurückzugeben. Der Backup- und Restore-Orchestrierungsdienst ist
 aus demselben Grund auf dieselbe Weise lizenziert.
+
+## Enterprise-Agents: bbv AI Hub Enterprise License
+
+Einige kostenpflichtige Agents von bbv AI Hub – derzeit der Universal Agent und der Email Classification Agent – sind
+nicht Open Source. Sie liegen im Ordner `ee/` des Repositorys und stehen unter der bbv AI Hub Enterprise License: Für
+ihre Nutzung braucht es eine Vereinbarung mit bbv Software Services und eine gültige Lizenz; Kopieren und Anpassen zu
+Entwicklungs- und Testzwecken ist kostenlos. Der oben beschriebene offene Kern läuft ohne sie, und nichts darin hängt
+von ihnen ab.
 
 ## Das Ziel
 

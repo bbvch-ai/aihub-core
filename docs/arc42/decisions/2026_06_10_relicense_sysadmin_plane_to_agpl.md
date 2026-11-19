@@ -1,5 +1,9 @@
 # Relicense the Sysadmin Plane to AGPL-3.0-or-later (Fully Open-Source)
 
+> **Partially superseded by
+> [`2026_11_16_enterprise_agents_in_ee_package`](./2026_11_16_enterprise_agents_in_ee_package.md).** Paid agents now
+> live in `ee/` under the bbv AI Hub Enterprise License; the open core keeps the two licenses below.
+
 ## Context
 
 ADR [`2026_05_19_split-sysadmin-into-proprietary-packages`](./2026_05_19_split-sysadmin-into-proprietary-packages.md)

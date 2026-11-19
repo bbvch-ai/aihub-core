@@ -4,7 +4,7 @@
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT" || exit 0
 
-SCOPES=("packages/core" "packages/agent" "packages/process" "packages/api" "packages/bot" "packages/pipeline" "packages/web")
+SCOPES=("packages/core" "packages/agent" "packages/process" "packages/api" "packages/bot" "packages/pipeline" "packages/web" "ee")
 
 # Find scopes with modified files
 changed_files=$(git diff --name-only 2>/dev/null)
@@ -24,11 +24,13 @@ if echo "$all_changed" | grep -qE '\.md$'; then
   md_changed=true
 fi
 
-# Only the changed YAML files are formatted: formatting every tracked file drags unrelated files into the diff
+# Only the changed YAML files are formatted: formatting every tracked file drags unrelated files into the diff.
+# Synthetic evaluation documents are text in YAML literal blocks; yamlfix deletes their blank lines and re-indents them,
+# as the root format-yaml target and the YAML edit hook already know.
 changed_yaml=()
 while IFS= read -r file; do
   [[ -f "$file" ]] && changed_yaml+=("$file")
-done < <(echo "$all_changed" | grep -E '\.(yaml|yml)$' | grep -v 'pnpm-lock.yaml')
+done < <(echo "$all_changed" | grep -E '\.(yaml|yml)$' | grep -v 'pnpm-lock.yaml' | grep -v '/tests/evaluation/synthetic/')
 
 # Run make pr-ready on each dirty scope
 failed=false

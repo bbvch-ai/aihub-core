@@ -1,0 +1,63 @@
+import re
+import unicodedata
+from typing import ClassVar
+
+
+class AmountTextParser:
+    """Reads an amount written with any of the separators used in Switzerland, the EU and English-speaking countries.
+
+    `12'496.36`, `12’496.36`, `12.496,36`, `12 496,36` and `12,496.36` are all 12496.36, with any space NFKC folds
+    into a plain one (no-break, narrow no-break, thin) as the thousands separator; the Swiss `1'250.–` is 1250.00.
+    A minus touching the number (`-500`, `CHF -500`, `500-`) or its currency (`-CHF 500`), or brackets around the
+    number alone (`(500.00)`), make it negative. A spaced dash is a separator ("Betrag - CHF 500") and a bracketed
+    total with its currency ("Total (CHF 500.00)") an aside, so neither is read as a sign. With one separator, three
+    digits after it mean thousands, as no currency is written with three decimals.
+    """
+
+    _ZERO_CENTS: ClassVar[re.Pattern[str]] = re.compile(r"([.,])\s?-{1,2}(?!\d)")
+    _NUMBER: ClassVar[re.Pattern[str]] = re.compile(r"\d(?:[\d'’ .,]*\d)?")
+    _MINUS_BEFORE: ClassVar[re.Pattern[str]] = re.compile(r"(?:^|[^\w-])-(?:[a-z$€£.]{1,4}\s?)?$", re.IGNORECASE)
+    _MINUS_AFTER: ClassVar[re.Pattern[str]] = re.compile(r"^-(?!\d)")
+
+    @classmethod
+    def parse(cls, raw: str | None) -> float | None:
+        if not raw:
+            return None
+        text = re.sub(r"[‐-―−]", "-", unicodedata.normalize("NFKC", raw))
+        text = cls._ZERO_CENTS.sub(r"\g<1>00", text)
+        match = cls._NUMBER.search(text)
+        if match is None:
+            return None
+        value = cls._value(re.sub(r"['’ ]", "", match[0]))
+        if value is None:
+            return None
+        before, after = text[: match.start()], text[match.end() :]
+        bracketed = before.rstrip().endswith("(") and after.lstrip().startswith(")")
+        negative = bracketed or cls._MINUS_BEFORE.search(before) or cls._MINUS_AFTER.search(after)
+        return round(-value if negative else value, 2)
+
+    @classmethod
+    def _value(cls, number: str) -> float | None:
+        decimal = cls._decimal_separator(number)
+        integer_part, _, fraction = number.rpartition(decimal) if decimal else (number, "", "")
+        digits = re.sub(r"[.,]", "", integer_part)
+        if not digits.isdigit() or (fraction and not fraction.isdigit()):
+            return None
+        return float(f"{digits}.{fraction}" if fraction else digits)
+
+    @classmethod
+    def _decimal_separator(cls, number: str) -> str | None:
+        """The separator before the decimals: the later one when both kinds appear, a lone one unless it groups
+        thousands, and none when the number has no separator."""
+        last_dot, last_comma = number.rfind("."), number.rfind(",")
+        if last_dot >= 0 and last_comma >= 0:
+            return "." if last_dot > last_comma else ","
+        if last_dot < 0 and last_comma < 0:
+            return None
+        separator = "." if last_dot >= 0 else ","
+        return None if cls._is_thousands(number, separator) else separator
+
+    @classmethod
+    def _is_thousands(cls, number: str, separator: str) -> bool:
+        groups = number.split(separator)
+        return len(groups) > 2 or len(groups[-1]) == 3

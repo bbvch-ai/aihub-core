@@ -124,6 +124,7 @@ runner.mount(
     .get_source_pipelines()
     .create_database()
     .update_database_source()
+    .request_classification()
     .create_namespace()
     .update_namespace()
     .get_databases()
