@@ -377,13 +377,29 @@ _OCR_HEADER = "# Invoice 2025-313\n\nSupplier: Vantra AG, Industriestrasse 21, 6
 
 
 @pytest.mark.asyncio
-async def test_a_misread_supplier_name_with_the_right_name_elsewhere_meets_the_condition() -> None:
-    """The header lost a letter to OCR; the payment details still name the supplier (demo dry run, "Hooi AG")."""
+async def test_a_misread_supplier_name_with_the_right_name_elsewhere_is_not_skipped() -> None:
+    """The header lost a letter to OCR; the payment details still name the supplier (demo dry run, "Hooi AG").
+
+    "yes" and "unsure" both keep the document; the model may read the payee as a variant of the header name.
+    """
     text = _invoice(_OCR_HEADER) + "\nPlease transfer the amount to Vantora AG, IBAN CH93 0076 2011 6238 5295 7.\n"
 
     match = await _judged(text, "only invoices from Vantora AG")
 
-    assert match.verdict == "yes", match
+    assert match.verdict in ("yes", "unsure"), match
+
+
+_OTHER_SUPPLIER_HEADER = "# Invoice 2025-314\n\nSupplier: Kestrel Mietwagen GmbH, Bahnhofstrasse 4, 8001 Zürich\nDate: 2025-03-14\n\n"
+
+
+@pytest.mark.asyncio
+async def test_a_requested_name_only_inside_a_web_address_does_not_meet_the_condition() -> None:
+    """The real-invoice e2e kept a rental invoice whose note links to the requested supplier's website."""
+    text = _invoice(_OTHER_SUPPLIER_HEADER) + "\nNote: more information at www.vantora.ch\n"
+
+    match = await _judged(text, "only invoices from Vantora AG")
+
+    assert match.verdict == "no", match
 
 
 @pytest.mark.asyncio
