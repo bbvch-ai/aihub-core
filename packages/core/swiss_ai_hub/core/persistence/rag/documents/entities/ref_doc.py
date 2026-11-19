@@ -517,7 +517,7 @@ class RefDoc(Document):
         namespace: str,
         document_title: str | None = None,
     ) -> Self:
-        """Create a placeholder RefDoc for a file that is being uploaded/processed, raising NotUniqueError if one exists.
+        """Create a placeholder RefDoc for a file being uploaded or processed; NotUniqueError if a record exists.
 
         Uses deterministic ID based on source path to enable upsert on processing completion. Insert-only, because
         MongoEngine's save() of a document with an id replaces whatever record holds that id: a parse or an upload
@@ -696,8 +696,9 @@ class RefDoc(Document):
         and a later failure (of its summaries, say) must not show it as failed. Matches only a record dated strictly
         before the failed attempt started: a re-upload resets the record and dates it to the upload, even while the
         old run is still going, and that run never saw the new file. A record from the same second is left alone too,
-        as it cannot be ordered; the failure of a later attempt, which a retry always brings, is reported. Writes nothing when the stored
-        values are already these, so the retry sensor can report the same failure on every tick at the cost of a read.
+        as it cannot be ordered; the failure of a later attempt, which a retry always brings, is reported. Writes
+        nothing when the stored values are already these, so the retry sensor can report the same failure on every
+        tick at the cost of a read.
         """
         with switch_db(cls, db_alias) as SwitchedRefDoc:
             pending = SwitchedRefDoc.objects(

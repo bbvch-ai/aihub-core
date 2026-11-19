@@ -8,9 +8,7 @@ from swiss_ai_hub.api.routes.knowledge.dto.document_dto import DocumentDTO
 from swiss_ai_hub.api.routes.knowledge.dto.document_ingestion_state import DocumentIngestionState
 
 
-def _ref_doc(
-    *, is_ingested: bool | None, failed_attempts: int | None = None, gave_up: bool | None = None
-) -> MagicMock:
+def _ref_doc(*, is_ingested: bool | None, failed_attempts: int | None = None, gave_up: bool | None = None) -> MagicMock:
     ref_doc = MagicMock()
     ref_doc.id = "doc-1"
     ref_doc.data.text = ""

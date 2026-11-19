@@ -16,6 +16,6 @@ class IngestionRetryDecision(BaseModel):
     retry_number: Annotated[int, Field(description="Which retry under the current pipeline version; 0 unless RETRY.")]
     attempt_started_at: Annotated[
         float | None,
-        Field(description="Unix time the latest attempt started: a record changed since then is a version it never saw."),
+        Field(description="Unix time the latest attempt started; a record changed since is a version it never saw."),
     ] = None
     failed_at: Annotated[float | None, Field(description="Unix time the latest attempt ended.")] = None
