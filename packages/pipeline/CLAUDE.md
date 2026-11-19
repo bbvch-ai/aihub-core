@@ -62,6 +62,8 @@ packages/pipeline/                        # SDK framework
 │   │   ├── source_bucket_cleanup_sensor.py # Forget databases a source pipeline no longer fills (partitions + remote)
 │   │   ├── knowledge_teardown_sensor.py   # Run teardown for databases/folders flagged `deleting`
 │   │   ├── document_classification_backfill_sensor.py # Run the classification backfill for databases that requested it
+│   │   ├── failed_ingestion_retry_sensor.py # Retry failed document partitions, bounded per pipeline version
+│   │   ├── ingestion_retry_decider.py     # Pure retry / wait / give-up decision from a partition's run history
 │   │   ├── single_flight_run_guard.py     # "Is a run of this job already queued or running?"
 │   │   └── nats/
 │   │       ├── nats_document_uploaded_sensor.py  # NATS event-driven triggers
@@ -90,6 +92,7 @@ packages/pipeline/                        # SDK framework
 │   ├── jobs/knowledge_teardown_job.py     # {ingestor}_knowledge_teardown
 │   ├── jobs/repair_orphaned_nodes_job.py  # {ingestor}_repair_orphaned_nodes (manual, dry run by default)
 │   ├── jobs/backfill_document_classification_job.py # {ingestor}_backfill_document_classification (sensor or manual dry run)
+│   ├── jobs/retry_failed_ingestion_job.py # {ingestor}_retry_failed_ingestion (partitioned; launched by the retry sensor)
 │   ├── executors/factory.py               # default_process_executor (in-process)
 │   ├── automation/all_deps_completed.py   # AutomationCondition for all-deps-ready
 │   ├── types/                             # Domain types (Pydantic models)
@@ -1107,6 +1110,22 @@ Four triggering mechanisms work together:
   `NamespaceEntity` rows flagged `deleting` and requests a teardown run per flagged row. The flag *is* the durable
   request, so nothing can be acknowledged and then lost. The run key is numbered by how many runs the target has already
   had, which keeps it stable while an attempt is pending and lets a failed teardown re-drive.
+- **Failed-ingestion retry sensor**: `failed_ingestion_retry_sensor` (`FailedIngestionRetrySensorFor_…`) — eager
+  automation only fires when a file's data version changes, and a failed run changes nothing, so this sensor re-drives
+  failed partitions. It reads each asset's partition statuses from Dagster's status cache (one call per asset) and
+  requests the **earliest** failed asset of a partition (`documents` → `nodes` → `summary_nodes`) through
+  `{ingestor}_retry_failed_ingestion`, letting automation carry the rest. The rules live in `IngestionRetryDecider`
+  (pure, unit-tested): a failure starts at the latest run the sensor did not request; retries are counted per
+  pipeline version (`aihub/pipeline_version`, the installed `swiss-ai-hub-pipeline` version) up to
+  `DOCUMENT_INGESTION_MAX_RETRIES` (3), each `DOCUMENT_INGESTION_RETRY_BACKOFF_MINUTES` (10) after the last attempt
+  ended, so a release that fixes a bug retries what it failed and a file that can never be ingested stops. Retries run at
+  priority -1, at most 50 per tick. The sensor writes the failure to the document's record
+  (`RefDoc.record_ingestion_failure`: attempts, time, given up; only onto a record dated strictly before the failed
+  attempt started, so a re-upload made while the old run was still going is never marked with its failure), inserting a placeholder that carries the failure
+  for a synced file that never parsed (`RefDoc.create_failed_placeholder`, insert-only so a concurrent parse is never
+  overwritten). While a run it did not request is queued or running, it clears the failure from that document
+  (`RefDoc.clear_ingestion_failures`), so a file changed at its source shows as processing. The API turns the fields
+  into `ingestion_state`. See ADR `2026_11_19_bounded_retry_of_failed_document_ingestion`.
 - **Daily schedules**: `daily_schedule_at(job, hour, minute)` — cron-based observation for sources that don't push
   events.
 - **Run-status chaining**: `run_after_success_sensor(monitored_job=..., triggered_job=...)` — fires `triggered_job`

@@ -8696,6 +8696,25 @@ export const DocumentDTOSchema = {
       title: "Is Ingested",
       description: "Whether the document has been fully ingested.",
     },
+    ingestion_state: {
+      $ref: "#/components/schemas/DocumentIngestionState",
+      description:
+        "Ingested; processing (waiting for or running an attempt); retrying (an attempt failed and another is scheduled); or failed (no further attempt until the file changes or the pipeline is updated).",
+      default: "ingested",
+    },
+    ingestion_failed_attempts: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Ingestion Failed Attempts",
+      description:
+        "Failed ingestion attempts so far, while retrying or failed.",
+    },
     content: {
       anyOf: [
         {
@@ -8764,6 +8783,14 @@ export const DocumentDeletionResultSchema = {
   required: ["document_id", "status"],
   title: "DocumentDeletionResult",
   description: "Outcome of a single document deletion within a batch request.",
+} as const;
+
+export const DocumentIngestionStateSchema = {
+  type: "string",
+  enum: ["ingested", "processing", "retrying", "failed"],
+  title: "DocumentIngestionState",
+  description:
+    "Where a document stands in ingestion, as the knowledge list shows it.\n\n`processing` covers both waiting for and running an attempt: the pipeline records nothing when a run starts,\nbecause a successful parse rewrites the whole record. Only a failure is written, by the pipeline's retry sensor.",
 } as const;
 
 export const DocumentParsingMetadataSchema = {

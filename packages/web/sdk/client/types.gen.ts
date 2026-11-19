@@ -5898,6 +5898,16 @@ export type DocumentDto = {
    */
   is_ingested: boolean;
   /**
+   * Ingested; processing (waiting for or running an attempt); retrying (an attempt failed and another is scheduled); or failed (no further attempt until the file changes or the pipeline is updated).
+   */
+  ingestion_state?: DocumentIngestionState;
+  /**
+   * Ingestion Failed Attempts
+   *
+   * Failed ingestion attempts so far, while retrying or failed.
+   */
+  ingestion_failed_attempts?: number | null;
+  /**
    * Content
    *
    * Content of the document.
@@ -5936,6 +5946,32 @@ export type DocumentDeletionResult = {
    */
   status: "scheduled" | "not_found" | "failed";
 };
+
+/**
+ * DocumentIngestionState
+ *
+ * Where a document stands in ingestion, as the knowledge list shows it.
+ *
+ * `processing` covers both waiting for and running an attempt: the pipeline records nothing when a run starts,
+ * because a successful parse rewrites the whole record. Only a failure is written, by the pipeline's retry sensor.
+ */
+export const DocumentIngestionState = {
+  INGESTED: "ingested",
+  PROCESSING: "processing",
+  RETRYING: "retrying",
+  FAILED: "failed",
+} as const;
+
+/**
+ * DocumentIngestionState
+ *
+ * Where a document stands in ingestion, as the knowledge list shows it.
+ *
+ * `processing` covers both waiting for and running an attempt: the pipeline records nothing when a run starts,
+ * because a successful parse rewrites the whole record. Only a failure is written, by the pipeline's retry sensor.
+ */
+export type DocumentIngestionState =
+  (typeof DocumentIngestionState)[keyof typeof DocumentIngestionState];
 
 /**
  * DocumentParsingMetadata

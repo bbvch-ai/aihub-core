@@ -555,6 +555,11 @@ document:
     number_of_pages: Numero di pagine
     download: Scarica
     is_processing: Elaborazione in corso
+    ingestion_retrying: Nuovo tentativo
+    ingestion_retrying_hint: L'elaborazione non è riuscita {count} volta/e. Viene ripetuta automaticamente.
+    ingestion_failed: Elaborazione non riuscita
+    ingestion_failed_hint: L'elaborazione non è riuscita {count} volta/e e non viene più ripetuta. Verrà ripetuta
+      quando il file cambia o la pipeline viene aggiornata.
     actions: Azioni
     selected_count: '{count} documento/i selezionato/i'
   delete:

@@ -63,3 +63,16 @@ class DocumentIngestionPipelineSettings(EnvironmentSettings):
     OBSERVE_JOB_MINUTE: Annotated[
         int, Field(default=0, ge=0, le=59, description="Minute of the daily per-bucket observation schedule.")
     ]
+    MAX_RETRIES: Annotated[
+        int,
+        Field(
+            default=3,
+            ge=0,
+            description="Retries of a document whose ingestion failed, per pipeline version, before it is reported "
+            "as failed. A new pipeline version grants the same number again, so a fixed bug recovers its documents.",
+        ),
+    ]
+    RETRY_BACKOFF_MINUTES: Annotated[
+        int,
+        Field(default=10, ge=1, description="Minutes between a failed ingestion attempt and its retry."),
+    ]

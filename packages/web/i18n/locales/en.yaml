@@ -549,6 +549,11 @@ document:
     number_of_pages: Number of Pages
     download: Download
     is_processing: Processing
+    ingestion_retrying: Retrying
+    ingestion_retrying_hint: Ingestion failed {count} time(s). It is retried automatically.
+    ingestion_failed: Ingestion failed
+    ingestion_failed_hint: Ingestion failed {count} time(s) and is not retried any more. It is retried when the
+      file changes or the pipeline is updated.
     actions: Actions
     selected_count: '{count} document(s) selected'
   delete:
