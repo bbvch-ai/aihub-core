@@ -38,3 +38,20 @@ def test_a_name_of_dots_before_its_extension_is_stored_under_its_id():
     file = MediaWikiFile.from_listing({**_LISTED, "title": "File:..pdf"}, "File")
 
     assert file.object_key == "File/file 101.pdf"
+
+
+def test_a_file_without_a_description_page_is_synced():
+    """A wiki lists an uploaded file whose description page is gone as missing but known, without a page id; one of
+    them used to fail every sync of the database."""
+    listed = {key: value for key, value in _LISTED.items() if key != "pageid"} | {"missing": True, "known": True}
+
+    file = MediaWikiFile.from_listing(listed, "File")
+
+    assert file.page_id is None
+    assert file.object_key == "File/Handbook 2026.pdf"
+
+
+def test_a_name_of_dots_without_a_description_page_is_stored_under_its_checksum():
+    listed = {key: value for key, value in _LISTED.items() if key != "pageid"} | {"title": "File:..pdf"}
+
+    assert MediaWikiFile.from_listing(listed, "File").object_key == "File/file abc123.pdf"

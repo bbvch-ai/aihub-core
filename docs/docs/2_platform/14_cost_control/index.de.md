@@ -1,6 +1,6 @@
 ---
 title: Kostenkontrolle
-source_sha: 680b4ecab6faec8d2f79431fd6e748b2f044a6596fb565367e156030495e5de1
+source_sha: d4cc52b5dacec3a4851b902216768261e1ad67c812b1176456c2c7225c1cec43
 ---
 
 # Kostenkontrolle
@@ -18,7 +18,7 @@ Kostenmodell-Vergleich:
 | Modell              | Typ                | Kostenstruktur                                                                                                                                                                     |
 | :------------------ | :----------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | API (Pay-per-token) | Variable OPEX      | Bezahlen Sie Anbieter (OpenAI, Google) für jedes verarbeitete Token                                                                                                                |
-| Lokal gehostet      | CAPEX + Feste OPEX | Investitionskosten für Hardware (GPUs, Server) plus laufende Kosten für Strom und MLOps-Personal. Die Kosten pro Token betragen \$0, aber die festen Infrastrukturkosten sind hoch |
+| Lokal gehostet      | CAPEX + Feste OPEX | Investitionskosten für Hardware (GPUs, Server) plus laufende Kosten für Strom und MLOps-Personal. Die Kosten pro Token betragen 0, aber die festen Infrastrukturkosten sind hoch |
 
 Jede Interaktion verbraucht verschiedene Arten von Tokens zu unterschiedlichen Preisen:
 
@@ -55,6 +55,97 @@ konsistent zu verfolgen.
 Sie können Kosteninformationen pro Konversation anzeigen, um zu sehen, welche Fragen am teuersten sind. Dies hilft bei
 Agent-Design-Entscheidungen, der Modellwahl und der Budgetplanung.
 
+## Wie Kosten berechnet werden
+
+Jeder Betrag, den die Plattform ausweist, ist eine Token-Anzahl oder eine Dauer, multipliziert mit einem Preis aus der
+LiteLLM-Konfiguration. Ein Preis wird nirgends sonst nachgeschlagen: Ein Modell ohne konfigurierten Preis kostet 0.
+
+### Währung
+
+Alle Preise und Kosten sind in **CHF** angegeben, der Währung, in der die Provider abrechnen. Das gilt für die Kosten
+pro Konversation, die Admin UI, die Hub API, die Usage-Ansichten von LiteLLM, Langfuse und Benutzerbudgets.
+
+::: warning Das Dollarzeichen in LiteLLM und Langfuse
+LiteLLM und Langfuse haben keine Währungseinstellung und zeigen immer „\$" an. Die angezeigten Beträge sind CHF.
+:::
+
+### Woher die Preise stammen
+
+Preise werden pro Modell in der LiteLLM-Konfiguration festgelegt, als Preis pro Token (`input_cost_per_token`,
+`output_cost_per_token`) oder pro Sekunde Audio (`input_cost_per_second`). Jeder Preis wird aus der CHF-Preisliste des
+Providers übernommen oder, wenn ein Provider keine veröffentlicht, aus seinem Nutzungsbericht ermittelt.
+
+Die Docker-Compose-Deployments beziehen ihre Preise aus `infra/deployment/compose-config.yml`; die Dateien in
+`infra/configs/litellm/` werden daraus generiert. Kubernetes-Deployments führen ihre eigenen Preise in der
+LiteLLM-Konfiguration ihres Charts, nach denselben Regeln.
+
+### Wie jeder Aufruf bepreist wird
+
+LiteLLM bucht die Kosten jedes Aufrufs in seinem Spend Log, auf Basis der Usage, die der Provider zurückgibt:
+
+| Aufruf                       | Gebuchte Kosten                                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Chat                         | Prompt-Tokens × Eingabepreis + Completion-Tokens × Ausgabepreis                                           |
+| Chat mit Reasoning           | Reasoning-Tokens gehören zu den Completion-Tokens und kosten den Ausgabepreis                             |
+| Chat mit gecachter Eingabe   | Gecachte Prompt-Tokens kosten den vollen Eingabepreis; ein reduzierter Cache-Preis ist nicht konfiguriert |
+| Gestreamter Chat             | Gleich wie ohne Streaming; LiteLLM fordert beim Provider immer die Usage an                               |
+| Embedding                    | Eingabe-Tokens × Eingabepreis                                                                             |
+| Rerank                       | Eingabe-Tokens × Eingabepreis; die Usage-Ansichten zeigen die Kosten, aber 0 Tokens                       |
+| Transkription                | Sekunden Audio, wie vom Provider gemeldet, × Preis pro Sekunde; 0 Tokens                                  |
+| Fallback                     | Der Preis des Modells, das geantwortet hat, gebucht unter dem Namen dieses Modells                        |
+| Cache-Treffer                | 0, da der Provider nicht aufgerufen wird; die Tokens werden erneut gezählt                                |
+| Modell ohne Preis            | 0; die Tokens werden trotzdem erfasst                                                                     |
+| Provider liefert keine Usage | 0 Tokens und 0 Kosten ohne Streaming; mit Streaming zählt LiteLLM die Tokens selbst                       |
+
+Die Konfigurationen cachen Embeddings für einen Tag, sodass wiederholte Embeddings desselben Texts kostenlos sind, aber
+erneut in den Token-Summen erscheinen. Ein Aufruf eines Modells, der fehlschlägt, fällt auf
+`text-generation/gemma-4-31B-it` zurück und wird zu dessen Preis gebucht.
+
+### Drei Beträge für dieselben Aufrufe
+
+| Betrag            | Wo er angezeigt wird                          | Tokens gezählt aus                                                                                                                         |
+| ----------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| LiteLLM Spend Log | Usage- und Customer-Usage-Ansicht von LiteLLM | Der Usage, die der Provider zurückgibt                                                                                                     |
+| Hub-Kostenevents  | Kosten pro Konversation, Admin UI             | Der Usage, die der Provider zurückgibt, oder einem lokalen Tokenizer, wenn keine vorhanden ist; bei Embeddings immer dem lokalen Tokenizer |
+| Langfuse          | Traces                                        | Der Usage im Trace, bepreist über Modelldefinitionen, die aus den Preisen von LiteLLM erstellt wurden                                      |
+
+Der LiteLLM Spend Log ist der Betrag, der mit Rechnungen verglichen werden sollte: Er umfasst jeden Aufruf über den
+Proxy. Hub-Kostenevents umfassen nur Agent-Runs. Langfuse speichert die Kosten jeder Generation, wenn es sie erfasst:
+Findet die Hub API beim Start einen in LiteLLM geänderten Preis, ersetzt sie die Definition dieses Modells in Langfuse,
+und bereits erfasste Generationen behalten ihre Kosten. Modelle, die pro Sekunde Audio bepreist werden, etwa
+Transkription, werden in Langfuse nicht bepreist.
+
+### Preise der Docker-Compose-Deployments
+
+Am 2026-11-17 mit den Preislisten der Provider abgeglichen. Preise pro Million Tokens, sofern nicht anders angegeben.
+
+| Modell                                          | Provider         | Eingabe            | Ausgabe | Quelle und Prüfung                                                                 |
+| ----------------------------------------------- | ---------------- | ------------------ | ------- | ---------------------------------------------------------------------------------- |
+| `text-generation/gemma-4-31B-it`                | Infomaniak       | 0.20               | 0.40    | Preisseite von Infomaniak; stimmt überein                                          |
+| `text-generation/gemma-4-31B-it` (stoney)       | stoney           | 0.25               | 1.00    | Aus dem Nutzungsbericht von stoney ermittelt, der keine öffentliche Preisliste hat |
+| `text-generation/Ministral-3-14B-Instruct-2512` | Infomaniak       | 0.30               | 0.40    | Preisseite von Infomaniak; stimmt überein                                          |
+| `text-generation/Kimi-K2.6`                     | Infomaniak       | 0.60               | 3.00    | Preisseite von Infomaniak; stimmt überein                                          |
+| `text-generation/Apertus-70B-Instruct-2509`     | Infomaniak       | 0.70               | 2.50    | Die Preisseite führt nur Apertus-v1.5-70B, zu diesem Preis                         |
+| `text-generation/Qwen3.5-122B-A10B-FP8`         | Infomaniak       | 0.40               | 3.20    | Nicht mehr auf der Preisseite; nicht verifiziert                                   |
+| `embedding/bge-m3`                              | Phoeniqs         | 0.4309             | -       | Phoeniqs veröffentlicht keine Preisliste; nicht verifiziert                        |
+| `reranker/bge`                                  | Phoeniqs         | 0.0077             | -       | Phoeniqs veröffentlicht keine Preisliste; nicht verifiziert                        |
+| `transcription/whisper-large-v3`                | Phoeniqs         | 0.00245 pro Minute | -       | Phoeniqs veröffentlicht keine Preisliste; nicht verifiziert                        |
+| `text-generation/MinerU2.5-2509-1.2B` (OCR)     | stoney           | ohne Preis         |         | stoney veröffentlicht keinen Preis; kostet 0                                       |
+| `image-generation/flux`                         | nicht festgelegt | ohne Preis         |         | Standardmässig ist kein Provider konfiguriert; kostet 0                            |
+| Alle Modelle der `*.gpu`-Varianten              | Eigene GPUs      | 0                  | 0       | Bewusst mit 0 bepreist: Die Kosten liegen in der Hardware, nicht im Aufruf         |
+
+### Preise aktuell halten
+
+Wenn ein Provider einen Preis ändert oder ein Modell hinzukommt:
+
+1. Übernehmen Sie den CHF-Preis aus der Preisliste des Providers oder ermitteln Sie ihn aus seinem Nutzungsbericht.
+2. Tragen Sie ihn als Preis pro Token (pro Million geteilt durch 1'000'000) in `infra/deployment/compose-config.yml` und
+   in der LiteLLM-Konfiguration des Kubernetes-Charts ein, mit einem Kommentar, der Quelle und Datum nennt.
+3. Führen Sie `make generate-compose` aus und aktualisieren Sie die obige Tabelle.
+
+Für einen Provider, der in einer anderen Währung abrechnet, muss der Preis bei der Erfassung in CHF umgerechnet werden,
+mit Kurs und dessen Datum im Kommentar.
+
 ## Nutzung pro Mandant
 
 Jeder Modellaufruf, den der Swiss AI Hub für einen Benutzer ausführt, wird dem Mandanten zugerechnet, in dem der
@@ -74,7 +165,9 @@ Die Kosten werden aus den Preisen berechnet, die in LiteLLM für jedes Modell ko
 Auf einer gemeinsam genutzten Instanz, die mehrere Mandanten bedient:
 
 1. Öffnen Sie die LiteLLM-Oberfläche unter `https://litellm.<Ihre Domain>/ui` und melden Sie sich als
-   Proxy-Administrator an.
+   Proxy-Administrator an. In der Sysadmin-Oberfläche öffnet **LLM-Nutzung** in der Kopfzeile die Nutzungsseite direkt,
+   und die **Übersicht** jedes Mandanten verlinkt sie zusammen mit dem Namen, den Sie in Schritt 4 wählen. LiteLLM lässt
+   sich nicht bereits auf einen einzelnen Kunden gefiltert öffnen.
 2. Öffnen Sie **Usage** und wechseln Sie die Ansicht von **Global Usage** zu **Customer Usage**.
 3. Setzen Sie **Select Time Range** auf den ersten und letzten Tag des Monats.
 4. Wählen Sie unter **Select customer to filter** den Mandanten anhand seines Namens.
@@ -137,8 +230,8 @@ Verfügbare Kontrollen:
 
 ::: details Konfiguration über Umgebungsvariablen
 ```bash
-LITE_LLM_PROXY_USER_MAX_BUDGET=100.0           # $100 hard limit
-LITE_LLM_PROXY_USER_SOFT_BUDGET=80.0           # Alert at $80
+LITE_LLM_PROXY_USER_MAX_BUDGET=100.0           # 100 CHF hard limit
+LITE_LLM_PROXY_USER_SOFT_BUDGET=80.0           # Alert at 80 CHF
 LITE_LLM_PROXY_USER_BUDGET_DURATION="30d"      # Reset monthly
 LITE_LLM_PROXY_USER_TPM_LIMIT=10000            # 10k tokens/minute
 LITE_LLM_PROXY_USER_RPM_LIMIT=60               # 60 requests/minute
