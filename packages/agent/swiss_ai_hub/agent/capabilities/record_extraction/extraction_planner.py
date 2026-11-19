@@ -278,6 +278,7 @@ class ExtractionPlanner:
         code = ExtractionPlanner._code
         searched = "matches" if criteria.content_is_regex else "contains"
         parts = [
+            f"in collection {code(criteria.collection)}" if criteria.collection else "",
             f"path matches {code(criteria.path_glob)}" if criteria.path_glob else "",
             f"path contains {code(criteria.path_regex)}" if criteria.path_regex else "",
             f"text {searched} {code(criteria.content_query)}" if criteria.content_query else "",

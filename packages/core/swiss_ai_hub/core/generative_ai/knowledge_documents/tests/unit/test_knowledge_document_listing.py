@@ -19,6 +19,7 @@ def _summary(collection: BucketNamespacePair, path: str) -> KnowledgeDocumentSum
     return KnowledgeDocumentSummary(
         id=path,
         collection=collection,
+        collection_name=f"{collection.bucket_name}/{collection.namespace_name}",
         path=path,
         filename=filename,
         title=filename,
@@ -80,3 +81,8 @@ def test_no_match_is_an_empty_listing(listing: KnowledgeDocumentListing) -> None
 def test_invalid_pattern_fails_the_filter(listing: KnowledgeDocumentListing) -> None:
     with pytest.raises(InvalidPathPatternError):
         listing.matching_regex("invoices/(2025")
+
+
+def test_a_collection_name_keeps_only_that_collections_documents(listing: KnowledgeDocumentListing) -> None:
+    assert [doc.path for doc in listing.in_collection("kb/legal").documents] == ["contracts/2025/msa-acme.md"]
+    assert listing.in_collection("kb/legal/contracts").documents == []

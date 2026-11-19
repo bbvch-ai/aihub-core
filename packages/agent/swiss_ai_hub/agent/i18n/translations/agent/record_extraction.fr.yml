@@ -114,7 +114,8 @@ form:
   where:
     header: "Emplacement"
     question: "Quels documents dois-je lire ? J'ai compris : %{value}."
-    hint: "Pour n'en lire qu'une partie, nomme un dossier, un fichier ou une année."
+    hint: "Pour n'en lire qu'une partie, nomme une collection, un dossier, un fichier ou une année."
+    collections: "Collections : %{collections}"
     folders: "Dossiers : %{folders}"
     anything: "Tous les documents"
     anything_description: "Lire chaque document du périmètre de cet agent"

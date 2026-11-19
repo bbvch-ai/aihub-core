@@ -126,16 +126,18 @@ class KnowledgeExtractionAgent(Agent):
             ]
             return await ExtractionAnswer.notice("\n\n".join(notices), ctx.query, displayer)
         awaiting = await SampleAwaitingConfirmation.load(thread, agent_config.agent_id)
+        listing = await WholeScopeRequest.listing(scope)
         understood = await WholeScopeRequest.reading(
-            ctx.history, scope, agent_config, awaiting, displayer, user, t, event.locale
+            ctx.history, scope, listing, agent_config, awaiting, displayer, user, t, event.locale
         )
         if isinstance(understood, str):
             return await ExtractionAnswer.notice(understood, ctx.query, displayer)
         if isinstance(understood, ExtractRecordsEvent):
             return understood
-        folders = await WholeScopeRequest.folders(scope)
+        places = ExtractionForm.places(listing.documents, t)
+        unmatched = WholeScopeRequest.unmatched(understood, listing, t)
         searches = agent_config.knowledge_documents.discovery is True
-        return await ExtractionRequestForm.ask(understood, folders, searches, run_context, t)
+        return await ExtractionRequestForm.ask(understood, places, unmatched, searches, run_context, t)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.steps.confirm_request.name"),
@@ -170,10 +172,11 @@ class KnowledgeExtractionAgent(Agent):
         understood = await ExtractionRequestForm.understood(run_context)
         answers = ExtractionRequestAnswers.of(response.response, understood, t, searches)
         reading: ExtractionRequestAnswer | None = answers.reading
+        listing = await WholeScopeRequest.listing(scope)
         if answers.correction is not None:
             history = ExtractionRequestForm.answered(ctx.history, response.request_event.question, answers.correction)
             reading = await WholeScopeRequest.read(
-                history, scope, agent_config, False, displayer, user, t, event.locale
+                history, scope, listing, agent_config, False, displayer, user, t, event.locale
             )
         if reading is None or not reading.is_table_request:
             return await ExtractionAnswer.notice(
@@ -189,7 +192,7 @@ class KnowledgeExtractionAgent(Agent):
                 history, mode=ToolLoopMode.GATHER, knowledge_references=event.knowledge_references
             )
             return loop.model_copy(update={"hands_back_results": False})
-        extraction = await WholeScopeRequest.extraction_of(reading, scope, t)
+        extraction = WholeScopeRequest.extraction_of(reading, scope, listing, t)
         if isinstance(extraction, str):
             return await ExtractionAnswer.notice(extraction, ctx.query, displayer)
         return extraction

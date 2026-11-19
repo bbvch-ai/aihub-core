@@ -107,6 +107,7 @@ def _document(path: str, pages: int = 1) -> KnowledgeDocumentSummary:
     return KnowledgeDocumentSummary(
         id=path.replace("/", "-"),
         collection=FINANCE,
+        collection_name=f"{FINANCE.bucket_name}/{FINANCE.namespace_name}",
         path=path,
         filename=path.rsplit("/", 1)[-1],
         title=path,

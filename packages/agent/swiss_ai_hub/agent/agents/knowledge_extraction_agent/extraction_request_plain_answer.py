@@ -27,7 +27,9 @@ class ExtractionRequestPlainAnswer(BaseModel):
     ]
     locations: Annotated[
         list[RequestedLocation],
-        Field(description="The folders, files or years the user named; empty when the whole scope is meant."),
+        Field(
+            description="The collections, folders, files or years the user named; empty when the whole scope is meant."
+        ),
     ]
     fields: Annotated[
         str,
@@ -61,5 +63,5 @@ class ExtractionRequestPlainAnswer(BaseModel):
     @property
     def selection(self) -> KnowledgeDocumentSelection:
         """The named places, or the whole scope when the user named none."""
-        criteria = [location.as_criteria() for location in self.locations if location.path_glob or location.path_regex]
+        criteria = [location.as_criteria() for location in self.locations if location.is_place]
         return KnowledgeDocumentSelection(any_of=criteria or [KnowledgeDocumentCriteria()])

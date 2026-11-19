@@ -41,6 +41,12 @@ class SelectionFacets:
         return SelectionFacets._entries(counts, True)
 
     @staticmethod
+    def collections(documents: Annotated[list[KnowledgeDocumentSummary], "The documents in scope"]) -> str:
+        """The collections with their counts, as 'database/collection', when there are several to choose from."""
+        counts = Counter(SelectionFacets._collection(document) for document in documents)
+        return SelectionFacets._entries(counts, True) if len(counts) > 1 else ""
+
+    @staticmethod
     def sample(
         documents: Annotated[list[KnowledgeDocumentSummary], "The selected documents, in order"],
         size: Annotated[int, "How many documents the sample holds"],
@@ -59,7 +65,7 @@ class SelectionFacets:
 
     @staticmethod
     def _collection(document: KnowledgeDocumentSummary) -> str:
-        return f"{document.collection.bucket_name}/{document.collection.namespace_name}"
+        return document.collection_name
 
     @staticmethod
     def _entries(counts: Counter[str], counted: bool) -> str:
