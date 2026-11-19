@@ -22,7 +22,7 @@ class ImageAdmission:
             return history
 
         last_turn_images = ImageBudget.count(history[-1:])
-        if not ImageAdmission._accepts_images(llm):
+        if not ImageAdmission.accepts_images(llm):
             if last_turn_images:
                 return await ImageAdmission._refuse(
                     RefusalReason.IMAGES_NOT_ACCEPTED, "images_not_accepted", last_turn_images, None, llm, displayer, t
@@ -39,7 +39,7 @@ class ImageAdmission:
         return ImageBudget.fit(history, max_images)
 
     @staticmethod
-    def _accepts_images(llm: LLMConfig) -> bool:
+    def accepts_images(llm: LLMConfig) -> bool:
         """Off by the profile, or by a model that declares it cannot read images; an undeclared model is given the
         benefit of the doubt, since LiteLLM leaves `supports_vision` unset for most models."""
         return llm.default_parameter.accept_images is True and llm.supports_vision is not False

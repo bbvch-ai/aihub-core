@@ -34,6 +34,7 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
+from swiss_ai_hub.agent.capabilities.conversation.context_figures import ContextFigures
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.conversation.image_admission import ImageAdmission
 from swiss_ai_hub.agent.capabilities.conversation.structured_answer import StructuredAnswer
@@ -302,6 +303,7 @@ class Conversation(Capability):
         over several system messages, and strict chat templates (Qwen) reject a system message anywhere else.
         What gives way when the result does not fit is the oldest turns first, since the blocks were asked for
         this turn; then whole blocks from the front, never part of one, and never the question or the system head.
+        Figures in the merged system messages move onto the question (`ContextFigures`), where the model can see them.
         `reserve_tokens` is room kept free for what the caller sends next to the result (the sufficiency guard's
         documents and instructions).
         """
@@ -311,7 +313,8 @@ class Conversation(Capability):
         room = conversation.input_budget - reserve_tokens - estimate_prompt_tokens([*system_head, *question], counter)
         fitted_blocks = _fit_whole_blocks(blocks, room, counter)
         kept = _fit_newest_turns(earlier, room - estimate_prompt_tokens(fitted_blocks, counter), counter)
-        return merge_consecutive_messages([*system_head, *fitted_blocks, *kept, *question])
+        merged = merge_consecutive_messages([*system_head, *fitted_blocks, *kept, *question])
+        return ContextFigures.on_question(merged, conversation.llm)
 
     @staticmethod
     @step(
