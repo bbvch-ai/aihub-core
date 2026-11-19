@@ -16,9 +16,10 @@ class DocumentMatch(BaseModel):
             "they state a value that differs from one the condition itself asks for, such as another party, currency, "
             "document type or status or a date outside the period, never for something the condition does not ask "
             "about, so a draft fails only a condition that asks for a status, and never when the requested value is "
-            'also stated elsewhere; "unsure" only when the fact is not stated, or when a name differs from the '
-            "requested one only by a letter or two, as an OCR or typing error would, and the requested name is stated "
-            "nowhere else."
+            'also stated elsewhere; "unsure" only when the excerpt or title does not write the fact out (a fact '
+            "inferred from the language, a country, an address, the kind of document or other values is not written), "
+            "or when a name differs from the requested one only by a letter or two, as an OCR or typing error would, "
+            "and the requested name is stated nowhere else."
         ),
     ]
     reason: Annotated[

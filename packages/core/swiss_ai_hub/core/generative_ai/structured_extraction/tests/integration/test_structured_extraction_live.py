@@ -298,6 +298,30 @@ async def test_an_invoice_without_a_supplier_line_in_its_opening_is_unsure() -> 
     assert sorted(record.values["position"] for record in result.records) == [1, 2, 3, 4, 5, 6, 7]
 
 
+@pytest.mark.asyncio
+async def test_an_invoice_that_writes_no_currency_is_unsure_under_a_currency_condition() -> None:
+    """A currency guessed from the supplier's country is not stated, so it never fails the document."""
+    llm_config, llm, _ = _llm()
+    invoice = (
+        _INVOICE.replace(" | Currency |", " |")
+        .replace("|----------|", "|")
+        .replace(" | CHF |", " |")
+        .replace(" CHF.", ".")
+    )
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(invoice),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        document_condition="only invoices in GBP",
+    )
+
+    assert "CHF" not in invoice
+    assert result.document_match.verdict == "unsure", result.document_match
+
+
 @pytest.mark.slow
 @pytest.mark.asyncio
 async def test_a_long_contract_failing_the_condition_is_read_in_one_call() -> None:
