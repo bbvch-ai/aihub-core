@@ -20,6 +20,7 @@ from swiss_ai_hub.pipeline.util.run_routing import BUCKET_RUN_TAG, bucket_from_r
 from swiss_ai_hub.pipeline.util.source_builders import source_config_for_bucket
 
 _RUNNING = [DagsterRunStatus.STARTING, DagsterRunStatus.STARTED]
+BUFFER_MAX_ITEMS = 100
 
 
 def sync_structured_records_op(
@@ -86,6 +87,9 @@ def _run(
     dagster-dlt reports a materialization per dlt resource, an asset every database would share, so its events are
     folded into this step's metadata instead of being emitted.
     """
+    # dlt holds up to 5,000 rows in memory before writing them to disk, and a row carries a whole record, so a large
+    # source would need memory in proportion to its size.
+    dlt.config["data_writer.buffer_max_items"] = BUFFER_MAX_ITEMS
     try:
         pipeline = dlt.pipeline(
             pipeline_name=pipeline_name,

@@ -1,4 +1,6 @@
 import abc
+import logging
+from collections.abc import Callable
 from typing import Annotated, Any, ClassVar
 
 from dlt.extract import DltSource
@@ -9,6 +11,8 @@ from swiss_ai_hub.pipeline.types.structured_file_reference import StructuredFile
 from swiss_ai_hub.pipeline.types.structured_record_file import StructuredRecordFile
 
 KIND_REF = "structured_source_kind"
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractStructuredSourceAdapter[TOptions: Form](abc.ABC):
@@ -25,6 +29,7 @@ class AbstractStructuredSourceAdapter[TOptions: Form](abc.ABC):
     FILES_SEEN: ClassVar[str] = "files_seen"
     """Resource-state key of an adapter's map from a file's object key to its fingerprint. A file the destination
     could not read is removed from every such map before the state is saved, so the next run tries it again."""
+    PROGRESS_EVERY: ClassVar[int] = 100
 
     kind: ClassVar[str]
     display_name: ClassVar[LocaleString]
@@ -79,9 +84,25 @@ class AbstractStructuredSourceAdapter[TOptions: Form](abc.ABC):
         resolve after the mapping.
         """
         source = self.dlt_source(options)
-        for resource in source.selected_resources.values():
-            resource.add_map(self._with_file)
+        for name, resource in source.selected_resources.items():
+            resource.add_map(self._counted(name))
         return source
+
+    def _counted(
+        self, resource_name: Annotated[str, "The dlt resource the records come from"]
+    ) -> Callable[[dict[str, Any]], dict[str, Any]]:
+        """Maps records to their files and logs every ``PROGRESS_EVERY`` records. dlt writes nothing to the data lake
+        before every record is read, so these lines are all a long sync shows while it reads."""
+        read = 0
+
+        def with_file(record: dict[str, Any]) -> dict[str, Any]:
+            nonlocal read
+            read += 1
+            if read % self.PROGRESS_EVERY == 0:
+                logger.info(f"Read {read} records of '{resource_name}'.")
+            return self._with_file(record)
+
+        return with_file
 
     def _with_file(self, record: dict[str, Any]) -> dict[str, Any]:
         record_file = self.to_record_file(record)
