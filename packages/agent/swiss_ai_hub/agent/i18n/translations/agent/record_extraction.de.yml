@@ -113,7 +113,8 @@ form:
   where:
     header: "Ablageort"
     question: "Welche Dokumente soll ich lesen? Verstanden habe ich: %{value}."
-    hint: "Um nur einen Teil zu lesen, nenne einen Ordner, eine Datei oder ein Jahr."
+    hint: "Um nur einen Teil zu lesen, nenne eine Sammlung, einen Ordner, eine Datei oder ein Jahr."
+    collections: "Sammlungen: %{collections}"
     folders: "Ordner: %{folders}"
     anything: "Alle Dokumente"
     anything_description: "Jedes Dokument im Bereich dieses Agenten lesen"

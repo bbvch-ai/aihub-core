@@ -46,7 +46,11 @@ class KnowledgeDocumentSelector:
         selected: dict[_DocumentKey, KnowledgeDocumentSummary] = {}
         for criteria in selection.any_of:
             documents = await KnowledgeDocumentSelector._matching(
-                collections, listing, criteria, restricting_glob, budget
+                collections,
+                listing.in_collection(criteria.collection) if criteria.collection else listing,
+                criteria,
+                restricting_glob,
+                budget,
             )
             selected.update((KnowledgeDocumentSelector._key(document), document) for document in documents)
         ordered = KnowledgeDocumentListing.from_summaries(list(selected.values())).documents

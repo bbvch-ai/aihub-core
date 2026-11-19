@@ -17,9 +17,13 @@ _GLOB_CHARACTERS = {"*": "[*]", "?": "[?]", "[": "[[]"}
 
 
 class RequestedLocation(BaseModel):
-    """A place in the collections the user named: a folder, a file or a year in the path. Never what the documents
-    say, since only reading every document can tell which ones hold the wanted rows."""
+    """A place in the collections the user named: a collection, a folder, a file or a year in the path. Never what the
+    documents say, since only reading every document can tell which ones hold the wanted rows. A path starts inside its
+    collection, so a collection is its own part: a glob prefixed with it matches nothing."""
 
+    collection: Annotated[
+        str | None, Field(description="The collection, as 'database/collection' the scope lists it; null for all.")
+    ]
     path_glob: Annotated[str | None, Field(description="Glob on the path, e.g. 'contracts/**' or 'invoices/2025/**'.")]
     path_regex: Annotated[str | None, Field(description="Regular expression searched anywhere in the path.")]
 
@@ -29,7 +33,8 @@ class RequestedLocation(BaseModel):
         only its last folders. A model may read such a path as a topic and extract from the whole scope, which puts a
         file of the same name in place of the one asked for; a written path is never a topic."""
         paths = (RequestedLocation._written_path(word) for word in _WORD_BREAKS.split(message))
-        return [cls(path_glob=f"**/{path}", path_regex=None) for path in dict.fromkeys(path for path in paths if path)]
+        written = dict.fromkeys(path for path in paths if path)
+        return [cls(collection=None, path_glob=f"**/{path}", path_regex=None) for path in written]
 
     @classmethod
     def named_in(
@@ -43,7 +48,8 @@ class RequestedLocation(BaseModel):
         text = message.casefold()
         names = dict.fromkeys(path.rsplit("/", 1)[-1] for path in paths)
         named = [name for name in names if RequestedLocation._holds_name(text, name) and "{" not in name]
-        return [cls(path_glob=f"**/{RequestedLocation._literal_glob(name)}", path_regex=None) for name in named]
+        globs = [f"**/{RequestedLocation._literal_glob(name)}" for name in named]
+        return [cls(collection=None, path_glob=glob, path_regex=None) for glob in globs]
 
     @staticmethod
     def _holds_name(text: str, name: str) -> bool:
@@ -83,8 +89,17 @@ class RequestedLocation(BaseModel):
         stem, _, extension = segments[-1].rpartition(".")
         return "/".join(segments) if stem and _EXTENSION.fullmatch(extension) else None
 
+    @property
+    def is_place(self) -> bool:
+        return bool(self.collection or self.path_glob or self.path_regex)
+
     def as_criteria(self) -> KnowledgeDocumentCriteria:
-        return KnowledgeDocumentCriteria(path_glob=self.path_glob, path_regex=self.path_regex)
+        return KnowledgeDocumentCriteria(
+            collection=self.collection, path_glob=self.path_glob, path_regex=self.path_regex
+        )
 
     def describe(self) -> str:
-        return " and ".join(part for part in (self.path_glob, self.path_regex) if part)
+        path = " and ".join(part for part in (self.path_glob, self.path_regex) if part)
+        if not self.collection:
+            return path
+        return f"{self.collection}: {path}" if path else self.collection

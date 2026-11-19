@@ -2,9 +2,11 @@ import json
 from typing import Any
 
 from swiss_ai_hub.core.events.agent import HumanInTheLoopChoiceOption, HumanInTheLoopChoiceQuestion
+from swiss_ai_hub.core.generative_ai import KnowledgeDocumentSummary
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form_part import ExtractionFormPart
+from swiss_ai_hub.agent.capabilities.record_extraction.selection_facets import SelectionFacets
 
 FORM = "agent.record_extraction.form"
 # OpenWebUI's dialog cuts longer texts; cutting here keeps the end visible as an ellipsis.
@@ -40,6 +42,16 @@ class ExtractionForm:
             [*(f"{notice}\n" for notice in notices), t(f"{FORM}.intro"), "", *understood, "", t(f"{FORM}.reply_hint")]
             + guidance
         )
+
+    @staticmethod
+    def places(documents: list[KnowledgeDocumentSummary], t: LocaleHandler) -> list[str]:
+        """The collections, when there are several, and the largest folders in scope, for the Location hint."""
+        places = []
+        if collections := SelectionFacets.collections(documents):
+            places.append(t(f"{FORM}.where.collections", collections=collections))
+        if folders := SelectionFacets.folders(documents):
+            places.append(t(f"{FORM}.where.folders", folders=folders))
+        return places
 
     @staticmethod
     def line(key: str, value: str, t: LocaleHandler) -> str:

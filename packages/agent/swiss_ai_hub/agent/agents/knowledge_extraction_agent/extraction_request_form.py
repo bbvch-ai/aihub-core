@@ -32,12 +32,19 @@ class ExtractionRequestForm:
 
     @classmethod
     async def ask(
-        cls, reading: ExtractionRequestAnswer, folders: str, keywords: bool, run_context: RunContext, t: LocaleHandler
+        cls,
+        reading: ExtractionRequestAnswer,
+        places: list[str],
+        unmatched: list[str],
+        keywords: bool,
+        run_context: RunContext,
+        t: LocaleHandler,
     ) -> ExtractionRequestFormRequestEvent:
-        """`folders`: the largest folders in scope; `keywords`: whether the model searches, so the keywords matter."""
+        """`places`: the collections and largest folders in scope; `unmatched`: the notice that the understood places
+        hold nothing; `keywords`: whether the model searches, so the keywords matter."""
         await run_context.set(READING_KEY, reading.model_dump(mode="json"))
-        parts = ExtractionRequestParts.of(reading, t, keywords).form(reading, folders, t)
-        notices = ExtractionNotices.for_calculation(reading.calculation, t)
+        parts = ExtractionRequestParts.of(reading, t, keywords).form(reading, places, t)
+        notices = [*unmatched, *ExtractionNotices.for_calculation(reading.calculation, t)]
         return cls.request(
             question=ExtractionForm.text(parts, notices, t),
             questions=ExtractionForm.questions(parts, notices, t),

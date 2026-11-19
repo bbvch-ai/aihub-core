@@ -31,11 +31,10 @@ class ExtractionRequestParts(BaseModel):
     def lines(self, t: LocaleHandler) -> list[str]:
         return [ExtractionForm.line(key, value, t) for key, value in self.model_dump().items() if value is not None]
 
-    def form(self, reading: ExtractionRequestAnswer, folders: str, t: LocaleHandler) -> list[ExtractionFormPart]:
-        """The form's questions; `folders`: the largest folders in scope, so the user can name one as the location."""
-        where_hint = t(f"{FORM}.where.hint")
-        if folders:
-            where_hint = f"{where_hint} {t(f'{FORM}.where.folders', folders=folders)}"
+    def form(self, reading: ExtractionRequestAnswer, places: list[str], t: LocaleHandler) -> list[ExtractionFormPart]:
+        """The form's questions; `places`: the collections and largest folders in scope, so the user can name one as
+        the location."""
+        where_hint = " ".join([t(f"{FORM}.where.hint"), *places])
         parts = [
             ExtractionFormPart(
                 key="where", value=self.where, named=bool(reading.locations), droppable=True, hint=where_hint

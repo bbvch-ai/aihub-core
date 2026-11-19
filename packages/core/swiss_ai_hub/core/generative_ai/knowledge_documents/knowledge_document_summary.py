@@ -17,6 +17,9 @@ class KnowledgeDocumentSummary(BaseModel):
 
     id: Annotated[str, Field(description="Document id, unique within its knowledge database")]
     collection: Annotated[BucketNamespacePair, Field(description="Collection the document belongs to")]
+    collection_name: Annotated[
+        str, Field(description="The collection as 'database/collection', the name knowledge search gives it too")
+    ]
     path: Annotated[str, Field(description="Path relative to the collection, e.g. 'invoices/2025/acme.pdf'")]
     filename: Annotated[str, Field(description="Last segment of the path")]
     title: Annotated[str, Field(description="Document title, the filename when the document has none")]
@@ -40,6 +43,7 @@ class KnowledgeDocumentSummary(BaseModel):
         return cls(
             id=str(ref_doc.id),
             collection=resolved.collection,
+            collection_name=f"{resolved.db_name}/{resolved.collection.namespace_name}",
             path=path,
             filename=filename,
             title=metadata.document_title or filename,

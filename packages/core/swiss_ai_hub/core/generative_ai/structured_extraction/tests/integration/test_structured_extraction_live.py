@@ -68,6 +68,7 @@ def _document(text: str, title: str = "Invoice INV-2025-0412") -> KnowledgeDocum
     summary = KnowledgeDocumentSummary(
         id="live-doc",
         collection=BucketNamespacePair(bucket_name="kb", namespace_name="finance"),
+        collection_name="kb/finance",
         path="invoices/2025/helvetic.pdf",
         filename="helvetic.pdf",
         title=title,
