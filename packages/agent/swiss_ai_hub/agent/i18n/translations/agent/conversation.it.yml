@@ -58,6 +58,7 @@ messages:
     sola. Carica un file più piccolo, dividilo in parti, oppure passa a un assistente
     che usa un modello con una finestra di contesto più ampia.
 prompt:
+  context_figures: Le immagini seguenti sono figure dei documenti recuperati e fanno parte del contesto recuperato.
   correct_structured_answer: "La tua risposta precedente non corrisponde al formato\
     \ JSON richiesto. %{violation}\nRispondi di nuovo solo con un oggetto JSON, senza\
     \ altro testo, mantenendo il contenuto della tua risposta precedente."

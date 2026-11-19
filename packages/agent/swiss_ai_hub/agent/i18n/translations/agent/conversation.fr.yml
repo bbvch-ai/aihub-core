@@ -58,6 +58,7 @@ messages:
     fois. Veuillez téléverser un fichier plus petit, le diviser en parties, ou utiliser
     un assistant dont le modèle dispose d'une fenêtre de contexte plus grande.
 prompt:
+  context_figures: Les images ci-dessous sont des figures des documents récupérés et font partie du contexte récupéré.
   correct_structured_answer: "Ta réponse précédente ne correspond pas au format JSON\
     \ requis. %{violation}\nRéponds à nouveau uniquement avec un objet JSON, sans\
     \ autre texte, en conservant le contenu de ta réponse précédente."

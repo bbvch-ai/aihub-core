@@ -185,6 +185,9 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
   prompt the model is actually sent: instructions in the leading system messages of `history`, never added after. When
   it does not fit, the oldest turns give way first, then whole blocks from the front (never part of one); the system
   head and the last turn never do. Consecutive messages of one role leave merged, so send the history unchanged.
+  Images in the merged system messages (figures of retrieved documents) move ahead of the last turn's text
+  (`ContextFigures`): llama-index sends a system message as text only, and the moved figures follow the user's image
+  rules (`ImageAdmission.accepts_images`, `max_images`).
   `Conversation.fit(history, blocks, config, reserve_tokens=0)` is the same composition without the event, for a step
   that must reason over the context before the prompt is composed (RAG's context-sufficiency guard). Anything the step
   sends next to the result must be passed as `reserve_tokens`: the guard reserves its retrieved documents and its own

@@ -58,6 +58,7 @@ messages:
     Bitte laden Sie eine kleinere Datei hoch, teilen Sie sie auf, oder wechseln Sie
     zu einem Assistenten mit einem Modell mit grösserem Kontextfenster.
 prompt:
+  context_figures: Die folgenden Bilder sind Abbildungen aus den abgerufenen Dokumenten und gehören zum abgerufenen Kontext.
   correct_structured_answer: "Deine vorherige Antwort entspricht nicht dem verlangten\
     \ JSON-Format. %{violation}\nAntworte nochmals nur mit einem JSON-Objekt, ohne\
     \ weiteren Text, und behalte den Inhalt deiner vorherigen Antwort bei."

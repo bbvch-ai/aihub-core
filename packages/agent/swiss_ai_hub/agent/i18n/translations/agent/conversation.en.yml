@@ -57,6 +57,7 @@ messages:
     a smaller file, split it into parts, or switch to an assistant that uses a model
     with a larger context window.
 prompt:
+  context_figures: The images below are figures of the retrieved documents and part of the retrieved context.
   correct_structured_answer: "Your previous answer does not match the required JSON\
     \ format. %{violation}\nAnswer again with only a JSON object, no other text, keeping\
     \ the content of your previous answer."
