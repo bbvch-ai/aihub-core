@@ -51,8 +51,8 @@ thread:
   name: Conversations
   description: Manage your conversation history
 token:
-  name: API Keys
-  description: Create and manage API access keys
+  name: API Tokens
+  description: Create, review and revoke your personal API tokens
 translation:
   name: Translation
   description: Translate text to all supported languages

@@ -19929,17 +19929,23 @@ export type TokenResponse = {
    */
   name: string;
   /**
+   * Created At
+   *
+   * When the token was created
+   */
+  created_at: Date;
+  /**
    * Expiry Date
    *
    * Expiry date
    */
   expiry_date: Date;
   /**
-   * Roles
+   * Last Used At
    *
-   * List of roles granted to the access token
+   * When the token last authenticated a request, to within five minutes; null if never
    */
-  roles: Array<string>;
+  last_used_at: Date | null;
 };
 
 /**

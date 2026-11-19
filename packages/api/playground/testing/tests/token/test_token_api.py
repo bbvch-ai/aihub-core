@@ -1,11 +1,12 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from bson import ObjectId
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
-from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
-from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
+from swiss_ai_hub.core.persistence import BearerToken
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID, TestAuthHandler
 
 from swiss_ai_hub.api.routes.token.token_controller import TokenController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
@@ -92,9 +93,59 @@ def test_revoke_token(api_client, valid_token_request):
 
 
 def test_revoke_nonexistent_token(api_client):
-    """Test revoking a non-existent token returns error."""
     response = api_client.delete(f"{TOKEN_BASE}/123456789012345678901234")
-    assert response.status_code == 400
+    assert response.status_code == 404
+
+
+def test_revoke_malformed_token_id(api_client):
+    response = api_client.delete(f"{TOKEN_BASE}/not-an-object-id")
+    assert response.status_code == 404
+
+
+def test_revoke_another_users_token(api_client):
+    """Another user's token must look exactly like a missing one and stay valid."""
+    foreign = BearerToken.create_new_token("foreign", datetime.now(UTC) + timedelta(days=1), str(ObjectId()))
+
+    response = api_client.delete(f"{TOKEN_BASE}/{foreign.id}")
+
+    assert response.status_code == 404
+    assert BearerToken.objects(id=foreign.id).count() == 1
+
+
+def test_static_token_is_neither_listed_nor_revocable(api_client):
+    """The superuser token is seeded for the superuser account; that user must not be able to cut internal services
+    off by revoking it."""
+    static = BearerToken.upsert_static_token(
+        name="superuser-static-token",
+        token_value=f"sk-static-{ObjectId()}",
+        expiry_date=datetime.now(UTC) + timedelta(days=1),
+        user_oid=TEST_USER_OID,
+    )
+
+    listed_ids = [token["id"] for token in api_client.get(f"{TOKEN_BASE}/").json()]
+    response = api_client.delete(f"{TOKEN_BASE}/{static.id}")
+
+    assert str(static.id) not in listed_ids
+    assert response.status_code == 404
+    assert BearerToken.objects(id=static.id).count() == 1
+
+
+def test_list_reports_creation_and_last_use(api_client, valid_token_request):
+    created = api_client.post(f"{TOKEN_BASE}/", json=valid_token_request).json()
+
+    unused = api_client.get(f"{TOKEN_BASE}/").json()[0]
+    used_at = datetime.now(UTC)
+    BearerToken.objects.get(id=created["id"]).record_use(used_at)
+    used = api_client.get(f"{TOKEN_BASE}/").json()[0]
+
+    assert unused["id"] == created["id"]
+    assert unused["created_at"] is not None
+    assert unused["last_used_at"] is None
+    assert "roles" not in unused
+    reported_use = datetime.fromisoformat(used["last_used_at"])
+    assert reported_use.tzinfo is not None, "Without an offset a browser reads the time as local"
+    assert abs(reported_use - used_at) < timedelta(seconds=1)
+    assert datetime.fromisoformat(unused["expiry_date"]).tzinfo is not None
 
 
 @pytest.mark.parametrize(
