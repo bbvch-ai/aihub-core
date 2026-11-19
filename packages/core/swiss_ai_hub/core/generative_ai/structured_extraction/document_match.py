@@ -12,9 +12,9 @@ class DocumentMatch(BaseModel):
     verdict: Annotated[
         Literal["yes", "no", "unsure"],
         Field(
-            description='"yes" when the excerpt or title shows the document meets the document condition; "no" only '
-            'when they state a fact that contradicts it; "unsure" otherwise, including when the fact is not in the '
-            "excerpt."
+            description='"yes" when the excerpt or title shows the document meets the document condition; "no" when '
+            "they state a value that differs from it, such as another party, currency or document type or a date "
+            'outside the period; "unsure" only when the fact is not stated.'
         ),
     ]
     reason: Annotated[

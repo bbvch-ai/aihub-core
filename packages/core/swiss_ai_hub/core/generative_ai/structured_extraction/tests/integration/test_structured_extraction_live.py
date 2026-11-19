@@ -19,6 +19,7 @@ from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summ
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
+from swiss_ai_hub.core.generative_ai.structured_extraction.document_match import DocumentMatch
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_extractor import RecordExtractor
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_field import RecordField
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_schema import RecordSchema
@@ -334,6 +335,96 @@ async def test_a_long_contract_signed_on_its_last_page_is_unsure_not_skipped() -
         LocaleHandler("en"),
         limiter=_windows_at_once(),
         document_condition="only signed versions",
+    )
+
+    assert result.window_count > 1
+    assert result.document_match.verdict == "unsure", result.document_match
+    assert [record.values["position"] for record in result.records] == [1, 2, 3, 4, 5, 6]
+
+
+def _invoice(header: str) -> str:
+    """`_INVOICE`'s lines under another header."""
+    return header + _INVOICE[_INVOICE.index("| Pos |") :]
+
+
+async def _judged(text: str, condition: str, locale: str = "en", title: str = "Invoice") -> DocumentMatch | None:
+    llm_config, llm, _ = _llm()
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA, _document(text, title=title), llm, llm_config, LocaleHandler(locale), document_condition=condition
+    )
+    return result.document_match
+
+
+@pytest.mark.asyncio
+async def test_a_supplier_named_without_a_label_that_differs_is_no() -> None:
+    text = _invoice("Umbra Logistik AG\nMusterweg 3, 4051 Basel\n\n# Invoice 2025-311\n\nDate: 2025-03-14\n\n")
+
+    match = await _judged(text, "only invoices from Hooli AG")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_name_that_merely_contains_the_requested_name_is_another_party() -> None:
+    text = _invoice("# Invoice 2025-312\n\nSupplier: Rosenberg AG, Seestrasse 4, 8002 Zürich\nDate: 2025-03-14\n\n")
+
+    match = await _judged(text, "only invoices from Berg AG")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_plain_invoice_does_not_meet_a_credit_note_condition() -> None:
+    match = await _judged(_INVOICE, "only credit notes", title="Invoice INV-2025-0412")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_date_outside_the_quarter_is_no() -> None:
+    match = await _judged(_INVOICE, "only invoices dated in Q2 2025", title="Invoice INV-2025-0412")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_german_condition_on_a_german_invoice_from_another_supplier_is_no() -> None:
+    text = _invoice(
+        "# Rechnung RE-2025-118\n\nLieferant: Alpenblick Bürobedarf AG, Hauptgasse 9, 3011 Bern\nDatum: 14.03.2025\n\n"
+    )
+
+    match = await _judged(text, "nur Rechnungen von Hooli AG", locale="de", title="Rechnung RE-2025-118")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_french_condition_on_a_french_invoice_from_another_supplier_is_no() -> None:
+    text = _invoice(
+        "# Facture F-2025-77\n\nFournisseur : Papeterie du Lac SA, Rue du Rhône 12, 1204 Genève\nDate : 14.03.2025\n\n"
+    )
+
+    match = await _judged(text, "seulement les factures de Hooli SA", locale="fr", title="Facture F-2025-77")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.slow
+@pytest.mark.asyncio
+async def test_a_long_contract_naming_its_supplier_only_after_the_first_window_is_unsure() -> None:
+    """The sharpened "no" must stay limited to a stated value: a supplier that window 0 does not show is unsure."""
+    llm_config, llm, _ = _llm()
+    header = "# Contract HW-2025-117\n\nClient: Acme Engineering GmbH\n\n"
+    supplier = "\n\nThe supplier under this contract is Hooli AG, Bahnhofplatz 1, 8001 Zürich."
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(header + _long_contract() + supplier, title="Hardware contract"),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        limiter=_windows_at_once(),
+        document_condition="only contracts whose supplier is Hooli AG",
     )
 
     assert result.window_count > 1
