@@ -2,6 +2,7 @@
 
 import ipaddress
 import logging
+import math
 import re
 from collections.abc import Coroutine
 from typing import Any
@@ -25,6 +26,8 @@ LOOPBACK_HOSTNAMES: frozenset[str] = frozenset({"localhost", "0.0.0.0", "::", "[
 
 ALLOWLIST_SETTING = "LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST"
 LANGFUSE_SERVICES = "langfuse-web and langfuse-worker"
+
+MODELS_PAGE_SIZE = 100
 
 
 class LangfuseProvisioner:
@@ -139,25 +142,52 @@ class LangfuseProvisioner:
     async def _register_model_definitions(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
     ) -> None:
-        """Langfuse can't auto-calculate costs for custom model names.
+        """Langfuse can't price custom model names, so each gets a definition with LiteLLM's prices.
 
-        We register per-token prices from LiteLLM since custom names don't match the built-in pricing database.
+        Langfuse keeps one definition per model name and stores each generation's cost when it ingests it. A changed
+        price therefore replaces the definition, and generations already ingested keep the cost they were given. Each
+        model is synced on its own, so a Langfuse error on one leaves the others priced.
         """
+        current = await self._fetch_custom_models(client)
         registered = 0
 
         for entry in litellm_models:
             model_name = entry.get("model_name")
             model_info = entry.get("model_info", {})
             input_cost = model_info.get("input_cost_per_token")
-            output_cost = model_info.get("output_cost_per_token")
+            output_cost = model_info.get("output_cost_per_token") or 0
 
-            if not model_name or input_cost is None or output_cost is None:
+            if not model_name or input_cost is None:
                 continue
 
-            if await self._create_model_definition(client, model_name, input_cost, output_cost):
-                registered += 1
+            try:
+                if await self._sync_model_definition(
+                    client, model_name, (input_cost, output_cost), current.get(model_name)
+                ):
+                    registered += 1
+            except httpx.HTTPError:
+                logger.exception(f"Langfuse provisioning: could not sync the model definition of '{model_name}'")
 
         logger.info(f"Langfuse provisioning: Registered {registered} model definitions with pricing")
+
+    async def _sync_model_definition(
+        self,
+        client: httpx.AsyncClient,
+        model_name: str,
+        prices: tuple[float, float],
+        known: dict[str, Any] | None,
+    ) -> bool:
+        """Langfuse has no update for a definition, so a changed price is a delete followed by a create."""
+        if known is not None:
+            if self._same_prices(self._default_tier_prices(known), prices):
+                return False
+            await self._delete_model_definition(client, known["id"])
+
+        return await self._create_model_definition(client, model_name, *prices, replacing=known is not None)
+
+    @staticmethod
+    def _same_prices(known: tuple[float, float], configured: tuple[float, float]) -> bool:
+        return all(math.isclose(a, b, rel_tol=1e-9, abs_tol=0) for a, b in zip(known, configured, strict=True))
 
     async def _create_default_prompt(self, client: httpx.AsyncClient) -> None:
         """Maps dataset ``question`` field to a user message for the OpenAI-compatible agent endpoint."""
@@ -186,6 +216,42 @@ class LangfuseProvisioner:
         response.raise_for_status()
 
         return response.json().get("data", [])
+
+    async def _fetch_custom_models(self, client: httpx.AsyncClient) -> dict[str, dict[str, Any]]:
+        """The project's own model definitions by model name; Langfuse's built-in ones are never touched."""
+        custom: dict[str, dict[str, Any]] = {}
+        page, total_pages = 1, 1
+
+        while page <= total_pages:
+            response = await client.get(
+                f"{self._base_url}/api/public/models",
+                params={"page": page, "limit": MODELS_PAGE_SIZE},
+                auth=self._auth,
+            )
+            response.raise_for_status()
+            body = response.json()
+            custom.update(
+                {model["modelName"]: model for model in body.get("data", []) if not model.get("isLangfuseManaged")}
+            )
+            total_pages = body.get("meta", {}).get("totalPages", 1)
+            page += 1
+
+        return custom
+
+    async def _delete_model_definition(self, client: httpx.AsyncClient, model_id: str) -> None:
+        response = await client.delete(f"{self._base_url}/api/public/models/{model_id}", auth=self._auth)
+        if response.status_code == 404:
+            # Another API process starting at the same time replaced it first.
+            return
+        response.raise_for_status()
+
+    @staticmethod
+    def _default_tier_prices(model: dict[str, Any]) -> tuple[float, float]:
+        prices = model.get("prices") or {}
+        return (
+            (prices.get("input") or {}).get("price") or 0,
+            (prices.get("output") or {}).get("price") or 0,
+        )
 
     # ------------------------------------------------------------------
     # Langfuse API helpers
@@ -229,6 +295,8 @@ class LangfuseProvisioner:
         model_name: str,
         input_cost_per_token: float,
         output_cost_per_token: float,
+        *,
+        replacing: bool = False,
     ) -> bool:
         url = f"{self._base_url}/api/public/models"
         match_pattern = f"(?i)^({re.escape(model_name)})$"
@@ -248,6 +316,13 @@ class LangfuseProvisioner:
             return True
         elif response.status_code == 409 or (response.status_code == 400 and "already exists" in response.text.lower()):
             logger.debug(f"Langfuse model definition already exists: {model_name}")
+            return False
+        elif replacing:
+            logger.error(
+                f"Langfuse model definition for '{model_name}' was deleted to change its price but could not be "
+                f"created again: {response.status_code} — {response.text}. Its generations get no cost in Langfuse "
+                f"until the next API start."
+            )
             return False
         else:
             logger.warning(
