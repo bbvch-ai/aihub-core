@@ -1822,7 +1822,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.106.4
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.106.9
     restart: always
     ports: [4000:4000]
     environment:
@@ -2845,7 +2845,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   traefik:
     container_name: traefik
-    image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.7.16
+    image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.7.18
     restart: always
     depends_on:
       docker-socket-proxy:

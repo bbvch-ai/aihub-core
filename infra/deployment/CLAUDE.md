@@ -108,7 +108,7 @@ then starts without the guardrail and drops the requested anonymisation too. The
 key as external; `generate_compose.py` rejects a missing or unknown location anyway, so a typo cannot silently anonymise
 a local model. Each handled call also leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`,
 mounted next to the guardrail, sent to `OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
-`uv run --with "litellm==1.106.4" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
+`uv run --with "litellm==1.106.9" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
 (unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
 on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. LiteLLM follows its plain release tags (no
 more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollback path are in ADR
