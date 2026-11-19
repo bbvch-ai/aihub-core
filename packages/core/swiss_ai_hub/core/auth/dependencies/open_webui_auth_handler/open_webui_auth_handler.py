@@ -31,7 +31,7 @@ class OpenWebuiAuthHandler(AuthHandler):
     """
 
     SIGNATURE_MAX_AGE_SECONDS: ClassVar[int] = 300
-    _TIMESTAMP_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"[0-9]{1,12}")
+    _TIMESTAMP_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"\d{1,12}", re.ASCII)
 
     def __init__(self, base_auth_handler: TokenAuthHandler):
         """Initialize with a token auth handler to verify the bearer token."""
