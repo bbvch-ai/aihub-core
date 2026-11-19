@@ -129,7 +129,7 @@ form:
   documents:
     header: "Dokumentbedingung"
     question: "Welche Dokumente zählen? Verstanden habe ich: %{value}."
-    hint: "Eine Bedingung an das ganze Dokument, an seinem Anfang geprüft, z. B. von Lieferant GmbH · datiert Q1 2026 · nur unterschriebene Fassungen. Dokumente, die sie eindeutig nicht erfüllen, werden übersprungen und aufgelistet."
+    hint: "Eine Bedingung an das ganze Dokument, an seinem Anfang geprüft, z. B. von Lieferant GmbH · datiert zwischen dem 1. Januar und dem 31. März 2026 · nur unterschriebene Fassungen. Dokumente, die sie eindeutig nicht erfüllen, werden übersprungen und aufgelistet."
     anything: "Jedes Dokument"
     anything_description: "Jedes Dokument am Ablageort lesen"
     everything: "jedes Dokument am Ablageort"

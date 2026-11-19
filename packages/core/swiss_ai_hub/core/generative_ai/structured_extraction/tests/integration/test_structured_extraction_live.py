@@ -409,6 +409,33 @@ async def test_a_french_condition_on_a_french_invoice_from_another_supplier_is_n
     assert match.verdict == "no", match
 
 
+@pytest.mark.asyncio
+async def test_a_date_only_condition_keeps_a_credit_note_dated_inside_the_period() -> None:
+    """A condition that names no document type never fails a document for its type (regression of e2e D06b)."""
+    text = _invoice(
+        "# Credit Note CN-2025-031\n\nSupplier: Helvetic IT Supplies AG, Bahnhofstrasse 10, 8001 Zürich\n"
+        "Date: 2025-03-14\nRefers to invoice INV-2025-0412\n\n"
+    )
+
+    match = await _judged(text, "dated between 1 January 2025 and 31 March 2025", title="Credit Note CN-2025-031")
+
+    assert match.verdict == "yes", match
+
+
+@pytest.mark.asyncio
+async def test_a_german_date_only_condition_keeps_a_gutschrift_dated_inside_the_period() -> None:
+    text = _invoice(
+        "# Gutschrift GS-2025-031\n\nLieferant: Alpenblick Bürobedarf AG, Hauptgasse 9, 3011 Bern\n"
+        "Datum: 14.03.2025\nZu Rechnung RE-2025-118\n\n"
+    )
+
+    match = await _judged(
+        text, "datiert zwischen dem 1. Januar 2025 und dem 31. März 2025", locale="de", title="Gutschrift GS-2025-031"
+    )
+
+    assert match.verdict == "yes", match
+
+
 @pytest.mark.slow
 @pytest.mark.asyncio
 async def test_a_long_contract_naming_its_supplier_only_after_the_first_window_is_unsure() -> None:

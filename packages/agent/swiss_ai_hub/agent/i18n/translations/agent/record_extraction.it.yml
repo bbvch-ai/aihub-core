@@ -128,7 +128,7 @@ form:
   documents:
     header: "Condizione sul documento"
     question: "Quali documenti contano? Ho capito: %{value}."
-    hint: "Una condizione che l'intero documento deve soddisfare, verificata all'inizio, p. es. di Lieferant GmbH · datato T1 2026 · solo versioni firmate. I documenti che chiaramente non la soddisfano sono saltati ed elencati."
+    hint: "Una condizione che l'intero documento deve soddisfare, verificata all'inizio, p. es. di Lieferant GmbH · datato tra il 1° gennaio e il 31 marzo 2026 · solo versioni firmate. I documenti che chiaramente non la soddisfano sono saltati ed elencati."
     anything: "Ogni documento"
     anything_description: "Leggere ogni documento della posizione"
     everything: "ogni documento della posizione"

@@ -13,8 +13,9 @@ class DocumentMatch(BaseModel):
         Literal["yes", "no", "unsure"],
         Field(
             description='"yes" when the excerpt or title shows the document meets the document condition; "no" when '
-            "they state a value that differs from it, such as another party, currency or document type or a date "
-            'outside the period; "unsure" only when the fact is not stated.'
+            "they state a value that differs from one the condition itself asks for, such as another party, currency "
+            "or document type or a date outside the period, never for something the condition does not ask about; "
+            '"unsure" only when the fact is not stated.'
         ),
     ]
     reason: Annotated[
