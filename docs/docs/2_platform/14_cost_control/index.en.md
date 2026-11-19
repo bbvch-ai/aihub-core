@@ -158,7 +158,9 @@ Costs are computed from the prices configured for each model in LiteLLM.
 
 On a shared instance that serves several tenants:
 
-1. Open the LiteLLM UI at `https://litellm.<your domain>/ui` and sign in as a proxy administrator.
+1. Open the LiteLLM UI at `https://litellm.<your domain>/ui` and sign in as a proxy administrator. From the Sysadmin UI,
+   **LLM usage** in the header opens the usage page directly, and each tenant's **Overview** links to it with the name
+   to pick in step 4. LiteLLM cannot be opened already filtered to one customer.
 2. Open **Usage** and switch the view from **Global Usage** to **Customer Usage**.
 3. Set **Select Time Range** to the first and last day of the month.
 4. In **Select customer to filter**, pick the tenant by its name.

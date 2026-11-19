@@ -9,6 +9,13 @@ tenant_admin:
   save: Save
   save_error: Could not save tenant. Please try again.
   tenant_id: Tenant ID
+  llm_usage:
+    title: LLM usage
+    open: LLM usage
+    open_tenant: Open in LiteLLM
+    pick_tenant: 'In LiteLLM, switch to Customer Usage and select the customer "{name}".
+      Its ID:'
+    chf_note: Amounts are in CHF, although LiteLLM shows them with "$".
   navigation:
     overview: Overview
     roles: Roles

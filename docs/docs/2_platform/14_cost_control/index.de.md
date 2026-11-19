@@ -1,6 +1,6 @@
 ---
 title: Kostenkontrolle
-source_sha: 45c5c9f3e4d7eb842e5f0e97e7cfa2e54b5d6a28d7724b8026b58d1c6eb980f8
+source_sha: d4cc52b5dacec3a4851b902216768261e1ad67c812b1176456c2c7225c1cec43
 ---
 
 # Kostenkontrolle
@@ -165,7 +165,9 @@ Die Kosten werden aus den Preisen berechnet, die in LiteLLM für jedes Modell ko
 Auf einer gemeinsam genutzten Instanz, die mehrere Mandanten bedient:
 
 1. Öffnen Sie die LiteLLM-Oberfläche unter `https://litellm.<Ihre Domain>/ui` und melden Sie sich als
-   Proxy-Administrator an.
+   Proxy-Administrator an. In der Sysadmin-Oberfläche öffnet **LLM-Nutzung** in der Kopfzeile die Nutzungsseite direkt,
+   und die **Übersicht** jedes Mandanten verlinkt sie zusammen mit dem Namen, den Sie in Schritt 4 wählen. LiteLLM lässt
+   sich nicht bereits auf einen einzelnen Kunden gefiltert öffnen.
 2. Öffnen Sie **Usage** und wechseln Sie die Ansicht von **Global Usage** zu **Customer Usage**.
 3. Setzen Sie **Select Time Range** auf den ersten und letzten Tag des Monats.
 4. Wählen Sie unter **Select customer to filter** den Mandanten anhand seines Namens.

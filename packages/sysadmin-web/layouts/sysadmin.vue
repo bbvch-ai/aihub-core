@@ -9,6 +9,19 @@
       </div>
       <div class="flex items-center gap-2">
         <Button
+          v-if="isLlmUsageAvailable"
+          v-tooltip.bottom="{ value: t('tenant_admin.llm_usage.chf_note'), showDelay: 0 }"
+          :label="t('tenant_admin.llm_usage.open')"
+          icon="pi pi-chart-bar"
+          severity="secondary"
+          variant="text"
+          size="small"
+          as="a"
+          :href="llmUsageUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+        />
+        <Button
           v-tooltip.bottom="{ value: t('bar.toggle_dark_mode'), showDelay: 0 }"
           :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
           severity="secondary"
@@ -35,6 +48,7 @@
 <script setup lang="ts">
 const { t } = useI18n()
 const { exitToMainApp } = useMainAppNavigation()
+const { usageUrl: llmUsageUrl, isAvailable: isLlmUsageAvailable } = useLiteLlmUsage()
 
 const isDark = useDarkMode()
 
