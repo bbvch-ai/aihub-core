@@ -284,15 +284,17 @@ class Conversation(Capability):
         agent: Agent,
         request: ComposeContextEvent,
         conversation: ConversationFields,
+        t: LocaleHandler,
     ) -> ContextComposedEvent:
         """Merge the blocks behind the leading system messages, within budget, as `Conversation.fit` does."""
-        return ContextComposedEvent(history=Conversation.fit(request.history, request.blocks, conversation))
+        return ContextComposedEvent(history=Conversation.fit(request.history, request.blocks, conversation, t))
 
     @staticmethod
     def fit(
         history: list[ChatMessage],
         blocks: Sequence[list[ChatMessage]],
         conversation: ConversationFields,
+        t: LocaleHandler,
         reserve_tokens: int = 0,
     ) -> list[ChatMessage]:
         """The history with the blocks merged behind its leading system messages, re-limited to the input budget.
@@ -314,7 +316,7 @@ class Conversation(Capability):
         fitted_blocks = _fit_whole_blocks(blocks, room, counter)
         kept = _fit_newest_turns(earlier, room - estimate_prompt_tokens(fitted_blocks, counter), counter)
         merged = merge_consecutive_messages([*system_head, *fitted_blocks, *kept, *question])
-        return ContextFigures.on_question(merged, conversation.llm)
+        return ContextFigures.on_question(merged, conversation.llm, t)
 
     @staticmethod
     @step(

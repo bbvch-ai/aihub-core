@@ -331,7 +331,7 @@ async def do_context_sufficient_guard(
         t, user_query, context_message, prev_queries, more_hops_available, chat_history=[]
     )
     reserve_tokens = estimate_prompt_tokens(guard_prompt, conversation.llm.token_counter)
-    chat_history = Conversation.fit(history, blocks, conversation, reserve_tokens=reserve_tokens)
+    chat_history = Conversation.fit(history, blocks, conversation, t, reserve_tokens=reserve_tokens)
 
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         guard_result = await context_sufficient_guard(
