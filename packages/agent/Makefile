@@ -47,9 +47,6 @@ run-llm-wrapping-agent:
 run-namespace-selection-agent:
 	uv run python app/namespace_selection_agent/main.py
 
-run-universal-agent:
-	uv run python app/universal_agent/main.py
-
 run-web-fetch-agent:
 	uv run python app/web_fetch_agent/main.py
 
@@ -67,9 +64,6 @@ run-anonymiser-agent:
 
 run-imap-agent:
 	uv run python app/imap_agent/main.py
-
-run-email-classification-agent:
-	uv run python app/email_classification_agent/main.py
 
 run-release-notes-agent:
 	uv run python app/release_notes_agent/main.py

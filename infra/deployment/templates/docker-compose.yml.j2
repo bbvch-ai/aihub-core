@@ -3985,7 +3985,7 @@ services:
     {%- if image_tags.universal_agent[stage] == 'localbuild' %}
     build:
       context: ..
-      dockerfile: ./packages/agent/app/universal_agent/Dockerfile
+      dockerfile: ./ee/app/universal_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.universal_agent[stage] }}
     {%- endif %}
@@ -5030,7 +5030,7 @@ services:
     {%- if image_tags.email_classification_agent[stage] == 'localbuild' %}
     build:
       context: ..
-      dockerfile: ./packages/agent/app/email_classification_agent/Dockerfile
+      dockerfile: ./ee/app/email_classification_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.email_classification_agent[stage] }}
     {%- endif %}

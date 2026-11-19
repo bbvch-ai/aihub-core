@@ -16,7 +16,6 @@ import swiss_ai_hub.agent.agents.rag_agent  # noqa: F401,E402
 from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
 
 BLUEPRINTS = [
-    ("email_classification_agent", "EmailClassificationAgent", "EmailClassificationAgentConfig"),
     ("expert_asking_agent", "ExpertAskingAgent", "ExpertAskingAgentConfig"),
     ("expert_rag_agent", "ExpertRAGAgent", "ExpertRAGAgentConfig"),
     ("few_shot_agent", "FewShotAgent", "FewShotAgentConfig"),
@@ -26,7 +25,6 @@ BLUEPRINTS = [
     ("namespace_selection_agent", "NamespaceSelectionAgent", "NamespaceSelectionAgentConfig"),
     ("rag_agent", "RAGAgent", "RAGAgentConfig"),
     ("retrieval_agent", "RetrievalAgent", "RetrievalAgentConfig"),
-    ("universal_agent", "UniversalAgent", "UniversalAgentConfig"),
 ]
 
 

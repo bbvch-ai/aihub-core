@@ -137,10 +137,11 @@ and the grants described in the agreement.
 
 ## ⚖️ License
 
-Swiss AI Hub is fully open-source under a **dual-license model** — each package carries its own license. Most packages
-are Apache-2.0; the web frontend (`packages/web`), the multi-tenant administration plane (`packages/sysadmin-api`,
-`packages/sysadmin-web`), and the backup service (`packages/backup`) are AGPL-3.0-or-later. The full per-package matrix
-is in [`LICENSES.md`](LICENSES.md).
+Swiss AI Hub is an open-core project with a **dual-license** open core — each package carries its own license. Most
+packages are Apache-2.0; the web frontend (`packages/web`), the multi-tenant administration plane
+(`packages/sysadmin-api`, `packages/sysadmin-web`), and the backup service (`packages/backup`) are AGPL-3.0-or-later.
+The paid agents in `ee/` are under the bbv AI Hub Enterprise License, and bbv Software Services owns modifications to
+them. The full per-package matrix is in [`LICENSES.md`](LICENSES.md).
 
 By contributing, you agree that your contribution is licensed under the license of the package it targets, as listed in
 [`LICENSES.md`](LICENSES.md). Contributions are additionally covered by our Contributor License Agreement (CLA), which

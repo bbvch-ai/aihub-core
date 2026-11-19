@@ -1,10 +1,15 @@
 ---
 title: Universal Agent
 description: Ein Assistent, der selbst entscheidet, ob er Ihr Wissen durchsucht, angehängte Dateien liest oder sich an Gespeichertes erinnert, und so lange weitermacht, bis er antworten kann.
-source_sha: 13e7079d1783d4be4a5dc18ce25c363f9090fdff5ed61d0425ee79ffce8694a4
+source_sha: dc93f17381dc2b65c607ef5396c4dff608bcaeb3b8e90d0d0a2a3fcb6de5ee24
 ---
 
 # Universal Agent
+
+::: info Enterprise-Funktion
+Der Universal Agent ist Teil von bbv AI Hub Enterprise. Für den Betrieb braucht es eine bbv AI Hub Enterprise License;
+siehe [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
+:::
 
 Der **Universal Agent** arbeitet so, wie man es von einem modernen Assistenten erwartet. Statt einer festen Abfolge von
 Schritten zu folgen, betrachtet er jede Nachricht und entscheidet selbst, was er braucht: das Wissen Ihres Unternehmens

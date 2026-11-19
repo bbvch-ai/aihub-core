@@ -108,6 +108,20 @@ jobs:
             exit 1
           fi
           echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+      - name: Locate Dockerfile
+        id: dockerfile
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          # Enterprise agents live in ee/, the open ones in packages/agent.
+          for root in ee/app packages/agent/app; do
+            if [ -f "$root/$IMAGE/Dockerfile" ]; then
+              echo "path=./$root/$IMAGE/Dockerfile" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          done
+          echo "❌ No Dockerfile for $IMAGE in ee/app or packages/agent/app."
+          exit 1
       - name: build and release docker image
         uses: ./.github/actions/build_image
         with:
@@ -117,7 +131,7 @@ jobs:
           github_repository_owner: ${{ github.repository_owner }}
           github_event_repository_name: ${{ github.event.repository.name }}
           context: .
-          file: ./packages/agent/app/${{ matrix.image }}/Dockerfile
+          file: ${{ steps.dockerfile.outputs.path }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           secondary_tag: ${{ github.event_name == 'repository_dispatch' && 'nightly' || github.event.inputs.secondary_tag }}
   # ---------------------------------------------------------------------------

@@ -17,7 +17,6 @@ from swiss_ai_hub.core.events.agent import (
     ConversationContextualizedEvent,
     LLMEvent,
     Message,
-    ToolLoopFinishedEvent,
 )
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
@@ -25,8 +24,6 @@ from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
-from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalAgent
-from swiss_ai_hub.agent.agents.universal_agent.universal_agent_config import UniversalAgentConfig
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 
 # Well below the development broker's 1 MB `max_payload`: headers and the subject need room.
@@ -115,27 +112,3 @@ async def test_the_llm_wrapping_turn_ends_in_events_the_broker_accepts():
         assert _size(event) < EVENT_LIMIT_BYTES, type(event).__name__
     assert [message.content for message in stop.input_messages] == ["Hello", "Hi, how can I help?", QUESTION]
     assert stop.output_messages[-1].content == REPLY
-
-
-@pytest.mark.asyncio
-async def test_the_universal_turn_ends_in_events_the_broker_accepts():
-    config = UniversalAgentConfig(
-        agent_id="event-sizes",
-        name=LocaleString(en="Universal"),
-        description=LocaleString(en="Universal fixture"),
-        llm=LLMConfig(model_name="text-generation/dummy"),
-    )
-    ctx = ConversationContextualizedEvent(history=_prompt(), query=QUESTION)
-
-    events = await UniversalAgent().complete_step(
-        ToolLoopFinishedEvent(answer=_answer_to(_prompt())),
-        ctx,
-        agent_config=config,
-        topic=MagicMock(),
-        t=LocaleHandler(locale="en"),
-        user=None,
-    )
-    stop = await _stop_after(events[-1])
-
-    for event in [*events, stop]:
-        assert _size(event) < EVENT_LIMIT_BYTES, type(event).__name__
