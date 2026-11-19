@@ -373,6 +373,26 @@ async def test_a_name_that_merely_contains_the_requested_name_is_another_party()
     assert match.verdict == "no", match
 
 
+_OCR_HEADER = "# Invoice 2025-313\n\nSupplier: Vantra AG, Industriestrasse 21, 6300 Zug\nDate: 2025-03-14\n\n"
+
+
+@pytest.mark.asyncio
+async def test_a_misread_supplier_name_with_the_right_name_elsewhere_meets_the_condition() -> None:
+    """The header lost a letter to OCR; the payment details still name the supplier (demo dry run, "Hooi AG")."""
+    text = _invoice(_OCR_HEADER) + "\nPlease transfer the amount to Vantora AG, IBAN CH93 0076 2011 6238 5295 7.\n"
+
+    match = await _judged(text, "only invoices from Vantora AG")
+
+    assert match.verdict == "yes", match
+
+
+@pytest.mark.asyncio
+async def test_a_supplier_name_a_letter_off_and_nowhere_else_is_unsure() -> None:
+    match = await _judged(_invoice(_OCR_HEADER), "only invoices from Vantora AG")
+
+    assert match.verdict == "unsure", match
+
+
 @pytest.mark.asyncio
 async def test_a_plain_invoice_does_not_meet_a_credit_note_condition() -> None:
     match = await _judged(_INVOICE, "only credit notes", title="Invoice INV-2025-0412")

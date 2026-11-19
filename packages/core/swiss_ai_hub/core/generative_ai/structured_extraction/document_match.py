@@ -15,8 +15,10 @@ class DocumentMatch(BaseModel):
             description='"yes" when the excerpt or title shows the document meets the document condition; "no" when '
             "they state a value that differs from one the condition itself asks for, such as another party, currency, "
             "document type or status or a date outside the period, never for something the condition does not ask "
-            "about, so a draft fails only a condition that asks for a status; "
-            '"unsure" only when the fact is not stated.'
+            "about, so a draft fails only a condition that asks for a status, and never when the requested value is "
+            'also stated elsewhere; "unsure" only when the fact is not stated, or when a name differs from the '
+            "requested one only by a letter or two, as an OCR or typing error would, and the requested name is stated "
+            "nowhere else."
         ),
     ]
     reason: Annotated[
