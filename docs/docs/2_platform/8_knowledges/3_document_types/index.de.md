@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: 1aafe1db0da70e0da8ac2f097aaca99804232938a58b76e43ea1468173de6ada
+source_sha: 8705a70299bf21f98f68927bfd5117a84e4f8535526d285f1be9929444bfb97b
 ---
 
 # Dokumenttypen und Attribute
@@ -41,9 +41,10 @@ einer früheren Rechnung mit negativem Total ist eine Gutschrift. Ein QR-Zahltei
 `other`. Ein Angebot, eine Bestellung, eine Rechnung oder ein Vertrag in Briefform ist von diesem Typ, nicht ein Brief.
 Ein Verlauf mehrerer E-Mails ist ein `email_thread`; eine einzelne E-Mail ist ein `letter`. Ein Reglement, eine
 Richtlinie oder eine Weisung, die Regeln setzt, ist eine `policy`, nicht `documentation`, auch mit Versionsnummer oder
-wenn sie erklärt, was zu tun ist; ebenso ein Personalhandbuch, das Arbeitszeit, Ferien oder Verhalten regelt. Allgemeine
-Geschäftsbedingungen, die nicht zwischen genannten Parteien vereinbart sind, sind eine `policy`, kein `contract`, und
-ein Anhang, der Service Levels zusagt, ist ein `service_level_agreement`, auch wenn er Leistungsbeschreibung heisst.
+wenn sie erklärt, was zu tun ist; ebenso ein Personal- oder Mitarbeiterhandbuch, auch wenn es erklärt, wie man Ferien
+beantragt oder sich krank meldet. Allgemeine Geschäftsbedingungen, die nicht zwischen genannten Parteien vereinbart
+sind, sind eine `policy`, kein `contract`, und ein Anhang, der Service Levels zusagt, ist ein `service_level_agreement`,
+auch wenn er Leistungsbeschreibung heisst.
 
 Ein Dokument hat einen **primären Typ**, nämlich den, der es als Ganzes beschreibt. Es kann zusätzlich bis zu drei
 **sekundäre Typen** aufführen, zum Beispiel eine Rechnung, die zugleich ihr Lieferschein ist, oder ein Vertrag mit
@@ -74,6 +75,7 @@ jedem Typ wirkt, der das Attribut hat. Jeder Typ hat nur die Attribute, die für
 | `document_service_levels`     |                      |         |            |              |          |        |         |         |  ✓  |       |         |               |           |                |
 | `document_product`            |                      |         |            |              |          |        |         |         |     |       |         |       ✓       |           |                |
 | `document_participants`       |                      |         |            |              |          |        |         |         |     |       |         |               |           |       ✓        |
+| `document_jurisdiction`       |                      |         |            |              |          |        |         |    ✓    |  ✓  |       |         |               |     ✓     |                |
 
 Wo ein Attribut für einen Typ etwas Bestimmtes bedeutet:
 
@@ -96,8 +98,11 @@ Wo ein Attribut für einen Typ etwas Bestimmtes bedeutet:
   Versions- oder Release-Nummer ohne das Wort «Version».
 - **Datum.** Bei einer Dokumentation ihr Erscheinungs- oder Revisionsdatum; bei einem Reglement das Datum, ab dem es
   gilt, sonst sein Ausgabe- oder Revisionsdatum; bei einem E-Mail-Verlauf das Datum der neuesten Nachricht.
-- **Zeitraum.** Bei einem Vertrag oder SLA seine Laufzeit, nur wenn Beginn und Ende genannt sind. Ein unbefristeter
-  Vertrag hat keinen Zeitraum, aber meist eine Kündigungsfrist.
+- **Zeitraum.** Bei einem Vertrag oder SLA seine Laufzeit. Ein einzelnes Datum ist der ganze Zeitraum, ausser ein Wort
+  daneben sagt, welches Ende es ist: Ein Vertrag, der an einem Datum beginnt und bis zur Kündigung läuft («ab 1. Juli
+  2025», «tritt am 1. März 2026 in Kraft», «prend effet le», «from»), speichert nur seinen Beginn, und einer, der nur
+  sein Ende nennt («endet am 30. Juni 2027», «until»), nur sein Ende. So findet «Verträge, die 2026 enden» jeden
+  Vertrag, der sein Ende nennt, und das Unterzeichnungsdatum ist nie sein Beginn.
 - **Gültig bis**, **Kündigungsfrist** und **Service Levels** sind mit diesen Typen neu: das Datum, bis zu dem eine
   Offerte gilt; die Kündigungsfrist eines Vertrags oder SLA, wie geschrieben aufbewahrt; und bis zu fünf Service Levels,
   die ein SLA zusagt, wie geschrieben übernommen («Verfügbarkeit 99,9 % pro Monat»).
@@ -107,6 +112,10 @@ Wo ein Attribut für einen Typ etwas Bestimmtes bedeutet:
 - **Beteiligte** gilt nur für E-Mail-Verläufe: bis zu zehn Personen und Organisationen, die eine Nachricht des Verlaufs
   senden oder empfangen, mit dem Namen, den eine Kopfzeile oder Signatur angibt, einschliesslich des Unternehmens, das
   eine Signatur für eine Person nennt. Eine E-Mail-Adresse oder eine Domain ist nie ein Beteiligter.
+- **Gerichtsstand** gilt für Verträge, SLAs und Reglemente: der Gerichtsstand für Streitigkeiten wie geschrieben
+  (Gerichtsstand, for, foro, courts of), etwa «Luzern». Ein anwendbares Recht allein («Es gilt schweizerisches Recht»),
+  die Adresse einer Partei und der Ort der Unterzeichnung sind kein Gerichtsstand: Der Code behält einen Ort nur, wo
+  seine Zeile oder die Überschrift darüber ein Gericht nennt.
 - **Parteien** führt Aussteller und Empfänger auf, oder die Beteiligten eines E-Mail-Verlaufs, sodass ein einziger
   Parteien-Filter die Rechnungen, Verträge und Korrespondenz eines Unternehmens gleichermassen findet.
 

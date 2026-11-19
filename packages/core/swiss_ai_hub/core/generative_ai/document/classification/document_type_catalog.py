@@ -103,6 +103,15 @@ class DocumentTypeCatalog:
             max_items=5,
         ),
         DocumentAttributeDefinition(
+            attribute=_A.JURISDICTION,
+            value_type=_V.TEXT,
+            meaning=(
+                "The place of jurisdiction a clause names for disputes (Gerichtsstand, for, foro, courts of), as "
+                'written, such as "Zürich"; null when no clause names one, even when it names the governing law; '
+                "never a party's address or the place it was signed"
+            ),
+        ),
+        DocumentAttributeDefinition(
             attribute=_A.PRODUCT,
             value_type=_V.TEXT,
             meaning=(
@@ -559,6 +568,7 @@ class DocumentTypeCatalog:
                 _A.PERIOD,
                 _A.NOTICE_PERIOD,
                 _A.RELATED_REFERENCES,
+                _A.JURISDICTION,
             ],
             meanings={
                 _A.DATE: "The date it was signed or concluded, else the date it carries",
@@ -568,7 +578,10 @@ class DocumentTypeCatalog:
                 ),
                 _A.RECIPIENT: "The other party: the customer, client, tenant, licensee or employee",
                 _A.TOTAL_AMOUNT: "The contract value, or else the recurring fee, rent or salary it states",
-                _A.PERIOD: "Its term, only when it states both its start and its end date; never its start alone",
+                _A.PERIOD: (
+                    "Its term, with the words that say where it starts or ends (ab, bis, dès, until); only its start "
+                    "when it runs until terminated, only its end when it names no start; never the date it was signed"
+                ),
                 _A.RELATED_REFERENCES: "Numbers of the offer, the framework contract or the contract it amends",
             },
             references=[
@@ -611,12 +624,16 @@ class DocumentTypeCatalog:
                 _A.NOTICE_PERIOD,
                 _A.SERVICE_LEVELS,
                 _A.RELATED_REFERENCES,
+                _A.JURISDICTION,
             ],
             meanings={
                 _A.DATE: "The date it was signed or concluded, else the date it carries",
                 _A.ISSUER: "The service provider, by its legal name",
                 _A.RECIPIENT: "The customer that receives the service",
-                _A.PERIOD: "Its term, only when it states both its start and its end date; never its start alone",
+                _A.PERIOD: (
+                    "Its term, with the words that say where it starts or ends (ab, bis, dès, until); only its start "
+                    "when it runs until terminated, only its end when it names no start; never the date it was signed"
+                ),
                 _A.RELATED_REFERENCES: "Numbers of the master or framework contract it belongs to",
             },
             references=[
@@ -706,6 +723,8 @@ class DocumentTypeCatalog:
             excludes=[
                 "a policy, guideline, directive, regulation or set of terms that sets rules employees or customers "
                 "must follow, which is a policy, even when it has a version number or explains what to do",
+                "a staff or employee handbook (Personalhandbuch, Mitarbeiterhandbuch), which is a policy even when "
+                "it explains how to request holidays or report sick",
                 "a report of results or findings, which is a report",
                 "a service level agreement",
                 "a slide presentation",
@@ -771,7 +790,7 @@ class DocumentTypeCatalog:
                 "code of conduct",
                 "terms and conditions",
             ],
-            attributes=[_A.DATE, _A.REFERENCE_NUMBER, _A.ISSUER],
+            attributes=[_A.DATE, _A.REFERENCE_NUMBER, _A.ISSUER, _A.JURISDICTION],
             meanings={
                 _A.DATE: (
                     "The date it takes effect (gültig ab, en vigueur dès, in vigore dal, effective); else the date it "

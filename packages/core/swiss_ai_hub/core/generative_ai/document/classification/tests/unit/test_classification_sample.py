@@ -25,6 +25,7 @@ _TEXT_KEYS = [
     "document_recipient",
     "document_notice_period",
     "document_product",
+    "document_jurisdiction",
 ]
 _LIST_KEYS = ["document_related_references", "document_service_levels", "document_participants"]
 _MIN_CASES_PER_TYPE = 8

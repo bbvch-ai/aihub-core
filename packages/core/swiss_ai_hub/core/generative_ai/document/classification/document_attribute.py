@@ -24,3 +24,4 @@ class DocumentAttribute(StrEnum):
     SERVICE_LEVELS = "document_service_levels"
     PRODUCT = "document_product"
     PARTICIPANTS = "document_participants"
+    JURISDICTION = "document_jurisdiction"

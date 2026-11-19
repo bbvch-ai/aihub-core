@@ -48,6 +48,7 @@
       - Reaktionszeit Priorität 1 | 30 Minuten
       - Lösungszeit Priorität 1 | 4 Stunden
       - Reaktionszeit Priorität 2 | 2 Stunden
+    document_jurisdiction: null
 
 - id: sla-de-2
   type: service_level_agreement
@@ -96,6 +97,7 @@
       - innerhalb von 15 Minuten bestätigt
       - innerhalb von 2 Stunden behoben
       - täglich mit einer Aufbewahrung von 30 Tagen
+    document_jurisdiction: null
 
 - id: sla-de-3
   type: service_level_agreement
@@ -150,6 +152,7 @@
       - Behebung von Störungen der Lüftung in Operationsräumen innert 4 Stunden
       - "Qualitätsgrad mindestens 90 % gemäss monatlicher Stichprobenkontrolle"
       - Zugänge und Notfallzufahrt bis 06:00 Uhr geräumt
+    document_jurisdiction: null
 
 - id: sla-fr-1
   type: service_level_agreement
@@ -181,6 +184,9 @@
     ## 4. Rapports
     Un rapport mensuel sur le respect des niveaux de service est remis au Client.
 
+    ## 5. For
+    Le for juridique est à Sion.
+
     Sion, le 16 février 2026
   expected:
     document_date: "2026-02-16"
@@ -196,11 +202,12 @@
       - Haute | 2 heures | 1 jour ouvrable
       - Normale | 1 jour ouvrable | 5 jours ouvrables
       - taux de résolution au premier appel visé est d'au moins 70 %
+    document_jurisdiction: Sion
 
 - id: sla-fr-2
   type: service_level_agreement
   title: accord_niveau_service_hebergement_ANS-2025-12.pdf
-  note: A stand-alone French hosting SLA with an availability, a response time and a recovery time written in prose.
+  note: A stand-alone French hosting SLA with its levels in prose; a term given as a start and a number of months stores its start alone.
   text: |
     # Helvécloud Hébergement Sàrl
     Chemin du Closel 5, 1020 Renens · IDE CHE-532.556.965
@@ -229,7 +236,7 @@
     document_reference_number: ANS-2025-12
     document_issuer: Helvécloud Hébergement Sàrl
     document_recipient: Éditions du Jorat SA
-    document_period_start: null
+    document_period_start: "2025-12-01"
     document_period_end: null
     document_related_references: null
     document_notice_period: null
@@ -237,6 +244,7 @@
       - disponibilité de 99,8 % par mois
       - prise en charge dans un délai de 1 heure, 7 jours sur 7
       - rétablis dans un délai de 8 heures
+    document_jurisdiction: null
 
 - id: sla-it-1
   type: service_level_agreement
@@ -279,6 +287,7 @@
       - Tempo di presa in carico, priorità 1 | 15 minuti
       - Tempo di risoluzione, priorità 1 | 2 ore
       - Applicazione patch di sicurezza critiche | entro 72 ore
+    document_jurisdiction: null
 
 - id: sla-it-2
   type: service_level_agreement
@@ -319,6 +328,7 @@
       - entro 2 ore dalla segnalazione di un guasto bloccante, 24 ore su 24
       - I guasti non bloccanti sono risolti entro 3 giorni lavorativi
       - manutenzione preventiva è eseguita due volte all'anno
+    document_jurisdiction: null
 
 - id: sla-en-1
   type: service_level_agreement
@@ -351,6 +361,9 @@
     Where a target is missed in any month, the Customer is entitled to a service credit of 5% of the monthly charge for
     that service, up to 25% in total.
 
+    ### 4. Jurisdiction
+    This SLA is governed by Swiss law. The courts of Zurich have exclusive jurisdiction.
+
     Signed for Brightwater Managed IT Ltd and for Fenwick & Rowe Architects LLP.
   expected:
     document_date: "2026-01-05"
@@ -366,6 +379,7 @@
       - Priority 1 response time | 15 minutes, 24/7
       - Priority 1 resolution time | 4 hours
       - Service desk calls answered | 90% within 60 seconds
+    document_jurisdiction: Zurich
 
 - id: sla-en-2
   type: service_level_agreement
@@ -407,6 +421,7 @@
       - resolve them within 6 hours
       - within 4 business hours of a request
       - at least 4.2 out of 5 per quarter
+    document_jurisdiction: null
 
 - id: sla-de-leistungsbeschreibung-1
   type: service_level_agreement
@@ -448,3 +463,4 @@
       - Erfolgreiche tägliche Sicherung | 98 % der Sicherungen pro Monat
       - Wiederherstellung einzelner Dateien | innert 4 Stunden
       - Reaktionszeit bei Störungen | 1 Stunde während der Servicezeiten
+    document_jurisdiction: null

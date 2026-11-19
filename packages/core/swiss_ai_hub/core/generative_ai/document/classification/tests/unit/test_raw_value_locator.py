@@ -22,3 +22,10 @@ def test_a_copy_differing_in_case_quotes_dashes_emphasis_or_spacing_is_found(raw
 @pytest.mark.parametrize("raw", ["Hooli GmbH", "CHF 12'496.37", "  "])
 def test_a_value_that_is_not_in_the_document_is_not_found(raw: str) -> None:
     assert not RawValueLocator.appears_in(raw, _TEXT)
+
+
+def test_the_line_of_a_copy_is_the_document_line_that_holds_it() -> None:
+    document = "# Accord\nL'accord prend effet le 1er décembre 2025.\nSion, le 16 février 2026"
+
+    assert RawValueLocator.line_of("le 1er  Décembre 2025", document) == "L'accord prend effet le 1er décembre 2025."
+    assert RawValueLocator.line_of("le 2 décembre 2025", document) is None

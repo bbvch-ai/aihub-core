@@ -38,10 +38,10 @@ A final invoice stays an invoice when the advance payments it deducts make its t
 earlier invoice whose total is negative is a credit note. A QR payment part on its own, without its invoice, is `other`.
 An offer, order, invoice or contract sent as a letter is of that type, not a letter. A conversation of several e-mails
 is an `email_thread`; a single e-mail is a `letter`. A policy, guideline or regulation that sets rules is a `policy`,
-not `documentation`, even when it carries a version number or explains what to do; so is a staff handbook that sets
-working hours, holidays or conduct. General terms and conditions not agreed between named parties are a `policy`, not a
-`contract`, and a service level annex that commits to service levels is a `service_level_agreement` even when it is
-called a service description (Leistungsbeschreibung).
+not `documentation`, even when it carries a version number or explains what to do; so is a staff or employee handbook,
+even when it explains how to request holidays or report sick. General terms and conditions not agreed between named
+parties are a `policy`, not a `contract`, and a service level annex that commits to service levels is a
+`service_level_agreement` even when it is called a service description (Leistungsbeschreibung).
 
 A document has one **primary type**, the one that describes it as a whole. It may also list up to three **secondary
 types**, for example an invoice that is also its delivery note, or a contract with a service level annex (`contract`,
@@ -72,6 +72,7 @@ the attribute. Each type has only the attributes that make sense for it:
 | `document_service_levels`     |                      |       |       |               |         |           |          |          |  ✓  |        |        |               |        |               |
 | `document_product`            |                      |       |       |               |         |           |          |          |     |        |        |       ✓       |        |               |
 | `document_participants`       |                      |       |       |               |         |           |          |          |     |        |        |               |        |       ✓       |
+| `document_jurisdiction`       |                      |       |       |               |         |           |          |    ✓     |  ✓  |        |        |               |   ✓    |               |
 
 Where an attribute means something specific for a type:
 
@@ -93,8 +94,11 @@ Where an attribute means something specific for a type:
   when it has no document number.
 - **Date.** For documentation, its publication or revision date; for a policy, the date it takes effect, else the date
   it was issued or revised; for an e-mail thread, the date of the latest message.
-- **Period.** For a contract or SLA, its term, only when both its start and end are stated. A contract running until
-  terminated has no period, but usually a notice period.
+- **Period.** For a contract or SLA, its term. A single date is the whole period unless a word next to it says which end
+  it is: a contract that begins on a date and runs until terminated ("ab 1. Juli 2025", "tritt am 1. März 2026 in
+  Kraft", "prend effet le", "from") stores only its start, and one that names only its end ("endet am 30. Juni 2027",
+  "until") only its end. So "contracts ending in 2026" finds every contract that states its end, and the date it was
+  signed is never its start.
 - **Valid until**, **notice period** and **service levels** are new with these types: the date an offer is valid until;
   the notice period of a contract or SLA, kept as written; and up to five service levels an SLA commits to, copied as
   written ("Verfügbarkeit 99,9 % pro Monat").
@@ -104,6 +108,10 @@ Where an attribute means something specific for a type:
 - **Participants** applies to e-mail threads only: up to ten people and organisations that send or receive a message of
   the conversation, by the name a header or signature gives, including the company a signature names for a person. An
   e-mail address or a domain is never a participant.
+- **Jurisdiction** applies to contracts, SLAs and policies: the place of jurisdiction for disputes as written
+  (Gerichtsstand, for, foro, courts of), such as "Luzern". A governing law alone ("Es gilt schweizerisches Recht"), a
+  party's address and the place it was signed are no jurisdiction: code keeps a place only where its line, or the
+  heading above it, names a court.
 - **Parties** lists the issuer and the recipient, or the participants of an e-mail thread, so one parties filter finds a
   company's invoices, contracts and conversations alike.
 

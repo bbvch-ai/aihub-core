@@ -18,6 +18,7 @@
     document_date: "2025-01-01"
     document_reference_number: null
     document_issuer: Muster Treuhand GmbH
+    document_jurisdiction: null
 
 - id: policy-en-1
   type: policy
@@ -34,6 +35,7 @@
     document_date: "2025-03-01"
     document_reference_number: "3.1"
     document_issuer: null
+    document_jurisdiction: null
 
 - id: policy-fr-1
   type: policy
@@ -48,6 +50,7 @@
     document_date: "2025-09-01"
     document_reference_number: null
     document_issuer: Atelier Rousseau Sàrl
+    document_jurisdiction: null
 
 - id: terms-de-1
   type: policy
@@ -77,6 +80,7 @@
     document_date: "2025-03-01"
     document_reference_number: null
     document_issuer: Velorado Zweirad GmbH
+    document_jurisdiction: Winterthur
 
 - id: guideline-en-1
   type: policy
@@ -106,6 +110,7 @@
     document_date: "2025-04-01"
     document_reference_number: "2.3"
     document_issuer: Northpeak Software Ltd
+    document_jurisdiction: null
 
 - id: guideline-de-1
   type: policy
@@ -129,6 +134,7 @@
     document_date: "2025-07-01"
     document_reference_number: "1.2"
     document_issuer: Bergwerk Bau AG
+    document_jurisdiction: null
 
 - id: policy-de-handbook-1
   type: policy
@@ -156,6 +162,7 @@
     document_date: "2025-02-01"
     document_reference_number: null
     document_issuer: Alpenlicht Optik AG
+    document_jurisdiction: null
 
 - id: policy-it-1
   type: policy
@@ -174,6 +181,7 @@
     document_date: "2025-05-01"
     document_reference_number: DIR-07
     document_issuer: Studio Bellavista Sagl
+    document_jurisdiction: null
 
 - id: policy-en-code-1
   type: policy
@@ -199,6 +207,7 @@
     document_date: "2025-02-12"
     document_reference_number: null
     document_issuer: Brightwater Analytics Ltd
+    document_jurisdiction: null
 
 - id: policy-de-handbook-2
   type: policy
@@ -225,3 +234,31 @@
     document_date: "2025-01-01"
     document_reference_number: null
     document_issuer: Muster Treuhand GmbH
+    document_jurisdiction: null
+
+- id: terms-it-1
+  type: policy
+  title: Condizioni_generali_Ticinonet_2025.pdf
+  note: Italian general terms and conditions set rules for customers and name their place of jurisdiction.
+  text: |
+    # Condizioni generali di contratto
+    Ticinonet SA · Edizione aprile 2025
+
+    ## 1. Campo d'applicazione
+    Le presenti condizioni si applicano a tutti i servizi internet e di telefonia forniti da Ticinonet SA ai suoi
+    clienti privati e commerciali.
+
+    ## 2. Fatturazione
+    Le fatture sono pagabili entro 20 giorni. In caso di ritardo, Ticinonet SA può sospendere il servizio dopo un
+    richiamo.
+
+    ## 3. Disdetta
+    Gli abbonamenti possono essere disdetti per la fine di ogni mese con un preavviso di 30 giorni.
+
+    ## 4. Diritto applicabile e foro
+    Si applica il diritto svizzero. Foro competente è Bellinzona.
+  expected:
+    document_date: "2025-04-01"
+    document_reference_number: null
+    document_issuer: Ticinonet SA
+    document_jurisdiction: Bellinzona

@@ -86,15 +86,21 @@ rest, where totals and payment terms often stand.
   manuals, rules and e-mail histories customers hold. Pro-forma invoices are offers. A `letter` is a single letter or
   e-mail, a conversation of several is an `email_thread`. Policies, guidelines, directives, staff handbooks that set
   rules and general terms and conditions are a `policy`; meeting minutes, presentations, forms and tenders stay `other`.
-  Five attributes came with them (`document_valid_until`, `document_notice_period`, `document_service_levels`,
-  `document_product` for documentation and `document_participants` for threads); a contract's or SLA's issuer is the
-  party that provides the service, so issuer and recipient filters keep working across types. `document_parties` is
-  derived from issuer, recipient and participants, and applies to a type that has any of them, so one parties filter
-  finds a company's invoices and its conversations alike. Only `other`'s version rose: invoices keep theirs, since none
-  of the new types was carved out of `invoice`.
-- Classification stays one call per document. On 154 synthetic documents (8 to 21 per type) every type reached 100%
+  Six attributes came with them (`document_valid_until`, `document_notice_period`, `document_service_levels`,
+  `document_product` for documentation, `document_participants` for threads and `document_jurisdiction` for contracts,
+  SLAs and policies, the place of jurisdiction that Azure's contract model, CUAD and the Microsoft 365 contract model
+  all extract); a contract's or SLA's issuer is the party that provides the service, so issuer and recipient filters
+  keep working across types. `document_parties` is derived from issuer, recipient and participants, and applies to a
+  type that has any of them, so one parties filter finds a company's invoices and its conversations alike. Only
+  `other`'s version rose: invoices keep theirs, since none of the new types was carved out of `invoice`. A contract's or
+  SLA's term stores the end it states when it states only one: a single date next to "ab", "in Kraft", "prend effet" or
+  "from", or in a term "auf unbestimmte Zeit", is its start, and one next to "endet", "bis" or "until" its end, so
+  "contracts ending in 2026" finds every contract that names its end. Without such a word a single date stays the whole
+  period, as for an invoice's date of supply. The parser, not the model, decides which end it is, so the change raised
+  only the normalizer's version.
+- Classification stays one call per document. On 156 synthetic documents (8 to 21 per type) every type reached 100%
   recall and precision, and every attribute stayed under 2% wrong or guessed, in two runs in a row, so a second,
-  type-specific extraction call is not worth doubling the cost. The prompt grew from about 4,800 to 19,300 characters:
+  type-specific extraction call is not worth doubling the cost. The prompt grew from about 4,800 to 19,900 characters:
   on the short synthetic documents about 4,400 prompt tokens and a median of 3 to 8 s per document (the provider's
   latency varied between runs), against 1,070 tokens and 1.4 s with only invoices. Types sharing an attribute's meaning
   are named together in the prompt, so it grows with the meanings that differ.
@@ -102,7 +108,11 @@ rest, where totals and payment terms often stand.
   and misses the 2% target on its own. Both reached it only after their meanings named what the model otherwise added:
   neither a handbook's own title nor a work process it describes is a product, and a participant includes the company a
   signature names but never a party a message only mentions. A name the document writes only inside an e-mail address is
-  dropped in code, since the model builds names from mailbox domains.
+  dropped in code, since the model builds names from mailbox domains. Likewise a place of jurisdiction is kept only
+  where its line, or the heading above it, names a court: the model took one from a party's address or the place of
+  signing in about one run in two, and with 31 documents that have the attribute one slip is 3.2%. A period's end is
+  decided by the words around the date in the copy or, when the model copied the date alone, in the document line it
+  came from.
 - A backfill on the dev stack's 12 documents classified a rule-setting IT security guideline with a version number as
   `documentation`; the synthetic sample had no guideline titled like one. `documentation` now excludes policies,
   guidelines and directives that set rules. They first went to `other`, which put the same backfill's rule-based

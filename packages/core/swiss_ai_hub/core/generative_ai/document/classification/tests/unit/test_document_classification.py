@@ -49,6 +49,7 @@ _ANSWER: dict[str, Any] = {
     "document_service_levels": None,
     "document_product": None,
     "document_participants": None,
+    "document_jurisdiction": None,
 }
 
 
@@ -268,6 +269,50 @@ def test_documentation_stores_the_product_it_documents() -> None:
     assert values["document_date"] == "2025-03-01"
     assert values["document_date_precision"] == "month"
     assert "document_parties" not in values
+
+
+def test_a_contract_running_until_terminated_stores_its_start_alone() -> None:
+    text = (
+        "# Mietvertrag\nPilatus Logistik AG vermietet der Bergwerk Bau AG einen Lagerplatz.\n"
+        "Das Mietverhältnis beginnt am 1. Juli 2025 und läuft auf unbestimmte Zeit.\nGerichtsstand ist Luzern."
+    )
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.CONTRACT,
+        "secondary_types": [],
+        "document_issuer": "Pilatus Logistik AG",
+        "document_recipient": "Bergwerk Bau AG",
+        "document_period": "beginnt am 1. Juli 2025 und läuft auf unbestimmte Zeit",
+        "document_jurisdiction": "Luzern",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_period_start"] == "2025-07-01"
+    assert values["document_period_end"] is None
+    assert values["document_jurisdiction"] == "Luzern"
+
+
+@pytest.mark.parametrize(
+    ("text", "stored"),
+    [
+        ("# SLA\nKestrel AG, Seefeldstrasse 101, 8008 Zürich\nZürich, 18 March 2026", None),
+        ("# SLA\nKestrel AG, 8008 Zürich\nThe courts of Zürich have exclusive jurisdiction.", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\n## 4. Gerichtsstand\nZürich", "Zürich"),
+    ],
+)
+def test_a_jurisdiction_is_kept_only_where_a_clause_names_a_court(text: str, stored: str | None) -> None:
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.SERVICE_LEVEL_AGREEMENT,
+        "secondary_types": [],
+        "document_jurisdiction": "Zürich",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_jurisdiction"] == stored
+    assert values["document_jurisdiction_raw"] == "Zürich"
 
 
 def test_an_offer_reads_its_validity_as_a_date() -> None:

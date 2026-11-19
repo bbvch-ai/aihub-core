@@ -34,6 +34,11 @@ class DocumentValueNormalizer:
     VERSION: ClassVar[int] = 3
     _SLASH_DATE: ClassVar[re.Pattern[str]] = re.compile(r"\b(\d{1,2})/(\d{1,2})/(?:\d{4}|\d{2})\b")
     _E_MAIL: ClassVar[re.Pattern[str]] = re.compile(r"<?[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+>?")
+    _JURISDICTION_CLAUSE: ClassVar[re.Pattern[str]] = re.compile(
+        r"gerichtsstand|\ble for\b|\bfor (?:juridique|exclusif|est)\b|\bforo\b|\bcourts?\b|jurisdiction|juridiction|"
+        r"tribunal|giurisdizion",
+        re.IGNORECASE,
+    )
     _NAMES: ClassVar[frozenset[DocumentAttribute]] = frozenset(
         {DocumentAttribute.ISSUER, DocumentAttribute.RECIPIENT, DocumentAttribute.PARTICIPANTS}
     )
@@ -49,10 +54,11 @@ class DocumentValueNormalizer:
         for definition in applicable:
             if not definition.is_derived:
                 raw = cls._located(getattr(answer, definition.attribute.value), document_text)
-                values |= cls._stored(definition, raw, slash_order)
+                values |= cls._stored(definition, raw, slash_order, document_text)
         cls._complete_currency(values)
         cls._drop_own_number(values)
         cls._drop_names_only_in_addresses(values, document_text)
+        cls._drop_jurisdiction_outside_its_clause(values, document_text)
         for definition in applicable:
             if definition.is_derived:
                 values[definition.key] = cls._derived(definition, values)
@@ -98,7 +104,11 @@ class DocumentValueNormalizer:
 
     @classmethod
     def _stored(
-        cls, definition: DocumentAttributeDefinition, raw: _Raw, slash_order: SlashDateOrder | None
+        cls,
+        definition: DocumentAttributeDefinition,
+        raw: _Raw,
+        slash_order: SlashDateOrder | None,
+        document_text: str,
     ) -> dict[str, Any]:
         match definition.value_type:
             case AttributeValueType.DATE:
@@ -110,9 +120,11 @@ class DocumentValueNormalizer:
                 }
             case AttributeValueType.PERIOD:
                 period = PeriodTextParser.parse(raw, slash_order)
+                context = RawValueLocator.line_of(raw, document_text) if isinstance(raw, str) else None
+                states_start, states_end = PeriodTextParser.stated_ends(raw, slash_order, context)
                 return {
-                    definition.start_key: period.start.isoformat() if period else None,
-                    definition.end_key: period.end.isoformat() if period else None,
+                    definition.start_key: period.start.isoformat() if period and states_start else None,
+                    definition.end_key: period.end.isoformat() if period and states_end else None,
                     definition.raw_key: raw,
                     definition.precision_key: period.precision.value if period else None,
                 }
@@ -141,6 +153,17 @@ class DocumentValueNormalizer:
         if raw is None or not cls._E_MAIL.search(raw):
             return raw
         return cls._E_MAIL.sub("", raw).strip(" ,;:()<>\"'") or None
+
+    @classmethod
+    def _drop_jurisdiction_outside_its_clause(cls, values: dict[str, Any], document_text: str) -> None:
+        """A place counts only where a clause or its heading names a court, since models take one from an address or
+        the place a document was signed."""
+        place = values.get(DocumentAttribute.JURISDICTION.value)
+        if not isinstance(place, str):
+            return
+        passages = RawValueLocator.passages_holding(place, document_text, 2)
+        if not any(cls._JURISDICTION_CLAUSE.search(passage) for passage in passages):
+            values[DocumentAttribute.JURISDICTION.value] = None
 
     @classmethod
     def _drop_names_only_in_addresses(cls, values: dict[str, Any], document_text: str) -> None:

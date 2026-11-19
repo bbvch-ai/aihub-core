@@ -5,7 +5,7 @@
 - id: other-de-1
   type: contract
   title: Arbeitsvertrag_Muster.pdf
-  note: An employment contract with only a start date stores no period; the employer is the issuer and the salary the total.
+  note: An employment contract with only a start date stores that start alone; the employer is the issuer and the salary the total.
   text: |
     # Arbeitsvertrag
 
@@ -22,10 +22,11 @@
     document_recipient: Simon Graf
     document_total_amount: 5600.00
     document_currency: CHF
-    document_period_start: null
+    document_period_start: "2025-04-01"
     document_period_end: null
     document_related_references: null
     document_notice_period: null
+    document_jurisdiction: null
 
 - id: contract-de-1
   type: contract
@@ -84,11 +85,12 @@
     document_period_end: "2028-12-31"
     document_related_references: [OF-2025-0912]
     document_notice_period: null
+    document_jurisdiction: Bern
 
 - id: contract-de-2
   type: contract
   title: Mietvertrag_Geschaeftsraeume_Hertensteinstrasse.pdf
-  note: A rental agreement running until terminated stores no period; the landlord is the issuer and the notice period is copied as written.
+  note: A rental agreement running until terminated stores its start alone; the landlord is the issuer and the notice period is copied as written.
   text: |
     # Mietvertrag für Geschäftsräume
     Mietvertrag Nr. MV-0457-12
@@ -127,15 +129,16 @@
     document_recipient: Praxis Keller Physiotherapie GmbH
     document_total_amount: 2950.00
     document_currency: CHF
-    document_period_start: null
+    document_period_start: "2025-07-01"
     document_period_end: null
     document_related_references: null
     document_notice_period: 6 Monaten auf Ende eines Kalenderquartals
+    document_jurisdiction: null
 
 - id: contract-de-3
   type: contract
   title: Nachtrag_N-2026-02_zu_RV-2023-118.pdf
-  note: An amendment (Nachtrag) is a contract; the contract it amends is a related reference and its effective date alone is no period.
+  note: An amendment (Nachtrag) is a contract; the contract it amends is a related reference and the date it takes effect is the start of its term.
   text: |
     # Tessera Systems AG
     Grabenstrasse 9, 6300 Zug · UID CHE-870.633.396
@@ -167,10 +170,11 @@
     document_recipient: Hollenstein Transporte AG
     document_total_amount: 7800.00
     document_currency: CHF
-    document_period_start: null
+    document_period_start: "2026-03-01"
     document_period_end: null
     document_related_references: [RV-2023-118, N-2024-01]
     document_notice_period: null
+    document_jurisdiction: null
 
 - id: contract-fr-1
   type: contract
@@ -215,6 +219,7 @@
     document_period_end: "2026-12-31"
     document_related_references: null
     document_notice_period: trois mois avant son échéance
+    document_jurisdiction: Lausanne
 
 - id: contract-it-1
   type: contract
@@ -241,6 +246,9 @@
     ### Art. 3 – Corrispettivo
     Il corrispettivo ammonta a CHF 4'250.00 mensili, IVA esclusa.
 
+    ### Art. 4 – Foro competente
+    Per ogni controversia il foro competente è Lugano.
+
     Lugano, 9 gennaio 2026
 
     L'Appaltatore: Splendor Servizi Sagl — Il Committente: Residenza Al Lago SA
@@ -255,11 +263,12 @@
     document_period_end: null
     document_related_references: [OF-2025-388]
     document_notice_period: 2 mesi per la fine di un mese
+    document_jurisdiction: Lugano
 
 - id: contract-en-1
   type: contract
   title: Software_Licence_Agreement_LA-2025-0219.pdf
-  note: An English software licence agreement; the licensor is the issuer and the annual licence fee the total.
+  note: An English software licence agreement; the licensor is the issuer and the annual licence fee the total; a governing law without a court stores no jurisdiction.
   text: |
     # SOFTWARE LICENCE AGREEMENT
     Agreement No. LA-2025-0219
@@ -300,6 +309,7 @@
     document_period_end: "2027-12-31"
     document_related_references: null
     document_notice_period: not less than 90 days' written notice
+    document_jurisdiction: null
 
 - id: contract-fr-2
   type: contract
@@ -353,11 +363,12 @@
     document_period_end: "2029-03-31"
     document_related_references: null
     document_notice_period: au moins six mois avant l'échéance
+    document_jurisdiction: null
 
 - id: contract-en-2
   type: contract
   title: Consulting_Agreement_CA-2026-005.pdf
-  note: A consulting agreement that starts on a date and runs until the services are completed stores no period; the fixed fee is the contract value.
+  note: A consulting agreement that starts on a date and runs until the services are completed stores its start alone; the fixed fee is the contract value.
   text: |
     # Northgate Advisory GmbH
     Bahnhofstrasse 7, 6300 Zug · UID CHE-218.906.929
@@ -385,7 +396,46 @@
     document_recipient: Velora Pharma AG
     document_total_amount: 64500.00
     document_currency: CHF
-    document_period_start: null
+    document_period_start: "2026-02-01"
     document_period_end: null
     document_related_references: [P-2025-311]
     document_notice_period: 30 days' written notice
+    document_jurisdiction: null
+
+- id: contract-de-4
+  type: contract
+  title: Mietvertrag_Lagerplatz_Kriens.pdf
+  note: A contract that names only its end stores the end alone; the place of jurisdiction is copied as written.
+  text: |
+    # Mietvertrag für einen Lagerplatz
+
+    zwischen der Pilatus Logistik AG, Industriestrasse 12, 6010 Kriens (Vermieterin)
+    und der Bergwerk Bau AG, Seetalstrasse 40, 6020 Emmenbrücke (Mieterin)
+
+    ## 1. Mietobjekt
+    Aussenlagerplatz Nr. 7, 400 m², Industriestrasse 12, Kriens.
+
+    ## 2. Mietzins
+    CHF 1'800.00 pro Monat, zahlbar im Voraus auf den Ersten des Monats.
+
+    ## 3. Dauer
+    Das Mietverhältnis ist fest vereinbart und endet ohne Kündigung am 30. Juni 2027.
+
+    ## 4. Gerichtsstand
+    Gerichtsstand ist Luzern. Es gilt schweizerisches Recht.
+
+    Kriens, 3. Februar 2026
+
+    Pilatus Logistik AG — Bergwerk Bau AG
+  expected:
+    document_date: "2026-02-03"
+    document_reference_number: null
+    document_issuer: Pilatus Logistik AG
+    document_recipient: Bergwerk Bau AG
+    document_total_amount: 1800.00
+    document_currency: CHF
+    document_period_start: null
+    document_period_end: "2027-06-30"
+    document_related_references: null
+    document_notice_period: null
+    document_jurisdiction: Luzern

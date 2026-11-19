@@ -787,11 +787,13 @@ last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadat
 - **The model copies, code reads.** `DocumentValueNormalizer` drops copied text that `RawValueLocator` cannot find in
   the whole document, stores no attribute the type lacks, and reads dates (`DateTextParser`; a slash date both orders
   allow only in the order `SlashDateOrder` the normaliser settles from the document's unambiguous slash dates, else day
-  first unless the currency is USD, a bare `$` or unknown), periods, amounts (Swiss, EU and English separators),
-  currencies (a bare `$` stays unread) and tax IDs (a Swiss UID must pass its check digit). Names (issuer, recipient, a
-  thread's participants) lose any e-mail address copied with them; a bare address is stored empty. `document_parties` is
-  derived from issuer, recipient and participants, and a type lists it when it has any of them. Each attribute keeps its
-  copy under `<key>_raw`, dates their `<key>_precision`, and an unreadable copy has an empty value.
+  first unless the currency is USD, a bare `$` or unknown), periods (`PeriodTextParser.stated_ends`: a single date next
+  to "ab", "in Kraft" or "from", or in a term "auf unbestimmte Zeit", is only the start, next to "endet", "bis" or
+  "until" only the end), amounts (Swiss, EU and English separators), currencies (a bare `$` stays unread) and tax IDs (a
+  Swiss UID must pass its check digit). Names (issuer, recipient, a thread's participants) lose any e-mail address
+  copied with them; a bare address is stored empty. `document_parties` is derived from issuer, recipient and
+  participants, and a type lists it when it has any of them. Each attribute keeps its copy under `<key>_raw`, dates
+  their `<key>_precision`, and an unreadable copy has an empty value.
 - **Versions, at the narrowest level.** Each re-classified document costs a model call, so raise only what a change
   needs. A type's `DocumentTypeDefinition.version` when only its documents could be classified differently, and
   `OTHER`'s when a type is added or narrowed: only `other` documents can move into the new one.

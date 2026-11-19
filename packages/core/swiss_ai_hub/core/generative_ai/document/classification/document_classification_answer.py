@@ -38,3 +38,4 @@ class DocumentClassificationAnswer(BaseModel):
     document_participants: Annotated[
         list[str] | None, Field(description="Name of each person or organisation writing or addressed")
     ]
+    document_jurisdiction: Annotated[str | None, Field(description="Text of the place of jurisdiction")]
