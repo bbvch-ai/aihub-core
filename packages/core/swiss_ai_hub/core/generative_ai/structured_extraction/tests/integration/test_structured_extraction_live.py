@@ -389,7 +389,9 @@ async def test_a_misread_supplier_name_with_the_right_name_elsewhere_is_not_skip
     assert match.verdict in ("yes", "unsure"), match
 
 
-_OTHER_SUPPLIER_HEADER = "# Invoice 2025-314\n\nSupplier: Kestrel Mietwagen GmbH, Bahnhofstrasse 4, 8001 Zürich\nDate: 2025-03-14\n\n"
+_OTHER_SUPPLIER_HEADER = (
+    "# Invoice 2025-314\n\nSupplier: Kestrel Mietwagen GmbH, Bahnhofstrasse 4, 8001 Zürich\nDate: 2025-03-14\n\n"
+)
 
 
 @pytest.mark.asyncio
