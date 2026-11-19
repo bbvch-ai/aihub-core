@@ -1230,3 +1230,54 @@ userFiles:
     uploaded: '{count} fichier(s) envoyé(s)'
     uploadFailed: Échec de l'envoi
     changeFailed: La modification a échoué
+token:
+  title: Jetons API
+  intro: Les jetons personnels permettent à des scripts et à des intégrations d'appeler l'API REST en votre nom, avec vos
+    propres autorisations. Un jeton fonctionne dans tous les locataires dont vous faites partie, jusqu'à son expiration ou
+    sa révocation.
+  list:
+    name: Nom
+    created: Créé le
+    expires: Expire le
+    last_used: Dernière utilisation
+    never_used: Jamais utilisé
+    empty: Vous n'avez encore aucun jeton API.
+  status:
+    active: Actif
+    expiring: Expire bientôt
+    expired: Expiré
+  create:
+    button: Générer un jeton
+    title: Générer un jeton API
+    name:
+      label: Nom
+      placeholder: p. ex. script de reporting
+      help: Vous aide à reconnaître le jeton plus tard, par exemple au script ou à l'intégration qui l'utilise.
+    expiry:
+      label: Expire après
+      preset_30: 30 jours
+      preset_90: 90 jours
+      preset_180: 6 mois
+      preset_365: 1 an
+      custom: Date personnalisée
+      custom_placeholder: Choisir une date d'expiration
+      help: Le jeton cessera de fonctionner le {date}.
+    cancel: Annuler
+    submit: Générer
+    error: Le jeton n'a pas pu être généré. Veuillez réessayer.
+  created:
+    title: Copiez votre nouveau jeton
+    warning: Le jeton n'est affiché qu'une seule fois. Copiez-le maintenant et conservez-le en lieu sûr. Si vous le perdez,
+      révoquez-le et générez-en un nouveau.
+    copy: Copier
+    copied: Copié
+    usage: 'Envoyez-le avec chaque requête API dans l''en-tête Authorization: Bearer <token>.'
+    done: Terminé
+  revoke:
+    button: Révoquer
+    confirm: Révoquer ce jeton ?
+    explanation: Tout ce qui utilise encore « {name} » perd immédiatement l'accès. Cette action est irréversible.
+    cancel: Annuler
+    proceed: Révoquer
+    success: Jeton révoqué
+    error: Le jeton n'a pas pu être révoqué

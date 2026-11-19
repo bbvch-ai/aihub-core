@@ -1234,3 +1234,53 @@ userFiles:
     uploaded: '{count} Datei(en) hochgeladen'
     uploadFailed: Hochladen fehlgeschlagen
     changeFailed: Die Änderung ist fehlgeschlagen
+token:
+  title: API-Token
+  intro: Mit persönlichen Token rufen Skripte und Integrationen die REST API in Ihrem Namen und mit Ihren Berechtigungen auf.
+    Ein Token gilt in allen Mandanten, denen Sie angehören, bis es abläuft oder Sie es widerrufen.
+  list:
+    name: Name
+    created: Erstellt
+    expires: Läuft ab
+    last_used: Zuletzt verwendet
+    never_used: Nie verwendet
+    empty: Sie haben noch keine API-Token.
+  status:
+    active: Aktiv
+    expiring: Läuft bald ab
+    expired: Abgelaufen
+  create:
+    button: Token generieren
+    title: API-Token generieren
+    name:
+      label: Name
+      placeholder: z. B. Reporting-Skript
+      help: Damit erkennen Sie das Token später wieder, etwa am Skript oder an der Integration, die es verwendet.
+    expiry:
+      label: Läuft ab nach
+      preset_30: 30 Tagen
+      preset_90: 90 Tagen
+      preset_180: 6 Monaten
+      preset_365: 1 Jahr
+      custom: Eigenes Datum
+      custom_placeholder: Ablaufdatum wählen
+      help: Das Token läuft am {date} ab.
+    cancel: Abbrechen
+    submit: Generieren
+    error: Das Token konnte nicht generiert werden. Bitte versuchen Sie es erneut.
+  created:
+    title: Neues Token kopieren
+    warning: Das Token wird nur dieses eine Mal angezeigt. Kopieren Sie es jetzt und bewahren Sie es sicher auf. Wenn Sie
+      es verlieren, widerrufen Sie es und generieren Sie ein neues.
+    copy: Kopieren
+    copied: Kopiert
+    usage: 'Senden Sie es bei jeder API-Anfrage im Header Authorization: Bearer <token>.'
+    done: Fertig
+  revoke:
+    button: Widerrufen
+    confirm: Dieses Token widerrufen?
+    explanation: Alles, was «{name}» noch verwendet, verliert sofort den Zugriff. Dies kann nicht rückgängig gemacht werden.
+    cancel: Abbrechen
+    proceed: Widerrufen
+    success: Token widerrufen
+    error: Das Token konnte nicht widerrufen werden
