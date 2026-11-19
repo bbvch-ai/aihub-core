@@ -9,6 +9,13 @@ tenant_admin:
   save: Salva
   save_error: Impossibile salvare il tenant. Riprova.
   tenant_id: ID del tenant
+  llm_usage:
+    title: Utilizzo LLM
+    open: Utilizzo LLM
+    open_tenant: Apri in LiteLLM
+    pick_tenant: 'In LiteLLM, passa a Customer Usage e seleziona il cliente «{name}».
+      Il suo ID:'
+    chf_note: Gli importi sono in CHF, anche se LiteLLM li mostra con «$».
   navigation:
     overview: Panoramica
     roles: Ruoli

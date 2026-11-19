@@ -24,6 +24,12 @@ export default defineNuxtConfig({
       mainApp: {
         url: process.env.ENV == 'dev' ? (process.env.MAIN_APP_URL ?? 'http://localhost:3333') : '',
       },
+      // LiteLLM's admin origin, for the links to its usage views
+      // (`useLiteLlmUsage`). Empty hides the links. Populated in prod from
+      // LITELLM_ADMIN_URL on window.__AIHUB_CONFIG__ (/config.js).
+      litellm: {
+        url: process.env.ENV == 'dev' ? (process.env.LITELLM_ADMIN_URL ?? 'http://localhost:4000') : '',
+      },
     },
   },
   compatibilityDate: '2024-12-03',
