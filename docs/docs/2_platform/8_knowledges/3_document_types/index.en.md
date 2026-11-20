@@ -98,8 +98,10 @@ Where an attribute means something specific for a type:
   it is: a contract that begins on a date and runs until terminated ("ab 1. Juli 2025", "tritt am 1. März 2026 in
   Kraft", "prend effet le", "from") stores only its start, and one that names only its end ("endet am 30. Juni 2027",
   "until") only its end. Only words in the date's own sentence count. So "contracts ending in 2026" finds every contract
-  that states its end, and the date it was signed is never its start. Every other type's period stays whole, whatever
-  words stand near it.
+  that states its end, and the date it was signed is never its start. A contract that states its start and its end on
+  lines of their own ("Vertragsbeginn 1. April 2025", "Vertragsende 31. März 2028") keeps both, when every date the model
+  names is in the document; a word the model adds to a date is not read, only the date's own line. Every other type's
+  period stays whole, whatever words stand near it.
 - **Valid until**, **notice period** and **service levels** are new with these types: the date an offer is valid until;
   the notice period of a contract or SLA, kept as written; and up to five service levels an SLA commits to, copied as
   written ("Verfügbarkeit 99,9 % pro Monat").
@@ -204,6 +206,10 @@ mismatch. An attribute that does not apply to a type is not stored on documents 
 Rules that keep values from being guessed:
 
 - **Not in the document, not stored.** Text the model copied that the document does not contain is dropped.
+- **A template's gap is no value.** A copy holding an unfilled placeholder (`[YYYY]`, `[####]`, `______`, an empty box)
+  is stored empty, so a half-filled template does not file "NW-SLA-[YYYY]-[####]" as its number.
+- **Stored text uses plain letters.** A ligature a PDF writes as one character ("ﬀ" in "Schaﬀhausen") is stored as its
+  letters, so a filter for "Schaffhausen" finds it; the copied text is kept as written.
 - **Ambiguous dates are read only in the document's own order.** Dates with dots or dashes are read day first. A slash
   date such as `03/04/2025` could be March or April. The document's other slash dates settle it when one of them allows
   only one order (`17/11/2025` is day first, `11/17/2025` month first). Without such a date, it is read day first on a

@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: 34e4faf7f40702e5ad0dcd3c38be57f1101ce6e1c5a952f5075a531dba6c663b
+source_sha: 24866a04322fac27389742517d1fd2dd24cf9376e49ed09b4408404d58bf6c81
 ---
 
 # Dokumenttypen und Attribute
@@ -102,8 +102,11 @@ Wo ein Attribut für einen Typ etwas Bestimmtes bedeutet:
   daneben sagt, welches Ende es ist: Ein Vertrag, der an einem Datum beginnt und bis zur Kündigung läuft («ab 1. Juli
   2025», «tritt am 1. März 2026 in Kraft», «prend effet le», «from»), speichert nur seinen Beginn, und einer, der nur
   sein Ende nennt («endet am 30. Juni 2027», «until»), nur sein Ende. Es zählen nur Wörter im Satz des Datums. So findet
-  «Verträge, die 2026 enden» jeden Vertrag, der sein Ende nennt, und das Unterzeichnungsdatum ist nie sein Beginn. Der
-  Zeitraum jedes anderen Typs bleibt ganz, welche Wörter auch daneben stehen.
+  «Verträge, die 2026 enden» jeden Vertrag, der sein Ende nennt, und das Unterzeichnungsdatum ist nie sein Beginn. Ein
+  Vertrag, der Beginn und Ende auf eigenen Zeilen nennt («Vertragsbeginn 1. April 2025», «Vertragsende 31. März 2028»),
+  behält beide, sofern jedes Datum, das das Modell nennt, im Dokument steht; ein Wort, das das Modell einem Datum
+  hinzufügt, wird nicht gelesen, nur die eigene Zeile des Datums. Der Zeitraum jedes anderen Typs bleibt ganz, welche
+  Wörter auch daneben stehen.
 - **Gültig bis**, **Kündigungsfrist** und **Service Levels** sind mit diesen Typen neu: das Datum, bis zu dem eine
   Offerte gilt; die Kündigungsfrist eines Vertrags oder SLA, wie geschrieben aufbewahrt; und bis zu fünf Service Levels,
   die ein SLA zusagt, wie geschrieben übernommen («Verfügbarkeit 99,9 % pro Monat»).
@@ -217,6 +220,12 @@ Regeln, die verhindern, dass Werte geraten werden:
 
 - **Nicht im Dokument, nicht gespeichert.** Text, den das Modell übernommen hat, der im Dokument aber nicht vorkommt,
   wird verworfen.
+- **Eine Lücke einer Vorlage ist kein Wert.** Eine Kopie mit einem nicht ausgefüllten Platzhalter (`[YYYY]`, `[####]`,
+  `______`, ein leeres Kästchen) wird leer gespeichert, damit eine halb ausgefüllte Vorlage nicht «NW-SLA-[YYYY]-[####]»
+  als Nummer erhält.
+- **Gespeicherter Text verwendet einfache Buchstaben.** Eine Ligatur, die ein PDF als ein Zeichen schreibt («ﬀ» in
+  «Schaﬀhausen»), wird als ihre Buchstaben gespeichert, sodass ein Filter auf «Schaffhausen» sie findet; der kopierte
+  Text bleibt wie geschrieben.
 - **Mehrdeutige Daten werden nur in der Reihenfolge des Dokuments gelesen.** Daten mit Punkten oder Bindestrichen werden
   mit dem Tag zuerst gelesen. Ein Datum mit Schrägstrichen wie `03/04/2025` kann März oder April sein. Die übrigen
   Schrägstrich-Daten des Dokuments entscheiden, wenn eines davon nur eine Reihenfolge zulässt (`17/11/2025`: Tag zuerst,

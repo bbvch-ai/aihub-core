@@ -69,10 +69,13 @@ class DateTextParser:
 
     @classmethod
     def normalized(cls, raw: str) -> str:
-        """Lower case, ordinals ("1er", "1st") reduced to their number, and every dash read as a hyphen."""
+        """Lower case, ordinals ("1er", "1st", "1°") reduced to their number, and every dash read as a hyphen.
+
+        NFKC turns the ordinal sign "º" into "o"; Italian writes the first of a month with it or with the degree sign.
+        """
         text = unicodedata.normalize("NFKC", raw).lower()
         text = re.sub(r"[‐-―−]", "-", text)
-        text = re.sub(r"\b(\d{1,2})(?:er|re|st|nd|rd|th|º)\b", r"\1", text)
+        text = re.sub(r"\b(\d{1,2})(?:(?:er|re|st|nd|rd|th|o)\b|°)", r"\1", text)
         return re.sub(r"\s+", " ", text).strip()
 
     @classmethod

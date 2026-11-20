@@ -224,7 +224,7 @@
 - id: contract-it-1
   type: contract
   title: contratto_servizi_pulizia_CS-25-017.pdf
-  note: An Italian cleaning services contract; its term is written with the ordinal "1°", which no parser reads, so no period is stored.
+  note: An Italian cleaning services contract; its term is written with the ordinal "1°", which is read like "1".
   text: |
     # Splendor Servizi Sagl
     Via Cantonale 14, 6928 Manno · IDI CHE-767.720.120
@@ -259,8 +259,8 @@
     document_recipient: Residenza Al Lago SA
     document_total_amount: 4250.00
     document_currency: CHF
-    document_period_start: null
-    document_period_end: null
+    document_period_start: "2026-02-01"
+    document_period_end: "2027-01-31"
     document_related_references: [OF-2025-388]
     document_notice_period: 2 mesi per la fine di un mese
     document_jurisdiction: Lugano

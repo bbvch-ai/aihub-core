@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from typing import ClassVar
 
 from swiss_ai_hub.core.generative_ai.document.classification.date_precision import DatePrecision
@@ -66,6 +67,8 @@ class PeriodTextParser:
         rf"(?:\b\d{{1,2}}\W{{0,2}}\s*)?\b(?:{_P.MONTH_PATTERN})\b"
     )
     _YEAR: ClassVar[re.Pattern[str]] = re.compile(r"\b\d{4}\b")
+    _ORDINAL: ClassVar[re.Pattern[str]] = re.compile(r"\b(\d{1,2})((?:er|re|st|nd|rd|th|o)\b|°)", re.IGNORECASE)
+    """An ordinal suffix, blanked out at its own length so a date is found where the text writes "1er" or "1°"."""
     _REACH: ClassVar[int] = 60
     _SENTENCE_END: ClassVar[re.Pattern[str]] = re.compile(r"(?:(?<=\w{4})(?<!inkl)(?<!zzgl)\.|[!?;])\s")
     """A full stop after a word of four letters or more ends a sentence; shorter words ("ca.", "Nr.", "z. B.") and
@@ -87,6 +90,27 @@ class PeriodTextParser:
         if len(dates) + len(cls._MONTH_NAME.findall(cls._without_full_dates(text))) >= 2:
             return None
         return DateTextParser.parse(raw, slash_order)
+
+    @classmethod
+    def dates_written(cls, raw: str) -> list[str]:
+        """Each complete date in the text as written, in order, so each can be checked against the document."""
+        text = unicodedata.normalize("NFKC", raw)
+        searched = cls._ORDINAL.sub(lambda match: match[1] + " " * len(match[2]), text)
+        spans = sorted(
+            {
+                (match.start(), match.end())
+                for pattern in cls._FULL_DATE_PATTERNS
+                for match in re.finditer(pattern.pattern, searched, re.IGNORECASE)
+            }
+        )
+        kept: list[tuple[int, int]] = []
+        for start, end in spans:
+            if kept and start < kept[-1][1]:
+                if end - start > kept[-1][1] - kept[-1][0]:
+                    kept[-1] = (start, end)
+                continue
+            kept.append((start, end))
+        return [text[start:end] for start, end in kept]
 
     @classmethod
     def stated_ends(
