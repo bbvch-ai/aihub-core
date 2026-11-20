@@ -557,6 +557,11 @@ document:
     number_of_pages: Anzahl der Seiten
     download: Download
     is_processing: Verarbeitung läuft
+    ingestion_retrying: Neuer Versuch
+    ingestion_retrying_hint: Die Verarbeitung ist {count}-mal fehlgeschlagen. Sie wird automatisch wiederholt.
+    ingestion_failed: Verarbeitung fehlgeschlagen
+    ingestion_failed_hint: Die Verarbeitung ist {count}-mal fehlgeschlagen und wird nicht mehr wiederholt. Sie
+      wird erneut versucht, wenn sich die Datei ändert oder die Pipeline aktualisiert wird.
     actions: Aktionen
     selected_count: '{count} Dokument(e) ausgewählt'
   delete:

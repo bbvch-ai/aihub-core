@@ -56,14 +56,15 @@
             />
           </div>
           <div
-            v-else-if="!data.is_ingested"
+            v-else-if="ingestionTag(data)"
             class="flex items-center gap-2"
           >
             <Tag
-              :value="t('document.list.is_processing')"
+              v-tooltip.top="ingestionTag(data)?.hint"
+              :value="ingestionTag(data)?.label"
               size="small"
-              icon="pi pi-clock"
-              severity="info"
+              :icon="ingestionTag(data)?.icon"
+              :severity="ingestionTag(data)?.severity"
             />
           </div>
         </div>
@@ -164,6 +165,34 @@ const checkedDocuments = ref<DocumentDto[]>([])
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
 
 const isDocumentDeleting = (document: DocumentDto) => isScheduled(document.id)
+
+type IngestionTag = { label: string, icon: string, severity: 'info' | 'warn' | 'danger', hint?: string }
+
+// A failed document must not look like one still on its way: the pipeline retries it a few times, then stops
+// until the file changes or the pipeline is updated, and only that last state needs someone's attention.
+const ingestionTag = (document: DocumentDto): IngestionTag | null => {
+  const attempts = document.ingestion_failed_attempts ?? 1
+  switch (document.ingestion_state) {
+    case 'processing':
+      return { label: t('document.list.is_processing'), icon: 'pi pi-clock', severity: 'info' }
+    case 'retrying':
+      return {
+        label: t('document.list.ingestion_retrying'),
+        icon: 'pi pi-refresh',
+        severity: 'warn',
+        hint: t('document.list.ingestion_retrying_hint', { count: attempts }),
+      }
+    case 'failed':
+      return {
+        label: t('document.list.ingestion_failed'),
+        icon: 'pi pi-exclamation-triangle',
+        severity: 'danger',
+        hint: t('document.list.ingestion_failed_hint', { count: attempts }),
+      }
+    default:
+      return null
+  }
+}
 
 // Deleting is safe at any stage of ingestion: the API only removes the source file, and the pipeline
 // drops the document's partition before the remove job touches any store, which aborts an in-flight
