@@ -1,12 +1,18 @@
 import hashlib
 import hmac
 import logging
+import re
+import time
+from typing import ClassVar
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
+from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_signature_rejected_error import (
+    OpenWebuiSignatureRejectedError,
+)
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
@@ -19,9 +25,13 @@ class OpenWebuiAuthHandler(AuthHandler):
     """
     A FastAPI dependency for OpenWebUI authentication.
 
-    Validates HMAC signature from OpenWebUI headers and resolves user identity
-    from the local database.
+    Validates the HMAC signature from OpenWebUI headers and resolves the user identity from Keycloak. The signature
+    covers the time it was made, so a captured header set stops working once it is older than
+    ``SIGNATURE_MAX_AGE_SECONDS``.
     """
+
+    SIGNATURE_MAX_AGE_SECONDS: ClassVar[int] = 300
+    _TIMESTAMP_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"\d{1,12}", re.ASCII)
 
     def __init__(self, base_auth_handler: TokenAuthHandler):
         """Initialize with a token auth handler to verify the bearer token."""
@@ -30,11 +40,31 @@ class OpenWebuiAuthHandler(AuthHandler):
         secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET.get_secret_value()
         self.signing_secret = secret.encode("utf-8")
 
-    def _verify_signature(self, signature_to_check: str, user_name: str, user_email: str) -> bool:
+    def _verify_signature(self, signature_to_check: str, timestamp: str, user_name: str, user_email: str) -> bool:
         """Verifies the HMAC-SHA256 signature from OpenWebUI headers."""
-        message = f"name:{user_name},email:{user_email}".encode()
+        message = f"ts:{timestamp},name:{user_name},email:{user_email}".encode()
         expected_signature = hmac.new(self.signing_secret, message, hashlib.sha256).hexdigest()
         return hmac.compare_digest(expected_signature, signature_to_check)
+
+    def _reject_unless_recently_signed(self, request: Request, signature: str, user_name: str, user_email: str) -> None:
+        """The signature is checked before the age, so a logged age is one OpenWebUI really sent. A timestamp ahead of
+        the API's clock is refused too, or a clock running fast in OpenWebUI would keep a captured set valid longer."""
+        timestamp = request.headers.get("X-OpenWebUI-Timestamp")
+        if timestamp is None or not self._TIMESTAMP_PATTERN.fullmatch(timestamp):
+            logger.warning("OpenWebUI request without a valid signature timestamp. Is the pipe function up to date?")
+            raise OpenWebuiSignatureRejectedError("Missing or malformed X-OpenWebUI-Timestamp.")
+
+        if not self._verify_signature(signature, timestamp, user_name, user_email):
+            logger.warning("Invalid OpenWebUI signature for user. The request may be tampered.")
+            raise OpenWebuiSignatureRejectedError("Invalid OpenWebUI signature.")
+
+        age_seconds = int(time.time()) - int(timestamp)
+        if abs(age_seconds) > self.SIGNATURE_MAX_AGE_SECONDS:
+            logger.warning(
+                f"OpenWebUI signature is {age_seconds}s old, outside the {self.SIGNATURE_MAX_AGE_SECONDS}s window. "
+                "The same age on every request points to clock skew between OpenWebUI and the API."
+            )
+            raise OpenWebuiSignatureRejectedError("Expired OpenWebUI signature.")
 
     async def __call__(
         self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
@@ -52,11 +82,7 @@ class OpenWebuiAuthHandler(AuthHandler):
                 "(X-OpenWebUI-User-Name, X-OpenWebUI-User-Email, X-OpenWebUI-Signature).",
             )
 
-        is_signature_valid = self._verify_signature(signature, user_name, user_email)
-
-        if not is_signature_valid:
-            logger.warning("Invalid OpenWebUI signature for user. The request may be tampered.")
-            raise HTTPException(status_code=401, detail="Invalid OpenWebUI signature.")
+        self._reject_unless_recently_signed(request, signature, user_name, user_email)
 
         logger.info("Successfully authenticated OpenWebUI user via signature")
 

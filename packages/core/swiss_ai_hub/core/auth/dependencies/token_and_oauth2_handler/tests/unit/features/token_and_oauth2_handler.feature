@@ -38,3 +38,13 @@ Feature: MultiAuthHandler composite authentication
     Then the rejection should have status 401
     And the rejection detail should mention "Malformed token"
     And the rejection detail should mention "Keycloak down"
+
+  Scenario: A rejected OpenWebUI signature is final, never answered by the next handler
+    Given a Keycloak configuration with url "http://keycloak:8080" and realm "test-realm"
+    And a multi auth handler composed of:
+      | handler_name               | behavior           | detail                       |
+      | DummySignatureRejectedAuth | signature_rejected | Expired OpenWebUI signature. |
+      | DummySuccessAuth           | success            |                              |
+    When I invoke the multi auth handler expecting a rejection
+    Then the rejection should have status 401
+    And the rejection detail should be "Expired OpenWebUI signature."

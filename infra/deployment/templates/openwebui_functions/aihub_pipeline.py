@@ -308,7 +308,11 @@ class EventCaller(Protocol):
 
 
 class AuthenticationService:
-    """Handles all authentication-related operations"""
+    """Handles all authentication-related operations.
+
+    The user headers are signed as each request goes out, not when they are built: the API refuses a signature older
+    than a few minutes, and a dialog can wait on the user longer than that before its answer reuses the turn's headers.
+    """
 
     def __init__(
         self,
@@ -320,30 +324,43 @@ class AuthenticationService:
 
     def sign_user_headers(
         self,
-        user_name: Annotated[str, "User's name"],
+        timestamp: Annotated[str, "Unix time in seconds the signature is made at"],
+        user_name: Annotated[str, "User's name, URL-quoted"],
         user_email: Annotated[str, "User's email address"],
     ) -> Annotated[str, "HMAC-SHA256 signature as hex string"]:
         """Generate HMAC-SHA256 signature for user authentication"""
         secret = self._signing_secret.encode("utf-8")
-        message = f"name:{user_name},email:{user_email}".encode()
+        message = f"ts:{timestamp},name:{user_name},email:{user_email}".encode()
         return hmac.new(secret, message, hashlib.sha256).hexdigest()
+
+    def sign_request(
+        self, request: Annotated[httpx.Request, "Request about to be sent"]
+    ) -> Annotated[httpx.Request, "The same request, signed when it names a user"]:
+        """Given to an httpx client as ``auth``, which calls it right before each request is sent. A request that
+        names no user, such as an upload to a presigned storage URL, is left unsigned."""
+        user_name = request.headers.get("X-OpenWebUI-User-Name")
+        user_email = request.headers.get("X-OpenWebUI-User-Email")
+        if user_name is None or user_email is None:
+            return request
+        timestamp = str(int(time.time()))
+        request.headers["X-OpenWebUI-Timestamp"] = timestamp
+        request.headers["X-OpenWebUI-Signature"] = self.sign_user_headers(timestamp, user_name, user_email)
+        return request
 
     def prepare_headers(
         self,
         user_name: Annotated[str, "User's name"],
         user_email: Annotated[str, "User's email address"],
         accept_language: Annotated[str | None, "Accept-Language header value"] = None,
-    ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
-        """Prepare authenticated request headers"""
+    ) -> Annotated[dict[str, str], "HTTP headers naming the user, signed later by sign_request"]:
+        """Prepare request headers that name the user"""
         clean_username = urllib.parse.quote(user_name, safe="") if user_name else ""
-        signature = self.sign_user_headers(clean_username, user_email)
 
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
             "X-OpenWebUI-User-Name": clean_username,
             "X-OpenWebUI-User-Email": user_email,
-            "X-OpenWebUI-Signature": signature,
         }
         if accept_language:
             headers["Accept-Language"] = accept_language
@@ -1909,16 +1926,18 @@ class StreamingService:
     def __init__(
         self,
         base_url: Annotated[str, "AI-Hub base URL"],
+        auth_service: Annotated[AuthenticationService, "Signs the OpenWebUI user headers"],
         timeout: Annotated[int, "Request timeout in seconds"],
     ):
         self._base_url = base_url
+        self._auth_service = auth_service
         self._timeout = timeout
         self._event_processor = EventProcessorFactory.create_chain()
 
     async def active_tenant_id(
         self, headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"]
     ) -> Annotated[str, "The tenant the user acts in, by id rather than the `active` alias"]:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0, auth=self._auth_service.sign_request) as client:
             response = await client.get(f"{self._base_url}/api/v1/my-tenants/active", headers=headers)
             response.raise_for_status()
             return response.json()["id"]
@@ -1977,7 +1996,9 @@ class StreamingService:
             attachments=attachments,
         )
 
-        async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=None, follow_redirects=True, auth=self._auth_service.sign_request
+        ) as client:
             try:
                 result = await self._process_stream(
                     client,
@@ -2336,8 +2357,9 @@ class KnowledgeReferenceService:
     each one stands for. An entry nobody resolves, such as one a user created in Open WebUI, is left out.
     """
 
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, base_url: str, auth_service: AuthenticationService) -> None:
         self._base_url = base_url
+        self._auth_service = auth_service
 
     async def references_for_event(
         self,
@@ -2349,7 +2371,7 @@ class KnowledgeReferenceService:
         )
         if not openwebui_ids:
             return []
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0, auth=self._auth_service.sign_request) as client:
             response = await client.post(
                 f"{self._base_url}/api/v1/active/knowledge/openwebui-references",
                 json={"openwebui_ids": openwebui_ids},
@@ -2445,8 +2467,16 @@ class FileProcessingService:
     bucket using the two-step initiate/validate flow, preventing IDOR.
     """
 
-    def __init__(self, base_url: str, s3_endpoint: str, s3_access_key: str, s3_secret_key: str) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        auth_service: AuthenticationService,
+        s3_endpoint: str,
+        s3_access_key: str,
+        s3_secret_key: str,
+    ) -> None:
         self._base_url = base_url
+        self._auth_service = auth_service
         self._owui_s3_client = self._create_s3_client(s3_endpoint, s3_access_key, s3_secret_key)
 
     @property
@@ -2732,7 +2762,7 @@ class FileProcessingService:
         if not attachments:
             return set()
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=30.0, auth=self._auth_service.sign_request) as client:
                 response = await client.post(
                     self._files_url(agent_class, agent_id, "validate"),
                     headers=headers,
@@ -2758,7 +2788,7 @@ class FileProcessingService:
             content = attachment.text.encode()
         else:
             content = await asyncio.to_thread(self._read_file_content, attachment.owui_file)
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0, auth=self._auth_service.sign_request) as client:
             initiate_resp = await client.post(
                 self._files_url(agent_class, agent_id, "initiate"),
                 headers=headers,
@@ -2835,7 +2865,7 @@ class ResponseMergeService:
 
         # Inside the try: a failure while building the request must still reach the user as text, or the
         # merged message stays empty — the exact symptom this path exists to remove.
-        client = httpx.AsyncClient(timeout=None, follow_redirects=True)
+        client = httpx.AsyncClient(timeout=None, follow_redirects=True, auth=self._auth_service.sign_request)
         try:
             headers, payload = self._build_request(body, user, metadata, request)
             async with client.stream(
@@ -2873,7 +2903,9 @@ class ResponseMergeService:
         try:
             headers, payload = self._build_request(body, user, metadata, request)
             payload["stream"] = False
-            async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=True) as client:
+            async with httpx.AsyncClient(
+                timeout=self._timeout, follow_redirects=True, auth=self._auth_service.sign_request
+            ) as client:
                 response = await client.post(
                     url=f"{self._base_url}/api/v1/active/openai/chat/completions",
                     json=payload,
@@ -3075,13 +3107,14 @@ class Pipe:
         # File Processing
         self._file_service = FileProcessingService(
             self.valves.AIHUB_BASE_URL,
+            self._auth_service,
             self.valves.S3_STORAGE_ENDPOINT,
             self.valves.S3_STORAGE_ACCESS_KEY,
             self.valves.S3_STORAGE_SECRET_KEY,
         )
 
         # Referenced knowledge collections
-        self._knowledge_reference_service = KnowledgeReferenceService(self.valves.AIHUB_BASE_URL)
+        self._knowledge_reference_service = KnowledgeReferenceService(self.valves.AIHUB_BASE_URL, self._auth_service)
 
         # Message Conversion
         self._message_converter = MessageConverter()
@@ -3096,7 +3129,9 @@ class Pipe:
         )
 
         # Streaming
-        self._streaming_service = StreamingService(self.valves.AIHUB_BASE_URL, self.valves.AIHUB_REQUEST_TIMEOUT)
+        self._streaming_service = StreamingService(
+            self.valves.AIHUB_BASE_URL, self._auth_service, self.valves.AIHUB_REQUEST_TIMEOUT
+        )
 
         # Response merging (plain LLM, never the agent)
         self._merge_service = ResponseMergeService(
@@ -3211,7 +3246,9 @@ class Pipe:
     ) -> Annotated[dict[str, Any] | None, "Open chat HITL request or None"]:
         """Query API for open chat HITL in this thread."""
         try:
-            async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT) as client:
+            async with httpx.AsyncClient(
+                timeout=self.valves.AIHUB_REQUEST_TIMEOUT, auth=self._auth_service.sign_request
+            ) as client:
                 response = await client.get(
                     f"{self.valves.AIHUB_BASE_URL}/api/v1/active/threads/{thread_id}/open-chat-hitl",
                     headers=headers,

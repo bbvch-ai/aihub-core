@@ -26,6 +26,7 @@ import json
 import logging
 import os
 import secrets
+import time
 import urllib.parse
 from typing import Any, Annotated
 
@@ -41,7 +42,11 @@ logger = logging.getLogger(__name__)
 
 
 class AuthenticationService:
-    """Handles all authentication-related operations"""
+    """Handles all authentication-related operations.
+
+    The user headers are signed as each request goes out, not when they are built: the API refuses a signature older
+    than a few minutes.
+    """
 
     def __init__(
         self,
@@ -53,29 +58,41 @@ class AuthenticationService:
 
     def sign_user_headers(
         self,
-        user_name: Annotated[str, "User's name"],
+        timestamp: Annotated[str, "Unix time in seconds the signature is made at"],
+        user_name: Annotated[str, "User's name, URL-quoted"],
         user_email: Annotated[str, "User's email address"],
     ) -> Annotated[str, "HMAC-SHA256 signature as hex string"]:
         """Generate HMAC-SHA256 signature for user authentication"""
         secret = self._signing_secret.encode("utf-8")
-        message = f"name:{user_name},email:{user_email}".encode()
+        message = f"ts:{timestamp},name:{user_name},email:{user_email}".encode()
         return hmac.new(secret, message, hashlib.sha256).hexdigest()
+
+    def sign_request(
+        self, request: Annotated[httpx.Request, "Request about to be sent"]
+    ) -> Annotated[httpx.Request, "The same request, signed when it names a user"]:
+        """Given to an httpx client as ``auth``, which calls it right before each request is sent."""
+        user_name = request.headers.get("X-OpenWebUI-User-Name")
+        user_email = request.headers.get("X-OpenWebUI-User-Email")
+        if user_name is None or user_email is None:
+            return request
+        timestamp = str(int(time.time()))
+        request.headers["X-OpenWebUI-Timestamp"] = timestamp
+        request.headers["X-OpenWebUI-Signature"] = self.sign_user_headers(timestamp, user_name, user_email)
+        return request
 
     def prepare_headers(
         self,
         user_name: Annotated[str, "User's name"],
         user_email: Annotated[str, "User's email address"],
-    ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
-        """Prepare authenticated request headers"""
+    ) -> Annotated[dict[str, str], "HTTP headers naming the user, signed later by sign_request"]:
+        """Prepare request headers that name the user"""
         clean_username = urllib.parse.quote(user_name, safe="") if user_name else ""
-        signature = self.sign_user_headers(clean_username, user_email)
 
         return {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
             "X-OpenWebUI-User-Name": clean_username,
             "X-OpenWebUI-User-Email": user_email,
-            "X-OpenWebUI-Signature": signature,
         }
 
 
@@ -208,7 +225,7 @@ class Pipe:
             },
         }
 
-        client = httpx.AsyncClient(timeout=None, follow_redirects=True)
+        client = httpx.AsyncClient(timeout=None, follow_redirects=True, auth=self._auth_service.sign_request)
 
         try:
             # Start the streaming request
@@ -294,7 +311,9 @@ class Pipe:
 
         try:
             # Use a separate client for non-streaming requests
-            async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True) as client:
+            async with httpx.AsyncClient(
+                timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True, auth=self._auth_service.sign_request
+            ) as client:
                 response = await client.post(
                     url=f"{self.valves.AIHUB_BASE_URL}/api/v1/active/openai/chat/completions",
                     json=payload,

@@ -27,12 +27,15 @@ payload rather than in HTTP headers. Concrete handlers extract and validate cred
 signature, and checking audience and issuer claims. `TokenAuthHandler` validates API access tokens (format:
 `sk-<url-safe-random>`) against MongoDB with direct indexed lookup and expiry checking. `OpenWebuiAuthHandler` verifies
 HMAC-SHA256 signatures on OpenWebUI's custom headers (`X-OpenWebUI-User-Name`, `X-OpenWebUI-User-Email`,
-`X-OpenWebUI-Signature`) before delegating to a wrapped inner handler. For tests and interactive playground servers,
-`TestAuthHandler` (in `swiss_ai_hub.core.testing.auth_utils` — not in `core.auth`) skips token validation and returns a
-fixed test identity; it is not reachable from the production auth public interface. The static superuser bearer token
-(`SUPERUSER_TOKEN`) is materialized into the `bearer_tokens` collection at API startup, bound to the seeded Keycloak
-superuser, and validated by `TokenAuthHandler` like any other bearer token — there is no dedicated superuser auth
-handler.
+`X-OpenWebUI-Timestamp`, `X-OpenWebUI-Signature`) before delegating to a wrapped inner handler. The signature covers the
+timestamp, and one more than five minutes from the API's clock is refused, so a captured header set cannot be replayed
+later. The OpenWebUI pipe functions therefore sign each request as it is sent, not when they build its headers. A
+refused signature ends the chain with a 401: the next bearer handler would accept OpenWebUI's bearer token, which
+belongs to the superuser. For tests and interactive playground servers, `TestAuthHandler` (in
+`swiss_ai_hub.core.testing.auth_utils` — not in `core.auth`) skips token validation and returns a fixed test identity;
+it is not reachable from the production auth public interface. The static superuser bearer token (`SUPERUSER_TOKEN`) is
+materialized into the `bearer_tokens` collection at API startup, bound to the seeded Keycloak superuser, and validated
+by `TokenAuthHandler` like any other bearer token — there is no dedicated superuser auth handler.
 
 The production handler, `TokenAndOauth2Handler`, composes these strategies dynamically based on environment settings. It
 tries OAuth2 handlers first (for browser-based SSO), then bearer token handlers (for API tokens and OpenWebUI pipeline

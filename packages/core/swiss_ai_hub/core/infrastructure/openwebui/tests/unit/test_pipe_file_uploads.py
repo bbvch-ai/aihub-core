@@ -131,6 +131,7 @@ def _service(pipe: Any, monkeypatch: pytest.MonkeyPatch, api: _AgentFilesApi, *o
     monkeypatch.setattr(pipe.httpx, "AsyncClient", api.client)
     service = pipe.FileProcessingService.__new__(pipe.FileProcessingService)
     service._base_url = "http://api"
+    service._auth_service = pipe.AuthenticationService("signing-secret", "api-key")
     service._owui_s3_client = MagicMock()
     service._owui_s3_client.get_object.side_effect = lambda Bucket, Key: {"Body": io.BytesIO(Key.encode())}
     return service
