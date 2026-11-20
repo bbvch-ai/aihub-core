@@ -50,6 +50,7 @@ from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     initialize_knowledge_buckets,
     initialize_startup_tenant,
     lower_llm_request_timeouts,
+    remove_stale_role_names,
     retarget_legacy_organization_memory_profiles,
     strip_retired_agent_config_keys,
     unset_oversized_input_limits,
@@ -295,6 +296,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await initialize_startup_tenant()
         add_process_root_rule()
         await finalize_role_setup(redis)
+        remove_stale_role_names()
         await initialize_knowledge_buckets()
         await carry_over_bucket_model_columns()
         await strip_retired_agent_config_keys()

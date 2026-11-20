@@ -35,6 +35,7 @@ from swiss_ai_hub.api.runners.lifetime.pre_pair_knowledge_collection_migration i
     PrePairKnowledgeCollectionMigration,
 )
 from swiss_ai_hub.api.runners.lifetime.process_root_rule_migration import ProcessRootRuleMigration
+from swiss_ai_hub.api.runners.lifetime.stale_role_name_migration import StaleRoleNameMigration
 
 logger = logging.getLogger(__name__)
 
@@ -415,6 +416,16 @@ def add_process_root_rule() -> None:
     migrated = ProcessRootRuleMigration.run()
     if migrated:
         logger.info(f"Added the process root rule next to the process wildcard in: {', '.join(migrated)}")
+
+
+# Transitional: deleting a role now removes its name from every user, but names left by deletions before that would
+# re-grant a role created later under the same name to every former holder (aihub-core-private#488). Delete it and
+# `StaleRoleNameMigration` once deployments have upgraded past it.
+def remove_stale_role_names() -> None:
+    """Removes from every user the role names that no longer match a role in their tenant."""
+    migrated = StaleRoleNameMigration.run()
+    if migrated:
+        logger.info(f"Removed role names without a matching role from: {'; '.join(migrated)}")
 
 
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:
