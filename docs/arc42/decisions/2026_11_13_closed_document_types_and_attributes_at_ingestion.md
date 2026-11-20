@@ -95,8 +95,9 @@ rest, where totals and payment terms often stand.
   `other`'s version rose: invoices keep theirs, since none of the new types was carved out of `invoice`. A contract's or
   SLA's term stores the end it states when it states only one: a single date next to "ab", "in Kraft", "prend effet" or
   "from", or in a term "auf unbestimmte Zeit", is its start, and one next to "endet", "bis" or "until" its end, so
-  "contracts ending in 2026" finds every contract that names its end. Without such a word a single date stays the whole
-  period, as for an invoice's date of supply. The parser, not the model, decides which end it is, so the change raised
+  "contracts ending in 2026" finds every contract that names its end. Only words in the date's own sentence count, and
+  only a contract's or SLA's term is read this way: every other type's period, an invoice's date of supply included,
+  stays whole whatever words stand near it. The parser, not the model, decides which end it is, so the change raised
   only the normalizer's version.
 - Classification stays one call per document. On 156 synthetic documents (8 to 21 per type) every type reached 100%
   recall and precision, and every attribute stayed under 2% wrong or guessed, in two runs in a row, so a second,

@@ -54,6 +54,17 @@ def test_a_stored_value_is_compared_with_its_label(
         ("document_notice_period", "trois mois avant son échéance", "trois mois", AttributeOutcome.CORRECT),
         ("document_notice_period", "3 Monate", "3 Monate auf Ende der Laufzeit.", AttributeOutcome.CORRECT),
         ("document_notice_period", "3 Monate", "6 Monate", AttributeOutcome.WRONG),
+        ("document_notice_period", "3 Monate", "3", AttributeOutcome.WRONG),
+        ("document_notice_period", "3 Monate auf Ende eines Quartals", "Monate", AttributeOutcome.WRONG),
+        (
+            "document_notice_period",
+            "3 Monate auf Ende eines Quartals",
+            "Monate auf Ende eines Quartals",
+            AttributeOutcome.WRONG,
+        ),
+        ("document_service_levels", ["24 Stunden Reaktionszeit"], ["24"], AttributeOutcome.WRONG),
+        ("document_service_levels", ["Verfügbarkeit 99,9 %", "Reaktionszeit 4 Stunden"], ["9"], AttributeOutcome.WRONG),
+        ("document_jurisdiction", "Zürich", "Gerichtsstand ist Zürich", AttributeOutcome.CORRECT),
         (
             "document_service_levels",
             ["Verfügbarkeit 99,9 %", "Reaktionszeit 30 Minuten"],

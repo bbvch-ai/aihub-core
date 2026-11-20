@@ -1,6 +1,6 @@
 ---
 title: Dokumenttypen und Attribute
-source_sha: 8705a70299bf21f98f68927bfd5117a84e4f8535526d285f1be9929444bfb97b
+source_sha: 34e4faf7f40702e5ad0dcd3c38be57f1101ce6e1c5a952f5075a531dba6c663b
 ---
 
 # Dokumenttypen und Attribute
@@ -101,8 +101,9 @@ Wo ein Attribut für einen Typ etwas Bestimmtes bedeutet:
 - **Zeitraum.** Bei einem Vertrag oder SLA seine Laufzeit. Ein einzelnes Datum ist der ganze Zeitraum, ausser ein Wort
   daneben sagt, welches Ende es ist: Ein Vertrag, der an einem Datum beginnt und bis zur Kündigung läuft («ab 1. Juli
   2025», «tritt am 1. März 2026 in Kraft», «prend effet le», «from»), speichert nur seinen Beginn, und einer, der nur
-  sein Ende nennt («endet am 30. Juni 2027», «until»), nur sein Ende. So findet «Verträge, die 2026 enden» jeden
-  Vertrag, der sein Ende nennt, und das Unterzeichnungsdatum ist nie sein Beginn.
+  sein Ende nennt («endet am 30. Juni 2027», «until»), nur sein Ende. Es zählen nur Wörter im Satz des Datums. So findet
+  «Verträge, die 2026 enden» jeden Vertrag, der sein Ende nennt, und das Unterzeichnungsdatum ist nie sein Beginn. Der
+  Zeitraum jedes anderen Typs bleibt ganz, welche Wörter auch daneben stehen.
 - **Gültig bis**, **Kündigungsfrist** und **Service Levels** sind mit diesen Typen neu: das Datum, bis zu dem eine
   Offerte gilt; die Kündigungsfrist eines Vertrags oder SLA, wie geschrieben aufbewahrt; und bis zu fünf Service Levels,
   die ein SLA zusagt, wie geschrieben übernommen («Verfügbarkeit 99,9 % pro Monat»).
@@ -205,7 +206,8 @@ Dokument und jeder seiner Chunks im Vector Store:
   nicht lesen lässt;
 - den **übernommenen Text** unter dem Schlüssel mit angehängtem `_raw`;
 - bei Daten und Zeiträumen die **Genauigkeit** (`day`, `month`, `quarter` oder `year`) unter dem Schlüssel mit
-  angehängtem `_precision`, damit „März 2025“ nie für den 1. März gehalten wird.
+  angehängtem `_precision`, damit „März 2025“ nie für den 1. März gehalten wird. Bei einem Zeitraum beschreibt sie jedes
+  gespeicherte Ende: Eine Laufzeit „ab März 2025“ speichert ihren Beginn mit Monatsgenauigkeit und kein Ende.
 
 Jedes Attribut des Typs ist vorhanden und leer, wo es unbekannt ist. Ein Filter sollte einen leeren Wert als unbekannt
 behandeln, nicht als Nichtübereinstimmung. Ein Attribut, das für einen Typ nicht gilt, wird bei Dokumenten dieses Typs

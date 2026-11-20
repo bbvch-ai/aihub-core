@@ -67,6 +67,10 @@ class PeriodTextParser:
     )
     _YEAR: ClassVar[re.Pattern[str]] = re.compile(r"\b\d{4}\b")
     _REACH: ClassVar[int] = 60
+    _SENTENCE_END: ClassVar[re.Pattern[str]] = re.compile(r"(?:(?<=\w{4})(?<!inkl)(?<!zzgl)\.|[!?;])\s")
+    """A full stop after a word of four letters or more ends a sentence; shorter words ("ca.", "Nr.", "z. B.") and
+    "inkl." / "zzgl." are abbreviations, so "bis inkl. 31.12.2026" keeps its "bis"."""
+    _EMPHASIS: ClassVar[re.Pattern[str]] = re.compile(r"[*_]")
     _OPEN_ENDED: ClassVar[re.Pattern[str]] = re.compile(
         r"unbefristet|unbestimmte zeit|auf weiteres|indéterminée|indeterminat|indefinite|until terminated|"
         r"until further notice|until (?:they are|it is) completed"
@@ -103,7 +107,7 @@ class PeriodTextParser:
             return True, True
         if ends := cls._ends_named_around(text, *cls._date_span(text)):
             return ends
-        surrounding = DateTextParser.normalized(context) if context else ""
+        surrounding = DateTextParser.normalized(cls._EMPHASIS.sub("", context)) if context else ""
         position = surrounding.find(text)
         if position >= 0 and (ends := cls._ends_named_around(surrounding, position, position + len(text))):
             return ends
@@ -111,7 +115,7 @@ class PeriodTextParser:
 
     @classmethod
     def _ends_named_around(cls, text: str, date_start: int, date_end: int) -> tuple[bool, bool] | None:
-        before = re.split(r"\d", text[max(0, date_start - cls._REACH) : date_start])[-1]
+        before = cls._SENTENCE_END.split(re.split(r"\d", text[max(0, date_start - cls._REACH) : date_start])[-1])[-1]
         after = re.split(r"\d", text[date_end : date_end + cls._REACH])[0]
         if cls._OPEN_ENDED.search(f"{before} {after}") or cls._TAKES_EFFECT.search(after):
             return True, False

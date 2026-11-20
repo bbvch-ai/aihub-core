@@ -475,3 +475,70 @@ def test_the_documents_own_unambiguous_slash_dates_settle_the_order_before_its_c
     )
 
     assert classification.values["document_date"] == read
+
+
+def _stored_period(document_type: DocumentType, text: str, period: str) -> dict[str, Any]:
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": document_type,
+        "secondary_types": [],
+        "document_period": period,
+    }
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+    return {key: values[key] for key in ("document_period_start", "document_period_end", "document_period_precision")}
+
+
+def test_an_invoice_period_is_whole_whatever_words_stand_before_it() -> None:
+    """Start and end words concern a term only; an invoice line keeps its whole period, as before #2485."""
+    text = "# Rechnung RE-2025-0318\nLieferung bis spätestens Ende Monat. Leistungszeitraum: März 2025\n"
+
+    assert _stored_period(DocumentType.INVOICE, text, "März 2025") == {
+        "document_period_start": "2025-03-01",
+        "document_period_end": "2025-03-31",
+        "document_period_precision": "month",
+    }
+    assert (
+        _stored_period(DocumentType.INVOICE, "Leistung bis 31.03.2025 erbracht", "31.03.2025")["document_period_start"]
+        == "2025-03-31"
+    )
+
+
+def test_a_contract_stated_by_its_end_in_part_in_bold_stores_only_its_end() -> None:
+    text = (
+        "# Mietvertrag MV-2025-07\nDas Mietverhältnis beginnt am 1. Juli 2025.\n"
+        "Das Mietverhältnis endet am **30. Juni** 2027.\n"
+    )
+
+    assert _stored_period(DocumentType.CONTRACT, text, "30. Juni 2027") == {
+        "document_period_start": None,
+        "document_period_end": "2027-06-30",
+        "document_period_precision": "day",
+    }
+
+
+def test_a_contract_term_word_in_the_sentence_before_does_not_decide_its_end() -> None:
+    text = "# Rahmenvertrag\nKündigung bis Ende Jahr. Die Laufzeit umfasst das Kalenderjahr 2026.\n"
+
+    assert _stored_period(DocumentType.CONTRACT, text, "2026") == {
+        "document_period_start": "2026-01-01",
+        "document_period_end": "2026-12-31",
+        "document_period_precision": "year",
+    }
+
+
+def test_a_jurisdiction_is_not_taken_from_an_address_whose_city_stands_inside_another_word() -> None:
+    text = (
+        "# Kaufvertrag KV-2025-12\nVerkäuferin: Aarewohn AG, Marktgasse 4, 3011 Bern\n"
+        "Käuferin: Kestrel AG, Bahnhofplatz 2, 8001 Zürich\n\nGerichtsstand ist am Sitz der Übernehmerin.\n"
+    )
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.CONTRACT,
+        "secondary_types": [],
+        "document_jurisdiction": "Bern",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_jurisdiction"] is None
+    assert values["document_jurisdiction_raw"] == "Bern"

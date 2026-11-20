@@ -97,8 +97,9 @@ Where an attribute means something specific for a type:
 - **Period.** For a contract or SLA, its term. A single date is the whole period unless a word next to it says which end
   it is: a contract that begins on a date and runs until terminated ("ab 1. Juli 2025", "tritt am 1. März 2026 in
   Kraft", "prend effet le", "from") stores only its start, and one that names only its end ("endet am 30. Juni 2027",
-  "until") only its end. So "contracts ending in 2026" finds every contract that states its end, and the date it was
-  signed is never its start.
+  "until") only its end. Only words in the date's own sentence count. So "contracts ending in 2026" finds every contract
+  that states its end, and the date it was signed is never its start. Every other type's period stays whole, whatever
+  words stand near it.
 - **Valid until**, **notice period** and **service levels** are new with these types: the date an offer is valid until;
   the notice period of a contract or SLA, kept as written; and up to five service levels an SLA commits to, copied as
   written ("Verfügbarkeit 99,9 % pro Monat").
@@ -194,7 +195,8 @@ chunks in the vector store carry:
 - the **value**, under the attribute's key, read by code from the copied text and empty when it cannot be read;
 - the **copied text**, under the key with `_raw` appended;
 - for dates and periods, the **precision** (`day`, `month`, `quarter` or `year`), under the key with `_precision`
-  appended, so "März 2025" is never mistaken for 1 March.
+  appended, so "März 2025" is never mistaken for 1 March. For a period it describes each end that is stored: a term "ab
+  März 2025" stores its start at month precision and no end.
 
 Every attribute of the type is present, empty where unknown. A filter should treat an empty value as unknown, not as a
 mismatch. An attribute that does not apply to a type is not stored on documents of that type.

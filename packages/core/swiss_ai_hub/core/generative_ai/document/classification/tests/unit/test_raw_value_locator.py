@@ -40,3 +40,23 @@ def test_a_copy_running_across_a_line_break_is_found_in_the_lines_that_hold_it()
     assert (
         RawValueLocator.line_of("Gerichtsstand ist Zürich", document) == "Ausschliesslicher Gerichtsstand ist\nZürich."
     )
+
+
+def test_a_copy_is_found_only_as_whole_words() -> None:
+    document = (
+        "Verkäuferin: Aarewohn AG, 3011 Bern\nGerichtsstand ist am Sitz der Übernehmerin.\nGerichts stand ist Zü rich"
+    )
+
+    assert RawValueLocator.passages_holding("Bern", document, 1) == ["Verkäuferin: Aarewohn AG, 3011 Bern"]
+    assert RawValueLocator.passages_holding("Zürich", document, 1) == ["Gerichts stand ist Zü rich"]
+    assert RawValueLocator.passages_holding("Sitz der", document, 1) == ["Gerichtsstand ist am Sitz der Übernehmerin."]
+    assert RawValueLocator.passages_holding("Sitz de", document, 1) == []
+
+
+def test_the_copies_in_a_document_are_found_together() -> None:
+    document = "Von: Lea Frei <lea@kestrel.example>\nAn: Marco Brunner"
+
+    assert RawValueLocator.found_in(["Lea Frei", "Marco Brunner", "Anna Meier"], document) == [
+        "Lea Frei",
+        "Marco Brunner",
+    ]

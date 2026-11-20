@@ -154,6 +154,10 @@ def test_a_word_next_to_a_single_date_says_which_end_of_the_period_it_is(raw: st
         ("31.12.2026", "Laufzeitende 31.12.2026", (False, True)),
         ("30.06.2026", "Vertragsablauf: 30.06.2026", (False, True)),
         ("1. Januar 2025", "in der geltende Fassung vom 1. Januar 2025", (True, True)),
+        ("März 2025", "Lieferung bis spätestens Ende Monat. Leistungszeitraum: März 2025", (True, True)),
+        ("31.12.2026", "Gültig bis inkl. 31.12.2026", (False, True)),
+        ("30. Juni 2027", "Das Mietverhältnis endet am **30. Juni** 2027.", (False, True)),
+        ("1. Juli 2025", "Mietbeginn: __1. Juli__ 2025", (True, False)),
     ],
 )
 def test_a_date_copied_without_its_word_is_read_in_the_line_it_came_from(

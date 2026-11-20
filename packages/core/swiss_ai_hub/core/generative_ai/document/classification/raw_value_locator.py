@@ -14,11 +14,19 @@ class RawValueLocator:
 
     @classmethod
     def appears_in(cls, raw: str, document_text: str) -> bool:
-        wanted = cls._comparable(raw)
-        if not wanted:
-            return False
+        return bool(cls.found_in([raw], document_text))
+
+    @classmethod
+    def found_in(cls, raws: list[str], document_text: str) -> list[str]:
+        """The copies that are in the document, normalising the document once for all of them."""
         text = cls._comparable(document_text)
-        return wanted in text or wanted.replace(" ", "") in text.replace(" ", "")
+        squeezed = text.replace(" ", "")
+        found = []
+        for raw in raws:
+            wanted = cls._comparable(raw)
+            if wanted and (wanted in text or wanted.replace(" ", "") in squeezed):
+                found.append(raw)
+        return found
 
     @classmethod
     def line_of(cls, raw: str, document_text: str) -> str | None:
@@ -30,31 +38,49 @@ class RawValueLocator:
         """Each run of lines that holds the copied text, with the `line_count - 1` non-empty lines before it (a
         heading).
 
-        The copy is found across line breaks and, failing that, with spacing ignored, just as `appears_in` finds it.
+        The copy is found across line breaks and, failing that, with spacing ignored, just as `appears_in` finds it, but
+        only as whole words: a short copy such as a city must not count where it stands inside another word.
         """
         wanted = cls._comparable(raw)
         if not wanted:
             return []
         lines = [line for line in document_text.splitlines() if line.strip()]
         comparable_lines = [cls._comparable(line) for line in lines]
-        spans = cls._line_spans(wanted, comparable_lines, " ") or cls._line_spans(
-            wanted.replace(" ", ""), [line.replace(" ", "") for line in comparable_lines], ""
-        )
+        text = " ".join(comparable_lines)
+        line_ends = list(itertools.accumulate(len(line) + 1 for line in comparable_lines))
+        positions = cls._positions(wanted, text) or cls._positions(wanted, text, squeezed=True)
+        spans = {
+            (bisect.bisect_right(line_ends, start), bisect.bisect_right(line_ends, end)): None
+            for start, end in positions
+        }
         return ["\n".join(lines[max(0, first - line_count + 1) : last + 1]) for first, last in spans]
 
     @classmethod
-    def _line_spans(cls, wanted: str, lines: list[str], separator: str) -> list[tuple[int, int]]:
-        """The first and last line of each place `wanted` stands, reading the lines as one text."""
-        line_ends = list(itertools.accumulate(len(line) + len(separator) for line in lines))
-        text = separator.join(lines)
-        spans: dict[tuple[int, int], None] = {}
-        position = text.find(wanted)
+    def _positions(cls, wanted: str, text: str, squeezed: bool = False) -> list[tuple[int, int]]:
+        """Where `wanted` stands in `text` as whole words: its first and last character.
+
+        Squeezed, spacing is ignored on both sides for OCR text, and the word boundaries are still read in `text`, so
+        "Bern" is not found inside "Übernehmerin".
+        """
+        kept = [index for index, character in enumerate(text) if character != " "] if squeezed else None
+        searched = "".join(text[index] for index in kept) if kept is not None else text
+        needle = wanted.replace(" ", "") if squeezed else wanted
+        positions = []
+        position = searched.find(needle)
         while position >= 0:
-            first = bisect.bisect_right(line_ends, position)
-            last = bisect.bisect_right(line_ends, position + len(wanted) - 1)
-            spans[(first, last)] = None
-            position = text.find(wanted, position + 1)
-        return list(spans)
+            start, end = position, position + len(needle) - 1
+            if kept is not None:
+                start, end = kept[start], kept[end]
+            if cls._whole_words(text, start, end):
+                positions.append((start, end))
+            position = searched.find(needle, position + 1)
+        return positions
+
+    @staticmethod
+    def _whole_words(text: str, start: int, end: int) -> bool:
+        opens = start == 0 or not (text[start - 1].isalnum() and text[start].isalnum())
+        closes = end == len(text) - 1 or not (text[end].isalnum() and text[end + 1].isalnum())
+        return opens and closes
 
     @classmethod
     def _comparable(cls, text: str) -> str:

@@ -39,6 +39,10 @@ class DocumentValueNormalizer:
         r"juridiction|tribuna(?:l|ux)|giurisdizion",
         re.IGNORECASE,
     )
+    _TERM_TYPES: ClassVar[frozenset[DocumentType]] = frozenset(
+        {DocumentType.CONTRACT, DocumentType.SERVICE_LEVEL_AGREEMENT}
+    )
+    """Types whose period is a term, which may state only its start or only its end; any other period is whole."""
     _NAMES: ClassVar[frozenset[DocumentAttribute]] = frozenset(
         {DocumentAttribute.ISSUER, DocumentAttribute.RECIPIENT, DocumentAttribute.PARTICIPANTS}
     )
@@ -54,7 +58,7 @@ class DocumentValueNormalizer:
         for definition in applicable:
             if not definition.is_derived:
                 raw = cls._located(getattr(answer, definition.attribute.value), document_text)
-                values |= cls._stored(definition, raw, slash_order, document_text)
+                values |= cls._stored(definition, raw, slash_order, document_text, document_type in cls._TERM_TYPES)
         cls._complete_currency(values)
         cls._drop_own_number(values)
         cls._drop_names_only_in_addresses(values, document_text)
@@ -76,7 +80,7 @@ class DocumentValueNormalizer:
     @classmethod
     def _located(cls, raw: _Raw, document_text: str) -> _Raw:
         if isinstance(raw, list):
-            found = [item.strip() for item in raw if item.strip() and RawValueLocator.appears_in(item, document_text)]
+            found = RawValueLocator.found_in([item.strip() for item in raw if item.strip()], document_text)
             return found or None
         if raw is None or not raw.strip():
             return None
@@ -109,6 +113,7 @@ class DocumentValueNormalizer:
         raw: _Raw,
         slash_order: SlashDateOrder | None,
         document_text: str,
+        is_term: bool,
     ) -> dict[str, Any]:
         match definition.value_type:
             case AttributeValueType.DATE:
@@ -120,8 +125,9 @@ class DocumentValueNormalizer:
                 }
             case AttributeValueType.PERIOD:
                 period = PeriodTextParser.parse(raw, slash_order)
-                context = RawValueLocator.line_of(raw, document_text) if isinstance(raw, str) else None
-                states_start, states_end = PeriodTextParser.stated_ends(raw, slash_order, context)
+                states_start, states_end = (
+                    cls._stated_ends(raw, slash_order, document_text) if is_term else (True, True)
+                )
                 return {
                     definition.start_key: period.start.isoformat() if period and states_start else None,
                     definition.end_key: period.end.isoformat() if period and states_end else None,
@@ -155,6 +161,11 @@ class DocumentValueNormalizer:
         return cls._E_MAIL.sub("", raw).strip(" ,;:()<>\"'") or None
 
     @classmethod
+    def _stated_ends(cls, raw: _Raw, slash_order: SlashDateOrder | None, document_text: str) -> tuple[bool, bool]:
+        context = RawValueLocator.line_of(raw, document_text) if isinstance(raw, str) else None
+        return PeriodTextParser.stated_ends(raw if isinstance(raw, str) else None, slash_order, context)
+
+    @classmethod
     def _drop_jurisdiction_outside_its_clause(cls, values: dict[str, Any], document_text: str) -> None:
         """A place counts only where a clause or its heading names a court, since models take one from an address or
         the place a document was signed."""
@@ -169,14 +180,19 @@ class DocumentValueNormalizer:
     def _drop_names_only_in_addresses(cls, values: dict[str, Any], document_text: str) -> None:
         """A name the document writes only inside an e-mail address ("northpeak" in billing@northpeak.example) was
         made up from the mailbox, so it is dropped while its copied text is kept."""
-        text_without_addresses = cls._E_MAIL.sub(" ", document_text)
+        names = [
+            name
+            for attribute in cls._NAMES
+            for name in (values.get(attribute) if isinstance(values.get(attribute), list) else [values.get(attribute)])
+            if isinstance(name, str)
+        ]
+        found = set(RawValueLocator.found_in(names, cls._E_MAIL.sub(" ", document_text)))
         for attribute in cls._NAMES:
             value = values.get(attribute)
-            if isinstance(value, str) and not RawValueLocator.appears_in(value, text_without_addresses):
+            if isinstance(value, str) and value not in found:
                 values[attribute] = None
             elif isinstance(value, list):
-                kept = [name for name in value if RawValueLocator.appears_in(name, text_without_addresses)]
-                values[attribute] = kept or None
+                values[attribute] = [name for name in value if name in found] or None
 
     @classmethod
     def _complete_currency(cls, values: dict[str, Any]) -> None:

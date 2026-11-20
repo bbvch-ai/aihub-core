@@ -12,10 +12,12 @@ class AttributeComparison:
     of text, the order of a list, and rounding below half a cent.
 
     A passage copied as written, such as a notice period, a service level, a product name or a place of jurisdiction,
-    has no one right extent: "trois mois" and "trois mois avant son échéance" state the same period. It matches when
-    either contains the other. A list of passages that misses some but invents none is incomplete, not wrong.
+    has no one right extent: "trois mois" and "trois mois avant son échéance" state the same period. It matches when it
+    holds its label, or is a part of it that keeps at least two words and every number. A list of passages that misses
+    some but invents none is incomplete, not wrong.
     """
 
+    _NUMBER: ClassVar[re.Pattern[str]] = re.compile(r"\d+")
     PASSAGE_KEYS: ClassVar[frozenset[str]] = frozenset(
         {
             DocumentAttribute.NOTICE_PERIOD.value,
@@ -46,9 +48,17 @@ class AttributeComparison:
         return AttributeOutcome.INCOMPLETE
 
     @classmethod
-    def _overlap(cls, first: Any, second: Any) -> bool:
-        first_text, second_text = cls._passage(first), cls._passage(second)
-        return first_text in second_text or second_text in first_text
+    def _overlap(cls, stored: Any, expected: Any) -> bool:
+        """Whether a stored passage states its label: it holds the label, or it is a part of the label with at least
+        two words and every number the label has, so "3" or "Monate" does not pass for "3 Monate"."""
+        stored_text, expected_text = cls._passage(stored), cls._passage(expected)
+        if expected_text in stored_text:
+            return True
+        return (
+            stored_text in expected_text
+            and len(stored_text.split()) >= 2
+            and set(cls._NUMBER.findall(expected_text)) <= set(cls._NUMBER.findall(stored_text))
+        )
 
     @classmethod
     def _equal(cls, expected: Any, stored: Any) -> bool:
