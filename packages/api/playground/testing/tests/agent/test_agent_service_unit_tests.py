@@ -763,3 +763,47 @@ async def test_a_streamed_answer_from_a_member_who_did_not_start_the_run_is_a_40
     assert refused.value.status_code == 403
     for_thread.assert_not_called()
     distributor.distribute_event.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_a_streamed_event_carries_the_callers_aihub_headers_to_the_agent(mock_nats, mock_user_identity):
+    """The OpenWebUI pipe streams through this path, so the user's forwarded token (X-AIHub-User-Token) must reach the
+    agent here, or an MCP connection with auth_mode 'user_token' cannot run from a chat."""
+    thread = Mock(id=ObjectId())
+    request = ToolApprovalRequestEvent(
+        question="Allow?",
+        topic=AgentInstanceTopic(
+            agent_class="TestAgent",
+            agent_id="test_agent_1",
+            thread_id=str(thread.id),
+            display_id=str(ObjectId()),
+            run_id=str(ObjectId()),
+            event_type="control_event",
+            event_name="ToolApprovalResponseEvent",
+            event_id=str(ObjectId()),
+        ),
+        tool_call_id="c1",
+        name="run_command",
+        kind="function",
+    )
+    distributor = Mock(distribute_event=AsyncMock())
+    aihub_headers = {"x-aihub-user-token": "user-jwt"}
+
+    with (
+        patch.object(ThreadEntity, "get_thread_by_id", return_value=thread),
+        patch.object(PersistedAgentEventEntity, "user_id_of_run", return_value=mock_user_identity.id),
+        patch.object(AgentNCSubscriber, "for_thread_display_events", return_value=Mock(start=AsyncMock())),
+    ):
+        await AgentService.send_agent_input_event_stream(
+            nc=mock_nats,
+            agent_class="TestAgent",
+            agent_id="test_agent_1",
+            input_event=ToolApprovalResponseEvent(response=True, request_event=request),
+            external_agent_event_distributor=distributor,
+            thread_id=thread.id,
+            display_id=None,
+            user=mock_user_identity,
+            aihub_headers=aihub_headers,
+        )
+
+    assert distributor.distribute_event.await_args.kwargs["aihub_headers"] == aihub_headers

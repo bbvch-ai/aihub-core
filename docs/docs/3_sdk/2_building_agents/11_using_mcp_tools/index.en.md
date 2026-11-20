@@ -42,6 +42,17 @@ its host name in `MCP_ALLOWED_PRIVATE_HOSTS` (comma-separated) in the agent's en
 `user_token` mode only works for user-initiated chat runs that carry the user's token. Scheduled, process-initiated,
 bot-channel, and agent-to-agent runs forward no user token and fail in this mode — use `api_key` or `none` for those.
 
+Where the token comes from: OpenWebUI hands the `aihub-pipeline` function the access token of a user who signed in
+through Keycloak, refreshed when needed, and the function sends it as `X-AIHub-User-Token`. The API copies every
+`X-AIHub-*` header of a chat call (the OpenAI-compatible endpoint and the agent event endpoints alike) onto the NATS
+message that starts the run, and the agent reads it from the run context. A user with a local OpenWebUI account has no
+Keycloak token, so a `user_token` connection fails for them. The token travels with the run's control events, so it is
+stored with them in JetStream and in the run context until it expires.
+
+`forward_tenant_id_header` (for example `X-LCDM-Tenant`) sends the acting tenant's external id on every MCP request and
+is accepted only together with `user_token`: the header alone is a claim the MCP server cannot verify, the token lets it
+check that the user belongs to that tenant.
+
 ## Calling MCP tools from a step
 
 Add an `McpClientConfig` field to your agent config, then open a client inside a step with `McpClientFactory`.

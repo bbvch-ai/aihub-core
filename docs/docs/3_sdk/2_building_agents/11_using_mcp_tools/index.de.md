@@ -38,6 +38,17 @@ Der `user_token`-Modus funktioniert nur für vom Benutzer initiierte Chat-Läufe
 Geplante, prozessinitiierte, Bot-Kanal- und Agent-zu-Agent-Läufe leiten kein Benutzer-Token weiter und schlagen in
 diesem Modus fehl – verwenden Sie `api_key` oder `none` für diese.
 
+Woher das Token kommt: OpenWebUI übergibt der Funktion `aihub-pipeline` das Access Token eines Benutzers, der sich über
+Keycloak angemeldet hat, bei Bedarf erneuert, und die Funktion sendet es als `X-AIHub-User-Token`. Die API kopiert jeden
+`X-AIHub-*`-Header eines Chat-Aufrufs (des OpenAI-kompatiblen Endpunkts wie der Agent-Event-Endpunkte) auf die
+NATS-Nachricht, die den Lauf startet, und der Agent liest ihn aus dem Run-Kontext. Ein Benutzer mit einem lokalen
+OpenWebUI-Konto hat kein Keycloak-Token, eine `user_token`-Verbindung schlägt für ihn deshalb fehl. Das Token reist mit
+den Control-Events des Laufs, wird also mit ihnen in JetStream und im Run-Kontext gespeichert, bis es abläuft.
+
+`forward_tenant_id_header` (zum Beispiel `X-LCDM-Tenant`) sendet die externe ID des handelnden Tenants bei jeder
+MCP-Anfrage und ist nur zusammen mit `user_token` erlaubt: Den Header allein kann der MCP-Server nicht prüfen, mit dem
+Token kann er prüfen, dass der Benutzer zu diesem Tenant gehört.
+
 ## MCP-Tools von einem Schritt aus aufrufen
 
 Fügen Sie ein `McpClientConfig`-Feld zu Ihrer Agent-Konfiguration hinzu und öffnen Sie dann einen Client innerhalb eines

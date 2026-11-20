@@ -147,6 +147,9 @@ class AgentService:
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
+        aihub_headers: Annotated[
+            dict[str, str] | None, "X-AIHub-* request headers for the agent, e.g. the user's forwarded token"
+        ] = None,
     ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
         """Sends an event to a specific agent."""
         if thread_id:
@@ -178,6 +181,7 @@ class AgentService:
             topic_manager=topic_manager,
             nc=nc,
             external_agent_event_distributor=external_agent_event_distributor,
+            aihub_headers=aihub_headers,
         )
 
         await ChatService.wait_for_stop_then_drain(resources)
@@ -199,6 +203,9 @@ class AgentService:
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
+        aihub_headers: Annotated[
+            dict[str, str] | None, "X-AIHub-* request headers for the agent, e.g. the user's forwarded token"
+        ] = None,
     ) -> StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent:
         """Sends an event (start or HITL response) to a specific agent and waits for a response."""
         return await AgentService._send_event(
@@ -211,6 +218,7 @@ class AgentService:
             thread_id=thread_id,
             display_id=display_id,
             subscribe_to_thread=subscribe_to_thread,
+            aihub_headers=aihub_headers,
         )
 
     @staticmethod
@@ -228,6 +236,9 @@ class AgentService:
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
+        aihub_headers: Annotated[
+            dict[str, str] | None, "X-AIHub-* request headers for the agent, e.g. the user's forwarded token"
+        ] = None,
     ) -> StreamingResources:
         """
         Sends an event (start or HITL response) to a specific agent and returns streaming resources for SSE.
@@ -302,7 +313,10 @@ class AgentService:
         logger.debug(f"Subscriber created for streaming subject: {subscriber.subject}")
 
         await external_agent_event_distributor.distribute_event(
-            external_event, user, target_agent=AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
+            external_event,
+            user,
+            aihub_headers=aihub_headers,
+            target_agent=AgentInstanceRef(agent_class=agent_class, agent_id=agent_id),
         )
 
         return resources

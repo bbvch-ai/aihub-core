@@ -53,6 +53,8 @@ logger = logging.getLogger(__name__)
 # the chat title with the user's prompt. Must stay in sync with the key in ``aihub_title_filter.py``.
 AIHUB_TITLE_REDIS_KEY = "aihub:title:{chat_id}"
 AIHUB_TITLE_REDIS_TTL_SECONDS = 600
+# Read by the agent as McpAuthResolver.USER_TOKEN_HEADER (lowercased) for MCP connections with auth_mode 'user_token'.
+USER_TOKEN_HEADER = "X-AIHub-User-Token"
 
 # Must stay in sync with ``aihub_feature_filter.py``, which stashes the chat features the selected agent supports
 # under this key before OpenWebUI would act on them.
@@ -327,6 +329,19 @@ class AuthenticationService:
         secret = self._signing_secret.encode("utf-8")
         message = f"name:{user_name},email:{user_email}".encode()
         return hmac.new(secret, message, hashlib.sha256).hexdigest()
+
+    @staticmethod
+    def user_token_headers(
+        oauth_token: Annotated[Optional[dict[str, Any]], "OpenWebUI's __oauth_token__ for the user"],
+    ) -> Annotated[dict[str, str], "X-AIHub-User-Token, or nothing without a token"]:
+        """Forwards the user's own access token so an MCP connection with auth_mode 'user_token' can act as that user.
+
+        Without it, a profile that scopes the MCP server to the user's tenant (forward_tenant_id_header) cannot run from
+        a chat: the header alone is a claim the server cannot verify. Users who did not sign in through Keycloak
+        (local accounts) have no token, and such a profile then fails loudly in the agent instead of calling unscoped.
+        """
+        access_token = (oauth_token or {}).get("access_token")
+        return {USER_TOKEN_HEADER: access_token} if access_token else {}
 
     def prepare_headers(
         self,
@@ -3233,6 +3248,7 @@ class Pipe:
         __event_call__: Annotated[Any, "Event caller function"],
         __request__: Annotated[Any, "HTTP request object"] = None,
         __files__: Annotated[Optional[list[dict[str, Any]]], "Uploaded files"] = None,
+        __oauth_token__: Annotated[Optional[dict[str, Any]], "The user's Keycloak tokens, refreshed by OpenWebUI"] = None,
         **kwargs,
     ) -> Annotated[
         str | dict[str, Any] | AsyncGenerator[str, None], "Empty for the agent stream, SSE/JSON for a merge"
@@ -3278,6 +3294,7 @@ class Pipe:
                 # Prepare authentication (forward Accept-Language for localized error messages)
                 accept_language = __request__.headers.get("Accept-Language") if __request__ else None
                 headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"], accept_language)
+                headers.update(AuthenticationService.user_token_headers(__oauth_token__))
                 inject(headers)
 
                 # Convert messages

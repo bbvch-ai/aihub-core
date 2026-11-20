@@ -8,7 +8,7 @@ from operator import or_
 from typing import Annotated, override
 
 from bson import ObjectId
-from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Security
+from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Request, Security
 from mypy_boto3_s3 import S3Client
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
@@ -43,6 +43,7 @@ from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.routes import ChatService
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
+from swiss_ai_hub.core.tracing import NATSMessageHeaders
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
@@ -403,6 +404,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
 
         async def send_event(
             agent_id: Annotated[str, Path(title="Agent ID", description="The specific agent instance ID")],
+            request: Request,
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
@@ -455,6 +457,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
                 display_id=display_id,
                 user=user,
                 subscribe_to_thread=True,
+                aihub_headers=NATSMessageHeaders.extract_aihub_headers(dict(request.headers)),
             )
 
             if isinstance(response_event, ExceptionEvent):
@@ -506,6 +509,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
 
         async def stream_event(
             agent_id: Annotated[str, Path(title="Agent ID", description="The specific agent instance ID")],
+            request: Request,
             nc: Annotated[NATS, Depends(use_nats)],
             usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
@@ -560,6 +564,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
                 display_id=display_id,
                 user=user,
                 subscribe_to_thread=True,
+                aihub_headers=NATSMessageHeaders.extract_aihub_headers(dict(request.headers)),
             )
 
             async def sse_event_generator():
