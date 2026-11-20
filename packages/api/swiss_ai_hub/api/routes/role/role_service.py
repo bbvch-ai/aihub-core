@@ -87,7 +87,7 @@ class RoleService:
     @staticmethod
     @trace_fn
     def delete_role(role_id: str, tenant_id: str) -> None:
-        """Deletes a tenant-scoped role by its ID. System roles cannot be deleted."""
+        """Deletes a tenant-scoped role by its ID and revokes it from every user. System roles cannot be deleted."""
         try:
             role = RoleEntity.objects.get(id=role_id)
         except DoesNotExist:
@@ -96,4 +96,4 @@ class RoleService:
             raise HTTPException(status_code=403, detail="Cannot delete system roles.")
         if role.tenant_id != tenant_id:
             raise HTTPException(status_code=404, detail=_ROLE_NOT_FOUND)
-        role.delete()
+        RoleEntity.delete_role(role.name, tenant_id)
