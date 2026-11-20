@@ -35,8 +35,8 @@ class DocumentValueNormalizer:
     _SLASH_DATE: ClassVar[re.Pattern[str]] = re.compile(r"\b(\d{1,2})/(\d{1,2})/(?:\d{4}|\d{2})\b")
     _E_MAIL: ClassVar[re.Pattern[str]] = re.compile(r"<?[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+>?")
     _JURISDICTION_CLAUSE: ClassVar[re.Pattern[str]] = re.compile(
-        r"gerichtsstand|\ble for\b|\bfor (?:juridique|exclusif|est)\b|\bforo\b|\bcourts?\b|jurisdiction|juridiction|"
-        r"tribunal|giurisdizion",
+        r"gericht(?!et)|\ble for\b|\bfor (?:juridique|exclusif|est)\b|\bforo\b|\bcourts?\b|\bvenue\b|jurisdiction|"
+        r"juridiction|tribuna(?:l|ux)|giurisdizion",
         re.IGNORECASE,
     )
     _NAMES: ClassVar[frozenset[DocumentAttribute]] = frozenset(

@@ -1,3 +1,5 @@
+import bisect
+import itertools
 import re
 import unicodedata
 
@@ -20,19 +22,39 @@ class RawValueLocator:
 
     @classmethod
     def line_of(cls, raw: str, document_text: str) -> str | None:
-        """The document's line that holds the copied text, for the words around it the model left out."""
+        """The document's lines that hold the copied text, for the words around it the model left out."""
         return next(iter(cls.passages_holding(raw, document_text, 1)), None)
 
     @classmethod
     def passages_holding(cls, raw: str, document_text: str, line_count: int) -> list[str]:
-        """Each line that holds the copied text, with the `line_count - 1` non-empty lines before it (a heading)."""
+        """Each run of lines that holds the copied text, with the `line_count - 1` non-empty lines before it (a
+        heading).
+
+        The copy is found across line breaks and, failing that, with spacing ignored, just as `appears_in` finds it.
+        """
         wanted = cls._comparable(raw)
+        if not wanted:
+            return []
         lines = [line for line in document_text.splitlines() if line.strip()]
-        return [
-            "\n".join(lines[max(0, index - line_count + 1) : index + 1])
-            for index, line in enumerate(lines)
-            if wanted and wanted in cls._comparable(line)
-        ]
+        comparable_lines = [cls._comparable(line) for line in lines]
+        spans = cls._line_spans(wanted, comparable_lines, " ") or cls._line_spans(
+            wanted.replace(" ", ""), [line.replace(" ", "") for line in comparable_lines], ""
+        )
+        return ["\n".join(lines[max(0, first - line_count + 1) : last + 1]) for first, last in spans]
+
+    @classmethod
+    def _line_spans(cls, wanted: str, lines: list[str], separator: str) -> list[tuple[int, int]]:
+        """The first and last line of each place `wanted` stands, reading the lines as one text."""
+        line_ends = list(itertools.accumulate(len(line) + len(separator) for line in lines))
+        text = separator.join(lines)
+        spans: dict[tuple[int, int], None] = {}
+        position = text.find(wanted)
+        while position >= 0:
+            first = bisect.bisect_right(line_ends, position)
+            last = bisect.bisect_right(line_ends, position + len(wanted) - 1)
+            spans[(first, last)] = None
+            position = text.find(wanted, position + 1)
+        return list(spans)
 
     @classmethod
     def _comparable(cls, text: str) -> str:

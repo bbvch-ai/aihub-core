@@ -29,3 +29,14 @@ def test_the_line_of_a_copy_is_the_document_line_that_holds_it() -> None:
 
     assert RawValueLocator.line_of("le 1er  Décembre 2025", document) == "L'accord prend effet le 1er décembre 2025."
     assert RawValueLocator.line_of("le 2 décembre 2025", document) is None
+
+
+def test_a_copy_running_across_a_line_break_is_found_in_the_lines_that_hold_it() -> None:
+    document = "# Vertrag\nKestrel AG\nAusschliesslicher Gerichtsstand ist\nZürich."
+
+    assert RawValueLocator.passages_holding("Gerichtsstand ist Zürich", document, 2) == [
+        "Kestrel AG\nAusschliesslicher Gerichtsstand ist\nZürich."
+    ]
+    assert (
+        RawValueLocator.line_of("Gerichtsstand ist Zürich", document) == "Ausschliesslicher Gerichtsstand ist\nZürich."
+    )

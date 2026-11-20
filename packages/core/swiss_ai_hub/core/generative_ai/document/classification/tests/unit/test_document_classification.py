@@ -299,6 +299,11 @@ def test_a_contract_running_until_terminated_stores_its_start_alone() -> None:
         ("# SLA\nKestrel AG, Seefeldstrasse 101, 8008 Zürich\nZürich, 18 March 2026", None),
         ("# SLA\nKestrel AG, 8008 Zürich\nThe courts of Zürich have exclusive jurisdiction.", "Zürich"),
         ("# SLA\nKestrel AG, 8008 Zürich\n## 4. Gerichtsstand\nZürich", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\nZuständig sind die ordentlichen Gerichte in Zürich.", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\nZuständig ist das Handelsgericht Zürich.", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\nLes tribunaux de Zürich sont seuls compétents.", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\nExclusive venue shall be Zürich.", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\nDer Support ist auf Zürich ausgerichtet.", None),
     ],
 )
 def test_a_jurisdiction_is_kept_only_where_a_clause_names_a_court(text: str, stored: str | None) -> None:
@@ -313,6 +318,26 @@ def test_a_jurisdiction_is_kept_only_where_a_clause_names_a_court(text: str, sto
 
     assert values["document_jurisdiction"] == stored
     assert values["document_jurisdiction_raw"] == "Zürich"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "# SLA\nKestrel AG, 8008 Zürich\nAusschliesslicher Gerichtsstand ist\nZürich.",
+        "# SLA\nKestrel AG, 8008 Zürich\nAusschliesslicher Gerichts stand ist Zürich.",
+    ],
+)
+def test_a_jurisdiction_clause_is_found_across_a_line_break_or_a_split_word(text: str) -> None:
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.SERVICE_LEVEL_AGREEMENT,
+        "secondary_types": [],
+        "document_jurisdiction": "Gerichtsstand ist Zürich",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_jurisdiction"] == "Gerichtsstand ist Zürich"
 
 
 def test_an_offer_reads_its_validity_as_a_date() -> None:

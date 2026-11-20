@@ -48,13 +48,16 @@ class PeriodTextParser:
         _P.MONTH_NAME_DAY_PATTERN,
     )
     _MONTH_NAME: ClassVar[re.Pattern[str]] = re.compile(rf"\b(?:{_P.MONTH_PATTERN})\b")
+    _TERM_COMPOUND: ClassVar[str] = r"(?:vertrags|miet|pacht|laufzeit|abonnements?|arbeits|anstellungs|frist)?"
+    """German writes an end of a term as one word (Mietende, Vertragsablauf); only these prefixes count, since a bare
+    "-ende" also ends adjectives such as "geltende" or "folgende"."""
     _START_WORDS: ClassVar[re.Pattern[str]] = re.compile(
-        r"\b(?:ab|seit|beginn\w*|stellenantritt|eintritt\w*|in kraft|dès|à partir|début|prend effet|en vigueur|"
+        r"\b(?:ab|seit|\w*beginn\w*|\w*antritt|\w*eintritt\w*|in kraft|dès|à partir|début|prend effet|en vigueur|"
         r"a partire|dal|decorr\w*|inizio|in vigore|from|start\w*|commenc\w*|effective)\b"
     )
     _END_WORDS: ClassVar[re.Pattern[str]] = re.compile(
-        r"\b(?:bis|endet|ende|ablauf|vertragsende|jusqu|fin|échéance|expir\w*|fino|scad\w*|termina|until|till|"
-        r"through|ends?)\b"
+        rf"\b(?:bis|endet|{_TERM_COMPOUND}ende|{_TERM_COMPOUND}ablauf|jusqu|fin|échéance|expir\w*|fino|scad\w*|"
+        r"termina|until|till|through|ends?)\b"
     )
     _TAKES_EFFECT: ClassVar[re.Pattern[str]] = re.compile(
         r"\b(?:in kraft|en vigueur|in vigore|takes effect|comes into force)\b"
