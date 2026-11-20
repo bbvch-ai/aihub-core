@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from typing import Any, ClassVar
 
 from swiss_ai_hub.core.generative_ai.document.classification.amount_text_parser import AmountTextParser
@@ -31,8 +32,12 @@ class DocumentValueNormalizer:
     re-reads every document's kept text without calling a model.
     """
 
-    VERSION: ClassVar[int] = 3
+    VERSION: ClassVar[int] = 4
     _SLASH_DATE: ClassVar[re.Pattern[str]] = re.compile(r"\b(\d{1,2})/(\d{1,2})/(?:\d{4}|\d{2})\b")
+    _PLACEHOLDER: ClassVar[re.Pattern[str]] = re.compile(
+        r"_{3,}|\.{4,}|…{2,}|\[\s?\]|\[\s*(?:[YMDJTX#*.…/\s-]{2,}|[^\]]*_{2,}[^\]]*)\s*\]"
+    )
+    """A gap a template leaves to fill in: a blank line, dots, "[YYYY]", "[####]", "[______]" or an empty box."""
     _E_MAIL: ClassVar[re.Pattern[str]] = re.compile(r"<?[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+>?")
     _JURISDICTION_CLAUSE: ClassVar[re.Pattern[str]] = re.compile(
         r"gericht(?!et)|\ble for\b|\bfor (?:juridique|exclusif|est)\b|\bforo\b|\bcourts?\b|\bvenue\b|jurisdiction|"
@@ -57,8 +62,11 @@ class DocumentValueNormalizer:
         values: dict[str, Any] = {}
         for definition in applicable:
             if not definition.is_derived:
+                is_term = document_type in cls._TERM_TYPES
                 raw = cls._located(getattr(answer, definition.attribute.value), document_text)
-                values |= cls._stored(definition, raw, slash_order, document_text, document_type in cls._TERM_TYPES)
+                if raw is None and is_term and definition.value_type is AttributeValueType.PERIOD:
+                    raw = cls._term_by_its_dates(getattr(answer, definition.attribute.value), document_text)
+                values |= cls._stored(definition, raw, slash_order, document_text, is_term)
         cls._complete_currency(values)
         cls._drop_own_number(values)
         cls._drop_names_only_in_addresses(values, document_text)
@@ -79,12 +87,29 @@ class DocumentValueNormalizer:
 
     @classmethod
     def _located(cls, raw: _Raw, document_text: str) -> _Raw:
+        """The copied text that is in the document; a template's unfilled gap is not a value, even where it is."""
         if isinstance(raw, list):
-            found = RawValueLocator.found_in([item.strip() for item in raw if item.strip()], document_text)
-            return found or None
-        if raw is None or not raw.strip():
+            items = [item.strip() for item in raw if item.strip() and not cls._PLACEHOLDER.search(item)]
+            return RawValueLocator.found_in(items, document_text) or None
+        if raw is None or not raw.strip() or cls._PLACEHOLDER.search(raw):
             return None
         return raw.strip() if RawValueLocator.appears_in(raw, document_text) else None
+
+    @classmethod
+    def _term_by_its_dates(cls, raw: _Raw, document_text: str) -> _Raw:
+        """A term the model wrote in words of its own, kept when every date it names is in the document.
+
+        A contract often states its start and its end on lines of their own ("Vertragsbeginn 1. April 2025",
+        "Vertragsende 31. März 2028"), which no single copy spans, and a model adds a word ("ab") the document does
+        not have. Two dates or more keep the model's text, which reads as a range; one date keeps only the date as
+        written, so its end is read from its own line in the document rather than from the model's words.
+        """
+        if not isinstance(raw, str) or cls._PLACEHOLDER.search(raw):
+            return None
+        dates = PeriodTextParser.dates_written(raw)
+        if not dates or len(RawValueLocator.found_in(dates, document_text)) < len(dates):
+            return None
+        return dates[0] if len(dates) == 1 else raw.strip()
 
     @classmethod
     def _slash_order(cls, answer: DocumentClassificationAnswer, document_text: str) -> SlashDateOrder | None:
@@ -141,12 +166,21 @@ class DocumentValueNormalizer:
             case AttributeValueType.TAX_ID:
                 return {definition.key: TaxIdTextParser.parse(raw), definition.raw_key: raw}
             case AttributeValueType.TEXT_LIST:
-                items = cls._distinct((cls._name(raw) if definition.attribute in cls._NAMES else raw) or [])
+                plain = cls._plain(raw)
+                items = cls._distinct((cls._name(plain) if definition.attribute in cls._NAMES else plain) or [])
                 return {definition.key: items[: definition.max_items] or None, definition.raw_key: raw}
             case _ if definition.attribute in cls._NAMES:
-                return {definition.key: cls._name(raw), definition.raw_key: raw}
+                return {definition.key: cls._name(cls._plain(raw)), definition.raw_key: raw}
             case _:
-                return {definition.key: raw, definition.raw_key: raw}
+                return {definition.key: cls._plain(raw), definition.raw_key: raw}
+
+    @classmethod
+    def _plain(cls, raw: _Raw) -> _Raw:
+        """Text as a filter matches it: typographic ligatures ("ﬀ" in "Schaﬀhausen") and other compatibility
+        characters a PDF writes become plain letters; the copy itself is kept as written."""
+        if isinstance(raw, list):
+            return [unicodedata.normalize("NFKC", item) for item in raw]
+        return unicodedata.normalize("NFKC", raw) if raw is not None else None
 
     @classmethod
     def _name(cls, raw: _Raw) -> _Raw:

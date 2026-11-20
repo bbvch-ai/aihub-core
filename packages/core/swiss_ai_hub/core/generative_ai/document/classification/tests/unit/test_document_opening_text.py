@@ -45,3 +45,30 @@ def test_a_document_without_page_breaks_is_cut_by_characters() -> None:
     assert opening.endswith(paragraph.strip())
     assert excerpt.endswith("Total CHF 100.00")
     assert len(excerpt) < DocumentOpeningText.MAX_OPENING_CHARACTERS + DocumentOpeningText.TAIL_CHARACTERS + 20
+
+
+def test_a_long_contract_is_read_with_its_term_court_and_signing_clauses_from_the_middle() -> None:
+    filler = "\n".join(f"{number}.1 Die Lizenzgeberin erbringt die Leistung gemäss Anhang." for number in range(3, 60))
+    middle = (
+        f"{filler}\nArt. 16 Vertragsdauer\n16.1 Die Vertragslaufzeit beginnt am 1. Januar 2024 und dauert bis zum "
+        f"31. Dezember 2026.\n{filler}\nArt. 19 Gerichtsstand\nAusschliesslicher Gerichtsstand ist Zug.\n"
+        f"Zug, 28. November 2023 Zürich, 28. November 2023\n{filler}"
+    )
+    text = _pages("# Lizenzvertrag LV-1", "Art. 1 Gegenstand", middle, "Anhang C Preise\nTotal CHF 9'000.00")
+
+    excerpt = DocumentOpeningText.of(text)
+
+    assert "16.1 Die Vertragslaufzeit beginnt am 1. Januar 2024" in excerpt
+    assert "Ausschliesslicher Gerichtsstand ist Zug." in excerpt
+    assert "Zug, 28. November 2023" in excerpt
+    assert excerpt.endswith("Total CHF 9'000.00")
+    assert len(excerpt) < 4000
+
+
+def test_a_mention_of_the_term_in_passing_gives_way_to_its_heading() -> None:
+    passing = "Die Lizenz gilt für die Vertragsdauer und umfasst alle Updates, die während dieser Zeit erscheinen."
+    filler = "\n".join(f"Ziffer {number} regelt die Einzelheiten der Wartung und des Supports." for number in range(80))
+    middle = f"{passing}\n{passing}\n{filler}\nArt. 9 Vertragsdauer\nDer Vertrag läuft bis 30. Juni 2027.\n{filler}"
+    text = _pages("# Vertrag", "Art. 1", middle, "Unterschriften")
+
+    assert "Der Vertrag läuft bis 30. Juni 2027." in DocumentOpeningText.of(text)

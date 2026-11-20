@@ -164,3 +164,27 @@ def test_a_date_copied_without_its_word_is_read_in_the_line_it_came_from(
     raw: str, line: str, ends: tuple[bool, bool]
 ) -> None:
     assert PeriodTextParser.stated_ends(raw, context=line) == ends
+
+
+@pytest.mark.parametrize(
+    "raw", ["dal 1° gennaio 2026 fino al 31 dicembre 2027", "dal 1º gennaio 2026 al 31 dicembre 2027"]
+)
+def test_an_italian_range_whose_first_day_carries_an_ordinal_sign_is_read(raw: str) -> None:
+    parsed = PeriodTextParser.parse(raw)
+
+    assert parsed is not None
+    assert (parsed.start, parsed.end) == (date(2026, 1, 1), date(2027, 12, 31))
+
+
+@pytest.mark.parametrize(
+    ("raw", "dates"),
+    [
+        ("1. April 2025 bis 31. März 2028", ["1. April 2025", "31. März 2028"]),
+        ("ab 1. September 2025", ["1. September 2025"]),
+        ("dal 1° gennaio 2026 ﬁno al 31 dicembre 2027", ["1° gennaio 2026", "31 dicembre 2027"]),
+        ("du 1er janvier 2026 jusqu'au 2027-12-31", ["1er janvier 2026", "2027-12-31"]),
+        ("Februar 2025", []),
+    ],
+)
+def test_the_dates_a_period_names_are_listed_as_written(raw: str, dates: list[str]) -> None:
+    assert PeriodTextParser.dates_written(raw) == dates

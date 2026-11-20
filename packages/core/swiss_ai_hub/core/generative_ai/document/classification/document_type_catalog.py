@@ -533,6 +533,7 @@ class DocumentTypeCatalog:
         ),
         DocumentTypeDefinition(
             type=DocumentType.CONTRACT,
+            version=2,
             description=(
                 "Records an agreement between named parties and its terms, signed or as a draft: contracts, framework "
                 "and service agreements, employment, rental and licence agreements, and amendments to them."
@@ -591,6 +592,7 @@ class DocumentTypeCatalog:
         ),
         DocumentTypeDefinition(
             type=DocumentType.SERVICE_LEVEL_AGREEMENT,
+            version=2,
             description=(
                 "Defines the service levels a provider commits to for a service, such as availability, response and "
                 "resolution times and support hours, and what applies when they are missed: a stand-alone service "
@@ -762,6 +764,7 @@ class DocumentTypeCatalog:
         ),
         DocumentTypeDefinition(
             type=DocumentType.POLICY,
+            version=2,
             description=(
                 "Sets rules that employees, members or customers must follow: policies, guidelines, directives, "
                 "regulations, codes of conduct, staff handbooks that set working hours, holidays or conduct, and "

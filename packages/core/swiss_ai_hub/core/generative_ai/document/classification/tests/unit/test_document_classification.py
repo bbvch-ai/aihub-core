@@ -542,3 +542,90 @@ def test_a_jurisdiction_is_not_taken_from_an_address_whose_city_stands_inside_an
 
     assert values["document_jurisdiction"] is None
     assert values["document_jurisdiction_raw"] == "Bern"
+
+
+_TERM_ON_TWO_LINES = """# Rahmenvertrag RV-2025-07
+Vertragsbeginn 1. April 2025
+Vertragsende 31. März 2028
+"""
+
+
+def test_a_term_whose_ends_stand_on_lines_of_their_own_is_kept_when_the_model_joins_them() -> None:
+    assert _stored_period(DocumentType.CONTRACT, _TERM_ON_TWO_LINES, "1. April 2025 bis 31. März 2028") == {
+        "document_period_start": "2025-04-01",
+        "document_period_end": "2028-03-31",
+        "document_period_precision": "day",
+    }
+
+
+def test_a_joined_term_with_a_date_the_document_does_not_have_stores_nothing() -> None:
+    assert _stored_period(DocumentType.CONTRACT, _TERM_ON_TWO_LINES, "1. April 2025 bis 31. März 2029") == {
+        "document_period_start": None,
+        "document_period_end": None,
+        "document_period_precision": None,
+    }
+
+
+def test_a_word_the_model_added_to_a_term_date_is_not_read_its_own_line_is() -> None:
+    """The model wrote "bis" where the document says the contract begins: the line decides, not the model's word."""
+    text = "# Arbeitsvertrag\nDas Arbeitsverhältnis beginnt am 1. September 2025.\n"
+
+    assert _stored_period(DocumentType.CONTRACT, text, "bis 1. September 2025") == {
+        "document_period_start": "2025-09-01",
+        "document_period_end": None,
+        "document_period_precision": "day",
+    }
+
+
+def test_an_invoice_period_the_model_wrote_in_its_own_words_stays_dropped() -> None:
+    text = "# Rechnung\nLieferung 1. März 2025\nRechnungsdatum 31. März 2025\n"
+
+    assert _stored_period(DocumentType.INVOICE, text, "1. März 2025 bis 31. März 2025")["document_period_start"] is None
+
+
+def test_an_italian_term_written_with_an_ordinal_sign_is_read() -> None:
+    text = "# Rinnovo\nIl Contratto è prorogato dal 1° gennaio 2026 fino al 31 dicembre 2027.\n"
+
+    assert _stored_period(DocumentType.CONTRACT, text, "dal 1° gennaio 2026 fino al 31 dicembre 2027") == {
+        "document_period_start": "2026-01-01",
+        "document_period_end": "2027-12-31",
+        "document_period_precision": "day",
+    }
+
+
+def test_a_template_gap_is_not_stored_as_a_value() -> None:
+    text = (
+        "# Service Level Agreement NW-SLA-[YYYY]-[####]\nNordwind Software GmbH\n"
+        "Place of jurisdiction: [Zurich / other: ______]\n"
+    )
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.SERVICE_LEVEL_AGREEMENT,
+        "secondary_types": [],
+        "document_reference_number": "NW-SLA-[YYYY]-[####]",
+        "document_issuer": "Nordwind Software GmbH",
+        "document_jurisdiction": "[Zurich / other: ______]",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_reference_number"] is None
+    assert values["document_jurisdiction"] is None
+    assert values["document_issuer"] == "Nordwind Software GmbH"
+
+
+def test_a_ligature_a_pdf_wrote_is_stored_as_plain_letters_and_its_copy_as_written() -> None:
+    text = "# Vertrag\nArredi Uﬃcio SA, Mendrisio\nIl foro competente è Schaﬀhausen.\n"
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.CONTRACT,
+        "secondary_types": [],
+        "document_issuer": "Arredi Uﬃcio SA",
+        "document_jurisdiction": "Schaﬀhausen",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_issuer"] == "Arredi Ufficio SA"
+    assert values["document_jurisdiction"] == "Schaffhausen"
+    assert values["document_issuer_raw"] == "Arredi Uﬃcio SA"

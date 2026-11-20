@@ -781,8 +781,8 @@ not mapped back to them yet.
 
 `document/classification/` assigns a document one type from a closed set and reads that type's attributes (#2346, ADR
 `2026_11_13_closed_document_types_and_attributes_at_ingestion`). **`DocumentClassifier.classify(text, title, llm)`**
-makes one structured-output call on `DocumentOpeningText.of(text)` (first two pages capped at 8,000 characters, plus the
-last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadata()` is what ingestion stores:
+makes one structured-output call on `DocumentOpeningText.of(text)` (first two pages capped at 8,000 characters, at most
+two excerpts each of term, notice, court and signing-date clauses from the middle, plus the last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadata()` is what ingestion stores:
 
 - **`DocumentTypeCatalog` is the only list.** Types (16 since #2485: `invoice`, `credit_note`, `offer`, `order`,
   `delivery_note`, `receipt`, `account_statement`, `payment_reminder`, `contract`, `service_level_agreement`, `letter`,
