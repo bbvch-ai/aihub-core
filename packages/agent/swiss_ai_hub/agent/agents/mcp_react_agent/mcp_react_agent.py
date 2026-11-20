@@ -254,6 +254,7 @@ class McpReactAgent(Agent):
             for tool_event in new_tool_events:
                 message = await execute_single_tool_call(
                     mcp_client,
+                    server=mcp_config,
                     tool_call_id=tool_event.tool_call_id,
                     tool_name=tool_event.name,
                     arguments=tool_event.parameters,

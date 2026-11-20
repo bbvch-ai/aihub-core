@@ -1,5 +1,6 @@
 """Tests for AgentRunTracer — OTEL + Langfuse span enrichment for agent runs."""
 
+import json
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -10,9 +11,16 @@ from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, SpanContext, StatusCode, TraceFlags
 from pydantic import BaseModel
 from swiss_ai_hub.core.dispatcher import TraceStore
-from swiss_ai_hub.core.events.agent import StartEvent
+from swiss_ai_hub.core.events.agent import LLMEvent, Message, StartEvent, ToolEvent
+from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.mcp import McpClientConfig
+from swiss_ai_hub.core.secrets import SecretEncryptionService
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
+from swiss_ai_hub.agent.agents.mcp_react_agent import McpReactAgentConfig
+from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.tracing.agent_run_tracer import AgentRunTracer
 
 _FAKE_TRACEPARENT = {"traceparent": "00-0000000000000000000000000000dead-000000000000beef-01"}
@@ -261,6 +269,142 @@ class TestTraceStepStop:
 
         attrs = mock_span2.set_attributes.call_args_list[-1][0][0]
         assert attrs["langfuse.trace.output"] == "final answer"
+
+
+async def _traced_input(tracer: AgentRunTracer, topic: AgentInstanceTopic, kwargs: dict) -> str:
+    """The input value the step span starts with."""
+    mock_tracer = MagicMock()
+    tracer.tracer = mock_tracer
+
+    async def dummy_step():
+        pass
+
+    with (
+        patch("swiss_ai_hub.agent.tracing.agent_run_tracer.set_span_in_context"),
+        patch("swiss_ai_hub.agent.tracing.agent_run_tracer.context"),
+    ):
+        async with tracer.trace_step_start(topic, dummy_step, kwargs):
+            pass
+    return mock_tracer.start_span.call_args.kwargs["attributes"][SpanAttributes.INPUT_VALUE]
+
+
+def _mcp_agent_config(api_key: str) -> McpReactAgentConfig:
+    return McpReactAgentConfig(
+        agent_id="mcp",
+        name=LocaleString(en="MCP"),
+        description=LocaleString(en="MCP"),
+        llm=LLMConfig(model_name="test-model"),
+        mcp=McpClientConfig(name="echo", url="http://echo.example/mcp", api_key=api_key),
+    )
+
+
+class TestStepInputSecrets:
+    """Step inputs reach Langfuse and the cloud trace backend, so no secret may be in them."""
+
+    @pytest.mark.asyncio
+    async def test_masks_a_secret_of_the_agent_config(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
+        traced = json.loads(await _traced_input(tracer, topic, {"config": _mcp_agent_config("sk-secret")}))
+
+        assert "sk-secret" not in json.dumps(traced)
+        assert traced["config"]["mcp"]["api_key"] == SecretEncryptionService.MASK
+        assert traced["config"]["mcp"]["url"] == "http://echo.example/mcp"
+
+    @pytest.mark.asyncio
+    async def test_keeps_an_unset_secret_empty(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
+        traced = json.loads(await _traced_input(tracer, topic, {"config": _mcp_agent_config("")}))
+
+        assert traced["config"]["mcp"]["api_key"] == ""
+
+    @pytest.mark.asyncio
+    async def test_masks_a_secret_of_a_step_config(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
+        mcp_config = McpClientConfig(name="echo", url="http://echo.example/mcp", api_key="sk-secret")
+
+        traced = json.loads(await _traced_input(tracer, topic, {"mcp_config": mcp_config}))
+
+        assert traced["mcp_config"]["api_key"] == SecretEncryptionService.MASK
+
+    @pytest.mark.asyncio
+    async def test_masks_the_forwarded_user_token_only(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
+        run_context = MagicMock(spec=RunContext)
+        run_context.to_serializable = AsyncMock(
+            return_value={
+                "store_name": "run",
+                "data": {"_aihub_headers": {"x-aihub-user-token": "eyJ.secret", "x-aihub-anonymise": "true"}},
+            }
+        )
+
+        traced = json.loads(await _traced_input(tracer, topic, {"run_context": run_context}))
+
+        headers = traced["run_context"]["data"]["_aihub_headers"]
+        assert headers["x-aihub-user-token"] == SecretEncryptionService.MASK
+        assert headers["x-aihub-anonymise"] == "true"
+
+    @pytest.mark.asyncio
+    async def test_masks_encrypted_secrets_kept_in_the_context(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic
+    ) -> None:
+        """The dispatcher keeps the profile's config in RunContext with its secrets still encrypted."""
+        run_context = MagicMock(spec=RunContext)
+        run_context.to_serializable = AsyncMock(
+            return_value={
+                "store_name": "run",
+                "data": {"_agent_config": {"mcp": {"api_key": "enc:v1:gAAAA-ciphertext", "url": "http://echo"}}},
+            }
+        )
+
+        traced = json.loads(await _traced_input(tracer, topic, {"run_context": run_context}))
+
+        mcp = traced["run_context"]["data"]["_agent_config"]["mcp"]
+        assert mcp["api_key"] == SecretEncryptionService.MASK
+        assert mcp["url"] == "http://echo"
+
+
+def _span_kind(span: MagicMock) -> str | None:
+    kinds = [
+        call.args[0][SpanAttributes.OPENINFERENCE_SPAN_KIND]
+        for call in span.set_attributes.call_args_list
+        if SpanAttributes.OPENINFERENCE_SPAN_KIND in call.args[0]
+    ]
+    return kinds[-1] if kinds else None
+
+
+class TestStepLabel:
+    """A step is labelled by what it did, never by a tool call it only requested or a prompt it only carries."""
+
+    @pytest.mark.asyncio
+    async def test_requested_tool_calls_do_not_label_the_step(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic
+    ) -> None:
+        span = MagicMock()
+        calls = [ToolEvent(tool_call_id="1", name="echo", parameters={}), ToolEvent(tool_call_id="2", name="other")]
+
+        await tracer.trace_step_stop(span, calls, topic)
+
+        assert _span_kind(span) is None
+
+    @pytest.mark.asyncio
+    async def test_a_carried_prompt_is_not_a_generation(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic
+    ) -> None:
+        span = MagicMock()
+        prompt = McpReasoningEvent(input_messages=[Message.from_string(role="user", content="hi")])
+
+        await tracer.trace_step_stop(span, [prompt], topic)
+
+        assert _span_kind(span) is None
+
+    @pytest.mark.asyncio
+    async def test_an_answer_is_still_a_generation(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
+        span = MagicMock()
+        answer = LLMEvent(
+            input_messages=[Message.from_string(role="user", content="hi")],
+            output_messages=[Message.from_string(role="assistant", content="hello")],
+            chat_model_name="test-model",
+        )
+
+        await tracer.trace_step_stop(span, [answer], topic)
+
+        assert _span_kind(span) == OpenInferenceSpanKindValues.LLM.value
 
 
 class TestTraceStepError:
