@@ -44,11 +44,11 @@ For a customer deployment, that is the **customer's** tenant, so the customer's 
 up, not the operator. In short, they:
 
 1. Create a shared mailbox to send from.
-2. Register an Entra app with the application permission *Office 365 Exchange Online* → `SMTP.SendAsApp` and grant
-   admin consent.
+2. Register an Entra app with the application permission *Office 365 Exchange Online* → `SMTP.SendAsApp` and grant admin
+   consent.
 3. Create a client secret.
-4. Register the app in Exchange Online (`New-ServicePrincipal`), give it `FullAccess` to the mailbox only, and allow SMTP
-   AUTH on the mailbox.
+4. Register the app in Exchange Online (`New-ServicePrincipal`), give it `FullAccess` to the mailbox only, and allow
+   SMTP AUTH on the mailbox.
 5. Send the operator the tenant ID, client ID, client secret (over an encrypted channel), mailbox address and secret
    expiry date.
 
@@ -60,12 +60,12 @@ includes a test that proves the setup before anything changes on the platform.
 Set these variables in the deployment's `.env` (see [Environment variables](../9_environment_variables/)), using the
 values the customer sent:
 
-| Variable                      | Value                                                            |
-| ----------------------------- | ---------------------------------------------------------------- |
-| `KEYCLOAK_SMTP_TENANT_ID`     | Directory (tenant) id of the mailbox's tenant                    |
-| `KEYCLOAK_SMTP_CLIENT_ID`     | Application (client) id of the app                               |
-| `KEYCLOAK_SMTP_CLIENT_SECRET` | The client secret, from the deployment's secret store            |
-| `KEYCLOAK_SMTP_MAILBOX`       | The sending mailbox (default `noreply.ai-hub@bbv.ch`)            |
+| Variable                      | Value                                                 |
+| ----------------------------- | ----------------------------------------------------- |
+| `KEYCLOAK_SMTP_TENANT_ID`     | Directory (tenant) id of the mailbox's tenant         |
+| `KEYCLOAK_SMTP_CLIENT_ID`     | Application (client) id of the app                    |
+| `KEYCLOAK_SMTP_CLIENT_SECRET` | The client secret, from the deployment's secret store |
+| `KEYCLOAK_SMTP_MAILBOX`       | The sending mailbox (default `noreply.ai-hub@bbv.ch`) |
 
 `KEYCLOAK_SMTP_MAILBOX` must be exactly the mailbox the app has access to; another address fails with
 `554 5.2.252 SendAsDenied`. Note the secret's expiry date (see [Secret rotation](#secret-rotation-and-a-new-app)).

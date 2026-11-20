@@ -65,7 +65,7 @@ format:
 
 format-md:
 	@echo "Formatting markdown files..."
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index' | grep -v 'e2e/fixtures/')
 
 format-yaml:
 	@echo "Formatting YAML files..."
@@ -114,13 +114,13 @@ TAG ?= v0.326.0
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index' | grep -v 'e2e/fixtures/')
 
 # Check licenses across all dependencies
 license-check:
 	@echo "Checking licenses..."
 	/bin/bash ./generate-license.sh
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index' | grep -v 'e2e/fixtures/')
 
 # Generate Docker Compose files from the template
 generate-compose:

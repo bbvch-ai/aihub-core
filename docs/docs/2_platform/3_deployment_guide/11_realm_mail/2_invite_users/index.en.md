@@ -15,12 +15,12 @@ This page walks through the invitation in the Keycloak admin console and shows w
 
 ## Before you start
 
-| You need                                                    | Why                                                                                                                                  |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Realm mail is set up                                        | Without a mail server, Keycloak cannot send the invitation. The operator sets it up, see [Realm mail and invitations](../).          |
-| A Keycloak admin account for the realm **aihub**            | The steps run in the Keycloak admin console. The account needs the `manage-users` role of the `realm-management` client (or realm admin). |
-| The tenant already exists                                   | The person joins an existing tenant group under `tenants`, see [Setting up tenants](../../../16_multi_tenancy/2_creating_tenants/). |
-| The person's email address                                  | It becomes their sign-in name.                                                                                                       |
+| You need                                         | Why                                                                                                                                       |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Realm mail is set up                             | Without a mail server, Keycloak cannot send the invitation. The operator sets it up, see [Realm mail and invitations](../).               |
+| A Keycloak admin account for the realm **aihub** | The steps run in the Keycloak admin console. The account needs the `manage-users` role of the `realm-management` client (or realm admin). |
+| The tenant already exists                        | The person joins an existing tenant group under `tenants`, see [Setting up tenants](../../../16_multi_tenancy/2_creating_tenants/).       |
+| The person's email address                       | It becomes their sign-in name.                                                                                                            |
 
 To check that mail is working, open the sign-in page, choose **Forgot password?** and enter the address of an existing
 account that does not sign in through Entra ID. If no mail arrives within a minute, ask the operator to follow
@@ -52,6 +52,7 @@ If you created the user without a group, open the user's **Groups** tab and choo
 Without the realm role `AIHubAccess`, sign-in to Swiss AI-Hub is denied.
 
 1. On the new user's page, open the **Role mapping** tab.
+
 2. Choose **Assign role** → **Realm roles**.
 
    ![Assign role menu with Realm roles](../../../../../media/platform/inviting_users/03_assign_realm_role_menu.png)
@@ -107,22 +108,22 @@ instance, the mail arrives in the person's normal inbox and the sign-in page may
 ## Step 5: Give the user a tenant role
 
 The invitation gives access to the platform and the tenant, but no role inside the tenant yet. A tenant administrator
-assigns one (for example `AIHubUser`) in the Swiss AI-Hub admin UI under the tenant's users, as for every other user. See
-[Managing users and roles](../../../16_multi_tenancy/3_user_management/).
+assigns one (for example `AIHubUser`) in the Swiss AI-Hub admin UI under the tenant's users, as for every other user.
+See [Managing users and roles](../../../16_multi_tenancy/3_user_management/).
 
 ## Resend an invitation
 
-If the link expired or the mail got lost, repeat [step 4](#step-4-send-the-invitation) on the same user. The person
-uses the link in the newest mail.
+If the link expired or the mail got lost, repeat [step 4](#step-4-send-the-invitation) on the same user. The person uses
+the link in the newest mail.
 
 ## Troubleshooting
 
-| Problem                                                     | Cause and fix                                                                                                                                                                                  |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Send Email** fails, or the console shows an error        | Realm mail is not set up or not working. The operator checks the Keycloak log, see [Check that mail arrives](../#check-that-mail-arrives).                                                     |
-| Keycloak says the mail was sent, but nothing arrives        | Ask the person to check the spam or quarantine folder. Their mail server may block mail from the sender address; their IT can allow it.                                                        |
-| The link says it has expired                                | The time under **Expires In** has passed. Resend the invitation with a longer lifetime.                                                                                                       |
-| The person signs in, but access is denied                   | `AIHubAccess` is missing. Assign it ([step 3](#step-3-assign-the-aihubaccess-role)).                                                                                                           |
-| The person signs in, but sees no tenant or an empty tenant  | The tenant group is missing ([step 2](#step-2-add-the-user-to-the-tenant)), or no tenant role is assigned ([step 5](#step-5-give-the-user-a-tenant-role)).                                    |
-| **Add user** says the email already exists                  | The person already has an account, for example from an earlier Entra sign-in. Don't create a second one: add the existing user to the tenant instead.                                        |
+| Problem                                                                                         | Cause and fix                                                                                                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Send Email** fails, or the console shows an error                                             | Realm mail is not set up or not working. The operator checks the Keycloak log, see [Check that mail arrives](../#check-that-mail-arrives).                                                                                                                                |
+| Keycloak says the mail was sent, but nothing arrives                                            | Ask the person to check the spam or quarantine folder. Their mail server may block mail from the sender address; their IT can allow it.                                                                                                                                   |
+| The link says it has expired                                                                    | The time under **Expires In** has passed. Resend the invitation with a longer lifetime.                                                                                                                                                                                   |
+| The person signs in, but access is denied                                                       | `AIHubAccess` is missing. Assign it ([step 3](#step-3-assign-the-aihubaccess-role)).                                                                                                                                                                                      |
+| The person signs in, but sees no tenant or an empty tenant                                      | The tenant group is missing ([step 2](#step-2-add-the-user-to-the-tenant)), or no tenant role is assigned ([step 5](#step-5-give-the-user-a-tenant-role)).                                                                                                                |
+| **Add user** says the email already exists                                                      | The person already has an account, for example from an earlier Entra sign-in. Don't create a second one: add the existing user to the tenant instead.                                                                                                                     |
 | The link or sign-in shows "This account signs in through your organisation's identity provider" | The user has `AIHubFederatedUser` because they signed in through Entra ID at least once. They keep using Entra. To switch them to a password, see [Users who sign in through Entra ID never use a password](../#users-who-sign-in-through-entra-id-never-use-a-password). |

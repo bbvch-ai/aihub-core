@@ -7,8 +7,8 @@ source_sha: 661c201d93603d36256edfddbd5a39071a91ca22e5efb08b7f795bf3ada40a23
 # E-Mail-Verarbeitungsagent
 
 ::: info Enterprise-Funktion
-Der E-Mail-Verarbeitungsagent ist Teil von bbv AI Hub Enterprise. Für den Betrieb braucht es eine bbv AI Hub
-Enterprise License; siehe [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
+Der E-Mail-Verarbeitungsagent ist Teil von bbv AI Hub Enterprise. Für den Betrieb braucht es eine bbv AI Hub Enterprise
+License; siehe [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
 :::
 
 Der **E-Mail-Verarbeitungsagent** macht aus einem gemeinsamen Postfach eine Warteschlange, die sich selbst sortiert. Bei

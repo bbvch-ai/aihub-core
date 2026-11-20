@@ -61,8 +61,8 @@ calling and multimodal inputs (text and images) for vision-capable models. Agent
 
 A language model answers with at most its configured `max_output_tokens`, the same limit agents use: a request without
 `max_tokens` gets that limit, and a larger `max_tokens` or `max_completion_tokens` is lowered to it. A conversation too
-long to leave that much room in the model's context window is still answered, with whatever room is left. If a
-reasoning model uses the whole limit on thinking and produces no answer to a plain chat request (no own limit, no
+long to leave that much room in the model's context window is still answered, with whatever room is left. If a reasoning
+model uses the whole limit on thinking and produces no answer to a plain chat request (no own limit, no
 `response_format`, no tools), the response ends with `finish_reason: "length"` and a short message saying so, in the
 request's language.
 
