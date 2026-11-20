@@ -119,11 +119,11 @@ class PeriodTextParser:
         after = re.split(r"\d", text[date_end : date_end + cls._REACH])[0]
         if cls._OPEN_ENDED.search(f"{before} {after}") or cls._TAKES_EFFECT.search(after):
             return True, False
-        nearest = cls._end_words(before)[-1:]
+        nearest = cls._named_ends(before)[-1:]
         return (nearest[0], not nearest[0]) if nearest else None
 
     @classmethod
-    def _end_words(cls, text: str) -> list[bool]:
+    def _named_ends(cls, text: str) -> list[bool]:
         """For each word naming an end of a period, in the order written, whether it names the start."""
         return [
             starts
