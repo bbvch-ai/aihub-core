@@ -512,6 +512,20 @@ query-groups, view-groups, view-realm, view-clients
 (`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status. Role changes here now reach running
 deployments on the next start.
 
+**External knowledge writer** (`managed/30-clients.json.j2`): a client-credentials client for external systems that
+upload documents into tenant knowledge databases, its id and secret from `KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID` /
+`_SECRET`. It needs the `tenants` default scope and the `account` audience mapper, or the API rejects its tokens. Never
+create such a client by hand: keycloak-config-cli deletes every client not in this file. Its tenant groups and tenant
+role are operational config, see `docs/docs/6_code_deep_dive/2_keycloak_configuration/`. Set them up BEFORE the writer's
+first API call:
+
+- **Upload role.** In each target tenant, give the service-account user a role that holds only
+  `aihub.user.service.knowledge` (the service gate) and `aihub.admin.knowledge.<db>.<namespace>` (what `initiate` and
+  `validate` require). `AIHubUser` gets 403. `AIHubKnowledgeAdmin` can also create and delete databases.
+- **Startup tenant.** `/tenants/<startup tenant>` is a realm default group, so the service-account user starts out in
+  the startup tenant. A user without roles in a tenant gets the signup roles on its first call there, or the admin roles
+  if it is the tenant's first member. Remove the user from that group, or give it a harmless role there first.
+
 **AIHubAccess gate**: `Post Broker Login - AIHubAccess Check` only runs for users brokered through an external IdP, so
 `browser-aihub` carries its own CONDITIONAL `aihub-access-gate-browser` sub-flow (deny unless the user has
 `AIHubAccess`) right after the REQUIRED authenticate wrapper and before the Langfuse gate. It is the only `AIHubAccess`
