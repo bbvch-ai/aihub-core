@@ -1,0 +1,264 @@
+# Payment reminders and dunning letters, in German, French, Italian and English. Every company and person is made up;
+# every Swiss UID passes its check digit. `expected` holds each value as stored (ISO dates, numbers, ISO currency
+# codes), and None where the document does not state it.
+
+- id: reminder-de-1
+  type: payment_reminder
+  title: Zahlungserinnerung_2025-1142.pdf
+  note: A first payment reminder naming the open invoice and its amount.
+  text: |
+    # Alpenglück Bürobedarf AG
+    Marktgasse 30, 3011 Bern
+
+    Muster Treuhand GmbH, Spitalgasse 4, 3011 Bern
+
+    ## Zahlungserinnerung
+    Bern, 30.06.2025
+
+    Sicher ist es Ihrer Aufmerksamkeit entgangen, dass folgende Rechnung noch offen ist:
+
+    | Rechnung | Datum | Betrag CHF |
+    |---|---|---:|
+    | 2025-1142 | 21.05.2025 | 1'082.08 |
+
+    Wir bitten Sie, den Betrag bis 10.07.2025 zu überweisen.
+  expected:
+    document_date: "2025-06-30"
+    document_reference_number: null
+    document_issuer: Alpenglück Bürobedarf AG
+    document_recipient: Muster Treuhand GmbH
+    document_total_amount: 1082.08
+    document_currency: CHF
+    document_due_date: "2025-07-10"
+    document_related_references: [2025-1142]
+
+- id: reminder-de-2
+  type: payment_reminder
+  title: 2_Mahnung_88341.pdf
+  note: A second reminder that adds a fee and a new total.
+  text: |
+    # Rhyfall Elektro GmbH
+    Mühlentalstrasse 5, 8200 Schaffhausen
+
+    Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+    ## 2. Mahnung
+    Schaffhausen, 15.05.2025
+
+    Rechnung 88341 vom 17.03.2025: CHF 3'080.85
+    Mahngebühr: CHF 20.00
+    **Offener Betrag: CHF 3'100.85**
+
+    Bitte begleichen Sie den Betrag innert 10 Tagen, ansonsten leiten wir die Betreibung ein.
+  expected:
+    document_date: "2025-05-15"
+    document_reference_number: null
+    document_issuer: Rhyfall Elektro GmbH
+    document_recipient: Seeblick Hotel AG
+    document_total_amount: 3100.85
+    document_currency: CHF
+    document_due_date: null
+    document_related_references: ["88341"]
+
+- id: reminder-fr-1
+  type: payment_reminder
+  title: rappel_paiement_AF-2503-99127.pdf
+  note: A French payment reminder.
+  text: |
+    # Alpenfunk Télécom SA
+    Avenue de la Gare 18, 1003 Lausanne
+
+    Atelier Rousseau Sàrl, Rue du Rhône 21, 1204 Genève
+
+    ## Rappel de paiement
+    Lausanne, le 20 mai 2025
+
+    Sauf erreur de notre part, la facture n° AF-2503-99127 du 2 avril 2025 d'un montant de CHF 158.26 reste impayée.
+    Nous vous prions de régler ce montant d'ici le 30 mai 2025.
+  expected:
+    document_date: "2025-05-20"
+    document_reference_number: null
+    document_issuer: Alpenfunk Télécom SA
+    document_recipient: Atelier Rousseau Sàrl
+    document_total_amount: 158.26
+    document_currency: CHF
+    document_due_date: "2025-05-30"
+    document_related_references: [AF-2503-99127]
+
+- id: reminder-en-1
+  type: payment_reminder
+  title: Overdue_Notice_7781.pdf
+  note: An English overdue notice.
+  text: |
+    # Quillfeather Supplies Inc.
+    ## Overdue Notice
+
+    To: Brightwater Analytics Ltd
+    Date: May 10, 2025
+
+    Our records show that invoice #7781 for USD 1,716.00 is now 40 days past due.
+    Please remit payment within 7 days to avoid a late fee of USD 50.00.
+  expected:
+    document_date: "2025-05-10"
+    document_reference_number: null
+    document_issuer: Quillfeather Supplies Inc.
+    document_recipient: Brightwater Analytics Ltd
+    document_total_amount: 1716.00
+    document_currency: USD
+    document_due_date: null
+    document_related_references: ["7781"]
+
+- id: reminder-it-1
+  type: payment_reminder
+  title: sollecito_2025_00456.pdf
+  note: An Italian payment reminder.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano
+
+    Studio Bellavista Sagl, Piazza Riforma 3, 6900 Lugano
+
+    ## Sollecito di pagamento
+    Lugano, 25 ottobre 2025
+
+    La fattura n. 2025/00456 del 15 settembre 2025 di CHF 1'794.46 risulta ancora scoperta.
+    Vi preghiamo di provvedere al pagamento entro il 5 novembre 2025.
+  expected:
+    document_date: "2025-10-25"
+    document_reference_number: null
+    document_issuer: Ticino Logistica SA
+    document_recipient: Studio Bellavista Sagl
+    document_total_amount: 1794.46
+    document_currency: CHF
+    document_due_date: "2025-11-05"
+    document_related_references: [2025/00456]
+
+- id: reminder-de-3
+  type: payment_reminder
+  title: Letzte_Mahnung_M3-2025-0614.pdf
+  note: A third and final reminder whose total adds reminder fees and default interest; its own number is not the invoice's.
+  text: |
+    # Glarner Druckerei Linth AG
+    Landstrasse 58, 8750 Glarus · UID CHE-473.920.186 MWST
+
+    Einschreiben
+    Bistro Zum Hirschen GmbH
+    Herr Beat Zwicky
+    Hauptstrasse 3
+    8762 Schwanden
+
+    ## Letzte Mahnung (3. Mahnstufe) Nr. M3-2025-0614
+    Glarus, 12. August 2025
+
+    Trotz unserer Zahlungserinnerung vom 26.06.2025 und der 2. Mahnung vom 17.07.2025 ist folgende Rechnung weiterhin offen:
+
+    | Rechnung | Datum | Fällig seit | Betrag CHF |
+    |---|---|---|---:|
+    | 2025-0418 | 10.04.2025 | 10.05.2025 | 2'640.50 |
+
+    | Position | Betrag CHF |
+    |---|---:|
+    | Offener Rechnungsbetrag | 2'640.50 |
+    | Mahngebühren (2. und 3. Mahnung) | 50.00 |
+    | Verzugszins 5 % vom 11.05.2025 bis 12.08.2025 | 33.64 |
+    | **Total zu bezahlen** | **2'724.14** |
+
+    Wir fordern Sie letztmals auf, den Gesamtbetrag bis spätestens 22.08.2025 zu überweisen. Nach Ablauf dieser
+    Frist leiten wir ohne weitere Ankündigung die Betreibung ein.
+
+    Freundliche Grüsse
+    Glarner Druckerei Linth AG, Debitorenbuchhaltung
+  expected:
+    document_date: "2025-08-12"
+    document_reference_number: M3-2025-0614
+    document_issuer: Glarner Druckerei Linth AG
+    document_recipient: Bistro Zum Hirschen GmbH
+    document_total_amount: 2724.14
+    document_currency: CHF
+    document_due_date: "2025-08-22"
+    document_related_references: [2025-0418]
+
+- id: reminder-fr-2
+  type: payment_reminder
+  title: sommation_SOM-25-0087.pdf
+  note: A French sommation de payer adding reminder fees and late interest; the new deadline is the due date.
+  text: |
+    # Garage du Salève SA
+    Route de Saint-Julien 140, 1228 Plan-les-Ouates · IDE CHE-691.204.350 TVA
+
+    Recommandé
+    Monsieur Julien Perrin
+    Rue de Carouge 52
+    1205 Genève
+
+    ## Sommation de payer
+    Notre référence : SOM-25-0087
+    Genève, le 3 septembre 2025
+
+    Monsieur,
+
+    Malgré nos rappels des 7 juillet et 4 août 2025, la facture suivante demeure impayée :
+
+    | Facture | Date | Montant CHF |
+    |---|---|---:|
+    | F-2025-0731 (service et pneus, véhicule GE 481 220) | 4 juin 2025 | 1'486.20 |
+    | Frais de rappel | | 40.00 |
+    | Intérêts moratoires 5 % du 5 juillet au 3 septembre 2025 | | 12.22 |
+    | **Total dû** | | **1'538.42** |
+
+    Nous vous mettons en demeure de nous verser la somme de CHF 1'538.42 au plus tard le 13 septembre 2025. À défaut,
+    nous engagerons une procédure de poursuite sans autre avis.
+
+    Veuillez agréer, Monsieur, nos salutations distinguées.
+    Garage du Salève SA, comptabilité
+  expected:
+    document_date: "2025-09-03"
+    document_reference_number: SOM-25-0087
+    document_issuer: Garage du Salève SA
+    document_recipient: Monsieur Julien Perrin
+    document_total_amount: 1538.42
+    document_currency: CHF
+    document_due_date: "2025-09-13"
+    document_related_references: [F-2025-0731]
+
+- id: reminder-en-2
+  type: payment_reminder
+  title: Payment_Reminder_REM-2025-0219.pdf
+  note: An English reminder chasing two overdue invoices at once; both are related references and the total adds an admin fee.
+  text: |
+    # Kestrel Print & Design Ltd
+    14 Wharf Street, Bristol BS1 4RN · VAT Reg. No. GB 731 4402 18
+
+    Marlow Events Ltd
+    Attn: Finance Department
+    3 Thames Court, Marlow SL7 1NX
+
+    ## Payment Reminder
+    Reminder no.: REM-2025-0219
+    Date: 8 October 2025
+    Your account: MAR-118
+
+    Dear Sir or Madam,
+
+    According to our records, the following invoices remain unpaid past their due dates:
+
+    | Invoice | Invoice date | Due date | Amount |
+    |---|---|---|---:|
+    | KPD-10442 | 6 August 2025 | 5 September 2025 | £1,180.00 |
+    | KPD-10517 | 20 August 2025 | 19 September 2025 | £642.50 |
+    | Late payment administration fee | | | £25.00 |
+    | **Total now due** | | | **£1,847.50** |
+
+    Please arrange payment of £1,847.50 by 22 October 2025. If you have already paid, please disregard this reminder.
+
+    Yours faithfully,
+    Credit Control, Kestrel Print & Design Ltd
+  expected:
+    document_date: "2025-10-08"
+    document_reference_number: REM-2025-0219
+    document_issuer: Kestrel Print & Design Ltd
+    document_recipient: Marlow Events Ltd
+    document_total_amount: 1847.50
+    document_currency: GBP
+    document_due_date: "2025-10-22"
+    document_related_references: [KPD-10442, KPD-10517]

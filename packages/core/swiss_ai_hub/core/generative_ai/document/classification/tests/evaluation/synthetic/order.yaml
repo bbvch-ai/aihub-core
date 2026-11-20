@@ -1,0 +1,337 @@
+# Purchase orders and order confirmations, in German, French, Italian and English. Every company and person is made up;
+# every Swiss UID passes its check digit. `expected` holds each value as stored (ISO dates, numbers, ISO currency
+# codes), and None where the document does not state it.
+
+- id: order-confirmation-de-1
+  type: order
+  title: Auftragsbestaetigung_AB-77120.pdf
+  note: An order confirmation that ends with a total and VAT (C2).
+  text: |
+    # Rhyfall Elektro GmbH
+    Mühlentalstrasse 5, 8200 Schaffhausen · MWST CHE-314.159.269
+
+    Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+    ## Auftragsbestätigung AB-77120
+    Schaffhausen, 03.03.2025 · Ihre Bestellung BE-77120 vom 02.03.2025
+
+    Wir bestätigen Ihre Bestellung mit Dank:
+
+    | Pos | Artikel | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 1 | LED-Panel 60x60, 4000 K | 24 | 2'160.00 |
+    | 2 | Montage, Stunden | 6 | 690.00 |
+
+    Total inkl. 8.1 % MWST CHF 3'080.85
+    Voraussichtlicher Liefertermin: KW 11. Die Rechnung folgt mit der Lieferung.
+  expected:
+    document_date: "2025-03-03"
+    document_reference_number: AB-77120
+    document_issuer: Rhyfall Elektro GmbH
+    document_issuer_tax_id: CHE314159269
+    document_recipient: Seeblick Hotel AG
+    document_total_amount: 3080.85
+    document_currency: CHF
+    document_due_date: null
+    document_related_references: [BE-77120]
+
+- id: order-confirmation-fr-1
+  type: order
+  title: confirmation_commande_CC-5521.pdf
+  note: A French order confirmation with a total.
+  text: |
+    # Alpenfunk Télécom SA
+    Avenue de la Gare 18, 1003 Lausanne
+
+    Atelier Rousseau Sàrl, Rue du Rhône 21, 1204 Genève
+
+    ## Confirmation de commande CC-5521
+    Lausanne, le 10 février 2025
+
+    Abonnement Business Fibre 1 Gbit/s, mise en service le 1er mars 2025 : CHF 89.00 par mois
+    Frais d'installation uniques : CHF 149.00
+    Total de la première facture estimé : CHF 255.90 TTC
+
+    Votre première facture vous parviendra début avril.
+  expected:
+    document_date: "2025-02-10"
+    document_reference_number: CC-5521
+    document_issuer: Alpenfunk Télécom SA
+    document_issuer_tax_id: null
+    document_recipient: Atelier Rousseau Sàrl
+    document_total_amount: 255.90
+    document_currency: CHF
+    document_due_date: "2025-03-01"
+    document_related_references: null
+
+- id: order-confirmation-en-1
+  type: order
+  title: Order_Confirmation_SO-2025-4410.pdf
+  note: An English sales order confirmation.
+  text: |
+    # Quillfeather Supplies Inc.
+    880 Market Street, San Francisco, CA 94102
+
+    Customer: Brightwater Analytics Ltd
+
+    ## Sales Order Confirmation SO-2025-4410
+    Order date: March 2, 2025
+
+    | Item | Qty | Amount |
+    |---|---:|---:|
+    | Ergonomic office chair | 4 | $1,596.00 |
+    | Shipping | 1 | $120.00 |
+
+    Order total: USD 1,716.00
+    Estimated ship date: March 9, 2025. An invoice will be issued upon shipment.
+  expected:
+    document_date: "2025-03-02"
+    document_reference_number: SO-2025-4410
+    document_issuer: Quillfeather Supplies Inc.
+    document_issuer_tax_id: null
+    document_recipient: Brightwater Analytics Ltd
+    document_total_amount: 1716.00
+    document_currency: USD
+    document_due_date: "2025-03-09"
+    document_related_references: null
+
+- id: order-confirmation-it-1
+  type: order
+  title: conferma_ordine_ORD-5521.pdf
+  note: An Italian order confirmation.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano
+
+    Studio Bellavista Sagl, Piazza Riforma 3, 6900 Lugano
+
+    ## Conferma d'ordine ORD-5521
+    Lugano, 5 settembre 2025
+
+    Confermiamo il trasporto mobili ufficio Lugano–Bellinzona per il 12 settembre 2025.
+    Importo concordato: CHF 1'794.46 IVA inclusa.
+    La fattura seguirà dopo l'esecuzione.
+  expected:
+    document_date: "2025-09-05"
+    document_reference_number: ORD-5521
+    document_issuer: Ticino Logistica SA
+    document_issuer_tax_id: null
+    document_recipient: Studio Bellavista Sagl
+    document_total_amount: 1794.46
+    document_currency: CHF
+    document_due_date: "2025-09-12"
+    document_related_references: null
+
+- id: order-confirmation-de-2
+  type: order
+  title: Bestellbestaetigung_44871.pdf
+  note: An online shop order confirmation with "Rechnungsadresse" and a total.
+  text: |
+    # Alpenglück Bürobedarf AG – Onlineshop
+    Bestellbestätigung Nr. 44871 vom 19.05.2025
+
+    Rechnungsadresse: Muster Treuhand GmbH, Spitalgasse 4, 3011 Bern
+    Lieferadresse: wie Rechnungsadresse
+
+    | Artikel | Menge | Betrag CHF |
+    |---|---:|---:|
+    | Kopierpapier A4, 80 g, Karton | 10 | 389.00 |
+    | Toner HP 26X | 4 | 612.00 |
+
+    Bestellsumme inkl. MWST CHF 1'082.08
+    Zahlungsart: Kauf auf Rechnung. Die Rechnung liegt der Lieferung bei.
+  expected:
+    document_date: "2025-05-19"
+    document_reference_number: "44871"
+    document_issuer: Alpenglück Bürobedarf AG
+    document_issuer_tax_id: null
+    document_recipient: Muster Treuhand GmbH
+    document_total_amount: 1082.08
+    document_currency: CHF
+    document_due_date: null
+    document_related_references: null
+
+- id: order-confirmation-de-3
+  type: order
+  title: AB_2025_301.pdf
+  note: An order confirmation for design work with a fixed price.
+  text: |
+    # Atelier Lindenhof GmbH
+    Lindenhofstrasse 8, 8001 Zürich
+
+    Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+    ## Auftragsbestätigung AU-2025-301
+    Zürich, 01.07.2025
+
+    Neugestaltung Speisekarten Herbst 2025, Pauschalpreis CHF 2'400.00 exkl. MWST
+    Abgabe der Druckdaten bis 15.08.2025. Verrechnung nach Abgabe.
+  expected:
+    document_date: "2025-07-01"
+    document_reference_number: AU-2025-301
+    document_issuer: Atelier Lindenhof GmbH
+    document_issuer_tax_id: null
+    document_recipient: Seeblick Hotel AG
+    document_total_amount: 2400.00
+    document_currency: CHF
+    document_due_date: "2025-08-15"
+    document_related_references: null
+
+- id: purchase-order-de-1
+  type: order
+  title: Bestellung_BE-77120.pdf
+  note: A buyer's purchase order whose issuer and UID are the buyer's, not the supplier's, and which names the offer it accepts.
+  text: |
+    # Seeblick Hotel AG
+    Uferweg 2, 6006 Luzern · UID CHE-528.136.979 MWST
+    Einkauf: Sandra Kälin, Tel. 041 410 22 00
+
+    Rhyfall Elektro GmbH
+    Mühlentalstrasse 5
+    8200 Schaffhausen
+    MWST CHE-314.159.269
+
+    ## Bestellung BE-77120
+    Luzern, 02.03.2025
+
+    Gestützt auf Ihre Offerte OF-2025-221 vom 20.02.2025 bestellen wir:
+
+    | Pos | Artikel | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 1 | LED-Panel 60x60, 4000 K | 24 | 2'160.00 |
+    | 2 | Montage, Stunden | 6 | 690.00 |
+
+    Total exkl. MWST CHF 2'850.00 · MWST 8.1 % CHF 230.85
+    **Bestellsumme CHF 3'080.85**
+
+    Gewünschter Liefertermin: 14.03.2025, Anlieferung über die Hotelgarage.
+    Bitte senden Sie uns eine Auftragsbestätigung und geben Sie auf der Rechnung unsere Bestellnummer an.
+
+    Freundliche Grüsse
+    Seeblick Hotel AG
+  expected:
+    document_date: "2025-03-02"
+    document_reference_number: BE-77120
+    document_issuer: Seeblick Hotel AG
+    document_issuer_tax_id: CHE528136979
+    document_recipient: Rhyfall Elektro GmbH
+    document_total_amount: 3080.85
+    document_currency: CHF
+    document_due_date: "2025-03-14"
+    document_related_references: [OF-2025-221]
+
+- id: purchase-order-fr-1
+  type: order
+  title: bon_de_commande_BC-2025-0391.pdf
+  note: A French purchase order sent by the buyer to its supplier; the customer number is not a related reference.
+  text: |
+    # Lemanic Services SA
+    Chemin des Vignes 4, 1009 Pully
+
+    Papeterie du Léman SA
+    Service commandes
+    Avenue de Morges 52
+    1004 Lausanne
+
+    ## Bon de commande n° BC-2025-0391
+    Pully, le 14 octobre 2025
+    Notre n° client chez vous : 40-1187
+
+    | Article | Quantité | Prix unitaire CHF | Montant CHF |
+    |---|---:|---:|---:|
+    | Chaise visiteur empilable, anthracite | 6 | 159.00 | 954.00 |
+    | Table de réunion pliante 160 × 80 | 2 | 205.00 | 410.00 |
+
+    Total HT CHF 1'364.00
+    TVA 8,1 % CHF 110.48
+    **Total TTC CHF 1'474.48**
+
+    Livraison souhaitée : 24 octobre 2025, à notre adresse de Pully.
+    Merci de nous confirmer la commande par retour de courriel.
+  expected:
+    document_date: "2025-10-14"
+    document_reference_number: BC-2025-0391
+    document_issuer: Lemanic Services SA
+    document_issuer_tax_id: null
+    document_recipient: Papeterie du Léman SA
+    document_total_amount: 1474.48
+    document_currency: CHF
+    document_due_date: "2025-10-24"
+    document_related_references: null
+
+- id: purchase-order-en-1
+  type: order
+  title: PO-7731_Quillfeather.pdf
+  note: An English purchase order from the buyer, whose VAT number is the issuer's; the requested delivery date is the due date.
+  text: |
+    # Brightwater Analytics Ltd
+    12 Canal Street, Manchester M1 3HE · VAT Reg. No. GB 123 4567 89
+
+    Supplier:
+    Quillfeather Supplies Inc.
+    880 Market Street
+    San Francisco, CA 94102
+
+    ## PURCHASE ORDER PO-7731
+    Date: 28 February 2025
+    Buyer: Oliver Hartley, Facilities
+
+    | Item | Qty | Unit price | Amount |
+    |---|---:|---:|---:|
+    | Ergonomic office chair | 4 | $399.00 | $1,596.00 |
+    | Shipping | 1 | $120.00 | $120.00 |
+
+    **Total: USD 1,716.00**
+
+    Required delivery date: 14 March 2025
+    Deliver to: 12 Canal Street, Manchester M1 3HE. Please quote PO-7731 on all invoices and delivery notes.
+  expected:
+    document_date: "2025-02-28"
+    document_reference_number: PO-7731
+    document_issuer: Brightwater Analytics Ltd
+    document_issuer_tax_id: GB123456789
+    document_recipient: Quillfeather Supplies Inc.
+    document_total_amount: 1716.00
+    document_currency: USD
+    document_due_date: "2025-03-14"
+    document_related_references: null
+
+- id: purchase-order-it-1
+  type: order
+  title: ordine_acquisto_OA-2025-058.pdf
+  note: An Italian purchase order from the buyer, with the buyer's UID and a requested delivery date.
+  text: |
+    # Studio Bellavista Sagl
+    Piazza Riforma 3, 6900 Lugano · IDI CHE-639.047.151 IVA
+
+    Spettabile
+    Grafiche Ceresio SA
+    Via Industria 7
+    6814 Lamone
+
+    ## Ordine d'acquisto n. OA-2025-058
+    Lugano, 3 novembre 2025
+
+    Con la presente ordiniamo:
+
+    | Pos. | Descrizione | Quantità | Importo CHF |
+    |---|---|---:|---:|
+    | 1 | Biglietti da visita, 350 g, stampa fronte/retro | 2'000 | 320.00 |
+    | 2 | Cartelline A4 con logo | 500 | 480.00 |
+
+    Totale IVA esclusa CHF 800.00
+    IVA 8,1 % CHF 64.80
+    **Totale ordine CHF 864.80 IVA inclusa**
+
+    Consegna entro il 17 novembre 2025 presso il nostro studio.
+    Vi preghiamo di inviarci una conferma d'ordine.
+  expected:
+    document_date: "2025-11-03"
+    document_reference_number: OA-2025-058
+    document_issuer: Studio Bellavista Sagl
+    document_issuer_tax_id: CHE639047151
+    document_recipient: Grafiche Ceresio SA
+    document_total_amount: 864.80
+    document_currency: CHF
+    document_due_date: "2025-11-17"
+    document_related_references: null

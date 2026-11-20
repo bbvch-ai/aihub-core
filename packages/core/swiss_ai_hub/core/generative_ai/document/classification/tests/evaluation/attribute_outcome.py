@@ -6,6 +6,7 @@ class AttributeOutcome(StrEnum):
 
     WRONG and GUESSED are the costly ones: a filter silently drops a correct document on them. EMPTY and
     NOT_UNDERSTOOD only cost a read, since a filter keeps unknown values; NOT_UNDERSTOOD also names a format to add.
+    INCOMPLETE is a list of copied passages that misses some but invents none.
     """
 
     CORRECT = "correct"
@@ -13,3 +14,4 @@ class AttributeOutcome(StrEnum):
     GUESSED = "guessed"
     EMPTY = "empty"
     NOT_UNDERSTOOD = "not_understood"
+    INCOMPLETE = "incomplete"

@@ -44,6 +44,12 @@ _ANSWER: dict[str, Any] = {
     "document_due_date": "Zahlbar innert 30 Tagen netto",
     "document_period": "Februar 2025",
     "document_related_references": ["LS-8812", "PO-3333"],
+    "document_valid_until": None,
+    "document_notice_period": None,
+    "document_service_levels": None,
+    "document_product": None,
+    "document_participants": None,
+    "document_jurisdiction": None,
 }
 
 
@@ -99,6 +105,16 @@ def test_a_value_that_is_not_in_the_document_is_dropped_with_its_text() -> None:
     assert values["document_related_references"] == ["LS-8812"]
 
 
+def test_an_e_mail_address_is_not_stored_as_a_name_but_keeps_its_text() -> None:
+    text = _INVOICE + "\nAn: buchhaltung@muster.example\n"
+
+    values = _classified(text, document_recipient="buchhaltung@muster.example").values
+
+    assert values["document_recipient"] is None
+    assert values["document_recipient_raw"] == "buchhaltung@muster.example"
+    assert values["document_parties"] == ["Hooli AG"]
+
+
 def test_a_tax_id_failing_its_check_keeps_its_text_but_no_value() -> None:
     text = _INVOICE.replace("CHE-123.456.788", "CHE-123.456.789")
 
@@ -119,6 +135,237 @@ def test_another_type_stores_no_invoice_attributes_whatever_the_model_filled() -
 
     assert classification.values == {}
     assert classification.document_types == [DocumentType.OTHER]
+
+
+_SLA = """# Nebelhorn Hosting AG
+Industriestrasse 9, 6300 Zug
+
+Kunde: Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+## Service Level Agreement SLA-2025-14
+Anhang 2 zum Rahmenvertrag RV-2024-031 · Zug, 2. Mai 2025
+
+Laufzeit: 1. Juni 2025 bis 31. Mai 2027
+Kündigungsfrist: 6 Monate auf Ende der Laufzeit
+
+| Service Level | Zusage |
+|---|---|
+| Verfügbarkeit | 99,9 % pro Monat |
+| Reaktionszeit Priorität 1 | 30 Minuten |
+"""
+
+
+def test_a_service_level_agreement_stores_its_own_attributes_and_none_of_an_invoice() -> None:
+    answer = {
+        **_ANSWER,
+        "document_type": DocumentType.SERVICE_LEVEL_AGREEMENT,
+        "document_date": "2. Mai 2025",
+        "document_reference_number": "SLA-2025-14",
+        "document_issuer": "Nebelhorn Hosting AG",
+        "document_recipient": "Seeblick Hotel AG",
+        "document_period": "1. Juni 2025 bis 31. Mai 2027",
+        "document_notice_period": "6 Monate auf Ende der Laufzeit",
+        "document_service_levels": ["99,9 % pro Monat", "Reaktionszeit Priorität 1 | 30 Minuten"],
+        "document_related_references": ["RV-2024-031"],
+        "document_total_amount": "CHF 12'496.36",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), _SLA).values
+
+    assert values["document_period_start"] == "2025-06-01"
+    assert values["document_period_end"] == "2027-05-31"
+    assert values["document_notice_period"] == "6 Monate auf Ende der Laufzeit"
+    assert values["document_service_levels"] == ["99,9 % pro Monat", "Reaktionszeit Priorität 1 | 30 Minuten"]
+    assert values["document_related_references"] == ["RV-2024-031"]
+    assert values["document_parties"] == ["Nebelhorn Hosting AG", "Seeblick Hotel AG"]
+    assert "document_total_amount" not in values
+    assert "document_due_date" not in values
+
+
+_THREAD = """**Von:** Lea Brunner <lea.brunner@seeblick.example>
+**Gesendet:** Dienstag, 4. März 2025 09:12
+**An:** support@nebelhorn.example
+**Betreff:** AW: Ausfall Buchungssystem, Ticket T-4471
+
+Guten Morgen, das System läuft wieder. Danke! Lea Brunner, Seeblick Hotel AG
+
+**Von:** Nebelhorn Hosting AG Support <support@nebelhorn.example>
+**Gesendet:** Montag, 3. März 2025 18:40
+**An:** Lea Brunner <lea.brunner@seeblick.example>
+**Cc:** buchhaltung@seeblick.example
+
+Wir haben die Störung behoben (SLA-2025-14).
+"""
+
+_THREAD_ANSWER: dict[str, Any] = {
+    **{key: None for key in _ANSWER},
+    "document_type": DocumentType.EMAIL_THREAD,
+    "secondary_types": [],
+    "document_date": "4. März 2025",
+    "document_participants": [
+        "Lea Brunner <lea.brunner@seeblick.example>",
+        "Nebelhorn Hosting AG Support",
+        "buchhaltung@seeblick.example",
+        "Lea Brunner",
+    ],
+    "document_related_references": ["T-4471", "SLA-2025-14"],
+    "document_issuer": "Nebelhorn Hosting AG",
+}
+
+
+def test_an_e_mail_thread_stores_its_participants_by_name_and_lists_them_as_parties() -> None:
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**_THREAD_ANSWER), _THREAD).values
+
+    assert values["document_date"] == "2025-03-04"
+    assert values["document_participants"] == ["Lea Brunner", "Nebelhorn Hosting AG Support"]
+    assert values["document_participants_raw"] == _THREAD_ANSWER["document_participants"]
+    assert values["document_parties"] == ["Lea Brunner", "Nebelhorn Hosting AG Support"]
+    assert values["document_related_references"] == ["T-4471", "SLA-2025-14"]
+    assert "document_issuer" not in values
+
+
+def test_a_thread_whose_participants_are_only_e_mail_addresses_has_no_participants_and_no_parties() -> None:
+    answer = {**_THREAD_ANSWER, "document_participants": ["support@nebelhorn.example", "buchhaltung@seeblick.example"]}
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), _THREAD).values
+
+    assert values["document_participants"] is None
+    assert values["document_parties"] is None
+
+
+def test_a_name_written_only_inside_an_e_mail_address_is_dropped_with_its_text_kept() -> None:
+    answer = {**_THREAD_ANSWER, "document_participants": ["Buchhaltung", "Lea Brunner"]}
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), _THREAD).values
+
+    assert values["document_participants"] == ["Lea Brunner"]
+    assert values["document_participants_raw"] == ["Buchhaltung", "Lea Brunner"]
+
+
+def test_a_name_copied_with_its_e_mail_address_keeps_the_name() -> None:
+    text = _INVOICE + "\nAn: Muster Treuhand GmbH <buchhaltung@muster.example>\n"
+
+    values = _classified(text, document_recipient="Muster Treuhand GmbH <buchhaltung@muster.example>").values
+
+    assert values["document_recipient"] == "Muster Treuhand GmbH"
+    assert values["document_parties"] == ["Hooli AG", "Muster Treuhand GmbH"]
+
+
+def test_documentation_stores_the_product_it_documents() -> None:
+    text = "# Benutzerhandbuch Kassensystem Orbis POS 4\nDok.-Nr. HB-ORB-040 · Ausgabe 03/2025\nKassenwerk AG"
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.DOCUMENTATION,
+        "secondary_types": [],
+        "document_date": "03/2025",
+        "document_reference_number": "HB-ORB-040",
+        "document_issuer": "Kassenwerk AG",
+        "document_product": "Kassensystem Orbis POS 4",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_product"] == "Kassensystem Orbis POS 4"
+    assert values["document_date"] == "2025-03-01"
+    assert values["document_date_precision"] == "month"
+    assert "document_parties" not in values
+
+
+def test_a_contract_running_until_terminated_stores_its_start_alone() -> None:
+    text = (
+        "# Mietvertrag\nPilatus Logistik AG vermietet der Bergwerk Bau AG einen Lagerplatz.\n"
+        "Das Mietverhältnis beginnt am 1. Juli 2025 und läuft auf unbestimmte Zeit.\nGerichtsstand ist Luzern."
+    )
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.CONTRACT,
+        "secondary_types": [],
+        "document_issuer": "Pilatus Logistik AG",
+        "document_recipient": "Bergwerk Bau AG",
+        "document_period": "beginnt am 1. Juli 2025 und läuft auf unbestimmte Zeit",
+        "document_jurisdiction": "Luzern",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_period_start"] == "2025-07-01"
+    assert values["document_period_end"] is None
+    assert values["document_jurisdiction"] == "Luzern"
+
+
+@pytest.mark.parametrize(
+    ("text", "stored"),
+    [
+        ("# SLA\nKestrel AG, Seefeldstrasse 101, 8008 Zürich\nZürich, 18 March 2026", None),
+        ("# SLA\nKestrel AG, 8008 Zürich\nThe courts of Zürich have exclusive jurisdiction.", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\n## 4. Gerichtsstand\nZürich", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\nZuständig sind die ordentlichen Gerichte in Zürich.", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\nZuständig ist das Handelsgericht Zürich.", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\nLes tribunaux de Zürich sont seuls compétents.", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\nExclusive venue shall be Zürich.", "Zürich"),
+        ("# SLA\nKestrel AG, 8008 Zürich\nDer Support ist auf Zürich ausgerichtet.", None),
+    ],
+)
+def test_a_jurisdiction_is_kept_only_where_a_clause_names_a_court(text: str, stored: str | None) -> None:
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.SERVICE_LEVEL_AGREEMENT,
+        "secondary_types": [],
+        "document_jurisdiction": "Zürich",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_jurisdiction"] == stored
+    assert values["document_jurisdiction_raw"] == "Zürich"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "# SLA\nKestrel AG, 8008 Zürich\nAusschliesslicher Gerichtsstand ist\nZürich.",
+        "# SLA\nKestrel AG, 8008 Zürich\nAusschliesslicher Gerichts stand ist Zürich.",
+    ],
+)
+def test_a_jurisdiction_clause_is_found_across_a_line_break_or_a_split_word(text: str) -> None:
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.SERVICE_LEVEL_AGREEMENT,
+        "secondary_types": [],
+        "document_jurisdiction": "Gerichtsstand ist Zürich",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_jurisdiction"] == "Gerichtsstand ist Zürich"
+
+
+def test_an_offer_reads_its_validity_as_a_date() -> None:
+    text = "# Offerte OF-2025-221\nSchaffhausen, 20.02.2025 · gültig bis 31.03.2025\nOffertsumme CHF 3'080.85"
+    answer = {
+        **_ANSWER,
+        "document_type": DocumentType.OFFER,
+        "document_date": "20.02.2025",
+        "document_reference_number": "OF-2025-221",
+        "document_valid_until": "31.03.2025",
+        "document_total_amount": "CHF 3'080.85",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_valid_until"] == "2025-03-31"
+    assert values["document_valid_until_precision"] == "day"
+    assert values["document_total_amount"] == 3080.85
+    assert "document_due_date" not in values
+
+
+def test_a_contract_with_a_service_level_annex_carries_both_types() -> None:
+    classification = _classified(
+        document_type=DocumentType.CONTRACT, secondary_types=[DocumentType.SERVICE_LEVEL_AGREEMENT]
+    )
+
+    assert classification.document_types == [DocumentType.CONTRACT, DocumentType.SERVICE_LEVEL_AGREEMENT]
+    assert "document_service_levels" not in classification.values
 
 
 def test_secondary_types_exclude_the_primary_type_and_other() -> None:
@@ -228,3 +475,70 @@ def test_the_documents_own_unambiguous_slash_dates_settle_the_order_before_its_c
     )
 
     assert classification.values["document_date"] == read
+
+
+def _stored_period(document_type: DocumentType, text: str, period: str) -> dict[str, Any]:
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": document_type,
+        "secondary_types": [],
+        "document_period": period,
+    }
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+    return {key: values[key] for key in ("document_period_start", "document_period_end", "document_period_precision")}
+
+
+def test_an_invoice_period_is_whole_whatever_words_stand_before_it() -> None:
+    """Start and end words concern a term only; an invoice line keeps its whole period, as before #2485."""
+    text = "# Rechnung RE-2025-0318\nLieferung bis spätestens Ende Monat. Leistungszeitraum: März 2025\n"
+
+    assert _stored_period(DocumentType.INVOICE, text, "März 2025") == {
+        "document_period_start": "2025-03-01",
+        "document_period_end": "2025-03-31",
+        "document_period_precision": "month",
+    }
+    assert (
+        _stored_period(DocumentType.INVOICE, "Leistung bis 31.03.2025 erbracht", "31.03.2025")["document_period_start"]
+        == "2025-03-31"
+    )
+
+
+def test_a_contract_stated_by_its_end_in_part_in_bold_stores_only_its_end() -> None:
+    text = (
+        "# Mietvertrag MV-2025-07\nDas Mietverhältnis beginnt am 1. Juli 2025.\n"
+        "Das Mietverhältnis endet am **30. Juni** 2027.\n"
+    )
+
+    assert _stored_period(DocumentType.CONTRACT, text, "30. Juni 2027") == {
+        "document_period_start": None,
+        "document_period_end": "2027-06-30",
+        "document_period_precision": "day",
+    }
+
+
+def test_a_contract_term_word_in_the_sentence_before_does_not_decide_its_end() -> None:
+    text = "# Rahmenvertrag\nKündigung bis Ende Jahr. Die Laufzeit umfasst das Kalenderjahr 2026.\n"
+
+    assert _stored_period(DocumentType.CONTRACT, text, "2026") == {
+        "document_period_start": "2026-01-01",
+        "document_period_end": "2026-12-31",
+        "document_period_precision": "year",
+    }
+
+
+def test_a_jurisdiction_is_not_taken_from_an_address_whose_city_stands_inside_another_word() -> None:
+    text = (
+        "# Kaufvertrag KV-2025-12\nVerkäuferin: Aarewohn AG, Marktgasse 4, 3011 Bern\n"
+        "Käuferin: Kestrel AG, Bahnhofplatz 2, 8001 Zürich\n\nGerichtsstand ist am Sitz der Übernehmerin.\n"
+    )
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.CONTRACT,
+        "secondary_types": [],
+        "document_jurisdiction": "Bern",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_jurisdiction"] is None
+    assert values["document_jurisdiction_raw"] == "Bern"

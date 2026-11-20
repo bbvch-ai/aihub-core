@@ -35,10 +35,21 @@ def test_a_type_overrides_only_the_meaning_of_attributes_that_apply_to_it() -> N
         assert set(definition.meanings) <= set(definition.attributes), definition.type
 
 
-def test_a_derived_attribute_applies_only_with_its_sources() -> None:
+def test_a_derived_attribute_applies_only_with_one_of_its_sources() -> None:
     for type_definition in DocumentTypeCatalog.TYPES:
         for attribute in DocumentTypeCatalog.applicable(type_definition.type):
-            assert set(attribute.derived_from) <= set(type_definition.attributes), attribute.attribute
+            if attribute.is_derived:
+                assert set(attribute.derived_from) & set(type_definition.attributes), attribute.attribute
+
+
+def test_parties_cover_issuer_and_recipient_or_the_participants_of_a_thread() -> None:
+    def parties_sources(document_type: DocumentType) -> set[DocumentAttribute]:
+        type_attributes = set(DocumentTypeCatalog.type_definition(document_type).attributes)
+        parties = DocumentTypeCatalog.attribute_definition(DocumentAttribute.PARTIES)
+        return set(parties.derived_from) & type_attributes
+
+    assert parties_sources(DocumentType.INVOICE) == {DocumentAttribute.ISSUER, DocumentAttribute.RECIPIENT}
+    assert parties_sources(DocumentType.EMAIL_THREAD) == {DocumentAttribute.PARTICIPANTS}
 
 
 def test_other_has_no_attributes() -> None:
@@ -144,3 +155,23 @@ def test_the_prompt_names_every_type_and_every_attribute_the_model_fills() -> No
     for definition in DocumentTypeCatalog.extracted_attributes():
         assert f'<attribute name="{definition.key}">' in system
     assert "The issue date (Rechnungsdatum)" in system
+
+
+def test_the_prompt_names_types_sharing_a_meaning_together_and_each_meaning_once() -> None:
+    for attribute in DocumentTypeCatalog.prompt_attributes():
+        meanings = [group["meaning"] for group in attribute["meanings"]]
+        types = [document_type for group in attribute["meanings"] for document_type in group["types"]]
+
+        assert len(meanings) == len(set(meanings)), attribute["name"]
+        assert len(types) == len(set(types)), attribute["name"]
+
+    dates = next(
+        attribute for attribute in DocumentTypeCatalog.prompt_attributes() if attribute["name"] == "document_date"
+    )
+    assert ["contract", "service_level_agreement"] in [group["types"] for group in dates["meanings"]]
+
+
+def test_adding_the_types_of_2485_re_classifies_only_documents_marked_other() -> None:
+    assert DocumentTypeCatalog.type_definition(DocumentType.OTHER).version == 2
+    assert DocumentTypeCatalog.needs_classification(DocumentTypeCatalog.VERSION, "other", 1)
+    assert not DocumentTypeCatalog.needs_classification(DocumentTypeCatalog.VERSION, "invoice", 1)

@@ -1,0 +1,205 @@
+# Reports, in German, French, Italian and English. Every company and person is made up; every Swiss UID passes its check
+# digit. `expected` holds each value as stored (ISO dates, numbers, ISO currency codes), and None where the document
+# does not state it.
+
+- id: report-de-1
+  type: report
+  title: Jahresbericht_2024.pdf
+  note: An annual report covers its year, and carries no date of its own here.
+  text: |
+    # Jahresbericht 2024
+    Bergwerk Bau AG
+
+    ## Das Wichtigste in Kürze
+    Der Umsatz stieg um 6 % auf CHF 48,2 Mio. Wir haben 14 Projekte abgeschlossen, darunter die Sanierung von drei
+    Schulhäusern. Die Zahl der Mitarbeitenden wuchs auf 212.
+
+    ## Ausblick
+    Für 2025 erwarten wir eine stabile Auftragslage im öffentlichen Hochbau.
+  expected:
+    document_date: null
+    document_issuer: Bergwerk Bau AG
+    document_period_start: "2024-01-01"
+    document_period_end: "2024-12-31"
+
+- id: report-en-1
+  type: report
+  title: Data_Quality_Audit_Report.pdf
+  note: The report's month is its date, not a period; the client it was written for is not the issuer.
+  text: |
+    # Data Quality Audit – Final Report
+    Prepared by Brightwater Analytics Ltd for Hooli AG · February 2025
+
+    ## Findings
+    1. 4.2% of customer records have no country code.
+    2. Duplicate invoices were found in the ERP export for 2023 (37 cases).
+    3. Order dates are missing on 1.1% of orders.
+
+    ## Recommendations
+    Introduce validation on entry and a monthly duplicate check.
+  expected:
+    document_date: "2025-02-01"
+    document_issuer: Brightwater Analytics Ltd
+    document_period_start: null
+    document_period_end: null
+
+- id: report-fr-1
+  type: report
+  title: rapport_activite_T3.pdf
+  text: |
+    # Rapport d'activité – 3e trimestre 2025
+    Lemanic Services SA
+
+    Au troisième trimestre, nous avons repris l'entretien de deux nouveaux immeubles de bureaux à Lausanne. Le taux de
+    satisfaction de la clientèle atteint 92 %. Les absences pour maladie ont diminué de 1,4 point.
+  expected:
+    document_date: null
+    document_issuer: Lemanic Services SA
+    document_period_start: "2025-07-01"
+    document_period_end: "2025-09-30"
+
+- id: report-de-2
+  type: report
+  title: Projektstatus_Atlas_KW12.pdf
+  note: A status report naming no organisation or author has no issuer; no parser reads a calendar week as a period.
+  text: |
+    # Projektstatus „Atlas" – KW 12/2025
+
+    | Arbeitspaket | Status | Fertig |
+    |---|---|---:|
+    | UI-Design | in Arbeit | 70 % |
+    | Backend-API | in Arbeit | 55 % |
+    | Tests | offen | 0 % |
+
+    Risiko: Die Schnittstelle zum Rechnungsmodul ist noch nicht spezifiziert.
+  expected:
+    document_date: null
+    document_issuer: null
+    document_period_start: null
+    document_period_end: null
+
+- id: report-it-1
+  type: report
+  title: Rapporto_annuale_2024.pdf
+  note: An annual report covers its year; the date it carries is the date it was signed off, not the period.
+  text: |
+    # Rapporto annuale 2024
+    Cooperativa Agricola Valmaggia
+
+    Cevio, 28 marzo 2025
+
+    ## Il 2024 in breve
+    La cooperativa conta 186 soci. Il latte conferito è aumentato del 3,5 % a 2,41 milioni di litri; la produzione di
+    formaggio d'alpe ha raggiunto 38,6 tonnellate. La nuova cantina di stagionatura a Bignasco è in funzione da giugno.
+
+    ## Conti annuali
+    | | 2024 CHF | 2023 CHF |
+    |---|---:|---:|
+    | Ricavi | 4'812'300 | 4'655'900 |
+    | Risultato d'esercizio | 96'400 | 71'200 |
+
+    ## Prospettive
+    Per il 2025 il comitato prevede prezzi del latte stabili e un ulteriore aumento delle vendite dirette.
+
+    Per il comitato: Luca Martinoli, presidente
+  expected:
+    document_date: "2025-03-28"
+    document_issuer: Cooperativa Agricola Valmaggia
+    document_period_start: "2024-01-01"
+    document_period_end: "2024-12-31"
+
+- id: report-en-2
+  type: report
+  title: Fire_Safety_Inspection_Warehouse_B.pdf
+  note: An inspection on a single day has a date but covers no period; the client is not the issuer.
+  text: |
+    # Fire Safety Inspection Report
+    Kestrel Building Inspections Ltd · 7 Albion Street, Leeds LS1 6HX
+
+    | | |
+    |---|---|
+    | Client | Harrow & Finch Logistics Ltd |
+    | Site | Warehouse B, 4 Dockside Road, Leeds LS10 1PZ |
+    | Inspector | James Holloway, MIFireE |
+    | Date | 14 May 2025 |
+
+    ## Summary
+    The site was inspected on the date above. Overall fire safety is adequate; two findings need action.
+
+    ## Findings
+    1. Fire door FD-07 between the loading bay and the office wing does not close fully. Priority: high.
+    2. Emergency lighting test log has no entries for March and April. Priority: medium.
+    3. Extinguishers serviced and in date.
+
+    ## Recommendations
+    Repair FD-07 within 14 days and resume the monthly emergency lighting test.
+  expected:
+    document_date: "2025-05-14"
+    document_issuer: Kestrel Building Inspections Ltd
+    document_period_start: null
+    document_period_end: null
+
+- id: report-de-3
+  type: report
+  title: Quartalsbericht_Q2_2025.pdf
+  note: A quarterly report covers its quarter, read from "Q2 2025".
+  text: |
+    # Seeland Logistik AG
+    Quartalsbericht Q2 2025
+
+    Lyss, 24. Juli 2025
+
+    ## Kennzahlen
+    | Kennzahl | Q2 2025 | Q2 2024 |
+    |---|---:|---:|
+    | Umsatz (Mio. CHF) | 18.4 | 17.1 |
+    | Sendungen | 412'600 | 398'300 |
+    | Pünktlichkeit | 96.8 % | 95.2 % |
+
+    ## Kommentar der Geschäftsleitung
+    Das zweite Quartal war geprägt vom neuen Kühllager in Lyss, das seit Mai voll ausgelastet ist. Die Pünktlichkeit
+    stieg dank der neuen Tourenplanung um 1,6 Prozentpunkte.
+
+    ## Ausblick
+    Für das dritte Quartal erwarten wir eine ähnliche Auslastung.
+
+    Daniel Moser, CEO
+  expected:
+    document_date: "2025-07-24"
+    document_issuer: Seeland Logistik AG
+    document_period_start: "2025-04-01"
+    document_period_end: "2025-06-30"
+
+- id: report-fr-2
+  type: report
+  title: rapport_expertise_immeuble_Sion.pdf
+  note: An expert report written by a named expert without an organisation has the author as issuer.
+  text: |
+    # Rapport d'expertise
+    Évaluation de l'immeuble Rue du Scex 22, 1950 Sion
+
+    Expert : Jean-Luc Monnier, ingénieur civil EPF, expert immobilier indépendant
+    Mandant : Hoirie Dupraz, p.a. Me Sophie Rey, notaire, Avenue de la Gare 30, 1950 Sion
+
+    Sion, le 9 septembre 2025
+
+    ## 1. Objet de l'expertise
+    Déterminer la valeur vénale de l'immeuble en vue du partage successoral.
+
+    ## 2. Constatations
+    Immeuble locatif de 1974, six appartements, rénovation de la toiture en 2012. Les fenêtres et l'installation de
+    chauffage arrivent en fin de vie ; des travaux d'environ CHF 280'000 sont à prévoir d'ici cinq ans.
+
+    ## 3. Conclusion
+    | Méthode | Valeur CHF |
+    |---|---:|
+    | Valeur de rendement | 2'350'000 |
+    | Valeur intrinsèque | 2'610'000 |
+    | **Valeur vénale retenue** | **2'420'000** |
+
+    Jean-Luc Monnier
+  expected:
+    document_date: "2025-09-09"
+    document_issuer: Jean-Luc Monnier
+    document_period_start: null
+    document_period_end: null
