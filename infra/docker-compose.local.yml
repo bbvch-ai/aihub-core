@@ -728,6 +728,9 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/plugins:/plugins
     environment:
       NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+      # CVE-2026-114938 (Java4Shell): Neo4j bundles the same affected OpenJDK and Base64-decodes the HTTP Basic
+      # header before authenticating. The image entrypoint appends this setting, keeping its default JVM flags.
+      NEO4J_server_jvm_additional: -XX:-UseBASE64Intrinsics
     healthcheck:
       test:
         - CMD
@@ -1013,6 +1016,9 @@ services:
       # local cache removes that warm-up. NOTE: if Keycloak is ever run multi-node/HA, this must
       # become conditional (local cache does not replicate sessions across nodes).
       KC_CACHE: local
+      # CVE-2026-114938 (Java4Shell): the JDK's AVX-512 Base64 decoder corrupts memory on input Keycloak
+      # decodes before authentication. Drop once the Keycloak image ships a vendor-fixed OpenJDK.
+      JAVA_OPTS_APPEND: -XX:-UseBASE64Intrinsics
       DOMAIN: ${DOMAIN}
       # Superuser (interactive Keycloak-seeded admin) — passed to realm template
       SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
