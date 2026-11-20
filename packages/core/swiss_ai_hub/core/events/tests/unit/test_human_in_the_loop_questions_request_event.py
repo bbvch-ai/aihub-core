@@ -48,3 +48,15 @@ def test_the_request_is_a_chat_request_that_round_trips_with_its_questions():
 def test_a_label_longer_than_the_dialog_shows_is_rejected():
     with pytest.raises(ValidationError):
         HumanInTheLoopChoiceOption(label="x" * 81, description="d")
+
+
+def test_six_questions_fit_and_a_seventh_is_rejected():
+    """The Document Tables form with discovery asks six: location, document condition, rows, values, two keywords."""
+    question = _request().questions[0]
+    topic = PartialAgentTopic(event_type="control", event_name="HumanInTheLoopChatResponseEvent")
+
+    six = HumanInTheLoopQuestionsRequestEvent(question="q", questions=[question] * 6, topic=topic)
+
+    assert len(six.questions) == 6
+    with pytest.raises(ValidationError):
+        HumanInTheLoopQuestionsRequestEvent(question="q", questions=[question] * 7, topic=topic)

@@ -9,7 +9,8 @@ from swiss_ai_hub.agent.capabilities.record_extraction.extraction_run import Ext
 
 class DocumentExtractedEvent(ControlEvent):
     """What one document yielded: where its rows are stored, or why it yielded none. Every request ends in one,
-    failure included, because the join waits for a result per document.
+    failure included, because the join waits for a result per document. A document skipped by the document condition
+    is a result, not a failure.
 
     The rows themselves are in object storage (`ExtractionFileStore`): a document can yield hundreds of long rows, and
     the join reads every result of the extraction each time one arrives.
@@ -30,4 +31,18 @@ class DocumentExtractedEvent(ControlEvent):
     )
     partly_read: Annotated[
         bool, Field(description="Whether only parts of the document were read, so rows outside them may be missing.")
+    ] = False
+    skipped_reason: Annotated[
+        str | None,
+        Field(
+            description="Why the document was skipped: it clearly does not meet the document condition. None when it "
+            "qualified, failed or there was none."
+        ),
+    ] = None
+    document_unsure: Annotated[
+        bool,
+        Field(
+            description="Whether the model could not tell if the document meets the document condition, so it was "
+            "read whole and its rows are marked for checking."
+        ),
     ] = False

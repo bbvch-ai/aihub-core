@@ -219,8 +219,9 @@ class KnowledgeExtractionAgent(Agent):
         user confirmed. A model that ended its search without stating a selection is asked once for the selection its
         searches point to; one stopped at its limit before it did is asked for folders and paths only, since its hits
         are incomplete. A stopped search whose own selection stands still marks the table as possibly incomplete. The
-        confirmed values and condition are what is extracted, whatever the model passed; the confirmed exact keywords
-        order the documents when the model named none, and a confirmed calculation is named under the table."""
+        confirmed values, document condition and row condition are what is extracted, whatever the model passed; the
+        confirmed exact keywords order the documents when the model named none, and a confirmed calculation is named
+        under the table."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
@@ -253,7 +254,9 @@ class KnowledgeExtractionAgent(Agent):
             }
         )
         calculation = confirmed.calculation
-        return SelectedExtraction.of(as_confirmed, scope, finished, by_location, t, calculation)
+        return SelectedExtraction.of(
+            as_confirmed, scope, finished, by_location, t, calculation, confirmed.document_condition
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.steps.complete.name"),

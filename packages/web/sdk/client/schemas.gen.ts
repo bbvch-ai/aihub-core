@@ -9612,6 +9612,19 @@ export const ExtractRecordsEventSchema = {
       description:
         "Which records to keep, e.g. 'only hardware'; never turned into a column.",
     },
+    document_condition: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Condition",
+      description:
+        "Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows.",
+    },
     row_terms: {
       anyOf: [
         {
@@ -12241,7 +12254,7 @@ export const HumanInTheLoopQuestionsRequestEventSchema = {
         $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
       },
       type: "array",
-      maxItems: 5,
+      maxItems: 6,
       minItems: 1,
       title: "Questions",
       description: "The question's parts, for clients that show a dialog.",
@@ -12275,7 +12288,7 @@ export const HumanInTheLoopQuestionsRequestEventSchema = {
   ],
   title: "HumanInTheLoopQuestionsRequestEvent",
   description:
-    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nfive questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
+    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nsix questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -24406,6 +24419,14 @@ export const RecordsExtractedEventSchema = {
       minimum: 0,
       title: "Failed Count",
       description: "Documents that could not be extracted.",
+      default: 0,
+    },
+    skipped_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Skipped Count",
+      description:
+        "Documents left out because they clearly fail the document condition; never counted as failed.",
       default: 0,
     },
     row_count: {
@@ -37781,6 +37802,19 @@ export const ExtractRecordsEventWritableSchema = {
       description:
         "Which records to keep, e.g. 'only hardware'; never turned into a column.",
     },
+    document_condition: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Condition",
+      description:
+        "Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows.",
+    },
     row_terms: {
       anyOf: [
         {
@@ -39596,7 +39630,7 @@ export const HumanInTheLoopQuestionsRequestEventWritableSchema = {
         $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
       },
       type: "array",
-      maxItems: 5,
+      maxItems: 6,
       minItems: 1,
       title: "Questions",
       description: "The question's parts, for clients that show a dialog.",
@@ -39607,7 +39641,7 @@ export const HumanInTheLoopQuestionsRequestEventWritableSchema = {
   required: ["question", "topic", "questions"],
   title: "HumanInTheLoopQuestionsRequestEvent",
   description:
-    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nfive questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
+    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nsix questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
 } as const;
 
 export const HumanInTheLoopRequestEventWritableSchema = {
@@ -47576,6 +47610,14 @@ export const RecordsExtractedEventWritableSchema = {
       minimum: 0,
       title: "Failed Count",
       description: "Documents that could not be extracted.",
+      default: 0,
+    },
+    skipped_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Skipped Count",
+      description:
+        "Documents left out because they clearly fail the document condition; never counted as failed.",
       default: 0,
     },
     row_count: {

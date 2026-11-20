@@ -355,12 +355,14 @@ event:
   extraction:
     fields: Colonne
     instructions: Righe da tenere
+    documentCondition: Documenti che contano
     criteria: Documenti selezionati
     collections: Raccolte
     notices: Avvisi
     documentIds: '{count} documenti scelti'
     files: File
     failedFiles: File non riusciti
+    skippedFiles: File saltati per la condizione sul documento
     rows: Righe mostrate / trovate
     truncated: Abbreviato
     confirmed: Estrae tutti i documenti confermati dall'utente

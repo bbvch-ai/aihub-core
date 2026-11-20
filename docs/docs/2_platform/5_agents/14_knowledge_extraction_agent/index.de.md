@@ -1,7 +1,7 @@
 ---
 title: Wissensextraktions-Agent
 description: Sammelt Datensätze aus vielen Wissensdokumenten in einer Tabelle, etwa jede Hardware-Position auf den Rechnungen 2025 eines Lieferanten, jede Zeile mit der Datei, aus der sie stammt.
-source_sha: 785e3ae41f05ea53d8aba07ca078855d4f02e2a0a0dc31c7ae27b65111eca1fa
+source_sha: b9c849104c4316631b076da1f16478098314e364b0f352f2e016d51cff397116
 ---
 
 # Wissensextraktions-Agent
@@ -33,9 +33,10 @@ flowchart LR
     F --> G[Tabellenvorschau,<br/>Zusammenfassung und CSV]
 ```
 
-1. **Anfrage lesen.** Ein Modellaufruf liest die Nachricht: die Spalten, nach denen der Benutzer fragt, welche Zeilen
-   behalten werden, jeden Ordner, jede Datei oder jedes Jahr, die der Benutzer nennt, und jede verlangte Berechnung.
-   Eine Folgefrage wie *«dasselbe für 2024»* wird zusammen mit der Unterhaltung gelesen.
+1. **Anfrage lesen.** Ein Modellaufruf liest die Nachricht: die Spalten, nach denen der Benutzer fragt, welche Dokumente
+   zählen (die Dokumentbedingung), welche Zeilen behalten werden, jeden Ordner, jede Datei oder jedes Jahr, die der
+   Benutzer nennt, und jede verlangte Berechnung. Eine Folgefrage wie *«dasselbe für 2024»* wird zusammen mit der
+   Unterhaltung gelesen.
 2. **Anfrage bestätigen.** Bevor ein Dokument gelesen wird, zeigt der Agent in einem Formular, was er verstanden hat,
    und der Benutzer bestätigt oder korrigiert es (siehe [Das Anfrageformular](#das-anfrageformular)). Was der Benutzer
    bestätigt, wird gelesen und extrahiert.
@@ -43,18 +44,21 @@ flowchart LR
    eingegrenzt nur durch den bestätigten Ablageort. Eine Datei, die der Benutzer nennt, mit ihrem Pfad oder nur mit
    ihrem Namen, mit oder ohne Endung, meint nur diese Datei, nicht ihren Ordner. Keine Suche entscheidet, welche
    Dokumente zählen, sodass ein Dokument nie übersehen wird, weil es Dinge anders formuliert als die Anfrage. Ein
-   Lieferant oder ein Thema ist eine Bedingung an die Zeilen, kein Ort: *«von Acme»* behält die Zeilen von Acme, es
-   wählt keine Dokumente aus. Mit eingeschaltetem [Discovery-Modus](#discovery-modus) sucht stattdessen das Modell nach
-   den Dokumenten.
+   Lieferant, eine Vertragspartei, ein Status oder ein Zeitraum, aus dem das Dokument stammt, ist kein Ort, sondern eine
+   *Dokumentbedingung* (*«von Acme»*, *«nur unterschriebene Fassungen»*, *«datiert Q1 2026»*), die am Anfang jedes
+   Dokuments geprüft wird. Ein Wert, den die Zeilen selbst tragen, etwa der Lieferant auf jeder Zeile eines
+   Kontoauszugs, bleibt eine Bedingung an die Zeilen. Ein Jahr, das der Ordner schon nennt, grenzt nur den Ablageort
+   ein. Mit eingeschaltetem [Discovery-Modus](#discovery-modus) sucht stattdessen das Modell nach den Dokumenten.
 4. **Spalten entwerfen.** Die Spalten werden aus den Worten des Benutzers entworfen, etwa *Datum, Position, Betrag,
    Währung*. Eine Bedingung wie *«nur Hardware»* entscheidet, welche Zeilen behalten werden, und wird nie zur Spalte.
 5. **Extrahieren.** Jedes Dokument wird gelesen und seine passenden Datensätze werden extrahiert, viele Dokumente
    gleichzeitig. Dokumente werden in überlappenden Teilen gelesen, sodass eine Zeile auf der letzten Seite gefunden und
    eine Zeile an der Grenze zwischen zwei Teilen nicht doppelt gezählt wird. Eine Zeile, die die Bedingung vielleicht
    nicht erfüllt, bleibt erhalten und wird in einer Spalte **Treffer** als *unsicher* markiert, sodass eine Person sie
-   prüfen kann, statt dass sie verworfen wird. Eine Bedingung an das ganze Dokument, etwa sein Lieferant, eine
-   Vertragspartei oder ein Jahr, gilt für jede seiner Zeilen: Ein Dokument, das sie eindeutig nicht erfüllt, liefert
-   keine Zeilen und wird unter „Keine Zeilen aus“ aufgeführt.
+   prüfen kann, statt dass sie verworfen wird. Ein Dokument, dessen Anfang der Dokumentbedingung widerspricht, etwa weil
+   er einen anderen Lieferanten nennt, wird nicht weiter gelesen: Es liefert keine Zeilen und wird mit seinem Grund
+   unter «Übersprungen» aufgeführt. Ein Dokument, dessen Anfang es nicht entscheidet, wird ganz gelesen, und seine
+   Zeilen werden mit *unsicher, bitte prüfen* markiert.
 6. **Antworten.** Die Antwort zeigt die ersten Zeilen der Tabelle (bis zu 100), gefolgt von der Zusammenfassung, und die
    ganze Tabelle als CSV-Datei: im Chat an die Antwort angehängt, über die API als Download-Link. Ein Dokument, das
    nicht gelesen werden konnte, wird mit dem Grund unter der Tabelle aufgeführt; die Zeilen der anderen Dokumente sind
@@ -64,19 +68,21 @@ flowchart LR
 Der Chat zeigt jeden Schritt, während er geschieht: eine Zeile dazu, wie viele Dokumente gelesen werden, welche Spalten
 die Tabelle hat und wie lange es ungefähr dauert; eine Zeile, wenn ein langes Dokument beginnt; eine Zeile pro Dokument,
 sobald es extrahiert ist, mit seinen ersten Zeilen («12 von 150 · invoice.pdf: 3 Zeilen — Laptop X1, 1,200; Dock D2,
-180»); und, solange ein Dokument länger als eine Minute braucht, eine Zeile, dass es noch gelesen wird. Eine Antwort
-kann viele Minuten dauern, wenn viele Dokumente gelesen werden; der Fortschritt zeigt, dass sie noch läuft.
+180») oder dem Grund, aus dem es übersprungen wurde («14 von 150 · initech-0412.pdf: übersprungen, Lieferant: Initech
+AG»); und, solange ein Dokument länger als eine Minute braucht, eine Zeile, dass es noch gelesen wird. Eine Antwort kann
+viele Minuten dauern, wenn viele Dokumente gelesen werden; der Fortschritt zeigt, dass sie noch läuft.
 
 ### Das Anfrageformular
 
 Ein falsch gelesener Teil einer Anfrage zeigte sich früher erst in der fertigen Tabelle, nachdem jedes Dokument gelesen
-war. Deshalb wird jede neue Tabellenanfrage zuerst zurückgefragt, in drei Teilen:
+war. Deshalb wird jede neue Tabellenanfrage zuerst zurückgefragt, in vier Teilen:
 
-| Teil                       | Was er sagt                                                                                                              | Alternative    |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------- |
-| **Ablageort**              | Die zu lesenden Ordner, Dateien oder Jahre. Der Hinweis nennt die grössten Ordner des Bereichs mit ihrer Anzahl.         | Alle Dokumente |
-| **Filterbedingung**        | Welche Datensätze die Tabelle behält, etwa *von Acme* oder *nur Hardware-Positionen*.                                    | Jede Zeile     |
-| **Zu extrahierende Werte** | Die Spalten der Tabelle; sie entscheiden, was eine Zeile ist: Rechnungsnummer und Total ergeben eine Zeile pro Rechnung. | —              |
+| Teil                       | Was er sagt                                                                                                                          | Alternative    |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
+| **Ablageort**              | Die zu lesenden Ordner, Dateien oder Jahre. Der Hinweis nennt die grössten Ordner des Bereichs mit ihrer Anzahl.                     | Alle Dokumente |
+| **Dokumentbedingung**      | Welche Dokumente zählen, etwa *von Acme*, *nur unterschriebene Fassungen* oder *datiert Q1 2026*; am Anfang jedes Dokuments geprüft. | Jedes Dokument |
+| **Filterbedingung**        | Welche Datensätze die Tabelle behält, etwa *nur Hardware-Positionen* oder die Zeilen eines Lieferanten auf einem Kontoauszug.        | Jede Zeile     |
+| **Zu extrahierende Werte** | Die Spalten der Tabelle; sie entscheiden, was eine Zeile ist: Rechnungsnummer und Total ergeben eine Zeile pro Rechnung.             | —              |
 
 Mit eingeschaltetem **Discovery-Modus** folgen zwei weitere Teile: **Exakte Stichwörter**, Wörter, die die gesuchten
 Dokumente wörtlich enthalten (der Name eines Lieferanten, eine Rechnungsnummer), und **Semantische Stichwörter**, wovon
@@ -143,7 +149,8 @@ Tabelle. Die Suche ist durch **Maximale Entscheidungen** und **Maximale Werkzeug
 der Agent nach Ordner aus und prüft die Bedingungen der Anfrage in jedem Dokument, und die Antwort sagt es.
 
 Was immer die Suche gewählt hat, die bestätigten Teile entscheiden: Der bestätigte **Ablageort** ersetzt jeden Pfad, den
-die Suche gesetzt hat, und die bestätigten **Zu extrahierenden Werte** und die **Filterbedingung** werden extrahiert.
+die Suche gesetzt hat, und die bestätigten **Zu extrahierenden Werte**, die **Dokumentbedingung** und die
+**Filterbedingung** werden extrahiert.
 
 Ohne Discovery-Modus entscheidet die Rangfolge nach Bedeutung nur, welche Dokumente in die Stichprobe kommen und zuerst
 gelesen werden; kein Dokument wird je wegen seines Rangs weggelassen.
@@ -156,13 +163,14 @@ bis der **Discovery-Modus** wieder angekreuzt ist.
 :::
 
 ::: tip Welcher Modus für welches Profil
-Jedes Dokument zu lesen ist der sichere Standard: Nichts wird übersehen, aber die Zeilen jedes Dokuments beurteilt das
-Extraktionsmodell für sich allein. Nennt eine Anfrage einen Lieferanten oder eine Vertragspartei unter vielen in
-denselben Ordnern (*"die Hardware von Acme 2025"* über die Rechnungen aller Lieferanten), behält diese Beurteilung ab
-und zu eine Zeile aus dem Dokument eines anderen Lieferanten, und jedes Dokument kostet einen Modellaufruf. Für Profile,
-die für solche genauen, engen Anfragen über grosse gemischte Sammlungen genutzt werden, schalten Sie den
-**Discovery-Modus** ein: Nur die Dokumente, die die Suche auswählt, werden gelesen, was schneller und günstiger ist, mit
-dem Risiko, dass ein Dokument fehlt, das die Suche nicht findet.
+Jedes Dokument zu lesen ist der sichere Standard: Nichts wird übersehen. Nennt eine Anfrage einen Lieferanten oder eine
+Vertragspartei unter vielen in denselben Ordnern (*"die Hardware von Acme 2025"* über die Rechnungen aller Lieferanten),
+überspringt die **Dokumentbedingung** das Dokument jedes anderen Lieferanten nach seinem ersten Teil, sodass seine
+Zeilen nie in die Tabelle gelangen; doch jedes Dokument kostet weiterhin mindestens einen Modellaufruf, und ein
+Dokument, dessen Anfang seinen Lieferanten nicht nennt, wird ganz gelesen und zur Prüfung markiert. Für Profile, die für
+solche genauen, engen Anfragen über grosse gemischte Sammlungen genutzt werden, schalten Sie den **Discovery-Modus**
+ein: Nur die Dokumente, die die Suche auswählt, werden gelesen, was schneller und günstiger ist, mit dem Risiko, dass
+ein Dokument fehlt, das die Suche nicht findet.
 :::
 
 ### Lange Dokumente
@@ -173,6 +181,10 @@ und den Teilen, in denen die gesuchten Zeilen am wahrscheinlichsten stehen. Sein
 **(teilweise gelesen)** markiert, und die Zusammenfassung führt es unter «Teilweise gelesen (Zeilen können fehlen)» auf,
 weil eine Zeile in einem nicht gelesenen Teil nicht gefunden wird. Siehe ADR
 `2026_10_21_partial_reads_of_long_documents_in_record_extraction`.
+
+Ein langes Dokument, das die Dokumentbedingung nicht erfüllt, wird nur in seinem ersten Teil gelesen: Sein Anfang
+entscheidet, und seine anderen Teile werden gar nicht gelesen. Siehe ADR
+`2026_11_18_document_condition_judged_in_the_first_extraction_window`.
 
 ## Was er *nicht* tut
 
