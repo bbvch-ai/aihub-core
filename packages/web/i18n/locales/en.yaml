@@ -1215,3 +1215,52 @@ userFiles:
     uploaded: Uploaded {count} file(s)
     uploadFailed: Upload failed
     changeFailed: The change failed
+token:
+  title: API Tokens
+  intro: Personal tokens let scripts and integrations call the REST API as you, with your own permissions. A token works in
+    every tenant you belong to, until it expires or you revoke it.
+  list:
+    name: Name
+    created: Created
+    expires: Expires
+    last_used: Last used
+    never_used: Never used
+    empty: You have no API tokens yet.
+  status:
+    active: Active
+    expiring: Expires soon
+    expired: Expired
+  create:
+    button: Generate token
+    title: Generate API token
+    name:
+      label: Name
+      placeholder: e.g. Reporting script
+      help: Helps you recognise the token later, for example by the script or integration that uses it.
+    expiry:
+      label: Expires after
+      preset_30: 30 days
+      preset_90: 90 days
+      preset_180: 6 months
+      preset_365: 1 year
+      custom: Custom date
+      custom_placeholder: Pick an expiry date
+      help: The token stops working on {date}.
+    cancel: Cancel
+    submit: Generate
+    error: The token could not be generated. Please try again.
+  created:
+    title: Copy your new token
+    warning: This is the only time the token is shown. Copy it now and keep it somewhere safe. If you lose it, revoke it and
+      generate a new one.
+    copy: Copy
+    copied: Copied
+    usage: Send it with every API request in the Authorization header, after the word Bearer and a space.
+    done: Done
+  revoke:
+    button: Revoke
+    confirm: Revoke this token?
+    explanation: Anything still using "{name}" loses access immediately. This cannot be undone.
+    cancel: Cancel
+    proceed: Revoke
+    success: Token revoked

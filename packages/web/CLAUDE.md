@@ -168,6 +168,11 @@ Pinia-Colada cache as DTOs. Two rules follow:
   replaces the guard instead of adding to it.
 - **Any other SDK client must install the guard itself** (as `sysadmin-web` does for its sysadmin-api client).
 
+**Dates in request bodies go out as `{}`.** The client's `unwrapRefs` rebuilds a body key by key, and a `Date` has no
+enumerable keys, so the API answers 422 even though the generated request type asks for `Date`. Send `toISOString()` and
+cast the body, as `composables/token/useCreateToken.ts` does. Response dates are unaffected: the generated transformers
+parse them.
+
 ## FormKit Dynamic Forms
 
 The backend defines form schemas (`FormkitElement[]`), the frontend renders them dynamically.

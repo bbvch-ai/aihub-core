@@ -2273,7 +2273,7 @@ export const sendProcessOpenForm = <
 /**
  * List API Tokens
  *
- * Lists all API tokens for the authenticated user. The token value is not returned.
+ * Lists the authenticated user's API tokens, newest first, expired ones included. The token value is not returned.
  */
 export const listTokensEndpoint = <
   TComposable extends Composable = "$fetch",
@@ -2339,7 +2339,7 @@ export const createTokenEndpoint = <
 /**
  * Revoke API Token
  *
- * Revokes (deletes) an API token for the authenticated user.
+ * Revokes (deletes) one of the authenticated user's API tokens. Answers 404 for any other id.
  */
 export const revokeTokenEndpoint = <
   TComposable extends Composable = "$fetch",

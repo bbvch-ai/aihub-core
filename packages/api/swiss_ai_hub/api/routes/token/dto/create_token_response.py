@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
+from swiss_ai_hub.core.persistence import BearerToken
 
 
 class CreateTokenResponse(BaseModel):
@@ -9,3 +10,7 @@ class CreateTokenResponse(BaseModel):
     name: Annotated[str, Field(description="The name of the API token", example="My API Token")]
     expiry_date: Annotated[datetime, Field(description="Expiry date")]
     token: Annotated[str, Field(description="The generated API token, only returned at creation")]
+
+    @classmethod
+    def from_entity(cls, token: BearerToken) -> Self:
+        return cls(id=str(token.id), name=token.name, expiry_date=token.expiry_date, token=token.token)

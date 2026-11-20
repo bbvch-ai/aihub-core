@@ -7164,9 +7164,8 @@ export const CreateTokenRequestSchema = {
   required: ["name", "expiry_date"],
   title: "CreateTokenRequest",
   example: {
-    expiry_date: "2025-12-31T23:59:59Z",
+    expiry_date: "2027-12-31T23:59:59Z",
     name: "My API Token",
-    roles: ["read", "write"],
   },
 } as const;
 
@@ -30080,23 +30079,35 @@ export const TokenResponseSchema = {
       description: "The name of the API token",
       example: "My API Token",
     },
+    created_at: {
+      type: "string",
+      format: "date-time",
+      title: "Created At",
+      description: "When the token was created",
+    },
     expiry_date: {
       type: "string",
       format: "date-time",
       title: "Expiry Date",
       description: "Expiry date",
     },
-    roles: {
-      items: {
-        type: "string",
-      },
-      type: "array",
-      title: "Roles",
-      description: "List of roles granted to the access token",
+    last_used_at: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Last Used At",
+      description:
+        "When the token last authenticated a request, to within five minutes; null if never",
     },
   },
   type: "object",
-  required: ["id", "name", "expiry_date", "roles"],
+  required: ["id", "name", "created_at", "expiry_date", "last_used_at"],
   title: "TokenResponse",
 } as const;
 

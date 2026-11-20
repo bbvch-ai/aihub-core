@@ -41,7 +41,11 @@ export const getAgentEventTimeseriesResponseTransformer = async (
 };
 
 const tokenResponseSchemaResponseTransformer = (data: any) => {
+  data.created_at = new Date(data.created_at);
   data.expiry_date = new Date(data.expiry_date);
+  if (data.last_used_at) {
+    data.last_used_at = new Date(data.last_used_at);
+  }
   return data;
 };
 

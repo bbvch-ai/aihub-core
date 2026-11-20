@@ -1230,3 +1230,52 @@ userFiles:
     uploaded: '{count} file caricati'
     uploadFailed: Caricamento non riuscito
     changeFailed: La modifica non è riuscita
+token:
+  title: Token API
+  intro: I token personali consentono a script e integrazioni di chiamare la REST API a tuo nome, con le tue autorizzazioni.
+    Un token funziona in tutti i tenant di cui fai parte, finché non scade o non lo revochi.
+  list:
+    name: Nome
+    created: Creato il
+    expires: Scade il
+    last_used: Ultimo utilizzo
+    never_used: Mai utilizzato
+    empty: Non hai ancora nessun token API.
+  status:
+    active: Attivo
+    expiring: In scadenza
+    expired: Scaduto
+  create:
+    button: Genera token
+    title: Genera token API
+    name:
+      label: Nome
+      placeholder: es. script di reporting
+      help: Ti aiuta a riconoscere il token in seguito, ad esempio dallo script o dall'integrazione che lo usa.
+    expiry:
+      label: Scade dopo
+      preset_30: 30 giorni
+      preset_90: 90 giorni
+      preset_180: 6 mesi
+      preset_365: 1 anno
+      custom: Data personalizzata
+      custom_placeholder: Scegli una data di scadenza
+      help: Il token smetterà di funzionare il {date}.
+    cancel: Annulla
+    submit: Genera
+    error: Non è stato possibile generare il token. Riprova.
+  created:
+    title: Copia il nuovo token
+    warning: Il token viene mostrato solo questa volta. Copialo ora e conservalo in un luogo sicuro. Se lo perdi, revocalo
+      e generane uno nuovo.
+    copy: Copia
+    copied: Copiato
+    usage: Invialo con ogni richiesta API nell'header Authorization, dopo la parola Bearer e uno spazio.
+    done: Fine
+  revoke:
+    button: Revoca
+    confirm: Revocare questo token?
+    explanation: Tutto ciò che usa ancora «{name}» perde subito l'accesso. L'operazione è irreversibile.
+    cancel: Annulla
+    proceed: Revoca
+    success: Token revocato
