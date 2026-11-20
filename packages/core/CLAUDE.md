@@ -217,7 +217,7 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   ├── StartEvent, StopEvent (workflow lifecycle)                 [events/agent/control/]
 │   ├── HumanInTheLoopRequest/Response (HITL)                     [events/agent/hitl/]
 │   │   ├── Input, Confirmation, Chat requests (popup, yes/no, next chat message answers)
-│   │   └── QuestionsRequest (a Chat request + ≤5 HumanInTheLoopChoiceQuestion: OpenWebUI's dialog, else `question` as text)
+│   │   └── QuestionsRequest (a Chat request + ≤6 HumanInTheLoopChoiceQuestion: OpenWebUI's dialog, else `question` as text)
 │   ├── AgentInTheLoopRequest/Response (AITL)                     [events/agent/aitl/]
 │   ├── BotInTheLoopRequest/Response (BITL)                       [events/agent/bitl/]
 │   ├── SemanticEvent (OpenInference tracing)                     [events/agent/semantic/]
@@ -756,7 +756,7 @@ read no agent configuration:
 - **`RecordSchemaBuilder.build(description, llm, t)`** returns a validated `RecordSchema`: primitive fields only, at
   most `DEFAULT_MAX_FIELDS`, names normalised to snake_case. It calls a copy of `llm` at temperature zero and raises
   `InvalidRecordSchemaError` (a `ValueError`) rather than degrading, since without a schema there is nothing to extract.
-- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None, *, limiter=None, max_windows=None, row_terms=None)`**
+- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None, *, limiter=None, max_windows=None, row_terms=None, document_condition=None)`**
   returns a `DocumentExtractionResult` whose records carry `RecordProvenance`. `instructions` is the filter ("only
   hardware"); filters never become fields. The document must be loaded whole. Windows run side by side under the
   caller's `limiter` (one by one without). With `max_windows` a longer document is read in part: `WindowSelection` keeps
@@ -770,6 +770,15 @@ read no agent configuration:
   `RecordMerger` drops overlap copies between adjacent windows only. Every later window is also shown the document's
   opening (`DOCUMENT_OPENING_TOKENS`, at most half a window), so header values such as an invoice number reach records
   far below the header.
+- **Document condition:** with `document_condition` ("only contracts with Hooli"), window 0 runs first and alone with a
+  records model whose first field is `DocumentMatch` (`verdict` "yes" / "no" / "unsure", `reason`); the prompt's
+  condition block and rule appear only then, so without a condition the prompt is main's (pinned by
+  `tests/unit/fixtures/`). Only a stated contradicting fact gives "no": the document is then
+  `DocumentExtractionResult.skipped_by` (no records, `skipped`, never `failed`) and its other windows are not read.
+  "yes" and "unsure" read the other windows side by side as before, without the condition, and the result carries the
+  `document_match`. Each verdict is set on the current span (`extraction.document.path`,
+  `extraction.document_condition.verdict`, `.reason`) and logged, so false skips can be sampled later. ADR
+  `2026_11_18_document_condition_judged_in_the_first_extraction_window`.
 - **Failure:** malformed output fails that document as a whole with a `failure_reason`, never with a partial list.
   Infrastructure errors still raise.
 
@@ -787,16 +796,26 @@ not mapped back to them yet.
 makes one structured-output call on `DocumentOpeningText.of(text)` (first two pages capped at 8,000 characters, plus the
 last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadata()` is what ingestion stores:
 
-- **`DocumentTypeCatalog` is the only list.** Types (`invoice`, `other`), shared attributes, which apply to which type
-  and per-type meanings; the prompt, `metadata_keys()` (every stored key, for exclusion lists, frontmatter reservation
-  and filters) and `value_keys()` come from it. `DocumentClassificationAnswer` must have one field per non-derived
-  attribute; a catalog test checks it.
+- **`DocumentTypeCatalog` is the only list.** Types (16 since #2485: `invoice`, `credit_note`, `offer`, `order`,
+  `delivery_note`, `receipt`, `account_statement`, `payment_reminder`, `contract`, `service_level_agreement`, `letter`,
+  `report`, `documentation`, `policy`, `email_thread`, `other`), shared attributes, which apply to which type and
+  per-type meanings (only where a type's differs: the prompt names types sharing a meaning together, so keep overrides
+  that merely restate the general meaning out); the prompt, `metadata_keys()` (every stored key, for exclusion lists,
+  frontmatter reservation and filters) and `value_keys()` come from it. `DocumentClassificationAnswer` must have one
+  field per non-derived attribute; a catalog test checks it. The evaluation (`tests/evaluation/`, one synthetic YAML per
+  type, at least 8 documents each) measures recall and precision per type and wrong-plus-guessed values per type and
+  attribute.
 - **The model copies, code reads.** `DocumentValueNormalizer` drops copied text that `RawValueLocator` cannot find in
   the whole document, stores no attribute the type lacks, and reads dates (`DateTextParser`; a slash date both orders
   allow only in the order `SlashDateOrder` the normaliser settles from the document's unambiguous slash dates, else day
-  first unless the currency is USD, a bare `$` or unknown), periods, amounts (Swiss, EU and English separators),
-  currencies (a bare `$` stays unread) and tax IDs (a Swiss UID must pass its check digit). Each attribute keeps its
-  copy under `<key>_raw`, dates their `<key>_precision`, and an unreadable copy has an empty value.
+  first unless the currency is USD, a bare `$` or unknown), periods (for contract and SLA terms only,
+  `PeriodTextParser.stated_ends`: a single date in the same sentence next to "ab", "in Kraft" or "from", or in a term
+  "auf unbestimmte Zeit", is only the start, next to "endet", "bis" or "until" only the end), amounts (Swiss, EU and
+  English separators), currencies (a bare `$` stays unread) and tax IDs (a Swiss UID must pass its check digit). Names
+  (issuer, recipient, a thread's participants) lose any e-mail address copied with them; a bare address is stored empty.
+  `document_parties` is derived from issuer, recipient and participants, and a type lists it when it has any of them.
+  Each attribute keeps its copy under `<key>_raw`, dates their `<key>_precision`, and an unreadable copy has an empty
+  value.
 - **Versions, at the narrowest level.** Each re-classified document costs a model call, so raise only what a change
   needs. A type's `DocumentTypeDefinition.version` when only its documents could be classified differently, and
   `OTHER`'s when a type is added or narrowed: only `other` documents can move into the new one.

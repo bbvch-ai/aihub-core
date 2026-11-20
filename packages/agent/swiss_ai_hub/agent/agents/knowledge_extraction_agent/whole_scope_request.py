@@ -117,6 +117,7 @@ class WholeScopeRequest:
                 *ExtractionNotices.for_table(scope, False, t),
             ],
             document_terms=reading.document_terms,
+            document_condition=reading.document_condition,
         )
 
     @staticmethod

@@ -78,8 +78,8 @@ Dieser Agent baut auf zwei anderen auf, daher müssen beide Konfigurationen zuer
 
 1. **Alles, was der Assistent für Dokumentenintelligenz benötigt.** Eine gefüllte Wissensdatenbank, ein passendes
    Embedding-Modell und ein Chat-Modell – siehe die
-   [Voraussetzungen](../5_document_intelligence_assistant/#bevor-sie-beginnen-voraussetzungen) dieses Agenten. Der Agent für
-   Unternehmenswissen teilt sich dieselbe Retrieval-Konfiguration.
+   [Voraussetzungen](../5_document_intelligence_assistant/#bevor-sie-beginnen-voraussetzungen) dieses Agenten. Der Agent
+   für Unternehmenswissen teilt sich dieselbe Retrieval-Konfiguration.
 2. **Ein konfiguriertes Expertenkoordinator-Agentenprofil.** Das Eskalationsziel muss bereits existieren und
    funktionieren, einschliesslich des verbundenen Teams-/Slack-Bots. Richten Sie zuerst den
    [Expertenkoordinator-Agenten](../9_expert_coordinator_agent/) ein und testen Sie ihn – der Agent für

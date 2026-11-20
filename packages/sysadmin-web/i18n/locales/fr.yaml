@@ -9,6 +9,13 @@ tenant_admin:
   save: Enregistrer
   save_error: Impossible d'enregistrer le tenant. Veuillez réessayer.
   tenant_id: ID du tenant
+  llm_usage:
+    title: Utilisation LLM
+    open: Utilisation LLM
+    open_tenant: Ouvrir dans LiteLLM
+    pick_tenant: 'Dans LiteLLM, passez à Customer Usage et sélectionnez le client
+      « {name} ». Son ID :'
+    chf_note: Les montants sont en CHF, même si LiteLLM les affiche avec « $ ».
   navigation:
     overview: Vue d'ensemble
     roles: Rôles

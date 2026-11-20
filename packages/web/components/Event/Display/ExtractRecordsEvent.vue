@@ -33,6 +33,7 @@ const facts = computed<EventFact[]>(() => [
   },
   { label: t('event.extraction.fields'), value: props.event.event.fields || null },
   { label: t('event.extraction.instructions'), value: props.event.event.instructions },
+  { label: t('event.extraction.documentCondition'), value: props.event.event.document_condition },
   { label: t('event.extraction.criteria'), value: criteria.value },
   {
     label: t('event.extraction.collections'),

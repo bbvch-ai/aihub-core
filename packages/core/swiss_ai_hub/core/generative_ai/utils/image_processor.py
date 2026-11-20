@@ -40,6 +40,10 @@ logger = logging.getLogger(__name__)
 
 BASE64_IMAGE_PATTERN = r"!\[([^\]]*)\]\((data:image/[^;]+;base64,[^)]+)\)"
 
+# A figure's folder is named after its document and may contain ")" (e.g. "Report_(1)_docx"), so the reference
+# ends at the figure file this module writes (`figure_<hash>.<ext>`), not at the first closing parenthesis.
+S3_FIGURE_REFERENCE_PATTERN = r"!\[([^\]]*)\]\((s3://([^/]+)/(.+?/figure_[0-9a-f]+\.[A-Za-z0-9]+))\)"
+
 # dHash on a downscaled image is translation-tolerant: it encodes neighbor-pixel
 # gradients, which barely shift when the crop bounds move a few pixels. pHash was
 # evaluated and rejected — high-frequency DCT coefficients flip dramatically on
@@ -325,7 +329,6 @@ async def replace_s3_paths_with_signed_urls(
     Used for API responses where the client needs direct access to images
     without S3 credentials. The signed URLs expire after the specified lifetime.
     """
-    pattern = r"!\[([^\]]*)\]\((s3://([^/]+)/([^)]+))\)"
 
     def replace_with_signed_url(match: re.Match) -> str:
         alt_text = match.group(1)
@@ -335,4 +338,4 @@ async def replace_s3_paths_with_signed_urls(
         signed_url = s3_service.generate_sas_url(bucket, key, lifetime_hours=lifetime_hours)
         return f"![{alt_text}]({signed_url})"
 
-    return await asyncio.to_thread(re.sub, pattern, replace_with_signed_url, markdown_content)
+    return await asyncio.to_thread(re.sub, S3_FIGURE_REFERENCE_PATTERN, replace_with_signed_url, markdown_content)

@@ -21,9 +21,9 @@
               {{ t('models.card.costPer1M') }}:
             </span>
             <span class="text-sm font-light text-surface-900 dark:text-surface-100">
-              ${{ inputCostPerToken }}
+              {{ inputCostPerToken }}
               <span class="mx-1 text-surface-500">•</span>
-              ${{ outputCostPerToken }}
+              {{ outputCostPerToken }} {{ t('costs.table.currency') }}
             </span>
           </div>
           <div class="flex items-center gap-2">

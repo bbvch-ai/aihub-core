@@ -1,4 +1,5 @@
 import logging
+import re
 
 from redis.asyncio import Redis
 from swiss_ai_hub.core.auth import UserIdentity
@@ -23,6 +24,8 @@ from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields 
 logger = logging.getLogger(__name__)
 
 FAILURE_REASON_CHARACTERS = 300
+SKIP_REASON_CHARACTERS = 200
+_LEADING_MARKERS = re.compile(r"^(?:[#>|]+ ?|[-*+] )+")
 # A document this long takes several extraction calls, so its start is announced: the chat otherwise shows nothing
 # from it for minutes. About three windows of a mid-sized model.
 LONG_DOCUMENT_CHARACTERS = 40_000
@@ -113,24 +116,35 @@ class DocumentRecordExtraction:
                 limiter=ExtractionSlots.calls(config.agent_id, settings.max_parallel_extractions),
                 max_windows=PARTIAL_READ_WINDOWS if long else None,
                 row_terms=request.row_terms,
+                document_condition=request.run.document_condition,
             )
         if result.failed:
             return DocumentRecordExtraction._failed(request, result.failure_reason or ""), []
+        if result.skipped and result.document_match is not None:
+            return DocumentRecordExtraction._skipped(request, result.document_match.reason, t), []
         if result.partial:
             read = min(PARTIAL_READ_WINDOWS, result.window_count)
             logger.info("[record-extraction] %s read in part: %d of %d windows", path, read, result.window_count)
         rows = [record.values for record in result.records]
-        return await DocumentRecordExtraction._stored(request, rows, result.partial), rows
+        document_unsure = result.document_match is not None and result.document_match.unsure
+        return await DocumentRecordExtraction._stored(request, rows, result.partial, document_unsure)
 
     @staticmethod
     async def _stored(
-        request: DocumentExtractionRequestedEvent, rows: list[dict[str, RecordValue]], partial: bool
-    ) -> DocumentExtractedEvent:
+        request: DocumentExtractionRequestedEvent,
+        rows: list[dict[str, RecordValue]],
+        partial: bool,
+        document_unsure: bool = False,
+    ) -> tuple[DocumentExtractedEvent, list[dict[str, RecordValue]]]:
+        """The result with its rows stored, and the rows as stored. Every row of a document that may not meet the
+        document condition is marked for checking, as a row that may not meet the row condition is."""
+        if document_unsure:
+            rows = [{**row, RecordSchema.MATCH_FIELD: RecordSchema.MATCH_UNSURE} for row in rows]
         rows_key = (
             await ExtractionFileStore.put_rows(request.run.extraction_id, request.event_id, rows) if rows else None
         )
         unsure = sum(1 for row in rows if row.get(RecordSchema.MATCH_FIELD) == RecordSchema.MATCH_UNSURE)
-        return DocumentExtractedEvent(
+        stored = DocumentExtractedEvent(
             run=request.run,
             request_event_id=request.event_id,
             document=request.document,
@@ -138,7 +152,9 @@ class DocumentRecordExtraction:
             row_count=len(rows),
             unsure_count=unsure,
             partly_read=partial,
+            document_unsure=document_unsure,
         )
+        return stored, rows
 
     @staticmethod
     def _failed(request: DocumentExtractionRequestedEvent, reason: str) -> DocumentExtractedEvent:
@@ -146,8 +162,25 @@ class DocumentRecordExtraction:
             run=request.run,
             request_event_id=request.event_id,
             document=request.document,
-            failure_reason=reason[:FAILURE_REASON_CHARACTERS] or "unknown",
+            failure_reason=DocumentRecordExtraction._one_line(reason, FAILURE_REASON_CHARACTERS) or "unknown",
         )
+
+    @staticmethod
+    def _skipped(request: DocumentExtractionRequestedEvent, reason: str, t: LocaleHandler) -> DocumentExtractedEvent:
+        return DocumentExtractedEvent(
+            run=request.run,
+            request_event_id=request.event_id,
+            document=request.document,
+            skipped_reason=DocumentRecordExtraction._one_line(reason, SKIP_REASON_CHARACTERS)
+            or t("agent.record_extraction.progress.skipped_unknown"),
+        )
+
+    @staticmethod
+    def _one_line(reason: str, limit: int) -> str:
+        """Model output taken from document text must not break the summary's markdown list: one line, no leading
+        heading, table or quote marker and no leading list bullet. Emphasis such as `**Supplier:**` is kept whole, since
+        stripping only its opening stars would leave the rest of the summary line bold."""
+        return _LEADING_MARKERS.sub("", " ".join(reason.split()))[:limit]
 
     @staticmethod
     async def _report(
@@ -160,6 +193,8 @@ class DocumentRecordExtraction:
         count = {"done": min(done, result.run.file_count), "files": result.run.file_count, "path": result.document.path}
         if result.failure_reason is not None:
             thought = t("agent.record_extraction.progress.failed", reason=result.failure_reason, **count)
+        elif result.skipped_reason is not None:
+            thought = t("agent.record_extraction.progress.skipped", reason=result.skipped_reason, **count)
         elif rows:
             first = DocumentRecordExtraction._first_rows(rows, result.run.field_names)
             thought = t("agent.record_extraction.progress.extracted_rows", rows=result.row_count, first=first, **count)

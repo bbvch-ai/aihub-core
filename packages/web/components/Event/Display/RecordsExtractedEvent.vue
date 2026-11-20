@@ -63,6 +63,7 @@ const previewNote = computed<string | null>(() => rowCount.value < totalRowCount
 const facts = computed<EventFact[]>(() => [
   { label: t('event.extraction.files'), value: props.event.event.file_count },
   { label: t('event.extraction.failedFiles'), value: props.event.event.failed_count },
+  { label: t('event.extraction.skippedFiles'), value: props.event.event.skipped_count },
   { label: t('event.extraction.rows'), value: `${rowCount.value} / ${totalRowCount.value}` },
   { label: t('event.extraction.truncated'), value: t(props.event.event.truncated ? 'event.parts.yes' : 'event.parts.no') },
   {

@@ -27,10 +27,18 @@ class CaseResult(BaseModel):
         value = self.metadata.get(DOCUMENT_TYPE)
         return DocumentType(value) if value else None
 
+    @property
+    def is_correctly_typed(self) -> bool:
+        return self.predicted_type == self.case.type
+
     def outcomes(self) -> dict[str, AttributeOutcome]:
-        """The outcome of every labelled key; a misclassified invoice stores nothing, so its labels count as empty."""
+        """The outcome of every labelled key, compared with whatever was stored under it.
+
+        A document given another type stores only that type's attributes, so its labels mostly count as empty; the
+        misclassification itself is counted against recall and precision.
+        """
         raw_keys = LabelledKeys.raw_key_of_value_keys()
         return {
-            key: AttributeComparison.outcome(expected, self.metadata.get(key), self.metadata.get(raw_keys[key]))
+            key: AttributeComparison.outcome(key, expected, self.metadata.get(key), self.metadata.get(raw_keys[key]))
             for key, expected in self.case.expected.items()
         }

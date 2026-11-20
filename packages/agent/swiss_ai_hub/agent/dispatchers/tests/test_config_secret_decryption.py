@@ -18,9 +18,6 @@ from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig
 from swiss_ai_hub.core.secrets import SecretEncryptionService
 from swiss_ai_hub.core.testing import async_test
 
-from swiss_ai_hub.agent.agents.email_classification_agent.configs.email_classification_agent_config import (
-    EmailClassificationAgentConfig,
-)
 from swiss_ai_hub.agent.agents.imap_agent.configs.imap_agent_config import ImapAgentConfig
 from swiss_ai_hub.agent.agents.imap_agent.events.read_mail_start_event import ReadMailStartEvent
 from swiss_ai_hub.agent.agents.imap_agent.imap_agent import ImapAgent
@@ -163,7 +160,6 @@ async def test_plaintext_passes_through_without_a_key(no_key: None):
     ("config_type", "paths"),
     [
         (ImapAgentConfig, {"imap.password", "imap.client_secret"}),
-        (EmailClassificationAgentConfig, {"imap.password", "imap.client_secret"}),
         (ReleaseNotesAgentConfig, {"jira.api_token"}),
     ],
 )

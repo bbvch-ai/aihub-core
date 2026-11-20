@@ -6568,6 +6568,12 @@ export type ExtractRecordsEvent = {
    */
   instructions?: string | null;
   /**
+   * Document Condition
+   *
+   * Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows.
+   */
+  document_condition?: string | null;
+  /**
    * Row Terms
    *
    * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
@@ -8317,7 +8323,7 @@ export type HumanInTheLoopInputResponseEvent = {
  *
  * Clients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows
  * `question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to
- * five questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
+ * six questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
  */
 export type HumanInTheLoopQuestionsRequestEvent = {
   /**
@@ -13402,13 +13408,13 @@ export type ModelInfoDto = {
   /**
    * Input Cost Per Token
    *
-   * Cost per input token in USD
+   * Cost per million input tokens in CHF
    */
   input_cost_per_token?: number | null;
   /**
    * Output Cost Per Token
    *
-   * Cost per output token in USD
+   * Cost per million output tokens in CHF
    */
   output_cost_per_token?: number | null;
   /**
@@ -16228,6 +16234,12 @@ export type RecordsExtractedEvent = {
    * Documents that could not be extracted.
    */
   failed_count?: number;
+  /**
+   * Skipped Count
+   *
+   * Documents left out because they clearly fail the document condition; never counted as failed.
+   */
+  skipped_count?: number;
   /**
    * Row Count
    *
@@ -25187,6 +25199,12 @@ export type ExtractRecordsEventWritable = {
    */
   instructions?: string | null;
   /**
+   * Document Condition
+   *
+   * Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows.
+   */
+  document_condition?: string | null;
+  /**
    * Row Terms
    *
    * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
@@ -26286,7 +26304,7 @@ export type HumanInTheLoopInputResponseEventWritable = {
  *
  * Clients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows
  * `question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to
- * five questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
+ * six questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
  */
 export type HumanInTheLoopQuestionsRequestEventWritable = {
   /**
@@ -31162,6 +31180,12 @@ export type RecordsExtractedEventWritable = {
    * Documents that could not be extracted.
    */
   failed_count?: number;
+  /**
+   * Skipped Count
+   *
+   * Documents left out because they clearly fail the document condition; never counted as failed.
+   */
+  skipped_count?: number;
   /**
    * Row Count
    *

@@ -243,7 +243,7 @@ class MyRetrieveEvent(ControlAndDisplayEvent):
 | `HumanInTheLoopInputRequestEvent`        | `human_in_the_loop.request`   | Popup mit Texteingabefeld                                         |
 | `HumanInTheLoopConfirmationRequestEvent` | `human_in_the_loop.request`   | Ja/Nein-Schaltflächenauswahl                                      |
 | `HumanInTheLoopChatRequestEvent`         | `human_in_the_loop.request`   | Chat-Nachricht (Fallback)                                         |
-| `HumanInTheLoopQuestionsRequestEvent`    | `human_in_the_loop.request`   | Bis zu 5 Auswahlfragen: Dialog in OpenWebUI, sonst Chat-Nachricht |
+| `HumanInTheLoopQuestionsRequestEvent`    | `human_in_the_loop.request`   | Bis zu 6 Auswahlfragen: Dialog in OpenWebUI, sonst Chat-Nachricht |
 | `HumanInTheLoopResponseEvent`            | `human_in_the_loop.response`  | Basisklasse für HITL-Antworten                                    |
 | `AgentInTheLoopRequestEvent`             | `agent_in_the_loop.request`   | An einen anderen Agenten delegieren                               |
 | `AgentInTheLoopResponseEvent`            | `agent_in_the_loop.response`  | Ergebnis des delegierten Agenten                                  |

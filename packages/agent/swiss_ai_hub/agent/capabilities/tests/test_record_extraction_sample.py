@@ -248,6 +248,34 @@ class TestSample:
         )
 
     @pytest.mark.asyncio
+    async def test_the_sample_interpretation_names_the_document_condition(self):
+        planning = _Planning(KnowledgeDocumentSelectionResult(documents=_documents(150)))
+        request = _request(instructions="only hardware", document_condition="from Q1 2026")
+
+        planned = await planning.plan(request, _config(), _Thread())
+
+        assert "**Columns:** item, amount · **Documents:** from Q1 2026 · **Rows kept:** only hardware" in (
+            planned[0].run.notices
+        )
+
+    @pytest.mark.asyncio
+    async def test_a_sample_whose_documents_are_all_skipped_still_offers_confirm_or_narrow(self):
+        planning = _Planning(KnowledgeDocumentSelectionResult(documents=_documents(150)))
+        planned = await planning.plan(_request(document_condition="only invoices from Hooli"), _config(), _Thread())
+        skipped = [
+            _no_rows(request).model_copy(update={"skipped_reason": "Supplier: Initech AG"}) for request in planned
+        ]
+
+        with patch.object(ExtractionFileStore, "put_table", AsyncMock()):
+            table = await ExtractionTable.assemble(planned[0].run, skipped, T)
+
+        assert table.total_row_count == 0
+        assert (table.skipped_count, table.awaiting_confirmation) == (5, True)
+        assert "**Skipped, not meeting the document condition:** 5 documents" in table.summary
+        assert table.summary.count(": Supplier: Initech AG") == 5
+        assert "Reply *yes* to extract all 150 documents" in table.summary
+
+    @pytest.mark.asyncio
     async def test_the_sample_answer_counts_against_the_whole_selection_and_awaits_confirmation(self):
         planning = _Planning(KnowledgeDocumentSelectionResult(documents=_documents(150)))
 
@@ -345,6 +373,19 @@ class TestConfirming:
         assert (run.sample, run.file_count, run.field_names, run.notices) == (False, 150, ["item", "amount"], ["note"])
         assert confirming.thoughts()[0].startswith("Extracting item, amount from 150 documents")
         assert await SampleAwaitingConfirmation.load(thread, "tables") is None
+
+    @pytest.mark.asyncio
+    async def test_a_confirmed_sample_keeps_its_document_condition(self):
+        thread = _Thread()
+        documents = _documents(150)
+        request = _request(document_condition="only invoices from Hooli")
+        await _Planning(KnowledgeDocumentSelectionResult(documents=documents)).plan(request, _config(), thread)
+        confirming = _Planning(KnowledgeDocumentSelectionResult(documents=documents))
+
+        planned = await confirming.plan(RecordExtraction.confirm_sample([FINANCE]), _config(), thread)
+
+        assert len(planned) == 150
+        assert {planned_request.run.document_condition for planned_request in planned} == {"only invoices from Hooli"}
 
     @pytest.mark.asyncio
     async def test_a_confirmed_sample_still_says_the_search_behind_it_stopped_early(self):

@@ -1,0 +1,229 @@
+# Delivery notes and packing slips, in German, French, Italian and English. Every company and person is made up; every
+# Swiss UID passes its check digit. `expected` holds each value as stored (ISO dates, numbers, ISO currency codes), and
+# None where the document does not state it.
+
+- id: delivery-note-de-1
+  type: delivery_note
+  title: Lieferschein_LS-8812.pdf
+  note: A delivery note without prices.
+  text: |
+    # Hooli AG
+    Bahnhofstrasse 10, 8001 Zürich
+
+    Muster Treuhand GmbH, Spitalgasse 4, 3011 Bern
+
+    ## Lieferschein LS-8812
+    Lieferdatum: 03.02.2025 · Ihre Bestellung PO-3333
+
+    | Pos | Artikel | Menge |
+    |---|---|---:|
+    | 1 | Notebook ThinkPad T14 | 3 |
+    | 2 | Docking Station USB-C | 3 |
+
+    Ware in einwandfreiem Zustand erhalten: ____________________
+  expected:
+    document_date: "2025-02-03"
+    document_reference_number: LS-8812
+    document_issuer: Hooli AG
+    document_recipient: Muster Treuhand GmbH
+    document_related_references: [PO-3333]
+
+- id: delivery-note-de-2
+  type: delivery_note
+  title: Lieferschein_22091.pdf
+  note: A delivery note that lists unit prices and a goods value.
+  text: |
+    # Kaffeerösterei Elbstrand e.K.
+    Hafenstraße 9, 20457 Hamburg
+
+    Nordlicht Software GmbH, Leopoldstraße 90, 80802 München
+
+    ## Lieferschein 22091
+    Versanddatum: 10.06.2025
+
+    | Artikel | Menge | Einzelpreis |
+    |---|---:|---:|
+    | Espresso Hausmischung 1 kg | 12 | 24,90 € |
+    | Filterkaffee Äthiopien 1 kg | 6 | 27,50 € |
+
+    Warenwert 463,80 € netto. Die Rechnung erhalten Sie separat per E-Mail.
+  expected:
+    document_date: "2025-06-10"
+    document_reference_number: "22091"
+    document_issuer: Kaffeerösterei Elbstrand e.K.
+    document_recipient: Nordlicht Software GmbH
+    document_related_references: null
+
+- id: delivery-note-fr-1
+  type: delivery_note
+  title: bon_de_livraison_BL-3310.pdf
+  note: A French delivery note.
+  text: |
+    # Lemanic Services SA
+    Chemin des Vignes 4, 1009 Pully
+
+    Alpenglück Bürobedarf AG, Marktgasse 30, 3011 Bern
+
+    ## Bon de livraison BL-3310
+    Date de livraison : 14 janvier 2025
+
+    | Article | Quantité |
+    |---|---:|
+    | Produit de nettoyage multi-surfaces 5 L | 8 |
+    | Sacs poubelle 110 L, rouleau | 20 |
+
+    Reçu en bon état, signature : ____________________
+  expected:
+    document_date: "2025-01-14"
+    document_reference_number: BL-3310
+    document_issuer: Lemanic Services SA
+    document_recipient: Alpenglück Bürobedarf AG
+    document_related_references: null
+
+- id: delivery-note-en-1
+  type: delivery_note
+  title: Packing_Slip_SO-2025-4410.pdf
+  note: An English packing slip without its own number; the order it ships is a related reference.
+  text: |
+    # Quillfeather Supplies Inc.
+    Packing Slip for Order SO-2025-4410
+
+    Ship to: Brightwater Analytics Ltd, 12 Canal Street, Manchester M1 3HE
+    Ship date: March 9, 2025 · Carrier: Atlas Freight · Tracking 1Z 999 AA1 01 2345 6784
+
+    | Item | Qty shipped |
+    |---|---:|
+    | Ergonomic office chair | 4 |
+  expected:
+    document_date: "2025-03-09"
+    document_reference_number: null
+    document_issuer: Quillfeather Supplies Inc.
+    document_recipient: Brightwater Analytics Ltd
+    document_related_references: [SO-2025-4410]
+
+- id: delivery-note-it-1
+  type: delivery_note
+  title: bolla_di_consegna_BC-778.pdf
+  note: An Italian delivery note.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano
+
+    Destinatario: Studio Bellavista Sagl, Piazza Riforma 3, 6900 Lugano
+
+    ## Bolla di consegna BC-778
+    Data: 12 settembre 2025 · Rif. ordine ORD-5521
+
+    Colli consegnati: 34 · Peso totale: 1'280 kg
+    Firma del destinatario: ____________________
+  expected:
+    document_date: "2025-09-12"
+    document_reference_number: BC-778
+    document_issuer: Ticino Logistica SA
+    document_recipient: Studio Bellavista Sagl
+    document_related_references: [ORD-5521]
+
+- id: delivery-note-fr-2
+  type: delivery_note
+  title: BL_2025-06418_commande_CMD-24-1187.pdf
+  note: A French delivery note naming the order and the order confirmation it delivers; the customer number is not a reference.
+  text: |
+    # Menuiserie Jorat & Fils SA
+    Route de Berne 112, 1010 Lausanne · IDE CHE-246.813.575 TVA
+
+    Livrer à :
+    Fondation Les Tilleuls
+    Service technique
+    Chemin des Tilleuls 6, 1023 Crissier
+
+    ## Bulletin de livraison n° BL 2025-06418
+    Date d'expédition : 22.07.2025
+    N° client : 40-1187
+    Votre commande : CMD-24-1187 du 30 juin 2025 · Notre confirmation de commande : CC-25-0932
+
+    | Pos. | Désignation | Unité | Quantité |
+    |---|---|---|---:|
+    | 1 | Porte intérieure chêne 80 × 200 cm, huisserie comprise | pce | 6 |
+    | 2 | Poignée inox série Lido | pce | 6 |
+    | 3 | Butoir de porte sol, brossé | pce | 6 |
+
+    Transport : camion propre · Livraison franco domicile
+    Marchandise reçue au complet et en bon état.
+
+    Lieu et date : ____________________ Signature du destinataire : ____________________
+  expected:
+    document_date: "2025-07-22"
+    document_reference_number: BL 2025-06418
+    document_issuer: Menuiserie Jorat & Fils SA
+    document_recipient: Fondation Les Tilleuls
+    document_related_references: [CMD-24-1187, CC-25-0932]
+
+- id: delivery-note-de-3
+  type: delivery_note
+  title: Teillieferung_LS-25-30177.pdf
+  note: A partial delivery (Teillieferung) against one order, with a backorder still to follow; it stays a delivery note.
+  text: |
+    # Sanitas Haustechnik AG
+    Gewerbestrasse 21, 6330 Cham · UID CHE-369.258.142
+
+    Lieferadresse:
+    Wohnbaugenossenschaft Lindenhof
+    Baustelle Lindenhof Ost, Haus C
+    Lindenstrasse 40, 6340 Baar
+
+    ## Lieferschein LS-25-30177 – Teillieferung 1 von 2
+    Lieferdatum: 4. November 2025
+    Ihre Bestellung: B-2025-1488 vom 14.10.2025 · Unsere Auftragsbestätigung: AB-77120
+    Ihr Ansprechpartner: Herr Stefan Imhof
+
+    | Pos | Artikel-Nr. | Bezeichnung | Bestellt | Geliefert | Rückstand |
+    |---|---|---|---:|---:|---:|
+    | 1 | 401-220 | Waschtisch Keramik 60 cm | 24 | 24 | 0 |
+    | 2 | 401-318 | Wand-WC spülrandlos | 24 | 12 | 12 |
+    | 3 | 512-004 | Unterputz-Spülkasten | 24 | 24 | 0 |
+    | 4 | 612-950 | Einhebelmischer Chrom | 24 | 0 | 24 |
+
+    Die Rückstände werden voraussichtlich in KW 48 nachgeliefert (Restlieferung).
+    Die Rechnung folgt nach vollständiger Lieferung.
+
+    Ware erhalten: ____________________ Datum: ____________
+  expected:
+    document_date: "2025-11-04"
+    document_reference_number: LS-25-30177
+    document_issuer: Sanitas Haustechnik AG
+    document_recipient: Wohnbaugenossenschaft Lindenhof
+    document_related_references: [B-2025-1488, AB-77120]
+
+- id: delivery-note-en-2
+  type: delivery_note
+  title: Delivery_Note_DN-55210.pdf
+  note: An English delivery note that also shows prices and names the customer's purchase order; it is not an invoice.
+  text: |
+    # Harrowgate Lab Supplies Ltd
+    Unit 7, Riverside Trading Estate, Leeds LS11 5QT · VAT Reg. No. GB 284 9917 32
+
+    Deliver to:
+    Fenwick Biotech Ltd
+    Goods Inwards, Building 2
+    Science Park Road, Cambridge CB4 0WS
+
+    ## Delivery Note DN-55210
+    Despatch date: 17/06/2025
+    Customer PO: FB-PO-20931 · Account: FEN001
+
+    | Line | Product code | Description | Qty | Unit price |
+    |---|---|---|---:|---:|
+    | 1 | PT-1000 | Pipette tips 1000 µl, racked, 10 × 96 | 20 | £38.50 |
+    | 2 | NG-200 | Nitrile gloves, size M, box of 200 | 15 | £12.90 |
+    | 3 | CT-50 | Centrifuge tubes 50 ml, sterile, pack of 500 | 4 | £96.00 |
+
+    Prices shown for information only. An invoice will follow separately.
+    Please check the goods on receipt and report any shortage within 48 hours.
+
+    Received by: ____________________ Print name: ____________________
+  expected:
+    document_date: "2025-06-17"
+    document_reference_number: DN-55210
+    document_issuer: Harrowgate Lab Supplies Ltd
+    document_recipient: Fenwick Biotech Ltd
+    document_related_references: [FB-PO-20931]

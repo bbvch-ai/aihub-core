@@ -1,0 +1,47 @@
+[project]
+name = "swiss-ai-hub-ee"
+version = "0.326.0"
+description = "bbv AI Hub enterprise agents, licensed under the bbv AI Hub Enterprise License."
+requires-python = ">=3.13, <3.14"
+authors = [
+    { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
+    { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },
+    { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
+    { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
+    { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
+]
+license = "LicenseRef-bbv-AI-Hub-Enterprise"
+license-files = ["LICENSE"]
+readme = "README.md"
+classifiers = ["Private :: Do Not Upload"]
+dependencies = [
+    "swiss-ai-hub-agent==0.326.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+module-name = "swiss_ai_hub.ee"
+
+[tool.uv.sources]
+swiss-ai-hub-agent = { workspace = true }
+
+[tool.ruff]
+line-length = 120
+target-version = 'py313'
+
+[tool.ruff.lint]
+select = ["E", "F", "UP", "I"]
+
+[tool.pytest.ini_options]
+markers = [
+    "self_hosted: mark tests that use self hosted services",
+    "slow: mark a test as slow",
+    "integration: mark a test as an integration test",
+    "experimental: mark a test as experimental",
+    "flaky: mark a test as flaky (may fail intermittently)",
+]
+addopts = "--strict-markers"

@@ -78,7 +78,13 @@ TEST_MODULES = (
         services="postgres-ferretdb ferretdb",
         triggered_by=("packages/api/",),
     ),
+    TestModule(
+        path="ee",
+        services=f"postgres clickhouse langfuse-worker langfuse-web otel-collector {STACK_DATA} {STACK_STORAGE} neo4j",
+        triggered_by=("packages/agent/",),
+    ),
 )
+ENTERPRISE_APPS = Path("ee/app")
 
 
 class CiTargets:
@@ -118,6 +124,18 @@ class CiTargets:
             name
             for name, tag in image_tags.items()
             if isinstance(tag, dict) and tag.get("build") == "localbuild" and name.endswith(suffix)
+        )
+
+    @staticmethod
+    def agent_image(name: str, agent_paths: tuple[str, ...]) -> ImageTarget:
+        """An enterprise agent is built from `ee/app/`, an open one from `packages/agent/app/`."""
+        enterprise = ENTERPRISE_APPS / name / "Dockerfile"
+        if enterprise.is_file():
+            return ImageTarget(
+                name=name, file=enterprise.as_posix(), cache_scope="ee", triggered_by=(*agent_paths, "ee/")
+            )
+        return ImageTarget(
+            name=name, file=f"packages/agent/app/{name}/Dockerfile", cache_scope="agent", triggered_by=agent_paths
         )
 
     @classmethod
@@ -169,15 +187,7 @@ class CiTargets:
                 )
                 for name in cls.localbuild_images("_pipeline")
             ),
-            *(
-                ImageTarget(
-                    name=name,
-                    file=f"packages/agent/app/{name}/Dockerfile",
-                    cache_scope="agent",
-                    triggered_by=agent_paths,
-                )
-                for name in cls.localbuild_images("_agent")
-            ),
+            *(cls.agent_image(name, agent_paths) for name in cls.localbuild_images("_agent")),
         ]
 
     @classmethod

@@ -21,6 +21,7 @@ class SelectedExtraction:
         by_location: bool,
         t: LocaleHandler,
         calculation: str | None = None,
+        document_condition: str | None = None,
     ) -> ExtractRecordsEvent:
         return RecordExtraction.extract(
             selection.selection,
@@ -34,4 +35,5 @@ class SelectedExtraction:
             ],
             cut_short=finished.stopped_early and not by_location,
             document_terms=selection.document_terms,
+            document_condition=document_condition,
         )

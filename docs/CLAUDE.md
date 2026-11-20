@@ -41,8 +41,9 @@ Three categories of generated files — edits will be overwritten:
 - **`docs/6_code_deep_dive/`**: Overwritten by `sync-docs.sh`. Edit the source `README.md` in each package.
 - **`public/` generated files**: `index.md`, `llms.txt`, `llms-full.txt`, `changelog.md`, `licenses.md`, and the `docs/`
   and `de/` subtrees are rebuilt by `generate-llm-files.mjs` — never edit these. The committed static files `CNAME`,
-  `logo.png` and `robots.txt` are the exception: they are hand-edited and survive the generator (its `cleanPublicDirectory` only
-  removes the generated paths). VitePress copies everything in `public/` to the deployed site root.
+  `logo.png` and `robots.txt` are the exception: they are hand-edited and survive the generator (its
+  `cleanPublicDirectory` only removes the generated paths). VitePress copies everything in `public/` to the deployed
+  site root.
 
 ## Page Structure
 

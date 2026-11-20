@@ -28,7 +28,7 @@ Decide which type the document is, and copy the attributes of that type exactly 
 <attributes>
 {% for attribute in attributes %}
 <attribute name="{{ attribute.name }}">
-{%- for type_name, meaning in attribute.per_type.items() %}For {{ type_name }}: {{ meaning }}. {% endfor -%}
+{%- for group in attribute.meanings %}For {{ group.types | join(", ") }}: {{ group.meaning }}. {% endfor -%}
 </attribute>
 {% endfor %}
 </attributes>

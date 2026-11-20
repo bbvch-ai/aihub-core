@@ -1,0 +1,264 @@
+# Policies, guidelines, directives, regulations, codes of conduct and general terms and conditions that set rules
+# employees or customers must follow, in German, French, Italian and English. Every company and person is made up.
+# `expected` holds each value as stored (ISO dates), and None where the document does not state it.
+
+- id: policy-de-1
+  type: policy
+  title: Spesenreglement_2025.pdf
+  text: |
+    # Spesenreglement 2025
+    Muster Treuhand GmbH
+
+    1. Spesen werden nur gegen Originalbeleg (Quittung oder Rechnung) vergütet.
+    2. Verpflegung auswärts: höchstens CHF 30.00 pro Mahlzeit.
+    3. Bahnreisen: 2. Klasse; ab 2 Stunden Fahrzeit 1. Klasse.
+
+    Gültig ab 1. Januar 2025.
+  expected:
+    document_date: "2025-01-01"
+    document_reference_number: null
+    document_issuer: Muster Treuhand GmbH
+    document_jurisdiction: null
+
+- id: policy-en-1
+  type: policy
+  title: Information_Security_Policy.pdf
+  note: A policy whose organisation appears only in an e-mail address names no issuer.
+  text: |
+    # Information Security Policy
+    Version 3.1 · Effective 1 March 2025
+
+    1. All devices must use full-disk encryption.
+    2. Passwords must be stored in the company password manager.
+    3. Incidents must be reported to security@hooli.example within one hour.
+  expected:
+    document_date: "2025-03-01"
+    document_reference_number: "3.1"
+    document_issuer: null
+    document_jurisdiction: null
+
+- id: policy-fr-1
+  type: policy
+  title: reglement_teletravail.pdf
+  text: |
+    # Règlement sur le télétravail
+    Atelier Rousseau Sàrl · en vigueur dès le 1er septembre 2025
+
+    Le télétravail est possible jusqu'à deux jours par semaine, après accord de la direction. Les frais de connexion
+    internet sont remboursés forfaitairement à hauteur de CHF 30.– par mois.
+  expected:
+    document_date: "2025-09-01"
+    document_reference_number: null
+    document_issuer: Atelier Rousseau Sàrl
+    document_jurisdiction: null
+
+- id: terms-de-1
+  type: policy
+  title: AGB_Velorado_2025.pdf
+  note: General terms and conditions set rules for customers; they are a policy, not a contract.
+  text: |
+    # Allgemeine Geschäftsbedingungen (AGB)
+    Velorado Zweirad GmbH · Stand: März 2025
+
+    ## 1. Geltungsbereich
+    Diese AGB gelten für alle Kauf-, Reparatur- und Serviceverträge zwischen der Velorado Zweirad GmbH und ihren
+    Kundinnen und Kunden. Abweichende Bedingungen gelten nur, wenn sie schriftlich vereinbart wurden.
+
+    ## 2. Preise und Zahlung
+    Es gelten die Preise am Tag der Bestellung, in CHF inkl. MWST. Rechnungen sind innert 30 Tagen netto zahlbar.
+
+    ## 3. Gewährleistung
+    Auf neue Velos gewähren wir 2 Jahre Garantie, auf Rahmen 5 Jahre. Verschleissteile sind ausgenommen.
+
+    ## 4. Serviceabo
+    Das Serviceabo verlängert sich jeweils um ein Jahr, wenn es nicht mit einer Frist von einem Monat auf das Ende der
+    Laufzeit gekündigt wird.
+
+    ## 5. Gerichtsstand
+    Gerichtsstand ist Winterthur. Es gilt schweizerisches Recht.
+  expected:
+    document_date: "2025-03-01"
+    document_reference_number: null
+    document_issuer: Velorado Zweirad GmbH
+    document_jurisdiction: Winterthur
+
+- id: guideline-en-1
+  type: policy
+  title: Data_Handling_Guideline_v2.3.pdf
+  note: A guideline that sets rules is a policy, not documentation, although it has a version and explains what to do.
+  text: |
+    # Northpeak Software Ltd — Data Handling Guideline
+
+    Version 2.3, valid from 1 April 2025. Owner: Data Protection Office.
+
+    ## Storing data
+    - Customer data must be stored only in the approved cloud drive "Vault".
+    - Personal data must not be copied to private devices or private e-mail accounts.
+    - Exports from the CRM are deleted after 30 days at the latest.
+
+    ## Sharing data
+
+    | Class | Example | May be shared with |
+    |---|---|---|
+    | Public | Price list | Anyone |
+    | Internal | Team calendar | All employees |
+    | Confidential | Customer contracts | Named project members |
+
+    ## Incidents
+    A suspected data breach must be reported to the Data Protection Office within 2 hours.
+  expected:
+    document_date: "2025-04-01"
+    document_reference_number: "2.3"
+    document_issuer: Northpeak Software Ltd
+    document_jurisdiction: null
+
+- id: guideline-de-1
+  type: policy
+  title: Richtlinie_Social_Media_2025.pdf
+  note: A Richtlinie sets rules for employees and is a policy, even when it reads like instructions.
+  text: |
+    # Richtlinie Social Media
+    Bergwerk Bau AG · Version 1.2 · gültig ab 1. Juli 2025
+
+    ## 1. Geltungsbereich
+    Diese Richtlinie gilt für alle Mitarbeitenden, die sich privat oder beruflich in sozialen Medien äussern.
+
+    ## 2. Regeln
+    1. Im Namen der Firma äussern sich nur die Kommunikationsabteilung und die Geschäftsleitung.
+    2. Fotos von Baustellen dürfen nur mit Zustimmung der Projektleitung veröffentlicht werden.
+    3. Kundennamen, Preise und Pläne werden nie veröffentlicht.
+
+    ## 3. Verstösse
+    Verstösse können arbeitsrechtliche Massnahmen nach sich ziehen.
+  expected:
+    document_date: "2025-07-01"
+    document_reference_number: "1.2"
+    document_issuer: Bergwerk Bau AG
+    document_jurisdiction: null
+
+- id: policy-de-handbook-1
+  type: policy
+  title: Personalhandbuch_2025.pdf
+  note: A staff handbook that sets working hours, holidays and conduct is a policy, even when it also says whom to call.
+  text: |
+    # Personalhandbuch
+    Alpenlicht Optik AG · gültig ab 1. Februar 2025
+
+    ## Arbeitszeit
+    Die Sollarbeitszeit beträgt 42 Stunden pro Woche. Blockzeiten sind von 9.00 bis 11.30 Uhr und von 14.00 bis
+    16.00 Uhr; in dieser Zeit sind alle Mitarbeitenden erreichbar.
+
+    ## Ferien
+    Mitarbeitende haben Anspruch auf 25 Arbeitstage Ferien, ab dem 50. Altersjahr auf 27. Mindestens zwei Wochen
+    werden am Stück bezogen.
+
+    ## Krankheit
+    Ab dem vierten Krankheitstag ist ein Arztzeugnis vorzulegen. Melden Sie sich am ersten Tag vor 8.30 Uhr bei
+    Ihrer vorgesetzten Person.
+
+    ## Verhalten
+    Geschenke von Lieferanten über CHF 100.00 sind der Geschäftsleitung zu melden.
+  expected:
+    document_date: "2025-02-01"
+    document_reference_number: null
+    document_issuer: Alpenlicht Optik AG
+    document_jurisdiction: null
+
+- id: policy-it-1
+  type: policy
+  title: Direttiva_veicoli_aziendali.pdf
+  note: The document number wins over the version number.
+  text: |
+    # Direttiva sull'uso dei veicoli aziendali
+    Studio Bellavista Sagl · Doc. DIR-07 · Versione 2 · in vigore dal 1° maggio 2025
+
+    1. I veicoli aziendali sono riservati ai viaggi di servizio. L'uso privato richiede l'autorizzazione della
+       direzione.
+    2. Il conducente registra ogni viaggio nel libro di bordo entro la fine della giornata.
+    3. Le multe sono a carico del conducente.
+    4. Danni e incidenti vanno segnalati alla direzione entro 24 ore.
+  expected:
+    document_date: "2025-05-01"
+    document_reference_number: DIR-07
+    document_issuer: Studio Bellavista Sagl
+    document_jurisdiction: null
+
+- id: policy-en-code-1
+  type: policy
+  title: Code_of_Conduct.pdf
+  note: A code of conduct with no effective date stores the date it was approved.
+  text: |
+    # Code of Conduct
+    Brightwater Analytics Ltd · Approved by the Board of Directors on 12 February 2025
+
+    ## Our principles
+    We treat colleagues, customers and suppliers with respect and do not tolerate discrimination or harassment.
+
+    ## Conflicts of interest
+    Employees disclose any private interest in a supplier or customer to their manager before taking part in a
+    decision about them.
+
+    ## Gifts
+    Gifts worth more than GBP 50 are declined or handed over to the Compliance Officer.
+
+    ## Speaking up
+    Breaches of this code can be reported anonymously through the whistleblowing line.
+  expected:
+    document_date: "2025-02-12"
+    document_reference_number: null
+    document_issuer: Brightwater Analytics Ltd
+    document_jurisdiction: null
+
+- id: policy-de-handbook-2
+  type: policy
+  title: Mitarbeiterhandbuch_2025.pdf
+  note: A staff handbook that tells employees when to call in sick and by when to claim expenses sets rules, though it reads like a guide.
+  text: |
+    # Mitarbeiterhandbuch
+    Muster Treuhand GmbH · Ausgabe Januar 2025
+
+    ## Willkommen
+    Dieses Handbuch erklärt, wie die wichtigsten Abläufe in unserem Büro funktionieren und an wen Sie sich wenden.
+
+    ## So beantragen Sie Ferien
+    1. Tragen Sie die gewünschten Tage im Ferienkalender ein.
+    2. Ihre Teamleitung bestätigt den Antrag innert einer Woche.
+
+    ## So melden Sie sich krank
+    Rufen Sie vor 9 Uhr Ihre Teamleitung an. Dauert die Krankheit länger als drei Tage, senden Sie das Arztzeugnis
+    an das Sekretariat.
+
+    ## So reichen Sie Spesen ein
+    Fotografieren Sie die Belege und laden Sie sie bis zum 5. des Folgemonats im Spesenordner hoch.
+  expected:
+    document_date: "2025-01-01"
+    document_reference_number: null
+    document_issuer: Muster Treuhand GmbH
+    document_jurisdiction: null
+
+- id: terms-it-1
+  type: policy
+  title: Condizioni_generali_Ticinonet_2025.pdf
+  note: Italian general terms and conditions set rules for customers and name their place of jurisdiction.
+  text: |
+    # Condizioni generali di contratto
+    Ticinonet SA · Edizione aprile 2025
+
+    ## 1. Campo d'applicazione
+    Le presenti condizioni si applicano a tutti i servizi internet e di telefonia forniti da Ticinonet SA ai suoi
+    clienti privati e commerciali.
+
+    ## 2. Fatturazione
+    Le fatture sono pagabili entro 20 giorni. In caso di ritardo, Ticinonet SA può sospendere il servizio dopo un
+    richiamo.
+
+    ## 3. Disdetta
+    Gli abbonamenti possono essere disdetti per la fine di ogni mese con un preavviso di 30 giorni.
+
+    ## 4. Diritto applicabile e foro
+    Si applica il diritto svizzero. Foro competente è Bellinzona.
+  expected:
+    document_date: "2025-04-01"
+    document_reference_number: null
+    document_issuer: Ticinonet SA
+    document_jurisdiction: Bellinzona

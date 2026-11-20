@@ -574,6 +574,14 @@ everything, while a rotated credential keeps the cursor.
     saving, so the next run tries it again; and it travels to reconcile as `unread_file_keys`, which rule 6 skips.
     Counted as missing, a file that stays unavailable would discard the state every second run and re-read the whole
     source.
+11. **A sync's memory does not grow with the source.** dlt keeps up to 5,000 rows in memory before writing them to disk,
+    and each row carries a whole record (a wiki page holds its HTML and its markdown), so a source of a few thousand
+    records would be read entirely into memory. The sync step sets dlt's `data_writer.buffer_max_items` to 100.
+12. **A long sync reports its progress.** dlt writes nothing to the data lake before every record is read, so without
+    log lines a sync that reads for minutes looks hung. The record mapping logs every `PROGRESS_EVERY` (100) records per
+    resource, and an adapter may log its scope (MediaWiki: pages and files in scope, how many to read). They go through
+    `logging.getLogger(__name__)`, which the instance's `managed_python_loggers: [swiss_ai_hub]` turns into Dagster
+    events: they show in a run's Events tab even where stdout and stderr are not captured (`NoOpComputeLogManager`).
 
 **Try it locally.** `make structured-pipeline` runs the ingestion pipeline and `app.structured_pipeline` (Jira,
 Confluence) in one `dagster dev`; `playground/jira_seed` fills a Jira Cloud or Data Center test site with the cases to
@@ -843,9 +851,10 @@ frontmatter chunks until the file changes or is re-uploaded.
 ## Document Classification
 
 `ops/document/classify_document.py` runs in `documents_factory` after table refinement (#2482). It assigns each document
-one type of the closed set in core's `DocumentTypeCatalog` (`invoice`, `other`) and reads that type's attributes with
-one call of the database's own text model (`build_language_model(bucket)`), through `DocumentClassificationResource`.
-See core's `document/classification/` and ADR `2026_11_13_closed_document_types_and_attributes_at_ingestion`.
+one type of the closed set in core's `DocumentTypeCatalog` (`invoice`, `contract`, … `other`) and reads that type's
+attributes with one call of the database's own text model (`build_language_model(bucket)`), through
+`DocumentClassificationResource`. See core's `document/classification/` and ADR
+`2026_11_13_closed_document_types_and_attributes_at_ingestion`.
 
 - **Switched per database** by `with_document_classification` (`DOCUMENT_INGESTION_WITH_DOCUMENT_CLASSIFICATION`, on by
   default), like the other enrichment flags.

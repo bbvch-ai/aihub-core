@@ -3,11 +3,11 @@
 ## Context
 
 Operators must tell a customer how many tokens and how much LLM cost their tenant used in a month, in total and per
-model. A dedicated instance serves one customer, and LiteLLM's Global Usage view already answers that for it. A tenant on
-the shared instance has no such view. The gateway attributed calls to users only (ADR
+model. A dedicated instance serves one customer, and LiteLLM's Global Usage view already answers that for it. A tenant
+on the shared instance has no such view. The gateway attributed calls to users only (ADR
 `2026_08_06_per_user_litellm_key_as_cost_attribution_carrier`), and one user key serves a user in every tenant they
-belong to, so the key cannot carry the tenant. The platform's own per-tenant figures come from `LLMCostEvent`, which only
-agent runs emit, so plain chat, embeddings, translation, speech-to-text and pipelines are missing from them.
+belong to, so the key cannot carry the tenant. The platform's own per-tenant figures come from `LLMCostEvent`, which
+only agent runs emit, so plain chat, embeddings, translation, speech-to-text and pipelines are missing from them.
 
 LiteLLM v1.106.4, which every deployment runs, ships Customer Usage and Tag Usage views to proxy administrators without
 an Enterprise licence, with spend, tokens and a per-model breakdown. Both read daily aggregate tables that LiteLLM fills
@@ -52,8 +52,8 @@ makes the per-tenant figures add up. The same customer is the direction for tena
 Grafana dashboards.
 
 Verified on LiteLLM v1.106.4 with a fake upstream, by driving the Hub's call paths for one user in two tenants, a
-sysadmin, a pipeline, a run without a user and a raw master-key call. Each tenant's line held exactly its own calls,
-per model. `no-tenant` held the four calls without a tenant. The customers' requests, tokens and spend summed exactly to
+sysadmin, a pipeline, a run without a user and a raw master-key call. Each tenant's line held exactly its own calls, per
+model. `no-tenant` held the four calls without a tenant. The customers' requests, tokens and spend summed exactly to
 Global Usage.
 
 ## Consequences

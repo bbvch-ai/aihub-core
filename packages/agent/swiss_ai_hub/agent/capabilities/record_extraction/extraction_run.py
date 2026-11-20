@@ -23,6 +23,10 @@ class ExtractionRun(BaseModel):
         bool, Field(description="Whether the table names each row's collection, as when it spans several.")
     ] = False
     tool_call_id: Annotated[str | None, Field(description="The tool call the extraction answers, if any.")] = None
+    document_condition: Annotated[
+        str | None,
+        Field(description="Which documents count; a document that clearly fails it is skipped after its first part."),
+    ] = None
     collections: Annotated[
         list[BucketNamespacePair],
         Field(description="The collections the run may read, so a confirmed sample is checked against them."),

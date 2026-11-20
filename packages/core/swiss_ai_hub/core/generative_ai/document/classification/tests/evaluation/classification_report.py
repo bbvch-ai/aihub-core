@@ -5,19 +5,21 @@ from pydantic import BaseModel, Field
 
 from swiss_ai_hub.core.generative_ai.document.classification.document_type import DocumentType
 from swiss_ai_hub.core.generative_ai.document.classification.tests.evaluation.attribute_outcome import AttributeOutcome
-from swiss_ai_hub.core.generative_ai.document.classification.tests.evaluation.case_kind import CaseKind
 from swiss_ai_hub.core.generative_ai.document.classification.tests.evaluation.case_result import CaseResult
 
 
 class ClassificationReport(BaseModel):
-    """The measures #2481 reports, and whether they meet the targets the team agreed on.
+    """The measures #2481 agreed for invoices, applied to every type of the set (#2485).
 
-    Recall counts every invoice, boundary cases included. Precision is measured where it is at risk: on documents that
-    resemble invoices. Attribute shares are per key over the invoices labelling it.
+    Per type: recall over the documents of that type, and precision over everything classified as it, so a type that
+    swallows its look-alikes shows up as low precision. `OTHER` has no target: a document missed by a type already
+    costs that type's recall. The attribute target holds per attribute over every document labelling it, as it did for
+    invoices; with eight to ten documents a type, one slip would be 10% of a type, so the shares per type and attribute
+    are reported to show where values go wrong, not held to the target.
     """
 
-    MIN_INVOICE_RECALL: ClassVar[float] = 0.95
-    MIN_HARD_NEGATIVE_PRECISION: ClassVar[float] = 0.95
+    MIN_RECALL: ClassVar[float] = 0.95
+    MIN_PRECISION: ClassVar[float] = 0.95
     MAX_WRONG_OR_GUESSED: ClassVar[float] = 0.02
 
     name: Annotated[str, Field(description="Which sample this reports on")]
@@ -26,52 +28,56 @@ class ClassificationReport(BaseModel):
     prompt_tokens: Annotated[int, Field(description="Prompt tokens over all calls")] = 0
     completion_tokens: Annotated[int, Field(description="Completion tokens over all calls")] = 0
 
-    def of_kind(self, *kinds: CaseKind) -> list[CaseResult]:
-        return [result for result in self.results if result.case.kind in kinds]
+    def of_type(self, document_type: DocumentType) -> list[CaseResult]:
+        return [result for result in self.results if result.case.type == document_type]
 
-    @property
-    def invoice_recall(self) -> float:
-        return self._share(self.of_kind(CaseKind.INVOICE, CaseKind.BOUNDARY_INVOICE), DocumentType.INVOICE)
+    def predicted_as(self, document_type: DocumentType) -> list[CaseResult]:
+        return [result for result in self.results if result.predicted_type == document_type]
 
-    @property
-    def hard_negative_precision(self) -> float:
-        """Share of documents resembling invoices that are kept out of the invoices."""
-        return self._share(self.of_kind(CaseKind.HARD_NEGATIVE), DocumentType.OTHER)
+    def types(self) -> list[DocumentType]:
+        """The types the sample has documents of, in the catalog's order."""
+        present = {result.case.type for result in self.results}
+        return [document_type for document_type in DocumentType if document_type in present]
 
-    @property
-    def easy_negative_precision(self) -> float:
-        return self._share(self.of_kind(CaseKind.EASY_NEGATIVE), DocumentType.OTHER)
+    def recall(self, document_type: DocumentType) -> float:
+        results = self.of_type(document_type)
+        return sum(result.is_correctly_typed for result in results) / len(results) if results else 1.0
 
-    @property
-    def invoice_precision(self) -> float:
-        """Of everything classified as an invoice, the share that is one."""
-        predicted = [result for result in self.results if result.predicted_type == DocumentType.INVOICE]
-        return sum(result.case.kind.is_invoice for result in predicted) / len(predicted) if predicted else 1.0
+    def precision(self, document_type: DocumentType) -> float:
+        """Of everything classified as this type, the share that is of it."""
+        predicted = self.predicted_as(document_type)
+        return sum(result.is_correctly_typed for result in predicted) / len(predicted) if predicted else 1.0
 
-    def attribute_shares(self) -> dict[str, dict[AttributeOutcome, float]]:
-        counts: dict[str, Counter[AttributeOutcome]] = {}
+    def attribute_shares(self) -> dict[tuple[DocumentType, str], dict[AttributeOutcome, float]]:
+        counts: dict[tuple[DocumentType, str], Counter[AttributeOutcome]] = {}
         for result in self.results:
             for key, outcome in result.outcomes().items():
-                counts.setdefault(key, Counter())[outcome] += 1
+                counts.setdefault((result.case.type, key), Counter())[outcome] += 1
         return {
-            key: {outcome: counter[outcome] / counter.total() for outcome in AttributeOutcome}
-            for key, counter in counts.items()
+            type_and_key: {outcome: counter[outcome] / counter.total() for outcome in AttributeOutcome}
+            for type_and_key, counter in counts.items()
         }
 
     def missed_targets(self) -> list[str]:
         missed = []
-        if self.of_kind(CaseKind.INVOICE, CaseKind.BOUNDARY_INVOICE) and self.invoice_recall < self.MIN_INVOICE_RECALL:
-            missed.append(f"invoice recall {self.invoice_recall:.1%} < {self.MIN_INVOICE_RECALL:.0%}")
-        if self.of_kind(CaseKind.HARD_NEGATIVE) and self.hard_negative_precision < self.MIN_HARD_NEGATIVE_PRECISION:
-            missed.append(
-                f"precision on documents resembling invoices {self.hard_negative_precision:.1%} "
-                f"< {self.MIN_HARD_NEGATIVE_PRECISION:.0%}"
-            )
-        for key, shares in self.attribute_shares().items():
-            costly = shares[AttributeOutcome.WRONG] + shares[AttributeOutcome.GUESSED]
+        for document_type in self.types():
+            if document_type == DocumentType.OTHER:
+                continue
+            if self.recall(document_type) < self.MIN_RECALL:
+                missed.append(f"{document_type} recall {self.recall(document_type):.1%} < {self.MIN_RECALL:.0%}")
+            if self.precision(document_type) < self.MIN_PRECISION:
+                missed.append(
+                    f"{document_type} precision {self.precision(document_type):.1%} < {self.MIN_PRECISION:.0%}"
+                )
+        for key, costly in self.costly_shares().items():
             if costly > self.MAX_WRONG_OR_GUESSED:
                 missed.append(f"{key}: wrong + guessed {costly:.1%} > {self.MAX_WRONG_OR_GUESSED:.0%}")
         return missed
 
-    def _share(self, results: list[CaseResult], document_type: DocumentType) -> float:
-        return sum(result.predicted_type == document_type for result in results) / len(results) if results else 1.0
+    def costly_shares(self) -> dict[str, float]:
+        """Per attribute, over every type: the share of labelled values stored wrong or guessed."""
+        counts: dict[str, Counter[bool]] = {}
+        for result in self.results:
+            for key, outcome in result.outcomes().items():
+                counts.setdefault(key, Counter())[outcome in (AttributeOutcome.WRONG, AttributeOutcome.GUESSED)] += 1
+        return {key: counter[True] / counter.total() for key, counter in counts.items()}

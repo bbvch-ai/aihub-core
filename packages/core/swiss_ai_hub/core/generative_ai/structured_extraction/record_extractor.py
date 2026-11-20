@@ -4,10 +4,14 @@ from typing import Annotated, Any
 
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
+from opentelemetry import trace
+from pydantic import BaseModel
 
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document import KnowledgeDocument
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result import DocumentExtractionResult
+from swiss_ai_hub.core.generative_ai.structured_extraction.document_match import DocumentMatch
+from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record import RecordValue
 from swiss_ai_hub.core.generative_ai.structured_extraction.extraction_window_call import ExtractionWindowCall
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_merger import RecordMerger
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_provenance import RecordProvenance
@@ -40,6 +44,8 @@ MIN_WINDOW_TOKENS = 256
 
 MAX_FAILURE_REASON_CHARACTERS = 300
 
+MAX_TRACED_REASON_CHARACTERS = 300
+
 
 class RecordExtractor:
     """Extracts every record matching a schema from one document, however long the document is."""
@@ -59,28 +65,46 @@ class RecordExtractor:
         ] = None,
         max_windows: Annotated[int | None, "Read at most this many windows; the result is then partial"] = None,
         row_terms: Annotated[str | None, "What wanted lines usually contain, to choose windows by"] = None,
+        document_condition: Annotated[
+            str | None,
+            "Which documents count, e.g. 'only contracts with Hooli'; judged on the first window, and a document that "
+            "clearly fails it is not read further",
+        ] = None,
     ) -> DocumentExtractionResult:
         """Malformed model output becomes a failed result for this document instead of a raise.
 
         A deliberate departure from fail-fast: a caller extracts from many documents, and one document a model
         cannot handle must not cost the records of the others. A document fails as a whole, never with the records of
         the windows that worked, because a partial list would read as complete. For the same reason a document read
-        only in part, because it has more windows than `max_windows`, says so in the result. Infrastructure errors
-        still raise.
+        only in part, because it has more windows than `max_windows`, says so in the result. A document that clearly
+        fails the document condition is a result too, skipped after its first window, never a raise. Infrastructure
+        errors still raise.
         """
         RecordExtractor._require_whole(document)
         provenance = RecordProvenance.from_summary(document.summary)
         prompt = RichPromptTemplate(t("lib.prompt.structured_extraction.extraction_prompt"))
         schema = schema.with_match() if instructions else schema
-        prompt_args = RecordExtractor._prompt_args(schema, document, instructions)
+        prompt_args = RecordExtractor._prompt_args(schema, document, instructions, document_condition)
         window_tokens = RecordExtractor._window_tokens(prompt, prompt_args, llm_config)
         windows = TextWindows.split(
             document.text, window_tokens, int(window_tokens * WINDOW_OVERLAP_RATIO), llm_config.token_counter
         )
         opening = RecordExtractor._opening(document.text, window_tokens, llm_config) if len(windows) > 1 else ""
         positions = WindowSelection.choose(windows, max_windows or len(windows), row_terms)
-        limiter = limiter or asyncio.Semaphore(1)
-        call = ExtractionWindowCall(llm, schema.to_records_model(), prompt, prompt_args, windows, opening, limiter)
+        call = ExtractionWindowCall(
+            llm, schema.to_records_model(), prompt, prompt_args, windows, opening, limiter or asyncio.Semaphore(1)
+        )
+        if document_condition and positions:
+            return await RecordExtractor._judged_first(
+                call, schema.to_records_model(judged=True), positions, provenance
+            )
+        outcomes = await RecordExtractor._side_by_side(call, positions)
+        return RecordExtractor._result(provenance, positions, outcomes, len(windows))
+
+    @staticmethod
+    async def _side_by_side(
+        call: ExtractionWindowCall, positions: list[int]
+    ) -> list[list[dict[str, RecordValue]] | ValueError]:
         try:
             async with asyncio.TaskGroup() as group:
                 tasks = [group.create_task(call.records(position)) for position in positions]
@@ -88,23 +112,68 @@ class RecordExtractor:
             # The group cancelled the other windows; callers expect the infrastructure error itself, as before the
             # windows ran side by side.
             raise failed_calls.exceptions[0] from failed_calls
-        outcomes = [task.result() for task in tasks]
-        for position, outcome in zip(positions, outcomes, strict=True):
-            if isinstance(outcome, ValueError):
-                logger.warning("[extract] %s: excerpt %d of %d failed", provenance.path, position + 1, len(windows))
-                reason = f"Excerpt {position + 1} of {len(windows)}: {type(outcome).__name__}: {outcome}"
-                return DocumentExtractionResult.failed_with(
-                    provenance, reason[:MAX_FAILURE_REASON_CHARACTERS], len(windows)
-                )
-        merged = RecordMerger.merge([outcome for outcome in outcomes if not isinstance(outcome, ValueError)], positions)
-        return DocumentExtractionResult.succeeded(provenance, merged, len(windows), len(positions) < len(windows))
+        return [task.result() for task in tasks]
 
     @staticmethod
-    def _prompt_args(schema: RecordSchema, document: KnowledgeDocument, instructions: str | None) -> dict[str, Any]:
+    async def _judged_first(
+        call: ExtractionWindowCall,
+        judged_model: type[BaseModel],
+        positions: list[int],
+        provenance: RecordProvenance,
+    ) -> DocumentExtractionResult:
+        """Window 0 alone, then the other windows side by side only when the document may meet the condition.
+
+        `positions[0] == 0` always, because `WindowSelection.choose` returns every window or a set containing 0.
+        """
+        window_count = len(call.windows)
+        judged = await call.judged(judged_model)
+        if isinstance(judged, ValueError):
+            return RecordExtractor._result(provenance, positions[:1], [judged], window_count)
+        match, first = judged
+        RecordExtractor._record_judgement(provenance, match)
+        if match.fails:
+            return DocumentExtractionResult.skipped_by(provenance, match, window_count)
+        outcomes = [first, *await RecordExtractor._side_by_side(call, positions[1:])]
+        return RecordExtractor._result(provenance, positions, outcomes, window_count, match)
+
+    @staticmethod
+    def _result(
+        provenance: RecordProvenance,
+        positions: list[int],
+        outcomes: list[list[dict[str, RecordValue]] | ValueError],
+        window_count: int,
+        document_match: DocumentMatch | None = None,
+    ) -> DocumentExtractionResult:
+        for position, outcome in zip(positions, outcomes, strict=True):
+            if isinstance(outcome, ValueError):
+                logger.warning("[extract] %s: excerpt %d of %d failed", provenance.path, position + 1, window_count)
+                reason = f"Excerpt {position + 1} of {window_count}: {type(outcome).__name__}: {outcome}"
+                return DocumentExtractionResult.failed_with(
+                    provenance, reason[:MAX_FAILURE_REASON_CHARACTERS], window_count
+                )
+        merged = RecordMerger.merge([outcome for outcome in outcomes if not isinstance(outcome, ValueError)], positions)
+        return DocumentExtractionResult.succeeded(
+            provenance, merged, window_count, len(positions) < window_count, document_match
+        )
+
+    @staticmethod
+    def _record_judgement(provenance: RecordProvenance, match: DocumentMatch) -> None:
+        """On the span of `extract`, so verdicts can be queried per document to label a sample of them later."""
+        span = trace.get_current_span()
+        span.set_attribute("extraction.document.path", provenance.path)
+        span.set_attribute("extraction.document_condition.verdict", match.verdict)
+        span.set_attribute("extraction.document_condition.reason", match.reason[:MAX_TRACED_REASON_CHARACTERS])
+        logger.info("[extract] %s: document condition %s: %s", provenance.path, match.verdict, match.reason)
+
+    @staticmethod
+    def _prompt_args(
+        schema: RecordSchema, document: KnowledgeDocument, instructions: str | None, document_condition: str | None
+    ) -> dict[str, Any]:
         return {
             "fields": schema.fields,
             "field_names": ", ".join(schema.field_names),
             "instructions": instructions or "",
+            "document_condition": document_condition or "",
             "title": document.summary.title,
         }
 

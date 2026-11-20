@@ -353,12 +353,14 @@ event:
   extraction:
     fields: Columns
     instructions: Rows to keep
+    documentCondition: Documents that count
     criteria: Selected documents
     collections: Collections
     notices: Notices
     documentIds: '{count} chosen documents'
     files: Files
     failedFiles: Files that failed
+    skippedFiles: Files skipped by the document condition
     rows: Rows shown / found
     truncated: Cut short
     confirmed: Extracts every document the user confirmed

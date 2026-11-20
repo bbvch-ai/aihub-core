@@ -3715,6 +3715,8 @@ services:
       # The main app's UI origin for the cross-origin browser redirect when a
       # non-sysadmin lands on sysadmin-web (`useMainAppNavigation.exitToMainApp`).
       MAIN_APP_URL: https://${DOMAIN}
+      # LiteLLM's admin UI (oauth2proxy-litellm), the target of the LLM usage links.
+      LITELLM_ADMIN_URL: https://litellm.${DOMAIN}
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/"]
       interval: 30s
@@ -3985,7 +3987,7 @@ services:
     {%- if image_tags.universal_agent[stage] == 'localbuild' %}
     build:
       context: ..
-      dockerfile: ./packages/agent/app/universal_agent/Dockerfile
+      dockerfile: ./ee/app/universal_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.universal_agent[stage] }}
     {%- endif %}
@@ -5030,7 +5032,7 @@ services:
     {%- if image_tags.email_classification_agent[stage] == 'localbuild' %}
     build:
       context: ..
-      dockerfile: ./packages/agent/app/email_classification_agent/Dockerfile
+      dockerfile: ./ee/app/email_classification_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.email_classification_agent[stage] }}
     {%- endif %}

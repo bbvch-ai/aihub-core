@@ -252,9 +252,9 @@ runner.mount(MyController(auth=auth).list_items().create_item().delete_item())
 ```
 
 [`AgentController`](https://github.com/bbvch-ai/aihub-core/blob/main/packages/api/swiss_ai_hub/api/routes/agent/agent_controller.py)
-is the canonical reference, and the [documentation](https://docs.ai-hub.bbv.ch/) walks through the full
-new-endpoint workflow (DTOs → service → controller → mount). Every controller's HTTP dependencies (NATS client, S3,
-Milvus, the event distributors, the WebSocket manager) are injected via FastAPI `Depends`/`Security`.
+is the canonical reference, and the [documentation](https://docs.ai-hub.bbv.ch/) walks through the full new-endpoint
+workflow (DTOs → service → controller → mount). Every controller's HTTP dependencies (NATS client, S3, Milvus, the event
+distributors, the WebSocket manager) are injected via FastAPI `Depends`/`Security`.
 
 ## Links
 

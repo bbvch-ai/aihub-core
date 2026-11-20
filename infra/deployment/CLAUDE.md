@@ -591,11 +591,11 @@ and the VM's real `host.name`), and a second tailer would ingest every line twic
   included: `litellm` itself carries no Traefik labels and sits on `proxy` only for outbound traffic. Do not give it a
   public router again: a user's LiteLLM key used from outside skips the Hub's model access rules, and the keys derived
   from the user id alone in earlier releases are still valid. External clients use the Hub's `/api/v1/active/openai`
-- The `api` container carries a second router, `api-figures` (priority 6100): `/hub-figures/` on the **OpenWebUI**
-  host, rewritten by `replacePathRegex` to the API's figure route, so the browser sends OpenWebUI's session cookie with
-  figure requests from sources. The regex accepts only a tenant id, a 24-character thread id and a bucket name before
-  the key; keep it that strict. k8s deployments need the same rule in their ingress, and the `dev` stage (no Traefik)
-  has none, so figures show only on `local`/`build` and deployed stages
+- The `api` container carries a second router, `api-figures` (priority 6100): `/hub-figures/` on the **OpenWebUI** host,
+  rewritten by `replacePathRegex` to the API's figure route, so the browser sends OpenWebUI's session cookie with figure
+  requests from sources. The regex accepts only a tenant id, a 24-character thread id and a bucket name before the key;
+  keep it that strict. k8s deployments need the same rule in their ingress, and the `dev` stage (no Traefik) has none,
+  so figures show only on `local`/`build` and deployed stages
 - The oauth2-proxy image is upstream `quay.io/oauth2-proxy/oauth2-proxy`, mirrored under the pinned tag in
   `compose-config.yml`. Our only change, the sign-in button colour, is `templates/oauth2-proxy/sign_in.html`, mounted
   via `OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR`: on a version bump, copy upstream's `pkg/app/pagewriter/sign_in.html` of the

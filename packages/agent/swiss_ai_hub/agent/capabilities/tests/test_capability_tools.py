@@ -26,12 +26,13 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.agent import Agent
-from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalAgent
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles, answers_a_read_call
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory, answers_a_recall_call
 from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
+from swiss_ai_hub.agent.capabilities.sandbox.sandbox_tools import SandboxTools
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
@@ -51,6 +52,12 @@ PHOTO = UserUploadedFile(filename="photo.png", file_type="image/png", file_id=F3
 
 class _Config(MemoryFields, ToolLoopFields, AgentConfig):
     pass
+
+
+class SandboxAgent(Agent):
+    """Offers the code sandbox next to the attached files, so a spreadsheet chosen for code is pointed there."""
+
+    tools = ToolLoop.over(AttachedFiles, SandboxTools)
 
 
 def _config(**memory: Any) -> _Config:
@@ -176,7 +183,7 @@ class TestAttachedFilesAsATool:
         conversation.input_budget = 10_000
 
         result = await AttachedFiles.read_tool_call_step(
-            UniversalAgent(),
+            SandboxAgent(),
             call=_call("read_attached_files", files=[CitationId.of(F4)]),
             request=RunToolLoopEvent(files=[REPORT, ORDERS]),
             conversation=conversation,
@@ -196,7 +203,7 @@ class TestAttachedFilesAsATool:
         conversation.input_budget = 10_000
 
         read = await AttachedFiles.read_tool_call_step(
-            UniversalAgent(),
+            SandboxAgent(),
             call=_call("read_attached_files", files=[CitationId.of(F1), CitationId.of(F4)]),
             request=RunToolLoopEvent(files=[REPORT, ORDERS]),
             conversation=conversation,
@@ -216,7 +223,7 @@ class TestAttachedFilesAsATool:
         conversation.input_budget = 10_000
 
         read = await AttachedFiles.read_tool_call_step(
-            UniversalAgent(),
+            SandboxAgent(),
             call=_call("read_attached_files", files=[CitationId.of(F4)]),
             request=RunToolLoopEvent(files=[REPORT, ORDERS]),
             conversation=conversation,

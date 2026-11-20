@@ -50,6 +50,7 @@ from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_for
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_form_response_event import (
     ExtractionRequestFormResponseEvent,
 )
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_parts import ExtractionRequestParts
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_plain_answer import (
     ExtractionRequestPlainAnswer,
 )
@@ -580,12 +581,14 @@ def _reading(
     confirms_sample: bool = False,
     calculation: str | None = None,
     document_kind: str | None = None,
+    document_condition: str | None = None,
 ) -> ExtractionRequestAnswer:
     return ExtractionRequestAnswer(
         is_table_request=is_table_request,
         confirms_sample=confirms_sample,
         locations=list(locations),
         fields="item, amount",
+        document_condition=document_condition,
         instructions="only Hooli hardware",
         calculation=calculation,
         document_kind=document_kind,
@@ -688,6 +691,19 @@ class TestWholeScope:
         assert list_documents.await_args.args[0] == [FINANCE]
         assert ask.await_args.args[4] is False
         assert any(line.startswith("**By folder:**") for line in ask.await_args.args[2])
+
+    @pytest.mark.asyncio
+    async def test_the_document_condition_reaches_the_extraction(self):
+        request, _, _ = await _discover(_reading(document_condition="from Hooli"))
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert (request.document_condition, request.instructions) == ("from Hooli", "only Hooli hardware")
+
+    @pytest.mark.asyncio
+    async def test_without_a_document_condition_the_extraction_is_as_before(self):
+        request, _, _ = await _discover(_reading())
+
+        assert request.document_condition is None
 
     @pytest.mark.asyncio
     async def test_a_named_place_narrows_the_scope_by_path(self):
@@ -868,32 +884,40 @@ def _dialog(**answers: dict[str, Any]) -> str:
 
 class TestRequestForm:
     @pytest.mark.asyncio
-    async def test_the_request_is_asked_back_as_three_questions_and_as_text(self):
+    async def test_the_request_is_asked_back_as_four_questions_and_as_text(self):
         form, ask, _ = await _discover(_reading(), answer=None)
 
         assert isinstance(form, ExtractionRequestFormRequestEvent)
         assert form.hitl_type == "chat"
         assert form.topic.event_name == "ExtractionRequestFormResponseEvent"
-        where, rows, columns = form.questions
+        where, documents, rows, columns = form.questions
         assert [option.label for option in where.options] == ["All documents"]
+        assert [option.label for option in documents.options] == ["Every document"]
         assert [option.label for option in rows.options] == ["As understood", "Every row"]
         assert rows.options[0].description == "only Hooli hardware"
         assert [(option.label, option.description) for option in columns.options] == [("As understood", "item, amount")]
         assert all(question.allow_other for question in form.questions)
-        assert [question.header for question in form.questions] == ["Location", "Filter Condition", "Values to extract"]
+        assert [question.header for question in form.questions] == [
+            "Location",
+            "Document Condition",
+            "Filter Condition",
+            "Values to extract",
+        ]
         assert where.question == (
             "Which documents should I read? I understood: all documents in scope. To read only some, name a folder, a "
             "file or a year. Folders: invoices/2024/q1 (1), invoices/2024/q2 (1), invoices/2025/q1 (1)"
         )
+        assert documents.question.startswith("Which documents count? I understood: every document at the location.")
         assert rows.question.endswith(
-            "A condition on the records, not a calculation, e.g. from Lieferant GmbH · dated 2018 · "
-            "only hardware items."
+            "A condition on each record, not on the whole document and not a calculation, e.g. only hardware items · "
+            "amounts above CHF 1,000 · lines from Lieferant GmbH on a statement."
         )
         assert "→ one row per invoice; item, quantity, net amount → one row per line item." in columns.question
         assert "- **Filter Condition:** only Hooli hardware" in form.question
-        reply, location, condition, values = form.question.split("\n")[-4:]
+        reply, location, document, condition, values = form.question.split("\n")[-5:]
         assert reply == "Reply *yes* to go ahead, or write what to change:"
         assert location == f"- **Location:** {where.question.split('scope. ')[1]}"
+        assert document.startswith("- **Document Condition:** A condition the whole document must meet")
         assert condition.endswith(rows.question.split("Hooli hardware. ")[1])
         assert values.startswith("- **Values to extract:** The values decide what a row is")
         ask.assert_awaited_once()
@@ -957,6 +981,7 @@ class TestRequestForm:
         assert "- **Filter Condition:** only Hooli hardware" in history[-2].content
         assert history[-1].content.splitlines() == [
             "**Location:** all documents in scope",
+            "**Document Condition:** every document at the location",
             "**Filter Condition:** only invoices dated June 2018",
             "**Values to extract:** item, amount",
         ]
@@ -1010,12 +1035,13 @@ class TestRequestForm:
 
         assert [question.header for question in form.questions] == [
             "Location",
+            "Document Condition",
             "Filter Condition",
             "Values to extract",
             "Exact keyword(s)",
             "Semantic keyword(s)",
         ]
-        exact, semantic = form.questions[3:]
+        exact, semantic = form.questions[4:]
         assert [(option.label, option.description) for option in exact.options] == [
             ("As understood", "Hooli"),
             ("None", "Let the search decide"),
@@ -1030,14 +1056,75 @@ class TestRequestForm:
 
         form, _, _ = await _discover(reading, discovery=True, answer=None)
 
-        assert [option.label for option in form.questions[3].options] == ["None"]
         assert [option.label for option in form.questions[4].options] == ["None"]
+        assert [option.label for option in form.questions[5].options] == ["None"]
 
     @pytest.mark.asyncio
-    async def test_without_discovery_the_form_asks_three_parts(self):
+    async def test_without_discovery_the_form_asks_four_parts(self):
         form, _, _ = await _discover(_reading(document_kind="supplier invoice"), answer=None)
 
-        assert len(form.questions) == 3
+        assert len(form.questions) == 4
+
+    @pytest.mark.asyncio
+    async def test_a_named_document_condition_can_be_kept_or_dropped(self):
+        form, _, _ = await _discover(_reading(document_condition="from Hooli"), answer=None)
+
+        documents = form.questions[1]
+        assert [(option.label, option.description) for option in documents.options] == [
+            ("As understood", "from Hooli"),
+            ("Every document", "Read every document at the location"),
+        ]
+        assert "- **Document Condition:** from Hooli" in form.question
+
+    @pytest.mark.asyncio
+    async def test_a_written_document_condition_is_read_again(self):
+        reread = _reading(document_condition="only signed versions")
+        answer = _dialog(documents={"type": "other", "text": "only signed versions"})
+
+        request, ask, _ = await _discover(_reading(document_condition="from Hooli"), answer=answer, reread=reread)
+
+        assert request.document_condition == "only signed versions"
+        assert "**Document Condition:** only signed versions" in ask.await_args_list[1].args[0][-1].content.splitlines()
+
+    @pytest.mark.asyncio
+    async def test_dropping_the_document_condition_extracts_every_document(self):
+        answer = _dialog(documents={"type": "option", "option_index": 1})
+
+        request, ask, _ = await _discover(_reading(document_condition="from Hooli"), answer=answer)
+
+        assert request.document_condition is None
+        assert request.instructions == "only Hooli hardware"
+        ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("dropped", "written", "cleared"),
+        [
+            ("where", "rows", {"selection": KnowledgeDocumentSelection(any_of=[KnowledgeDocumentCriteria()])}),
+            ("documents", "rows", {"document_condition": None}),
+            ("rows", "columns", {"instructions": None}),
+        ],
+    )
+    async def test_a_part_dropped_next_to_a_written_one_stays_dropped_after_the_second_reading(
+        self, dropped: str, written: str, cleared: dict[str, Any]
+    ):
+        """The second reading sees the first message too and may bring the dropped part back (e2e S8c)."""
+        place = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        understood = _reading(place, document_condition="from Hooli")
+        answer = json.dumps(
+            {dropped: {"type": "option", "option_index": 1}, written: {"type": "other", "text": "only hardware lines"}}
+        )
+
+        request, ask, _ = await _discover(understood, answer=answer, reread=understood)
+
+        assert ask.await_count == 2
+        assert {field: getattr(request, field) for field in cleared} == cleared
+
+    def test_the_lines_without_a_condition_name_every_document_at_the_location(self):
+        """A correction of the rows alone sends these lines, so the second reading keeps the condition null."""
+        lines = ExtractionRequestParts.of(_reading(), T).lines(T)
+
+        assert "**Document Condition:** every document at the location" in lines
 
     @pytest.mark.asyncio
     async def test_none_on_both_keywords_lets_the_search_decide(self):
@@ -1251,17 +1338,23 @@ class TestRequestReading:
         [
             (
                 "en",
-                'Filter Condition: "sum all the items in the invoice", goes into calculation, never into instructions',
+                'Filter Condition: "sum all the items in the invoice", goes into calculation, never into '
+                "document_condition, instructions",
             ),
             (
                 "de",
-                'Filterbedingung: "summiere alle Positionen der Rechnung", gehört in calculation, nie in instructions',
+                'Filterbedingung: "summiere alle Positionen der Rechnung", gehört in calculation, nie in '
+                "document_condition, instructions",
             ),
             (
                 "fr",
                 'Condition de filtre : "additionne toutes les positions de la facture", va dans calculation, jamais',
             ),
-            ("it", 'Condizione di filtro: "somma tutte le voci della fattura", va in calculation, mai in instructions'),
+            (
+                "it",
+                'Condizione di filtro: "somma tutte le voci della fattura", va in calculation, mai in '
+                "document_condition, instructions",
+            ),
         ],
     )
     def test_a_calculation_written_into_the_form_is_read_as_a_calculation_not_a_condition(
@@ -1272,6 +1365,43 @@ class TestRequestReading:
         prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.read_request")
 
         assert example in prompt
+
+    @pytest.mark.parametrize(
+        ("locale", "example"),
+        [
+            ("en", '"Q4 2018" as "dated between 1 October 2018 and 31 December 2018"'),
+            ("de", '"Q4 2018" als "datiert zwischen dem 1. Oktober 2018 und dem 31. Dezember 2018"'),
+            ("fr", "« T4 2018 » comme « daté entre le 1er octobre 2018 et le 31 décembre 2018 »"),
+            ("it", '"T4 2018" come "datato tra il 1° ottobre 2018 e il 31 dicembre 2018"'),
+        ],
+    )
+    def test_a_period_in_the_document_condition_is_written_as_explicit_dates(self, locale: str, example: str):
+        """The judge got a terse "Q4 2018" wrong for September documents; explicit dates leave nothing to infer."""
+        prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.read_request")
+        description = ExtractionRequestPlainAnswer.model_fields["document_condition"].description
+
+        assert example in prompt
+        assert "'Q4 2018' as 'dated between 1 October 2018 and 31 December 2018'" in description
+
+    def test_the_plain_fallback_keeps_the_document_condition(self):
+        plain = ExtractionRequestPlainAnswer(
+            is_table_request=True,
+            confirms_sample=False,
+            locations=[],
+            fields="item, amount",
+            document_condition="from Hooli",
+            instructions=None,
+            calculation=None,
+            document_kind=None,
+        )
+
+        assert ExtractionRequestAnswer.without_terms(plain).document_condition == "from Hooli"
+
+    def test_a_reading_stored_before_the_document_condition_still_loads(self):
+        stored = _reading().model_dump(mode="json")
+        del stored["document_condition"]
+
+        assert ExtractionRequestAnswer.model_validate(stored).document_condition is None
 
     @pytest.mark.parametrize("locale", ["en", "de", "fr", "it"])
     def test_the_prompt_names_every_field_of_the_answer(self, locale: str):
@@ -1404,6 +1534,21 @@ class TestConfirmedRequestInDiscovery:
             "Laptop|Server",
         )
         assert request.selection.any_of == [KnowledgeDocumentCriteria(content_query="Hooli")]
+
+    @pytest.mark.asyncio
+    async def test_the_confirmed_document_condition_wins_over_the_search(self):
+        confirmed = _reading(document_condition="only signed versions")
+
+        request, _ = await _plan(confirmed, [_selecting([{"content_query": "Hooli"}])])
+
+        assert request.document_condition == "only signed versions"
+
+    @pytest.mark.asyncio
+    async def test_the_discovery_loop_is_told_the_document_condition(self):
+        loop, _, _ = await _discover(_reading(document_condition="from Hooli"), discovery=True)
+
+        assert loop.mode == ToolLoopMode.GATHER
+        assert "**Document Condition:** from Hooli" in loop.history[-1].content.splitlines()
 
     @pytest.mark.asyncio
     async def test_a_selection_without_a_path_is_kept_within_the_confirmed_place(self):

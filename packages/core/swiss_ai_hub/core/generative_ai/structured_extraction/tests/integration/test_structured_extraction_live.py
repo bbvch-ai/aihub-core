@@ -9,6 +9,7 @@ import asyncio
 import os
 from collections import Counter
 from datetime import UTC, datetime
+from unittest.mock import patch
 
 import pytest
 from llama_index.llms.openai_like import OpenAILike
@@ -18,6 +19,7 @@ from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summ
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
+from swiss_ai_hub.core.generative_ai.structured_extraction.document_match import DocumentMatch
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_extractor import RecordExtractor
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_field import RecordField
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_schema import RecordSchema
@@ -93,6 +95,10 @@ def _long_contract() -> str:
         399: "Position 6: Rack cabinet 42U with cabling, 1290.00 CHF.",
     }
     return "\n\n".join(lines.get(n, filler.format(n=n)) for n in range(400))
+
+
+def _contract_header(supplier: str) -> str:
+    return f"# Contract HW-2025-117\n\nSupplier: {supplier}\nClient: Acme Engineering GmbH\n\n"
 
 
 def _llm() -> tuple[LLMConfig, OpenAILike, LLMCostTracker]:
@@ -217,6 +223,350 @@ async def test_long_markdown_table_is_extracted_once_per_row_with_exact_amounts(
     assert result.window_count > 1
     assert {record.values["position"]: record.values["amount"] for record in result.records} == amounts
     assert len(result.records) == len(amounts)
+
+
+@pytest.mark.asyncio
+async def test_an_invoice_from_another_supplier_is_skipped_with_its_reason() -> None:
+    llm_config, llm, _ = _llm()
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(_INVOICE),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        document_condition="only invoices from Hooli",
+    )
+
+    assert result.skipped, result.document_match
+    assert result.records == []
+    assert "Helvetic" in result.document_match.reason
+
+
+@pytest.mark.asyncio
+async def test_an_invoice_from_the_named_supplier_is_extracted() -> None:
+    llm_config, llm, _ = _llm()
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(_INVOICE),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        document_condition="only invoices from Helvetic IT Supplies",
+    )
+
+    assert not result.skipped, result.document_match
+    assert sorted(record.values["position"] for record in result.records) == [1, 2, 3, 4, 5, 6, 7]
+
+
+@pytest.mark.asyncio
+async def test_a_qualifying_invoice_still_keeps_only_the_rows_the_instructions_ask_for() -> None:
+    """The judged window must not read "as if there were no document condition" as "keep every row"."""
+    llm_config, llm, _ = _llm()
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(_INVOICE),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        instructions="Only hardware positions. Software licences and subscriptions are not hardware.",
+        document_condition="only invoices from Helvetic IT Supplies",
+    )
+
+    assert result.document_match.verdict == "yes", result.document_match
+    assert sorted(record.values["position"] for record in result.records) == [1, 2, 3, 5, 7]
+
+
+@pytest.mark.asyncio
+async def test_an_invoice_without_a_supplier_line_in_its_opening_is_unsure() -> None:
+    """An absent fact is not a contradiction, so the document is read and its rows are checked by a person."""
+    llm_config, llm, _ = _llm()
+    invoice = _INVOICE.replace("Supplier: Helvetic IT Supplies AG, Bahnhofstrasse 10, 8001 Zürich\n", "")
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(invoice),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        document_condition="only invoices from Hooli",
+    )
+
+    assert result.document_match.verdict == "unsure", result.document_match
+    assert sorted(record.values["position"] for record in result.records) == [1, 2, 3, 4, 5, 6, 7]
+
+
+@pytest.mark.asyncio
+async def test_an_invoice_that_writes_no_currency_is_unsure_under_a_currency_condition() -> None:
+    """A currency guessed from the supplier's country is not stated, so it never fails the document."""
+    llm_config, llm, _ = _llm()
+    invoice = (
+        _INVOICE.replace(" | Currency |", " |")
+        .replace("|----------|", "|")
+        .replace(" | CHF |", " |")
+        .replace(" CHF.", ".")
+    )
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(invoice),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        document_condition="only invoices in GBP",
+    )
+
+    assert "CHF" not in invoice
+    assert result.document_match.verdict == "unsure", result.document_match
+
+
+@pytest.mark.slow
+@pytest.mark.asyncio
+async def test_a_long_contract_failing_the_condition_is_read_in_one_call() -> None:
+    llm_config, llm, _ = _llm()
+    predict = type(llm).astructured_predict
+
+    with patch.object(type(llm), "astructured_predict", autospec=True, side_effect=predict) as calls:
+        result = await RecordExtractor.extract(
+            _LINE_SCHEMA,
+            _document(_contract_header("Initech AG") + _long_contract(), title="Hardware contract"),
+            llm,
+            llm_config,
+            LocaleHandler("en"),
+            limiter=_windows_at_once(),
+            document_condition="only contracts with Hooli",
+        )
+
+    assert result.window_count > 1
+    assert result.skipped, result.document_match
+    assert calls.await_count == 1
+
+
+@pytest.mark.slow
+@pytest.mark.asyncio
+async def test_a_long_contract_signed_on_its_last_page_is_unsure_not_skipped() -> None:
+    llm_config, llm, _ = _llm()
+    signature = "\n\nSigned for the client: Anna Muster, Zürich, 2025-03-20. Signed for the supplier: Beat Keller."
+    text = _contract_header("Helvetic IT Supplies AG") + _long_contract() + signature
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(text, title="Hardware contract"),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        limiter=_windows_at_once(),
+        document_condition="only signed versions",
+    )
+
+    assert result.window_count > 1
+    assert result.document_match.verdict == "unsure", result.document_match
+    assert [record.values["position"] for record in result.records] == [1, 2, 3, 4, 5, 6]
+
+
+def _invoice(header: str) -> str:
+    """`_INVOICE`'s lines under another header."""
+    return header + _INVOICE[_INVOICE.index("| Pos |") :]
+
+
+async def _judged(text: str, condition: str, locale: str = "en", title: str = "Invoice") -> DocumentMatch | None:
+    llm_config, llm, _ = _llm()
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA, _document(text, title=title), llm, llm_config, LocaleHandler(locale), document_condition=condition
+    )
+    return result.document_match
+
+
+@pytest.mark.asyncio
+async def test_a_supplier_named_without_a_label_that_differs_is_no() -> None:
+    text = _invoice("Umbra Logistik AG\nMusterweg 3, 4051 Basel\n\n# Invoice 2025-311\n\nDate: 2025-03-14\n\n")
+
+    match = await _judged(text, "only invoices from Hooli AG")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_name_that_merely_contains_the_requested_name_is_another_party() -> None:
+    text = _invoice("# Invoice 2025-312\n\nSupplier: Rosenberg AG, Seestrasse 4, 8002 Zürich\nDate: 2025-03-14\n\n")
+
+    match = await _judged(text, "only invoices from Berg AG")
+
+    assert match.verdict == "no", match
+
+
+_OCR_HEADER = "# Invoice 2025-313\n\nSupplier: Vantra AG, Industriestrasse 21, 6300 Zug\nDate: 2025-03-14\n\n"
+
+
+@pytest.mark.asyncio
+async def test_a_misread_supplier_name_with_the_right_name_elsewhere_is_not_skipped() -> None:
+    """The header lost a letter to OCR; the payment details still name the supplier (demo dry run, "Hooi AG").
+
+    "yes" and "unsure" both keep the document; the model may read the payee as a variant of the header name.
+    """
+    text = _invoice(_OCR_HEADER) + "\nPlease transfer the amount to Vantora AG, IBAN CH93 0076 2011 6238 5295 7.\n"
+
+    match = await _judged(text, "only invoices from Vantora AG")
+
+    assert match.verdict in ("yes", "unsure"), match
+
+
+_OTHER_SUPPLIER_HEADER = (
+    "# Invoice 2025-314\n\nSupplier: Kestrel Mietwagen GmbH, Bahnhofstrasse 4, 8001 Zürich\nDate: 2025-03-14\n\n"
+)
+
+
+@pytest.mark.asyncio
+async def test_a_requested_name_only_inside_a_web_address_does_not_meet_the_condition() -> None:
+    """The real-invoice e2e kept a rental invoice whose note links to the requested supplier's website."""
+    text = _invoice(_OTHER_SUPPLIER_HEADER) + "\nNote: more information at www.vantora.ch\n"
+
+    match = await _judged(text, "only invoices from Vantora AG")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_supplier_name_a_letter_off_and_nowhere_else_is_unsure() -> None:
+    match = await _judged(_invoice(_OCR_HEADER), "only invoices from Vantora AG")
+
+    assert match.verdict == "unsure", match
+
+
+@pytest.mark.asyncio
+async def test_a_plain_invoice_does_not_meet_a_credit_note_condition() -> None:
+    match = await _judged(_INVOICE, "only credit notes", title="Invoice INV-2025-0412")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_date_outside_the_quarter_is_no() -> None:
+    match = await _judged(_INVOICE, "only invoices dated in Q2 2025", title="Invoice INV-2025-0412")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_german_condition_on_a_german_invoice_from_another_supplier_is_no() -> None:
+    text = _invoice(
+        "# Rechnung RE-2025-118\n\nLieferant: Alpenblick Bürobedarf AG, Hauptgasse 9, 3011 Bern\nDatum: 14.03.2025\n\n"
+    )
+
+    match = await _judged(text, "nur Rechnungen von Hooli AG", locale="de", title="Rechnung RE-2025-118")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_french_condition_on_a_french_invoice_from_another_supplier_is_no() -> None:
+    text = _invoice(
+        "# Facture F-2025-77\n\nFournisseur : Papeterie du Lac SA, Rue du Rhône 12, 1204 Genève\nDate : 14.03.2025\n\n"
+    )
+
+    match = await _judged(text, "seulement les factures de Hooli SA", locale="fr", title="Facture F-2025-77")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.asyncio
+async def test_a_date_only_condition_keeps_a_credit_note_dated_inside_the_period() -> None:
+    """A condition that names no document type never fails a document for its type (regression of e2e D06b)."""
+    text = _invoice(
+        "# Credit Note CN-2025-031\n\nSupplier: Helvetic IT Supplies AG, Bahnhofstrasse 10, 8001 Zürich\n"
+        "Date: 2025-03-14\nRefers to invoice INV-2025-0412\n\n"
+    )
+
+    match = await _judged(text, "dated between 1 January 2025 and 31 March 2025", title="Credit Note CN-2025-031")
+
+    assert match.verdict == "yes", match
+
+
+@pytest.mark.asyncio
+async def test_a_german_date_only_condition_keeps_a_gutschrift_dated_inside_the_period() -> None:
+    text = _invoice(
+        "# Gutschrift GS-2025-031\n\nLieferant: Alpenblick Bürobedarf AG, Hauptgasse 9, 3011 Bern\n"
+        "Datum: 14.03.2025\nZu Rechnung RE-2025-118\n\n"
+    )
+
+    match = await _judged(
+        text, "datiert zwischen dem 1. Januar 2025 und dem 31. März 2025", locale="de", title="Gutschrift GS-2025-031"
+    )
+
+    assert match.verdict == "yes", match
+
+
+_DRAFT_SPEC = """# Payment Service Specification
+
+Document status: DRAFT
+Author: Platform Engineering department
+Version: 0.3
+
+## Requirements
+
+REQ-1: The service shall confirm every payment within two seconds.
+REQ-2: The service shall keep an audit log of every refund for ten years.
+REQ-3: The service shall reject payments above CHF 50,000 without a second approval.
+"""
+_REQUIREMENT_SCHEMA = RecordSchema(
+    fields=[
+        RecordField(name="requirement_id", type="string", description="Identifier of the requirement, e.g. REQ-1"),
+        RecordField(name="text", type="string", description="What the requirement demands"),
+    ]
+)
+
+
+async def _judged_spec(condition: str) -> DocumentMatch | None:
+    llm_config, llm, _ = _llm()
+    result = await RecordExtractor.extract(
+        _REQUIREMENT_SCHEMA,
+        _document(_DRAFT_SPEC, title="Payment Service Specification"),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        document_condition=condition,
+    )
+    return result.document_match
+
+
+@pytest.mark.asyncio
+async def test_a_draft_meets_a_condition_that_asks_for_no_status() -> None:
+    """Drafts are routine for specifications and policies; only a condition on status may fail them (review M1)."""
+    match = await _judged_spec("documents written by the Platform Engineering department")
+
+    assert match.verdict == "yes", match
+
+
+@pytest.mark.asyncio
+async def test_a_draft_fails_a_condition_that_asks_for_approved_documents() -> None:
+    match = await _judged_spec("only approved, final documents")
+
+    assert match.verdict == "no", match
+
+
+@pytest.mark.slow
+@pytest.mark.asyncio
+async def test_a_long_contract_naming_its_supplier_only_after_the_first_window_is_unsure() -> None:
+    """The sharpened "no" must stay limited to a stated value: a supplier that window 0 does not show is unsure."""
+    llm_config, llm, _ = _llm()
+    header = "# Contract HW-2025-117\n\nClient: Acme Engineering GmbH\n\n"
+    supplier = "\n\nThe supplier under this contract is Hooli AG, Bahnhofplatz 1, 8001 Zürich."
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA,
+        _document(header + _long_contract() + supplier, title="Hardware contract"),
+        llm,
+        llm_config,
+        LocaleHandler("en"),
+        limiter=_windows_at_once(),
+        document_condition="only contracts whose supplier is Hooli AG",
+    )
+
+    assert result.window_count > 1
+    assert result.document_match.verdict == "unsure", result.document_match
+    assert [record.values["position"] for record in result.records] == [1, 2, 3, 4, 5, 6]
 
 
 @pytest.mark.skipif(not _CONSISTENCY_MODELS, reason="set STRUCTURED_EXTRACTION_CONSISTENCY_MODELS to measure")

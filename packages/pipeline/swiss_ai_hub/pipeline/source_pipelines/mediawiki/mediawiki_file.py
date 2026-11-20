@@ -11,10 +11,12 @@ class MediaWikiFile(BaseModel):
     from, and the checksum that tells whether it changed.
 
     Its file lands in the collection named after the file namespace's canonical name, ``File``, under its own name and
-    extension, once however many pages use it.
+    extension, once however many pages use it. A file can be uploaded without a description page (deleted, or never
+    imported with the file); MediaWiki then lists it as missing but known, without a page id, and it is synced all the
+    same.
     """
 
-    page_id: Annotated[int, Field(description="Id of the file's description page.")]
+    page_id: Annotated[int | None, Field(description="Id of the file's description page; None when it has none.")]
     name: Annotated[str, Field(description="The file name without the namespace prefix, e.g. Report 2026.pdf.")]
     namespace: Annotated[str, Field(description="Knowledge namespace, after the wiki's file namespace.")]
     download_url: Annotated[str, Field(description="URL of the file's latest version.")]
@@ -32,7 +34,7 @@ class MediaWikiFile(BaseModel):
     ) -> Self:
         info = file["imageinfo"]
         return cls(
-            page_id=file["pageid"],
+            page_id=file.get("pageid"),
             name=file["title"].split(":", 1)[1],
             namespace=namespace,
             download_url=info["url"],
@@ -68,6 +70,7 @@ class MediaWikiFile(BaseModel):
         )
 
     def _stem(self) -> str:
-        """A name of dots alone before its extension (``..pdf``) cannot be a file name and is written as the id."""
+        """A name of dots alone before its extension (``..pdf``) cannot be a file name and is written as the id, or as
+        the checksum when the file has no description page."""
         stem = self.name.rsplit(".", 1)[0]
-        return stem if stem.strip(" .") else f"file {self.page_id}"
+        return stem if stem.strip(" .") else f"file {self.page_id or self.sha1}"
