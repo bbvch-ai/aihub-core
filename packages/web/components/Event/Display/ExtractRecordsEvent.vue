@@ -24,7 +24,7 @@ const criteria = computed<string[]>(() => (props.event.event.selection?.any_of ?
   criterion.path_regex && `/${criterion.path_regex}/`,
   criterion.content_query && `"${criterion.content_query}"`,
   (criterion.document_ids ?? []).length ? t('event.extraction.documentIds', { count: (criterion.document_ids ?? []).length }) : null,
-].filter(Boolean).join(' · ')))
+].filter(Boolean).join(' · ') || t('event.extraction.everyDocument')))
 
 // The bounds are calendar days: read as text, never through the local time zone, which can shift them by a day.
 const day = (bound: Date | string | null | undefined): string => {

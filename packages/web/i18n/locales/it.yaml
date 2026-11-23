@@ -361,6 +361,7 @@ event:
     collections: Raccolte
     notices: Avvisi
     documentIds: '{count} documenti scelti'
+    everyDocument: Tutti i documenti nell'ambito
     files: File
     failedFiles: File non riusciti
     skippedFiles: File saltati per la condizione sul documento

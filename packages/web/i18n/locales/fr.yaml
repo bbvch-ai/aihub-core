@@ -360,6 +360,7 @@ event:
     collections: Collections
     notices: Remarques
     documentIds: '{count} documents choisis'
+    everyDocument: Tous les documents du périmètre
     files: Fichiers
     failedFiles: Fichiers en échec
     skippedFiles: Fichiers ignorés selon la condition sur le document

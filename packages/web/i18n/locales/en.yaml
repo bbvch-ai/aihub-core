@@ -359,6 +359,7 @@ event:
     collections: Collections
     notices: Notices
     documentIds: '{count} chosen documents'
+    everyDocument: Every document in scope
     files: Files
     failedFiles: Files that failed
     skippedFiles: Files skipped by the document condition

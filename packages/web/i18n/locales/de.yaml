@@ -362,6 +362,7 @@ event:
     collections: Sammlungen
     notices: Hinweise
     documentIds: '{count} gewählte Dokumente'
+    everyDocument: Alle Dokumente im Bereich
     files: Dateien
     failedFiles: Fehlgeschlagene Dateien
     skippedFiles: Wegen der Dokumentbedingung übersprungene Dateien
