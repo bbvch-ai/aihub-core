@@ -40,6 +40,7 @@ CONDITION_CHARACTERS = 500
 # Row files are read side by side, a bounded number at once, so a thousand documents neither run one by one nor open
 # a thousand connections.
 ROW_FILES_AT_ONCE = 16
+SUMMARY_KEY = "agent.record_extraction.summary"
 
 
 class ExtractionTable:
@@ -185,7 +186,7 @@ class ExtractionTable:
     ) -> str:
         """Counts first and notices last, the failed files before the notices: `capped` cuts from the end, and only
         notices can grow beyond what the budgets below hold."""
-        key = "agent.record_extraction.summary"
+        key = SUMMARY_KEY
         if run.sample:
             counted = "sample_counts_ceiling" if run.above_ceiling else "sample_counts"
             counts = t(f"{key}.{counted}", files=len(results), total=run.total_documents, rows=found)
@@ -216,7 +217,7 @@ class ExtractionTable:
     def _document_lines(run: ExtractionRun, results: list[DocumentExtractedEvent], t: LocaleHandler) -> list[str]:
         """The document condition with its period, what the period and the condition left out or left open, then the
         documents that yielded no rows."""
-        key = "agent.record_extraction.summary"
+        key = SUMMARY_KEY
         lines = ExtractionTable._condition_lines(run, t)
         skipped = [(result.document.path, result.skipped_reason) for result in results if result.skipped_reason]
         if skipped:
@@ -238,7 +239,7 @@ class ExtractionTable:
     @staticmethod
     def _condition_lines(run: ExtractionRun, t: LocaleHandler) -> list[str]:
         """The user's condition, cut before the period is appended so the period is never what the cut drops."""
-        key = "agent.record_extraction.summary"
+        key = SUMMARY_KEY
         cut = ExtractionTable._cut(run.document_condition) if run.document_condition else None
         condition = DocumentConditionText.of(cut, run.period, t)
         lines = [t(f"{key}.document_condition", condition=condition)] if condition else []
@@ -249,7 +250,7 @@ class ExtractionTable:
     @staticmethod
     def path_date_lines(counts: PathDateCounts, t: LocaleHandler) -> list[str]:
         """How the period sorted the documents by their paths, and the first paths it left out."""
-        key = "agent.record_extraction.summary"
+        key = SUMMARY_KEY
         lines: list[str] = []
         if counts.total > 0:
             lines.append(
@@ -282,7 +283,7 @@ class ExtractionTable:
         more = (total if total is not None else len(entries)) - len(listed)
         if more <= 0:
             return ", ".join(listed)
-        return f"{', '.join(listed)}, {t('agent.record_extraction.summary.listed_more', count=more)}"
+        return f"{', '.join(listed)}, {t(f'{SUMMARY_KEY}.listed_more', count=more)}"
 
     @staticmethod
     def _with_reasons(

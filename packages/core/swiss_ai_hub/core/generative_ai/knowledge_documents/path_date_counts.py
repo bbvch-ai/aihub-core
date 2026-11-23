@@ -14,8 +14,8 @@ class PathDateCounts(BaseModel):
     The examples are bounded in bytes when they are collected, since they ride on every per-document event of a run.
     """
 
-    OUTSIDE_YEARS: ClassVar[int] = 12
-    EXCLUDED_EXAMPLES: ClassVar[int] = 10
+    OUTSIDE_YEAR_LIMIT: ClassVar[int] = 12
+    EXCLUDED_EXAMPLE_LIMIT: ClassVar[int] = 10
     EXCLUDED_EXAMPLE_BYTES: ClassVar[int] = 2_000
     EXCLUDED_PATH_CHARACTERS: ClassVar[int] = 200
 
@@ -46,7 +46,7 @@ class PathDateCounts(BaseModel):
             years.update(range(dated.start.year, dated.end.year + 1))
             example = cls._cut(path)
             size = cls._serialized_bytes(example)
-            if len(examples) < cls.EXCLUDED_EXAMPLES and example_bytes + size <= cls.EXCLUDED_EXAMPLE_BYTES:
+            if len(examples) < cls.EXCLUDED_EXAMPLE_LIMIT and example_bytes + size <= cls.EXCLUDED_EXAMPLE_BYTES:
                 examples.append(example)
                 example_bytes += size
         return cls(
@@ -59,7 +59,7 @@ class PathDateCounts(BaseModel):
 
     @classmethod
     def _nearest(cls, years: set[int], date_range: PathDateRange) -> list[int]:
-        nearest = sorted(years, key=lambda year: (date_range.distance_to(year), -year))[: cls.OUTSIDE_YEARS]
+        nearest = sorted(years, key=lambda year: (date_range.distance_to(year), -year))[: cls.OUTSIDE_YEAR_LIMIT]
         return sorted(nearest)
 
     @classmethod

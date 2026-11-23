@@ -238,6 +238,6 @@ async def test_the_left_out_paths_are_bounded_on_every_documents_event():
         extracted = await _extracted(0, 1)
 
     assert PATH_DATES.excluded == 9_999
-    assert 0 < len(examples) <= PathDateCounts.EXCLUDED_EXAMPLES
+    assert 0 < len(examples) <= PathDateCounts.EXCLUDED_EXAMPLE_LIMIT
     assert sum(len(json.dumps(example)) for example in examples) <= PathDateCounts.EXCLUDED_EXAMPLE_BYTES
     assert max(_size(requested), _size(extracted)) < EVENT_LIMIT_BYTES

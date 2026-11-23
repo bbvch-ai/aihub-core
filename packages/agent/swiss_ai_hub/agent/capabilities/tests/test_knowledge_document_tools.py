@@ -177,8 +177,10 @@ async def test_a_period_that_leaves_out_every_matching_document_says_so():
 
 @pytest.mark.asyncio
 async def test_an_unreadable_period_fails_the_call():
+    listing = _listing("invoices/2024/a.pdf")
+
     with pytest.raises(ValueError, match="names no date"):
-        await _list_with(_listing("invoices/2024/a.pdf"), path_glob="**", period_start="last year")
+        await _list_with(listing, path_glob="**", period_start="last year")
 
 
 def test_the_listing_tool_offers_no_year_glob():

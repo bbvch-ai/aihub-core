@@ -61,7 +61,7 @@ class PathDateParser:
     MONTH_PATTERN: ClassVar[str] = "|".join(sorted(MONTHS, key=len, reverse=True))
 
     _SEPARATORS: ClassVar[re.Pattern[str]] = re.compile(r"[/\\]+")
-    _EXTENSION: ClassVar[re.Pattern[str]] = re.compile(r"\.(?=[a-z0-9]{1,5}$)[a-z0-9]*[a-z][a-z0-9]*$", re.IGNORECASE)
+    _EXTENSION: ClassVar[re.Pattern[str]] = re.compile(r"\.(?=\d{0,4}[a-z])[a-z0-9]{1,5}$", re.IGNORECASE)
     _TWO_DIGIT_YEAR_AMBIGUOUS: ClassVar[re.Pattern[str]] = re.compile(
         rf"{_B}(\d{{1,2}})([-_])(\d{{1,2}})\2(\d{{2}}){_E}"
     )
@@ -238,7 +238,7 @@ class PathDateParser:
             (cls._YEAR_MONTH, lambda m: cls._month(years, int(m[1]), int(m[3]))),
             (cls._MONTH_YEAR, lambda m: cls._month(years, int(m[3]), int(m[1]))),
             *(folder_months if is_folder else []),
-            (cls._YEAR, lambda m: cls._year(years, int(m[1]))),
+            (cls._YEAR, lambda m: cls._year_of_token(years, int(m[1]))),
         ]
 
     @classmethod
@@ -329,5 +329,5 @@ class PathDateParser:
         return DateTextParser.quarter(year, quarter) if year in years else None
 
     @staticmethod
-    def _year(years: range, year: int) -> NormalizedDate | None:
+    def _year_of_token(years: range, year: int) -> NormalizedDate | None:
         return DateTextParser.year(year) if year in years else None
