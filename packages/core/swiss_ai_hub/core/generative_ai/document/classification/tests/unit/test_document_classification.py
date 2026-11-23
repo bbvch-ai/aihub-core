@@ -340,6 +340,42 @@ def test_a_jurisdiction_clause_is_found_across_a_line_break_or_a_split_word(text
     assert values["document_jurisdiction"] == "Gerichtsstand ist Zürich"
 
 
+def test_a_date_mineru_wrote_as_latex_is_found_when_copied_as_plain_text() -> None:
+    """MinerU writes the "er" of "1er" as LaTeX; every model copies the plain form, which must still count as found."""
+    text = "# Directives\nOffice fédéral des assurances sociales\nEtat: $1^{\\text{er}}$ janvier 2003\n318.507.22f"
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.POLICY,
+        "secondary_types": [],
+        "document_date": "1er janvier 2003",
+        "document_reference_number": "318.507.22f",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_date"] == "2003-01-01"
+    assert values["document_date_raw"] == "1er janvier 2003"
+
+
+def test_an_open_ended_term_whose_date_mineru_wrote_as_latex_stores_its_start() -> None:
+    text = (
+        "# Contratto di agenzia\nBrunnmatt Systems AG conferisce a Rezzonico Rappresentanze Sagl la rappresentanza.\n"
+        "6.1 Il contratto decorre dal $1^{\\circ}$ maggio 2024 ed è concluso per una durata indeterminata."
+    )
+    answer = {
+        **{key: None for key in _ANSWER},
+        "document_type": DocumentType.CONTRACT,
+        "secondary_types": [],
+        "document_issuer": "Brunnmatt Systems AG",
+        "document_period": "1° maggio 2024",
+    }
+
+    values = DocumentClassification.from_answer(DocumentClassificationAnswer(**answer), text).values
+
+    assert values["document_period_start"] == "2024-05-01"
+    assert values["document_period_end"] is None
+
+
 def test_an_offer_reads_its_validity_as_a_date() -> None:
     text = "# Offerte OF-2025-221\nSchaffhausen, 20.02.2025 · gültig bis 31.03.2025\nOffertsumme CHF 3'080.85"
     answer = {
