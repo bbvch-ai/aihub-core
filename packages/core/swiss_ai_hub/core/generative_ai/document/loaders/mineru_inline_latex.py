@@ -54,12 +54,22 @@ class MineruInlineLatex:
     _SCRIPT: ClassVar[re.Pattern[str]] = re.compile(r"[\^_]\s*(?:\{([^{}]*)\}|(\S))")
     _SUPERSCRIPT_DIGITS: ClassVar[dict[int, str]] = str.maketrans("0123456789-", "⁰¹²³⁴⁵⁶⁷⁸⁹⁻")
     _SIGNED_NUMBER: ClassVar[re.Pattern[str]] = re.compile(r"-?\d+")
+    _GLUED_SUPERSCRIPT: ClassVar[re.Pattern[str]] = re.compile(r"(?<=\w)([⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+)")
 
     @classmethod
     def as_text(cls, markdown: Annotated[str, "Markdown that may hold MinerU's inline LaTeX"]) -> str:
         if "$" not in markdown:
             return markdown
         return cls._INLINE.sub(lambda match: cls._plain(match[1]) or match[0], markdown)
+
+    @classmethod
+    def as_comparable_text(cls, text: Annotated[str, "Text about to be compared after NFKC normalisation"]) -> str:
+        """`as_text`, with a superscript number set apart from the word or number it follows.
+
+        NFKC turns "¹" back into "1", so a footnote mark would read as part of what precedes it: "Urteil¹" as "Urteil1",
+        "2003¹" as "20031". Apart, "Urteil" stays a whole word and "2003" a year.
+        """
+        return cls._GLUED_SUPERSCRIPT.sub(r" \1", cls.as_text(text))
 
     @classmethod
     def _plain(cls, latex: str) -> str | None:

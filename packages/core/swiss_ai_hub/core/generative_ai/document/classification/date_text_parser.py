@@ -75,7 +75,7 @@ class DateTextParser:
         NFKC turns the ordinal sign "º" into "o"; Italian writes the first of a month with it or with the degree sign.
         MinerU's inline LaTeX ("$1^{\\text{er}}$ janvier") is read as the text it stands for.
         """
-        text = unicodedata.normalize("NFKC", MineruInlineLatex.as_text(raw)).lower()
+        text = unicodedata.normalize("NFKC", MineruInlineLatex.as_comparable_text(raw)).lower()
         text = re.sub(r"[‐-―−]", "-", text)
         text = re.sub(r"\b(\d{1,2})(?:(?:er|re|st|nd|rd|th|o)\b|°)", r"\1", text)
         return re.sub(r"\s+", " ", text).strip()

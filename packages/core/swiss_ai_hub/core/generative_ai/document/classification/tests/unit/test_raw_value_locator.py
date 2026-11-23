@@ -60,3 +60,17 @@ def test_the_copies_in_a_document_are_found_together() -> None:
         "Lea Frei",
         "Marco Brunner",
     ]
+
+
+@pytest.mark.parametrize(
+    ("copy", "document"),
+    [
+        ("Urteil", "Gemäss Urteil$^{1}$ des Bundesgerichts"),
+        ("Urteil", "Gemäss Urteil¹ des Bundesgerichts"),
+        ("Muster AG", "Lieferant: Muster AG$^{2}$"),
+        ("Muster AG", "Lieferant: Muster AG²"),
+    ],
+)
+def test_a_word_followed_by_a_footnote_mark_is_still_a_whole_word(copy: str, document: str) -> None:
+    assert RawValueLocator.appears_in(copy, document)
+    assert len(RawValueLocator.passages_holding(copy, document, 1)) == 1

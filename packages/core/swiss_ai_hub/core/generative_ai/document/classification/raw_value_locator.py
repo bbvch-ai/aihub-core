@@ -86,7 +86,7 @@ class RawValueLocator:
 
     @classmethod
     def _comparable(cls, text: str) -> str:
-        normalized = unicodedata.normalize("NFKC", MineruInlineLatex.as_text(text)).casefold()
+        normalized = unicodedata.normalize("NFKC", MineruInlineLatex.as_comparable_text(text)).casefold()
         normalized = re.sub(r"[’‘`´]", "'", normalized)
         normalized = re.sub(r"[‐-―−]", "-", normalized)
         normalized = re.sub(r"[\\*_­]", "", normalized)

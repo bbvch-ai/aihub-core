@@ -61,3 +61,17 @@ def test_a_formula_keeps_its_latex(formula: str) -> None:
 )
 def test_dollar_amounts_in_running_text_are_left_alone(text: str) -> None:
     assert MineruInlineLatex.as_text(text) == text
+
+
+@pytest.mark.parametrize(
+    ("text", "comparable"),
+    [
+        (r"Urteil$^{1}$ des", "Urteil ¹ des"),
+        ("Muster AG² und", "Muster AG ² und"),
+        (r"am 1. Januar 2003$^{12}$", "am 1. Januar 2003 ¹²"),
+        ("120 m²", "120 m ²"),
+        ("Fussnote ¹ steht frei", "Fussnote ¹ steht frei"),
+    ],
+)
+def test_for_comparison_a_superscript_number_is_set_apart_from_what_it_follows(text: str, comparable: str) -> None:
+    assert MineruInlineLatex.as_comparable_text(text) == comparable
