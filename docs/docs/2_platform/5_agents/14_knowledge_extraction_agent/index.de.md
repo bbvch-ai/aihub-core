@@ -1,7 +1,7 @@
 ---
 title: Wissensextraktions-Agent
 description: Sammelt Datensätze aus vielen Wissensdokumenten in einer Tabelle, etwa jede Hardware-Position auf den Rechnungen 2025 eines Lieferanten, jede Zeile mit der Datei, aus der sie stammt.
-source_sha: 990719b56c5c10600d80892c69891cdea37931913549a9ba71e838642e390a78
+source_sha: 9685f3ecfc1169f45e54d4427008fe1fada8264af2120ec1096d934c39e3f698
 ---
 
 # Wissensextraktions-Agent
@@ -227,9 +227,10 @@ geschrieben wurde, gelesen wird.
   Bereich abdeckt (`Jan_Feb_2025`, `Q1_Q2_2025`, `1 und 15 März 2025`), ein Datum, das ein Ende eines offenen Zeitraums
   ist (`ab 2020`, `seit März 2025`, `ab Mitte 2020`, `up to 2019`, `2020-heute`, `Archiv bis 2019`, `2024 und älter`,
   `2020 onwards`, `2020 to date`, `2020+`, `-2019`), eine Zahl mit einem Bindestrich zwischen Leerzeichen vor einem
-  Monat (`Kapitel 3 - März 2025`), ein Bereich von Jahren (`2025-2026`, `FY2025`), eine Zahl hinter einer Kennung
-  (`Nr. 2024`, `SIA 2024`, `v2025`), ein Jahr vor 1990 oder nach dem nächsten Jahr und Ordner, deren Daten sich
-  widersprechen (`2025/20260406.pdf`).
+  Monat (`Kapitel 3 - März 2025`), ein Bereich von Jahren (`2025-2026`, `FY2025`), eine an Buchstaben angehängte
+  Jahreszahl, auch neben einem anderen Datum (`Offerte_2024_rev2025.pdf`, `2025er Rechnungen/2024-12-30.pdf`), eine Zahl
+  hinter einer Kennung (`Nr. 2024`, `SIA 2024`, `v2025`), ein Jahr vor 1990 oder nach dem nächsten Jahr und Ordner,
+  deren Daten sich widersprechen (`2025/20260406.pdf`).
 
 Jedes ausgewählte Dokument ist dann:
 

@@ -204,7 +204,8 @@ again, while a file or a folder path written into that part is read.
   two-digit year (`06-04-26`), listed months, quarters or days no range covers (`Jan_Feb_2025`, `Q1_Q2_2025`,
   `1 und 15 März 2025`), a date that is one end of an open period (`ab 2020`, `seit März 2025`, `ab Mitte 2020`,
   `up to 2019`, `2020-heute`, `Archiv bis 2019`, `2024 und älter`, `2020 onwards`, `2020 to date`, `2020+`, `-2019`), a
-  number with a spaced dash before a month (`Kapitel 3 - März 2025`), a range of years (`2025-2026`, `FY2025`), a number
+  number with a spaced dash before a month (`Kapitel 3 - März 2025`), a range of years (`2025-2026`, `FY2025`), a year
+  glued to letters, even next to another date (`Offerte_2024_rev2025.pdf`, `2025er Rechnungen/2024-12-30.pdf`), a number
   behind an identifier (`Nr. 2024`, `SIA 2024`, `v2025`), a year before 1990 or after next year, and folders whose dates
   contradict each other (`2025/20260406.pdf`).
 

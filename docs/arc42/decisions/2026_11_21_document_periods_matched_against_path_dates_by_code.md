@@ -67,6 +67,9 @@ scan names, day-first dates in Swiss file names. That information is exact and f
   - **day first always**: `04-06-2026` is 4 June; a date that does not exist day first gives no date and is never
     swapped;
   - digit guards, an identifier stop-list (`Nr`, `SIA`, `v`, `RE`, …), and a year window from 1990 to next year;
+  - a year glued to letters that no pattern reads (`rev2025`, `Stand2025`, `2025er`) makes its segment unknown, unless
+    it is glued to a stop-listed identifier (`RE2025-003`); product numbers such as `Office2019` next to a date are a
+    safe loss of this rule;
   - a range or list inside one segment is read as the span `PeriodTextParser` finds, only if that span covers every date
     the segment states and is wider than each; otherwise the path is unknown. A bare day number next to a finer date
     counts as part of such a range (`1-15 März 2025`, `2025-03-01 - 15`), except a counter glued on with `_` or `-`

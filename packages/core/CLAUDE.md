@@ -758,26 +758,27 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
   swapped), `dd.mm.yy` only with two-digit day and month (`06-04-26` makes the path unknown), day + month name + year,
   quarters (`Q1 2026`, `2026_Q1`, `T1`, `1. Quartal`, `primo trimestre`), month name + year in de/en/fr/it (plus `gen`,
   `mag`), `2026-03`/`03.2026`, `202603` as a folder only, and years. Digit guards and an identifier stop-list (`Nr`,
-  `SIA`, `ISO`, `RE`, `v`, …) keep numbers from reading as dates; years outside 1990 to next year give none. A segment
-  writing a range or a list (a joiner next to a leftover month, quarter, day fragment or year; own dates that do not
-  nest; a leftover month or quarter word, or a bare day number, next to a finer date) is read as `PeriodTextParser`'s
-  span only if it covers every date the segment states and is wider than each, otherwise the path is unknown. A bare day
-  number counts before a date (`1-15 März 2025`) and after one with a connector or a spaced dash (`2025-03-01 - 15`),
-  never as a counter glued on with `_` or `-`. A segment that is no span and makes its date one end of an open period is
-  unknown (`_OPEN_BOUND`): a word before it (`_OPEN_BEFORE`: `ab`, `seit`, `since`, `dès`, `dal`, `bis`, `vor`, `pre`,
-  `up to`, `through`, …, with up to two fillers such as `Mitte`, `Ende`, `fin`, `mi` in between), a word after it
-  (`_OPEN_AFTER`: `heute`, `present`, `ff`, `und älter`, `und später`, `onwards`, `or later`, `to date`, `à ce jour`,
-  `ad oggi`, …), or a sign between it and the segment's edge (`2020+`, `2020-`, `-2019`, `>2020`, `<2020`); whole words
-  only, so `Update 2025` or `Mitarbeiter 2025` keep their year. A two-digit day number equal to its month's own
-  (`03 März 2026`) reads as the whole month, and a dash joins a day to a month name only unspaced (`15-mar-2025`, not
-  `Kapitel 3 - März 2025`). Folders nest (`2026/03/14/`; a month, quarter or day folder counts only under a folder dated
-  exactly a year or a month), the shortest date wins, and dates of different segments that do not nest make the path
-  unknown. Results are memoised as tuples (`PARSED_PATHS_CACHED`, 50,000). `PathDateRange.verdict_of` sorts a path date
-  into `PathDateVerdict` WITHIN, OVERLAPPING, OUTSIDE or UNDATED, bounds inclusive.
-  `PathDateParser.folder_dates(folders, today)` gives each folder of a path the date it is when it is nothing but a date
-  (a year, month or quarter folder, also under its dated parent: `2025/q1`), None otherwise (`invoices-2025`); the KEA
-  uses it to take date folders that repeat a period out of a model's location. `PathDateParser` and `NormalizedDate` are
-  exported for it.
+  `SIA`, `ISO`, `RE`, `v`, …) keep numbers from reading as dates; years outside 1990 to next year give none. A year
+  glued to letters that no pattern reads (`rev2025`, `Stand2025`, `2025er`) makes its segment unknown, unless it is
+  glued to a stop-listed identifier (`RE2025-003`). A segment writing a range or a list (a joiner next to a leftover
+  month, quarter, day fragment or year; own dates that do not nest; a leftover month or quarter word, or a bare day
+  number, next to a finer date) is read as `PeriodTextParser`'s span only if it covers every date the segment states and
+  is wider than each, otherwise the path is unknown. A bare day number counts before a date (`1-15 März 2025`) and after
+  one with a connector or a spaced dash (`2025-03-01 - 15`), never as a counter glued on with `_` or `-`. A segment that
+  is no span and makes its date one end of an open period is unknown (`_OPEN_BOUND`): a word before it (`_OPEN_BEFORE`:
+  `ab`, `seit`, `since`, `dès`, `dal`, `bis`, `vor`, `pre`, `up to`, `through`, …, with up to two fillers such as
+  `Mitte`, `Ende`, `fin`, `mi` in between), a word after it (`_OPEN_AFTER`: `heute`, `present`, `ff`, `und älter`,
+  `und später`, `onwards`, `or later`, `to date`, `à ce jour`, `ad oggi`, …), or a sign between it and the segment's
+  edge (`2020+`, `2020-`, `-2019`, `>2020`, `<2020`); whole words only, so `Update 2025` or `Mitarbeiter 2025` keep
+  their year. A two-digit day number equal to its month's own (`03 März 2026`) reads as the whole month, and a dash
+  joins a day to a month name only unspaced (`15-mar-2025`, not `Kapitel 3 - März 2025`). Folders nest (`2026/03/14/`; a
+  month, quarter or day folder counts only under a folder dated exactly a year or a month), the shortest date wins, and
+  dates of different segments that do not nest make the path unknown. Results are memoised as tuples
+  (`PARSED_PATHS_CACHED`, 50,000). `PathDateRange.verdict_of` sorts a path date into `PathDateVerdict` WITHIN,
+  OVERLAPPING, OUTSIDE or UNDATED, bounds inclusive. `PathDateParser.folder_dates(folders, today)` gives each folder of
+  a path the date it is when it is nothing but a date (a year, month or quarter folder, also under its dated parent:
+  `2025/q1`), None otherwise (`invoices-2025`); the KEA uses it to take date folders that repeat a period out of a
+  model's location. `PathDateParser` and `NormalizedDate` are exported for it.
 - **Limits.** Case folding is simple, so `ß` never matches `SS`. Decomposed (NFD) text is matched for literal text but
   not by a class such as `[üu]`. `$` does not match before `\r\n`. DocumentDB rejects numbered backreferences (`\1`);
   named ones, `(?P<x>…)(?P=x)`, work. PCRE2 reports hitting its backtracking limit as no match, so ambiguous nested

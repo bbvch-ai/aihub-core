@@ -48,11 +48,11 @@ class PathDateParser:
 
     Never narrows on doubt. A period then leaves out every document dated outside it, so a path whose date might not
     contain the document's true date reads as no date and the document is kept: ambiguous two-digit years, listed
-    months, quarters or days no span covers, a date that is one end of an open period ("ab 2020", "2020-heute"),
-    numbers behind an identifier ("Nr", "SIA", "v"), years outside `EARLIEST_YEAR` to next year, and dates of different
-    segments that do not nest. The one decided exception: numeric dates with a four-digit
-    year are read day first, as in Switzerland and the EU, and one that does not exist that way gives no date rather
-    than a swapped one.
+    months, quarters or days no span covers, a date that is one end of an open period ("ab 2020", "2020-heute"), a
+    year glued to letters ("rev2025", "2025er"), and dates of different segments that do not nest. Numbers behind an
+    identifier ("Nr", "SIA", "v") and years outside `EARLIEST_YEAR` to next year give no date. The one decided
+    exception: numeric dates with a four-digit year are read day first, as in Switzerland and the EU, and one that does
+    not exist that way gives no date rather than a swapped one.
     """
 
     EARLIEST_YEAR: ClassVar[int] = 1990
@@ -68,6 +68,7 @@ class PathDateParser:
     _ID_PREFIX: ClassVar[re.Pattern[str]] = re.compile(
         rf"{_B}(?:nr|no|n°|nº|num|#|sia|iso|din|sn|plz|id|ref|re|rg|inv|art|pos|version|vers|v)[ ._:#-]*$"
     )
+    _GLUED_YEAR: ClassVar[re.Pattern[str]] = re.compile(r"(?<=[^\W\d_])\d{4}(?!\d)|(?<!\d)\d{4}(?=[^\W\d_])")
 
     _DAY_YEAR_FIRST: ClassVar[re.Pattern[str]] = re.compile(
         rf"{_B}{_G}(\d{{4}})([-_.])(\d{{2}})\2(\d{{2}})(?!\.\d){_E}"
@@ -195,6 +196,8 @@ class PathDateParser:
         if cls._TWO_DIGIT_YEAR_AMBIGUOUS.search(segment):
             return None
         working, dates = cls._own_dates(segment, cls._builders(years, is_folder))
+        if cls._has_glued_year(working, years):
+            return None
         if not cls._is_span_candidate(working, dates, years):
             return None if dates and cls._OPEN_BOUND.search(working) else dates
         span = PeriodTextParser.parse(segment.replace("_", " "))
@@ -240,6 +243,15 @@ class PathDateParser:
             *(folder_months if is_folder else []),
             (cls._YEAR, lambda m: cls._year_of_token(years, int(m[1]))),
         ]
+
+    @classmethod
+    def _has_glued_year(cls, working: str, years: range) -> bool:
+        """No pattern reads a year glued to letters, yet "rev2025" or "2025er" may be the document's year, so its
+        segment is unknown. One glued to an identifier ("RE2025-003") stays a number, as "Nr 2025" does."""
+        return any(
+            int(match[0]) in years and not cls._ID_PREFIX.search(working[: match.start()])
+            for match in cls._GLUED_YEAR.finditer(working)
+        )
 
     @classmethod
     def _is_span_candidate(cls, working: str, dates: list[NormalizedDate], years: range) -> bool:

@@ -315,6 +315,42 @@ def test_a_number_behind_an_identifier_is_no_date(path: str) -> None:
     assert _read(path) is None
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "a/Offerte_2024_rev2025.pdf",
+        "rev2025/Offerte_2024.pdf",
+        "Vertrag 2023 Stand2025.docx",
+        "Budget2025/2024-12-15_Entwurf.xlsx",
+        "2025er Rechnungen/2024-12-30.pdf",
+        "FY2025/2024-11/x.pdf",
+    ],
+)
+def test_a_year_glued_to_letters_makes_the_path_unknown(path: str) -> None:
+    """Read as 2024, "Offerte_2024_rev2025" was left out of a 2025 period; the glued number may be its year."""
+    assert _read(path) is None
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("Rechnungen 2025/RE2025-003.pdf", _YEAR_2025),
+        ("Offerte_2025_v2024.docx", _YEAR_2025),
+        ("März2025/x.pdf", (date(2025, 3, 1), date(2025, 3, 31), DatePrecision.MONTH)),
+        ("Q12025/x.pdf", (date(2025, 1, 1), date(2025, 3, 31), DatePrecision.QUARTER)),
+        ("Rechnung_2025-03-15_INV2025001.pdf", _MARCH_15_2025),
+    ],
+)
+def test_a_number_glued_to_an_identifier_or_read_by_a_pattern_keeps_the_date(
+    path: str, expected: tuple[date, date, DatePrecision]
+) -> None:
+    assert _read(path) == expected
+
+
+def test_a_product_number_glued_to_letters_next_to_a_date_is_a_safe_loss() -> None:
+    assert _read("Office2019_Lizenz_2024-03-01.pdf") is None
+
+
 def test_the_year_window_follows_today() -> None:
     assert PathDateParser.parse("2028/x.pdf", date(2027, 1, 1)) is not None
     assert PathDateParser.parse("2028/x.pdf", date(2026, 12, 31)) is None
@@ -486,3 +522,7 @@ def test_a_folder_that_names_more_than_a_date_or_none_certain_gives_none(folders
 def test_a_quarter_under_a_folder_that_also_names_something_is_still_read_under_its_year() -> None:
     """The parent names more than a date, so it is no date folder itself, yet it dates its quarter as `parse` does."""
     assert _folders("invoices-2025", "q1") == [None, _Q1_2025]
+
+
+def test_a_folder_with_a_glued_year_dates_no_child() -> None:
+    assert _folders("2025 rev2024", "q1") == [None, None]
