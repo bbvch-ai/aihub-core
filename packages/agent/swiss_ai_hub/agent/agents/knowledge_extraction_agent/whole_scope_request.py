@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from llama_index.core.base.llms.types import ChatMessage
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
@@ -53,7 +55,7 @@ class WholeScopeRequest:
         """The confirmation of the waiting sample, the request as read for the user to confirm, or the notice to
         answer with instead."""
         reading = await WholeScopeRequest.read(
-            history, scope, agent_config, awaiting is not None, displayer, user, t, locale
+            history, scope, agent_config, awaiting is not None, displayer, user, t, locale, widens_period_folders=True
         )
         if awaiting is not None and reading is not None and reading.confirms_sample:
             return RecordExtraction.confirm_sample(scope.pairs(), ExtractionNotices.for_table(scope, False, t))
@@ -73,9 +75,15 @@ class WholeScopeRequest:
         user: UserIdentity | None,
         t: LocaleHandler,
         locale: str,
+        widens_period_folders: Annotated[
+            bool, "Whether date folders that only repeat the period leave the locations; false for a typed Location"
+        ] = False,
     ) -> ExtractionRequestAnswer | None:
         """The conversation's last message read as a table request, with the folders and years in scope to name, and
-        the files that message names in place of the places the model made of them."""
+        the files that message names in place of the places the model made of them. With `widens_period_folders`
+        (the request itself, or a form answer that kept the Location as shown) the reading then loses the date folders
+        the model made of the period (ADR 2026_11_21), last, so a named file never makes a widened place drop out; a
+        Location the user typed into the form is read as written."""
         listing = await WholeScopeRequest._listing(scope)
         facets = SelectionFacets.lines(listing.documents, t)
         instructions = agent_config.instructions.in_locale(locale) if agent_config.instructions else None
@@ -85,9 +93,11 @@ class WholeScopeRequest:
         if reading is None:
             return None
         named = WholeScopeRequest._named_files(ExtractionRequestReading.last_request(history), listing)
-        if not named:
+        if named:
+            reading = reading.model_copy(update={"locations": WholeScopeRequest._narrowed(reading, named, listing)})
+        if not widens_period_folders:
             return reading
-        return reading.model_copy(update={"locations": WholeScopeRequest._narrowed(reading, named, listing)})
+        return reading.without_period_folders(ExtractionRequestReading.user_turns(history))
 
     @staticmethod
     async def folders(scope: KnowledgeDocumentRunScope) -> str:

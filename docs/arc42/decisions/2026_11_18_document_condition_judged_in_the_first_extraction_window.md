@@ -30,6 +30,10 @@ judgement of the whole document has to fit that.
   the request form as its own part ("Document Condition"), and carried on `ExtractRecordsEvent` and on every document's
   run to `RecordExtractor.extract(document_condition=...)`. A value the rows carry themselves (a supplier per line of a
   statement) stays a row condition, and a period a location already expresses exactly (a year folder) is not repeated.
+  *Amended 2026-11-21:* a period is no longer part of the condition. The reading writes it into `period_start` and
+  `period_end`, never into `document_condition` or a location, and code matches it against the dates in the paths; the
+  judge still reads it, put into words by code, for documents whose path does not settle it. See ADR
+  `2026_11_21_document_periods_matched_against_path_dates_by_code`.
 - **Judged inside the first window's structured output.** With a condition, window 0 is extracted with a records model
   whose first field is `document_match` (`verdict` "yes" / "no" / "unsure", `reason`), then `records`. On the
   strict-output path field order is generation order, so the model decides before it lists records. Window 0 is the

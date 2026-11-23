@@ -354,6 +354,7 @@ event:
     fields: Columns
     instructions: Rows to keep
     documentCondition: Documents that count
+    pathDates: Period (dates in the paths)
     criteria: Selected documents
     collections: Collections
     notices: Notices
@@ -628,12 +629,16 @@ knowledge:
         here after the next scheduled sync. If they still do not, check the source
         settings.
   classification:
-    failed: 'The classification requested {date} failed several times and was stopped. Request it again, or ask an administrator to check the pipeline.'
+    failed: The classification requested {date} failed several times and was stopped.
+      Request it again, or ask an administrator to check the pipeline.
     request: Classify existing documents
-    pending: 'Classification requested {date}; the documents are classified on the pipeline''s next run.'
+    pending: Classification requested {date}; the documents are classified on the
+      pipeline's next run.
     confirm:
       header: Classify existing documents
-      message: 'The documents of {name} that have no type yet, or were classified by an older version, are given a type and attributes from their stored text. Each of them costs one model call; documents that are up to date are skipped.'
+      message: The documents of {name} that have no type yet, or were classified by
+        an older version, are given a type and attributes from their stored text.
+        Each of them costs one model call; documents that are up to date are skipped.
       accept: Classify
     requested:
       summary: Classification requested
@@ -1010,8 +1015,10 @@ lib:
   modelSelect:
     contextWindow: 'Context window: {input} input · {output} output tokens'
     contextWindowInputOnly: 'Context window: {input} input tokens'
-    notSelectable: '{model} does not meet what this field requires. Choose another model before saving.'
-    specialPurpose: '{model} is built for one job only and cannot be chosen here. Choose another model before saving.'
+    notSelectable: '{model} does not meet what this field requires. Choose another
+      model before saving.'
+    specialPurpose: '{model} is built for one job only and cannot be chosen here.
+      Choose another model before saving.'
     unavailable: '{model} is not available to you. Choose another model before saving.'
     loadFailed: The models could not be loaded. Reload the page to try again.
     empty: No model you can use meets what this field requires.
@@ -1217,8 +1224,9 @@ userFiles:
     changeFailed: The change failed
 token:
   title: API Tokens
-  intro: Personal tokens let scripts and integrations call the REST API as you, with your own permissions. A token works in
-    every tenant you belong to, until it expires or you revoke it.
+  intro: Personal tokens let scripts and integrations call the REST API as you, with
+    your own permissions. A token works in every tenant you belong to, until it expires
+    or you revoke it.
   list:
     name: Name
     created: Created
@@ -1236,7 +1244,8 @@ token:
     name:
       label: Name
       placeholder: e.g. Reporting script
-      help: Helps you recognise the token later, for example by the script or integration that uses it.
+      help: Helps you recognise the token later, for example by the script or integration
+        that uses it.
     expiry:
       label: Expires after
       preset_30: 30 days
@@ -1251,16 +1260,18 @@ token:
     error: The token could not be generated. Please try again.
   created:
     title: Copy your new token
-    warning: This is the only time the token is shown. Copy it now and keep it somewhere safe. If you lose it, revoke it and
-      generate a new one.
+    warning: This is the only time the token is shown. Copy it now and keep it somewhere
+      safe. If you lose it, revoke it and generate a new one.
     copy: Copy
     copied: Copied
-    usage: Send it with every API request in the Authorization header, after the word Bearer and a space.
+    usage: Send it with every API request in the Authorization header, after the word
+      Bearer and a space.
     done: Done
   revoke:
     button: Revoke
     confirm: Revoke this token?
-    explanation: Anything still using "{name}" loses access immediately. This cannot be undone.
+    explanation: Anything still using "{name}" loses access immediately. This cannot
+      be undone.
     cancel: Cancel
     proceed: Revoke
     success: Token revoked

@@ -44,7 +44,7 @@ class ExtractRecordsEvent(ControlAndDisplayEvent):
         Field(
             description="Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each "
             "document, and a document that clearly fails it yields no rows and is not read further. Never a condition "
-            "on single rows."
+            "on single rows, and never the period, which is the selection's `path_date_range`."
         ),
     ] = None
     row_terms: Annotated[

@@ -1,10 +1,12 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 
 from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_path_pattern_error import InvalidPathPatternError
+from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_criteria import KnowledgeDocumentCriteria
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_listing import KnowledgeDocumentListing
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary import KnowledgeDocumentSummary
+from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_range import PathDateRange
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
 
 pytestmark = pytest.mark.unit
@@ -80,3 +82,25 @@ def test_no_match_is_an_empty_listing(listing: KnowledgeDocumentListing) -> None
 def test_invalid_pattern_fails_the_filter(listing: KnowledgeDocumentListing) -> None:
     with pytest.raises(InvalidPathPatternError):
         listing.matching_regex("invoices/(2025")
+
+
+def test_a_period_keeps_every_document_not_dated_outside_it_in_order(listing: KnowledgeDocumentListing) -> None:
+    kept, counts = listing.dated_within(PathDateRange(start=date(2025, 1, 1), end=date(2025, 3, 31)))
+
+    assert _keys(kept) == [
+        ("hr", "people", "invoices/2025/q1/acme-0001.pdf"),
+        ("kb", "finance", "invoices/2025/globex-0003.pdf"),
+        ("kb", "finance", "invoices/2025/q1/acme-0001.pdf"),
+        ("kb", "legal", "contracts/2025/msa-acme.md"),
+    ]
+    assert (counts.in_range, counts.excluded, counts.undated) == (4, 2, 0)
+    assert counts.excluded_examples == ["invoices/2024/acme-0099.pdf", "invoices/2025/q2/acme-0002.PDF"]
+    assert counts.outside_years == [2024, 2025]
+    assert listing.total == 6
+
+
+def test_the_criteria_offer_no_year_to_select_by() -> None:
+    fields = KnowledgeDocumentCriteria.model_fields
+    descriptions = [fields["path_glob"].description or "", fields["content_query"].description or ""]
+
+    assert not any("2025" in description or "year" in description for description in descriptions)

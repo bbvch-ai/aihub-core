@@ -3,13 +3,14 @@
 An oversized event is dropped by the broker without an error, and the join or the chat then waits forever. Rows and
 tables travel by reference (`ExtractionFileStore`), so every event stays small whatever a document yields. The sizes
 are checked the way events are serialized, with the worst content: a thousand documents, half of them failing and a
-third of the rest skipped by a long document condition, twenty columns of whole clauses full of quotes, pipes,
-backslashes and umlauts, and many rows per document.
+third of the rest skipped by a long document condition and a period that left out ten thousand paths of a thousand
+umlauts, twenty columns of whole clauses full of quotes, pipes, backslashes and umlauts, and many rows per document.
 """
 
 import contextlib
+import json
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -20,7 +21,10 @@ from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
     ExtractedTableFile,
     ExtractionFileStore,
+    KnowledgeDocumentListing,
     KnowledgeDocumentSummary,
+    PathDateCounts,
+    PathDateRange,
     RecordField,
     RecordSchema,
 )
@@ -47,6 +51,7 @@ DOCUMENTS = 1000
 ROWS_PER_DOCUMENT = 40
 CONDITION = ("Nur Verträge mit der Müller & Söhne AG, Zürich, gültig ab März 2026, unterschrieben " * 10)[:800]
 SKIP_REASON = ("Lieferant: Hänggi Gerätebau AG, Bülach — nicht Müller & Söhne " * 5)[:200]
+PERIOD = PathDateRange(start=date(2026, 3, 1), end=date(2026, 12, 31))
 
 
 def _size(event: Any) -> int:
@@ -62,6 +67,8 @@ def _run() -> ExtractionRun:
         notices=["Ein Hinweis über die Suche, die Grenzen und die Auswahl der Dokumente. " * 5] * 3,
         show_collection=True,
         document_condition=CONDITION,
+        period=PERIOD,
+        path_dates=PATH_DATES,
     )
 
 
@@ -76,6 +83,15 @@ def _document(index: int) -> KnowledgeDocumentSummary:
         file_type="pdf",
         updated_at=datetime(2025, 1, 1, tzinfo=UTC),
     )
+
+
+def _left_out() -> KnowledgeDocumentSummary:
+    path = f"2025/{'ö' * 1_000}.pdf"
+    return _document(0).model_copy(update={"path": path, "filename": path.rsplit("/", 1)[-1]})
+
+
+# One path repeated: the parse is memoised, so the worst case costs milliseconds at import rather than seconds.
+PATH_DATES = KnowledgeDocumentListing(documents=[_left_out()] * 9_999).dated_within(PERIOD)[1]
 
 
 def _request(index: int) -> DocumentExtractionRequestedEvent:
@@ -210,3 +226,18 @@ async def test_the_failed_block_survives_when_every_list_is_full():
     assert ExtractionTable.serialized_bytes(without_notices.summary) <= SUMMARY_BYTES
     assert not without_notices.summary.endswith("…")
     assert summary.startswith(without_notices.summary)
+    assert "**Zeitraum nach Pfad:**" in summary
+    assert "**Wegen des Datums im Pfad ausgelassen:**" in summary
+
+
+@pytest.mark.asyncio
+async def test_the_left_out_paths_are_bounded_on_every_documents_event():
+    examples = PATH_DATES.excluded_examples
+    with _Store().patched():
+        requested = _request(0)
+        extracted = await _extracted(0, 1)
+
+    assert PATH_DATES.excluded == 9_999
+    assert 0 < len(examples) <= PathDateCounts.EXCLUDED_EXAMPLES
+    assert sum(len(json.dumps(example)) for example in examples) <= PathDateCounts.EXCLUDED_EXAMPLE_BYTES
+    assert max(_size(requested), _size(extracted)) < EVENT_LIMIT_BYTES

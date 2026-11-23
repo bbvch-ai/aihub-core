@@ -680,7 +680,9 @@ header: ingestion detects none.
 `knowledge_documents/` gives agents whole-file access to knowledge collections next to vector search.
 `KnowledgeDocumentReader.list_documents(collections)` returns a `KnowledgeDocumentListing` of fully ingested documents
 (id, path relative to the collection's **folder**, filename, title, type), loaded without their text and sorted by
-database, collection and path. `matching_glob()` and `matching_regex()` chain:
+database, collection and path. `matching_glob()` and `matching_regex()` chain, and `dated_within(PathDateRange)` keeps
+every document its path does not date outside a period and returns the `PathDateCounts` (CPU-bound: async callers run it
+in `asyncio.to_thread`):
 
 - **Glob:** the shell/ripgrep dialect, matched against the whole path, ignoring case, with `{a,b}` expanded.
 - **Regex:** searched anywhere in the path, on the `regex` engine with one time budget per call.
@@ -743,7 +745,39 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
   literal as `search` does, no text loaded, no per-line check, so it may count a document the line check would drop),
   with the restricting glob next to the criterion's own, so a model's selection can only narrow the caller's. The
   record-extraction capability resolves the selection a model wrote this way rather than trusting a list of ids, with
-  its ceiling as `limit`.
+  its ceiling as `limit`. A selection has one period, `path_date_range` (`PathDateRange`, either bound open, its bounds
+  dumped as ISO text in every mode because events are persisted as BSON, which has no plain date), applied after the
+  entries to their union, before `limit`; the result then carries `path_dates` (`PathDateCounts`: in range, excluded,
+  undated, the years the excluded paths are dated in, and up to ten of them within 2,000 serialized bytes, each cut at
+  200 characters). Without a period the result is unchanged and `path_dates` is None.
+- **Dates in paths** (#2349, ADR `2026_11_21_document_periods_matched_against_path_dates_by_code`).
+  `PathDateParser.parse(path, today)` gives the period a path dates its document in, or None, and never narrows on
+  doubt. Per segment (the extension stripped from the last, each `DateTextParser.normalized`): ISO and compact days
+  (counters such as `_001` or `-0001` after them are fine, a `.digit` suffix is not), day-first dot, dash and underscore
+  dates with a four-digit year (**always day first**: `04-06-2026` is 4 June; one invalid that way gives no date, never
+  swapped), `dd.mm.yy` only with two-digit day and month (`06-04-26` makes the path unknown), day + month name + year,
+  quarters (`Q1 2026`, `2026_Q1`, `T1`, `1. Quartal`, `primo trimestre`), month name + year in de/en/fr/it (plus `gen`,
+  `mag`), `2026-03`/`03.2026`, `202603` as a folder only, and years. Digit guards and an identifier stop-list (`Nr`,
+  `SIA`, `ISO`, `RE`, `v`, …) keep numbers from reading as dates; years outside 1990 to next year give none. A segment
+  writing a range or a list (a joiner next to a leftover month, quarter, day fragment or year; own dates that do not
+  nest; a leftover month or quarter word, or a bare day number, next to a finer date) is read as `PeriodTextParser`'s
+  span only if it covers every date the segment states and is wider than each, otherwise the path is unknown. A bare day
+  number counts before a date (`1-15 März 2025`) and after one with a connector or a spaced dash (`2025-03-01 - 15`),
+  never as a counter glued on with `_` or `-`. A segment that is no span and makes its date one end of an open period is
+  unknown (`_OPEN_BOUND`): a word before it (`_OPEN_BEFORE`: `ab`, `seit`, `since`, `dès`, `dal`, `bis`, `vor`, `pre`,
+  `up to`, `through`, …, with up to two fillers such as `Mitte`, `Ende`, `fin`, `mi` in between), a word after it
+  (`_OPEN_AFTER`: `heute`, `present`, `ff`, `und älter`, `und später`, `onwards`, `or later`, `to date`, `à ce jour`,
+  `ad oggi`, …), or a sign between it and the segment's edge (`2020+`, `2020-`, `-2019`, `>2020`, `<2020`); whole words
+  only, so `Update 2025` or `Mitarbeiter 2025` keep their year. A two-digit day number equal to its month's own
+  (`03 März 2026`) reads as the whole month, and a dash joins a day to a month name only unspaced (`15-mar-2025`, not
+  `Kapitel 3 - März 2025`). Folders nest (`2026/03/14/`; a month, quarter or day folder counts only under a folder dated
+  exactly a year or a month), the shortest date wins, and dates of different segments that do not nest make the path
+  unknown. Results are memoised as tuples (`PARSED_PATHS_CACHED`, 50,000). `PathDateRange.verdict_of` sorts a path date
+  into `PathDateVerdict` WITHIN, OVERLAPPING, OUTSIDE or UNDATED, bounds inclusive.
+  `PathDateParser.folder_dates(folders, today)` gives each folder of a path the date it is when it is nothing but a date
+  (a year, month or quarter folder, also under its dated parent: `2025/q1`), None otherwise (`invoices-2025`); the KEA
+  uses it to take date folders that repeat a period out of a model's location. `PathDateParser` and `NormalizedDate` are
+  exported for it.
 - **Limits.** Case folding is simple, so `ß` never matches `SS`. Decomposed (NFD) text is matched for literal text but
   not by a class such as `[üu]`. `$` does not match before `\r\n`. DocumentDB rejects numbered backreferences (`\1`);
   named ones, `(?P<x>…)(?P=x)`, work. PCRE2 reports hitting its backtracking limit as no match, so ambiguous nested
@@ -794,7 +828,8 @@ not mapped back to them yet.
 `document/classification/` assigns a document one type from a closed set and reads that type's attributes (#2346, ADR
 `2026_11_13_closed_document_types_and_attributes_at_ingestion`). **`DocumentClassifier.classify(text, title, llm)`**
 makes one structured-output call on `DocumentOpeningText.of(text)` (first two pages capped at 8,000 characters, at most
-two excerpts each of term, notice, court and signing-date clauses from the middle, plus the last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadata()` is what ingestion stores:
+two excerpts each of term, notice, court and signing-date clauses from the middle, plus the last 1,500 of the rest) and
+returns a `DocumentClassification` whose `to_metadata()` is what ingestion stores:
 
 - **`DocumentTypeCatalog` is the only list.** Types (16 since #2485: `invoice`, `credit_note`, `offer`, `order`,
   `delivery_note`, `receipt`, `account_statement`, `payment_reminder`, `contract`, `service_level_agreement`, `letter`,

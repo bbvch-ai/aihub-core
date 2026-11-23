@@ -8,6 +8,7 @@ from swiss_ai_hub.core.generative_ai import (
     KnowledgeDocumentSummary,
     KnowledgeSemanticMatch,
     KnowledgeSemanticRanking,
+    PathDateCounts,
 )
 
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_scope import (
@@ -35,16 +36,36 @@ class KnowledgeDocumentToolOutput:
 
     @staticmethod
     def listing(
-        scope: KnowledgeDocumentRunScope, documents: list[KnowledgeDocumentSummary], offset: int, total: int
+        scope: KnowledgeDocumentRunScope,
+        documents: list[KnowledgeDocumentSummary],
+        offset: int,
+        total: int,
+        path_dates: PathDateCounts | None = None,
     ) -> str:
         end = offset + len(documents)
         position = f"Documents {offset + 1}-{end} of {total}" if documents else f"No documents at offset {offset}"
         more = f"; more with offset={end}" if end < total else ""
+        period = (
+            f" The period left out {path_dates.excluded} documents dated outside it by their path; of the documents "
+            f"listed, {path_dates.undated} have no date in their path and are kept."
+            if path_dates is not None
+            else ""
+        )
         lines = [KnowledgeDocumentToolOutput._entry(scope, document) for document in documents]
-        return "\n".join([f"{position}{more}. {scope.describe()}", "id | collection | path | pages", *lines])
+        return "\n".join([f"{position}{more}. {scope.describe()}{period}", "id | collection | path | pages", *lines])
 
     @staticmethod
-    def nothing_listed(scope: KnowledgeDocumentRunScope, examples: list[KnowledgeDocumentSummary]) -> str:
+    def nothing_listed(
+        scope: KnowledgeDocumentRunScope,
+        examples: list[KnowledgeDocumentSummary],
+        path_dates: PathDateCounts | None = None,
+    ) -> str:
+        if path_dates is not None and path_dates.excluded > 0:
+            left_out = ", ".join(f"'{path}'" for path in path_dates.excluded_examples)
+            return (
+                f"No document path matches within the period: {path_dates.excluded} matching documents are dated "
+                f"outside it by their path. {scope.describe()} Left out, for example: {left_out}."
+            )
         shapes = ", ".join(f"'{document.path}'" for document in examples) or "none, the collections are empty"
         return (
             f"No document path matches. {scope.describe()} Paths look like: {shapes}. "

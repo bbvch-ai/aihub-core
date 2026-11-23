@@ -141,6 +141,56 @@ async def test_a_long_listing_comes_in_pages_that_say_where_to_continue():
     assert len(first) / 4 < 3000
 
 
+async def _list_with(listing: KnowledgeDocumentListing, **arguments: object) -> str:
+    with (
+        patch(SCOPE, AsyncMock(return_value=_scope())),
+        patch(f"{TOOLS}.KnowledgeDocumentReader.list_documents", AsyncMock(return_value=listing)),
+    ):
+        return await _tools().list_knowledge_documents(**arguments)
+
+
+@pytest.mark.asyncio
+async def test_a_listing_with_a_period_leaves_out_documents_dated_outside_it_and_says_how_many():
+    listing = _listing("invoices/2024/a.pdf", "invoices/2025/b.pdf", "invoices/c.pdf", "invoices/2026-01/d.pdf")
+
+    text = await _list_with(listing, path_glob="**", period_start="2025-01-01", period_end="2025-12-31")
+
+    assert text.startswith("Documents 1-2 of 2.")
+    assert (
+        "The period left out 2 documents dated outside it by their path; of the documents listed, 1 have no date in "
+        "their path and are kept."
+    ) in text
+    assert "invoices/2025/b.pdf" in text
+    assert "invoices/c.pdf" in text
+    assert "invoices/2024/a.pdf" not in text
+
+
+@pytest.mark.asyncio
+async def test_a_period_that_leaves_out_every_matching_document_says_so():
+    text = await _list_with(_listing("invoices/2024/a.pdf", "invoices/2023/b.pdf"), path_glob="**", period_start="2025")
+
+    assert text.startswith(
+        "No document path matches within the period: 2 matching documents are dated outside it by their path."
+    )
+    assert "'invoices/2023/b.pdf', 'invoices/2024/a.pdf'" in text
+
+
+@pytest.mark.asyncio
+async def test_an_unreadable_period_fails_the_call():
+    with pytest.raises(ValueError, match="names no date"):
+        await _list_with(_listing("invoices/2024/a.pdf"), path_glob="**", period_start="last year")
+
+
+def test_the_listing_tool_offers_no_year_glob():
+    tool = next(tool for tool in _tools().to_tool_list() if tool.metadata.name == "list_knowledge_documents")
+    parameters = tool.metadata.get_parameters_dict()["properties"]
+
+    assert "2025" not in parameters["path_glob"]["description"]
+    assert "by name, folder or file type" in tool.metadata.description
+    assert "folder, year" not in tool.metadata.description
+    assert {"period_start", "period_end"} <= set(parameters)
+
+
 @pytest.mark.asyncio
 async def test_an_empty_listing_shows_what_paths_look_like():
     with (

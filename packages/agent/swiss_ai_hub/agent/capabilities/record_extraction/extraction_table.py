@@ -2,9 +2,16 @@ import asyncio
 import json
 
 from swiss_ai_hub.core.events.agent import RecordsExtractedEvent
-from swiss_ai_hub.core.generative_ai import ExtractedTableMarkup, ExtractionFileStore, RecordSchema, RecordValue
+from swiss_ai_hub.core.generative_ai import (
+    ExtractedTableMarkup,
+    ExtractionFileStore,
+    PathDateCounts,
+    RecordSchema,
+    RecordValue,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 
+from swiss_ai_hub.agent.capabilities.record_extraction.document_condition_text import DocumentConditionText
 from swiss_ai_hub.agent.capabilities.record_extraction.document_extracted_event import DocumentExtractedEvent
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_run import ExtractionRun
 
@@ -18,13 +25,16 @@ PREVIEW_BYTES = 150_000
 # the file keeps it whole.
 CELL_CHARACTERS = 1_000
 CELL_CUT_MARK = "…"
-# The summary's worst case without notices (counts, preview, criteria, condition, the skipped and failed blocks full,
-# three file lists full) stays about 5 kB below its cap, so only notices are ever cut.
+# The summary's worst case without notices (counts, preview, criteria, condition with its period, the period's counts
+# and left-out paths, the skipped and failed blocks full, three file lists full) stays about 5 kB below its cap, so only
+# notices are ever cut.
 SUMMARY_BYTES = 30_000
 FAILED_FILES_LISTED = 30
 FAILED_LIST_BYTES = 8_000
 SKIPPED_LIST_BYTES = 5_000
 LISTED_BYTES = 3_000
+# Equal to `PathDateCounts.EXCLUDED_EXAMPLE_BYTES`, which already bounds the examples when they are collected.
+PATH_DATE_LIST_BYTES = 2_000
 CRITERIA_CHARACTERS = 1_000
 CONDITION_CHARACTERS = 500
 # Row files are read side by side, a bounded number at once, so a thousand documents neither run one by one nor open
@@ -204,14 +214,10 @@ class ExtractionTable:
 
     @staticmethod
     def _document_lines(run: ExtractionRun, results: list[DocumentExtractedEvent], t: LocaleHandler) -> list[str]:
-        """The document condition and what it left out or left open, then the documents that yielded no rows."""
+        """The document condition with its period, what the period and the condition left out or left open, then the
+        documents that yielded no rows."""
         key = "agent.record_extraction.summary"
-        lines: list[str] = []
-        if run.document_condition:
-            condition = run.document_condition
-            if len(condition) > CONDITION_CHARACTERS:
-                condition = condition[: CONDITION_CHARACTERS - 1] + "…"
-            lines.append(t(f"{key}.document_condition", condition=condition))
+        lines = ExtractionTable._condition_lines(run, t)
         skipped = [(result.document.path, result.skipped_reason) for result in results if result.skipped_reason]
         if skipped:
             header = t(f"{key}.skipped", count=len(skipped))
@@ -230,20 +236,53 @@ class ExtractionTable:
         return lines
 
     @staticmethod
-    def _listed(entries: list[str], t: LocaleHandler) -> str:
+    def _condition_lines(run: ExtractionRun, t: LocaleHandler) -> list[str]:
+        """The user's condition, cut before the period is appended so the period is never what the cut drops."""
+        key = "agent.record_extraction.summary"
+        cut = ExtractionTable._cut(run.document_condition) if run.document_condition else None
+        condition = DocumentConditionText.of(cut, run.period, t)
+        lines = [t(f"{key}.document_condition", condition=condition)] if condition else []
+        if run.path_dates is not None:
+            lines.extend(ExtractionTable.path_date_lines(run.path_dates, t))
+        return lines
+
+    @staticmethod
+    def path_date_lines(counts: PathDateCounts, t: LocaleHandler) -> list[str]:
+        """How the period sorted the documents by their paths, and the first paths it left out."""
+        key = "agent.record_extraction.summary"
+        lines: list[str] = []
+        if counts.total > 0:
+            lines.append(
+                t(f"{key}.path_dates", in_range=counts.in_range, excluded=counts.excluded, undated=counts.undated)
+            )
+        if counts.excluded_examples:
+            files = ExtractionTable._listed(
+                counts.excluded_examples, t, limit_bytes=PATH_DATE_LIST_BYTES, total=counts.excluded
+            )
+            lines.append(t(f"{key}.path_dates_excluded", files=files))
+        return lines
+
+    @staticmethod
+    def _cut(condition: str) -> str:
+        if len(condition) <= CONDITION_CHARACTERS:
+            return condition
+        return condition[: CONDITION_CHARACTERS - 1] + "…"
+
+    @staticmethod
+    def _listed(entries: list[str], t: LocaleHandler, limit_bytes: int = LISTED_BYTES, total: int | None = None) -> str:
         """The first entries, as many as fit, and how many more there are, so a long list never hides that it was
-        shortened."""
+        shortened; `total` counts entries the caller did not pass."""
         listed: list[str] = []
         size = 0
         for entry in entries[:FAILED_FILES_LISTED]:
             size += ExtractionTable.serialized_bytes(entry)
-            if size > LISTED_BYTES and listed:
+            if size > limit_bytes and listed:
                 break
             listed.append(entry)
-        if len(listed) == len(entries):
+        more = (total if total is not None else len(entries)) - len(listed)
+        if more <= 0:
             return ", ".join(listed)
-        more = t("agent.record_extraction.summary.listed_more", count=len(entries) - len(listed))
-        return f"{', '.join(listed)}, {more}"
+        return f"{', '.join(listed)}, {t('agent.record_extraction.summary.listed_more', count=more)}"
 
     @staticmethod
     def _with_reasons(

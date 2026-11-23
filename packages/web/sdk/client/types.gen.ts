@@ -6570,7 +6570,7 @@ export type ExtractRecordsEvent = {
   /**
    * Document Condition
    *
-   * Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows.
+   * Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows, and never the period, which is the selection's `path_date_range`.
    */
   document_condition?: string | null;
   /**
@@ -10632,7 +10632,7 @@ export type KnowledgeDocumentCriteria = {
   /**
    * Path Glob
    *
-   * Glob on the path relative to the collection, e.g. 'invoices/2025**'.
+   * Glob on the path relative to the collection, e.g. 'invoices**' or 'contracts*.pdf'.
    */
   path_glob?: string | null;
   /**
@@ -10644,7 +10644,7 @@ export type KnowledgeDocumentCriteria = {
   /**
    * Content Query
    *
-   * Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a year, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.
+   * Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.
    */
   content_query?: string | null;
   /**
@@ -10668,7 +10668,8 @@ export type KnowledgeDocumentCriteria = {
  * criteria.
  *
  * Describing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob
- * and limits when it resolves the set, so a model can only narrow what it was given.
+ * and limits when it resolves the set, so a model can only narrow what it was given. A selection has one period,
+ * applied after the entries to all they selected, because a request names its period once.
  */
 export type KnowledgeDocumentSelection = {
   /**
@@ -10677,6 +10678,10 @@ export type KnowledgeDocumentSelection = {
    * A document is selected when it meets every condition of at least one entry.
    */
   any_of: Array<KnowledgeDocumentCriteria>;
+  /**
+   * Leaves out the selected documents whose path dates them outside this period, such as a year folder, 2026-03 or 20260406 in a file name; a document whose path gives no clear date is kept.
+   */
+  path_date_range?: PathDateRange | null;
 };
 
 /**
@@ -15027,6 +15032,28 @@ export type Password = {
    */
   readonly validation: string;
   [key: string]: unknown;
+};
+
+/**
+ * PathDateRange
+ *
+ * A period the wanted documents are dated in, matched by code against the dates their paths give them.
+ *
+ * Either bound may be open ("since March 2025"), never both. Bounds are inclusive days.
+ */
+export type PathDateRange = {
+  /**
+   * Start
+   *
+   * First day of the period; null when it has no start.
+   */
+  start?: Date | null;
+  /**
+   * End
+   *
+   * Last day of the period; null when it has no end.
+   */
+  end?: Date | null;
 };
 
 /**
@@ -25207,7 +25234,7 @@ export type ExtractRecordsEventWritable = {
   /**
    * Document Condition
    *
-   * Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows.
+   * Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows, and never the period, which is the selection's `path_date_range`.
    */
   document_condition?: string | null;
   /**
