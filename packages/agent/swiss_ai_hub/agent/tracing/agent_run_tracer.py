@@ -8,17 +8,20 @@ from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferen
 from opentelemetry import context, propagate, trace
 from opentelemetry.trace import Span, StatusCode, set_span_in_context
 from pydantic import BaseModel
+from swiss_ai_hub.core.agents import AgentConfig, StepConfig
 from swiss_ai_hub.core.context import BaseContext
 from swiss_ai_hub.core.dispatcher import TraceStore
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events.agent import StartEvent
+from swiss_ai_hub.core.events.agent import LLMEvent, StartEvent, ToolEvent
 from swiss_ai_hub.core.infrastructure import get_tracer
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.openinference_context import (
     openinference_trace_context,
 )
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 from swiss_ai_hub.core.workflow import ListOfSize
+
+from swiss_ai_hub.agent.tracing.trace_input_redactor import TraceInputRedactor
 
 logger = logging.getLogger(__name__)
 
@@ -97,11 +100,13 @@ class AgentRunTracer:
             if isinstance(arg, BaseEvent):
                 input_values[name] = arg.to_trace_dict()
             elif isinstance(arg, BaseContext):
-                input_values[name] = await arg.to_serializable()
+                input_values[name] = TraceInputRedactor.context(await arg.to_serializable())
             elif isinstance(arg, ListOfSize):
                 input_values[name] = [ev.model_dump() for ev in arg]
             elif isinstance(arg, EventDisplayer):
                 pass  # EventDisplayer args are intentionally excluded from tracing
+            elif isinstance(arg, AgentConfig | StepConfig):
+                input_values[name] = TraceInputRedactor.config(arg)
             elif isinstance(arg, BaseModel):
                 input_values[name] = arg.model_dump()
             else:
@@ -164,7 +169,7 @@ class AgentRunTracer:
                     SpanAttributes.OUTPUT_MIME_TYPE: OpenInferenceMimeTypeValues.JSON.value,
                 }
             )
-            semantic_event = next((ev for ev in output_events if ev.is_semantic_event), None)
+            semantic_event = self._labelling_event(output_events)
             if semantic_event:
                 await self._set_semantic_attributes(span, semantic_event, topic)
 
@@ -199,6 +204,25 @@ class AgentRunTracer:
             if is_final_step:
                 trace_attrs["langfuse.trace.output"] = await self.trace_store.get_output(eci)
         span.set_attributes(trace_attrs)
+
+    @staticmethod
+    def _labelling_event(output_events: list[BaseEvent]) -> BaseEvent | None:
+        """The semantic event that says what the step itself did.
+
+        A requested tool call is not one: the call runs in a later step, which traces it as the tool. Nor is an LLM
+        event without output, which only carries a prompt into the step that makes the call; labelled by either, the
+        step would show as a tool it never ran or as a generation that never happened.
+        """
+        return next(
+            (
+                event
+                for event in output_events
+                if event.is_semantic_event
+                and not isinstance(event, ToolEvent)
+                and not (isinstance(event, LLMEvent) and not event.output_messages)
+            ),
+            None,
+        )
 
     def trace_step_ok(self, span: Span):
         """Marks the step span as succeeded once its results are published. OpenTelemetry keeps an OK status final, so
