@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import LocaleInput
 from swiss_ai_hub.core.i18n import LocaleString
@@ -19,16 +19,28 @@ class KnowledgeExtractionAgentConfig(RecordExtractionFields, ToolLoopFields, Age
     limits, whether a model searches for the documents first, and that search loop's limits (published by the runner
     with the blueprint's tools as options).
 
-    The profile is the hard boundary of what a request may touch, so the document tools are always on, `#` references
-    only pick among the configured collections, and "every readable collection" is not offered. Without `discovery`,
-    the default (`knowledge_documents.discovery`), every document in that boundary is read, so the table cannot miss one
-    for its wording.
+    The profile is the hard boundary of what a request may touch: whenever a profile is loaded, the document tools are
+    switched on, `#` references only pick among the configured collections, and "every readable collection" is off, so a
+    profile stored without these settings, or saved with them off, behaves the same. Without `discovery`, the default
+    (`knowledge_documents.discovery`), every document in that boundary is read, so the table cannot miss one for its
+    wording.
     """
 
     instructions: Annotated[
         LocaleString | LocaleInput | None,
         Field(description="Instructions for this profile, added after the agent's own on how to find documents."),
     ] = None
+
+    @model_validator(mode="after")
+    def force_the_profile_boundary(self) -> Self:
+        """Forced on load rather than baked into `as_form()`: the dispatcher merges only top-level non-configurable
+        fields, so a fixed leaf inside `knowledge_documents` never reaches a stored profile and its default would apply.
+        """
+        self.knowledge_tool = self.knowledge_tool.model_copy(update={"every_readable_collection": False})
+        self.knowledge_documents = self.knowledge_documents.model_copy(
+            update={"enabled": True, "narrow_references": True}
+        )
+        return self
 
     @classmethod
     def as_form(cls) -> Self:
@@ -44,12 +56,8 @@ class KnowledgeExtractionAgentConfig(RecordExtractionFields, ToolLoopFields, Age
                 input_type="textarea",
                 rows=4,
             ),
-            knowledge_tool=KnowledgeToolConfig(
-                every_readable_collection=False, sources=[KnowledgeToolSource.as_form()]
-            ),
+            knowledge_tool=KnowledgeToolConfig(sources=[KnowledgeToolSource.as_form()]),
             knowledge_documents=KnowledgeDocumentConfig(
-                enabled=True,
-                narrow_references=True,
                 path_glob=KnowledgeDocumentConfig.path_glob_input(),
                 discovery=KnowledgeDocumentConfig.discovery_input(),
             ),
