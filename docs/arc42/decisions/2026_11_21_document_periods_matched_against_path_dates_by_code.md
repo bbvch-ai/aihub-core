@@ -134,5 +134,13 @@ Rejected:
   documents the path dates within the period are still judged on that condition (an "unsure" row at worst, a skip only
   for a clear contradiction), and the form shows the period twice. Code cannot tell reliably that free words only
   restate the period, and prompt edits for it destabilised other readings.
+- A type word that only rode on a year folder is lost with the folder. Before, "Hardware lines of the Q1 2026 invoices"
+  read as Location `invoices/2026/**`, which kept the request to invoices by accident. Now the period has no Location
+  and the type word is only `document_kind`, so in a scope that mixes kinds, another kind dated in the period by its
+  path (`statements/creditcard-statement-2026-03.pdf`) is read without a judgement and adds its rows (e2e S5: 7 rows
+  instead of 4, 4/4 runs). Rows are added, never lost. Reading the type word as a document condition was tried and
+  rejected: the models applied it to single-kind scopes too, and the first-window judgement then skips credit notes
+  filed among invoices, which turns extra rows into missing ones. A judge that lets a kind admit its corrections and
+  credit notes is the follow-up.
 - Amends the reading half of ADR `2026_11_18_document_condition_judged_in_the_first_extraction_window`; its judging half
   stands.
