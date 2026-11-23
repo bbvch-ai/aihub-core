@@ -26,7 +26,7 @@ from swiss_ai_hub.core.events.agent import (
     ToolResultEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.form import Checkbox
+from swiss_ai_hub.core.form import Checkbox, InputText, VectorStoreInput
 from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
     ExtractedTableMarkup,
@@ -86,7 +86,7 @@ WHOLE = "swiss_ai_hub.agent.agents.knowledge_extraction_agent.whole_scope_reques
 
 
 def _discovering(discovery: bool) -> KnowledgeDocumentConfig:
-    return KnowledgeDocumentConfig(enabled=True, narrow_references=True, discovery=discovery)
+    return KnowledgeDocumentConfig(discovery=discovery)
 
 
 def _config(**fields: Any) -> KnowledgeExtractionAgentConfig:
@@ -190,13 +190,19 @@ def test_the_blueprint_validates_and_offers_the_document_tools_and_the_selection
     assert "continue_extraction" not in KnowledgeExtractionAgent.tools.names()
 
 
-def test_the_profile_form_fixes_the_document_tools_on_and_narrowing():
+def test_the_profile_form_offers_only_discovery_and_the_path_glob_for_documents():
     form = KnowledgeExtractionAgentConfig.as_form()
 
-    assert form.knowledge_documents.enabled is True
-    assert form.knowledge_documents.narrow_references is True
-    assert form.knowledge_tool.every_readable_collection is False
     assert isinstance(form.knowledge_documents.discovery, Checkbox)
+    assert isinstance(form.knowledge_documents.path_glob, InputText)
+    for fixed in (
+        form.knowledge_documents.enabled,
+        form.knowledge_documents.narrow_references,
+        form.knowledge_tool.every_readable_collection,
+    ):
+        assert isinstance(fixed, bool)
+    assert {"knowledge_documents", "knowledge_tool"} <= set(form.get_configurable_fields())
+    assert isinstance(form.knowledge_tool.sources[0].vector_store, VectorStoreInput)
     assert _config().knowledge_documents.discovery is False
     assert "discovery" not in KnowledgeExtractionAgentConfig.model_fields
     assert KnowledgeDocumentConfig.as_form().discovery is False
