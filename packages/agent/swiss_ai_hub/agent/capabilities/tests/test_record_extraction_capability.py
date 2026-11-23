@@ -7,7 +7,7 @@ import contextlib
 import functools
 import json
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -41,6 +41,8 @@ from swiss_ai_hub.core.generative_ai import (
     KnowledgeDocumentSelectionResult,
     KnowledgeDocumentSummary,
     LLMConfig,
+    PathDateCounts,
+    PathDateRange,
     RecordField,
     RecordProvenance,
     RecordSchema,
@@ -201,6 +203,14 @@ def _result(
 
 def _selection() -> KnowledgeDocumentSelection:
     return KnowledgeDocumentSelection(any_of=[KnowledgeDocumentCriteria(path_glob="invoices/2025/**")])
+
+
+_YEAR_2025 = PathDateRange(start=date(2025, 1, 1), end=date(2025, 12, 31))
+_PERIOD_WORDS = "dated between 2025-01-01 and 2025-12-31"
+
+
+def _dated_selection() -> KnowledgeDocumentSelection:
+    return _selection().model_copy(update={"path_date_range": _YEAR_2025})
 
 
 def _body_lines(table: str) -> list[str]:
@@ -514,6 +524,55 @@ class TestTable:
             "note"
         )
 
+    @pytest.mark.asyncio
+    async def test_the_period_line_follows_the_document_condition(self, store: _Store):
+        counts = PathDateCounts(in_range=2, excluded=3, undated=1, excluded_examples=["2024/x.pdf", "2023/y.pdf"])
+        run = _run(file_count=2, document_condition="only Hooli", period=_YEAR_2025, path_dates=counts)
+        results = [_result(run, "a.pdf"), _result(run, "b.pdf", skipped_reason="Supplier: Initech AG")]
+
+        table = await ExtractionTable.assemble(run, results, T)
+
+        assert (
+            f"**Document condition:** only Hooli; {_PERIOD_WORDS}\n\n"
+            "**Period by path:** 2 documents dated in or across it · 3 left out, dated outside it · 1 without a date "
+            "in their path\n\n"
+            "**Left out by the date in their path:** 2024/x.pdf, 2023/y.pdf, and 1 more\n\n"
+            "**Skipped, not meeting the document condition:**"
+        ) in table.summary
+
+    @pytest.mark.asyncio
+    async def test_a_long_condition_is_cut_before_the_period(self, store: _Store):
+        run = _run(file_count=1, document_condition="x" * 600, period=_YEAR_2025)
+
+        table = await ExtractionTable.assemble(run, [_result(run, "a.pdf")], T)
+
+        assert f"**Document condition:** {'x' * 499}…; {_PERIOD_WORDS}\n" in table.summary
+
+    @pytest.mark.asyncio
+    async def test_without_a_period_the_summary_has_no_period_line(self, store: _Store):
+        run = _run(file_count=1, document_condition="only Hooli")
+
+        table = await ExtractionTable.assemble(run, [_result(run, "a.pdf")], T)
+
+        assert "**Document condition:** only Hooli\n" in table.summary
+        assert "dated" not in table.summary
+        assert "Period by path" not in table.summary
+
+    @pytest.mark.asyncio
+    async def test_the_excluded_paths_are_listed_with_how_many_more(self, store: _Store):
+        examples = [f"invoices/2024/{index}.pdf" for index in range(10)]
+        counts = PathDateCounts(in_range=1, excluded=25, excluded_examples=examples)
+
+        lines = ExtractionTable.path_date_lines(counts, T)
+
+        assert lines[1] == f"**Left out by the date in their path:** {', '.join(examples)}, and 15 more"
+
+    def test_listed_keeps_its_default_limit_and_count_for_existing_callers(self):
+        paths = [f"invoices/{index:02d}.pdf" for index in range(40)]
+
+        assert ExtractionTable._listed(paths[:2], T) == "invoices/00.pdf, invoices/01.pdf"
+        assert ExtractionTable._listed(paths, T).endswith(", invoices/29.pdf, and 10 more")
+
 
 def _request(path: str = "invoices/2025/a.pdf") -> DocumentExtractionRequestedEvent:
     return DocumentExtractionRequestedEvent(run=_run(file_count=1), document=_summary(path), record_schema=SCHEMA)
@@ -787,6 +846,31 @@ class TestDocumentExtraction:
         assert (result.row_count, result.unsure_count) == (2, 2)
         assert [row[RecordSchema.MATCH_FIELD] for row in store.stored_rows[result.rows_key]] == ["unsure", "unsure"]
 
+    @pytest.mark.asyncio
+    async def test_the_judge_reads_the_period_only_where_the_path_does_not_settle_it(self, store: _Store):
+        run = _run(file_count=2, document_condition="only Hooli", period=_YEAR_2025)
+        judged = {}
+        for dated_by_path in (True, False):
+            extract = AsyncMock(return_value=DocumentExtractionResult.succeeded(_provenance(), [], 1))
+            request = DocumentExtractionRequestedEvent(
+                run=run, document=_summary("invoices/a.pdf"), record_schema=SCHEMA, dated_by_path=dated_by_path
+            )
+            await _extract_document(extract, request=request)
+            judged[dated_by_path] = extract.await_args.kwargs["document_condition"]
+
+        assert judged == {True: "only Hooli", False: f"only Hooli; {_PERIOD_WORDS}"}
+
+    @pytest.mark.asyncio
+    async def test_without_a_period_the_judge_reads_the_run_condition_unchanged(self, store: _Store):
+        extract = AsyncMock(return_value=DocumentExtractionResult.succeeded(_provenance(), [], 1))
+        request = DocumentExtractionRequestedEvent(
+            run=_run(file_count=1, document_condition="only Hooli"), document=_summary("x.pdf"), record_schema=SCHEMA
+        )
+
+        await _extract_document(extract, request=request)
+
+        assert extract.await_args.kwargs["document_condition"] == "only Hooli"
+
 
 class TestHeartbeat:
     @pytest.mark.asyncio
@@ -847,6 +931,19 @@ def _schema_llm() -> Any:
     context.__aenter__ = AsyncMock(return_value=MagicMock())
     context.__aexit__ = AsyncMock(return_value=None)
     return context
+
+
+async def _planned(
+    selected: KnowledgeDocumentSelectionResult, selection: KnowledgeDocumentSelection
+) -> list[DocumentExtractionRequestedEvent] | RecordsExtractedEvent:
+    with (
+        patch(f"{PLANNER}.KnowledgeDocumentSelector.resolve", AsyncMock(return_value=selected)),
+        patch(f"{PLANNER}.RecordSchemaBuilder.build", AsyncMock(return_value=SCHEMA)),
+        patch.object(LLMConfig, "get_model_info", return_value={}),
+        patch.object(LLMConfig, "cost_reporting_llm", return_value=_schema_llm()),
+    ):
+        request = _extract_request().model_copy(update={"selection": selection})
+        return await ExtractionPlanner.plan(request, _config(), _displayer(), T, _Thread(), None)
 
 
 class TestPlanning:
@@ -955,7 +1052,59 @@ class TestPlanning:
     def test_the_semantic_query_includes_the_document_condition(self):
         request = _extract_request(document_terms="Hooli", document_condition="from Q1 2026", instructions="hardware")
 
-        assert ExtractionPlanner._semantic_query(request, _config()) == "Hooli from Q1 2026 hardware item, amount"
+        assert ExtractionPlanner._semantic_query(request, _config(), T) == "Hooli from Q1 2026 hardware item, amount"
+
+    def test_the_semantic_query_includes_the_period(self):
+        request = _extract_request(document_condition="from Hooli").model_copy(update={"selection": _dated_selection()})
+
+        assert ExtractionPlanner._semantic_query(request, _config(), T) == f"from Hooli; {_PERIOD_WORDS} item, amount"
+
+    @pytest.mark.asyncio
+    async def test_a_document_dated_wholly_in_the_period_is_not_judged_on_it(self):
+        documents = [_summary("invoices/2025/a.pdf"), _summary("invoices/b.pdf"), _summary("x/2024-12_2025-01.pdf")]
+
+        planned = await _planned(KnowledgeDocumentSelectionResult(documents=documents), _dated_selection())
+
+        assert [request.dated_by_path for request in planned] == [True, False, False]
+
+    @pytest.mark.asyncio
+    async def test_the_path_date_counts_and_period_ride_on_the_run(self):
+        counts = PathDateCounts(in_range=1, excluded=4, undated=0, excluded_examples=["invoices/2024/c.pdf"])
+        selected = KnowledgeDocumentSelectionResult(documents=[_summary("invoices/2025/a.pdf")], path_dates=counts)
+
+        planned = await _planned(selected, _dated_selection())
+
+        assert (planned[0].run.period, planned[0].run.path_dates) == (_YEAR_2025, counts)
+
+    @pytest.mark.asyncio
+    async def test_a_period_that_leaves_out_every_document_says_how_many_which_and_which_years(self):
+        counts = PathDateCounts(excluded=2, outside_years=[2023, 2024], excluded_examples=["2023/a.pdf", "2024/b.pdf"])
+
+        answer = await _planned(KnowledgeDocumentSelectionResult(documents=[], path_dates=counts), _dated_selection())
+
+        assert isinstance(answer, RecordsExtractedEvent)
+        assert answer.summary == (
+            "No document matches the selection, so nothing was extracted.\n\n"
+            "**Period by path:** 0 documents dated in or across it · 2 left out, dated outside it · 0 without a date "
+            "in their path\n\n"
+            "**Left out by the date in their path:** 2023/a.pdf, 2024/b.pdf\n\n"
+            "The paths left out are dated in: 2023, 2024."
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("counts", [None, PathDateCounts()])
+    async def test_nothing_selected_without_path_dates_has_no_period_line(self, counts: PathDateCounts | None):
+        answer = await _planned(KnowledgeDocumentSelectionResult(documents=[], path_dates=counts), _dated_selection())
+
+        assert answer.summary == "No document matches the selection, so nothing was extracted."
+
+    @pytest.mark.asyncio
+    async def test_without_a_period_the_run_is_as_before(self):
+        documents = [_summary("invoices/2025/a.pdf")]
+
+        planned = await _planned(KnowledgeDocumentSelectionResult(documents=documents), _selection())
+
+        assert (planned[0].run.period, planned[0].run.path_dates, planned[0].dated_by_path) == (None, None, False)
 
     def test_a_stored_profile_with_the_removed_limits_still_validates(self):
         config = RecordExtractionConfig.model_validate(

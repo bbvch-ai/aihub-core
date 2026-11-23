@@ -13,6 +13,7 @@ from swiss_ai_hub.core.generative_ai import (
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 
+from swiss_ai_hub.agent.capabilities.record_extraction.document_condition_text import DocumentConditionText
 from swiss_ai_hub.agent.capabilities.record_extraction.document_extracted_event import DocumentExtractedEvent
 from swiss_ai_hub.agent.capabilities.record_extraction.document_extraction_requested_event import (
     DocumentExtractionRequestedEvent,
@@ -116,7 +117,9 @@ class DocumentRecordExtraction:
                 limiter=ExtractionSlots.calls(config.agent_id, settings.max_parallel_extractions),
                 max_windows=PARTIAL_READ_WINDOWS if long else None,
                 row_terms=request.row_terms,
-                document_condition=request.run.document_condition,
+                document_condition=DocumentConditionText.of(
+                    request.run.document_condition, None if request.dated_by_path else request.run.period, t
+                ),
             )
         if result.failed:
             return DocumentRecordExtraction._failed(request, result.failure_reason or ""), []

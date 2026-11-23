@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair, PathDateCounts, PathDateRange
 
 
 class ExtractionRun(BaseModel):
@@ -38,3 +38,13 @@ class ExtractionRun(BaseModel):
     above_ceiling: Annotated[
         bool, Field(description="Whether more documents match than the profile resolves, so the total is a floor.")
     ] = False
+    period: Annotated[
+        PathDateRange | None,
+        Field(
+            description="The period the documents are dated in by their paths; judged only where a path leaves it open."
+        ),
+    ] = None
+    path_dates: Annotated[
+        PathDateCounts | None,
+        Field(description="How the period sorted the selected documents by their paths, for the table's summary."),
+    ] = None

@@ -356,10 +356,12 @@ event:
     fields: Colonne
     instructions: Righe da tenere
     documentCondition: Documenti che contano
+    pathDates: Periodo (date nei percorsi)
     criteria: Documenti selezionati
     collections: Raccolte
     notices: Avvisi
     documentIds: '{count} documenti scelti'
+    everyDocument: Tutti i documenti nell'ambito
     files: File
     failedFiles: File non riusciti
     skippedFiles: File saltati per la condizione sul documento
@@ -635,12 +637,18 @@ knowledge:
         le sue collezioni compaiono qui dopo la prossima sincronizzazione pianificata.
         Se ancora non compaiono, controlla le impostazioni della sorgente.
   classification:
-    failed: 'La classificazione richiesta il {date} non è riuscita più volte ed è stata interrotta. Richiedila di nuovo o chiedi a un amministratore di controllare la pipeline.'
+    failed: La classificazione richiesta il {date} non è riuscita più volte ed è stata
+      interrotta. Richiedila di nuovo o chiedi a un amministratore di controllare
+      la pipeline.
     request: Classifica i documenti esistenti
-    pending: 'Classificazione richiesta il {date}; i documenti vengono classificati alla prossima esecuzione della pipeline.'
+    pending: Classificazione richiesta il {date}; i documenti vengono classificati
+      alla prossima esecuzione della pipeline.
     confirm:
       header: Classifica i documenti esistenti
-      message: 'Ai documenti di {name} che non hanno ancora un tipo, o che sono stati classificati da una versione precedente, vengono assegnati un tipo e degli attributi dal testo salvato. Ognuno costa una chiamata al modello; i documenti aggiornati vengono saltati.'
+      message: Ai documenti di {name} che non hanno ancora un tipo, o che sono stati
+        classificati da una versione precedente, vengono assegnati un tipo e degli
+        attributi dal testo salvato. Ognuno costa una chiamata al modello; i documenti
+        aggiornati vengono saltati.
       accept: Classifica
     requested:
       summary: Classificazione richiesta
@@ -1021,11 +1029,15 @@ form:
       fino al rilascio di una correzione.
 lib:
   modelSelect:
-    contextWindow: 'Finestra di contesto: {input} token in ingresso · {output} in uscita'
+    contextWindow: 'Finestra di contesto: {input} token in ingresso · {output} in
+      uscita'
     contextWindowInputOnly: 'Finestra di contesto: {input} token in ingresso'
-    notSelectable: '{model} non soddisfa i requisiti di questo campo. Scegli un altro modello prima di salvare.'
-    specialPurpose: '{model} è pensato per un solo compito e non può essere scelto qui. Scegli un altro modello prima di salvare.'
-    unavailable: '{model} non è disponibile per te. Scegli un altro modello prima di salvare.'
+    notSelectable: '{model} non soddisfa i requisiti di questo campo. Scegli un altro
+      modello prima di salvare.'
+    specialPurpose: '{model} è pensato per un solo compito e non può essere scelto
+      qui. Scegli un altro modello prima di salvare.'
+    unavailable: '{model} non è disponibile per te. Scegli un altro modello prima
+      di salvare.'
     loadFailed: Non è stato possibile caricare i modelli. Ricarica la pagina per riprovare.
     empty: Nessuno dei modelli che puoi usare soddisfa i requisiti di questo campo.
   modelBound:
@@ -1232,8 +1244,9 @@ userFiles:
     changeFailed: La modifica non è riuscita
 token:
   title: Token API
-  intro: I token personali consentono a script e integrazioni di chiamare la REST API a tuo nome, con le tue autorizzazioni.
-    Un token funziona in tutti i tenant di cui fai parte, finché non scade o non lo revochi.
+  intro: I token personali consentono a script e integrazioni di chiamare la REST
+    API a tuo nome, con le tue autorizzazioni. Un token funziona in tutti i tenant
+    di cui fai parte, finché non scade o non lo revochi.
   list:
     name: Nome
     created: Creato il
@@ -1251,7 +1264,8 @@ token:
     name:
       label: Nome
       placeholder: es. script di reporting
-      help: Ti aiuta a riconoscere il token in seguito, ad esempio dallo script o dall'integrazione che lo usa.
+      help: Ti aiuta a riconoscere il token in seguito, ad esempio dallo script o
+        dall'integrazione che lo usa.
     expiry:
       label: Scade dopo
       preset_30: 30 giorni
@@ -1266,16 +1280,18 @@ token:
     error: Non è stato possibile generare il token. Riprova.
   created:
     title: Copia il nuovo token
-    warning: Il token viene mostrato solo questa volta. Copialo ora e conservalo in un luogo sicuro. Se lo perdi, revocalo
-      e generane uno nuovo.
+    warning: Il token viene mostrato solo questa volta. Copialo ora e conservalo in
+      un luogo sicuro. Se lo perdi, revocalo e generane uno nuovo.
     copy: Copia
     copied: Copiato
-    usage: Invialo con ogni richiesta API nell'header Authorization, dopo la parola Bearer e uno spazio.
+    usage: Invialo con ogni richiesta API nell'header Authorization, dopo la parola
+      Bearer e uno spazio.
     done: Fine
   revoke:
     button: Revoca
     confirm: Revocare questo token?
-    explanation: Tutto ciò che usa ancora «{name}» perde subito l'accesso. L'operazione è irreversibile.
+    explanation: Tutto ciò che usa ancora «{name}» perde subito l'accesso. L'operazione
+      è irreversibile.
     cancel: Annulla
     proceed: Revoca
     success: Token revocato

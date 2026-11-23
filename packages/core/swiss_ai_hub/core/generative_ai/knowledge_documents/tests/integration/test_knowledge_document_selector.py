@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Iterator
+from datetime import date
 
 import pytest
 from mongoengine import connect, disconnect
@@ -13,6 +14,7 @@ from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_sele
     KnowledgeDocumentSelectionResult,
 )
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_selector import KnowledgeDocumentSelector
+from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_range import PathDateRange
 from swiss_ai_hub.core.generative_ai.knowledge_documents.tests.integration.knowledge_document_seeder import (
     KnowledgeDocumentSeeder,
 )
@@ -127,3 +129,23 @@ async def test_a_document_selected_twice_is_returned_once(documents: dict[str, s
     result = await KnowledgeDocumentSelector.resolve(_BOTH, selection, limit=10)
 
     assert [document.id for document in result.documents] == [documents["globex_2025"]]
+
+
+@pytest.mark.asyncio
+async def test_the_period_leaves_out_documents_its_paths_date_outside_it(documents: dict[str, str]) -> None:
+    selection = KnowledgeDocumentSelection(
+        any_of=[KnowledgeDocumentCriteria(path_glob="**")],
+        path_date_range=PathDateRange(start=date(2025, 1, 1), end=date(2025, 12, 31)),
+    )
+
+    result = await KnowledgeDocumentSelector.resolve(_BOTH, selection, limit=10)
+
+    assert _ids(result) == {
+        documents["acme_2025"],
+        documents["acme_body"],
+        documents["globex_2025"],
+        documents["contract"],
+    }
+    assert result.path_dates is not None
+    assert (result.path_dates.in_range, result.path_dates.excluded, result.path_dates.undated) == (3, 1, 1)
+    assert result.path_dates.excluded_examples == ["invoices/2024/acme-0.md"]

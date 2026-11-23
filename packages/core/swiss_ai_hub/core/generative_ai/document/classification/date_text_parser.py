@@ -109,6 +109,10 @@ class DateTextParser:
         )
 
     @classmethod
+    def year(cls, year: int) -> NormalizedDate:
+        return NormalizedDate(start=date(year, 1, 1), end=date(year, 12, 31), precision=DatePrecision.YEAR)
+
+    @classmethod
     def _builders(cls, slash_order: SlashDateOrder | None) -> list[tuple[re.Pattern[str], _Builder]]:
         return [
             (cls.ISO_PATTERN, lambda m: cls.day(int(m[1]), int(m[2]), int(m[3]))),
@@ -118,7 +122,7 @@ class DateTextParser:
             (cls._QUARTER, cls._quarter_of),
             (cls._MONTH_NAME_YEAR, lambda m: cls.month(int(m[2]), cls.MONTHS[m[1]])),
             (cls._NUMERIC_MONTH_YEAR, lambda m: cls.month(int(m[2]), int(m[1]))),
-            (cls._YEAR, lambda m: cls._year_of(int(m[1]))),
+            (cls._YEAR, lambda m: cls.year(int(m[1]))),
         ]
 
     @classmethod
@@ -143,7 +147,3 @@ class DateTextParser:
         if match[3]:
             return cls.quarter(int(match[4]), int(match[3]))
         return cls.quarter(int(match[6]), cls.ITALIAN_QUARTERS[match[5]])
-
-    @classmethod
-    def _year_of(cls, year: int) -> NormalizedDate:
-        return NormalizedDate(start=date(year, 1, 1), end=date(year, 12, 31), precision=DatePrecision.YEAR)

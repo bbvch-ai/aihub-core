@@ -1,12 +1,20 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from mongoengine import connect, disconnect
 
+from swiss_ai_hub.core.events.agent.record_extraction.extract_records_event import ExtractRecordsEvent
+from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_criteria import KnowledgeDocumentCriteria
+from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_selection import (
+    KnowledgeDocumentSelection,
+)
+from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_range import PathDateRange
+from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 from swiss_ai_hub.core.topic_managers.agents.agent_topic_manager import AgentTopicManager
+from swiss_ai_hub.core.topics.agents.agent_instance_topic import AgentInstanceTopic
 
 
 @pytest.fixture
@@ -507,3 +515,31 @@ class TestUserIdOfRun:
     def test_none_for_a_start_without_a_user(self):
         _persist_event("t_run", ["CronStartEvent", "StartEvent"], "e1", run_id="r1", data={"user": None})
         assert PersistedAgentEventEntity.user_id_of_run("r1") is None
+
+
+class TestEventWithAPeriod:
+    def test_an_extraction_with_a_period_is_stored_and_reads_back(self):
+        period = PathDateRange(start=date(2025, 2, 1), end=date(2025, 2, 28))
+        event = ExtractRecordsEvent(
+            selection=KnowledgeDocumentSelection(
+                any_of=[KnowledgeDocumentCriteria(path_glob="statements/**")], path_date_range=period
+            ),
+            fields="date, amount",
+            collections=[BucketNamespacePair(bucket_name="kb", namespace_name="ns")],
+        )
+        topic = AgentInstanceTopic(
+            agent_class="TestAgent",
+            agent_id="test",
+            thread_id="t_period",
+            display_id="disp",
+            run_id="run",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            event_name="ExtractRecordsEvent",
+            event_id=event.event_id,
+        )
+
+        PersistedAgentEventEntity.persist_event(event, topic, "default")
+
+        stored = PersistedAgentEventEntity.objects.get(event_id=event.event_id).event_data
+        assert stored["selection"]["path_date_range"] == {"start": "2025-02-01", "end": "2025-02-28"}
+        assert ExtractRecordsEvent.model_validate(stored).selection.path_date_range == period

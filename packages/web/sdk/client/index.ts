@@ -1006,6 +1006,7 @@ export {
   type PartialAgentTopic,
   type Password,
   type PasswordWritable,
+  type PathDateRange,
   type PreviewUserFileData,
   type PreviewUserFileError,
   type PreviewUserFileErrors,

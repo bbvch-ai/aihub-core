@@ -9622,7 +9622,7 @@ export const ExtractRecordsEventSchema = {
       ],
       title: "Document Condition",
       description:
-        "Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows.",
+        "Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows, and never the period, which is the selection's `path_date_range`.",
     },
     row_terms: {
       anyOf: [
@@ -16115,7 +16115,7 @@ export const KnowledgeDocumentCriteriaSchema = {
       ],
       title: "Path Glob",
       description:
-        "Glob on the path relative to the collection, e.g. 'invoices/2025/**'.",
+        "Glob on the path relative to the collection, e.g. 'invoices/**' or 'contracts/*.pdf'.",
     },
     path_regex: {
       anyOf: [
@@ -16140,7 +16140,7 @@ export const KnowledgeDocumentCriteriaSchema = {
       ],
       title: "Content Query",
       description:
-        "Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a year, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.",
+        "Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.",
     },
     content_is_regex: {
       type: "boolean",
@@ -16177,12 +16177,24 @@ export const KnowledgeDocumentSelectionSchema = {
       description:
         "A document is selected when it meets every condition of at least one entry.",
     },
+    path_date_range: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/PathDateRange",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Leaves out the selected documents whose path dates them outside this period, such as a year folder, 2026-03 or 20260406 in a file name; a document whose path gives no clear date is kept.",
+    },
   },
   type: "object",
   required: ["any_of"],
   title: "KnowledgeDocumentSelection",
   description:
-    "The documents a request is about, described rather than listed: a document is selected when it meets any of the\ncriteria.\n\nDescribing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob\nand limits when it resolves the set, so a model can only narrow what it was given.",
+    "The documents a request is about, described rather than listed: a document is selected when it meets any of the\ncriteria.\n\nDescribing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob\nand limits when it resolves the set, so a model can only narrow what it was given. A selection has one period,\napplied after the entries to all they selected, because a request names its period once.",
 } as const;
 
 export const KnowledgeReferenceSchema = {
@@ -22589,6 +22601,41 @@ export const PasswordSchema = {
   required: ["label", "validation"],
   title: "Password",
   description: "https://formkit-primevue.netlify.app/inputs/Password",
+} as const;
+
+export const PathDateRangeSchema = {
+  properties: {
+    start: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Start",
+      description: "First day of the period; null when it has no start.",
+    },
+    end: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "End",
+      description: "Last day of the period; null when it has no end.",
+    },
+  },
+  type: "object",
+  title: "PathDateRange",
+  description:
+    'A period the wanted documents are dated in, matched by code against the dates their paths give them.\n\nEither bound may be open ("since March 2025"), never both. Bounds are inclusive days.',
 } as const;
 
 export const ProcessClassDTOSchema = {
@@ -37824,7 +37871,7 @@ export const ExtractRecordsEventWritableSchema = {
       ],
       title: "Document Condition",
       description:
-        "Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows.",
+        "Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows, and never the period, which is the selection's `path_date_range`.",
     },
     row_terms: {
       anyOf: [

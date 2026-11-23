@@ -2,7 +2,7 @@
 documents likeliest to hold wanted rows and confirms; the confirmation extracts every document with the sample's
 columns. Above the profile's ceiling only narrowing is offered."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -24,6 +24,8 @@ from swiss_ai_hub.core.generative_ai import (
     KnowledgeSemanticRanking,
     KnowledgeSemanticSearchUnavailableError,
     LLMConfig,
+    PathDateCounts,
+    PathDateRange,
     RecordField,
     RecordSchema,
 )
@@ -124,9 +126,16 @@ def _key(document: KnowledgeDocumentSummary) -> tuple[str, str, str]:
     return document.collection.bucket_name, document.collection.namespace_name, document.id
 
 
-def _request(fields: str = "item, amount", **arguments: Any) -> ExtractRecordsEvent:
-    selection = KnowledgeDocumentSelection(any_of=[KnowledgeDocumentCriteria(path_glob="invoices/**")])
+def _request(
+    fields: str = "item, amount", path_date_range: PathDateRange | None = None, **arguments: Any
+) -> ExtractRecordsEvent:
+    selection = KnowledgeDocumentSelection(
+        any_of=[KnowledgeDocumentCriteria(path_glob="invoices/**")], path_date_range=path_date_range
+    )
     return ExtractRecordsEvent(selection=selection, fields=fields, collections=[FINANCE], **arguments)
+
+
+_YEAR_2025 = PathDateRange(start=date(2025, 1, 1), end=date(2025, 12, 31))
 
 
 def _displayer() -> MagicMock:
@@ -259,6 +268,18 @@ class TestSample:
         )
 
     @pytest.mark.asyncio
+    async def test_a_sample_names_the_period_in_its_interpretation(self):
+        planning = _Planning(KnowledgeDocumentSelectionResult(documents=_documents(150)))
+        request = _request(path_date_range=_YEAR_2025, document_condition="from Hooli")
+
+        planned = await planning.plan(request, _config(), _Thread())
+
+        assert (
+            "**Columns:** item, amount · **Documents:** from Hooli; dated between 2025-01-01 and 2025-12-31 · "
+            "**Rows kept:** every row"
+        ) in planned[0].run.notices
+
+    @pytest.mark.asyncio
     async def test_a_sample_whose_documents_are_all_skipped_still_offers_confirm_or_narrow(self):
         planning = _Planning(KnowledgeDocumentSelectionResult(documents=_documents(150)))
         planned = await planning.plan(_request(document_condition="only invoices from Hooli"), _config(), _Thread())
@@ -386,6 +407,21 @@ class TestConfirming:
 
         assert len(planned) == 150
         assert {planned_request.run.document_condition for planned_request in planned} == {"only invoices from Hooli"}
+
+    @pytest.mark.asyncio
+    async def test_a_confirmed_sample_keeps_its_period_and_counts_from_the_new_resolve(self):
+        thread = _Thread()
+        documents = _documents(150)
+        await _Planning(KnowledgeDocumentSelectionResult(documents=documents)).plan(
+            _request(path_date_range=_YEAR_2025), _config(), thread
+        )
+        counts = PathDateCounts(in_range=150, excluded=7)
+        confirming = _Planning(KnowledgeDocumentSelectionResult(documents=documents, path_dates=counts))
+
+        planned = await confirming.plan(RecordExtraction.confirm_sample([FINANCE]), _config(), thread)
+
+        assert confirming.resolve.await_args.args[1].path_date_range == _YEAR_2025
+        assert (planned[0].run.period, planned[0].run.path_dates) == (_YEAR_2025, counts)
 
     @pytest.mark.asyncio
     async def test_a_confirmed_sample_still_says_the_search_behind_it_stopped_early(self):

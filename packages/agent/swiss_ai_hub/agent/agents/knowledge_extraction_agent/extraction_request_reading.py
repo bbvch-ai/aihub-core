@@ -1,4 +1,5 @@
 import logging
+from datetime import date
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.prompts.rich import RichPromptTemplate
@@ -27,9 +28,10 @@ class ExtractionRequestReading:
     """Reads a chat message as a table request over the profile's whole scope, in one structured call.
 
     No search decides which documents are read: every document in scope is, so a document whose wording the request
-    does not share is never missed. The model only states the columns, which rows to keep, the folders, files or years
-    the user named, and the terms that make documents and lines likely matches, used to order and sample, never to
-    leave a document out. While a sample awaits confirmation, it also tells a "yes" from a new request.
+    does not share is never missed. The model only states the columns, which rows to keep, the folders or files the
+    user named and the period that dates the documents, and the terms that make documents and lines likely matches,
+    used to order and sample, never to leave a document out. While a sample awaits confirmation, it also tells a "yes"
+    from a new request.
     """
 
     @staticmethod
@@ -54,24 +56,32 @@ class ExtractionRequestReading:
             "awaiting_sample": awaiting_sample,
             "conversation": ExtractionRequestReading._conversation(history),
             "request": ExtractionRequestReading.last_request(history),
+            "today": date.today().isoformat(),
         }
         async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
             deterministic = llm.model_copy(update={"temperature": 0.0, "max_tokens": READING_MAX_TOKENS})
             try:
-                return await deterministic.astructured_predict(ExtractionRequestAnswer, prompt, **arguments)
+                answer = await deterministic.astructured_predict(ExtractionRequestAnswer, prompt, **arguments)
             except ValueError:
                 logger.warning("[knowledge-extraction] no usable request with terms, reading it without them")
+            else:
+                return answer.with_readable_period(t)
             try:
                 plain = await deterministic.astructured_predict(ExtractionRequestPlainAnswer, prompt, **arguments)
             except ValueError:
                 logger.warning("[knowledge-extraction] the model read no usable request")
                 return None
-            return ExtractionRequestAnswer.without_terms(plain)
+            return ExtractionRequestAnswer.without_terms(plain).with_readable_period(t)
 
     @staticmethod
     def last_request(history: list[ChatMessage]) -> str:
         """The message being answered: the conversation's last user turn."""
         return next((message.content or "" for message in reversed(history) if message.role == MessageRole.USER), "")
+
+    @staticmethod
+    def user_turns(history: list[ChatMessage]) -> str:
+        """Everything the user wrote in the conversation, so a folder typed in an earlier turn still counts as typed."""
+        return "\n".join(message.content or "" for message in history if message.role == MessageRole.USER)
 
     @staticmethod
     def _conversation(history: list[ChatMessage]) -> str:
