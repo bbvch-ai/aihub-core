@@ -107,3 +107,11 @@ def test_a_slash_date_only_one_order_allows_keeps_that_order_either_way(raw: str
     assert DateTextParser.parse(raw).start == day
     assert DateTextParser.parse(raw, SlashDateOrder.DAY_FIRST).start == day
     assert DateTextParser.parse(raw, SlashDateOrder.MONTH_FIRST).start == day
+
+
+@pytest.mark.parametrize("raw", ["1er janvier 2003$^{1}$", "1er janvier 2003¹", "1. Januar 2003 $^{29}$"])
+def test_a_footnote_mark_after_a_year_does_not_join_the_year(raw: str) -> None:
+    parsed = DateTextParser.parse(raw)
+
+    assert parsed is not None
+    assert parsed.start == date(2003, 1, 1)

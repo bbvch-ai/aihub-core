@@ -3,6 +3,8 @@ import itertools
 import re
 import unicodedata
 
+from swiss_ai_hub.core.generative_ai.document.loaders.mineru_inline_latex import MineruInlineLatex
+
 
 class RawValueLocator:
     """Checks that text the model copied really is in the document, so a value it invented is stored empty.
@@ -84,7 +86,7 @@ class RawValueLocator:
 
     @classmethod
     def _comparable(cls, text: str) -> str:
-        normalized = unicodedata.normalize("NFKC", text).casefold()
+        normalized = unicodedata.normalize("NFKC", MineruInlineLatex.as_comparable_text(text)).casefold()
         normalized = re.sub(r"[’‘`´]", "'", normalized)
         normalized = re.sub(r"[‐-―−]", "-", normalized)
         normalized = re.sub(r"[\\*_­]", "", normalized)

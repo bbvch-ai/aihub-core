@@ -8,6 +8,7 @@ from typing import ClassVar
 from swiss_ai_hub.core.generative_ai.document.classification.date_precision import DatePrecision
 from swiss_ai_hub.core.generative_ai.document.classification.normalized_date import NormalizedDate
 from swiss_ai_hub.core.generative_ai.document.classification.slash_date_order import SlashDateOrder
+from swiss_ai_hub.core.generative_ai.document.loaders.mineru_inline_latex import MineruInlineLatex
 
 type _Builder = Callable[[re.Match[str]], NormalizedDate | None]
 
@@ -72,8 +73,9 @@ class DateTextParser:
         """Lower case, ordinals ("1er", "1st", "1°") reduced to their number, and every dash read as a hyphen.
 
         NFKC turns the ordinal sign "º" into "o"; Italian writes the first of a month with it or with the degree sign.
+        MinerU's inline LaTeX ("$1^{\\text{er}}$ janvier") is read as the text it stands for.
         """
-        text = unicodedata.normalize("NFKC", raw).lower()
+        text = unicodedata.normalize("NFKC", MineruInlineLatex.as_comparable_text(raw)).lower()
         text = re.sub(r"[‐-―−]", "-", text)
         text = re.sub(r"\b(\d{1,2})(?:(?:er|re|st|nd|rd|th|o)\b|°)", r"\1", text)
         return re.sub(r"\s+", " ", text).strip()
