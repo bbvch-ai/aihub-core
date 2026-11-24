@@ -408,7 +408,7 @@ def add_process_root_rule() -> None:
 # default rule an admin had removed (aihub-core-private#401). Delete it and `KnowledgeRootRuleMigration` once
 # deployments have upgraded past it.
 def add_knowledge_root_rule() -> None:
-    """Adds the knowledge root rule to every knowledge admin role that holds only the knowledge wildcard."""
+    """Adds the knowledge root rule to every knowledge admin role still exactly as seeded before v0.321.0."""
     migrated = KnowledgeRootRuleMigration.run()
     if migrated:
         logger.info(f"Added the knowledge root rule next to the knowledge wildcard in: {', '.join(migrated)}")

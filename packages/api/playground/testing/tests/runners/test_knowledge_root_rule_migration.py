@@ -2,9 +2,12 @@
 
 from unittest.mock import Mock, patch
 
+import pytest
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
 from swiss_ai_hub.api.runners.lifetime.knowledge_root_rule_migration import KnowledgeRootRuleMigration
+
+_SEEDED_BEFORE_ROOT = ["aihub.admin.agent.>", "aihub.admin.knowledge.>"]
 
 
 def _role(tenant_id: str, *rules: str) -> Mock:
@@ -15,33 +18,43 @@ def _role(tenant_id: str, *rules: str) -> Mock:
     return role
 
 
-def test_adds_the_root_next_to_the_wildcard_in_every_tenant():
-    startup = _role("default", "aihub.admin.knowledge.>")
-    other = _role("admin", "aihub.admin.agent.>", "aihub.admin.knowledge.>")
-
-    with patch.object(RoleEntity, "objects", return_value=[startup, other]):
+def _run(*roles: Mock) -> list[str]:
+    with patch.object(RoleEntity, "objects", return_value=list(roles)) as objects:
         migrated = KnowledgeRootRuleMigration.run()
+    objects.assert_called_once_with(name="AIHubKnowledgeAdmin")
+    return migrated
 
-    assert startup.access_rules == ["aihub.admin.knowledge.>", "aihub.admin.knowledge"]
-    assert other.access_rules == ["aihub.admin.agent.>", "aihub.admin.knowledge.>", "aihub.admin.knowledge"]
+
+def test_adds_the_root_to_roles_still_as_seeded_in_every_tenant():
+    startup = _role("default", *_SEEDED_BEFORE_ROOT)
+    other = _role("admin", *reversed(_SEEDED_BEFORE_ROOT))
+
+    migrated = _run(startup, other)
+
+    assert startup.access_rules == [*_SEEDED_BEFORE_ROOT, "aihub.admin.knowledge"]
+    assert other.access_rules == [*reversed(_SEEDED_BEFORE_ROOT), "aihub.admin.knowledge"]
     startup.save.assert_called_once()
     other.save.assert_called_once()
     assert migrated == ["role AIHubKnowledgeAdmin (default)", "role AIHubKnowledgeAdmin (admin)"]
 
 
-def test_queries_only_the_default_role_that_still_holds_the_wildcard():
-    """A custom role never could create a database, and a role narrowed to named databases was narrowed on purpose."""
-    with patch.object(RoleEntity, "objects", return_value=[]) as objects:
-        KnowledgeRootRuleMigration.run()
+@pytest.mark.parametrize(
+    "rules",
+    [
+        pytest.param(["aihub.admin.knowledge.>"], id="root-removed-on-purpose"),
+        pytest.param([*_SEEDED_BEFORE_ROOT, "aihub.admin.service.>"], id="seeded-role-extended-by-an-admin"),
+        pytest.param(
+            ["aihub.admin.knowledge.handbook", "aihub.admin.knowledge.handbook.>"], id="narrowed-to-one-database"
+        ),
+        pytest.param([*_SEEDED_BEFORE_ROOT, "aihub.admin.knowledge"], id="already-has-the-root"),
+    ],
+)
+def test_leaves_a_role_an_admin_has_edited_alone(rules: list[str]):
+    """aihub-core-private#401: this runs on every start, so it must never put back a rule an admin removed."""
+    role = _role("default", *rules)
 
-    objects.assert_called_once_with(name="AIHubKnowledgeAdmin", access_rules="aihub.admin.knowledge.>")
+    migrated = _run(role)
 
-
-def test_leaves_a_role_that_already_has_the_root_alone():
-    role = _role("default", "aihub.admin.knowledge", "aihub.admin.knowledge.>")
-
-    with patch.object(RoleEntity, "objects", return_value=[role]):
-        migrated = KnowledgeRootRuleMigration.run()
-
+    assert role.access_rules == rules
     role.save.assert_not_called()
     assert migrated == []

@@ -3,26 +3,24 @@ from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
 
 class KnowledgeRootRuleMigration:
-    """Adds the bare ``aihub.admin.knowledge`` root to every ``AIHubKnowledgeAdmin`` role that still lacks it.
+    """Adds ``aihub.admin.knowledge`` to every ``AIHubKnowledgeAdmin`` role still exactly as seeded before v0.321.0.
 
-    Creating a knowledge database is guarded on the root, which ``aihub.admin.knowledge.>`` does not match, and the
-    role was seeded with only the wildcard before that guard existed. Only the default role is touched, and only while
-    it still holds the wildcard: a custom role never could create a database, and one narrowed to named databases was
-    narrowed on purpose.
+    Creating a knowledge database is guarded on that root, which ``aihub.admin.knowledge.>`` does not match, and the
+    role used to be seeded without it. This runs on every start, so only a role still holding exactly the old seeded
+    rules is touched: any other set was edited by an admin, who may have left the root out on purpose
+    (aihub-core-private#401).
     """
 
     ROLE_NAME = "AIHubKnowledgeAdmin"
     ROOT = f"{AccessChecker.ADMIN_PREFIX}knowledge"
-    WILDCARD = f"{AccessChecker.ADMIN_PREFIX}knowledge.>"
+    SEEDED_BEFORE_ROOT = frozenset({f"{AccessChecker.ADMIN_PREFIX}agent.>", f"{AccessChecker.ADMIN_PREFIX}knowledge.>"})
 
     @staticmethod
     def run() -> list[str]:
-        """Adds the root where it is missing; returns the roles it rewrote."""
+        """Adds the root to the roles still as seeded before it existed; returns the roles it rewrote."""
         migrated: list[str] = []
-        for role in RoleEntity.objects(
-            name=KnowledgeRootRuleMigration.ROLE_NAME, access_rules=KnowledgeRootRuleMigration.WILDCARD
-        ):
-            if KnowledgeRootRuleMigration.ROOT not in role.access_rules:
+        for role in RoleEntity.objects(name=KnowledgeRootRuleMigration.ROLE_NAME):
+            if set(role.access_rules) == KnowledgeRootRuleMigration.SEEDED_BEFORE_ROOT:
                 role.access_rules = [*role.access_rules, KnowledgeRootRuleMigration.ROOT]
                 role.save()
                 migrated.append(f"role {role.name} ({role.tenant_id})")
