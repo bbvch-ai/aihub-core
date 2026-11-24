@@ -38,6 +38,20 @@ def test_adds_the_root_to_roles_still_as_seeded_in_every_tenant():
     assert migrated == ["role AIHubKnowledgeAdmin (default)", "role AIHubKnowledgeAdmin (admin)"]
 
 
+def test_a_seeded_role_whose_root_was_removed_gets_it_back_until_the_migration_is_deleted():
+    """Known limitation, kept visible on purpose: without the root, such a role is exactly the old seeded state.
+
+    Removing the root from a role seeded before v0.321.0 cannot be told apart from never having had it, so the
+    migration adds it again at every start. That is why it lives for one release only.
+    """
+    role = _role("default", *_SEEDED_BEFORE_ROOT, "aihub.admin.knowledge")
+    role.access_rules.remove("aihub.admin.knowledge")
+
+    _run(role)
+
+    assert role.access_rules == [*_SEEDED_BEFORE_ROOT, "aihub.admin.knowledge"]
+
+
 @pytest.mark.parametrize(
     "rules",
     [
