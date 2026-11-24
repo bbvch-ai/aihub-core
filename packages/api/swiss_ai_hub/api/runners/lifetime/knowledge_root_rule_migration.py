@@ -9,6 +9,10 @@ class KnowledgeRootRuleMigration:
     role used to be seeded without it. This runs on every start, so only a role still holding exactly the old seeded
     rules is touched: any other set was edited by an admin, who may have left the root out on purpose
     (aihub-core-private#401).
+
+    One edit cannot be told apart from the seeded state: removing the root from a role that was seeded before v0.321.0
+    and otherwise left alone. That role gets the root back at every start until this migration is deleted, which is
+    why it is meant to live for one release only.
     """
 
     ROLE_NAME = "AIHubKnowledgeAdmin"

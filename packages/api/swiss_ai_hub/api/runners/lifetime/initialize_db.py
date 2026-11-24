@@ -405,8 +405,9 @@ def add_process_root_rule() -> None:
 
 # Transitional: creating a knowledge database is guarded on the bare `aihub.admin.knowledge` root, which
 # `AIHubKnowledgeAdmin` roles seeded before v0.321.0 lack. This replaces the per-start reconcile that re-added every
-# default rule an admin had removed (aihub-core-private#401). Delete it and `KnowledgeRootRuleMigration` once
-# deployments have upgraded past it.
+# default rule an admin had removed (aihub-core-private#401). It still puts the root back on a role that was seeded
+# before v0.321.0 and then had only the root removed, so delete it and `KnowledgeRootRuleMigration` one release after
+# it ships.
 def add_knowledge_root_rule() -> None:
     """Adds the knowledge root rule to every knowledge admin role still exactly as seeded before v0.321.0."""
     migrated = KnowledgeRootRuleMigration.run()
