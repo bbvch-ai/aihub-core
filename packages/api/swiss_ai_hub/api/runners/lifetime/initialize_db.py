@@ -25,6 +25,7 @@ from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, In
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
 from swiss_ai_hub.api.runners.lifetime.empty_namespace_scope_migration import EmptyNamespaceScopeMigration
+from swiss_ai_hub.api.runners.lifetime.knowledge_root_rule_migration import KnowledgeRootRuleMigration
 from swiss_ai_hub.api.runners.lifetime.legacy_organization_memory_tenant_migration import (
     LegacyOrganizationMemoryTenantMigration,
 )
@@ -60,6 +61,8 @@ async def _backfill_existing_users_into_startup_group(tenant_id: str) -> None:
         logger.info(f"Backfilled user '{user.username}' into startup tenant group")
 
 
+# A changed definition reaches only roles created after the change: seeding never edits a stored role. Roles that
+# already exist need a transitional migration of their own, as `KnowledgeRootRuleMigration` is.
 _DEFAULT_ROLE_DEFINITIONS: list[_DefaultRoleDefinition] = [
     _DefaultRoleDefinition(
         name="AIHubUser",
@@ -156,31 +159,14 @@ async def initialize_startup_tenant() -> TenantMetadataEntity | None:
     return tenant
 
 
-def _reconcile_default_role_rules(existing: RoleEntity, role_def: _DefaultRoleDefinition, tenant_id: str) -> None:
-    """Adds access rules a default role definition gained since the role row was seeded.
-
-    Purely additive: rules an admin added by hand are kept, because the platform cannot tell a
-    deliberate customization from stale state. Without this, a deployment that seeded its roles
-    before a guard was introduced keeps a role that no longer grants what its name promises —
-    ``AIHubKnowledgeAdmin`` without the ``aihub.admin.knowledge`` root, for instance, cannot
-    create a database.
-    """
-    missing = [rule for rule in role_def.access_rules if rule not in existing.access_rules]
-    if not missing:
-        logger.info(f"Role '{role_def.name}' already exists for tenant '{tenant_id}', skipping creation")
-        return
-    existing.access_rules = list(existing.access_rules) + missing
-    existing.save()
-    logger.info(f"Added missing access rules {missing} to existing role '{role_def.name}' for tenant '{tenant_id}'")
-
-
 @no_trace
 async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
     """
     Seed the default role set for a tenant. Idempotent.
 
-    Roles that already exist are reconciled additively, so a deployment seeded before a
-    definition gained a rule picks that rule up on the next startup.
+    A role that already exists is left exactly as stored. This runs on every API start and on every provisioning
+    push, and a rule missing from a stored role may be one an admin removed on purpose (aihub-core-private#401), so a
+    release that changes a definition updates the stored roles with its own transitional migration instead.
 
     Gated by ``AIHubSettings().CREATE_DEFAULT_ROLES``: when disabled, tenants
     start empty and an admin is expected to create roles manually.
@@ -190,9 +176,8 @@ async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
         return
 
     for role_def in _DEFAULT_ROLE_DEFINITIONS:
-        existing = RoleEntity.objects(name=role_def.name, tenant_id=tenant_id).first()
-        if existing:
-            _reconcile_default_role_rules(existing, role_def, tenant_id)
+        if RoleEntity.objects(name=role_def.name, tenant_id=tenant_id).first():
+            logger.info(f"Role '{role_def.name}' already exists for tenant '{tenant_id}', skipping creation")
             continue
         try:
             RoleEntity.create_tenant_role(
@@ -416,6 +401,17 @@ def add_process_root_rule() -> None:
     migrated = ProcessRootRuleMigration.run()
     if migrated:
         logger.info(f"Added the process root rule next to the process wildcard in: {', '.join(migrated)}")
+
+
+# Transitional: creating a knowledge database is guarded on the bare `aihub.admin.knowledge` root, which
+# `AIHubKnowledgeAdmin` roles seeded before v0.321.0 lack. This replaces the per-start reconcile that re-added every
+# default rule an admin had removed (aihub-core-private#401). Delete it and `KnowledgeRootRuleMigration` once
+# deployments have upgraded past it.
+def add_knowledge_root_rule() -> None:
+    """Adds the knowledge root rule to every knowledge admin role that holds only the knowledge wildcard."""
+    migrated = KnowledgeRootRuleMigration.run()
+    if migrated:
+        logger.info(f"Added the knowledge root rule next to the knowledge wildcard in: {', '.join(migrated)}")
 
 
 # Transitional: deleting a role now removes its name from every user, but names left by deletions before that would
