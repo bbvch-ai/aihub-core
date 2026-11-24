@@ -56,13 +56,17 @@ Points that are easy to miss:
 
 ### When the roles are created
 
-The default roles are created:
+The platform creates the default roles a tenant does not have yet:
 
 - for the startup tenant, every time the API starts, and
-- for a tenant a system administrator creates or configures.
+- for a tenant a system administrator creates, configures, or provisions.
 
-Creation is idempotent. If a role already exists, the platform only **adds** access rules that the platform's definition
-gained since the role was created. It never removes a rule, so rules an administrator added by hand are kept.
+A role that already exists is **never changed**. Your edits to a default role stay in place across restarts and
+upgrades, including rules you removed. For example, you can narrow `AIHubUser` to selected assistants and services
+without the platform adding `aihub.user.>` back. When a release changes the rules of a default role, it brings its own
+update for existing roles, and its release notes say so.
+
+If you delete a default role in the startup tenant, the next API start creates it again.
 
 ## What new users receive
 
@@ -111,11 +115,8 @@ The setting `AIHUB_CREATE_DEFAULT_ROLES` stops the platform from creating the de
 set it to `False` on **both** services in your generated compose file. If only one is changed, the startup tenant and
 tenants created later are treated differently.
 
-Turning it off:
-
-- does **not** delete roles that already exist, and
-- stops the additive updates described above, so existing default roles no longer receive new rules from platform
-  upgrades.
+Turning it off does **not** delete roles that already exist. The updates a release brings for existing default roles
+still run.
 
 **Do not turn it off on a fresh installation while the signup variables still name the default roles.** No tenant would
 have `AIHubUser` or `AIHubAdmin`, so the startup check fails and the API does not start. Instead:
