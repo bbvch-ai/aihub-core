@@ -4,6 +4,23 @@ metadata:
   description: Assistant IA qui recherche et analyse vos documents pour fournir des
     réponses éclairées et contextuelles
 config:
+  external_access_filter:
+    metadata_key:
+      label: Clé de métadonnées
+      help: La clé de métadonnées des extraits à laquelle les valeurs du résolveur
+        sont comparées, p. ex. lcdm_knowledge_code.
+    resolver_url:
+      label: URL du résolveur
+      help: 'Appelée en GET avec le jeton de la personne qui pose la question ; répond
+        {"values": [...]}. Le résolveur vérifie le jeton et identifie la personne
+        lui-même.'
+    timeout_seconds:
+      label: Délai (secondes)
+      help: Durée d'attente du résolveur. Une réponse plus tardive vaut absence d'accès.
+    cache_ttl_seconds:
+      label: Durée du cache (secondes)
+      help: Durée de réutilisation de la réponse pour une personne. Un droit retiré
+        prend effet au plus tard après ce délai.
   restrict_to_user_access:
     label: Limiter aux droits de l'utilisateur
     help: Ne rechercher que dans les collections configurées que la personne qui pose

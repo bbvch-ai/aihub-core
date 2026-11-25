@@ -30,11 +30,13 @@ from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event imp
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
+from swiss_ai_hub.agent.agents.rag_agent.access.external_access_filters import ExternalAccessFilters
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.rag.answer_hand_back import AnswerHandBack
 from swiss_ai_hub.agent.rag.answer_prompt import AnswerPrompt
 from swiss_ai_hub.agent.rag.citation_policy import CitationPolicy
@@ -185,11 +187,13 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        run_context: RunContext,
         user: UserIdentity | None = None,
         access: AccessChecker | None = None,
     ) -> RetrieverEvent | Conversation.CompleteRequest:
         """Retrieves relevant nodes from multiple knowledge sources in parallel, from what the asking user may read
-        when the profile restricts retrieval to it. A run without a user keeps the profile's scope."""
+        when the profile restricts retrieval to it. A run without a user keeps the profile's scope, unless an external
+        access filter is on: that one decides per user and lets nothing through without one."""
         if isinstance(start_event, RAGStartEvent):
             runtime_configs = narrow_retrievers(
                 agent_config.retrievers,
@@ -200,6 +204,13 @@ class RAGAgent(Agent):
             runtime_configs = [RetrievalRuntimeConfig.from_config(r) for r in agent_config.retrievers]
         if agent_config.restrict_to_user_access and access is not None and runtime_configs:
             runtime_configs = await UserScopedRetrievers.narrow(runtime_configs, access)
+            if not runtime_configs:
+                return await InaccessibleKnowledge.answer(agent_config.llm.model_name, displayer, t)
+        if agent_config.external_access_filter is not None and runtime_configs:
+            user_token = await McpAuthResolver.resolve_user_token(run_context)
+            runtime_configs = await ExternalAccessFilters.apply(
+                runtime_configs, agent_config.external_access_filter, user, user_token
+            )
             if not runtime_configs:
                 return await InaccessibleKnowledge.answer(agent_config.llm.model_name, displayer, t)
         return await do_retrieve(event, runtime_configs, t, user)

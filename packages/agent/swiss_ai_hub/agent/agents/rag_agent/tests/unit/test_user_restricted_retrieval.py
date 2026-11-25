@@ -11,6 +11,7 @@ from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig
 
 from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
+from swiss_ai_hub.agent.agents.rag_agent.configs.external_access_filter_config import ExternalAccessFilterConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.agents.tests.test_task_llm_resolution import _rag_config
@@ -27,11 +28,15 @@ def _config(**overrides) -> RAGAgentConfig:
     return _rag_config(**overrides).model_copy(update={"retrievers": [HR]})
 
 
-async def _retrieve(config: RAGAgentConfig, access, restricted: list) -> tuple:
+async def _retrieve(config: RAGAgentConfig, access, restricted: list, externally_released: list | None = None) -> tuple:
     displayer = MagicMock(display_chunk=AsyncMock())
     with (
         patch(f"{RAG_MODULE}.UserScopedRetrievers.narrow", new=AsyncMock(return_value=restricted)) as scope,
         patch(f"{RAG_MODULE}.do_retrieve", new=AsyncMock(return_value="retrieved")) as retrieve,
+        patch(f"{RAG_MODULE}.McpAuthResolver.resolve_user_token", new=AsyncMock(return_value="user-token")),
+        patch(
+            f"{RAG_MODULE}.ExternalAccessFilters.apply", new=AsyncMock(return_value=externally_released or [])
+        ) as external,
     ):
         result = await RAGAgent().retrieve_step(
             event=MagicMock(),
@@ -40,9 +45,11 @@ async def _retrieve(config: RAGAgentConfig, access, restricted: list) -> tuple:
             agent_config=config,
             displayer=displayer,
             t=LocaleHandler("en"),
+            run_context=MagicMock(),
             user=None,
             access=access,
         )
+    _retrieve.external = external
     return result, scope, retrieve
 
 
@@ -82,6 +89,40 @@ async def test_a_user_who_may_read_none_of_it_is_told_so():
     assert isinstance(result.stop, RAGFailureStopEvent)
     assert result.stop.reason == RAGFailureReason.NO_ACCESSIBLE_KNOWLEDGE
     assert "not available to you" in result.stop.answer
+
+
+EXTERNAL = ExternalAccessFilterConfig(metadata_key="lcdm_knowledge_code", resolver_url="http://resolver/values")
+
+
+@pytest.mark.asyncio
+async def test_without_an_external_access_filter_nobody_is_asked():
+    await _retrieve(_config(), MagicMock(), [])
+
+    _retrieve.external.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_an_external_access_filter_narrows_with_the_users_token():
+    released = [MagicMock()]
+
+    result, _, retrieve = await _retrieve(_config(external_access_filter=EXTERNAL), None, [], released)
+
+    assert _retrieve.external.await_args.args[1] == EXTERNAL
+    assert _retrieve.external.await_args.args[3] == "user-token"
+    assert retrieve.await_args.args[1] is released
+    assert result == "retrieved"
+
+
+@pytest.mark.asyncio
+async def test_nothing_released_externally_is_told_as_no_access():
+    result, _, retrieve = await _retrieve(_config(external_access_filter=EXTERNAL), None, [], [])
+
+    retrieve.assert_not_awaited()
+    assert result.stop.reason == RAGFailureReason.NO_ACCESSIBLE_KNOWLEDGE
+
+
+def test_profiles_have_no_external_access_filter_unless_switched_on():
+    assert _config().external_access_filter is None
 
 
 def test_existing_profiles_keep_it_off_and_new_ones_start_with_it_on():
