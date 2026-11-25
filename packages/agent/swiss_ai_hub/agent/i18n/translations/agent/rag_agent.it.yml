@@ -11,8 +11,10 @@ config:
         del resolver, p. es. lcdm_knowledge_code.
     resolver_url:
       label: URL del resolver
-      help: 'Chiamato in GET con il token della persona che chiede; risponde {"values":
-        [...]}. Il resolver verifica il token e identifica la persona da sé.'
+      help: "Chiamato in GET con la chiave API e la persona in X-AIHub-User-Email e X-AIHub-Tenant. Risponde {\"values\": [...]}."
+    api_key:
+      label: "Chiave API"
+      help: "Permette al resolver di sapere che chiede l'AI Hub. L'AI Hub indica la persona tramite e-mail e mandante, dopo averla verificata."
     timeout_seconds:
       label: Timeout (secondi)
       help: Quanto attendere il resolver. Una risposta più tardiva vale come nessun

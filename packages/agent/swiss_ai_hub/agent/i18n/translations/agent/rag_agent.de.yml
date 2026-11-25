@@ -11,9 +11,10 @@ config:
         verglichen werden, z. B. lcdm_knowledge_code.
     resolver_url:
       label: Resolver-URL
-      help: 'Wird mit GET und dem Token der fragenden Person aufgerufen und antwortet
-        mit {"values": [...]}. Der Resolver prüft das Token und ordnet die Person
-        selbst zu.'
+      help: "Wird mit GET aufgerufen, mit dem API-Key und der fragenden Person in X-AIHub-User-Email und X-AIHub-Tenant. Antwortet mit {\"values\": [...]}."
+    api_key:
+      label: "API-Key"
+      help: "Damit erkennt der Resolver, dass der AI Hub fragt. Die fragende Person übergibt der AI Hub per E-Mail und Mandant, nachdem er sie selbst geprüft hat."
     timeout_seconds:
       label: Zeitlimit (Sekunden)
       help: Wie lange auf den Resolver gewartet wird. Eine spätere Antwort gilt als

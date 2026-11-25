@@ -36,7 +36,6 @@ from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
-from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.rag.answer_hand_back import AnswerHandBack
 from swiss_ai_hub.agent.rag.answer_prompt import AnswerPrompt
 from swiss_ai_hub.agent.rag.citation_policy import CitationPolicy
@@ -187,7 +186,6 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        run_context: RunContext,
         user: UserIdentity | None = None,
         access: AccessChecker | None = None,
     ) -> RetrieverEvent | Conversation.CompleteRequest:
@@ -207,10 +205,7 @@ class RAGAgent(Agent):
             if not runtime_configs:
                 return await InaccessibleKnowledge.answer(agent_config.llm.model_name, displayer, t)
         if agent_config.external_access_filter is not None and runtime_configs:
-            user_token = await McpAuthResolver.resolve_user_token(run_context)
-            runtime_configs = await ExternalAccessFilters.apply(
-                runtime_configs, agent_config.external_access_filter, user, user_token
-            )
+            runtime_configs = await ExternalAccessFilters.apply(runtime_configs, agent_config.external_access_filter, user)
             if not runtime_configs:
                 return await InaccessibleKnowledge.answer(agent_config.llm.model_name, displayer, t)
         return await do_retrieve(event, runtime_configs, t, user)

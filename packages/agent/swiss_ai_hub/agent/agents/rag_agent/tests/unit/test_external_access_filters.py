@@ -17,7 +17,7 @@ from swiss_ai_hub.agent.agents.rag_agent.access.external_access_filters import E
 from swiss_ai_hub.agent.agents.rag_agent.configs.external_access_filter_config import ExternalAccessFilterConfig
 
 RESOLVER = "https://lcdm-mcp.example/access/knowledge-codes"
-TOKEN = "user-token"
+API_KEY = "resolver-key"
 
 
 @pytest.fixture(autouse=True)
@@ -27,7 +27,7 @@ def _fresh_cache() -> None:
 
 def _config(cache_ttl_seconds: int = 60) -> ExternalAccessFilterConfig:
     return ExternalAccessFilterConfig(
-        metadata_key="lcdm_knowledge_code", resolver_url=RESOLVER, cache_ttl_seconds=cache_ttl_seconds
+        metadata_key="lcdm_knowledge_code", resolver_url=RESOLVER, api_key=API_KEY, cache_ttl_seconds=cache_ttl_seconds
     )
 
 
@@ -58,9 +58,9 @@ class _Resolver:
         return self.response
 
 
-def _apply(resolver: _Resolver, config: ExternalAccessFilterConfig | None = None, token: str | None = TOKEN):
+def _apply(resolver: _Resolver, config: ExternalAccessFilterConfig | None = None, user=None):
     return asyncio.run(
-        ExternalAccessFilters.apply([_runtime()], config or _config(), fake_user(), token, resolver.transport())
+        ExternalAccessFilters.apply([_runtime()], config or _config(), user or fake_user(), resolver.transport())
     )
 
 
@@ -72,7 +72,9 @@ def test_the_values_the_resolver_releases_become_a_choice_filter() -> None:
     assert narrowed[0].additional_metadata_filters == [
         MetadataFilterPair(key="lcdm_knowledge_code", value=["NEST/DOK", "KSB/DOK"])
     ]
-    assert resolver.calls[0].headers["Authorization"] == f"Bearer {TOKEN}"
+    assert resolver.calls[0].headers["Authorization"] == f"Bearer {API_KEY}"
+    assert resolver.calls[0].headers["X-AIHub-User-Email"] == fake_user().email
+    assert resolver.calls[0].headers["X-AIHub-Tenant"] == fake_user().acting_within_tenant.id
     assert str(resolver.calls[0].url) == RESOLVER
 
 
@@ -95,17 +97,17 @@ def test_a_failing_resolver_retrieves_nothing(response: httpx.Response | Excepti
     assert _apply(_Resolver(response)) == []
 
 
-def test_without_a_token_nothing_is_retrieved_and_nothing_is_asked() -> None:
+def test_a_user_without_an_e_mail_is_not_asked_about() -> None:
     resolver = _Resolver(httpx.Response(200, json={"values": ["NEST/DOK"]}))
 
-    assert _apply(resolver, token=None) == []
+    assert _apply(resolver, user=fake_user().model_copy(update={"email": ""})) == []
     assert resolver.calls == []
 
 
 def test_without_a_user_nothing_is_retrieved() -> None:
     resolver = _Resolver(httpx.Response(200, json={"values": ["NEST/DOK"]}))
 
-    narrowed = asyncio.run(ExternalAccessFilters.apply([_runtime()], _config(), None, TOKEN, resolver.transport()))
+    narrowed = asyncio.run(ExternalAccessFilters.apply([_runtime()], _config(), None, resolver.transport()))
 
     assert narrowed == []
 
@@ -142,6 +144,6 @@ def test_earlier_filters_of_the_run_are_kept() -> None:
         update={"additional_metadata_filters": [MetadataFilterPair(key="document_type", value="invoice")]}
     )
 
-    narrowed = asyncio.run(ExternalAccessFilters.apply([runtime], _config(), fake_user(), TOKEN, resolver.transport()))
+    narrowed = asyncio.run(ExternalAccessFilters.apply([runtime], _config(), fake_user(), resolver.transport()))
 
     assert [f.key for f in narrowed[0].additional_metadata_filters] == ["document_type", "lcdm_knowledge_code"]

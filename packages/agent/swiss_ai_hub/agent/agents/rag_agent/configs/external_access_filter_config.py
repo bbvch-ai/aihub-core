@@ -1,7 +1,7 @@
 from typing import Annotated, Self
 
 from pydantic import Field
-from swiss_ai_hub.core.form import InputNumber, InputText
+from swiss_ai_hub.core.form import InputNumber, InputText, Password
 from swiss_ai_hub.core.form.constraints import Ge, Gt
 from swiss_ai_hub.core.form.form import Form
 
@@ -23,10 +23,17 @@ class ExternalAccessFilterConfig(Form):
     resolver_url: Annotated[
         str | InputText,
         Field(
-            description="Called with GET and the asking user's bearer token; answers {\"values\": [...]}. The "
-            "resolver validates the token and maps the user itself."
+            description="Called with GET, the API key as bearer and the asking user in X-AIHub-User-Email and "
+            "X-AIHub-Tenant; answers {\"values\": [...]}. The resolver maps the user to its own model."
         ),
     ]
+    api_key: Annotated[
+        str | Password,
+        Field(
+            description="Proves to the resolver that the AI Hub is asking. The user is named by the AI Hub, which "
+            "verified them; chat clients forward no user token the resolver could check instead."
+        ),
+    ] = ""
     timeout_seconds: Annotated[
         float | InputNumber,
         Field(description="How long to wait for the resolver; a slower answer counts as no access."),
@@ -48,6 +55,10 @@ class ExternalAccessFilterConfig(Form):
             resolver_url=InputText(
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.external_access_filter.resolver_url.label"),
                 help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.external_access_filter.resolver_url.help"),
+            ),
+            api_key=Password(
+                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.external_access_filter.api_key.label"),
+                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.external_access_filter.api_key.help"),
             ),
             timeout_seconds=InputNumber(
                 label=AgentLocaleString.from_i18n_path(

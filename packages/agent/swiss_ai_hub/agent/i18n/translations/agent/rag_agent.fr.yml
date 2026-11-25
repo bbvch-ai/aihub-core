@@ -11,9 +11,10 @@ config:
         sont comparées, p. ex. lcdm_knowledge_code.
     resolver_url:
       label: URL du résolveur
-      help: 'Appelée en GET avec le jeton de la personne qui pose la question ; répond
-        {"values": [...]}. Le résolveur vérifie le jeton et identifie la personne
-        lui-même.'
+      help: "Appelée en GET avec la clé API et la personne dans X-AIHub-User-Email et X-AIHub-Tenant. Répond {\"values\": [...]}."
+    api_key:
+      label: "Clé API"
+      help: "Permet au résolveur de savoir que l'AI Hub pose la question. L'AI Hub transmet la personne par e-mail et mandant, après l'avoir vérifiée lui-même."
     timeout_seconds:
       label: Délai (secondes)
       help: Durée d'attente du résolveur. Une réponse plus tardive vaut absence d'accès.

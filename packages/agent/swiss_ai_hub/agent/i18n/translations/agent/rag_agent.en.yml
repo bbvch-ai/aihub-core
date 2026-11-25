@@ -11,8 +11,10 @@ config:
         lcdm_knowledge_code.
     resolver_url:
       label: Resolver URL
-      help: "Called with GET and the asking user's token; answers {\"values\": [...]}.\
-        \ The resolver validates the token and maps the user itself."
+      help: "Called with GET, the API key and the asking user in X-AIHub-User-Email and X-AIHub-Tenant. Answers {\"values\": [...]}."
+    api_key:
+      label: "API key"
+      help: "Lets the resolver know the AI Hub is asking. The AI Hub names the asking user by e-mail and tenant, after verifying them itself."
     timeout_seconds:
       label: Timeout (seconds)
       help: How long to wait for the resolver. A later answer counts as no access.

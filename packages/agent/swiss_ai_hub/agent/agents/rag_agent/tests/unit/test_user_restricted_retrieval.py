@@ -33,7 +33,6 @@ async def _retrieve(config: RAGAgentConfig, access, restricted: list, externally
     with (
         patch(f"{RAG_MODULE}.UserScopedRetrievers.narrow", new=AsyncMock(return_value=restricted)) as scope,
         patch(f"{RAG_MODULE}.do_retrieve", new=AsyncMock(return_value="retrieved")) as retrieve,
-        patch(f"{RAG_MODULE}.McpAuthResolver.resolve_user_token", new=AsyncMock(return_value="user-token")),
         patch(
             f"{RAG_MODULE}.ExternalAccessFilters.apply", new=AsyncMock(return_value=externally_released or [])
         ) as external,
@@ -45,7 +44,6 @@ async def _retrieve(config: RAGAgentConfig, access, restricted: list, externally
             agent_config=config,
             displayer=displayer,
             t=LocaleHandler("en"),
-            run_context=MagicMock(),
             user=None,
             access=access,
         )
@@ -102,13 +100,12 @@ async def test_without_an_external_access_filter_nobody_is_asked():
 
 
 @pytest.mark.asyncio
-async def test_an_external_access_filter_narrows_with_the_users_token():
+async def test_an_external_access_filter_narrows_for_the_asking_user():
     released = [MagicMock()]
 
     result, _, retrieve = await _retrieve(_config(external_access_filter=EXTERNAL), None, [], released)
 
     assert _retrieve.external.await_args.args[1] == EXTERNAL
-    assert _retrieve.external.await_args.args[3] == "user-token"
     assert retrieve.await_args.args[1] is released
     assert result == "retrieved"
 
