@@ -347,5 +347,11 @@ records_extracted_event:
 hitl_questions_request_event:
   name: Domande da confermare
   description: L'agente chiede all'utente di confermare o correggere le parti di una
-    richiesta, come modulo dove il client ne mostra uno, altrimenti come messaggio di
-    chat.
+    richiesta, come modulo dove il client ne mostra uno, altrimenti come messaggio
+    di chat.
+search_web_event:
+  name: Cerca nel web
+  description: Ricerca nel web
+web_searched_event:
+  name: Web cercato
+  description: L'agente ha cercato nel web e letto i risultati migliori.

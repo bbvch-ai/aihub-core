@@ -349,5 +349,11 @@ records_extracted_event:
   description: Die aus den ausgewählten Dokumenten extrahierte Tabelle
 hitl_questions_request_event:
   name: Fragen zur Bestätigung
-  description: Der Agent bittet den Benutzer, die Teile einer Anfrage zu bestätigen oder
-    zu korrigieren, als Formular, wo der Client eines zeigt, sonst als Chat-Nachricht.
+  description: Der Agent bittet den Benutzer, die Teile einer Anfrage zu bestätigen
+    oder zu korrigieren, als Formular, wo der Client eines zeigt, sonst als Chat-Nachricht.
+search_web_event:
+  name: Im Web suchen
+  description: Das Web wird durchsucht
+web_searched_event:
+  name: Web durchsucht
+  description: Der Agent hat das Web durchsucht und die besten Treffer gelesen.

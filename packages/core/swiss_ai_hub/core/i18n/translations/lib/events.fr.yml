@@ -347,5 +347,11 @@ records_extracted_event:
 hitl_questions_request_event:
   name: Questions à confirmer
   description: L'agent demande à l'utilisateur de confirmer ou de corriger les parties
-    d'une demande, sous forme de formulaire si le client en affiche un, sinon comme message
-    de chat.
+    d'une demande, sous forme de formulaire si le client en affiche un, sinon comme
+    message de chat.
+search_web_event:
+  name: Rechercher sur le web
+  description: Recherche sur le web
+web_searched_event:
+  name: Web recherché
+  description: L'agent a cherché sur le web et lu les meilleurs résultats.

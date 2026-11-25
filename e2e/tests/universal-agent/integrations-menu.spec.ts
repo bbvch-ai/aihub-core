@@ -4,7 +4,7 @@ import { expect, test } from './support/openwebui-test'
 const USER_FILES_FILTER = 'aihub-feature-user-files'
 
 test.describe('Universal Agent integrations menu', () => {
-  test('A1 @ui offers Code Interpreter and My Files, but neither Web Search nor Image', async ({ chat, owui }) => {
+  test('A1 @ui offers Code Interpreter and My Files, but neither Web Search (off in the profile) nor Image', async ({ chat, owui }) => {
     const model = ModelCatalog.universalAgent(await owui.models())
     expect(model.info?.meta?.capabilities).toMatchObject({
       code_interpreter: true,
@@ -17,9 +17,9 @@ test.describe('Universal Agent integrations menu', () => {
     await chat.open(model.id)
     const menu = await chat.openIntegrations()
 
-    await expect(menu.getByRole('button', { name: 'Code Interpreter' })).toBeVisible()
-    await expect(menu.getByRole('button', { name: 'My Files' })).toBeVisible()
-    await expect(menu.getByRole('button', { name: 'Web Search' })).toHaveCount(0)
-    await expect(menu.getByRole('button', { name: 'Image', exact: true })).toHaveCount(0)
+    await expect(menu.getByRole('menuitemcheckbox', { name: 'Code Interpreter' })).toBeVisible()
+    await expect(menu.getByRole('menuitemcheckbox', { name: 'My Files' })).toBeVisible()
+    await expect(menu.getByRole('menuitemcheckbox', { name: 'Web Search' })).toHaveCount(0)
+    await expect(menu.getByRole('menuitemcheckbox', { name: 'Image', exact: true })).toHaveCount(0)
   })
 })

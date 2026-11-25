@@ -75,6 +75,7 @@ from swiss_ai_hub.core.events.agent import (
     RunToolLoopEvent,
     SandboxFileDisplayedEvent,
     SearchKnowledgeEvent,
+    SearchWebEvent,
     SemanticEvent,
     SensitiveInfoAcceptEvent,
     SensitiveInfoRejectEvent,
@@ -97,6 +98,7 @@ from swiss_ai_hub.core.events.agent import (
     UnreadMailListedEvent,
     UserMessageEvent,
     WebPagesFetchedEvent,
+    WebSearchedEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
@@ -131,6 +133,7 @@ DisplayEvents = (
     | Annotated[MemoryStorageRequestedEvent, Tag("MemoryStorageRequestedEvent")]
     | Annotated[SearchKnowledgeEvent, Tag("SearchKnowledgeEvent")]
     | Annotated[FetchWebPagesEvent, Tag("FetchWebPagesEvent")]
+    | Annotated[SearchWebEvent, Tag("SearchWebEvent")]
     | Annotated[ExtractRecordsEvent, Tag("ExtractRecordsEvent")]
     | Annotated[ReadAttachedFilesEvent, Tag("ReadAttachedFilesEvent")]
     | Annotated[AttachedFilesReadEvent, Tag("AttachedFilesReadEvent")]
@@ -148,6 +151,7 @@ DisplayEvents = (
     | Annotated[AttachedFileEvent, Tag("AttachedFileEvent")]
     | Annotated[KnowledgeSearchedEvent, Tag("KnowledgeSearchedEvent")]
     | Annotated[WebPagesFetchedEvent, Tag("WebPagesFetchedEvent")]
+    | Annotated[WebSearchedEvent, Tag("WebSearchedEvent")]
     | Annotated[RecordsExtractedEvent, Tag("RecordsExtractedEvent")]
     | Annotated[ToolResultEvent, Tag("ToolResultEvent")]
     | Annotated[ToolLoopStatusEvent, Tag("ToolLoopStatusEvent")]

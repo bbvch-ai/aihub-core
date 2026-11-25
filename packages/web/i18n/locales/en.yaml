@@ -338,6 +338,8 @@ event:
     links: Links
     webReferences: Referenced web pages
     pagesRead: Pages read
+    searchQueries: Search queries
+    sitesFound: Sites found
     notRead: Not read
     webFetchFailure:
       malformed_url: Malformed link

@@ -4,49 +4,32 @@ A blueprint never declares its features: it supports exactly those of the capabi
 feature it does not support never counts as requested, whoever sent it.
 """
 
-from typing import Any, ClassVar
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
 from swiss_ai_hub.core.events.agent import ChatFeature, ContextualizeConversationEvent, UserMessageEvent
-from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
-from swiss_ai_hub.agent.capabilities.capability import Capability
-from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
-from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
+from swiss_ai_hub.agent.capabilities.web_search.web_search import WebSearch
+from swiss_ai_hub.agent.capabilities.web_search.web_search_fields import WebSearchFields
 from swiss_ai_hub.agent.workflow.decorators.step import step
-
-
-class SearchWebEvent(ControlEvent):
-    pass
-
-
-class WebSearchLikeCapability(Capability):
-    calls: ClassVar[dict[type[ControlEvent], tuple[type[ControlEvent], ...]]] = {SearchWebEvent: ()}
-    chat_feature: ClassVar[ChatFeature | None] = ChatFeature.WEB_SEARCH
 
 
 class SearchingAgent(Agent):
     @step()
-    async def open_step(self, event: UserMessageEvent) -> SearchWebEvent:
-        return SearchWebEvent()
+    async def open_step(self, event: UserMessageEvent) -> WebSearch.SearchRequest:
+        return WebSearch.search([event.user_query], WebSearchFields())
 
 
 class PlainAgent(Agent):
     @step()
     async def open_step(self, event: UserMessageEvent) -> ContextualizeConversationEvent:
         return Conversation.contextualize(history=event.messages, message=event)
-
-
-@pytest.fixture(autouse=True)
-def _catalog_with_web_search(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The stub capability is not one the SDK ships, so the catalog is taught about it for these tests."""
-    monkeypatch.setattr(CapabilityCatalog, "all", staticmethod(lambda: [Conversation, Memory, WebSearchLikeCapability]))
 
 
 def _run_context(requested: list[str] | None) -> Any:

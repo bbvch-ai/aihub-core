@@ -339,6 +339,8 @@ event:
     links: Liens
     webReferences: Pages web référencées
     pagesRead: Pages lues
+    searchQueries: Requêtes de recherche
+    sitesFound: Sites trouvés
     notRead: Non lues
     webFetchFailure:
       malformed_url: Lien mal formé

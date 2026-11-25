@@ -6520,6 +6520,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/FetchWebPagesEvent",
         },
         {
+          $ref: "#/components/schemas/SearchWebEvent",
+        },
+        {
           $ref: "#/components/schemas/ExtractRecordsEvent",
         },
         {
@@ -6569,6 +6572,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/WebPagesFetchedEvent",
+        },
+        {
+          $ref: "#/components/schemas/WebSearchedEvent",
         },
         {
           $ref: "#/components/schemas/RecordsExtractedEvent",
@@ -26370,6 +26376,102 @@ export const SearchKnowledgeEventSchema = {
     "Asks the knowledge capability to search the collections the user referenced for the turn's query.\n\nBuilt with `Knowledge.search(...)`; answered with `KnowledgeSearchedEvent`, empty when nothing was referenced.",
 } as const;
 
+export const SearchWebEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    queries: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Queries",
+      description: "The search queries, each sent to the search engines.",
+      default: [],
+    },
+    searching: {
+      type: "boolean",
+      title: "Searching",
+      description:
+        "Whether the search runs: false while the profile has web search off or the user's Web Search toggle is, so a chat client shows no search progress.",
+      default: true,
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the hits by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the search in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "SearchWebEvent",
+  description:
+    "Asks the web search capability to search the web for the given queries and read the best hits.\n\nBuilt with `WebSearch.search(...)` or from the model's `search_web` tool call; answered with `WebSearchedEvent`.\nDisplayed with its queries, so a chat client can show what is being searched for while the search runs.",
+} as const;
+
 export const SecretFileInputSchema = {
   properties: {
     is_formkit_element: {
@@ -33048,6 +33150,167 @@ export const WebPagesFetchedEventSchema = {
     "The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.\n\nDisplayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources\nthe answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of\nthose pages, with the failures beside them.",
 } as const;
 
+export const WebSearchResultSchema = {
+  properties: {
+    url: {
+      type: "string",
+      title: "Url",
+      description: "The page the hit links to.",
+    },
+    title: {
+      type: "string",
+      title: "Title",
+      description: "The page's title as the search engine reported it.",
+      default: "",
+    },
+    snippet: {
+      type: "string",
+      title: "Snippet",
+      description: "The search engine's excerpt of the page.",
+      default: "",
+    },
+    engine: {
+      type: "string",
+      title: "Engine",
+      description: "The search engine that ranked the hit highest.",
+      default: "",
+    },
+    read: {
+      type: "boolean",
+      title: "Read",
+      description:
+        "Whether the whole page was read, rather than only its snippet handed to the model.",
+      default: false,
+    },
+  },
+  type: "object",
+  required: ["url"],
+  title: "WebSearchResult",
+  description:
+    'One hit a web search returned, as a chat client lists it under "searched N sites".',
+} as const;
+
+export const WebSearchedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    queries: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Queries",
+      description: "The queries that were searched.",
+      default: [],
+    },
+    results: {
+      items: {
+        $ref: "#/components/schemas/WebSearchResult",
+      },
+      type: "array",
+      title: "Results",
+      description: "The hits, best first, without duplicates.",
+      default: [],
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "System messages carrying the pages read and the other hits' snippets.",
+      default: [],
+    },
+    grounding_nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNode",
+      },
+      type: "array",
+      title: "Grounding Nodes",
+      description:
+        "The hits the block holds, one per hit, for listing as sources.",
+      default: [],
+    },
+    failures: {
+      items: {
+        $ref: "#/components/schemas/WebFetchFailure",
+      },
+      type: "array",
+      title: "Failures",
+      description:
+        "Hits whose page could not be read, so only their snippet was used.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the search in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "WebSearchedEvent",
+  description:
+    "The answer to `SearchWebEvent`: the hits, and one context block with the pages read and the snippets of the rest.\n\n`results` is what a chat client lists as the sites searched; `grounding_nodes` are what the model is handed, one\nper hit, so a client lists exactly the sources the answer can cite. A semantic event, so the search shows in the\ntrace as a retrieval of those hits, with the queries and the pages that could not be read beside them.",
+} as const;
+
 export const WebhookResponseSchema = {
   properties: {
     status: {
@@ -36598,6 +36861,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/FetchWebPagesEventWritable",
         },
         {
+          $ref: "#/components/schemas/SearchWebEventWritable",
+        },
+        {
           $ref: "#/components/schemas/ExtractRecordsEventWritable",
         },
         {
@@ -36647,6 +36913,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/WebPagesFetchedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/WebSearchedEventWritable",
         },
         {
           $ref: "#/components/schemas/RecordsExtractedEventWritable",
@@ -49117,6 +49386,84 @@ export const SearchKnowledgeEventWritableSchema = {
     "Asks the knowledge capability to search the collections the user referenced for the turn's query.\n\nBuilt with `Knowledge.search(...)`; answered with `KnowledgeSearchedEvent`, empty when nothing was referenced.",
 } as const;
 
+export const SearchWebEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    queries: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Queries",
+      description: "The search queries, each sent to the search engines.",
+      default: [],
+    },
+    searching: {
+      type: "boolean",
+      title: "Searching",
+      description:
+        "Whether the search runs: false while the profile has web search off or the user's Web Search toggle is, so a chat client shows no search progress.",
+      default: true,
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the hits by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the search in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "SearchWebEvent",
+  description:
+    "Asks the web search capability to search the web for the given queries and read the best hits.\n\nBuilt with `WebSearch.search(...)` or from the model's `search_web` tool call; answered with `WebSearchedEvent`.\nDisplayed with its queries, so a chat client can show what is being searched for while the search runs.",
+} as const;
+
 export const SecretFileInputWritableSchema = {
   properties: {
     is_formkit_element: {
@@ -53599,4 +53946,107 @@ export const WebPagesFetchedEventWritableSchema = {
   title: "WebPagesFetchedEvent",
   description:
     "The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.\n\nDisplayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources\nthe answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of\nthose pages, with the failures beside them.",
+} as const;
+
+export const WebSearchedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    queries: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Queries",
+      description: "The queries that were searched.",
+      default: [],
+    },
+    results: {
+      items: {
+        $ref: "#/components/schemas/WebSearchResult",
+      },
+      type: "array",
+      title: "Results",
+      description: "The hits, best first, without duplicates.",
+      default: [],
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "System messages carrying the pages read and the other hits' snippets.",
+      default: [],
+    },
+    grounding_nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNodeWritable",
+      },
+      type: "array",
+      title: "Grounding Nodes",
+      description:
+        "The hits the block holds, one per hit, for listing as sources.",
+      default: [],
+    },
+    failures: {
+      items: {
+        $ref: "#/components/schemas/WebFetchFailure",
+      },
+      type: "array",
+      title: "Failures",
+      description:
+        "Hits whose page could not be read, so only their snippet was used.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the search in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "WebSearchedEvent",
+  description:
+    "The answer to `SearchWebEvent`: the hits, and one context block with the pages read and the snippets of the rest.\n\n`results` is what a chat client lists as the sites searched; `grounding_nodes` are what the model is handed, one\nper hit, so a client lists exactly the sources the answer can cite. A semantic event, so the search shows in the\ntrace as a retrieval of those hits, with the queries and the pages that could not be read beside them.",
 } as const;

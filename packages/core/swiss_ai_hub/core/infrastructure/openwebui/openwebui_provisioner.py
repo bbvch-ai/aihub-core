@@ -216,15 +216,15 @@ class OpenWebuiProvisioner:
         if not class_entities:
             return []
 
-        features_by_class = {ce.agent_class: ce.supported_features for ce in class_entities}
-        all_configs = await AgentConfigEntityDocument.find_for_classes(list(features_by_class))
+        class_by_name = {ce.agent_class: ce for ce in class_entities}
+        all_configs = await AgentConfigEntityDocument.find_for_classes(list(class_by_name))
 
         return [
             OnlineAgent(
                 agent_class=config.agent_class,
                 agent_id=config.agent_id,
                 display_name=self._resolve_display_name(config.name, config.agent_id),
-                supported_features=features_by_class[config.agent_class],
+                supported_features=class_by_name[config.agent_class].features_offered_by(config.config_data),
             )
             for config in all_configs
         ]

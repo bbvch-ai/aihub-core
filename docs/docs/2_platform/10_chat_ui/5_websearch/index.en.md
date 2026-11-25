@@ -7,10 +7,8 @@ title: Web search capability
 Chats with a plain language model can reach out to the web to answer questions requiring current data beyond the model's
 training. Organizations control this through configuration.
 
-::: warning
-Web search applies to plain model chats only. AI-Hub agents ground their answers in the knowledge bases they were
-configured with, so the "Web Search" button is not offered when an agent is selected in the model picker.
-:::
+Agents search the web too, when their profile allows it: see [Web search in agents](#web-search-in-agents). An agent
+whose profile has web search off shows no "Web Search" button.
 
 Select "Web Search".
 
@@ -83,3 +81,23 @@ industry standards.
 
 Configurable restrictions and validation mechanisms let organizations balance the value of external information with
 their risk tolerance and compliance obligations.
+
+## Web search in agents
+
+An agent built on a blueprint that can search the web, such as the
+[Universal Agent](../../5_agents/13_universal_agent/), searches with the platform's own SearXNG instead of Open WebUI's
+search. Each search is a step of the agent's run, so it appears in the run's events and its trace, and its cost counts
+towards the agent like any other step.
+
+- **Admins switch it on per profile.** In the profile's settings, turn on **Web Search** and choose how many results a
+  search keeps, how many of the best are read whole, which search engines are asked, the result language, safe search
+  and how recent the results must be. While it is off, the profile shows no "Web Search" button in the chat.
+- **Users switch it on per message.** With the button on, the agent decides for itself whether the question needs a
+  search; with it off, nothing is searched.
+- **The chat shows it like Open WebUI's own search.** The queries appear while the agent searches, then "Searched N
+  sites" with the sites listed, and every result the answer cites is a numbered, clickable source.
+
+The best results are read whole through the platform's browser, which only reaches public addresses; the others reach
+the model as the search engine's snippet, marked as such. A search sends the queries the model wrote, which come from
+the conversation, to the search engines SearXNG asks. Switching on "Web Search" for a message is the user's consent to
+that.

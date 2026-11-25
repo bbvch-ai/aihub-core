@@ -93,3 +93,8 @@ def test_the_universal_agent_supports_a_response_schema() -> None:
 
 def test_the_universal_agent_offers_the_code_interpreter_and_my_files_toggles() -> None:
     assert {ChatFeature.CODE_INTERPRETER, ChatFeature.USER_FILES} <= UniversalAgent.supported_features()
+
+
+def test_the_universal_agent_offers_web_search_on_profiles_that_turned_it_on() -> None:
+    assert ChatFeature.WEB_SEARCH in UniversalAgent.supported_features()
+    assert UniversalAgent.feature_config_fields() == {ChatFeature.WEB_SEARCH: "web_search"}

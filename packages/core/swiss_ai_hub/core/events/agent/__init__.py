@@ -189,6 +189,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.web_fetch.web_fetch_failure import WebFetchFailure
     from swiss_ai_hub.core.events.agent.web_fetch.web_fetch_failure_reason import WebFetchFailureReason
     from swiss_ai_hub.core.events.agent.web_fetch.web_pages_fetched_event import WebPagesFetchedEvent
+    from swiss_ai_hub.core.events.agent.web_search.search_web_event import SearchWebEvent
+    from swiss_ai_hub.core.events.agent.web_search.web_search_result import WebSearchResult
+    from swiss_ai_hub.core.events.agent.web_search.web_searched_event import WebSearchedEvent
 
 __all__ = [
     "CompleteConversationEvent",
@@ -332,6 +335,9 @@ __all__ = [
     "WebFetchFailure",
     "WebFetchFailureReason",
     "WebPagesFetchedEvent",
+    "SearchWebEvent",
+    "WebSearchResult",
+    "WebSearchedEvent",
     "ExtractRecordsEvent",
     "RecordsExtractedEvent",
 ]
@@ -480,6 +486,9 @@ _LAZY_IMPORTS: dict[str, str] = {
     "WebFetchFailure": "swiss_ai_hub.core.events.agent.web_fetch.web_fetch_failure",
     "WebFetchFailureReason": "swiss_ai_hub.core.events.agent.web_fetch.web_fetch_failure_reason",
     "WebPagesFetchedEvent": "swiss_ai_hub.core.events.agent.web_fetch.web_pages_fetched_event",
+    "SearchWebEvent": "swiss_ai_hub.core.events.agent.web_search.search_web_event",
+    "WebSearchResult": "swiss_ai_hub.core.events.agent.web_search.web_search_result",
+    "WebSearchedEvent": "swiss_ai_hub.core.events.agent.web_search.web_searched_event",
     "ExtractRecordsEvent": "swiss_ai_hub.core.events.agent.record_extraction.extract_records_event",
     "RecordsExtractedEvent": "swiss_ai_hub.core.events.agent.record_extraction.records_extracted_event",
 }

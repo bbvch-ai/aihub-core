@@ -193,9 +193,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
         name_locale_handler = ApiLocaleHandler(locale=self._openwebui_provisioner.model_name_locale)
         instances = await AgentService.get_all_agent_instances(t=name_locale_handler, online=True)
 
-        features_by_class = await self._supported_features_by_class()
+        features = await self._offered_features(instances)
         current_set = {
-            (inst.agent_class, inst.agent_id, inst.name, ",".join(features_by_class.get(inst.agent_class, [])))
+            (inst.agent_class, inst.agent_id, inst.name, ",".join(features[inst.agent_class, inst.agent_id]))
             for inst in instances
         }
         current_hash = self._compute_agents_hash(current_set)
@@ -221,13 +221,21 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
 
     @staticmethod
     def _compute_agents_hash(agent_set: set[tuple[str, str, str, str]]) -> str:
-        """The supported features are part of the hash, so a blueprint gaining one re-syncs its toggles."""
+        """The offered features are part of the hash, so a blueprint gaining one, or a profile switching one off,
+        re-syncs its toggles."""
         normalized = sorted(f"{ac}:{ai}:{name}:{features}" for ac, ai, name, features in agent_set)
         return hashlib.sha256(",".join(normalized).encode()).hexdigest()
 
     @staticmethod
-    async def _supported_features_by_class() -> dict[str, list[str]]:
-        return {entity.agent_class: sorted(entity.supported_features) for entity in await AgentClassEntity.get_all()}
+    async def _offered_features(instances: list[FullAgentInstanceDTO]) -> dict[tuple[str, str], list[str]]:
+        """Each profile's toggles: its blueprint's features, less those the profile has switched off."""
+        class_by_name = {entity.agent_class: entity for entity in await AgentClassEntity.get_all()}
+        return {
+            (inst.agent_class, inst.agent_id): class_by_name[inst.agent_class].features_offered_by(inst.configuration)
+            if inst.agent_class in class_by_name
+            else []
+            for inst in instances
+        }
 
     @classmethod
     def _agents_hash_key(cls, target: SyncTarget) -> str:
@@ -253,13 +261,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService[AgentClassDTO]):
     async def _sync_agent_instances_to_openwebui(self, instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
-            features_by_class = await self._supported_features_by_class()
+            features = await self._offered_features(instances)
             online_agents = [
                 OnlineAgent(
                     agent_class=inst.agent_class,
                     agent_id=inst.agent_id,
                     display_name=inst.name,
-                    supported_features=features_by_class.get(inst.agent_class, []),
+                    supported_features=features[inst.agent_class, inst.agent_id],
                 )
                 for inst in instances
                 if inst.is_conversational

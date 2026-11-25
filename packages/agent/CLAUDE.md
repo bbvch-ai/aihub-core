@@ -301,6 +301,17 @@ block after the knowledge and before the files; RAG's sufficiency guard weighs i
 question is not rejected for retrieval finding nothing. `UniversalAgent` offers it as a tool with
 `web_references=WebFetch.links_of(event)`.
 
+**`WebSearch`** (needs `WebSearchFields`: `web_search: WebSearchConfig | None`, off unless the profile turns it on, with
+`max_results`, `read_top_results`, `engines`, `language`, `safe_search`, `time_range` and the page limits):
+`search(queries, web, cite_sources)` → `WebSearch.Searched` (`WebSearchedEvent`), the hits as `results` and one block
+with the best `read_top_results` read whole through `WebPageFetcher` (so `RequestGuard` and `browser-proxy` apply) and
+the snippets of the rest, marked as such. Hits come from core's `SearxngClient` (one request per query, at most three,
+taken in turns, each site once). It serves the Web Search toggle (`chat_feature = WEB_SEARCH`) only on profiles that
+turned it on (`chat_feature_config_field = "web_search"`, published as `Agent.feature_config_fields()` and applied by
+the provisioner), and `web_search_step` searches nothing unless `RequestedFeatures.contains(WEB_SEARCH, ...)`. Its steps
+are named `web_search_*`, since `Knowledge` already has `search_*`. `UniversalAgent` offers it as the `search_web` tool.
+ADR `2026_11_25_agents_search_the_web_through_searxng`.
+
 **`ToolLoop`** (needs `ToolLoopFields`: iteration and call limits, the per-result token cap, disabled tools and approval
 rules; the runner publishes its form with the blueprint's tools as options, so `as_form()` spreads nothing): the model
 decides which tools of a tool set to use, until it is done. A blueprint declares sets as class attributes, each named

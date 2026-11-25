@@ -340,6 +340,8 @@ event:
     links: Link
     webReferences: Pagine web indicate
     pagesRead: Pagine lette
+    searchQueries: Query di ricerca
+    sitesFound: Siti trovati
     notRead: Non lette
     webFetchFailure:
       malformed_url: Link non valido
