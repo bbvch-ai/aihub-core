@@ -247,8 +247,13 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         thread_context: ThreadContext,
+        user: UserIdentity | None = None,
     ) -> InOrderNodeCombinerEvent:
         carried_nodes = await do_read_carried_grounding_nodes(thread_context)
+        if agent_config.external_access_filter is not None:
+            carried_nodes = await ExternalAccessFilters.still_visible(
+                carried_nodes, agent_config.external_access_filter, user
+            )
         return await do_order_nodes_by_documents(
             event, t, agent_config.context_prompt, displayer, carried_nodes=carried_nodes
         )

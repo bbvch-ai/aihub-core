@@ -5,7 +5,7 @@ from typing import ClassVar
 import httpx
 from pydantic import ValidationError
 from swiss_ai_hub.core.auth import UserIdentity
-from swiss_ai_hub.core.generative_ai import MetadataFilterPair, RetrievalRuntimeConfig
+from swiss_ai_hub.core.generative_ai import IngestedNode, MetadataFilterPair, RetrievalRuntimeConfig
 
 from swiss_ai_hub.agent.agents.rag_agent.access.external_access_answer import ExternalAccessAnswer
 from swiss_ai_hub.agent.agents.rag_agent.configs.external_access_filter_config import ExternalAccessFilterConfig
@@ -42,6 +42,27 @@ class ExternalAccessFilters:
             )
             for runtime_config in runtime_configs
         ]
+
+    @staticmethod
+    async def still_visible(
+        nodes: list[IngestedNode],
+        config: ExternalAccessFilterConfig,
+        user: UserIdentity | None,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> list[IngestedNode]:
+        """Nodes carried over from an earlier turn were released then, not necessarily now; they stay only if their
+        value is released for this turn too."""
+        if not nodes:
+            return []
+        values = set(await ExternalAccessFilters.visible_values(config, user, transport))
+        return [node for node in nodes if ExternalAccessFilters._values_of(node, config.metadata_key) & values]
+
+    @staticmethod
+    def _values_of(node: IngestedNode, metadata_key: str) -> set[str]:
+        value = node.record_fields.get(metadata_key)
+        if isinstance(value, list):
+            return {str(item) for item in value}
+        return {str(value)} if value is not None else set()
 
     @staticmethod
     async def visible_values(
