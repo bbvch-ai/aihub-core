@@ -89,3 +89,43 @@ class TestDeleteRoleFromAllTenants:
 
     def test_returns_zero_when_role_absent(self) -> None:
         assert RoleEntity.delete_role_from_all_tenants("agent-Gone-gone-admin") == 0
+
+
+class TestRevokeAccessRulesUnderFromAllRoles:
+    def test_removes_the_resource_and_its_subtree_from_every_role(self) -> None:
+        RoleEntity.create_tenant_role(
+            "Readers",
+            "desc",
+            [
+                "aihub.user.knowledge.kb_a11",
+                "aihub.user.knowledge.kb_a11.>",
+                "aihub.user.knowledge.kb_a11.*",
+                "aihub.admin.knowledge.kb_a11.reports",
+                "aihub.user.agent.MyAgent",
+            ],
+            "t1",
+        )
+        RoleEntity.create_tenant_role("Editors", "desc", ["aihub.admin.knowledge.kb_a11"], "t2")
+
+        changed = RoleEntity.revoke_access_rules_under_from_all_roles(
+            ["aihub.user.knowledge.kb_a11", "aihub.admin.knowledge.kb_a11"]
+        )
+
+        assert changed == 2
+        assert RoleEntity.objects.get(name="Readers", tenant_id="t1").access_rules == ["aihub.user.agent.MyAgent"]
+        assert RoleEntity.objects.get(name="Editors", tenant_id="t2").access_rules == []
+
+    def test_keeps_rules_of_a_database_sharing_the_name_prefix_and_wildcards(self) -> None:
+        kept = ["aihub.user.knowledge.kb_a1", "aihub.user.knowledge.kb_a111.>", "aihub.user.knowledge.>"]
+        RoleEntity.create_tenant_role("Readers", "desc", kept, "t1")
+
+        changed = RoleEntity.revoke_access_rules_under_from_all_roles(["aihub.user.knowledge.kb_a11"])
+
+        assert changed == 0
+        assert RoleEntity.objects.get(name="Readers", tenant_id="t1").access_rules == kept
+
+    def test_is_noop_for_an_empty_rule_list(self) -> None:
+        RoleEntity.create_tenant_role("Readers", "desc", ["aihub.user.knowledge.kb_a11"], "t1")
+
+        assert RoleEntity.revoke_access_rules_under_from_all_roles([]) == 0
+        assert RoleEntity.objects.get(name="Readers", tenant_id="t1").access_rules == ["aihub.user.knowledge.kb_a11"]

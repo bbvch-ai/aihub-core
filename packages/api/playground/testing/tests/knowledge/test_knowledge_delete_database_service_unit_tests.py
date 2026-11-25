@@ -201,3 +201,39 @@ class TestDeleteRevokesAccess:
             f"aihub.admin.knowledge.{DATABASE}.{NAMESPACE}",
         }
         role_cls.delete_role_from_all_tenants.assert_called_once_with("KnowledgeResearchdocsReportsAdmin")
+        role_cls.revoke_access_rules_under_from_all_roles.assert_called_once_with(
+            [f"aihub.user.knowledge.{DATABASE}.{NAMESPACE}", f"aihub.admin.knowledge.{DATABASE}.{NAMESPACE}"]
+        )
+
+    def test_a_database_delete_revokes_its_subtree_from_every_role(self):
+        """An admin-built role can name the database in any shape, so roles are cleaned by subtree, not by the
+        exact rules a create granted (aihub-core-private#497)."""
+        with (
+            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
+            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity"),
+            patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
+        ):
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket()
+            namespace_cls.get_namespaces_by_bucket.return_value = []
+
+            KnowledgeService.delete_database(database=DATABASE)
+
+        role_cls.revoke_access_rules_under_from_all_roles.assert_called_once_with(
+            [f"aihub.user.knowledge.{DATABASE}", f"aihub.admin.knowledge.{DATABASE}"]
+        )
+
+    def test_a_role_revoke_failure_does_not_block_the_teardown_flags(self):
+        with (
+            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
+            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity"),
+            patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
+        ):
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket()
+            namespace_cls.get_namespaces_by_bucket.return_value = []
+            role_cls.revoke_access_rules_under_from_all_roles.side_effect = RuntimeError("role store unavailable")
+
+            KnowledgeService.delete_database(database=DATABASE)
+
+        bucket_cls.mark_deleting.assert_called_once_with(BUCKET_ID)
