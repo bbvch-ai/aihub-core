@@ -784,18 +784,67 @@ class StreamingStateManager:
 
     def serialize_to_html(self) -> Annotated[str, "Complete HTML representation"]:
         """Serialize all blocks to HTML"""
+        return "".join(self._render(block) for block in self._ordered_blocks())
+
+    def to_output_items(self) -> Annotated[list[dict[str, Any]], "Open WebUI output items of the answer"]:
+        """The finished answer as Open WebUI's structured output: each thought a reasoning item, the rest message text.
+
+        Open WebUI edits an answer item by item, so a thought left inside the answer's HTML would open in the
+        editor as answer text, ``<details>`` markup included.
+        """
+        items: list[dict[str, Any]] = []
+        answer_parts: list[str] = []
+        for block in self._ordered_blocks():
+            if isinstance(block, ThinkingBlock):
+                items.extend(self._message_items(answer_parts))
+                answer_parts = []
+                items.append(self._reasoning_item(block))
+            else:
+                answer_parts.append(self._render(block))
+        items.extend(self._message_items(answer_parts))
+        return items
+
+    def _ordered_blocks(self) -> Annotated[list[ContentBlock], "Blocks in display order"]:
         blocks = [*self._content_blocks, *([self._current_block] if self._current_block else [])]
         # Deferred thoughts render live at the tail so reasoning stays visible while it happens; the
         # answer above them keeps growing, and flushing later lands them in this same position.
         if self._deferred_thinking:
             blocks.append(self._deferred_thinking)
+        return blocks
+
+    def _render(self, block: Annotated[ContentBlock, "Block to render"]) -> Annotated[str, "The block's HTML"]:
         # A table's cells are document text, never citations or file links, so they are shown as extracted.
-        return "".join(
-            block.to_html()
-            if isinstance(block, (ToolBlock, TableBlock))
-            else self.files.resolve(self.citations.resolve(block.to_html()))
-            for block in blocks
-        )
+        if isinstance(block, (ToolBlock, TableBlock)):
+            return block.to_html()
+        return self.files.resolve(self.citations.resolve(block.to_html()))
+
+    def _reasoning_item(self, block: Annotated[ThinkingBlock, "A thought"]) -> Annotated[dict[str, Any], "Its item"]:
+        text = self.files.resolve(self.citations.resolve(block.content.strip()))
+        return {
+            "type": "reasoning",
+            "id": f"r_{secrets.token_hex(12)}",
+            "status": "completed",
+            "duration": block.duration or 0,
+            "content": [{"type": "output_text", "text": text}],
+            "summary": None,
+        }
+
+    @staticmethod
+    def _message_items(
+        parts: Annotated[list[str], "Rendered answer blocks between two thoughts"],
+    ) -> Annotated[list[dict[str, Any]], "One message item, or none for blank text"]:
+        text = "".join(parts).strip()
+        if not text:
+            return []
+        return [
+            {
+                "type": "message",
+                "id": f"msg_{secrets.token_hex(12)}",
+                "status": "completed",
+                "role": "assistant",
+                "content": [{"type": "output_text", "text": text}],
+            }
+        ]
 
 
 # ============================================================================
@@ -3272,7 +3321,8 @@ class Pipe:
         __files__: Annotated[Optional[list[dict[str, Any]]], "Uploaded files"] = None,
         **kwargs,
     ) -> Annotated[
-        str | dict[str, Any] | AsyncGenerator[str, None], "Empty for the agent stream, SSE/JSON for a merge"
+        str | dict[str, Any] | AsyncGenerator[str | dict[str, Any], None],
+        "The answer's output items when streaming, else its HTML; SSE/JSON for a merge",
     ]:
         """Main pipeline entry point"""
         # Extract agent information
@@ -3434,7 +3484,7 @@ class Pipe:
                 )
 
                 logger.debug("Request processing completed")
-                return state_manager.serialize_to_html()
+                return self._finished_answer(state_manager, body.get("stream", False))
 
             except Exception as e:
                 logger.exception(f"Error in pipe: {e}")
@@ -3451,5 +3501,31 @@ class Pipe:
                 )
                 span.record_exception(e)
                 span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
-                partial = state_manager.serialize_to_html()
-                return f"{partial}\n\n> Error: {e}" if partial else f"Error: {e}"
+                error_text = f"\n\n> Error: {e}" if state_manager.serialize_to_html() else f"Error: {e}"
+                state_manager.close_current_block()
+                state_manager.start_text_block(error_text)
+                state_manager.finalize_all_blocks()
+                return self._finished_answer(state_manager, body.get("stream", False))
+
+    @classmethod
+    def _finished_answer(
+        cls,
+        state_manager: Annotated[StreamingStateManager, "State of the finished run"],
+        streaming: Annotated[bool, "Whether Open WebUI asked for a stream"],
+    ) -> Annotated[str | AsyncGenerator[dict[str, Any], None], "What Open WebUI stores as the answer"]:
+        """Hand Open WebUI the answer as output items when it streams, so it stores thoughts apart from the answer.
+
+        Open WebUI turns a returned string into a single message item, thoughts included, and its Edit view then
+        shows the reasoning ``<details>`` markup as answer text.
+        """
+        if not streaming:
+            return state_manager.serialize_to_html()
+        return cls._output_item_events(state_manager.to_output_items())
+
+    @staticmethod
+    async def _output_item_events(
+        items: Annotated[list[dict[str, Any]], "Output items of the answer"],
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        # Without an explicit index Open WebUI writes every item over the last one.
+        for index, item in enumerate(items):
+            yield {"type": "response.output_item.done", "output_index": index, "item": item}
