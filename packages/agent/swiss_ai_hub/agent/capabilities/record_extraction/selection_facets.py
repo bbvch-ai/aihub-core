@@ -25,7 +25,7 @@ class SelectionFacets:
             for key_name, counts in (
                 ("folders", Counter(SelectionFacets._folder(document) for document in documents)),
                 ("years", Counter(year for document in documents for year in set(_YEAR.findall(document.path)))),
-                ("collections", Counter(SelectionFacets._collection(document) for document in documents)),
+                ("collections", SelectionFacets._collections(documents)),
             )
             if len(counts) > 1
         ]
@@ -39,6 +39,12 @@ class SelectionFacets:
         counts = Counter(SelectionFacets._folder(document) for document in documents)
         counts.pop("/", None)
         return SelectionFacets._entries(counts, True)
+
+    @staticmethod
+    def collections(documents: Annotated[list[KnowledgeDocumentSummary], "The documents in scope"]) -> str:
+        """The collections with their counts, as 'database/collection', when there are several to choose from."""
+        counts = SelectionFacets._collections(documents)
+        return SelectionFacets._entries(counts, True) if len(counts) > 1 else ""
 
     @staticmethod
     def sample(
@@ -58,8 +64,9 @@ class SelectionFacets:
         return document.path.rsplit("/", 1)[0] if "/" in document.path else "/"
 
     @staticmethod
-    def _collection(document: KnowledgeDocumentSummary) -> str:
-        return f"{document.collection.bucket_name}/{document.collection.namespace_name}"
+    def _collections(documents: list[KnowledgeDocumentSummary]) -> Counter[str]:
+        """Documents per named collection; a summary stored before collections were named counts under none."""
+        return Counter(document.collection_name for document in documents if document.collection_name)
 
     @staticmethod
     def _entries(counts: Counter[str], counted: bool) -> str:

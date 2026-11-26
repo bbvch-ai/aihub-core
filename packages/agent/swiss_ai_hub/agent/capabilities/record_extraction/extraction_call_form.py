@@ -52,9 +52,9 @@ class ExtractionCallForm(BaseModel):
     request: ClassVar[type[ExtractionCallFormRequestEvent]] = ExtractionCallFormRequestEvent
     response: ClassVar[type[ExtractionCallFormResponseEvent]] = ExtractionCallFormResponseEvent
 
-    async def ask(self, folders: str, run_context: RunContext, t: LocaleHandler) -> ExtractionCallFormRequestEvent:
-        """`folders`: the largest folders in scope, so the user can name one as the location."""
-        parts = self.parts(folders, t)
+    async def ask(self, places: list[str], run_context: RunContext, t: LocaleHandler) -> ExtractionCallFormRequestEvent:
+        """`places`: the collections and largest folders in scope, so the user can name one as the location."""
+        parts = self.parts(places, t)
         event = ExtractionCallFormRequestEvent(
             question=ExtractionForm.text(parts, [], t),
             questions=ExtractionForm.questions(parts, [], t),
@@ -72,12 +72,10 @@ class ExtractionCallForm(BaseModel):
             await run_context.get(_PENDING_KEY.format(request_id=response.request_event.event_id))
         )
 
-    def parts(self, folders: str, t: LocaleHandler) -> list[ExtractionFormPart]:
+    def parts(self, places: list[str], t: LocaleHandler) -> list[ExtractionFormPart]:
         arguments = self.arguments
         named_place = any(ExtractionPlanner.describe(criteria) != "every document" for criteria in arguments.any_of)
-        where_hint = t(f"{FORM}.where.hint")
-        if folders:
-            where_hint = f"{where_hint} {t(f'{FORM}.where.folders', folders=folders)}"
+        where_hint = " ".join([t(f"{FORM}.where.hint"), *places])
         return [
             ExtractionFormPart(
                 key="where",
@@ -132,7 +130,7 @@ class ExtractionCallForm(BaseModel):
     def _as_answered(self, answers: dict[str, dict[str, Any]], t: LocaleHandler) -> str:
         """Every part as the user answered it, for the model to apply."""
         lines = []
-        for part in self.parts("", t):
+        for part in self.parts([], t):
             answer = answers.get(part.key)
             value = ExtractionForm.written(answer)
             if value is None:

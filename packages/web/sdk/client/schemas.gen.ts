@@ -16104,6 +16104,19 @@ export const KnowledgeDatabaseSelectorSchema = {
 
 export const KnowledgeDocumentCriteriaSchema = {
   properties: {
+    collection: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Collection",
+      description:
+        "Only documents of this collection, named 'database/collection' as the scope lists it. A path starts inside its collection, so a collection is named here, never in path_glob.",
+    },
     path_glob: {
       anyOf: [
         {

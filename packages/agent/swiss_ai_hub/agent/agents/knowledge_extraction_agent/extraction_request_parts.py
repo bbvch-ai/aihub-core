@@ -48,12 +48,11 @@ class ExtractionRequestParts(BaseModel):
     def lines(self, t: LocaleHandler) -> list[str]:
         return [ExtractionForm.line(key, value, t) for key, value in self.model_dump().items() if value is not None]
 
-    def form(self, reading: ExtractionRequestAnswer, folders: str, t: LocaleHandler) -> list[ExtractionFormPart]:
-        """The form's questions; `folders`: the largest folders in scope, so the user can name one as the location."""
+    def form(self, reading: ExtractionRequestAnswer, places: list[str], t: LocaleHandler) -> list[ExtractionFormPart]:
+        """The form's questions; `places`: the collections and largest folders in scope, so the user can name one as
+        the location."""
         named = ExtractionRequestParts.named(reading)
-        where_hint = t(f"{FORM}.where.hint_with_documents")
-        if folders:
-            where_hint = f"{where_hint} {t(f'{FORM}.where.folders', folders=folders)}"
+        where_hint = " ".join([t(f"{FORM}.where.hint_with_documents"), *places])
         parts = [
             ExtractionFormPart(key="where", value=self.where, named=named["where"], droppable=True, hint=where_hint),
             ExtractionFormPart(
