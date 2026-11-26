@@ -60,31 +60,32 @@ if [[ -f "$OUTPUT" ]] && [[ "$FORCE" != true ]]; then
 fi
 
 # --- Secret generators ---
+# Every generator strips '\r' too: the openssl of Git Bash for Windows ends its output with CRLF.
 
 # 32 bytes → base64url (matches Python secrets.token_urlsafe(32)). Never starts with '-': CLIs
 # such as neo4j-admin set-initial-password would parse that password as an option and fail.
 gen_urlsafe_32() {
     local value
-    value=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n')
+    value=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\r\n')
     while [[ "$value" == -* ]]; do
-        value=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n')
+        value=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\r\n')
     done
     printf '%s' "$value"
 }
 
 # 24 bytes → base64url (matches Python secrets.token_urlsafe(24))
 gen_urlsafe_24() {
-    openssl rand -base64 24 | tr '+/' '-_' | tr -d '=\n'
+    openssl rand -base64 24 | tr '+/' '-_' | tr -d '=\r\n'
 }
 
 # 32 bytes → 64 hex chars (matches Python secrets.token_hex(32))
 gen_hex_64() {
-    openssl rand -hex 32 | tr -d '\n'
+    openssl rand -hex 32 | tr -d '\r\n'
 }
 
 # 32 bytes → padded base64url, the format of a Fernet key (cryptography.fernet.Fernet.generate_key())
 gen_fernet_key() {
-    openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n'
+    openssl rand -base64 32 | tr '+/' '-_' | tr -d '\r\n'
 }
 
 # Random UUIDv4 derived from openssl so the script keeps a single crypto
