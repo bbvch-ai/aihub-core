@@ -447,7 +447,9 @@ class TestDisabledUserGroupMembership:
     them models."""
 
     @pytest.mark.asyncio
-    async def test_a_user_disabled_in_keycloak_is_left_out_of_every_group(self, provisioner: OpenWebuiProvisioner) -> None:
+    async def test_a_user_disabled_in_keycloak_is_left_out_of_every_group(
+        self, provisioner: OpenWebuiProvisioner
+    ) -> None:
         with (
             patch(
                 "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
