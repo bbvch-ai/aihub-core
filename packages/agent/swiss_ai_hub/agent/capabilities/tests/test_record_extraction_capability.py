@@ -1521,3 +1521,41 @@ def test_a_config_without_the_extraction_settings_is_refused():
 
     with pytest.raises(ValueError, match="RecordExtractionFields"):
         TableAgent.validate_workflow(LoopOnlyConfig)
+
+
+SELECTION_TOOLS = "swiss_ai_hub.agent.capabilities.record_extraction.record_selection_tools"
+
+
+def _selection_tools() -> RecordSelectionTools:
+    from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+
+    context = ToolContext(agent_config=_config(), displayer=MagicMock(spec=EventDisplayer), t=T)
+    return RecordSelectionTools(context)
+
+
+def _two_collection_scope() -> KnowledgeDocumentRunScope:
+    return KnowledgeDocumentRunScope(
+        collections=[
+            KnowledgeDocumentCollection(identifier="finance/invoices", collection=FINANCE, label="Finance"),
+            KnowledgeDocumentCollection(identifier="legal/contracts", collection=LEGAL, label="Legal"),
+        ]
+    )
+
+
+@pytest.mark.asyncio
+async def test_selecting_a_collection_outside_the_scope_fails_the_call_naming_the_collections_in_scope():
+    resolve = AsyncMock(side_effect=AssertionError("nothing is resolved for a collection outside the scope"))
+    with (
+        patch(f"{SELECTION_TOOLS}.KnowledgeDocumentScope.for_tool", AsyncMock(return_value=_two_collection_scope())),
+        patch(f"{SELECTION_TOOLS}.KnowledgeDocumentSelector.resolve", resolve),
+    ):
+        tools = _selection_tools()
+        with pytest.raises(LookupError) as refused:
+            await tools.select_knowledge_documents(
+                any_of=[KnowledgeDocumentCriteria(path_glob="2025/**"), KnowledgeDocumentCriteria(collection="legal")],
+                fields="amount",
+            )
+
+    message = str(refused.value)
+    assert message.startswith("No collection 'legal' in scope.")
+    assert "finance/invoices (Finance), legal/contracts (Legal)" in message

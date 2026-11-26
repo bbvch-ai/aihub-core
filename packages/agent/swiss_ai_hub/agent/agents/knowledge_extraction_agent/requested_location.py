@@ -1,7 +1,7 @@
 import re
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from swiss_ai_hub.core.generative_ai import (
     KnowledgeDocumentCriteria,
     NormalizedDate,
@@ -31,12 +31,20 @@ class RequestedLocation(BaseModel):
     only reading every document can tell which ones hold the wanted rows. A path starts inside its collection, so a
     collection is its own part: a glob prefixed with it matches nothing."""
 
-    # The default lets a reading stored before collections could be named load; strict output still requires it.
     collection: Annotated[
         str | None, Field(description="The collection, as 'database/collection' the scope lists it; null for all.")
-    ] = None
+    ]
     path_glob: Annotated[str | None, Field(description="Glob on the path, e.g. 'contracts/**' or 'invoices/**'.")]
     path_regex: Annotated[str | None, Field(description="Regular expression searched anywhere in the path.")]
+
+    @model_validator(mode="before")
+    @classmethod
+    def every_collection_when_stored_without(cls, data: Any) -> Any:
+        """Readings stored before locations named a collection lack it and meant every collection. A default would
+        take the field out of the schema's required list, so a model without strict output could omit it."""
+        if isinstance(data, dict) and "collection" not in data:
+            return {**data, "collection": None}
+        return data
 
     @classmethod
     def written_in(cls, message: Annotated[str, "The user's message"]) -> list[Self]:

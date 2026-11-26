@@ -376,7 +376,8 @@ the model:
   have no date in their path. The list, search and rank tools take an optional `collection` (`database/collection` as
   their results list it; a path starts inside it, so never in `path_glob`), which narrows the collections before
   anything is listed, searched or ranked, so pages and offsets count that collection only; a name outside the scope
-  fails the call with the scope's collections (`KnowledgeDocumentRunScope.pairs_in`). The scope is
+  fails the call with the scope's collections (`KnowledgeDocumentTools._named`). `select_knowledge_documents` refuses an
+  `any_of` collection outside the scope the same way, before anything is resolved. The scope is
   `KnowledgeDocumentScope`: the knowledge tool's collections (`KnowledgeDocumentFields` extends `KnowledgeToolFields`),
   narrowed to what the asking user may read and, with `narrow_references`, letting `#` references only pick among them
   (`KnowledgeToolScope.narrowed_collections`); the profile's `path_glob` is applied before anything reaches the model,
