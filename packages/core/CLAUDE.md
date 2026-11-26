@@ -738,8 +738,9 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
   store once per process. Milvus failures raise `KnowledgeSemanticSearchUnavailableError`; the `budget` bounds the
   listing and every search.
 - **Selections.** `KnowledgeDocumentSelector.resolve(collections, selection, limit, restricting_glob)` turns a
-  `KnowledgeDocumentSelection` (`any_of` `KnowledgeDocumentCriteria`: path glob, path regex, content query, ids; AND
-  within one, OR across) into the documents it describes, sorted and cut at `limit` with `truncated`. One
+  `KnowledgeDocumentSelection` (`any_of` `KnowledgeDocumentCriteria`: collection, path glob, path regex, content query,
+  ids; AND within one, OR across; a path is relative to its collection, so a collection is named by `collection`, as
+  `database/collection` like `KnowledgeDocumentSummary.collection_name`, and one outside the caller's selects nothing) into the documents it describes, sorted and cut at `limit` with `truncated`. One
   `KnowledgeSearchBudget` covers the listing (`list_documents(..., budget)`) and every content query, and a content
   query is one id-only search per collection (`KnowledgeContentSearch.matching_ids`, through the trigram index for a
   literal as `search` does, no text loaded, no per-line check, so it may count a document the line check would drop),

@@ -7,7 +7,13 @@ from swiss_ai_hub.core.generative_ai import (
     KnowledgeDocumentSummary,
 )
 
+from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_scope import (
+    KnowledgeDocumentRunScope,
+)
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_scope import KnowledgeDocumentScope
+from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_tool_output import (
+    KnowledgeDocumentToolOutput,
+)
 from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_arguments import ExtractRecordsArguments
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_estimate import ExtractionEstimate
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_sample import SAMPLE_ABOVE_DOCUMENTS
@@ -70,11 +76,20 @@ class RecordSelectionTools(BaseToolSpec):
             }
         )
         scope = await KnowledgeDocumentScope.for_tool(self.context)
+        RecordSelectionTools._check_collections(scope, arguments.any_of)
         settings = config.record_extraction
         selected = await KnowledgeDocumentSelector.resolve(
             scope.pairs(), arguments.selection, settings.max_documents_total, scope.restricting_glob
         )
         return self._report(selected.documents, selected.truncated, settings, arguments)
+
+    @staticmethod
+    def _check_collections(scope: KnowledgeDocumentRunScope, any_of: list[KnowledgeDocumentCriteria]) -> None:
+        """A collection outside the scope selects nothing, which the report would word as no document meeting the
+        conditions; the call fails naming the scope's collections instead, so the model selects again."""
+        for criteria in any_of:
+            if criteria.collection and not scope.pairs_in(criteria.collection):
+                raise LookupError(KnowledgeDocumentToolOutput.unknown_collection(scope, criteria.collection))
 
     @staticmethod
     def _report(

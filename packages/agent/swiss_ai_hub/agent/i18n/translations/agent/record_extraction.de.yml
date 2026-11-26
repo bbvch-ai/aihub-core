@@ -144,9 +144,10 @@ form:
   where:
     header: Ablageort
     question: 'Welche Dokumente soll ich lesen? Verstanden habe ich: %{value}.'
-    hint: Um nur einen Teil zu lesen, nenne einen Ordner, eine Datei oder ein Jahr.
-    hint_with_documents: Um nur einen Teil zu lesen, nenne einen Ordner oder eine
-      Datei; ein Zeitraum gehört unter Dokumentbedingung.
+    hint: Um nur einen Teil zu lesen, nenne eine Sammlung, einen Ordner, eine Datei oder ein Jahr.
+    hint_with_documents: Um nur einen Teil zu lesen, nenne eine Sammlung, einen Ordner
+      oder eine Datei; ein Zeitraum gehört unter Dokumentbedingung.
+    collections: 'Sammlungen: %{collections}'
     folders: 'Ordner: %{folders}'
     anything: Alle Dokumente
     anything_description: Jedes Dokument im Bereich dieses Agenten lesen

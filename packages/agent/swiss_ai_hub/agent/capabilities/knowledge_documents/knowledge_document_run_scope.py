@@ -23,6 +23,14 @@ class KnowledgeDocumentRunScope(BaseModel):
     def pairs(self) -> list[BucketNamespacePair]:
         return [entry.collection for entry in self.collections]
 
+    def pairs_in(
+        self, identifier: Annotated[str | None, "'database/collection' as the scope lists it; None for all"]
+    ) -> list[BucketNamespacePair]:
+        """The collections a tool call names; none for an identifier outside the scope, never another collection."""
+        if identifier is None:
+            return self.pairs()
+        return [entry.collection for entry in self.collections if entry.identifier == identifier]
+
     def identifier_of(self, collection: BucketNamespacePair) -> str:
         entry = next(
             entry for entry in self.collections if KnowledgeCollectionResolver.same(entry.collection, collection)

@@ -39,7 +39,8 @@ PATHS = (
 
 
 def _glob(glob: str, period: PathDateRange = YEAR_2025, message: str = MESSAGE) -> str | None:
-    return RequestedLocation(path_glob=glob, path_regex=None).without_period_folders(period, message).path_glob
+    location = RequestedLocation(collection=None, path_glob=glob, path_regex=None)
+    return location.without_period_folders(period, message).path_glob
 
 
 def _reading(
@@ -48,7 +49,7 @@ def _reading(
     return ExtractionRequestAnswer(
         is_table_request=True,
         confirms_sample=False,
-        locations=[RequestedLocation(path_glob=glob, path_regex=None) for glob in globs],
+        locations=[RequestedLocation(collection=None, path_glob=glob, path_regex=None) for glob in globs],
         fields="invoice number, total",
         period_start=period[0],
         period_end=period[1],
@@ -65,6 +66,7 @@ def _matched(glob: str) -> set[str]:
         KnowledgeDocumentSummary(
             id=path,
             collection=BucketNamespacePair(bucket_name="finance", namespace_name="invoices"),
+            collection_name="finance/invoices",
             path=path,
             filename=path.rsplit("/", 1)[-1],
             title=path,
@@ -132,8 +134,8 @@ def test_a_date_folder_the_message_writes_as_a_path_stays(glob: str, message: st
 
 
 def test_a_regex_is_never_read():
-    location = RequestedLocation(path_glob=None, path_regex="invoices/2025/")
-    both = RequestedLocation(path_glob="invoices/2025/**", path_regex="acme")
+    location = RequestedLocation(collection=None, path_glob=None, path_regex="invoices/2025/")
+    both = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex="acme")
 
     assert location.without_period_folders(YEAR_2025, MESSAGE) == location
     assert both.without_period_folders(YEAR_2025, MESSAGE) == both
@@ -186,6 +188,26 @@ def test_a_location_widened_to_every_document_makes_the_whole_scope_the_place():
     assert widened.locations == []
     assert widened.selection.any_of[0].path_glob is None
     assert widened.selection.path_date_range == YEAR_2025
+
+
+def test_a_collection_keeps_its_widened_places_apart_and_never_widens_to_the_whole_scope():
+    """A path starts inside its collection: `2025/**` of one collection widened to `**` is that whole collection, and
+    the same widened glob in two collections stays two places."""
+    reading = _reading("2025/**").model_copy(
+        update={
+            "locations": [
+                RequestedLocation(collection="kb/finance", path_glob="2025/**", path_regex=None),
+                RequestedLocation(collection="kb/legal", path_glob="2025/**", path_regex=None),
+            ]
+        }
+    )
+
+    widened = reading.without_period_folders(MESSAGE)
+
+    assert [(location.collection, location.path_glob) for location in widened.locations] == [
+        ("kb/finance", "**"),
+        ("kb/legal", "**"),
+    ]
 
 
 def test_a_reading_with_nothing_to_widen_is_returned_as_it_is():

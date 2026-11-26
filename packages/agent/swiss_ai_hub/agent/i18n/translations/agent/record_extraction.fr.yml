@@ -146,9 +146,10 @@ form:
   where:
     header: Emplacement
     question: "Quels documents dois-je lire ? J'ai compris : %{value}."
-    hint: Pour n'en lire qu'une partie, nomme un dossier, un fichier ou une année.
-    hint_with_documents: Pour n'en lire qu'une partie, nomme un dossier ou un fichier
-      ; une période va sous Condition sur le document.
+    hint: Pour n'en lire qu'une partie, nomme une collection, un dossier, un fichier ou une année.
+    hint_with_documents: Pour n'en lire qu'une partie, nomme une collection, un dossier
+      ou un fichier ; une période va sous Condition sur le document.
+    collections: 'Collections : %{collections}'
     folders: 'Dossiers : %{folders}'
     anything: Tous les documents
     anything_description: Lire chaque document du périmètre de cet agent

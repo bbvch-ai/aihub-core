@@ -40,6 +40,7 @@ def test_lines_and_pages_report_what_was_left_out() -> None:
     summary = KnowledgeDocumentSummary(
         id="d1",
         collection=BucketNamespacePair(bucket_name="b", namespace_name="n"),
+        collection_name="b/n",
         path="a.md",
         filename="a.md",
         title="a.md",
