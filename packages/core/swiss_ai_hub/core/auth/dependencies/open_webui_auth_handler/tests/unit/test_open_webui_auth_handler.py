@@ -489,8 +489,10 @@ TOKEN_OWNER_EMAIL = "svc@example.com"
 MAX_AGE = OpenWebuiAuthHandler.SIGNATURE_MAX_AGE_SECONDS
 
 
-def _member_of_the_startup_tenant(cleanup_document: list[Any], user_id: str, name: str, email: str) -> None:
-    register_fake_keycloak_user(user_id=user_id, name=name, email=email)
+def _member_of_the_startup_tenant(
+    cleanup_document: list[Any], user_id: str, name: str, email: str, enabled: bool = True
+) -> None:
+    register_fake_keycloak_user(user_id=user_id, name=name, email=email, enabled=enabled)
     cleanup_document.append(
         UserTenantRoleEntity.create_or_update(
             user_id=user_id, tenant_id=StartupTenantSettings().ID, roles=["aihub-admin"], validate_roles=False
@@ -607,3 +609,43 @@ def test_unsigned_forwarded_user_headers_still_authenticate_the_token_owner(serv
     )
 
     assert _authenticate(request).email == TOKEN_OWNER_EMAIL
+
+
+# --- A signed user the realm no longer lets in ---
+# OpenWebUI keeps its own session after Keycloak deletes or disables a user, so the pipe goes on signing for them. Each
+# refusal must end there instead of authenticating the token owner.
+
+
+def test_a_signed_user_keycloak_no_longer_has_is_refused(service_token: str) -> None:
+    request = _signed_request(service_token, "Deleted User", "deleted.user@example.com")
+
+    refusal = _refusal(request)
+
+    assert (refusal.status_code, refusal.detail) == (
+        401,
+        "User not found. Please login via OAuth2 before using OpenWebUI integration.",
+    )
+
+
+def test_a_signed_user_disabled_in_keycloak_is_refused(cleanup_document: list[Any], service_token: str) -> None:
+    name, email = "Disabled User", "disabled.user@example.com"
+    _member_of_the_startup_tenant(cleanup_document, str(ObjectId()), name, email, enabled=False)
+
+    refusal = _refusal(_signed_request(service_token, name, email))
+
+    assert (refusal.status_code, refusal.detail) == (403, "This account is disabled.")
+
+
+def test_a_signed_user_without_an_active_tenant_is_refused(service_token: str) -> None:
+    name, email = "Tenantless User", "tenantless.user@example.com"
+    register_fake_keycloak_user(user_id=str(ObjectId()), name=name, email=email, attributes={"locale": ["en"]})
+
+    refusal = _refusal(_signed_request(service_token, name, email))
+
+    assert (refusal.status_code, refusal.detail) == (400, "No active tenant set. Please select a tenant first.")
+
+
+def test_a_signed_request_without_a_bearer_is_refused_as_unauthenticated() -> None:
+    refusal = _refusal(_signed_request("", END_USER_NAME, END_USER_EMAIL))
+
+    assert (refusal.status_code, refusal.detail) == (401, "Token missing.")

@@ -71,7 +71,10 @@ ohne Benutzerkontext läuft, pusht der AI-Hub den Berechtigungsstatus in Open We
 
 Der Provisioner läuft beim API-Start, wenn sich der Satz der Online-Agents ändert (alle 60 Sekunden überprüft), wenn
 Benutzer Mandanten wechseln, wenn sich neue Benutzer über einen Open WebUI Webhook anmelden und wenn Rollen, Mandanten
-oder Benutzer-Rollen-Zuordnungen geändert werden. Alle Zugriffsänderungen werden sofort weitergegeben.
+oder Benutzer-Rollen-Zuordnungen geändert werden. Alle Zugriffsänderungen werden sofort weitergegeben. Zusätzlich läuft
+die Zugriffssynchronisation bei jedem LiteLLM-Benutzerabgleich (`LITE_LLM_PROXY_USER_RECONCILE_INTERVAL_SECONDS`, fünf
+Minuten). Keycloak meldet das Deaktivieren oder Löschen eines Benutzers nicht, und Open WebUI behält dessen Sitzung;
+nach etwa fünf Minuten ist der Benutzer aus allen Gruppen entfernt, und der Chat bietet ihm kein Modell mehr an.
 
 ### Zuverlässigkeit bei Multi-Replica-Deployments:
 

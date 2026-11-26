@@ -9,6 +9,7 @@ from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdmin
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_admin_service import LiteLLMUserAdminService
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_reconciler import LiteLLMUserReconciler
+from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
 
 pytestmark = pytest.mark.unit
 
@@ -381,3 +382,29 @@ async def test_a_run_is_cut_off_when_its_lease_expires(world: _World) -> None:
     reconciler = _reconciler(redis, USER_RECONCILE_INTERVAL_SECONDS=0.05)
     with pytest.raises(TimeoutError):
         await reconciler.run_if_due()
+
+
+@pytest.mark.asyncio
+async def test_a_run_has_openwebui_groups_follow_keycloak_even_when_litellm_fails(world: _World) -> None:
+    """Keycloak tells OpenWebUI nothing either: a deleted user's session there keeps every model their groups grant."""
+    world.keycloak_user("u1")
+    world.list_users.side_effect = RuntimeError("LiteLLM is down")
+    redis = AsyncMock()
+    redis.set.return_value = True
+    reconciler = _reconciler(redis)
+
+    with patch.object(AccessChangeHook, "notify") as notify, pytest.raises(RuntimeError, match="LiteLLM is down"):
+        await reconciler.run_if_due()
+
+    notify.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_openwebui_groups_follow_keycloak_once_per_interval_across_replicas(world: _World) -> None:
+    redis = AsyncMock()
+    redis.set.return_value = False
+
+    with patch.object(AccessChangeHook, "notify") as notify:
+        await _reconciler(redis).run_if_due()
+
+    notify.assert_not_called()
