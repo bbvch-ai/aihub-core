@@ -449,6 +449,19 @@ of the agent's knowledge is readable, the agent says so rather than answering as
 setting is on for new agents and off for agents saved before it existed, so their behaviour does not change unannounced.
 Runs without a person, such as scheduled or mail-triggered ones, keep the agent's configured scope.
 
+When the permissions live in another system, such as a data hub that decides per document who may see it, a RAG agent
+can ask that system on every question. Its **External access filter** names a metadata key, the address of an access
+resolver and an API key. The agent calls the resolver with `GET`, the API key as bearer token and the asking person's
+e-mail and tenant in `X-AIHub-User-Email` and `X-AIHub-Tenant`; the resolver answers `{"values": [...]}` with the values
+of that key the person may see. Retrieval then finds only documents whose key holds one of them (a single value or a
+list), and sources carried over from earlier turns of the chat are checked again. Documents without the key are found by
+no one. A failing, slow or unreachable resolver, or a person without an e-mail, means no access: the agent says that it
+cannot read its knowledge rather than searching everything. Answers are cached per person for **Cache (seconds)**, 60 by
+default. The resolver must be reachable from the agent's container; an address inside the platform's own networks is
+refused unless its host is listed in `EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS`. The filter is off by default and
+only applies to the RAG agents, not to the knowledge tools of other agents. See ADR
+`2026_11_27_per_user_retrieval_filter_from_an_external_access_resolver`.
+
 ### Knowledge databases and My Files
 
 Knowledge databases are shared, curated and indexed: documents are parsed, chunked and embedded so agents can search
