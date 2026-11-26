@@ -9,14 +9,18 @@ import {
 } from "./client";
 import { client } from "./client.gen";
 import {
+  createDatabaseResponseTransformer,
   createDatasetResponseTransformer,
   createTokenEndpointResponseTransformer,
   getAccessCapabilitiesResponseTransformer,
   getAgentEventTimeseriesResponseTransformer,
+  getDatabasesResponseTransformer,
   getDatasetResponseTransformer,
   getDatasetsResponseTransformer,
   getNotificationsResponseTransformer,
   listTokensEndpointResponseTransformer,
+  requestClassificationResponseTransformer,
+  updateDatabaseSourceResponseTransformer,
   updateDatasetResponseTransformer,
   updateNotificationResponseTransformer,
   updateNotificationsBulkResponseTransformer,
@@ -313,6 +317,9 @@ import type {
   RemoveUserFromThreadData,
   RemoveUserFromThreadError,
   RemoveUserFromThreadResponse,
+  RequestClassificationData,
+  RequestClassificationError,
+  RequestClassificationResponse,
   ResolveOpenwebuiReferencesData,
   ResolveOpenwebuiReferencesError,
   ResolveOpenwebuiReferencesResponse,
@@ -1120,7 +1127,11 @@ export const getLitellmModels = <
 /**
  * Get Litellm Models By Mode
  *
- * Retrieve all models filtered by their mode (chat, embedding, rerank, etc.).
+ * Retrieve the models of one mode (chat, embedding, rerank, etc.) a model picker may offer.
+ *
+ * Repeat `capability` to require several capabilities, and `hosting_location` to allow several locations; a
+ * model whose flag or location is not set fails them. Models built for one job, such as the OCR model, are
+ * left out unless `include_special_purpose` is set.
  */
 export const getLitellmModelsByMode = <
   TComposable extends Composable = "$fetch",
@@ -2164,7 +2175,7 @@ export const getProcessStartForms = <
 /**
  * Get Process Open Forms
  *
- * Returns a list of formkit forms that the user can submit to continue the given process walkthrough
+ * Returns the forms the user can submit to continue the walkthrough: only tasks assigned to them.
  */
 export const getProcessOpenForms = <
   TComposable extends Composable = "$fetch",
@@ -2262,7 +2273,7 @@ export const sendProcessOpenForm = <
 /**
  * List API Tokens
  *
- * Lists all API tokens for the authenticated user. The token value is not returned.
+ * Lists the authenticated user's API tokens, newest first, expired ones included. The token value is not returned.
  */
 export const listTokensEndpoint = <
   TComposable extends Composable = "$fetch",
@@ -2328,7 +2339,7 @@ export const createTokenEndpoint = <
 /**
  * Revoke API Token
  *
- * Revokes (deletes) an API token for the authenticated user.
+ * Revokes (deletes) one of the authenticated user's API tokens. Answers 404 for any other id.
  */
 export const revokeTokenEndpoint = <
   TComposable extends Composable = "$fetch",
@@ -3068,6 +3079,7 @@ export const createDatabase = <
     CreateDatabaseError,
     DefaultT
   >({
+    responseTransformer: createDatabaseResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
@@ -3103,6 +3115,7 @@ export const updateDatabaseSource = <
     UpdateDatabaseSourceError,
     DefaultT
   >({
+    responseTransformer: updateDatabaseSourceResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
@@ -3113,6 +3126,41 @@ export const updateDatabaseSource = <
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Request classification of a database's documents
+ *
+ * Asks the ingestion pipeline to classify the documents the database already holds, from their stored
+ * text: those ingested before classification existed, or classified by an older version. Returns the
+ * database with the pending request; 409 when its pipeline does not classify or it switched classification
+ * off.
+ */
+export const requestClassification = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends RequestClassificationResponse =
+    RequestClassificationResponse,
+>(
+  options: Options<
+    TComposable,
+    RequestClassificationData,
+    RequestClassificationResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    RequestClassificationResponse | DefaultT,
+    RequestClassificationError,
+    DefaultT
+  >({
+    responseTransformer: requestClassificationResponseTransformer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/classification",
+    ...options,
   });
 
 /**
@@ -3232,6 +3280,7 @@ export const getDatabases = <
     unknown,
     DefaultT
   >({
+    responseTransformer: getDatabasesResponseTransformer,
     security: [
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
@@ -3605,7 +3654,10 @@ export const getDocumentUrl = <
 /**
  * Get signed file URL
  *
- * Generates a short-lived secure link to the blob resource, and returns the URL.
+ * Generates a short-lived link to a knowledge document or figure, or to a file attached to an agent.
+ *
+ * The caller needs read access to the knowledge namespace or the agent owning the object; objects of any
+ * other bucket are never signed.
  */
 export const getFileUrl = <
   TComposable extends Composable = "$fetch",

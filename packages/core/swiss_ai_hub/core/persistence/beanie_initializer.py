@@ -5,7 +5,10 @@ from pymongo import AsyncMongoClient
 
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
+from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
+from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
 from swiss_ai_hub.core.persistence.notification.notification_entity import NotificationEntity
 
 
@@ -16,7 +19,13 @@ class BeanieInitializer:
     `init_beanie` binds every listed document to it. MongoEngine keeps serving every entity not listed here.
     """
 
-    DOCUMENT_MODELS: ClassVar[list[type[Document]]] = [AgentConfigEntityDocument, NotificationEntity]
+    DOCUMENT_MODELS: ClassVar[list[type[Document]]] = [
+        AgentConfigEntityDocument,
+        NotificationEntity,
+        AgentClassEntity,
+        DiscoveryRoundEntity,
+        ThreadEntity,
+    ]
 
     @staticmethod
     def create_client() -> AsyncMongoClient:

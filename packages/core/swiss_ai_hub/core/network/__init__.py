@@ -1,14 +1,14 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.network.source_host_guard import SourceHostGuard
+    from swiss_ai_hub.core.network.public_host_guard import PublicHostGuard
 
 __all__ = [
-    "SourceHostGuard",
+    "PublicHostGuard",
 ]
 
 _LAZY_IMPORTS = {
-    "SourceHostGuard": "swiss_ai_hub.core.network.source_host_guard",
+    "PublicHostGuard": "swiss_ai_hub.core.network.public_host_guard",
 }
 
 

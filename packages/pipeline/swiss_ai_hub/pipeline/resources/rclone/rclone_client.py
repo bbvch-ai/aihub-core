@@ -5,6 +5,7 @@ from urllib.parse import quote
 
 import aiohttp
 import httpx
+from pydantic import SecretStr
 from swiss_ai_hub.core.infrastructure.rclone import RcloneSettings, RcloneSourceConfig
 
 from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile, RcloneFile
@@ -16,9 +17,10 @@ logger = logging.getLogger(__name__)
 _CREATE_OPTIONS = {"obscure": True, "nonInteractive": True}
 # Questions rclone asks even in non-interactive mode and whose answer is fixed here. Google Drive always offers to
 # switch the remote to a Shared Drive after the credentials are in; the drive to sync is named up front, so the answer
-# is no. Every OAuth backend given a pasted token offers to refresh it; the answer is no, because a refreshed token
-# would live only in the in-memory daemon while the database keeps the one it was given. Any other question means a
-# credential is missing and stays an error.
+# is no. Every OAuth backend given a pasted token offers to refresh it at once; the answer is no, because rclone
+# refreshes an expired token by itself when the remote is used, and only the observation's private remote has its
+# refreshed token written back to the database (``RcloneTokenWriteBack``). Any other question means a credential is
+# missing and stays an error.
 _ANSWERED_QUESTIONS = {"config_change_team_drive": "false", "config_refresh_token": "false"}
 
 
@@ -72,6 +74,17 @@ class RcloneClient:
     def get_remote(self, name: str) -> dict[str, Any] | None:
         response = self._sync_post("config/get", {"name": name})
         return response or None
+
+    def get_token(self, name: str) -> SecretStr | None:
+        """The OAuth token the remote holds now, including any refresh rclone made in memory since it was created;
+        None when the remote is gone or holds no token. Wrapped so it never prints in a log or a traceback."""
+        token = (self.get_remote(name) or {}).get("token")
+        return SecretStr(token) if token else None
+
+    def list_remotes(self) -> list[str]:
+        """Names of the remotes in the daemon, without the trailing colon. rclone lists only sections with a
+        ``type``."""
+        return self._sync_post("config/listremotes", {}).get("remotes") or []
 
     def delete_remote(self, name: str) -> None:
         self._sync_post("config/delete", {"name": name})

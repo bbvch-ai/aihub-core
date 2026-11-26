@@ -2,6 +2,7 @@
   <StructuralColumn
     :title="t('thread.events.title')"
     :close-route="`/service/threads/${route.params.thread_id}/display`"
+    keep-query
     :loading="threadIsLoading || threadEventsAreLoading"
   >
     <EventList

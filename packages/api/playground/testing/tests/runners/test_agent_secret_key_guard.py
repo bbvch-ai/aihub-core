@@ -8,15 +8,13 @@ from typing import Any, Self
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+import pytest_asyncio
 from cryptography.fernet import Fernet
 from fastapi import FastAPI
-from mongoengine import connect, disconnect
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.imap import ImapClientConfig
-from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.secrets import SecretEncryptionService
@@ -44,30 +42,17 @@ class _MailboxAgentConfig(AgentConfig):
         )
 
 
-@pytest.fixture
-def mongo_connection():
-    client = connect(
-        db=AIHubSettings().MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-    )
-    yield client
-    disconnect()
-
-
-@pytest.fixture
-def announced_class(mongo_connection):
-    # The profiles are Beanie and emptied by `clean_beanie_collections`; the class stays on MongoEngine.
-    AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
-    AgentClassEntity(
+@pytest_asyncio.fixture(loop_scope="session")
+async def announced_class() -> None:
+    # Class and profiles are Beanie documents, emptied before every test by `clean_beanie_collections`.
+    await AgentClassEntity(
         agent_class=_AGENT_CLASS,
         form=[element.model_dump() for element in _MailboxAgentConfig.as_form().to_formkit_form()],
         is_conversational=False,
         start_events=[],
         stop_events=[],
         network_graph={},
-    ).save(validate=False)
-    yield
-    AgentClassEntity.objects(agent_class=_AGENT_CLASS).delete()
+    ).insert()
 
 
 async def _agent(password: Any) -> None:

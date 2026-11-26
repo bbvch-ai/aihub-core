@@ -1,8 +1,17 @@
 import re
-from typing import Self
+from datetime import UTC, datetime
+from typing import Annotated, Self
 
 from bson import ObjectId
-from mongoengine import BooleanField, DictField, Document, EmbeddedDocumentField, StringField, ValidationError
+from mongoengine import (
+    BooleanField,
+    DateTimeField,
+    DictField,
+    Document,
+    EmbeddedDocumentField,
+    StringField,
+    ValidationError,
+)
 from mongoengine.context_managers import switch_db
 
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
@@ -41,10 +50,17 @@ class BucketEntity(Document):
     # axis next to ``ingestor``: the ingestor says how files are processed, the source says where they come from.
     source = StringField(required=False, default=None)
     # The source pipeline's own settings for this database, shaped by the form it announced. Secret fields
-    # are stored encrypted by the API; the pipeline decrypts them per run.
+    # are stored encrypted by the API; the pipeline decrypts them per run, and writes back only an OAuth token
+    # its source refreshed, through ``replace_source_secret``.
     source_configuration = DictField(default=dict)
     # Soft-delete: excluded from every enumeration path, and hard-deleted last, by the teardown job.
     deleting = BooleanField(default=False)
+    # When classification of the documents already ingested was requested; None when nothing is owed. Like
+    # `deleting`, the flag is the work queue: the pipeline's backfill sensor runs a backfill while it is set, and the
+    # run clears only the request it started from, so one made during the run is served by the next.
+    classification_requested_at = DateTimeField(required=False, default=None)
+    # The request the backfill gave up on after its attempts failed, so the page can say so; cleared by a new request.
+    classification_failed_at = DateTimeField(required=False, default=None)
 
     @staticmethod
     def _validate_name(name: str, field_name: str) -> None:
@@ -177,6 +193,39 @@ class BucketEntity(Document):
         return bucket
 
     @classmethod
+    def replace_source_secret(
+        cls,
+        *,
+        bucket_name: Annotated[str, "Database whose source configuration holds the secret"],
+        source: Annotated[str, "Source pipeline the database must still be filled by"],
+        backend_type: Annotated[str, "Backend the configuration must still select"],
+        path: Annotated[str, "Dotted path of the secret inside source_configuration"],
+        expected: Annotated[str, "Stored value the caller read, encrypted"],
+        replacement: Annotated[str, "Value to store instead, encrypted"],
+        db_alias: Annotated[str, "Mongoengine connection alias"] = "default",
+    ) -> bool:
+        """Compare-and-set of one secret, for the source pipeline writing back a token its source refreshed.
+
+        One atomic ``update_one`` instead of a document save, so a user who replaced the source, switched it to
+        another backend or deleted the database in the meantime is never overwritten: the filter no longer matches
+        and nothing is written. Only the one path is set, so a concurrent edit of any other field survives.
+        """
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            collection = SwitchedBucket._get_collection()
+        field = f"source_configuration.{path}"
+        result = collection.update_one(
+            {
+                "bucket_name": bucket_name,
+                "source": source,
+                "deleting": {"$ne": True},
+                "source_configuration.backend_type": backend_type,
+                field: expected,
+            },
+            {"$set": {field: replacement}},
+        )
+        return result.matched_count == 1
+
+    @classmethod
     def carry_over_retired_model_columns(cls, db_alias: str = "default") -> int:
         """Moves the retired ``llm_model`` / ``embedding_model`` columns into ``configuration`` under the same keys.
 
@@ -199,6 +248,52 @@ class BucketEntity(Document):
             collection.update_one({"_id": row["_id"]}, update)
             carried += 1
         return carried
+
+    @classmethod
+    def request_classification(cls, bucket_id: str, db_alias: str = "default") -> datetime:
+        """Ask for the database's already ingested documents to be classified; returns the request's time.
+
+        Naive UTC at millisecond precision, as Mongo stores it, so the run that serves the request can clear exactly
+        that request and no later one.
+        """
+        now = datetime.now(UTC).replace(tzinfo=None)
+        requested_at = now.replace(microsecond=now.microsecond // 1000 * 1000)
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            SwitchedBucket.objects(id=bucket_id).update_one(
+                set__classification_requested_at=requested_at, unset__classification_failed_at=True
+            )
+        return requested_at
+
+    @classmethod
+    def get_classification_requested_buckets(cls, db_alias: str = "default") -> list["BucketEntity"]:
+        """Buckets whose already ingested documents are owed a classification, not counting those being deleted."""
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return list(
+                SwitchedBucket.objects(classification_requested_at__ne=None, deleting=False).order_by("bucket_name")
+            )
+
+    @classmethod
+    def clear_classification_request(cls, bucket_name: str, requested_at: datetime, db_alias: str = "default") -> bool:
+        """Clear the request a backfill served; a newer request made while it ran stays. Returns whether it cleared."""
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return bool(
+                SwitchedBucket.objects(bucket_name=bucket_name, classification_requested_at=requested_at).update_one(
+                    unset__classification_requested_at=True
+                )
+            )
+
+    @classmethod
+    def fail_classification_request(cls, bucket_name: str, requested_at: datetime, db_alias: str = "default") -> bool:
+        """Give up on a request whose backfill kept failing: it leaves the queue and is kept as the failed one.
+
+        Only that request, as `clear_classification_request` does, so a newer one made meanwhile is still served.
+        """
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return bool(
+                SwitchedBucket.objects(bucket_name=bucket_name, classification_requested_at=requested_at).update_one(
+                    unset__classification_requested_at=True, set__classification_failed_at=requested_at
+                )
+            )
 
     @classmethod
     def mark_deleting(cls, bucket_id: str, db_alias: str = "default") -> Self:

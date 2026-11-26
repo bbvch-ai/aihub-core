@@ -7,5 +7,5 @@
 # ===================================================================
 load_from:
   - grpc_server:
-      host: backup-code
+      host: backup-grpc
       port: 4266

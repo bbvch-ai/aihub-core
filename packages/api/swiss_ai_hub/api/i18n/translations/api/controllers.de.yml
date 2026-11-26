@@ -51,8 +51,8 @@ thread:
   name: Unterhaltungen
   description: Gesprächsverlauf verwalten
 token:
-  name: API-Schlüssel
-  description: API-Zugriffsschlüssel erstellen und verwalten
+  name: API-Token
+  description: Persönliche API-Token erstellen, einsehen und widerrufen
 translation:
   name: Übersetzung
   description: Text in alle unterstützten Sprachen übersetzen

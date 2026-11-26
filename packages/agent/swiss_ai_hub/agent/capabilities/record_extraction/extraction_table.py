@@ -2,9 +2,16 @@ import asyncio
 import json
 
 from swiss_ai_hub.core.events.agent import RecordsExtractedEvent
-from swiss_ai_hub.core.generative_ai import ExtractedTableMarkup, ExtractionFileStore, RecordSchema, RecordValue
+from swiss_ai_hub.core.generative_ai import (
+    ExtractedTableMarkup,
+    ExtractionFileStore,
+    PathDateCounts,
+    RecordSchema,
+    RecordValue,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 
+from swiss_ai_hub.agent.capabilities.record_extraction.document_condition_text import DocumentConditionText
 from swiss_ai_hub.agent.capabilities.record_extraction.document_extracted_event import DocumentExtractedEvent
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_run import ExtractionRun
 
@@ -18,14 +25,22 @@ PREVIEW_BYTES = 150_000
 # the file keeps it whole.
 CELL_CHARACTERS = 1_000
 CELL_CUT_MARK = "…"
+# The summary's worst case without notices (counts, preview, criteria, condition with its period, the period's counts
+# and left-out paths, the skipped and failed blocks full, three file lists full) stays about 5 kB below its cap, so only
+# notices are ever cut.
 SUMMARY_BYTES = 30_000
 FAILED_FILES_LISTED = 30
-FAILED_LIST_BYTES = 15_000
-LISTED_BYTES = 5_000
+FAILED_LIST_BYTES = 8_000
+SKIPPED_LIST_BYTES = 5_000
+LISTED_BYTES = 3_000
+# Equal to `PathDateCounts.EXCLUDED_EXAMPLE_BYTES`, which already bounds the examples when they are collected.
+PATH_DATE_LIST_BYTES = 2_000
 CRITERIA_CHARACTERS = 1_000
+CONDITION_CHARACTERS = 500
 # Row files are read side by side, a bounded number at once, so a thousand documents neither run one by one nor open
 # a thousand connections.
 ROW_FILES_AT_ONCE = 16
+SUMMARY_KEY = "agent.record_extraction.summary"
 
 
 class ExtractionTable:
@@ -54,6 +69,7 @@ class ExtractionTable:
         ]
         table, shown = ExtractionTable.preview(columns, found)
         failed = [result for result in ordered if result.failure_reason is not None]
+        skipped = [result for result in ordered if result.skipped_reason is not None]
         stored = (
             await ExtractionFileStore.put_table(run.extraction_id, ExtractionTable._filename(run), columns, found)
             if found
@@ -67,6 +83,7 @@ class ExtractionTable:
             summary=ExtractionTable._summary(run, ordered, failed, len(found), shown, unsure, t),
             file_count=len(ordered),
             failed_count=len(failed),
+            skipped_count=len(skipped),
             row_count=shown,
             total_row_count=len(found),
             truncated=run.cut_short,
@@ -167,7 +184,9 @@ class ExtractionTable:
         unsure: int,
         t: LocaleHandler,
     ) -> str:
-        key = "agent.record_extraction.summary"
+        """Counts first and notices last, the failed files before the notices: `capped` cuts from the end, and only
+        notices can grow beyond what the budgets below hold."""
+        key = SUMMARY_KEY
         if run.sample:
             counted = "sample_counts_ceiling" if run.above_ceiling else "sample_counts"
             counts = t(f"{key}.{counted}", files=len(results), total=run.total_documents, rows=found)
@@ -178,54 +197,119 @@ class ExtractionTable:
             lines.append(t(f"{key}.preview", shown=shown, rows=found))
         if run.criteria:
             lines.append(t(f"{key}.criteria", criteria=run.criteria))
-        empty = [result.document.path for result in results if not result.row_count and result.failure_reason is None]
-        if empty:
-            lines.append(t(f"{key}.no_rows", files=ExtractionTable._listed(empty, t)))
+        lines.extend(ExtractionTable._document_lines(run, results, t))
         if unsure:
             lines.append(t(f"{key}.unsure", count=unsure))
         partly_read = [result.document.path for result in results if result.partly_read]
         if partly_read:
             lines.append(t(f"{key}.partly_read", files=ExtractionTable._listed(partly_read, t)))
-        lines.extend(run.notices)
         if failed:
-            lines.append(ExtractionTable._failed_files(failed, t))
+            entries = [(result.document.path, result.failure_reason or "") for result in failed]
+            lines.append(
+                ExtractionTable._with_reasons(
+                    entries, t(f"{key}.failed_files"), f"{key}.failed_more", FAILED_LIST_BYTES, t
+                )
+            )
+        lines.extend(run.notices)
         return ExtractionTable.capped("\n\n".join(lines))
 
     @staticmethod
-    def _listed(entries: list[str], t: LocaleHandler) -> str:
+    def _document_lines(run: ExtractionRun, results: list[DocumentExtractedEvent], t: LocaleHandler) -> list[str]:
+        """The document condition with its period, what the period and the condition left out or left open, then the
+        documents that yielded no rows."""
+        key = SUMMARY_KEY
+        lines = ExtractionTable._condition_lines(run, t)
+        skipped = [(result.document.path, result.skipped_reason) for result in results if result.skipped_reason]
+        if skipped:
+            header = t(f"{key}.skipped", count=len(skipped))
+            lines.append(ExtractionTable._with_reasons(skipped, header, f"{key}.skipped_more", SKIPPED_LIST_BYTES, t))
+        empty = [
+            result.document.path
+            for result in results
+            if not result.row_count and result.failure_reason is None and result.skipped_reason is None
+        ]
+        if empty:
+            lines.append(t(f"{key}.no_rows", files=ExtractionTable._listed(empty, t)))
+        # An unsure document without rows has nothing to check; it is named under "No rows from" only.
+        document_unsure = [result.document.path for result in results if result.document_unsure and result.row_count]
+        if document_unsure:
+            lines.append(t(f"{key}.documents_unsure", files=ExtractionTable._listed(document_unsure, t)))
+        return lines
+
+    @staticmethod
+    def _condition_lines(run: ExtractionRun, t: LocaleHandler) -> list[str]:
+        """The user's condition, cut before the period is appended so the period is never what the cut drops."""
+        key = SUMMARY_KEY
+        cut = ExtractionTable._cut(run.document_condition) if run.document_condition else None
+        condition = DocumentConditionText.of(cut, run.period, t)
+        lines = [t(f"{key}.document_condition", condition=condition)] if condition else []
+        if run.path_dates is not None:
+            lines.extend(ExtractionTable.path_date_lines(run.path_dates, t))
+        return lines
+
+    @staticmethod
+    def path_date_lines(counts: PathDateCounts, t: LocaleHandler) -> list[str]:
+        """How the period sorted the documents by their paths, and the first paths it left out."""
+        key = SUMMARY_KEY
+        lines: list[str] = []
+        if counts.total > 0:
+            lines.append(
+                t(f"{key}.path_dates", in_range=counts.in_range, excluded=counts.excluded, undated=counts.undated)
+            )
+        if counts.excluded_examples:
+            files = ExtractionTable._listed(
+                counts.excluded_examples, t, limit_bytes=PATH_DATE_LIST_BYTES, total=counts.excluded
+            )
+            lines.append(t(f"{key}.path_dates_excluded", files=files))
+        return lines
+
+    @staticmethod
+    def _cut(condition: str) -> str:
+        if len(condition) <= CONDITION_CHARACTERS:
+            return condition
+        return condition[: CONDITION_CHARACTERS - 1] + "…"
+
+    @staticmethod
+    def _listed(entries: list[str], t: LocaleHandler, limit_bytes: int = LISTED_BYTES, total: int | None = None) -> str:
         """The first entries, as many as fit, and how many more there are, so a long list never hides that it was
-        shortened."""
+        shortened; `total` counts entries the caller did not pass."""
         listed: list[str] = []
         size = 0
         for entry in entries[:FAILED_FILES_LISTED]:
             size += ExtractionTable.serialized_bytes(entry)
-            if size > LISTED_BYTES and listed:
+            if size > limit_bytes and listed:
                 break
             listed.append(entry)
-        if len(listed) == len(entries):
+        more = (total if total is not None else len(entries)) - len(listed)
+        if more <= 0:
             return ", ".join(listed)
-        more = t("agent.record_extraction.summary.listed_more", count=len(entries) - len(listed))
-        return f"{', '.join(listed)}, {more}"
+        return f"{', '.join(listed)}, {t(f'{SUMMARY_KEY}.listed_more', count=more)}"
 
     @staticmethod
-    def _failed_files(failed: list[DocumentExtractedEvent], t: LocaleHandler) -> str:
-        """The failed files with their reasons, as many as fit, and how many more there are."""
-        key = "agent.record_extraction.summary"
+    def _with_reasons(
+        entries: list[tuple[str, str]],
+        header: str,
+        more_key: str,
+        limit_bytes: int,
+        t: LocaleHandler,
+    ) -> str:
+        """The files with their reasons under a header, as many as fit, and how many more there are."""
         listed: list[str] = []
         size = 0
-        for result in failed[:FAILED_FILES_LISTED]:
-            entry = f"- {result.document.path}: {result.failure_reason}"
+        for path, reason in entries[:FAILED_FILES_LISTED]:
+            entry = f"- {path}: {reason}"
             size += ExtractionTable.serialized_bytes(entry)
-            if size > FAILED_LIST_BYTES:
+            if size > limit_bytes:
                 break
             listed.append(entry)
-        if len(listed) < len(failed):
-            listed.append(t(f"{key}.failed_more", count=len(failed) - len(listed)))
-        return f"{t(f'{key}.failed_files')}\n\n" + "\n".join(listed)
+        if len(listed) < len(entries):
+            listed.append(t(more_key, count=len(entries) - len(listed)))
+        return f"{header}\n\n" + "\n".join(listed)
 
     @staticmethod
     def capped(summary: str) -> str:
-        """The summary within its share of the largest event; only notices from a model can make it this long."""
+        """The summary within its share of the largest event; only notices from a model can make it this long, and as
+        they come last, they are the part that gives way."""
         while ExtractionTable.serialized_bytes(summary) > SUMMARY_BYTES:
             summary = summary[: int(len(summary) * 0.9)].rstrip() + "…"
         return summary

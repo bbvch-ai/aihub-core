@@ -9,18 +9,21 @@ from swiss_ai_hub.core.generative_ai import (
     KnowledgeDocumentSelectionResult,
     KnowledgeDocumentSelector,
     KnowledgeDocumentSummary,
+    PathDateCounts,
+    PathDateVerdict,
     RecordSchema,
     RecordSchemaBuilder,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 
+from swiss_ai_hub.agent.capabilities.record_extraction.document_condition_text import DocumentConditionText
 from swiss_ai_hub.agent.capabilities.record_extraction.document_extraction_requested_event import (
     DocumentExtractionRequestedEvent,
 )
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_estimate import ExtractionEstimate
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_run import ExtractionRun
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_sample import SAMPLE_ABOVE_DOCUMENTS, ExtractionSample
-from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import CRITERIA_CHARACTERS
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import CRITERIA_CHARACTERS, ExtractionTable
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields import RecordExtractionFields
 from swiss_ai_hub.agent.capabilities.record_extraction.sample_awaiting_confirmation import SampleAwaitingConfirmation
 from swiss_ai_hub.agent.capabilities.record_extraction.selection_facets import SelectionFacets
@@ -65,13 +68,26 @@ class ExtractionPlanner:
                 SELECTION_TIMEOUT_SECONDS,
             )
             if not selected.documents:
-                return ExtractionPlanner.answer(request, t(f"{_SUMMARY}.no_documents"))
+                return ExtractionPlanner.answer(request, ExtractionPlanner._nothing_selected(selected, t))
             schema = schema or await ExtractionPlanner._schema(request, config, displayer, user, t)
         except (ValueError, LookupError, KnowledgeContentSearchTimeoutError) as problem:
             return ExtractionPlanner.answer(request, t(f"{_SUMMARY}.not_started", reason=problem))
         if selected.truncated or (len(selected.documents) > SAMPLE_ABOVE_DOCUMENTS and not request.confirmed):
             return await ExtractionPlanner._sample(request, selected, schema, config, displayer, t, thread, user)
-        return await ExtractionPlanner._whole(request, selected.documents, schema, config, displayer, t, user)
+        return await ExtractionPlanner._whole(request, selected, schema, config, displayer, t, user)
+
+    @staticmethod
+    def _nothing_selected(selected: KnowledgeDocumentSelectionResult, t: LocaleHandler) -> str:
+        """That nothing was selected, and, when the period left out every document, how many, which and which years,
+        so the user sees a request for the wrong period rather than an empty scope."""
+        lines = [t(f"{_SUMMARY}.no_documents")]
+        counts = selected.path_dates
+        if counts is not None and counts.total > 0:
+            lines.extend(ExtractionTable.path_date_lines(counts, t))
+            if counts.outside_years:
+                years = ", ".join(str(year) for year in counts.outside_years)
+                lines.append(t(f"{_SUMMARY}.path_dates_years", years=years))
+        return "\n\n".join(lines)
 
     @staticmethod
     async def _with_waiting_sample(
@@ -103,7 +119,7 @@ class ExtractionPlanner:
     @staticmethod
     async def _whole(
         request: ExtractRecordsEvent,
-        documents: list[KnowledgeDocumentSummary],
+        selected: KnowledgeDocumentSelectionResult,
         schema: RecordSchema,
         config: RecordExtractionFields,
         displayer: EventDisplayer,
@@ -112,7 +128,8 @@ class ExtractionPlanner:
     ) -> list[DocumentExtractionRequestedEvent]:
         """Every document in one answer, the likeliest first when the selection is large, so early progress shows what
         the table will hold; a small selection is not worth a ranking's wait."""
-        query = ExtractionPlanner._semantic_query(request, config)
+        documents = selected.documents
+        query = ExtractionPlanner._semantic_query(request, config, t)
         if len(documents) > SAMPLE_ABOVE_DOCUMENTS:
             documents, _ = await ExtractionSample.ordered(
                 documents,
@@ -123,7 +140,7 @@ class ExtractionPlanner:
                 user=user,
                 path_glob=config.knowledge_documents.path_glob or None,
             )
-        run = ExtractionPlanner._run(request, documents, schema)
+        run = ExtractionPlanner._run(request, documents, schema, selected.path_dates)
         minutes = ExtractionEstimate.minutes(documents, config.record_extraction.max_parallel_extractions)
         await displayer.display_thought(
             t(
@@ -155,7 +172,7 @@ class ExtractionPlanner:
             request.collections,
             request.document_terms,
             request.row_terms,
-            semantic_query=ExtractionPlanner._semantic_query(request, config),
+            semantic_query=ExtractionPlanner._semantic_query(request, config, t),
             user=user,
             path_glob=config.knowledge_documents.path_glob or None,
         )
@@ -163,7 +180,7 @@ class ExtractionPlanner:
         notices = ExtractionPlanner._sample_notices(request, selected, schema, config, t)
         if not selected.truncated:
             await SampleAwaitingConfirmation.of(request, schema, len(documents)).save(thread, config.agent_id)
-        run = ExtractionPlanner._run(request, sample, schema).model_copy(
+        run = ExtractionPlanner._run(request, sample, schema, selected.path_dates).model_copy(
             update={
                 "notices": [*notices, *request.notices],
                 "sample": True,
@@ -183,12 +200,20 @@ class ExtractionPlanner:
         return ExtractionPlanner.requests(run, sample, schema, request.instructions, request.row_terms)
 
     @staticmethod
-    def _semantic_query(request: ExtractRecordsEvent, config: RecordExtractionFields) -> str | None:
-        """What the wanted documents are about, to rank them by meaning: the terms that identify them and the condition
-        on their rows, in the user's words. Not after a discovery search, whose model already ranked what it chose."""
+    def _semantic_query(request: ExtractRecordsEvent, config: RecordExtractionFields, t: LocaleHandler) -> str | None:
+        """What the wanted documents are about, to rank them by meaning: the terms that identify them and the
+        conditions on them, their period included, and on their rows, in the user's words. Not after a discovery
+        search, whose model already ranked what it chose."""
         if config.knowledge_documents.discovery is True:
             return None
-        return " ".join(part for part in (request.document_terms, request.instructions, request.fields) if part) or None
+        parts = (request.document_terms, ExtractionPlanner._condition(request, t), request.instructions, request.fields)
+        return " ".join(part for part in parts if part) or None
+
+    @staticmethod
+    def _condition(request: ExtractRecordsEvent, t: LocaleHandler) -> str | None:
+        """The document condition with the selection's period in words, as the user reads it."""
+        date_range = request.selection.path_date_range if request.selection else None
+        return DocumentConditionText.of(request.document_condition, date_range, t)
 
     @staticmethod
     def _sample_notices(
@@ -202,6 +227,7 @@ class ExtractionPlanner:
         documents = selected.documents
         columns = ", ".join(name.replace("_", " ") for name in schema.field_names)
         kept = request.instructions or t(f"{_SUMMARY}.every_row")
+        condition = ExtractionPlanner._condition(request, t)
         notices = [
             t(f"{_SUMMARY}.too_broad_ceiling", total=len(documents))
             if selected.truncated
@@ -210,7 +236,9 @@ class ExtractionPlanner:
                 total=len(documents),
                 minutes=ExtractionEstimate.minutes(documents, config.record_extraction.max_parallel_extractions),
             ),
-            t(f"{_SUMMARY}.interpretation", columns=columns, kept=kept),
+            t(f"{_SUMMARY}.interpretation_documents", columns=columns, documents=condition, kept=kept)
+            if condition
+            else t(f"{_SUMMARY}.interpretation", columns=columns, kept=kept),
             *SelectionFacets.lines(documents, t, counted=not selected.truncated),
         ]
         notices.append(
@@ -228,6 +256,7 @@ class ExtractionPlanner:
         instructions: str | None,
         row_terms: str | None,
     ) -> list[DocumentExtractionRequestedEvent]:
+        """One request per document; a document its path dates wholly within the run's period is not judged on it."""
         return [
             DocumentExtractionRequestedEvent(
                 run=run,
@@ -235,13 +264,17 @@ class ExtractionPlanner:
                 record_schema=schema,
                 instructions=instructions,
                 row_terms=row_terms,
+                dated_by_path=run.period is not None and run.period.verdict(document.path) is PathDateVerdict.WITHIN,
             )
             for document in documents
         ]
 
     @staticmethod
     def _run(
-        request: ExtractRecordsEvent, documents: list[KnowledgeDocumentSummary], schema: RecordSchema
+        request: ExtractRecordsEvent,
+        documents: list[KnowledgeDocumentSummary],
+        schema: RecordSchema,
+        path_dates: PathDateCounts | None = None,
     ) -> ExtractionRun:
         return ExtractionRun(
             extraction_id=request.event_id,
@@ -253,6 +286,9 @@ class ExtractionPlanner:
             show_collection=ExtractionPlanner._spans_collections(documents),
             tool_call_id=request.tool_call_id,
             collections=request.collections,
+            document_condition=request.document_condition,
+            period=request.selection.path_date_range if request.selection else None,
+            path_dates=path_dates,
         )
 
     @staticmethod

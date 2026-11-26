@@ -24,6 +24,9 @@ export const useAuth = () => {
   const login = async (idpHint?: string, redirectMethod: 'assign' | 'replace' = 'assign') => {
     const { $auth, $i18n } = useNuxtApp()
     const extraQueryParams: Record<string, string> = idpHint ? { kc_idp_hint: idpHint } : {}
+    // Drop orphaned signin-state left in web storage by abandoned or superseded login attempts. A stale
+    // entry is a common cause of "mismatching_state" on the callback in a long-lived browser profile.
+    await $auth.clearStaleState()
     await $auth.signinRedirect({
       extraQueryParams,
       redirectMethod,

@@ -23,20 +23,19 @@ class KnowledgeDocument(BaseModel):
     end: Annotated[int, Field(description="Offset one past the last character of `text` in the full text")]
 
     @classmethod
-    def from_ref_doc(
+    def from_text_range(
         cls,
         ref_doc: RefDoc,
         resolved: ResolvedKnowledgeCollection,
-        start: int | None = None,
-        end: int | None = None,
+        text_length: int,
+        start: int,
     ) -> Self:
-        full_text = ref_doc.data.text or ""
-        range_start, range_end, _ = slice(start, end).indices(len(full_text))
-        range_end = max(range_start, range_end)
+        """From a document loaded with one range of its text, as `RefDoc.first_with_text_range` cuts it."""
+        text = ref_doc.data.text or ""
         return cls(
             summary=KnowledgeDocumentSummary.from_ref_doc(ref_doc, resolved),
-            text=full_text[range_start:range_end],
-            text_length=len(full_text),
-            start=range_start,
-            end=range_end,
+            text=text,
+            text_length=text_length,
+            start=start,
+            end=start + len(text),
         )

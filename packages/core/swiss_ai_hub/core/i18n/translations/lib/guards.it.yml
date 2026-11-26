@@ -156,6 +156,10 @@ sensitive_info_guard:
   docstring: |
     Risultato dell'analisi di una risposta per informazioni sensibili che non dovrebbero essere condivise esternamente.
 few_shot_example:
+  list_help: Esempi che stabiliscono a quali domande risponde questo agente. Prima
+    di consultare le sue conoscenze, l'agente confronta ogni domanda con questi esempi
+    e rifiuta, indicandone il motivo, quelle che segnano come fuori dal suo ambito.
+    Lascia l'elenco vuoto per accettare tutte le domande.
   user:
     label: Messaggio utente
     help: Un esempio di richiesta o messaggio utente che verrà valutato.

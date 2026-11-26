@@ -144,7 +144,7 @@ const config: DefaultConfigOptions = {
       props: ['modelRef', 'requires'],
     }),
     modelSelect: createInput(ModelSelect, {
-      props: ['mode', 'placeholder', 'filter', 'showClear'],
+      props: ['mode', 'placeholder', 'filter', 'showClear', 'requirements'],
     }),
     secretFileInput: createInput(SecretFileInput, {
       props: ['accept', 'maxSizeBytes', 'placeholder'],

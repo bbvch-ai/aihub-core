@@ -61,6 +61,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── source_pipeline_registration_sensor.py # Stage-1 counterpart: announce a source pipeline (+ shared id/label gate)
 │   │   ├── source_bucket_cleanup_sensor.py # Forget databases a source pipeline no longer fills (partitions + remote)
 │   │   ├── knowledge_teardown_sensor.py   # Run teardown for databases/folders flagged `deleting`
+│   │   ├── document_classification_backfill_sensor.py # Run the classification backfill for databases that requested it
 │   │   ├── single_flight_run_guard.py     # "Is a run of this job already queued or running?"
 │   │   └── nats/
 │   │       ├── nats_document_uploaded_sensor.py  # NATS event-driven triggers
@@ -82,11 +83,13 @@ packages/pipeline/                        # SDK framework
 │   ├── services/
 │   │   ├── knowledge_teardown_service.py  # Destroys a database/namespace across every store
 │   │   ├── default_partition_repair_service.py # Provisions the collection, moves nodes stranded in `_default`
-│   │   └── orphaned_node_repair_service.py # Deletes vector nodes whose document has no record and no file
+│   │   ├── orphaned_node_repair_service.py # Deletes vector nodes whose document has no record and no file
+│   │   └── document_classification_backfill_service.py # Classifies already ingested documents from their stored text
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
 │   ├── jobs/knowledge_teardown_job.py     # {ingestor}_knowledge_teardown
 │   ├── jobs/repair_orphaned_nodes_job.py  # {ingestor}_repair_orphaned_nodes (manual, dry run by default)
+│   ├── jobs/backfill_document_classification_job.py # {ingestor}_backfill_document_classification (sensor or manual dry run)
 │   ├── executors/factory.py               # default_process_executor (in-process)
 │   ├── automation/all_deps_completed.py   # AutomationCondition for all-deps-ready
 │   ├── types/                             # Domain types (Pydantic models)
@@ -98,6 +101,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── share_point_file.py            # SharePoint-specific file
 │   │   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
 │   │   ├── rclone_remote.py               # How a run addresses one database's remote (name, fs, patterns)
+│   │   ├── rclone_token_baseline.py       # What an observation's remote was created with (no plaintext token)
 │   │   ├── structured_record_file.py      # One API record as a markdown file: namespace, frontmatter, body
 │   │   ├── structured_file_reference.py   # A binary file a source offers: key, download URL, title and link
 │   │   ├── structured_source_state.py     # dlt state + scope fingerprint kept per database between syncs
@@ -115,6 +119,9 @@ packages/pipeline/                        # SDK framework
 │   │   ├── run_routing.py                 # BUCKET_RUN_TAG, bucket_from_run_tag/_partition_key, owned_by_ingestor/_source (CRITICAL)
 │   │   ├── store_builders.py              # build_vector_store/doc_store/s3_client for a bucket
 │   │   ├── source_builders.py             # source_config_for_bucket, rclone_remote_for_bucket — per-run source resolution
+│   │   ├── stored_source_configuration.py # One read of a database's source row: validated config + stored ciphertext
+│   │   ├── observation_rclone_remote.py   # The observation's private rclone remote + the sweep of leftover ones
+│   │   ├── rclone_token_write_back.py     # Stores an OAuth token rclone refreshed (compare-and-set)
 │   │   ├── source_updated_notifier.py     # notify_source_updated() — SourceUpdatedEvent per written/removed file
 │   │   ├── model_builders.py              # Per-database configuration: models, enrichment flags, vector width
 │   │   ├── bucket_utils.py                # get_db_name_from_bucket_name() — S3 bucket → MongoDB name
@@ -167,8 +174,9 @@ processing chain regardless of origin:
   `DefaultPartitionRepairService`: the database's Milvus collection is created with the embedding model's width if
   missing, a half-built one gets its missing partitions, and nodes stranded in `_default` move to their namespace
   partition (#1923). A document partition is what starts an ingestion run, so none meets a half-built collection.
-- `documents_factory` → parse (MinerU) → apply a `.md` file's frontmatter → `RefDocDocument` → MongoDB, flagged
-  `is_ingested=False` (see [Markdown Frontmatter](#markdown-frontmatter))
+- `documents_factory` → parse (MinerU) → apply a `.md` file's frontmatter → figure descriptions → table refinement →
+  classification → `RefDocDocument` → MongoDB, flagged `is_ingested=False` (see
+  [Markdown Frontmatter](#markdown-frontmatter) and [Document Classification](#document-classification))
 - `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus, which flips `is_ingested=True`
 - `summary_nodes_factory` (optional) → hierarchical summaries → Milvus
 - `removed_documents_factory` → cleanup orphaned documents: vector nodes first, then figures, then the MongoDB record.
@@ -207,13 +215,14 @@ is derived from `ingestor`, because asset keys are unique per Dagster deployment
 to the instance. That is what lets a second pipeline *type* be deployed alongside this one.
 
 `settings` is a `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`, read from the environment when omitted)
-carrying the text, embedding and vision models, the three enrichment flags and the observation schedule. The models and
+carrying the text, embedding and vision models, the four enrichment flags and the observation schedule. The models and
 enrichment flags are **deployment defaults**, not the graph's shape: they pre-fill the form the pipeline announces, and
 are what a database that stores no value of its own falls back to at run time. The builder registers them under its
 `ingestor` (`model_builders.register_deployment_defaults`), so a run falls back to the settings the pipeline was built
 with rather than re-reading the environment: a model named in code wins over the deployment's variables. The asset graph
-is identical for every database (`summary_nodes` always exists, and table refinement and figure descriptions are always
-in the `documents` graph), and each enrichment op decides per run from the bucket's configuration whether it has work.
+is identical for every database (`summary_nodes` always exists, and table refinement, figure descriptions and document
+classification are always in the `documents` graph), and each enrichment op decides per run from the bucket's
+configuration whether it has work.
 
 Every pipeline built here registers itself: a sensor upserts an `IngestorEntity` carrying labels, form and schema, so
 the API's `GET /knowledge/ingestors` can offer it in the create-database dialog and validate what users submit. See
@@ -357,23 +366,48 @@ SharePoint is `onedrive` with `drive_type=documentLibrary`. Credentials are `str
 mask keeps the stored value, and a submitted `enc:v1:` value is refused (a client is only ever shown masks).
 `SourcePipelineConfig` sets `hide_input_in_errors`, because the pipeline validates after decrypting. The dialog offers
 only `RcloneSyncConfig.offered_backends()` (`_TESTED_BACKENDS` = `s3`, `drive`, `onedrive`, plus `local` when
-`RCLONE_LOCAL_SOURCE_ROOT` is set), each under a translated label; the other backends stay in the form and runtime so
-existing databases keep syncing. rclone's setup still asks questions in non-interactive mode: `RcloneClient` answers the
-fixed ones (`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered with the stored `drive_id` through ephemeral
-`config_*` parameters (rclone then checks the drive against Microsoft Graph while creating the remote), and a step
-rclone fails raises its `Error` text. The Drive service-account key is a `SecretFileInput` (core form element, treated
-as a secret by `SecretFieldWalker`). Adding a backend = one `Form` subclass + one field on `RcloneSyncConfig` + labels
-in `packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
+`RCLONE_LOCAL_SOURCE_ROOT` is set), each under a translated label; a `model_validator` refuses any other backend when a
+stored configuration is read, because the API validates against the announced schema only. `outbound_urls()` names the
+hosts a backend connects to (S3/Azure `endpoint`, SFTP `host`), and `rclone_remote_for_bucket` passes each through
+`PublicHostGuard` before the remote is created (`RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts). With an S3
+endpoint set, `to_rclone_source_config` sends a path-style provider (`_PATH_STYLE_S3_PROVIDERS`, checked against the
+rclone image; any other provider, `AWS` included, goes out as `Other`), because in virtual-hosted style rclone contacts
+`<bucket>.<endpoint host>`, a name the check never sees; the stored provider is untouched. An access point ARN as the
+root path is refused with an endpoint, since the client derives its host from the ARN. The Drive key file is refused
+when any key folding to `token_uri` (Go's JSON decoder ignores case, Kelvin sign included) names a host other than
+Google's. rclone's setup still asks questions in non-interactive mode: `RcloneClient` answers the fixed ones
+(`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered with the stored `drive_id` through ephemeral `config_*`
+parameters (rclone then checks the drive against Microsoft Graph while creating the remote), and a step rclone fails
+raises its `Error` text. The Drive service-account key is a `SecretFileInput` (core form element, treated as a secret by
+`SecretFieldWalker`). Adding a backend = one `Form` subclass + one field on `RcloneSyncConfig` + labels in
+`packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
 
 **Per-run resolution** (`util/source_builders.py`, the Stage-1 sibling of `model_builders` / `store_builders`):
 
 - `source_config_for_bucket(bucket, source, RcloneSyncConfig)` — row → decrypt → validate; raises if the database is
-  `deleting` or its `source` is a different token.
-- `rclone_remote_for_bucket(bucket, source)` — upserts the remote `rclone_{bucket}` in the rclone daemon
-  (`config/create` with `obscure`, `nonInteractive`) **once per process** (`@cache`; every Dagster step is its own
-  process), so a credential edit applies on the next run and the daemon (`--config=/dev/null`, in-memory) needs no
-  operator action after a restart. Returns an `RcloneRemote` (name, `fs`, patterns). Secrets travel only in the
-  `config/create` body; URLs, logs and metadata carry the name.
+  `deleting` or its `source` is a different token. Delegates to `StoredSourceConfiguration.read`
+  (`util/stored_source_configuration.py`), which returns the validated config and the stored (encrypted) form from
+  **one** read of the row.
+- `rclone_remote_for_bucket(bucket, source)` — upserts the shared remote `{source}_{bucket}` in the rclone daemon
+  (`config/create` with `obscure`, `nonInteractive`) **once per process** (`@cache`; a run is one process, its steps
+  share it through `in_process_executor`), so a credential edit applies on the next run and the daemon
+  (`--config=/dev/null`, in-memory) needs no operator action after a restart. Returns an `RcloneRemote` (name, `fs`,
+  patterns). Secrets travel only in the `config/create` body; URLs, logs and metadata carry the name. Write and removal
+  runs use it.
+- `ObservationRcloneRemote.opened(bucket, source, run_id)` (`util/observation_rclone_remote.py`) — the observation's own
+  remote `{source}_{bucket}_obs_{run id hex}`, created from one read of the row, carrying an `RcloneTokenBaseline`
+  (token path, backend, the stored ciphertext, a digest of the token sent, whether it had a refresh token) and deleted
+  in `finally`. After the data versions, `RcloneTokenWriteBack.persist_refreshed_token` reads the token back
+  (`config/get`) and, if rclone refreshed it, stores it encrypted through `BucketEntity.replace_source_secret`, a
+  compare-and-set over that ciphertext: a user's edit in between wins, a token that lost its refresh token is refused,
+  neither fails the run. Only pasted OAuth tokens (`RcloneSyncConfig.refreshable_token_path()`: `onedrive.token`,
+  `drive.token`) are written back; logs name only the remote. Microsoft rotates refresh tokens, so without this a pasted
+  OneDrive/SharePoint token dies after 90 days. See the 2026-11-06 amendment of ADR
+  `2026_09_09_source_pipelines_as_a_second_axis_of_a_knowledge_database`.
+- OneDrive token mode sends `token_url` (`OneDriveOptions.token_url()`: rclone's login host for the region + tenant or
+  `common`, quoted; unknown region raises). rclone's OneDrive setup refreshes an expired token with a client that has no
+  token URL, so without it every `config/create` fails with `Post "": unsupported protocol scheme` once the access token
+  expired. Never stored.
 - `build_rclone_client()` — stateless `RcloneClient` (RC URL + basic auth), `@cache`d.
 
 The bucket travels in the `aihub/bucket` run tag on the observe/remove path and in the composite
@@ -397,17 +431,19 @@ announces each removal the same way.
 
 **Cleanup.** `SourceBucketCleanupSensorFor_{source}` (`sensors/source_bucket_cleanup_sensor.py`) drops the partitions
 and the daemon remote of every database that still has partitions but no live row pointing at this source. Storage
-teardown stays with the ingestion pipeline.
+teardown stays with the ingestion pipeline. It also sweeps observation remotes (`ObservationRcloneRemote.sweep`) a
+killed run left behind, deleting one only when Dagster reports its run finished: a SIGKILLed run stays started until run
+monitoring ends it (up to ~2 h), and a run unknown to the instance may belong to another one sharing the daemon.
 
 **Emptied folders.** Removing files leaves their namespace behind, and a sourced database refuses manual namespace
 deletion. So after each removal, `ops/source/routed/delete_emptied_namespaces.py` deletes the row of every namespace of
 the run's database whose folder holds no ingestible file any more. Only the row: the folder's documents, figures and
-vectors are removed per file by the ingestion pipeline, which finds them by the namespace name each document carries.
-Do not route this through `knowledge_teardown_sensor`. A teardown deletes the whole folder prefix and every vector of
-the namespace, so a folder re-created at the source while it waited would lose its new files; with the row gone, the
-next observation simply registers a fresh one. Rows flagged `deleting` are manual deletions and stay with the teardown.
-A folder emptied at the source counts as gone, because rclone lists files only. A folder the source still lists keeps
-its row even while the data lake holds none of its files, because rclone writes each file in a run of its own. The
+vectors are removed per file by the ingestion pipeline, which finds them by the namespace name each document carries. Do
+not route this through `knowledge_teardown_sensor`. A teardown deletes the whole folder prefix and every vector of the
+namespace, so a folder re-created at the source while it waited would lose its new files; with the row gone, the next
+observation simply registers a fresh one. Rows flagged `deleting` are manual deletions and stay with the teardown. A
+folder emptied at the source counts as gone, because rclone lists files only. A folder the source still lists keeps its
+row even while the data lake holds none of its files, because rclone writes each file in a run of its own. The
 structured source pipeline runs the same op after its removal, without source files, because it writes within the same
 run.
 
@@ -538,6 +574,14 @@ everything, while a rotated credential keeps the cursor.
     saving, so the next run tries it again; and it travels to reconcile as `unread_file_keys`, which rule 6 skips.
     Counted as missing, a file that stays unavailable would discard the state every second run and re-read the whole
     source.
+11. **A sync's memory does not grow with the source.** dlt keeps up to 5,000 rows in memory before writing them to disk,
+    and each row carries a whole record (a wiki page holds its HTML and its markdown), so a source of a few thousand
+    records would be read entirely into memory. The sync step sets dlt's `data_writer.buffer_max_items` to 100.
+12. **A long sync reports its progress.** dlt writes nothing to the data lake before every record is read, so without
+    log lines a sync that reads for minutes looks hung. The record mapping logs every `PROGRESS_EVERY` (100) records per
+    resource, and an adapter may log its scope (MediaWiki: pages and files in scope, how many to read). They go through
+    `logging.getLogger(__name__)`, which the instance's `managed_python_loggers: [swiss_ai_hub]` turns into Dagster
+    events: they show in a run's Events tab even where stdout and stderr are not captured (`NoOpComputeLogManager`).
 
 **Try it locally.** `make structured-pipeline` runs the ingestion pipeline and `app.structured_pipeline` (Jira,
 Confluence) in one `dagster dev`; `playground/jira_seed` fills a Jira Cloud or Data Center test site with the cases to
@@ -564,7 +608,7 @@ silent:
   requests runs the hook before following one, so no answer can send a request on to a host nobody checked.
 - **Only public hosts.** A knowledge administrator sets the URL, and the pipeline sits on the networks of the platform's
   own services. The URL type refuses `?`, `#` and credentials (a `?` would turn the appended API path into a query), and
-  `SourceHostGuard` (core `network/`, shared with agents that read Jira) refuses, first thing in the preflight, a host
+  `PublicHostGuard` (core `network/`, shared with agents that read Jira) refuses, first thing in the preflight, a host
   without a dot (Docker service names, `localhost`) and one resolving to any non-global address.
   `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts (`localhost` in `.env.dev`). DNS rebinding between the
   check and the request is not covered.
@@ -609,7 +653,7 @@ Cloud and Confluence Data Center over REST v1 (`content/search` with CQL); v2 ha
 Data Center. It keeps the Jira adapter's rules on credentials (`auth=` only), the error hook (`ConfluenceRequestError`,
 an `HTTPError`, so 429 and 5xx are retried), type-level URL constraints and `problems()`. In addition:
 
-- **Only public hosts, as for Jira.** The URL type refuses `?`, `#` and credentials, and `SourceHostGuard` runs first in
+- **Only public hosts, as for Jira.** The URL type refuses `?`, `#` and credentials, and `PublicHostGuard` runs first in
   the preflight with the same `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` exemptions. A Confluence next to a developer's
   pipeline is reached through the dev default `localhost`; an on-premise Data Center on a private address needs an
   operator to allow its host.
@@ -654,7 +698,7 @@ an `HTTPError`, so 429 and 5xx are retried), type-level URL constraints and `pro
 crawls the HTML pages: the API gives namespace and category scope, revision ids and a complete listing for deletions,
 and `action=parse` returns the page with every template expanded but without the skin's navigation. It keeps the
 Confluence adapter's rules on the error hook (`MediaWikiRequestError`, an `HTTPError`, so 429 and 5xx are retried),
-type-level URL constraints, `problems()` and the `SourceHostGuard` check with
+type-level URL constraints, `problems()` and the `PublicHostGuard` check with
 `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`. In addition:
 
 - **API errors arrive with status 200.** The response hook raises on an `error` object (its `code`, such as
@@ -739,7 +783,7 @@ type-level URL constraints, `problems()` and the `SourceHostGuard` check with
 - **Downloads** (`MediaWikiClient.download`) use the sync's signed-in session (the adapter keeps the client of
   `dlt_source` for `read_file`), follow no redirect, stop reading at the size limit, and refuse an HTML answer: a single
   sign-on gateway answers an expired session with its login page and status 200, which would be stored as the document.
-  A file on another host than the wiki's (Wikimedia's upload host) passes `SourceHostGuard` first. 403, 404 and 410
+  A file on another host than the wiki's (Wikimedia's upload host) passes `PublicHostGuard` first. 403, 404 and 410
   become `StructuredFileUnavailableError`; a 401 or a server error fails the run.
 
 ## Markdown Frontmatter
@@ -776,8 +820,10 @@ and a converted file opening with a horizontal rule must not be taken for YAML. 
 - Values: text, int64, finite floats; `true`/`false`, dates and list items are stored as **text**. llama-index's
   `MetadataFilter` rejects booleans, so a flag must be stored the way a filter can name it. Null, maps and nested lists
   are skipped.
-- `MarkdownFrontmatter.PLATFORM_KEYS` (all of `DEFAULT_METADATA` plus llama-index/Milvus internals) are refused, so a
-  Jira `type: Bug` cannot replace the content/summary `type` every retrieval filters on. Adapters write `issue_type`.
+- `MarkdownFrontmatter.PLATFORM_KEYS` (all of `DEFAULT_METADATA`, llama-index/Milvus internals and every key
+  classification writes, `DocumentTypeCatalog.metadata_keys()`) are refused, so a Jira `type: Bug` cannot replace the
+  content/summary `type` every retrieval filters on, and a record's own `document_type` cannot pass for classification.
+  Adapters write `issue_type`.
 - `MAX_METADATA_BYTES` (8 KiB, file order) caps the custom metadata: each node stores its metadata twice in Milvus' 64
   KiB dynamic field (keys + `_node_content`).
 
@@ -801,6 +847,60 @@ numbers keep plain equality, booleans are compared as `"true"`/`"false"`. Covere
 
 **Not retroactive.** Applying the op changes no data version upstream, so markdown ingested before it keeps its
 frontmatter chunks until the file changes or is re-uploaded.
+
+## Document Classification
+
+`ops/document/classify_document.py` runs in `documents_factory` after table refinement (#2482). It assigns each document
+one type of the closed set in core's `DocumentTypeCatalog` (`invoice`, `contract`, … `other`) and reads that type's
+attributes with one call of the database's own text model (`build_language_model(bucket)`), through
+`DocumentClassificationResource`. See core's `document/classification/` and ADR
+`2026_11_13_closed_document_types_and_attributes_at_ingestion`.
+
+- **Switched per database** by `with_document_classification` (`DOCUMENT_INGESTION_WITH_DOCUMENT_CLASSIFICATION`, on by
+  default), like the other enrichment flags.
+- **Records synced with frontmatter are skipped.** A non-empty `excluded_embed_metadata_keys` before this op can only
+  come from the frontmatter step, and such a record (Jira, Confluence, MediaWiki) says what it is through its own
+  fields.
+- **Metadata only.** `RefDocDocument.with_classification()` adds every key of `DocumentTypeCatalog.metadata_keys()` to
+  both exclusion lists, which chunks and summary nodes inherit, so embeddings do not change and a backfill never embeds
+  again. `IngestedNode` takes the keys into `document_classification` before it reads frontmatter `record_fields`.
+- **An enrichment, never a failure.** A failed call is logged and the document is ingested unclassified, without
+  `document_classification_version`, so a backfill (#2483) finds it.
+- **Filterable everywhere.** Retrieval accepts `DocumentTypeCatalog.filter_keys()` on every database without listing
+  them in `allowed_metadata_filter_fields`; the listing exposes them on `KnowledgeDocumentSummary`.
+
+**Backfill** (#2483): `{ingestor}_backfill_document_classification` (`jobs/` → `ops/repair/` →
+`services/document_classification_backfill_service.py`) classifies the documents a database ingested before, from the
+text in the doc store, without parsing or embedding again.
+
+- **What each document owes** (`BackfillWork`): no classification, or one `DocumentTypeCatalog.needs_classification`
+  finds outdated (an older `document_classification_version`, or an older `document_type_version` of its own type, so
+  adding a type redoes only the documents marked `other`) → classified with the database's text model; the current one
+  with an older `document_normalizer_version` → its `_raw` copies read again by `DocumentClassification.renormalized()`,
+  no model call; records synced with frontmatter (an excluded key that is not a classification key) → left alone, as at
+  ingestion. A second run has nothing to do.
+- **Nodes first, record last.** `PartitionAwareMilvusVectorStore.rewrite_document_metadata` patches the dynamic keys and
+  `_node_content` (llama-index rebuilds a node from the latter alone) of the nodes carrying the content hash it read,
+  and extends their exclusion lists; then `RefDoc.set_classification` writes the record, only while its content hash is
+  still that one (`RefDoc.text_of` checks it before Milvus is touched too). If the record write finds the document
+  changed or removed, the rows just written are deleted again: they can only be the old version's, which ingestion or
+  removal had replaced or deleted, so nothing deleted comes back and a re-ingested document's new nodes are never
+  touched. A removal caught between deleting the nodes and deleting the record can still leave rows behind;
+  `{ingestor}_repair_orphaned_nodes` removes them. Every classification key is written, `None` where the new type has no
+  value, so a changed type keeps nothing stale. A database being deleted is left alone.
+- **One document failing never fails the run**; its id is in the report and it stays owed. Infrastructure errors fail
+  the run.
+- **Started by a request, not a schedule.** `BucketEntity.classification_requested_at` (set by
+  `POST /knowledge/databases/{database}/classification`, the Knowledge page's "Classify existing documents" button) is
+  the work queue, like `deleting`: `DocumentClassificationBackfillSensorFor_…` starts one run per requested database
+  (never two at once, a run launched by hand included, since both carry `aihub/bucket`; a run key numbered by attempt so
+  a failed run is driven again) with `dry_run: false` and the request time, and the run clears exactly that request
+  (`BucketEntity.clear_classification_request`), so one made meanwhile starts the next run. Runs carry their request
+  time (`aihub/classification_requested_at`), so attempts are counted per request: after `MAX_ATTEMPTS_PER_REQUEST` (3)
+  runs of one request failed, the sensor stops and keeps the request as failed
+  (`BucketEntity.fail_classification_request` → `classification_failed_at`, shown as a warning on the Knowledge page),
+  instead of starting a run every tick through an outage. A new request starts over. A launch by hand needs the
+  `aihub/bucket` tag and is a dry run unless `ops: {backfill_document_classification_op: {config: {dry_run: false}}}`.
 
 ## Per-Database Configuration
 

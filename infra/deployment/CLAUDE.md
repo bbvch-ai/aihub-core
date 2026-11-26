@@ -33,7 +33,9 @@ deployment/
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
 │       ├── s3-ttl-init.sh.j2          # Bucket expiry as filer TTL rules (never S3 lifecycle, see ADR 2026_10_27)
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
-│       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
+│       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account + default language + Code Interpreter prompt)
+│       ├── openwebui-code-interpreter-prompt.txt  # Replaces OpenWebUI's Code Interpreter prompt (no /mnt/uploads links)
+│       ├── ferretdb-init.sh.j2        # FerretDB PG init (read-only role of the knowledge content search)
 │       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)
 │           ├── bootstrap/             # First-start-only seeds: realm-settings, components, groups, users-superuser,
 │           │                          #   identity-providers
@@ -54,7 +56,8 @@ deployment/
 - `infra/docker-compose.{stage}{.gpu}.yml` — 10 compose files
 - `infra/configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~80 stage-variant config files
 - `infra/configs/litellm/litellm-config.{variant}.{stage}{.gpu}.yml` — 20 files, see "LiteLLM provider variants"
-- `infra/configs/{service}/{static-scripts}` — ~6 stage-independent scripts (etcd, seaweedfs, postgres, openwebui)
+- `infra/configs/{service}/{static-scripts}` — ~7 stage-independent scripts (etcd, seaweedfs, postgres, openwebui,
+  ferretdb)
 
 ### LiteLLM provider variants
 
@@ -111,6 +114,35 @@ on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. Li
 more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollback path are in ADR
 `docs/arc42/decisions/2026_10_22_litellm_follows_plain_release_tags.md`. See ADR
 `docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.
+
+A LiteLLM upgrade also re-runs
+`uv run pytest -m integration swiss_ai_hub/core/infrastructure/litellm/tests/integration/test_user_key_provisioning.py`
+in `packages/core`: the Hub finds a user's key through `/v2/key/info`, which is outside LiteLLM's published schema. If
+that stops finding keys, every user's first request after a restart fails. See ADR
+`docs/arc42/decisions/2026_11_17_litellm_user_keys_derived_from_the_master_key.md`.
+
+`tenant_attribution.py` (also mounted next to `custom_callbacks.py` and listed under `callbacks`) books every call that
+names no LiteLLM customer to `no-tenant`. The Hub names the acting tenant as the customer on the calls it makes for a
+user, and this hook catches the rest (pipelines, MinerU, the memory writer), so the customers add up to the instance
+total in LiteLLM's Customer Usage view. ADR `docs/arc42/decisions/2026_11_09_acting_tenant_as_litellm_customer.md`.
+
+Model pickers read three more curated keys from `/v1/model/info`:
+
+- **`aihub_display_name`** is the name a picker shows instead of the LiteLLM id. Set it on every model; it is not
+  validated, and the API falls back to the id without its prefix.
+- **`aihub_general_purpose`** is `false` only for a model built for one job (today MinerU, an OCR model).
+  `/models/mode/{mode}` and every model picker leave such a model out, and neither an agent or process profile nor a
+  knowledge database can be saved with it. It is ours rather than a LiteLLM `mode` on purpose: `mode` decides how
+  LiteLLM calls and health-probes a model, and MinerU is served over `/chat/completions`. A model without the key counts
+  as general-purpose, which covers models an operator adds through the LiteLLM UI.
+- **`supports_reasoning`** says whether the model can produce a thinking phase at all, not whether it does by default
+  (gemma only thinks when asked). LiteLLM forwards `reasoning_effort` to every model it does not know, whatever this
+  flag says, so a provider that rejects it needs `reasoning_effort` in `additional_drop_params` (Ministral does).
+
+`generate_compose.py` requires `supports_function_calling`, `supports_response_schema`, `supports_vision`,
+`supports_reasoning` and `aihub_general_purpose` as explicit `true`/`false` on every `mode: chat` model
+(`CHAT_FLAG_KEYS`): a picker that requires a capability treats a flag LiteLLM reports as `null` as unsupported. Keep
+`HOSTING_LOCATIONS` in sync with `HostingLocation` in `packages/core`, which pickers filter on.
 
 `aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
 `model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
@@ -225,13 +257,22 @@ Dockerfile and published manually via `make -C infra/deployment build-and-push-p
 After publishing, non-build stages pick up the new image automatically via `docker compose pull`. The `build` stage
 continues to build locally so developers test Dockerfile edits without round-tripping through the registry.
 
+### env-guard: placeholder secrets refuse to start
+
+`generate_compose.py` collects every `.env.prod` variable whose value is a placeholder `setup-env.sh` generates (or
+`REPLACE_WITH_YOUR_DOMAIN`, see `ENV_GUARD_PLACEHOLDERS`) and renders them into the one-shot `env-guard` service. It
+exits 1 and names the variables if any still holds `REPLACE_WITH_`, and `traefik` and `keycloak` depend on it completing
+successfully, so `docker compose up` fails instead of serving with default secrets. Optional integrations (Teams,
+SharePoint, Azure, provider keys) keep their placeholders and are not checked. A new generated secret in `.env.prod` is
+picked up on the next `make generate-compose`.
+
 ### Publishing the open-terminal image
 
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
 libraries (reportlab, fpdf2 — the base already ships pandas/openpyxl/xlsxwriter/python-docx/python-pptx/weasyprint/
 pypdf/matplotlib/Pillow/numpy/scipy/lxml/PyYAML plus the ffmpeg and pandoc binaries) and headless LibreOffice with
-`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX
-and `pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
+`python3-uno` (Calc/Impress/Writer, for pivot tables, recalculation and rendering decks), TeX Live for offline LaTeX and
+`pandoc` PDFs, and poppler-utils for rendering PDF pages to PNG, and is published manually via
 `make -C infra/deployment build-and-push-open-terminal-image` (requires `docker login ghcr.io`). Re-publish whenever:
 
 - The upstream `open-terminal` base tag in `docker/open-terminal/Dockerfile` needs bumping
@@ -252,23 +293,32 @@ After publishing, all stages pull the new image automatically via `docker compos
 
 The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's multilingual PII model
 (`urchade/gliner_multi_pii-v1`, pinned revision) and spaCy's `de_core_news_lg` baked in, the hub offline at run time,
-and Presidio's stock REST server with two changes: every route but `/health` needs
-`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
-(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
-recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
-mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
-analysed under the language code `de`; see the config header.
+and Presidio's stock REST server with three changes: every route but `/health` needs
+`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`; GLiNER reads long texts in chunks that start at a word
+(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names); and
+the chunks of one text go to GLiNER `GLINER_BATCH_SIZE` at a time (`batched_gliner_recognizer.py`, image default 8)
+instead of one model call per chunk. Batching keeps Presidio's chunks, offsets and deduplication, so the spans are the
+stock recognizer's; padding moves scores by at most about 1e-5. On a 4-CPU laptop it made a 20,000-character text 28%
+faster (29 s to 21 s) at the same peak memory; 16 was no faster than 8. The recognizer config
+(`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in,
+so pattern changes need only `make generate-compose` and a container restart. Every text is analysed under the language
+code `de`; see the config header.
 
 Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
-`make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
-`image_tags.presidio_analyzer`, so bump that tag with every change to `docker/presidio-analyzer/` and publish **before
-any stage pulls it**: CI's backend tests start `litellm`, which depends on the analyzer. Live acceptance tests:
-`docker/presidio-analyzer/test_presidio_analyzer.py` (manual, see its docstring).
+`make -C infra/deployment build-and-push-presidio-analyzer-image`. Both build two images from the one Dockerfile and
+push the tags pinned in `image_tags.presidio_analyzer` (CPU torch) and `image_tags.presidio_analyzer_gpu` (CUDA torch
+via the `TORCH_INDEX` build argument: a 4.8 GB download and 7.8 GB on disk, against 2.0 GB and 3.3 GB). Each deployment
+pulls only the image its compose file names, so CPU deployments never download the GPU image. Bump both tags together
+with every change to `docker/presidio-analyzer/` and publish **before any stage pulls them**: CI's backend tests start
+`litellm`, which depends on the analyzer. The `.gpu` compose variants run the GPU image with an NVIDIA device
+reservation; the CPU variants are unchanged. Presidio puts GLiNER on CUDA only when torch sees a GPU, so the GPU image
+falls back to the CPU on a host without one. Live acceptance tests: `docker/presidio-analyzer/test_presidio_analyzer.py`
+(manual, see its docstring).
 
 Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
 character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
-The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
-for.
+The image is a 2.0 GB download and 3.3 GB on disk. Long prompts are what the gunicorn worker timeout (300 s) and the
+guardrail's timeout must allow for.
 
 Capacity is per deployment: `PRESIDIO_ANALYZER_{CPUS,MEMORY,WORKERS,THREADS,TORCH_THREADS}` size the container and
 `PRESIDIO_ANALYZER_TIMEOUT_SECONDS` the guardrail's wait. All six are optional, with `${VAR:-default}` in the template
@@ -283,14 +333,14 @@ every call.
 
 ### Publishing the browser-proxy image
 
-The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages, built
-from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image` (requires
-`docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and `image_tags.browser_proxy`
-with every change to that folder. Three settings look optional and are not (each verified against Playwright 1.63):
-`CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://` with `CONNECT` too; the
-error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted` instead of a 403 with
-`X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that form and the range
-would refuse all of IPv4.
+The browser-proxy image is project-managed: Alpine 3.23 with `squid=7.6-r0`, our `squid.conf` and emptied error pages,
+built from `docker/browser-proxy/` and published with `make -C infra/deployment build-and-push-browser-proxy-image`
+(requires `docker login ghcr.io`). Bump the `-N` suffix of `browser-proxy:7.6-1` in the Makefile and
+`image_tags.browser_proxy` with every change to that folder. Three settings look optional and are not (each verified
+against Playwright 1.63): `CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://`
+with `CONNECT` too; the error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted`
+instead of a 403 with `X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that
+form and the range would refuse all of IPv4.
 
 Check the [Squid advisories](https://github.com/squid-cache/squid/security/advisories) when bumping the base, not an
 image scan. Alpine 3.22 froze Squid at 6.12, which upstream no longer fixes, and Alpine's secdb lists only the CVEs
@@ -324,14 +374,15 @@ The template conditionally includes services based on stage and GPU mode:
 - **AI inference** (speaches, vLLM) — vLLM only when `gpu_enabled`, speaches in all stages
 - **1st-party services** (api, web, agents, bot, dagster, pipelines) — only when `image_tags.{service}[stage]` exists
 - **Traefik + docker-socket-proxy** — all stages except `dev`
-- **oauth2proxy sidecars** (for Attu, Dagster, SeaweedFS admin UIs) — all stages except `dev`
+- **oauth2proxy sidecars** (for Attu, Dagster, SeaweedFS, Backup and LiteLLM) — all stages except `dev`
+- **env-guard** — all stages except `dev`; Traefik and Keycloak wait for it to exit 0
 - **PgBouncer** — all stages except `dev` (dev connects directly to PostgreSQL)
 - **vLLM** — only when `gpu_enabled`
 
 Port exposure: direct localhost ports (`8080:8080`) only in `dev`, `local`, `build`. In `nightly`/`latest`, all traffic
 routes through Traefik.
 
-## Network Isolation (7 Zones)
+## Network Isolation (8 Zones + Control-Plane Networks)
 
 | Network         | Purpose                           | Internal | ICC | Key Services                                                                          |
 | --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------------------------------- |
@@ -373,6 +424,18 @@ in `pii-detection` and only its callers (litellm, agents) join that network. Wit
 outbound internet, which `internal: true` denies in non-dev stages. In dev it publishes port 5002 for agents running on
 the host.
 
+**Control-plane networks**: `docker-api` (traefik + docker-socket-proxy), `dagster-ui` / `backup-ui` (each Dagster
+webserver + its oauth2-proxy), `dagster` (pipeline webserver, daemon, pgbouncer, pipeline code servers), `backup`
+(backup webserver, daemon, backup-code), `backup-docker` (backup-code + `backup-docker-proxy`). The gRPC code servers
+also need `backend`/`data`/`storage`, so they bind gRPC to an alias that only exists on their control-plane network
+(`<container>-grpc`, `backup-grpc`) — the workspace files and healthchecks use that alias, never `localhost`. A new
+pipeline code server needs the same `entrypoint` override, alias and workspace entry. `backup-code` reaches Docker only
+through `backup-docker-proxy` (containers API + POST, no exec/images/volumes); a new Docker call outside
+`/containers/...` must be enabled there. Neither socket proxy runs `privileged`; both set `security_opt: label=disable`
+instead, which SELinux hosts need to open the socket and other hosts ignore. The webservers' localhost ports bind
+`127.0.0.1`, because the UI networks are not internal in `local`/`build` and a bare `3000:3000` would publish the
+unauthenticated UI on every interface.
+
 **Special**: `open-webui` uses `network_mode: "host"` in dev (to reach services running locally outside Docker).
 
 See ADR: `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`
@@ -383,10 +446,19 @@ The realm config lives in standalone JSON templates under `templates/configs/key
 `2026_06_12_declarative_keycloak_realm_reconciliation`):
 
 - **`bootstrap/`** — applied via `--import-realm` on **first start only**, never reconciled: realm-level settings
-  (themes, brute force, token and session lifespans, SMTP), the user-profile component, the startup tenant group seed,
-  the superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the
-  admin console survive restarts — and updating identity-provider config on an already-initialized deployment requires
-  the admin console (or a fresh realm DB), since they do not reconcile automatically.
+  (themes, brute force, token and session lifespans), the user-profile component, the startup tenant group seed, the
+  superuser seed, and the **identity providers** (Azure Entra ID + its mappers). Operator changes to these in the admin
+  console survive restarts — and updating identity-provider config on an already-initialized deployment requires the
+  admin console (or a fresh realm DB), since they do not reconcile automatically.
+- **Default migration in `keycloak-entrypoint.sh.j2`** — kcadm writes the token and session lifespans and `smtpServer`
+  on every start, but **only while the realm still holds the Keycloak default** (so admin-console overrides survive).
+  The realm import leaves `smtpServer` empty, because Keycloak validates the sender on import and a sender from an unset
+  variable would fail the first start. Exception: the platform's mail server (on `smtp.office365.com`, signing in as
+  `KEYCLOAK_SMTP_MAILBOX`) is platform-managed, and its client id and tenant follow `KEYCLOAK_SMTP_*` on every start;
+  any other mail server, also an operator's own Microsoft 365 mailbox, is kept.
+- **Federated-user marker in `keycloak-entrypoint.sh.j2`** — identity providers are bootstrap-only, so on every start
+  the entrypoint adds the `aihub-federated-user-role` Hardcoded Role mapper to each identity provider lacking it and
+  grants `AIHubFederatedUser` to users linked before it existed (see "Federated-user gate" below).
 - **`managed/`** — reconciled on **every stack start** by the one-shot `keycloak-config` service
   (adorsys/keycloak-config-cli): realm roles, client scopes, clients, custom auth flows, and the `aihub-api-service`
   service account. **File wins**: admin-console edits to these objects are overwritten, and objects removed from config
@@ -409,6 +481,25 @@ Rules when editing:
   Keycloak version yet, keep the newest release and check on the dev stack that `keycloak-config` still exits 0 against
   an upgraded realm and a fresh `--import-realm` (Keycloak 26.8.1 currently runs with `6.5.1-26.5.5`).
 
+**Realm mail** (`keycloak.smtp_server` in `compose-config.yml`): every stage sends from `KEYCLOAK_SMTP_MAILBOX` (default
+`noreply.ai-hub@bbv.ch`) through `smtp.office365.com` with an OAuth client-credentials token (`authType: token`); with
+empty `KEYCLOAK_SMTP_*` values (the dev default) Keycloak simply sends nothing. Invitations are Keycloak's own
+admin-triggered "Credential Reset" mail (no platform API or UI). The client secret is the one deliberate `${...}`
+placeholder in the realm: `${vault.smtp-client-secret}` is resolved by Keycloak's file vault, which the entrypoint fills
+from `KEYCLOAK_SMTP_CLIENT_SECRET` into a tmpfs at `/opt/keycloak/vault`. Operator setup:
+`docs/docs/2_platform/3_deployment_guide/11_realm_mail/`. Tests:
+`uv run pytest infra/deployment/tests/test_keycloak_realm_mail.py`.
+
+**Federated-user gate**: users who sign in through an identity provider must never get a password, or "Forgot password"
+would let them skip Entra's MFA and conditional access and keep access after Entra disables them. A Hardcoded Role
+mapper on every identity provider grants `AIHubFederatedUser` (`managed/10-roles`) on each sign-in, sync mode `FORCE`.
+The managed `federated-user-gate-browser` sub-flow (in `browser-aihub-forms`, after the password form) and
+`federated-user-gate-reset` (in `reset-credentials-aihub`, bound as `resetCredentialsFlow` like `browserFlow`) deny that
+role. The reset gate sits **after** the mail step on purpose: denying at the address form would reveal which addresses
+belong to federated users. A new bootstrap identity provider needs the mapper in `identity-providers.json.j2`; the
+entrypoint adds it to existing ones. `reset-credentials-aihub` replicates the built-in reset flow and must be reviewed
+on Keycloak major upgrades. Tests: `uv run pytest infra/deployment/tests/test_keycloak_federated_user_gate.py`.
+
 The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
 `realm-management` client roles. The current minimum required for the API to function correctly is:
 
@@ -420,6 +511,20 @@ query-groups, view-groups, view-realm, view-clients
 `view-realm` and `view-clients` are required by the realm-role-members endpoint
 (`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status. Role changes here now reach running
 deployments on the next start.
+
+**External knowledge writer** (`managed/30-clients.json.j2`): a client-credentials client for external systems that
+upload documents into tenant knowledge databases, its id and secret from `KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID` /
+`_SECRET`. It needs the `tenants` default scope and the `account` audience mapper, or the API rejects its tokens. Never
+create such a client by hand: keycloak-config-cli deletes every client not in this file. Its tenant groups and tenant
+role are operational config, see `docs/docs/6_code_deep_dive/2_keycloak_configuration/`. Set them up BEFORE the writer's
+first API call:
+
+- **Upload role.** In each target tenant, give the service-account user a role that holds only
+  `aihub.user.service.knowledge` (the service gate) and `aihub.admin.knowledge.<db>.<namespace>` (what `initiate` and
+  `validate` require). `AIHubUser` gets 403. `AIHubKnowledgeAdmin` can also create and delete databases.
+- **Startup tenant.** `/tenants/<startup tenant>` is a realm default group, so the service-account user starts out in
+  the startup tenant. A user without roles in a tenant gets the signup roles on its first call there, or the admin roles
+  if it is the tenant's first member. Remove the user from that group, or give it a harmless role there first.
 
 **AIHubAccess gate**: `Post Broker Login - AIHubAccess Check` only runs for users brokered through an external IdP, so
 `browser-aihub` carries its own CONDITIONAL `aihub-access-gate-browser` sub-flow (deny unless the user has
@@ -472,9 +577,11 @@ Two collectors run on a deployed VM and it matters which one you change:
 
 App services export to `http://otel-collector-backend:4317` (a `backend`-only alias on this collector; the bare
 container name also resolves on `egress`, where ICC is disabled), so the playbook's collector never sees their telemetry
-— that is why `resource/deployment` has to exist here too. Conversely, **do not add a `filelog` receiver for container
-logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symlinks, so records carry the container
-*name* and the VM's real `host.name`), and a second tailer would ingest every line twice into a paid backend.
+— that is why `resource/deployment` has to exist here too. `rclone` is dual-homed the same way and the rclone pipeline
+sits on `egress` too, so the pipeline targets `http://rclone-backend:5572`. Any service a caller on `egress` reaches
+must be called through such a `backend`-only alias. Conversely, **do not add a `filelog` receiver for container logs
+here**: the playbook already tails them (via `/var/log/docker-logs/*` symlinks, so records carry the container *name*
+and the VM's real `host.name`), and a second tailer would ingest every line twice into a paid backend.
 
 ## Traefik Configuration
 
@@ -493,7 +600,22 @@ logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symli
 - Docker provider via `docker-socket-proxy` (never direct Docker socket access)
 - `local`/`build`: mkcert self-signed certs — generate with `make local-cert`
 - `nightly`/`latest`: Let's Encrypt ACME auto-renewal
-- Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth
+- Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth. All of
+  `litellm.${DOMAIN}` goes through `oauth2proxy-litellm` (router `litellm-admin`, priority 1000), inference paths
+  included: `litellm` itself carries no Traefik labels and sits on `proxy` only for outbound traffic. Do not give it a
+  public router again: a user's LiteLLM key used from outside skips the Hub's model access rules, and the keys derived
+  from the user id alone in earlier releases are still valid. External clients use the Hub's `/api/v1/active/openai`
+- The `api` container carries a second router, `api-figures` (priority 6100): `/hub-figures/` on the **OpenWebUI** host,
+  rewritten by `replacePathRegex` to the API's figure route, so the browser sends OpenWebUI's session cookie with figure
+  requests from sources. The regex accepts only a tenant id, a 24-character thread id and a bucket name before the key;
+  keep it that strict. k8s deployments need the same rule in their ingress, and the `dev` stage (no Traefik) has none,
+  so figures show only on `local`/`build` and deployed stages
+- The oauth2-proxy image is upstream `quay.io/oauth2-proxy/oauth2-proxy`, mirrored under the pinned tag in
+  `compose-config.yml`. Our only change, the sign-in button colour, is `templates/oauth2-proxy/sign_in.html`, mounted
+  via `OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR`: on a version bump, copy upstream's `pkg/app/pagewriter/sign_in.html` of the
+  new tag and re-apply the `is-custom` button class
+- `auth.${DOMAIN}/admin` and `/realms/master` go through the `keycloak-admin` router, which allows only
+  `KEYCLOAK_ADMIN_ALLOWED_SOURCE_RANGES`
 - `security-headers@file` sends `X-Frame-Options: DENY`, except on the `web-auth` and `sysadmin-web-auth` routers
   (`/{locale}/auth/*`), which use `auth-route-security-headers@file` with `SAMEORIGIN`. The frontend loads
   `/{locale}/auth/renew` in a hidden same-origin iframe for its SSO session probe and silent renew; under `DENY` the

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -34,7 +35,8 @@ class TokenAuthHandler(BearerAuthHandler):
         Authenticates a user using a bearer token string.
 
         Resolves tenant context from the optional request parameter, falling back to
-        the user's active tenant when the request carries none.
+        the user's active tenant when the request carries none. Only a token that
+        authenticated someone counts as used.
         """
         access_token = self.verify_token(token_str)
         keycloak_user, realm_roles = await asyncio.gather(
@@ -42,13 +44,15 @@ class TokenAuthHandler(BearerAuthHandler):
             KeycloakAdminService.get_user_realm_roles(access_token.user_oid),
         )
         is_sys_admin = SYS_ADMIN_ROLE in realm_roles
-        return await self.build_identity(
+        identity = await self.build_identity(
             user_id=access_token.user_oid,
             name=keycloak_user.name,
             email=keycloak_user.email,
             request=request,
             is_sys_admin=is_sys_admin,
         )
+        access_token.record_use(datetime.now(UTC))
+        return identity
 
     @staticmethod
     def verify_token(token_str: str) -> BearerToken:

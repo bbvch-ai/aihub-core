@@ -2,6 +2,7 @@
   <StructuralColumn
     :title="t('thread.hierarchy.title')"
     close-route="/service/threads"
+    keep-query
     :loading="threadIsLoading"
   >
     <ThreadHierarchy :thread="thread" />

@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated, Any
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
@@ -14,6 +15,7 @@ from swiss_ai_hub.core.generative_ai import (
     KnowledgeSemanticRanking,
     KnowledgeSemanticSearch,
     KnowledgeSemanticSearchUnavailableError,
+    PathDateRange,
 )
 
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_fields import KnowledgeDocumentFields
@@ -80,23 +82,40 @@ class KnowledgeDocumentTools(BaseToolSpec):
     @ToolOptions.of(**_options(LIST_KNOWLEDGE_DOCUMENTS_TOOL))
     async def list_knowledge_documents(
         self,
-        path_glob: Annotated[str, "Glob on the path in its collection, e.g. 'invoices/2025/**'; '**' lists all."],
+        path_glob: Annotated[
+            str, "Glob on the path in its collection, e.g. 'invoices/**' or '**/*acme*'; '**' lists all."
+        ],
         path_regex: Annotated[str | None, "A regular expression the path must also contain, e.g. '(?i)acme'."] = None,
+        period_start: Annotated[
+            str | None,
+            "First day of a period, YYYY-MM-DD: documents whose path dates them before it (a year folder, 2026-03, "
+            "20260406) are left out; paths without a date stay.",
+        ] = None,
+        period_end: Annotated[
+            str | None,
+            "Last day of a period, YYYY-MM-DD: documents whose path dates them after it are left out; paths without a "
+            "date stay.",
+        ] = None,
         offset: Annotated[int, "Where the page starts, from a previous result's 'more with offset='."] = 0,
     ) -> str:
         """Lists the documents of our knowledge collections whose path matches, with ids for the other document
-        tools. Use it to find documents by name, folder, year or file type, or to see what a collection holds. Paths
-        are matched ignoring case; a glob that is too narrow misses files, so prefer '**/*acme*' over '*.pdf'."""
+        tools. Use it to find documents by name, folder or file type, or to see what a collection holds. For a period,
+        pass period_start and period_end rather than a year in the glob. Paths are matched ignoring case; a glob that
+        is too narrow misses files, so prefer '**/*acme*' over '*.pdf'."""
+        date_range = PathDateRange.written(period_start, period_end)
         scope = await KnowledgeDocumentScope.for_tool(self.context)
         everything = await KnowledgeDocumentReader.list_documents(scope.pairs())
         allowed = everything.matching_glob(scope.restricting_glob) if scope.restricting_glob else everything
         matching = allowed.matching_glob(path_glob)
         if path_regex:
             matching = matching.matching_regex(path_regex)
+        path_dates = None
+        if date_range is not None:
+            matching, path_dates = await asyncio.to_thread(matching.dated_within, date_range)
         if not matching.documents:
-            return KnowledgeDocumentToolOutput.nothing_listed(scope, allowed.documents[:_EXAMPLE_PATHS])
+            return KnowledgeDocumentToolOutput.nothing_listed(scope, allowed.documents[:_EXAMPLE_PATHS], path_dates)
         page = matching.documents[offset : offset + LISTING_PAGE_SIZE]
-        return KnowledgeDocumentToolOutput.listing(scope, page, offset, matching.total)
+        return KnowledgeDocumentToolOutput.listing(scope, page, offset, matching.total, path_dates)
 
     @ToolOptions.of(**_options(SEARCH_KNOWLEDGE_CONTENT_TOOL))
     async def search_knowledge_content(

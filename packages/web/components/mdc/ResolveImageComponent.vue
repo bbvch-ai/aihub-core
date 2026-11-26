@@ -1,6 +1,7 @@
 <template>
   <div>
     <img
+      v-if="src"
       :src="imageUrl"
       :alt="alt"
       :width="width"
@@ -19,20 +20,18 @@
 import { getFileUrl } from '@core/sdk/client'
 
 const props = defineProps<{
-  src: string
+  src?: string
   alt?: string
   width?: string | number
   height?: string | number
 }>()
 
 const { tenantId } = useTenant()
-const imageUrl = ref<string | null>(props.src)
+// An s3:// path is only rendered once it is presigned: the browser cannot load it, and the CSP reports the attempt.
+const imageUrl = ref<string | undefined>(props.src?.startsWith('s3://') ? undefined : props.src)
 
 const fetchAndSetImageUrl = async () => {
-  if (props.src.startsWith('http')) {
-    return props.src
-  }
-  if (!tenantId.value) return
+  if (!props.src || props.src.startsWith('http') || !tenantId.value) return
 
   let src = props.src
   if (src.includes('://')) {
@@ -53,6 +52,6 @@ const fetchAndSetImageUrl = async () => {
 }
 
 onMounted(() => {
-  fetchAndSetImageUrl()
+  void fetchAndSetImageUrl()
 })
 </script>

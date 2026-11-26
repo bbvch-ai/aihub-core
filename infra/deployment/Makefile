@@ -42,14 +42,21 @@ build-and-push-open-terminal-image:
 # Build the project-managed Presidio analyzer image (Presidio 2.2.364 + GLiNER + spaCy German model, API-key check)
 # and push to ghcr. The tag is the one pinned in compose-config.yml (image_tags.presidio_analyzer); bump it with every
 # change to `docker/presidio-analyzer/`. The "Build Presidio analyzer image" workflow does the same from CI. The
-# recognizer config is mounted, not baked in, so pattern changes need no rebuild.
+# recognizer config is mounted, not baked in, so pattern changes need no rebuild. The GPU image
+# (image_tags.presidio_analyzer_gpu) is built from the same Dockerfile in the same run with the CUDA torch index, so
+# both carry the same code.
 PRESIDIO_ANALYZER_IMAGE = ghcr.io/bbvch-ai/aihub-core/$(shell awk '/^  presidio_analyzer:/{print $$2}' compose-config.yml)
+PRESIDIO_ANALYZER_GPU_IMAGE = ghcr.io/bbvch-ai/aihub-core/$(shell awk '/^  presidio_analyzer_gpu:/{print $$2}' compose-config.yml)
+PRESIDIO_ANALYZER_GPU_TORCH_INDEX = https://download.pytorch.org/whl/cu130
 build-and-push-presidio-analyzer-image:
-	@echo "Building $(PRESIDIO_ANALYZER_IMAGE)..."
+	@echo "Building $(PRESIDIO_ANALYZER_IMAGE) and $(PRESIDIO_ANALYZER_GPU_IMAGE)..."
 	@docker login ghcr.io
 	@docker build -t $(PRESIDIO_ANALYZER_IMAGE) -f docker/presidio-analyzer/Dockerfile docker/presidio-analyzer
+	@docker build -t $(PRESIDIO_ANALYZER_GPU_IMAGE) --build-arg TORCH_INDEX=$(PRESIDIO_ANALYZER_GPU_TORCH_INDEX) \
+		-f docker/presidio-analyzer/Dockerfile docker/presidio-analyzer
 	@docker push $(PRESIDIO_ANALYZER_IMAGE)
-	@echo "Successfully published $(PRESIDIO_ANALYZER_IMAGE)"
+	@docker push $(PRESIDIO_ANALYZER_GPU_IMAGE)
+	@echo "Successfully published $(PRESIDIO_ANALYZER_IMAGE) and $(PRESIDIO_ANALYZER_GPU_IMAGE)"
 
 # Build the project-managed playwright image (Microsoft playwright base + npm
 # package + server entrypoint) and push to ghcr.
@@ -86,14 +93,14 @@ build-and-push-browser-proxy-image:
 # Keep OpenWebUI's Python client compatible with the project-managed browser server.
 # Publish both images before deploying their matching tags from compose-config.yml.
 build-and-push-openwebui-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1..."
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-webui:v0.12.5-playwright1.63.0-1..."
 	@docker login ghcr.io
 	@docker build --platform linux/amd64 \
-		-t ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1 \
+		-t ghcr.io/bbvch-ai/aihub-core/open-webui:v0.12.5-playwright1.63.0-1 \
 		-f docker/open-webui/Dockerfile \
 		docker/open-webui
-	@docker push ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
-	@echo "Successfully published open-webui:v0.11.4-playwright1.63.0-1"
+	@docker push ghcr.io/bbvch-ai/aihub-core/open-webui:v0.12.5-playwright1.63.0-1
+	@echo "Successfully published open-webui:v0.12.5-playwright1.63.0-1"
 
 # Build the project-managed rclone image (upstream rclone + a refreshed CA bundle) and push to ghcr.
 # The Dockerfile lives at `infra/deployment/docker/rclone/Dockerfile`. Re-run this whenever the base rclone tag changes.

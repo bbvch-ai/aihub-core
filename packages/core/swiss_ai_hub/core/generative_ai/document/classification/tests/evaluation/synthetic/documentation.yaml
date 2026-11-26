@@ -1,0 +1,241 @@
+# Manuals, handbooks, guides and specifications, technical or not, in German, French, Italian and English. Every
+# company and person is made up. `expected` holds each value as stored (ISO dates), and None where the document does
+# not state it.
+
+- id: manual-de-1
+  type: documentation
+  title: Bedienungsanleitung_Kaffeemaschine.pdf
+  note: A manual that names no manufacturer, number or date has only its product.
+  text: |
+    # Bedienungsanleitung Kaffeevollautomat CV-500
+
+    ## Inbetriebnahme
+    1. Wassertank füllen.
+    2. Bohnenbehälter füllen.
+    3. Gerät mit der Taste ⏻ einschalten und Spülvorgang abwarten.
+
+    ## Entkalken
+    Das Gerät meldet „Entkalken", sobald nötig. Verwenden Sie nur das mitgelieferte Entkalkungsmittel.
+  expected:
+    document_date: null
+    document_reference_number: null
+    document_issuer: null
+    document_product: Kaffeevollautomat CV-500
+
+- id: manual-en-1
+  type: documentation
+  title: VPN_Setup_Guide.pdf
+  text: |
+    # VPN Setup Guide – SecureConnect
+
+    1. Install the SecureConnect client from the company portal.
+    2. Enter the server address vpn.corp.example.
+    3. Sign in with your company account and approve the request on your phone.
+
+    If the connection fails, restart the client and check that your clock is correct.
+  expected:
+    document_date: null
+    document_reference_number: null
+    document_issuer: null
+    document_product: SecureConnect
+
+- id: manual-it-1
+  type: documentation
+  title: manuale_stampante.pdf
+  text: |
+    # Manuale d'uso – Stampante multifunzione MF-220
+
+    ## Sostituzione del toner
+    1. Aprire lo sportello anteriore.
+    2. Estrarre la cartuccia esaurita.
+    3. Inserire la nuova cartuccia fino allo scatto e chiudere lo sportello.
+  expected:
+    document_date: null
+    document_reference_number: null
+    document_issuer: null
+    document_product: Stampante multifunzione MF-220
+
+- id: documentation-de-long-1
+  type: documentation
+  title: Betriebshandbuch_AquaTherm_WP12.pdf
+  note: A long manual whose middle is cut, as the classifier reads it; the document number wins over the version.
+  text: |
+    # Thermoalpin AG
+
+    ## Betriebs- und Wartungshandbuch
+    ### Wärmepumpe AquaTherm WP 12
+    Dok.-Nr. BA-WP12-DE · Version 2.3 · Stand: 14.01.2025
+
+    ## 1. Sicherheitshinweise
+    Arbeiten am Kältekreis dürfen nur von Fachpersonen mit Kältemittel-Bewilligung ausgeführt werden. Vor dem Öffnen
+    des Gehäuses die Anlage allpolig vom Netz trennen und 5 Minuten warten, bis die Kondensatoren entladen sind.
+
+    ## 2. Aufbau der Anlage
+
+    | Pos | Bauteil | Funktion |
+    |---|---|---|
+    | 1 | Verdampfer | nimmt Wärme aus der Aussenluft auf |
+    | 2 | Verdichter | erhöht Druck und Temperatur des Kältemittels |
+    | 3 | Verflüssiger | gibt die Wärme an den Heizkreis ab |
+    | 4 | Expansionsventil | senkt den Druck vor dem Verdampfer |
+
+    ## 3. Inbetriebnahme
+    1. Heizkreis füllen und entlüften, Anlagendruck 1,5 bar.
+    2. Aussenfühler anschliessen und Fühlerwerte im Menü „Service › Fühler" prüfen.
+    3. Betriebsart „Automatik" wählen.
+
+    […]
+
+    ## 14. Wartungsplan
+
+    | Intervall | Arbeit |
+    |---|---|
+    | monatlich | Verdampfer auf Laub und Schmutz prüfen |
+    | jährlich | Kondensatablauf reinigen, Anlagendruck prüfen |
+    | alle 2 Jahre | Dichtheitskontrolle des Kältekreises |
+
+    ## 15. Störungen
+
+    | Code | Ursache | Abhilfe |
+    |---|---|---|
+    | E07 | Hochdruck | Durchfluss im Heizkreis prüfen |
+    | E12 | Fühler Aussenluft defekt | Fühler ersetzen |
+
+    Thermoalpin AG · Kundendienst · Industriering 7 · 3250 Lyss
+  expected:
+    document_date: "2025-01-14"
+    document_reference_number: BA-WP12-DE
+    document_issuer: Thermoalpin AG
+    document_product: Wärmepumpe AquaTherm WP 12
+
+- id: documentation-en-spec-1
+  type: documentation
+  title: SPEC-0217_Order_Export_API.pdf
+  note: A specification of an interface that exports orders is documentation, not an order.
+  text: |
+    # Interface Specification
+    ## Order Export API
+    Brightwater Analytics Ltd · Document No. SPEC-0217 · Version 1.4 · 2 June 2025
+
+    ### 1. Purpose
+    This specification describes the REST interface through which the ERP exports orders to the reporting platform.
+
+    ### 2. Endpoints
+
+    | Method | Path | Description |
+    |---|---|---|
+    | GET | /v1/orders?since={timestamp} | Orders changed since the timestamp |
+    | GET | /v1/orders/{id} | One order with its lines |
+
+    ### 3. Authentication
+    OAuth 2.0 client credentials. Tokens expire after 60 minutes.
+
+    ### 4. Order fields
+
+    | Field | Type | Required | Description |
+    |---|---|---|---|
+    | order_id | string | yes | The ERP's order number |
+    | customer_id | string | yes | The customer's number |
+    | total | decimal | yes | Order total including VAT |
+    | currency | string | yes | ISO 4217 code |
+  expected:
+    document_date: "2025-06-02"
+    document_reference_number: SPEC-0217
+    document_issuer: Brightwater Analytics Ltd
+    document_product: Order Export API
+
+- id: documentation-de-process-1
+  type: documentation
+  title: Prozessbeschreibung_Wareneingang.pdf
+  note: A non-technical description of how a process runs is documentation; it sets no rules and documents no product.
+  text: |
+    # Prozessbeschreibung Wareneingang
+    Holzwerk Brunner GmbH · Logistik · Stand Mai 2025
+
+    ## Überblick
+    Der Wareneingang verbindet Einkauf, Lager und Buchhaltung. Diese Beschreibung zeigt, wie eine Lieferung vom
+    Eintreffen bis zur Einlagerung läuft.
+
+    ## Ablauf
+    1. Der Fahrer meldet sich an der Rampe; das Lager vergleicht den Lieferschein mit der Bestellung im ERP.
+    2. Die Ware wird ausgepackt, gezählt und auf sichtbare Schäden geprüft.
+    3. Stimmen Menge und Zustand, bucht das Lager den Eingang; die Buchhaltung sieht ihn sofort bei der Bestellung.
+    4. Abweichungen erfasst das Lager als Reklamation, der Einkauf klärt sie mit dem Lieferanten.
+    5. Der Staplerfahrer lagert die Ware am Lagerplatz ein, den das ERP vorschlägt.
+  expected:
+    document_date: "2025-05-01"
+    document_reference_number: null
+    document_issuer: Holzwerk Brunner GmbH
+    document_product: null
+
+- id: documentation-fr-guide-1
+  type: documentation
+  title: guide_utilisation_MonCompte.pdf
+  note: With no document number, the version number is the reference; a guide explaining statements and QR bills is still a guide.
+  text: |
+    # Guide d'utilisation du portail MonCompte
+    Caisse d'Épargne du Haut-Lac · Version 2.0 · mars 2025
+
+    ## 1. Première connexion
+    1. Ouvrez moncompte.haut-lac.example et cliquez sur « Activer mon accès ».
+    2. Saisissez le code reçu par courrier.
+    3. Choisissez un mot de passe d'au moins 12 caractères.
+
+    ## 2. Consulter vos relevés
+    Sous « Comptes », choisissez le compte puis « Relevés ». Les relevés des 24 derniers mois sont disponibles en PDF.
+
+    ## 3. Payer une facture QR
+    Dans l'application, touchez « Payer » et scannez le code QR de la facture. Vérifiez le montant avant de confirmer.
+  expected:
+    document_date: "2025-03-01"
+    document_reference_number: "2.0"
+    document_issuer: Caisse d'Épargne du Haut-Lac
+    document_product: portail MonCompte
+
+- id: documentation-it-guide-1
+  type: documentation
+  title: guida_rapida_PayNova_T2.pdf
+  note: A quick guide for a payment terminal that prints receipts is documentation, not a receipt.
+  text: |
+    # Guida rapida
+    ## Terminale di pagamento PayNova T2
+    Clivento SA · Edizione settembre 2025 · Doc. GR-PN2-IT
+
+    ### Accensione
+    Tenere premuto il tasto verde per 3 secondi.
+
+    ### Pagamento con carta
+    1. Digitare l'importo e confermare con OK.
+    2. Il cliente avvicina o inserisce la carta.
+    3. Lo scontrino viene stampato automaticamente.
+
+    ### Chiusura giornaliera
+    Menu › Amministrazione › Chiusura: il terminale stampa il riepilogo delle transazioni del giorno.
+  expected:
+    document_date: "2025-09-01"
+    document_reference_number: GR-PN2-IT
+    document_issuer: Clivento SA
+    document_product: Terminale di pagamento PayNova T2
+
+- id: documentation-en-guide-1
+  type: documentation
+  title: Nimbus_Timesheets_User_Guide.pdf
+  note: A release number stands for the version when the guide has no document number.
+  text: |
+    # Nimbus Timesheets – User Guide
+    Release 5.2 · Northpeak Software Ltd
+
+    ## Logging time
+    Open the week view and click a day. Enter the hours, pick the project and save. Entries can be changed until the
+    week is submitted.
+
+    ## Submitting a week
+    Click "Submit week". Your manager is notified and approves or returns the week with a comment.
+
+    ## Exporting
+    Under "Reports", choose a period and click "Export CSV".
+  expected:
+    document_date: null
+    document_reference_number: "5.2"
+    document_issuer: Northpeak Software Ltd
+    document_product: Nimbus Timesheets

@@ -4,11 +4,12 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
 
+from swiss_ai_hub.core.generative_ai.document.classification.document_type_catalog import DocumentTypeCatalog
 from swiss_ai_hub.core.generative_ai.knowledge_documents.resolved_knowledge_collection import (
     ResolvedKnowledgeCollection,
 )
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
-from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
+from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import Metadata, RefDoc
 
 
 class KnowledgeDocumentSummary(BaseModel):
@@ -22,6 +23,14 @@ class KnowledgeDocumentSummary(BaseModel):
     file_type: Annotated[str, Field(description="Lower-case file extension without the dot, e.g. 'pdf'")]
     number_of_pages: Annotated[int | None, Field(description="Page count when the parser reported one")] = None
     updated_at: Annotated[datetime, Field(description="When the source file last changed")]
+    document_type: Annotated[
+        str | None, Field(description="Type from ingestion's classification; None when the document was not classified")
+    ] = None
+    document_types: Annotated[list[str], Field(description="Every type of the document, primary first")] = []
+    document_attributes: Annotated[
+        dict[str, str | float | list[str] | None],
+        Field(description="Classified attribute values under their metadata keys; None where unknown"),
+    ] = {}
 
     @classmethod
     def from_ref_doc(cls, ref_doc: RefDoc, resolved: ResolvedKnowledgeCollection) -> Self:
@@ -37,7 +46,15 @@ class KnowledgeDocumentSummary(BaseModel):
             file_type=cls._file_type(filename, ref_doc.data.mimetype),
             number_of_pages=metadata.number_of_pages,
             updated_at=datetime.fromtimestamp(metadata.updated_at, tz=UTC),
+            document_type=metadata.document_type,
+            document_types=list(metadata.document_types or []),
+            document_attributes=cls._attributes(metadata) if metadata.document_type else {},
         )
+
+    @staticmethod
+    def _attributes(metadata: Metadata) -> dict[str, str | float | list[str] | None]:
+        """The stored values, without the copied text they were read from: a listing selects, it does not audit."""
+        return {key: getattr(metadata, key, None) for key in DocumentTypeCatalog.value_keys()}
 
     @staticmethod
     def _file_type(filename: str, mimetype: str | None) -> str:

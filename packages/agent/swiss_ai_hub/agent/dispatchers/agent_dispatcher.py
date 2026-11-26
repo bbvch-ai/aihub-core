@@ -22,6 +22,7 @@ from swiss_ai_hub.core.events.agent import (
     AgentInTheLoopResponseEvent,
     ControlEvent,
     ExceptionEvent,
+    HumanInTheLoopResponseEvent,
     MemoryStorageRequestedEvent,
     StartEvent,
     UserMessageEvent,
@@ -125,10 +126,12 @@ class AgentDispatcher(BaseDispatcher):
         - Handles run lifecycle changes (Start, Stop, Exception).
         - Checks for and triggers ready steps asynchronously.
         """
+        run_context = RunContext.for_topic(self.redis, topic)
+        if not await self._answered_by_run_user(event, run_context, topic):
+            return
+
         await super().handle_event(event, topic)
 
-        # Retrieve contexts (run and thread)
-        run_context = RunContext.for_topic(self.redis, topic)
         thread_context = ThreadContext.for_topic(self.redis, topic)
 
         # Teardown must run before config resolution: it only needs the run id, and a redelivered
@@ -170,6 +173,25 @@ class AgentDispatcher(BaseDispatcher):
             await self._start_run(cast(StartEvent, event), run_context, instance_topic, run_agent_config)
 
         await self._trigger_ready_steps(event, run_context, thread_context, instance_topic, run_agent_config)
+
+    @staticmethod
+    async def _answered_by_run_user(
+        event: Annotated[ControlEvent, "The incoming control event."],
+        run_context: Annotated[RunContext, "Per-run context holding the run's user."],
+        topic: Annotated[AgentClassTopic, "The parsed topic of the event."],
+    ) -> bool:
+        """A run's question is answered by the user who started it; another member of a shared thread cannot
+        answer for them. The API stamps every answer it forwards, so a response without a responder was published
+        by the platform itself, such as a process; it passes here, and a step that needs a person's answer, like the
+        tool loop's approval step, refuses it itself."""
+        if not event.is_hitl_response_event:
+            return True
+        responded_by = cast(HumanInTheLoopResponseEvent, event).responded_by
+        run_user = await run_context.get("user")
+        if responded_by is None or not run_user or run_user.get("id") == responded_by:
+            return True
+        logger.warning(f"Dropped {event.event_name} for run {topic.execution_context_id}: not answered by its user")
+        return False
 
     async def _resolve_agent_config_dict(
         self,

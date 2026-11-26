@@ -4,7 +4,7 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.rerank.rerank_request import RerankRequest
 from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config import RerankingModelConfig
-from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
+from swiss_ai_hub.core.infrastructure.litellm.lite_llm_credentials import LiteLLMCredentials
 
 
 async def rerank_nodes(
@@ -24,8 +24,10 @@ async def rerank_nodes(
     if not nodes:
         return []
 
-    api_key = await LiteLLMService.api_key_for_user(user) if user else None
-    reranking_service, _ = reranking_model.to_llama_index(api_key=api_key)
+    credentials = await LiteLLMCredentials.for_user(user)
+    reranking_service, _ = reranking_model.to_llama_index(
+        extra_headers=credentials.headers, api_key=credentials.api_key
+    )
     budget = await asyncio.to_thread(reranking_model.token_budget)
     nodes_with_scores = [node.to_llama_index_node_with_score() for node in nodes]
     request = await asyncio.to_thread(RerankRequest.fit, query, nodes_with_scores, budget)

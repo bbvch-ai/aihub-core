@@ -22,12 +22,12 @@ DEFAULT_USER_ID = TEST_USER_OID
 def mongodb():
     """Setup MongoDB connection and clear data after tests."""
     yield
-    connect(
+    client = connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
         uuidRepresentation="standard",
     )
-    ThreadEntity.objects.delete()
+    client[AIHubSettings().MONGO_MAIN_DB_NAME][ThreadEntity.Settings.name].delete_many({})
     disconnect()
 
 

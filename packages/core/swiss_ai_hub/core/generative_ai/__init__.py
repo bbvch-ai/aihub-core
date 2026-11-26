@@ -24,6 +24,15 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
         S3AnonymousFileAccessService,
     )
+    from swiss_ai_hub.core.generative_ai.document.classification.document_attribute import DocumentAttribute
+    from swiss_ai_hub.core.generative_ai.document.classification.document_classification import DocumentClassification
+    from swiss_ai_hub.core.generative_ai.document.classification.document_classifier import DocumentClassifier
+    from swiss_ai_hub.core.generative_ai.document.classification.document_type import DocumentType
+    from swiss_ai_hub.core.generative_ai.document.classification.document_type_catalog import DocumentTypeCatalog
+    from swiss_ai_hub.core.generative_ai.document.classification.document_value_normalizer import (
+        DocumentValueNormalizer,
+    )
+    from swiss_ai_hub.core.generative_ai.document.classification.normalized_date import NormalizedDate
     from swiss_ai_hub.core.generative_ai.document.extraction.document_extractor import DocumentExtractor
     from swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver import DocumentTitleDeriver
     from swiss_ai_hub.core.generative_ai.document.extraction.extracted_document import ExtractedDocument
@@ -121,6 +130,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search_unavailable_error import (
         KnowledgeSemanticSearchUnavailableError,
     )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_counts import PathDateCounts
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_parser import PathDateParser
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_range import PathDateRange
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_verdict import PathDateVerdict
     from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
     from swiss_ai_hub.core.generative_ai.memory.memory_settings import MemorySettings
     from swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver import OrgMemoryNamespaceResolver
@@ -138,6 +151,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
     from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import EmbeddingQueryClamp
     from swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails import GatewayGuardrails
+    from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_model_info import LiteLLMModelInfo
     from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import (
         LLMConfig,
         LLMParameter,
@@ -169,6 +183,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result import (
         DocumentExtractionResult,
     )
+    from swiss_ai_hub.core.generative_ai.structured_extraction.document_match import DocumentMatch
     from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record import ExtractedRecord, RecordValue
     from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_csv import ExtractedTableCsv
     from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_file import ExtractedTableFile
@@ -224,8 +239,13 @@ __all__ = [
     "KnowledgeSemanticPassage",
     "KnowledgeSemanticSearch",
     "KnowledgeSemanticRanking",
+    "PathDateCounts",
+    "PathDateParser",
+    "PathDateRange",
+    "PathDateVerdict",
     "KnowledgeSemanticSearchUnavailableError",
     "DocumentExtractionResult",
+    "DocumentMatch",
     "ExtractedRecord",
     "RecordValue",
     "InvalidRecordSchemaError",
@@ -240,6 +260,13 @@ __all__ = [
     "RecordSchemaBuilder",
     "DocumentIntelligenceLoader",
     "CitationId",
+    "DocumentAttribute",
+    "DocumentClassification",
+    "DocumentClassifier",
+    "DocumentType",
+    "DocumentTypeCatalog",
+    "NormalizedDate",
+    "DocumentValueNormalizer",
     "DocumentExtractor",
     "DocumentLoaderSelector",
     "DocumentTitleDeriver",
@@ -259,6 +286,7 @@ __all__ = [
     "IngestedDocument",
     "IngestedNode",
     "KnowledgeRetrieverConfig",
+    "LiteLLMModelInfo",
     "LLMConfig",
     "LLMCosts",
     "LLMParameter",
@@ -328,6 +356,13 @@ _LAZY_IMPORTS = {
     "BucketNamespacePair": "swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair",
     "DocumentIntelligenceLoader": "swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader",
     "CitationId": "swiss_ai_hub.core.generative_ai.citations.citation_id",
+    "DocumentAttribute": "swiss_ai_hub.core.generative_ai.document.classification.document_attribute",
+    "DocumentClassification": "swiss_ai_hub.core.generative_ai.document.classification.document_classification",
+    "DocumentClassifier": "swiss_ai_hub.core.generative_ai.document.classification.document_classifier",
+    "DocumentType": "swiss_ai_hub.core.generative_ai.document.classification.document_type",
+    "DocumentTypeCatalog": "swiss_ai_hub.core.generative_ai.document.classification.document_type_catalog",
+    "NormalizedDate": "swiss_ai_hub.core.generative_ai.document.classification.normalized_date",
+    "DocumentValueNormalizer": "swiss_ai_hub.core.generative_ai.document.classification.document_value_normalizer",
     "DocumentExtractor": "swiss_ai_hub.core.generative_ai.document.extraction.document_extractor",
     "DocumentLoaderSelector": "swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector",
     "DocumentTitleDeriver": "swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver",
@@ -372,7 +407,12 @@ _LAZY_IMPORTS = {
     "KnowledgeSemanticSearch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search",
     "KnowledgeSemanticRanking": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_ranking",
     "KnowledgeSemanticSearchUnavailableError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search_unavailable_error",
+    "PathDateCounts": "swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_counts",
+    "PathDateParser": "swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_parser",
+    "PathDateRange": "swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_range",
+    "PathDateVerdict": "swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_verdict",
     "DocumentExtractionResult": "swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result",
+    "DocumentMatch": "swiss_ai_hub.core.generative_ai.structured_extraction.document_match",
     "ExtractedRecord": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record",
     "RecordValue": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record",
     "InvalidRecordSchemaError": "swiss_ai_hub.core.generative_ai.structured_extraction.invalid_record_schema_error",
@@ -388,6 +428,7 @@ _LAZY_IMPORTS = {
     "KnowledgeRetrieverConfig": "swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config",
     "GatewayGuardrails": "swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails",
     "LLMConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
+    "LiteLLMModelInfo": "swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_model_info",
     "LLMCosts": "swiss_ai_hub.core.generative_ai.resources.costs.llm_costs",
     "LLMParameter": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "ReasoningFreeChat": "swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat",

@@ -45,7 +45,10 @@ const navItems = computed<NavItem[]>(() => {
 })
 
 const toNavItem = (navItem: NavItem) => {
-  router.push(tenantPath(navItem.path))
+  router.push({
+    path: tenantPath(navItem.path),
+    query: route.query,
+  })
 }
 
 const activeNavItem = computed<NavItem | undefined>(() => {

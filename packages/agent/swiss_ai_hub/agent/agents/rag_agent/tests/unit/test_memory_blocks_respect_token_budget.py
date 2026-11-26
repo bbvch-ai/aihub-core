@@ -107,6 +107,7 @@ async def _run_spine_join(agent_type, config: RAGAgentConfig, history: list[Chat
         agent_type(),
         request=Conversation.compose(history, blocks=[block]),
         conversation=config,
+        t=LocaleHandler("en"),
     )
 
 

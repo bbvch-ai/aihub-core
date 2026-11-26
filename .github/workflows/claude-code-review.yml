@@ -11,6 +11,8 @@ on:
     #   - "src/**/*.tsx"
     #   - "src/**/*.js"
     #   - "src/**/*.jsx"
+permissions:
+  contents: read
 jobs:
   claude-review:
     if: >-
@@ -20,9 +22,6 @@ jobs:
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
       github.event.pull_request.author_association) }}
     runs-on: ubuntu-slim
-    # TODO: Remove once CLAUDE_CODE_OAUTH_TOKEN is refreshed. Keeps the review
-    # advisory so an expired token cannot block pull requests.
-    continue-on-error: true
     timeout-minutes: 20
     permissions:
       contents: write
@@ -41,7 +40,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}

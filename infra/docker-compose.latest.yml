@@ -615,6 +615,7 @@ services:
         max-file: 2
     networks:
       - data
+      - dagster  # Dagster webserver + daemon reach their storage only through this zone
 
   # ===================================================================
   # FerretDB Stack (MongoDB Compatibility)
@@ -674,6 +675,30 @@ services:
     networks:
       - data
 
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
+  ferretdb-init:
+    container_name: ferretdb-init
+    image: ghcr.io/bbvch-ai/aihub-core/postgres:17
+    restart: on-failure
+    depends_on:
+      postgres-ferretdb:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres-ferretdb
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${MONGO_USERNAME}
+      POSTGRES_PASSWORD: ${MONGO_PASSWORD}
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
+    volumes: [./configs/ferretdb/init-ferretdb.sh:/init-ferretdb.sh:ro]
+    entrypoint: [/bin/sh, /init-ferretdb.sh]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+
   # ===================================================================
   # Neo4j Stack (Graph Database)
   # ===================================================================
@@ -693,6 +718,9 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/plugins:/plugins
     environment:
       NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+      # CVE-2026-114938 (Java4Shell): Neo4j bundles the same affected OpenJDK and Base64-decodes the HTTP Basic
+      # header before authenticating. The image entrypoint appends this setting, keeping its default JVM flags.
+      NEO4J_server_jvm_additional: -XX:-UseBASE64Intrinsics
     healthcheck:
       test:
         - CMD
@@ -959,6 +987,16 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: 'true'
       KC_METRICS_ENABLED: 'true'
+      # Single-node deployments: use the local cache instead of the clustered ispn/jgroups default.
+      # Clustering makes Keycloak spend the first minutes after a (re)start retrying to reach the
+      # previous run's cluster member ("jgroups ... Connection refused"), during which the login
+      # redirect is dead — so a plain container restart locked users out for several minutes. The
+      # local cache removes that warm-up. NOTE: if Keycloak is ever run multi-node/HA, this must
+      # become conditional (local cache does not replicate sessions across nodes).
+      KC_CACHE: local
+      # CVE-2026-114938 (Java4Shell): the JDK's AVX-512 Base64 decoder corrupts memory on input Keycloak
+      # decodes before authentication. Drop once the Keycloak image ships a vendor-fixed OpenJDK.
+      JAVA_OPTS_APPEND: -XX:-UseBASE64Intrinsics
       DOMAIN: ${DOMAIN}
       # Superuser (interactive Keycloak-seeded admin) — passed to realm template
       SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
@@ -974,12 +1012,22 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       # Azure Entra ID configuration (for identity provider federation)
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
       KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
       KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET}
+      # Realm mail via Microsoft 365 (XOAUTH2 client credentials). The secret is
+      # written to the tmpfs vault by the entrypoint, never into the realm.
+      KEYCLOAK_SMTP_TENANT_ID: ${KEYCLOAK_SMTP_TENANT_ID}
+      KEYCLOAK_SMTP_CLIENT_ID: ${KEYCLOAK_SMTP_CLIENT_ID}
+      KEYCLOAK_SMTP_CLIENT_SECRET: ${KEYCLOAK_SMTP_CLIENT_SECRET}
+      KEYCLOAK_SMTP_MAILBOX: ${KEYCLOAK_SMTP_MAILBOX}
+    tmpfs: ['/opt/keycloak/vault:mode=0700,uid=1000,gid=0']
     volumes:
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
       - ./configs/keycloak/aihub-realm.latest.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
@@ -996,6 +1044,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      env-guard:
+        condition: service_completed_successfully
     logging:
       driver: json-file
       options:
@@ -1004,13 +1054,25 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
-      - traefik.http.routers.keycloak.rule=Host(`auth.${DOMAIN}`)
+      - traefik.http.routers.keycloak.rule=Host(`auth.${DOMAIN}`) && !PathPrefix(`/admin`)
+        && !PathPrefix(`/realms/master`)
       - traefik.http.routers.keycloak.entrypoints=websecure
       - traefik.http.routers.keycloak.tls=true
       - traefik.http.routers.keycloak.tls.certresolver=letsencrypt
       - traefik.http.routers.keycloak.priority=7000
       - traefik.http.routers.keycloak.middlewares=keycloak-security-headers
       - traefik.http.services.keycloak.loadbalancer.server.port=8080
+      # The admin console and the master realm answer only to KEYCLOAK_ADMIN_ALLOWED_SOURCE_RANGES (403 otherwise).
+      # The API, keycloak-config and the oauth2-proxies use the Admin API through http://keycloak:8080, not this route.
+      - traefik.http.routers.keycloak-admin.rule=Host(`auth.${DOMAIN}`) && (PathPrefix(`/admin`)
+        || PathPrefix(`/realms/master`))
+      - traefik.http.routers.keycloak-admin.entrypoints=websecure
+      - traefik.http.routers.keycloak-admin.tls=true
+      - traefik.http.routers.keycloak-admin.tls.certresolver=letsencrypt
+      - traefik.http.routers.keycloak-admin.priority=7500
+      - traefik.http.routers.keycloak-admin.service=keycloak
+      - traefik.http.routers.keycloak-admin.middlewares=keycloak-admin-allowlist,keycloak-security-headers
+      - traefik.http.middlewares.keycloak-admin-allowlist.ipallowlist.sourcerange=${KEYCLOAK_ADMIN_ALLOWED_SOURCE_RANGES}
       # Keycloak manages its own X-Frame-Options per realm (master: SAMEORIGIN
       # for admin console session iframes, aihub: empty for parent app embedding).
       # We only add non-frame security headers here to avoid overriding Keycloak's
@@ -1019,7 +1081,6 @@ services:
       - traefik.http.middlewares.keycloak-security-headers.headers.stsSeconds=31536000
       - traefik.http.middlewares.keycloak-security-headers.headers.stsIncludeSubdomains=true
       - traefik.http.middlewares.keycloak-security-headers.headers.contentTypeNosniff=true
-      - traefik.http.middlewares.keycloak-security-headers.headers.browserXssFilter=true
       - traefik.http.middlewares.keycloak-security-headers.headers.referrerPolicy=strict-origin-when-cross-origin
     networks:
       - data  # PostgreSQL access for Keycloak database
@@ -1061,8 +1122,11 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET}
       # Azure Entra ID vars are NOT needed here — identity providers are
       # bootstrap-only (seeded by the keycloak container's --import-realm), not
       # reconciled by keycloak-config-cli.
@@ -1161,9 +1225,12 @@ services:
       - --rc-pass=${RCLONE_RC_PASS}
       - --log-level=INFO
       - --config=/dev/null  # No config file: the rclone pipeline re-creates every remote from the database per run
+    # Dual-homed like otel-collector: the container name also resolves to the egress address, which egress's
+    # enable_icc=false drops, and rclone_pipeline sits on egress too. The pipeline targets the backend-only alias.
     networks:
-      - backend  # reached by the rclone pipeline
-      - egress  # reaches the cloud providers it syncs from
+      backend:  # reached by the rclone pipeline
+        aliases: [rclone-backend]
+      egress: {}  # reaches the cloud providers it syncs from
     healthcheck:
       test:
         - CMD
@@ -1227,7 +1294,53 @@ services:
   # ===================================================================
   # Independent 3-container Dagster deployment: gRPC code server, daemon,
   # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
+  # The gRPC code server binds only to its `backup` network alias, so the
+  # webserver and daemon are its only callers; the webserver shares
+  # `backup-ui` with nothing but its oauth2-proxy. Docker access goes through
+  # a dedicated socket proxy limited to the container API.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  backup-docker-proxy:
+    container_name: backup-docker-proxy
+    image: ghcr.io/bbvch-ai/aihub-core/tecnativa/docker-socket-proxy:0.3
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, wget, --spider, -q, http://localhost:2375/_ping]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt: [label=disable]
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      EVENTS: 0
+      EXEC: 0
+      IMAGES: 0
+      NETWORKS: 0
+      VOLUMES: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels: [traefik.enable=false]
+    networks:
+      - backup-docker
 
   # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   backup-code:
@@ -1251,6 +1364,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_started
+      backup-docker-proxy:
+        condition: service_healthy
     entrypoint:
       - dagster
       - api
@@ -1258,12 +1373,13 @@ services:
       - -m
       - swiss_ai_hub.backup.dagster
       - -h
-      - 0.0.0.0
+      - backup-grpc
       - -p
       - '4266'
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      DOCKER_HOST: tcp://backup-docker-proxy:2375
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
       BACKUP_MINIMUM_KEEP: ${BACKUP_MINIMUM_KEEP}
       BACKUP_POSTGRES_HOST: postgres
@@ -1299,7 +1415,6 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
       - ./configs/backup/backup-dagster.latest.yml:/dagster_home/dagster.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test:
         - CMD
@@ -1307,7 +1422,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - backup-grpc
         - --port
         - '4266'
       interval: 30s
@@ -1320,8 +1435,12 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
-      - storage
+      data:
+      storage:
+      backup-docker:
+      backup:
+        aliases:
+          - backup-grpc
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-backup:
     container_name: oauth2proxy-backup
@@ -1367,6 +1486,7 @@ services:
     networks:
       - proxy
       - backend
+      - backup-ui
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-webserver:
@@ -1403,8 +1523,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - proxy
-      - data
+      - backup-ui
+      - backup
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-daemon:
@@ -1434,7 +1554,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
+      - backup
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -1450,7 +1570,7 @@ services:
   # its callers, and needs no outbound internet (models baked in, hub offline).
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-4
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-5
     restart: always
     environment:
       ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
@@ -1538,6 +1658,7 @@ services:
       - ./configs/litellm/litellm-config.infomaniak.latest.yml:/app/config.infomaniak.yml
       - ./configs/litellm/litellm-config.stoney.latest.yml:/app/config.stoney.yml
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
+      - ./configs/litellm/tenant_attribution.py:/app/tenant_attribution.py:ro
       - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro
       - ./configs/litellm/pii_anonymisation_audit.py:/app/pii_anonymisation_audit.py:ro
     command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
@@ -1564,19 +1685,62 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)
-      - traefik.http.routers.litellm.entrypoints=websecure
-      - traefik.http.routers.litellm.middlewares=security-headers@file
-      - traefik.http.services.litellm.loadbalancer.server.port=4000
-      - traefik.http.routers.litellm.tls.certresolver=letsencrypt
     networks:
       - backend
       - data  # For PostgreSQL access
       - pii-detection  # Caller of the Presidio analyzer
-      - proxy  # For external API access via Traefik
+      # Outbound internet to the model providers only. LiteLLM has no Traefik router of its own: a user's key used
+      # from outside would skip the Hub's model access rules, so all of litellm.${DOMAIN} goes through
+      # oauth2proxy-litellm, and the Hub's services call LiteLLM inside the Docker network.
+      - proxy
+  # License: MIT — third-party (see LICENSE_REPORT.md)
+  oauth2proxy-litellm:
+    container_name: oauth2proxy-litellm
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.15.5
+    restart: always
+    volumes: [./configs/oauth2-proxy:/templates:ro]
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4183
+      OAUTH2_PROXY_COOKIE_SECURE: 'true'
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: http://litellm:4000
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_LITELLM}
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
+      OAUTH2_PROXY_SCOPE: openid email profile roles
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-litellm
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/certs
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_LITELLM}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
+      OAUTH2_PROXY_EMAIL_DOMAINS: '*'
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
+      OAUTH2_PROXY_REVERSE_PROXY: true
+      OAUTH2_PROXY_REDIRECT_URL: https://litellm.${DOMAIN}
+    depends_on: [litellm]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.litellm-admin.rule=Host(`litellm.${DOMAIN}`)
+      - traefik.http.routers.litellm-admin.priority=1000
+      - traefik.http.routers.litellm-admin.entrypoints=websecure
+      - traefik.http.routers.litellm-admin.middlewares=security-headers@file
+      - traefik.http.routers.litellm-admin.service=litellm-admin
+      - traefik.http.services.litellm-admin.loadbalancer.server.port=4183
+      - traefik.http.routers.litellm-admin.tls.certresolver=letsencrypt
+    networks:
+      - proxy
+      - backend
 
   # ===================================================================
   # Utility & Code Execution Services
@@ -1714,13 +1878,12 @@ services:
     container_name: mineru-api
     image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
     restart: always
+    # Caps the VLM calls one parse keeps open (MinerU's default is 100). Every parse runs its own cap, so up to
+    # MINERU_API_MAX_CONCURRENT_REQUESTS x 8 calls reach LiteLLM at once; at 5 x 100 its single process stalls for
+    # 10 s and more. A CLI flag only: MinerU reads no environment variable for it.
+    command: [--host, 0.0.0.0, --port, '8000', --max-concurrency, '8']
     environment:
-      # VLM routing through LiteLLM (OpenAI-compatible)
-      # Various API keys for OpenAI client compatibility
-      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
-      OPENAI_BASE_URL: http://litellm:4000/v1
-      LITELLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
-      # MinerU-specific configuration (used by mineru_vl_utils HttpVlmClient)
+      # VLM routing through LiteLLM: mineru_vl_utils' HTTP client reads only these MINERU_VL_* variables
       MINERU_VL_SERVER: http://litellm:4000/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
       MINERU_VL_MODEL_NAME: ${MINERU_VLM_NAME}
@@ -1819,7 +1982,7 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.12.5-playwright1.63.0-1
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
@@ -1852,6 +2015,11 @@ services:
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: false
       ENABLE_COMMUNITY_SHARING: false
+      # Response rating is unused and stores a copy of the whole chat that survives deleting it (#1760). OpenWebUI
+      # only reads these on first boot; an existing deployment keeps its database value until an admin turns off
+      # Message Rating (Settings > General) and Arena Models (Settings > Evaluations).
+      ENABLE_MESSAGE_RATING: false
+      ENABLE_EVALUATION_ARENA_MODELS: false
       BYPASS_MODEL_ACCESS_CONTROL: 'False'
       ENABLE_USER_WEBHOOKS: true
       WEBHOOK_URL: http://api:8000/api/v1/webhook/openwebui?token=${OPENWEBUI_WEBHOOK_SECRET}
@@ -1972,6 +2140,10 @@ services:
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
+      # Without session sharing, a model lookup holds one pooled connection while it opens a second one for the
+      # model's access grants. Once as many chats arrive at once as the pool has connections, each holds one and waits
+      # for another, nothing moves until the 30 s pool timeout, and the requests fail as QueuePool / "Model not found".
+      DATABASE_ENABLE_SESSION_SHARING: true
       REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/10
       REDIS_KEY_PREFIX: open-webui
 
@@ -2032,6 +2204,9 @@ services:
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: true
       WEB_LOADER_ENGINE: playwright
       PLAYWRIGHT_WS_URL: ws://playwright:3000
+      # Attach Webpage first fetches the page itself, and without a user agent it sends aiohttp's default, which
+      # Wikipedia refuses with 403. Wikimedia asks for a name and a contact.
+      USER_AGENT: Swiss-AI-Hub (+https://docs.ai-hub.bbv.ch/)
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -2144,9 +2319,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
       FUNCTIONS_DIR: /functions
+      CODE_INTERPRETER_PROMPT_FILE: /code-interpreter-prompt.txt
     volumes:
       - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro
       - ./configs/openwebui/functions:/functions:ro
+      - ./configs/openwebui/code-interpreter-prompt.txt:/code-interpreter-prompt.txt:ro
     entrypoint: [/bin/sh, /init-openwebui.sh]
     logging:
       driver: json-file
@@ -2206,6 +2383,7 @@ services:
     networks:
       - proxy
       - backend
+      - dagster-ui
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   dagster-webserver:
@@ -2245,8 +2423,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
-      - data
+      - dagster-ui
+      - dagster
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   dagster-daemon:
@@ -2279,8 +2457,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
-      - data
+      - dagster
 
   # ===================================================================
   # Docker Socket Proxy (Security Layer)
@@ -2290,20 +2467,95 @@ services:
   # compromised, as the proxy only exposes the minimal Docker API
   # endpoints required for service discovery.
   # ===================================================================
+  # One-shot check: refuses to let Traefik and Keycloak start while a value
+  # that setup-env.sh generates (or DOMAIN) still holds its REPLACE_WITH_*
+  # placeholder. The variable list comes from .env.prod at generation time.
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  env-guard:
+    container_name: env-guard
+    image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
+    restart: 'no'
+    entrypoint: [/bin/sh, -c]
+    command:
+      - unset=$$(env | grep -E "^[A-Z0-9_]+=.*REPLACE_WITH_" | cut -d= -f1); if [
+        -n "$$unset" ]; then echo "Still a placeholder, run setup-env.sh or set it
+        in .env:" $$unset >&2; exit 1; fi
+    environment:
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
+      AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      DOMAIN: ${DOMAIN}
+      ETCD_TOKEN: ${ETCD_TOKEN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
+      KEYCLOAK_OPENWEBUI_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
+      LANGFUSE_CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+      LANGFUSE_ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD}
+      LANGFUSE_KEYCLOAK_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
+      LANGFUSE_NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
+      LANGFUSE_SALT: ${LANGFUSE_SALT}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      LITELLM_UI_PASSWORD: ${LITELLM_UI_PASSWORD}
+      LOCAL_LLM_TOKEN: ${LOCAL_LLM_TOKEN}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      NATS_TOKEN: ${NATS_TOKEN}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      OAUTH_COOKIE_SECRET_ATTU: ${OAUTH_COOKIE_SECRET_ATTU}
+      OAUTH_COOKIE_SECRET_BACKUP: ${OAUTH_COOKIE_SECRET_BACKUP}
+      OAUTH_COOKIE_SECRET_DAGSTER: ${OAUTH_COOKIE_SECRET_DAGSTER}
+      OAUTH_COOKIE_SECRET_LITELLM: ${OAUTH_COOKIE_SECRET_LITELLM}
+      OAUTH_COOKIE_SECRET_SEAWEEDFS: ${OAUTH_COOKIE_SECRET_SEAWEEDFS}
+      OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
+      OPENWEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
+      OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+      OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
+      RCLONE_RC_PASS: ${RCLONE_RC_PASS}
+      RCLONE_RC_USER: ${RCLONE_RC_USER}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
+      SANDBOX_MIRROR_S3_SECRET_KEY: ${SANDBOX_MIRROR_S3_SECRET_KEY}
+      SEARXNG_SECRET_KEY: ${SEARXNG_SECRET_KEY}
+      SEAWEEDFS_TOKEN: ${SEAWEEDFS_TOKEN}
+      SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
+      SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels: [traefik.enable=false]
+    network_mode: none
+
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   docker-socket-proxy:
     container_name: docker-socket-proxy
     image: ghcr.io/bbvch-ai/aihub-core/tecnativa/docker-socket-proxy:0.3
     restart: always
-    # Required for Docker socket access in SELinux/AppArmor environments
-    privileged: true
     healthcheck:
       test: [CMD, wget, --spider, -q, http://localhost:2375/_ping]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 5s
-    volumes: [/var/run/docker.sock:/var/run/docker.sock:ro]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt: [label=disable]
     environment:
       # Security: Only enable required Docker API sections
       CONTAINERS: 1  # Required for Traefik to discover services
@@ -2329,7 +2581,7 @@ services:
         max-file: 2
     labels: [traefik.enable=false]
     networks:
-      - backend  # Only Traefik needs to access this service
+      - docker-api  # shared with Traefik only
 
   # ===================================================================
   # Traefik (Reverse Proxy)
@@ -2345,6 +2597,8 @@ services:
     depends_on:
       docker-socket-proxy:
         condition: service_healthy
+      env-guard:
+        condition: service_completed_successfully
     healthcheck:
       test: [NONE]
     ports: [80:80, 443:443]
@@ -2377,6 +2631,7 @@ services:
     networks:
       - proxy
       - backend  # Traefik routes to backend services
+      - docker-api  # reaches the Docker socket proxy for service discovery
   # ===================================================================
   # API Stack (Backend Logic)
   # ===================================================================
@@ -2484,7 +2739,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
@@ -2595,7 +2850,17 @@ services:
       - traefik.http.routers.api.entrypoints=websecure
       - traefik.http.routers.api.middlewares=security-headers@file
       - traefik.http.services.api.loadbalancer.server.port=8000
+      # Knowledge figures in OpenWebUI sources, on OpenWebUI's own origin so the browser sends its session cookie
+      # (ADR 2026_11_17_knowledge_figures_served_through_openwebui_session_proxy).
+      - traefik.http.routers.api-figures.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/hub-figures/`)
+      - traefik.http.routers.api-figures.priority=6100
+      - traefik.http.routers.api-figures.entrypoints=websecure
+      - traefik.http.routers.api-figures.service=api
+      - traefik.http.routers.api-figures.middlewares=api-figures-path,security-headers@file
+      - traefik.http.middlewares.api-figures-path.replacepathregex.regex=^/hub-figures/([A-Za-z0-9_-]+)/([a-f0-9]{24})/([a-z0-9][a-z0-9.-]*)/(.+)$$
+      - traefik.http.middlewares.api-figures-path.replacepathregex.replacement=/api/v1/$$1/files/figures/$$2/$$3/$$4
       - traefik.http.routers.api.tls.certresolver=letsencrypt
+      - traefik.http.routers.api-figures.tls.certresolver=letsencrypt
     networks:
       - proxy
       - backend
@@ -2619,6 +2884,8 @@ services:
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
       SYSADMIN_URL: https://sysadmin.${DOMAIN}
+      # The Content-Security-Policy allows images and uploads only from this S3 origin.
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
     healthcheck:
       test: [CMD, wget, --spider, -q, http://127.0.0.1:8080/]
       interval: 30s
@@ -2796,6 +3063,8 @@ services:
       # The main app's UI origin for the cross-origin browser redirect when a
       # non-sysadmin lands on sysadmin-web (`useMainAppNavigation.exitToMainApp`).
       MAIN_APP_URL: https://${DOMAIN}
+      # LiteLLM's admin UI (oauth2proxy-litellm), the target of the LLM usage links.
+      LITELLM_ADMIN_URL: https://litellm.${DOMAIN}
     healthcheck:
       test: [CMD, wget, --spider, -q, http://127.0.0.1:8080/]
       interval: 30s
@@ -2889,7 +3158,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
@@ -2983,7 +3252,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
@@ -3035,7 +3304,7 @@ services:
       - data
       - storage
       - browser  # Caller of the Playwright browser zone (web fetch)
-  # License: Apache-2.0 — own image (see LICENSES.md)
+  # License: LicenseRef-bbv-AI-Hub-Enterprise — own image (see LICENSES.md)
   universal_agent:
     container_name: universal-agent
     restart: always
@@ -3080,7 +3349,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: ws://playwright:3000
@@ -3100,6 +3369,9 @@ services:
       # Open Terminal (code sandbox)
       OPEN_TERMINAL_BASE_URL: http://open-terminal:8000
       OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
+
+      # Knowledge content search: read-only access to its trigram indexes
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
 
       # Mem0
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
@@ -3157,6 +3429,9 @@ services:
       # Mongo DB (agent configs and the knowledge documents it reads)
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
+      # Knowledge content search: read-only access to its trigram indexes
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
+
       # NATs
       NATS_ENDPOINT: nats://nats:4222
       NATS_TOKEN: ${NATS_TOKEN}
@@ -3175,7 +3450,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
@@ -3234,7 +3509,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # RAG figure inlining: sign figures internally so the gateway hook can inline
@@ -3294,6 +3569,104 @@ services:
       - storage
       - browser  # Caller of the Playwright browser zone (web fetch)
   # License: Apache-2.0 — own image (see LICENSES.md)
+  mcp_react_agent:
+    container_name: mcp-react-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/mcp_react_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # S3 Access connection
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Decrypts the secret fields of agent profiles (the MCP connection's API key)
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
+
+      # MCP: internal hosts an MCP server URL may name; every other internal host is refused
+      MCP_ALLOWED_PRIVATE_HOSTS: ${MCP_ALLOWED_PRIVATE_HOSTS}
+
+      # RAG figure inlining: sign figures internally so the gateway hook can inline
+      # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+
+      # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
+      PLAYWRIGHT_WS_URL: ws://playwright:3000
+      PLAYWRIGHT_PROXY_URL: http://browser-proxy:3128
+
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: http://mineru-api:8000
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: http://litellm:4000
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: mcp-react-agent
+      OTEL_RESOURCE_SERVICE_VERSION: latest
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8090/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
+      - egress  # Outbound access to the external MCP servers a profile points at
+  # License: Apache-2.0 — own image (see LICENSES.md)
   expert_rag_agent:
     container_name: expert-rag-agent
     restart: always
@@ -3325,7 +3698,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # RAG figure inlining: sign figures internally so the gateway hook can inline
@@ -3443,7 +3816,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
@@ -3496,7 +3869,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # RAG figure inlining: sign figures internally so the gateway hook can inline
@@ -3574,7 +3947,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
@@ -3658,7 +4031,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
@@ -3829,7 +4202,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
@@ -3868,7 +4241,7 @@ services:
       - data
       - storage
       - egress  # Outbound access to external IMAP servers
-  # License: Apache-2.0 — own image (see LICENSES.md)
+  # License: LicenseRef-bbv-AI-Hub-Enterprise — own image (see LICENSES.md)
   email_classification_agent:
     container_name: email-classification-agent
     restart: always
@@ -3906,7 +4279,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
@@ -3993,7 +4366,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # Images in messages: sign internally so the gateway inlines them; when false, sign public URLs
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
@@ -4024,6 +4397,10 @@ services:
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h default-rag-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:v0.320.1
     environment:
       PYTHONUNBUFFERED: 1
@@ -4076,7 +4453,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Pipeline run-failure notifications (Apprise)
@@ -4091,7 +4468,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - default-rag-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4099,13 +4476,20 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - default-rag-pipeline-grpc
   # License: Apache-2.0 — own image (see LICENSES.md)
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h shared-rag-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:v0.320.1
     environment:
       PYTHONUNBUFFERED: 1
@@ -4158,7 +4542,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Neo4j
@@ -4184,7 +4568,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - shared-rag-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4192,13 +4576,20 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - shared-rag-pipeline-grpc
   # License: Apache-2.0 — own image (see LICENSES.md)
   document_ingestion_pipeline:
     container_name: document-ingestion-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h document-ingestion-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/document_ingestion_pipeline:latest
     environment:
       PYTHONUNBUFFERED: 1
@@ -4224,6 +4615,8 @@ services:
       MINERU_VLM_NAME: ${MINERU_VLM_NAME}
       MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
       MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
@@ -4244,6 +4637,7 @@ services:
       DOCUMENT_INGESTION_WITH_SUMMARY_NODES: ${DOCUMENT_INGESTION_WITH_SUMMARY_NODES}
       DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT: ${DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT}
       DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS: ${DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS}
+      DOCUMENT_INGESTION_WITH_DOCUMENT_CLASSIFICATION: ${DOCUMENT_INGESTION_WITH_DOCUMENT_CLASSIFICATION}
       DOCUMENT_INGESTION_OBSERVE_JOB_HOUR: ${DOCUMENT_INGESTION_OBSERVE_JOB_HOUR}
       DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE: ${DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE}
 
@@ -4256,7 +4650,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
@@ -4272,7 +4666,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - document-ingestion-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4280,9 +4674,12 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - document-ingestion-pipeline-grpc
   # ===================================================================
   # Rclone Source Pipeline (Stage 1: cloud sources -> data lake, configured per knowledge database)
   # ===================================================================
@@ -4291,6 +4688,10 @@ services:
   rclone_pipeline:
     container_name: rclone-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h rclone-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/rclone_pipeline:latest
     depends_on:
       rclone:
@@ -4316,13 +4717,14 @@ services:
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # rclone daemon
-      RCLONE_URL: http://rclone:5572
+      RCLONE_URL: http://rclone-backend:5572
       RCLONE_RC_USER: ${RCLONE_RC_USER}
       RCLONE_RC_PASS: ${RCLONE_RC_PASS}
 
       # Rclone Source Pipeline schedule
       RCLONE_PIPELINE_OBSERVE_JOB_HOUR: ${RCLONE_PIPELINE_OBSERVE_JOB_HOUR}
       RCLONE_PIPELINE_OBSERVE_JOB_MINUTE: ${RCLONE_PIPELINE_OBSERVE_JOB_MINUTE}
+      RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS: ${RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
@@ -4333,7 +4735,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Pipeline run-failure notifications (Apprise)
@@ -4348,7 +4750,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - rclone-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4356,9 +4758,12 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases: [rclone-pipeline-grpc]
+      egress:  # resolves the hosts a source names (public host check) before the rclone daemon connects to them
   # ===================================================================
   # Structured Source Pipeline (Stage 1: API records such as Jira issues -> markdown in the data lake, via dlt,
   # configured per knowledge database)
@@ -4368,6 +4773,10 @@ services:
   structured_pipeline:
     container_name: structured-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h structured-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/structured_pipeline:latest
     environment:
       PYTHONUNBUFFERED: 1
@@ -4404,7 +4813,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Pipeline run-failure notifications (Apprise)
@@ -4419,7 +4828,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - structured-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4427,10 +4836,13 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
-      - egress  # reaches the business applications it syncs from (Jira Cloud or an on-premise Data Center)
+      backend:
+      data:
+      storage:
+      egress:  # reaches the business applications it syncs from (Jira Cloud or an on-premise Data Center)
+      dagster:
+        aliases:
+          - structured-pipeline-grpc
   # ===================================================================
   # Bot Service (MS Teams Integration)
   # ===================================================================
@@ -4472,7 +4884,7 @@ services:
       S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
-      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
 
       # Keycloak OIDC config — required because bot imports
       # KeycloakAuthHandler from core.auth, which instantiates
@@ -4526,6 +4938,10 @@ services:
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
 # - browser:       The Playwright browser, browser-proxy (its only way out) and its callers (open-webui, the web-fetching agents)
+# - docker-api:    Traefik and the Docker socket proxy
+# - dagster-ui / backup-ui: each Dagster webserver plus only its oauth2-proxy
+# - dagster / backup:       each Dagster webserver + daemon plus the gRPC code servers they load
+# - backup-docker: The backup code server and its own Docker socket proxy
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -4567,6 +4983,36 @@ networks:
   # The Presidio analyzer receives the personal data the platform protects: alone with its callers, no egress
   pii-detection:
     name: pii-detection
+    driver: bridge
+    internal: true
+  # Traefik and the Docker socket proxy only: no other container can query the Docker API
+  docker-api:
+    name: docker-api
+    driver: bridge
+    internal: true
+  # The Dagster webserver and its oauth2-proxy only. Not internal where the webserver publishes a localhost port.
+  dagster-ui:
+    name: dagster-ui
+    driver: bridge
+    internal: true
+  # Dagster webserver, daemon, their storage (pgbouncer) and the pipeline code servers, whose gRPC binds only here
+  dagster:
+    name: dagster
+    driver: bridge
+    internal: true
+  # The backup webserver and its oauth2-proxy only. Not internal where the webserver publishes a localhost port.
+  backup-ui:
+    name: backup-ui
+    driver: bridge
+    internal: true
+  # Backup webserver, daemon and the backup code server, whose gRPC binds only here
+  backup:
+    name: backup
+    driver: bridge
+    internal: true
+  # The backup code server and its Docker socket proxy only
+  backup-docker:
+    name: backup-docker
     driver: bridge
     internal: true
 configs:

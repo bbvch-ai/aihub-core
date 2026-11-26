@@ -1,7 +1,7 @@
 from typing import Annotated, Any
 
 from swiss_ai_hub.core.infrastructure import StructuredPipelineSettings
-from swiss_ai_hub.core.network import SourceHostGuard
+from swiss_ai_hub.core.network import PublicHostGuard
 
 from swiss_ai_hub.pipeline.resources.confluence.confluence_client import ConfluenceClient
 from swiss_ai_hub.pipeline.resources.confluence.confluence_request_error import ConfluenceRequestError
@@ -28,7 +28,7 @@ class ConfluencePreflight:
         client: Annotated[ConfluenceClient, "Client built from the configuration being checked"],
         options: Annotated[ConfluenceOptions, "The configuration, already checked for missing values"],
     ) -> None:
-        SourceHostGuard.require_public(
+        PublicHostGuard.require_public(
             options.base_url,
             StructuredPipelineSettings().private_host_allow_list(),
             _ALLOW_LIST_VARIABLE,

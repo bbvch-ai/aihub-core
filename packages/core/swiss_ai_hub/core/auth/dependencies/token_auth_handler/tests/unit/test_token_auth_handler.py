@@ -247,6 +247,18 @@ def check_roles(token_context_result: dict[str, Any], role1: str, role2: str) ->
     assert set(user.roles) == expected_roles, f"Expected roles {expected_roles}, got {set(user.roles)}"
 
 
+@then("the token should be marked as used")
+def check_token_marked_as_used(token_context: dict[str, Any]) -> None:
+    stored = BearerToken.objects.get(id=token_context["token_doc"].id)
+    assert stored.last_used_at is not None, "A token that authenticated a request must record its use"
+
+
+@then("the token should not be marked as used")
+def check_token_not_marked_as_used(token_context: dict[str, Any]) -> None:
+    stored = BearerToken.objects.get(id=token_context["token_doc"].id)
+    assert stored.last_used_at is None, "A rejected token must not record a use"
+
+
 @then(parsers.parse('I should receive an HTTP error with detail "{expected_detail}"'))
 def check_error_detail(error_context: dict[str, Any], expected_detail: str) -> None:
     """Check that the error detail matches the expected detail."""

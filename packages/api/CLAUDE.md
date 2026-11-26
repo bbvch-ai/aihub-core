@@ -171,6 +171,25 @@ transcript.
 `contains_speech` stays as a pre-filter rather than the whole answer: it detects sound at -40 dB, where the provider
 detects speech, so tone and noise pass it and are rejected upstream.
 
+## Plain-Model Output Limit
+
+`OpenaiService.chat_completion` (direct calls to a model, not an agent: OpenWebUI's own OpenAI connection, add-ins, API
+tokens) caps `max_tokens` / `max_completion_tokens` at the model's `max_output_tokens` from LiteLLM's `/v1/model/info`,
+and sets `max_tokens` to it when the caller sent neither. Agents already request that ceiling on every call
+(`LLMConfig.to_llama_index`). Without it a reasoning model thinks until the provider's window is full: one call to
+Qwen3.5 on aihub-be reasoned for eleven minutes and answered nothing (aihub-incidents#72). A model that declares no
+`max_output_tokens` (one added through LiteLLM's UI) gets no cap.
+
+Input and output share the provider's window, so a chat longer than `max_input_tokens` has less room than the ceiling
+and the provider rejects it with "maximum context length". The default limit is then dropped and the call sent once more
+without it, which is how it worked before the limit existed. A limit the caller set is never dropped.
+
+A call that still ends on `finish_reason: "length"` with no content or tool call gets
+`api.common.output_budget_exhausted` as its answer (one extra chunk before `[DONE]` when streamed, the message content
+otherwise), but only when the caller set no output limit and asked for no `response_format`, `tools` or `functions`.
+Title generators and JSON callers keep the empty answer they handle. A partial answer cut off by the limit is left as it
+is.
+
 ## i18n System
 
 **Hierarchy**: `LocaleString`/`LocaleHandler` (packages/core) → `ApiLocaleString`/`ApiLocaleHandler` (packages/api
@@ -206,6 +225,18 @@ Members and sysadmins may read a thread; process access counts only for a thread
 into a thread. A client may name a new thread itself (the OpenWebUI pipe derives the id from the chat), which
 `ThreadService.get_or_create_thread_to_post_in` creates for the caller. Scheduled-run thread ids are keyed with
 `AIHUB_CONFIG_ENCRYPTION_KEY` (`ThreadEntity.scheduled_thread_id`), so no client can compute one and claim it first.
+
+**Knowledge figures in OpenWebUI** (`FileController.get_figure`, ADR
+`2026_11_17_knowledge_figures_served_through_openwebui_session_proxy`): the pipe links each figure of a knowledge source
+to `/hub-figures/<tenant>/<thread>/<bucket>/<key>` on OpenWebUI's host, which Traefik rewrites to
+`/api/v1/<tenant>/files/figures/...`. The viewer comes from OpenWebUI's session cookie (`OpenWebuiSessionAuthHandler`),
+not a bearer token, so the route is out of the OpenAPI schema and only answers requests OpenWebUI's own pages make: an
+image tag or opening the image in a new tab (`Sec-Fetch-Site: same-origin`, `Sec-Fetch-Dest` `image` or `document`).
+`FigureAccess` grants a figure when the viewer may view the thread (`ThreadAccess.can_view_entity`, which skips building
+the thread DTO), the figure sits in its own document's figure folder inside a grounding node the thread's persisted
+events hold, and the viewer may still use the agent that sent it. `FigureImage` bounds size and pixels, re-encodes, and
+adds the response headers. Text in a source follows the same rule, which is why namespace access is deliberately not
+checked.
 
 **Access capability catalog**: `AccessController` (`routes/access/`, served at `/access/capabilities` &
 `/access/presets`) builds the human-readable capability table shown in the role and tenant-ceiling editors (and

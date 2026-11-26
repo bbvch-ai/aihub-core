@@ -53,8 +53,8 @@ thread:
   name: Conversations
   description: Gérez votre historique de conversations
 token:
-  name: Clés API
-  description: Créez et gérez les clés d'accès API
+  name: Jetons API
+  description: Créez, consultez et révoquez vos jetons API personnels
 translation:
   name: Traduction
   description: Traduire le texte dans toutes les langues prises en charge

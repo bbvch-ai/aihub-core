@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterator
 from typing import Any
 from urllib.parse import urlsplit
@@ -7,7 +8,7 @@ from dlt.extract import DltResource, DltSource
 from swiss_ai_hub.core.form import Checkbox, ChipsInput, InputNumber, InputText, Password, Select
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import StructuredPipelineSettings
-from swiss_ai_hub.core.network import SourceHostGuard
+from swiss_ai_hub.core.network import PublicHostGuard
 
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_client import MediaWikiClient
 from swiss_ai_hub.pipeline.resources.mediawiki.mediawiki_request_error import MediaWikiRequestError
@@ -30,6 +31,8 @@ _ALLOW_LIST_VARIABLE = "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"
 # What a file download answers when the wiki will not serve that file: forbidden, missing, or deleted since listed.
 _UNAVAILABLE = {403, 404, 410}
 _FILES_PER_BATCH = 50
+
+logger = logging.getLogger(__name__)
 
 
 class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
@@ -138,6 +141,7 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
                 listed = {str(page["pageid"]): page for page in scope.pages(client)}
                 current = {page_id: self._fingerprint(scope, page) for page_id, page in listed.items()}
                 changed = {page_id for page_id, fingerprint in current.items() if seen.get(page_id) != fingerprint}
+                logger.info(f"{len(listed)} pages in scope, {len(changed)} of them new or changed to read.")
                 read: set[str] = set()
                 for batch in self._read(client, scope, [listed[page_id] for page_id in sorted(changed)]):
                     read.update(str(page["page_id"]) for page in batch)
@@ -158,6 +162,7 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
                 seen: dict[str, str] = dlt.current.resource_state().setdefault(self.FILES_SEEN, {})
                 current = {file.object_key: file for file in scope.files(client, options)}
                 changed = [file for key, file in current.items() if seen.get(key) != file.fingerprint]
+                logger.info(f"{len(current)} files in scope, {len(changed)} of them new or changed to read.")
                 seen.clear()
                 seen.update({key: file.fingerprint for key, file in current.items()})
                 for start in range(0, len(changed), _FILES_PER_BATCH):
@@ -176,7 +181,7 @@ class MediaWikiAdapter(AbstractStructuredSourceAdapter[MediaWikiOptions]):
         """Downloads with the session the sync signed in with. A file stored on another host than the wiki's, as
         Wikimedia's are, is checked against the address guard first."""
         if urlsplit(reference.download_url).netloc != urlsplit(options.site_url()).netloc:
-            SourceHostGuard.require_public(
+            PublicHostGuard.require_public(
                 reference.download_url, StructuredPipelineSettings().private_host_allow_list(), _ALLOW_LIST_VARIABLE
             )
         try:

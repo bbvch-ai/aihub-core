@@ -1,11 +1,14 @@
 # License Overview
 
-Swiss AI Hub is **fully open-source** under a **dual-license model**: every package is either Apache-2.0 or
-AGPL-3.0-or-later. Each published artifact (Docker image, npm package, PyPI package) carries its own license — the
-per-package `LICENSE` file is authoritative for everything in that subtree, overriding the root `LICENSE` for that
+Swiss AI Hub is an **open-core** project. Its core is open source under a **dual-license model**: every package in
+`packages/` is either Apache-2.0 or AGPL-3.0-or-later. The paid agents of bbv AI Hub live in `ee/` under the **bbv AI
+Hub Enterprise License**. Each published artifact (Docker image, npm package, PyPI package) carries its own license —
+the per-package `LICENSE` file is authoritative for everything in that subtree, overriding the root `LICENSE` for that
 package.
 
-## Why a dual-license model
+The open core runs without `ee/`: no open package depends on it, and it is never published to PyPI.
+
+## Why a dual-license model for the core
 
 The split is intentional, and balances open collaboration with the practical needs of organizations building on the
 platform:
@@ -20,21 +23,29 @@ platform:
 
 See the **SDK Licensing** page in the documentation (Ecosystem → Certification → SDK Licensing) for the full rationale.
 
+## Enterprise features — bbv AI Hub Enterprise License
+
+The Universal Agent and the Email Classification Agent are paid features. They live in `ee/`, a separate workspace
+package (`swiss-ai-hub-ee`) with its own `LICENSE`, and their Docker images are built from there. Using them needs an
+agreement with bbv Software Services and a valid bbv AI Hub Enterprise License; copying and modifying them for
+development and testing does not. A later paid feature is covered by moving it into `ee/`.
+
 ## Per-package license matrix
 
-| Package                 | License                  | SPDX Identifier     | Rationale                                                                                                                                    |
-| ----------------------- | ------------------------ | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| _root, unsorted code_   | Apache License 2.0       | `Apache-2.0`        | Default permissive license for the platform runtime and shared utilities.                                                                    |
-| `packages/core`         | Apache License 2.0       | `Apache-2.0`        | Shared library — must stay maximally permissive so every other package (incl. the AGPL ones) can depend on it.                               |
-| `packages/agent`        | Apache License 2.0       | `Apache-2.0`        | Agent runtime + reference agents — extension surface for SDK users.                                                                          |
-| `packages/api`          | Apache License 2.0       | `Apache-2.0`        | REST + WebSocket gateway. Tenant-admin endpoints live in `packages/sysadmin-api` (AGPL-3.0-or-later).                                        |
-| `packages/bot`          | Apache License 2.0       | `Apache-2.0`        | Collaboration-platform integrations (Teams/Slack).                                                                                           |
-| `packages/pipeline`     | Apache License 2.0       | `Apache-2.0`        | Dagster ingestion/processing pipelines.                                                                                                      |
-| `packages/process`      | Apache License 2.0       | `Apache-2.0`        | Process orchestration engine.                                                                                                                |
-| `packages/web`          | GNU AGPL v3.0 (or later) | `AGPL-3.0-or-later` | Admin/Process UI. Network-copyleft: hosted modifications must publish source. Blocks hostile SaaS rehosts of the UI.                         |
-| `packages/backup`       | GNU AGPL v3.0 (or later) | `AGPL-3.0-or-later` | Backup/restore orchestration + Postgres maintenance. Same SaaS-rehost protection as the frontend.                                            |
-| `packages/sysadmin-api` | GNU AGPL v3.0 (or later) | `AGPL-3.0-or-later` | Multi-tenant administration API. Network-copyleft: hosted modifications must publish source. Blocks hostile SaaS rehosts of the admin plane. |
-| `packages/sysadmin-web` | GNU AGPL v3.0 (or later) | `AGPL-3.0-or-later` | Multi-tenant administration UI. Network-copyleft: hosted modifications must publish source. Blocks hostile SaaS rehosts of the admin plane.  |
+| Package                 | License                       | SPDX Identifier                    | Rationale                                                                                                                                    |
+| ----------------------- | ----------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| _root, unsorted code_   | Apache License 2.0            | `Apache-2.0`                       | Default permissive license for the platform runtime and shared utilities.                                                                    |
+| `packages/core`         | Apache License 2.0            | `Apache-2.0`                       | Shared library — must stay maximally permissive so every other package (incl. the AGPL ones) can depend on it.                               |
+| `packages/agent`        | Apache License 2.0            | `Apache-2.0`                       | Agent runtime + reference agents — extension surface for SDK users.                                                                          |
+| `packages/api`          | Apache License 2.0            | `Apache-2.0`                       | REST + WebSocket gateway. Tenant-admin endpoints live in `packages/sysadmin-api` (AGPL-3.0-or-later).                                        |
+| `packages/bot`          | Apache License 2.0            | `Apache-2.0`                       | Collaboration-platform integrations (Teams/Slack).                                                                                           |
+| `packages/pipeline`     | Apache License 2.0            | `Apache-2.0`                       | Dagster ingestion/processing pipelines.                                                                                                      |
+| `packages/process`      | Apache License 2.0            | `Apache-2.0`                       | Process orchestration engine.                                                                                                                |
+| `packages/web`          | GNU AGPL v3.0 (or later)      | `AGPL-3.0-or-later`                | Admin/Process UI. Network-copyleft: hosted modifications must publish source. Blocks hostile SaaS rehosts of the UI.                         |
+| `packages/backup`       | GNU AGPL v3.0 (or later)      | `AGPL-3.0-or-later`                | Backup/restore orchestration + Postgres maintenance. Same SaaS-rehost protection as the frontend.                                            |
+| `packages/sysadmin-api` | GNU AGPL v3.0 (or later)      | `AGPL-3.0-or-later`                | Multi-tenant administration API. Network-copyleft: hosted modifications must publish source. Blocks hostile SaaS rehosts of the admin plane. |
+| `packages/sysadmin-web` | GNU AGPL v3.0 (or later)      | `AGPL-3.0-or-later`                | Multi-tenant administration UI. Network-copyleft: hosted modifications must publish source. Blocks hostile SaaS rehosts of the admin plane.  |
+| `ee`                    | bbv AI Hub Enterprise License | `LicenseRef-bbv-AI-Hub-Enterprise` | Paid agents (Universal Agent, Email Classification Agent). Not open source; never published to PyPI.                                         |
 
 ## Vendored third-party files
 

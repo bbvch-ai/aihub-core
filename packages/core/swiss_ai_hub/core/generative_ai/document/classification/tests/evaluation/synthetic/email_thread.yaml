@@ -1,0 +1,257 @@
+# Conversations of several e-mails, replies or forwards kept in one document, in German, French, Italian and English.
+# Every company and person is made up. `expected` holds each value as stored (ISO dates, names as written), and None
+# where the document does not state it. Participants are the people and organisations that send or receive a message,
+# by the name a header or signature gives, with the organisation a signature names for a person; never an e-mail address
+# or a domain.
+
+- id: thread-de-1
+  type: email_thread
+  title: AW_Rechnung_2025-0611.eml
+  note: Two companies discuss an invoice and a contract; the signatures name both; a mailbox without a name is no participant.
+  text: |
+    **Von:** Marco Steiner <m.steiner@holzwerk-brunner.example>
+    **Gesendet:** Donnerstag, 12. Juni 2025 16:05
+    **An:** Petra Keller <p.keller@muster-treuhand.example>
+    **Cc:** Sandra Graf <s.graf@muster-treuhand.example>
+    **Betreff:** AW: Rechnung 2025-0611 – Abweichung zum Rahmenvertrag
+
+    Guten Tag Frau Keller
+
+    Sie haben recht: Gemäss Rahmenvertrag RV-2023-07 gilt ein Stundensatz von CHF 118.00. Wir stellen Ihnen eine
+    Gutschrift über die Differenz aus.
+
+    Freundliche Grüsse
+    Marco Steiner
+    Holzwerk Brunner GmbH
+
+    **Von:** Petra Keller <p.keller@muster-treuhand.example>
+    **Gesendet:** Mittwoch, 11. Juni 2025 10:22
+    **An:** info@holzwerk-brunner.example
+    **Betreff:** Rechnung 2025-0611 – Abweichung zum Rahmenvertrag
+
+    Guten Tag
+
+    Auf Ihrer Rechnung 2025-0611 sind 12 Stunden zu CHF 135.00 verrechnet. Laut Rahmenvertrag RV-2023-07 beträgt der
+    Satz CHF 118.00. Bitte prüfen Sie das.
+
+    Freundliche Grüsse
+    Petra Keller
+    Muster Treuhand GmbH
+  expected:
+    document_date: "2025-06-12"
+    document_participants: [Marco Steiner, Petra Keller, Sandra Graf, Holzwerk Brunner GmbH, Muster Treuhand GmbH]
+    document_related_references: ["2025-0611", RV-2023-07]
+
+- id: thread-fr-1
+  type: email_thread
+  title: RE_Devis_D-2025-311.msg
+  note: A thread accepting a quote is a conversation, not an offer or an order.
+  text: |
+    **De :** Claire Rousseau <claire@atelier-rousseau.example>
+    **Envoyé :** jeudi 9 octobre 2025 08:47
+    **À :** Julien Favre <j.favre@lemanic-services.example>
+    **Objet :** RE: Devis D-2025-311 nettoyage des vitrines
+
+    Bonjour Monsieur Favre,
+
+    Parfait, nous acceptons le devis D-2025-311. Pouvez-vous commencer le lundi 20 octobre ?
+
+    Meilleures salutations
+    Claire Rousseau
+
+    **De :** Julien Favre <j.favre@lemanic-services.example>
+    **Envoyé :** mercredi 8 octobre 2025 17:30
+    **À :** Claire Rousseau <claire@atelier-rousseau.example>
+    **Objet :** Devis D-2025-311 nettoyage des vitrines
+
+    Bonjour Madame Rousseau,
+
+    Vous trouverez ci-joint notre devis D-2025-311 pour le nettoyage mensuel des vitrines, CHF 280.– par passage.
+
+    Avec nos meilleures salutations
+    Julien Favre
+    Lemanic Services SA
+  expected:
+    document_date: "2025-10-09"
+    document_participants: [Claire Rousseau, Julien Favre, Lemanic Services SA]
+    document_related_references: [D-2025-311]
+
+- id: thread-it-1
+  type: email_thread
+  title: R_Trasloco_server.eml
+  note: A company named only in a message's body is not a participant; a person in copy is.
+  text: |
+    **Da:** Giulia Bernasconi <g.bernasconi@studio-bellavista.example>
+    **Inviato:** venerdì 14 marzo 2025 11:02
+    **A:** Paolo Ferrari <p.ferrari@studio-bellavista.example>; Luca Cattaneo <l.cattaneo@studio-bellavista.example>
+    **Oggetto:** R: Trasloco server
+
+    Va bene per sabato. Luca, ti occupi tu delle chiavi?
+
+    Giulia
+
+    **Da:** Paolo Ferrari <p.ferrari@studio-bellavista.example>
+    **Inviato:** giovedì 13 marzo 2025 18:15
+    **A:** Giulia Bernasconi <g.bernasconi@studio-bellavista.example>
+    **Cc:** Luca Cattaneo <l.cattaneo@studio-bellavista.example>
+    **Oggetto:** Trasloco server
+
+    Ciao Giulia,
+
+    Clivento SA propone di spostare il server sabato 22 marzo dalle 8 alle 12. Il costo è coperto dal contratto di
+    manutenzione CM-2023-12. Confermi?
+
+    Paolo
+  expected:
+    document_date: "2025-03-14"
+    document_participants: [Giulia Bernasconi, Paolo Ferrari, Luca Cattaneo]
+    document_related_references: [CM-2023-12]
+
+- id: thread-en-1
+  type: email_thread
+  title: FW_Ticket_SD-58213.eml
+  note: A forwarded message makes a thread; a service desk that signs without a person's name is a participant itself.
+  text: |
+    From: Sarah Whitfield <s.whitfield@brightwater.example>
+    Sent: Monday, 3 November 2025 09:14
+    To: Daniel Weber <d.weber@brightwater.example>
+    Subject: FW: Ticket SD-58213 – export job failing
+
+    Daniel, can you take this one? The customer needs it fixed before the month-end close.
+
+    Sarah
+
+    ---------- Forwarded message ---------
+    From: Hooli AG IT Service Desk <servicedesk@hooli.example>
+    Date: Fri, 31 Oct 2025 at 17:52
+    To: Sarah Whitfield <s.whitfield@brightwater.example>
+    Subject: Ticket SD-58213 – export job failing
+
+    Dear Ms Whitfield,
+
+    Since Thursday the nightly export to your dashboard fails with "permission denied". Ticket SD-58213 has priority 2.
+    Please contact us by Tuesday.
+
+    Kind regards
+    Hooli AG IT Service Desk
+  expected:
+    document_date: "2025-11-03"
+    document_participants: [Sarah Whitfield, Daniel Weber, Hooli AG IT Service Desk]
+    document_related_references: [SD-58213]
+
+- id: thread-de-private-1
+  type: email_thread
+  title: Geburtstagsfest_Mama.eml
+  note: A private conversation between people only, with no business document to refer to.
+  text: |
+    Von: Lena Kramer <lena.kramer@mailbox.example>
+    Gesendet: Sonntag, 7. September 2025 20:41
+    An: Thomas Kramer <thomas.kramer@mailbox.example>; Nina Huber <nina.huber@mailbox.example>
+    Betreff: AW: AW: Geburtstagsfest Mama
+
+    Super, dann bestelle ich den Kuchen beim Beck für Samstag. Thomas, bringst du die Stühle?
+    Lena
+
+    Von: Nina Huber <nina.huber@mailbox.example>
+    Gesendet: Sonntag, 7. September 2025 18:03
+    An: Lena Kramer <lena.kramer@mailbox.example>; Thomas Kramer <thomas.kramer@mailbox.example>
+    Betreff: AW: Geburtstagsfest Mama
+
+    Samstag, 20. September passt mir. Ich übernehme die Dekoration.
+    Nina
+
+    Von: Thomas Kramer <thomas.kramer@mailbox.example>
+    Gesendet: Samstag, 6. September 2025 12:30
+    An: Lena Kramer <lena.kramer@mailbox.example>; Nina Huber <nina.huber@mailbox.example>
+    Betreff: Geburtstagsfest Mama
+
+    Hallo zusammen, wollen wir für Mamas 70. am 20. oder 27. September feiern?
+    Thomas
+  expected:
+    document_date: "2025-09-07"
+    document_participants: [Lena Kramer, Nina Huber, Thomas Kramer]
+    document_related_references: null
+
+- id: thread-en-addresses-only-1
+  type: email_thread
+  title: Re_Invoice_NP-77120.eml
+  note: Mailboxes that give no names leave the participants empty; a thread confirming a payment is not a receipt.
+  text: |
+    From: billing@northpeak.example
+    Sent: Wednesday, 2 July 2025 14:20
+    To: accounts@seeblick.example
+    Subject: Re: Invoice NP-77120
+
+    Hello,
+
+    The payment for invoice NP-77120 arrived today. Thank you.
+
+    From: accounts@seeblick.example
+    Sent: Tuesday, 1 July 2025 09:05
+    To: billing@northpeak.example
+    Subject: Invoice NP-77120
+
+    Hello,
+
+    We paid invoice NP-77120 on 30 June. Could you confirm receipt?
+  expected:
+    document_date: "2025-07-02"
+    document_participants: null
+    document_related_references: [NP-77120]
+
+- id: thread-en-history-1
+  type: email_thread
+  title: Mailbox_export_Office_move.txt
+  note: A mailbox history lists the oldest message first, so the latest date is at the end.
+  text: |
+    # Mailbox export – conversation "Office move"
+
+    1 April 2025, 10:12 – Mia Laurent to Facility Team
+    Hi team, the movers confirmed 26 April. Please label your boxes by the 24th.
+
+    2 April 2025, 08:30 – Facility Team to Mia Laurent
+    Labels and boxes are at reception from tomorrow.
+
+    2 April 2025, 09:45 – Oliver Grant to Mia Laurent, Facility Team
+    Will the meeting rooms be ready on Monday 28th?
+
+    3 April 2025, 16:20 – Mia Laurent to Oliver Grant, Facility Team
+    Yes, IT sets them up on Sunday.
+  expected:
+    document_date: "2025-04-03"
+    document_participants: [Mia Laurent, Facility Team, Oliver Grant]
+    document_related_references: null
+
+- id: thread-fr-2
+  type: email_thread
+  title: TR_Retard_livraison_CMD-44120.msg
+  note: A forward with the supplier's reply below; the supplier writes as a company, without a person's name.
+  text: |
+    De : Sophie Morel <s.morel@imprimerie-leman.example>
+    Envoyé : lundi 17 novembre 2025 11:40
+    À : Claire Rousseau <claire@atelier-rousseau.example>
+    Objet : TR: Retard de livraison commande CMD-44120
+
+    Bonjour Madame Rousseau,
+
+    Je vous transmets la réponse de notre fournisseur ci-dessous. Les cartes de visite seront livrées jeudi.
+
+    Sophie Morel
+    Imprimerie du Léman SA
+
+    -----Message d'origine-----
+    De : Papeterie Valais SA <service@papeterie-valais.example>
+    Envoyé : lundi 17 novembre 2025 09:02
+    À : Sophie Morel <s.morel@imprimerie-leman.example>
+    Objet : Retard de livraison commande CMD-44120
+
+    Madame,
+
+    Le papier pour votre commande CMD-44120 est arrivé ce matin ; il partira demain par La Poste.
+
+    Service clientèle
+    Papeterie Valais SA
+  expected:
+    document_date: "2025-11-17"
+    document_participants: [Sophie Morel, Claire Rousseau, Imprimerie du Léman SA, Papeterie Valais SA]
+    document_related_references: [CMD-44120]

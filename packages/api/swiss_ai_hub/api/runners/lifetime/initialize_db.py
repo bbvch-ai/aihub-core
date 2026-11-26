@@ -22,14 +22,20 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, IngestorType, NamespaceEntity
 
+from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
 from swiss_ai_hub.api.runners.lifetime.empty_namespace_scope_migration import EmptyNamespaceScopeMigration
+from swiss_ai_hub.api.runners.lifetime.legacy_organization_memory_tenant_migration import (
+    LegacyOrganizationMemoryTenantMigration,
+)
 from swiss_ai_hub.api.runners.lifetime.llm_request_timeout_migration import LLMRequestTimeoutMigration
 from swiss_ai_hub.api.runners.lifetime.oversized_input_limit_migration import OversizedInputLimitMigration
 from swiss_ai_hub.api.runners.lifetime.plaintext_agent_secret_migration import PlaintextAgentSecretMigration
 from swiss_ai_hub.api.runners.lifetime.pre_pair_knowledge_collection_migration import (
     PrePairKnowledgeCollectionMigration,
 )
+from swiss_ai_hub.api.runners.lifetime.process_root_rule_migration import ProcessRootRuleMigration
+from swiss_ai_hub.api.runners.lifetime.stale_role_name_migration import StaleRoleNameMigration
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +102,7 @@ _DEFAULT_ROLE_DEFINITIONS: list[_DefaultRoleDefinition] = [
     _DefaultRoleDefinition(
         name="AIHubProcessAdmin",
         description="Grants admin access to all processes but to nothing else",
-        access_rules=["aihub.admin.process.>"],
+        access_rules=["aihub.admin.process", "aihub.admin.process.>"],
     ),
 ]
 
@@ -364,6 +370,23 @@ async def lower_llm_request_timeouts() -> None:
         logger.info(f"Lowered the LLM request timeout from 600 s to 300 s in: {', '.join(migrated)}")
 
 
+# Transitional: organization memory was read and edited through one owner shared by every tenant. Delete these two
+# functions and `LegacyOrganizationMemoryTenantMigration` once deployments have upgraded past it.
+async def retarget_legacy_organization_memory_profiles() -> None:
+    """Points every profile still scoped to the shared organization-memory owner at the startup tenant."""
+    migrated = await LegacyOrganizationMemoryTenantMigration(StartupTenantSettings().ID).retarget_profiles()
+    if migrated:
+        logger.info(f"Moved the organization-memory scope to the startup tenant in: {', '.join(migrated)}")
+
+
+async def adopt_legacy_organization_memories() -> None:
+    """Hands every organization memory stored under the shared owner to the startup tenant."""
+    migration = LegacyOrganizationMemoryTenantMigration(StartupTenantSettings().ID)
+    adopted = await migration.adopt_memories(ApiLocaleHandler())
+    if adopted:
+        logger.info(f"Moved {adopted} shared organization memories to the startup tenant")
+
+
 # Transitional: the input-token limit was pre-filled with 128,000 for every model, and saves are now rejected above 85%
 # of the model's window, so such a profile on a smaller model could not be saved at all. Unset, the limit fills that
 # share, which is what it ran at already. Delete it and `OversizedInputLimitMigration` once deployments have upgraded
@@ -383,6 +406,26 @@ async def encrypt_plaintext_agent_secrets() -> None:
     migrated = await PlaintextAgentSecretMigration.run()
     if migrated:
         logger.info(f"Encrypted plaintext secrets in: {', '.join(migrated)}")
+
+
+# Transitional: creating a process instance is now guarded on the bare `aihub.admin.process` root, which the
+# `aihub.admin.process.>` wildcard that tenants and roles used to receive does not match. Delete it and
+# `ProcessRootRuleMigration` once deployments have upgraded past it.
+def add_process_root_rule() -> None:
+    """Adds the process root rule to every tenant ceiling and role that holds only the process wildcard."""
+    migrated = ProcessRootRuleMigration.run()
+    if migrated:
+        logger.info(f"Added the process root rule next to the process wildcard in: {', '.join(migrated)}")
+
+
+# Transitional: deleting a role now removes its name from every user, but names left by deletions before that would
+# re-grant a role created later under the same name to every former holder (aihub-core-private#488). Delete it and
+# `StaleRoleNameMigration` once deployments have upgraded past it.
+def remove_stale_role_names() -> None:
+    """Removes from every user the role names that no longer match a role in their tenant."""
+    migrated = StaleRoleNameMigration.run()
+    if migrated:
+        logger.info(f"Removed role names without a matching role from: {'; '.join(migrated)}")
 
 
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:

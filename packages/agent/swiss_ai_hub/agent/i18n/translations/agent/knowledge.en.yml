@@ -39,6 +39,10 @@ tool:
   collections: The collections to search, by identifier; leave out to search all of
     them.
 config:
+  sources_help: The knowledge databases, whole or narrowed to some collections, that
+    the model may search when it decides to. Not used while every collection the user
+    can read is offered. The asking user only gets results from collections they may
+    read.
   retrieve_k:
     label: Sections per Database
     help: How many sections each searched database returns before the reranker keeps

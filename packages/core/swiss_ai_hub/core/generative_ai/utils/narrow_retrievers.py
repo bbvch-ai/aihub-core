@@ -1,3 +1,4 @@
+from swiss_ai_hub.core.generative_ai.document.classification.document_type_catalog import DocumentTypeCatalog
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters import BucketMetadataFilters
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
 from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config import KnowledgeRetrieverConfig
@@ -18,8 +19,9 @@ def narrow_retrievers(
     with none of its selected namespaces drops the retriever, and only a retriever configured with
     `all_namespaces` accepts any namespace. Several pairs may name the same bucket, which narrows that
     retriever to all of them rather than to the last one seen.
-    `additional_filters` keys must be listed in `allowed_metadata_filter_fields`; the reserved
-    `namespace` key is rejected.
+    `additional_filters` keys must be listed in `allowed_metadata_filter_fields` or be one of the keys ingestion's
+    classification writes on every database (`DocumentTypeCatalog.filter_keys()`); the reserved `namespace` key is
+    rejected.
     """
     selected_namespaces_by_bucket = _index_namespaces_by_bucket(selected_namespaces)
     filters_by_bucket = _index_filters_by_bucket(additional_filters)
@@ -87,7 +89,7 @@ def _index_filters_by_bucket(
 
 
 def _validate_filter_keys(filters: list[MetadataFilterPair], allowed_keys: list[str], bucket: str) -> None:
-    allowed = set(allowed_keys)
+    allowed = {*allowed_keys, *DocumentTypeCatalog.filter_keys()}
     for f in filters:
         if f.key == NAMESPACE:
             raise ValueError(

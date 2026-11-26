@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 
 import yaml
 from pydantic import BaseModel, Field
+from swiss_ai_hub.core.generative_ai import DocumentTypeCatalog
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     DEFAULT_METADATA,
     DOCUMENT_ID,
@@ -55,6 +56,7 @@ class MarkdownFrontmatter(BaseModel):
             "ref_doc_id",
             "text",
             "sparse_embedding",
+            *DocumentTypeCatalog.metadata_keys(),
         }
     )
     # Every chunk stores its metadata twice in Milvus' 64 KiB dynamic field (as keys and inside _node_content), next

@@ -123,7 +123,9 @@ class EmbeddingModelConfig(LiteLLMBase[ResilientOpenAILikeEmbedding]):
         token_counter = TokenCountingHandler(tokenizer=self.token_counter)
         cost_tracker = LLMCostTracker(
             token_counter=token_counter,
-            embedding_tokens_costs_per_thousand=model_info["model_info"]["input_cost_per_token"] * 1000,
+            embedding_tokens_costs_per_thousand=LLMCostTracker.per_thousand(
+                model_info["model_info"].get("input_cost_per_token")
+            ),
         )
 
         default_headers = {}

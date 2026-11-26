@@ -17,3 +17,9 @@ class DocumentExtractionRequestedEvent(ControlEvent):
     row_terms: Annotated[
         str | None, Field(description="What lines holding wanted records usually contain, for long documents.")
     ] = None
+    dated_by_path: Annotated[
+        bool,
+        Field(
+            description="Whether its path dates the document wholly within the run's period, so it is not judged on it."
+        ),
+    ] = False

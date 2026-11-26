@@ -1,4 +1,8 @@
+import asyncio
+import hashlib
+import hmac
 import secrets
+import time
 from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -10,7 +14,11 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
 from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_auth_handler import OpenWebuiAuthHandler
+from swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler import (
+    TokenAndOauth2Handler,
+)
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -21,6 +29,7 @@ from swiss_ai_hub.core.persistence.access.entities.bearer_token import TOKEN_PRE
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
 pytestmark = pytest.mark.usefixtures("mongo_connection")
 
@@ -92,6 +101,25 @@ def create_dummy_request(headers: dict[str, str]) -> Request:
 def generate_dummy_valid_token() -> str:
     """Generate a dummy ``sk-<random>`` token string that doesn't exist in the DB."""
     return f"{TOKEN_PREFIX}{secrets.token_urlsafe(48)}"
+
+
+def _signature(message: str) -> str:
+    secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET.get_secret_value().encode("utf-8")
+    return hmac.new(secret, message.encode(), hashlib.sha256).hexdigest()
+
+
+def _signed_request(token: str, user_name: str, user_email: str, signed_at: int | None = None) -> Request:
+    """Mirrors the pipe's ``AuthenticationService.sign_request``."""
+    timestamp = str(int(time.time()) if signed_at is None else signed_at)
+    return create_dummy_request(
+        {
+            "X-OpenWebUI-User-Name": user_name,
+            "X-OpenWebUI-User-Email": user_email,
+            "X-OpenWebUI-Timestamp": timestamp,
+            "X-OpenWebUI-Signature": _signature(f"ts:{timestamp},name:{user_name},email:{user_email}"),
+            "Authorization": f"Bearer {token}",
+        }
+    )
 
 
 # --- Given Steps ---
@@ -339,12 +367,6 @@ def check_error_detail(error_context: dict[str, Any], expected_detail: str) -> N
 def test_openwebui_auth_succeeds_when_token_owner_has_no_tenant(
     cleanup_document: list[Any],
 ) -> None:
-    import hashlib
-    import hmac
-
-    from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
-    from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
-
     # Token owner: simulates seeded superuser — no /tenants/<id> membership, no active_tenant_id.
     token_owner_oid = str(ObjectId())
     register_fake_keycloak_user(
@@ -372,22 +394,9 @@ def test_openwebui_auth_succeeds_when_token_owner_has_no_tenant(
     )
     cleanup_document.append(user_tenant_role)
 
-    # Mirror the production HMAC computation in OpenWebuiAuthHandler._verify_signature.
-    secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET.get_secret_value().encode("utf-8")
-    message = f"name:{end_user_name},email:{end_user_email}".encode()
-    signature = hmac.new(secret, message, hashlib.sha256).hexdigest()
-
-    headers = {
-        "X-OpenWebUI-User-Name": end_user_name,
-        "X-OpenWebUI-User-Email": end_user_email,
-        "X-OpenWebUI-Signature": signature,
-        "Authorization": f"Bearer {token_doc.token}",
-    }
-    request = create_dummy_request(headers)
+    request = _signed_request(token_doc.token, end_user_name, end_user_email)
 
     handler = OpenWebuiAuthHandler(base_auth_handler=TokenAuthHandler())
-
-    import asyncio
 
     async def run() -> UserIdentity:
         security = await HTTPBearer()(request)
@@ -399,3 +408,202 @@ def test_openwebui_auth_succeeds_when_token_owner_has_no_tenant(
     assert user.id == end_user_oid
     assert user.acting_within_tenant is not None
     assert user.acting_within_tenant.id == str(default_tenant.id)
+
+
+# --- A sysadmin chatting through OpenWebUI ---
+# The signed headers carry no roles, so a sysadmin without any tenant role was refused every agent the chat offered.
+
+
+def _authenticate_end_user(
+    cleanup_document: list[Any], monkeypatch: pytest.MonkeyPatch, realm_roles: list[str]
+) -> UserIdentity:
+    from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+
+    token_owner_oid = str(ObjectId())
+    register_fake_keycloak_user(user_id=token_owner_oid, name="Service Account", email="svc@example.com", attributes={})
+    token_doc = BearerToken.create_new_token(
+        name="svc-token", expiry_date=datetime.now(UTC) + timedelta(hours=1), user_oid=token_owner_oid
+    )
+    cleanup_document.append(token_doc)
+
+    end_user_oid = str(ObjectId())
+    end_user_name, end_user_email = "Sys Admin", "sys.admin@example.com"
+    register_fake_keycloak_user(user_id=end_user_oid, name=end_user_name, email=end_user_email)
+    # A member of the startup tenant who holds no role in it.
+    membership = UserTenantRoleEntity.create_or_update(
+        user_id=end_user_oid,
+        tenant_id=StartupTenantSettings().ID,
+        roles=[],
+        validate_roles=False,
+    )
+    cleanup_document.append(membership)
+
+    async def fake_realm_roles(user_id: str) -> list[str]:
+        return realm_roles if user_id == end_user_oid else []
+
+    monkeypatch.setattr(KeycloakAdminService, "get_user_realm_roles", staticmethod(fake_realm_roles))
+
+    request = _signed_request(token_doc.token, end_user_name, end_user_email)
+    handler = OpenWebuiAuthHandler(base_auth_handler=TokenAuthHandler())
+
+    async def run() -> UserIdentity:
+        return await handler(request, await HTTPBearer()(request))
+
+    return asyncio.run(run())
+
+
+def test_openwebui_auth_gives_a_sysadmin_without_tenant_roles_user_access_only(
+    cleanup_document: list[Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Anyone holding the signing secret and any API token can name a sysadmin in the headers, so the chat's user
+    access is all they carry: never the sysadmin gate, never admin rights."""
+    from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+    from swiss_ai_hub.core.auth.access.access_level import AccessLevel
+
+    user = _authenticate_end_user(cleanup_document, monkeypatch, realm_roles=["AIHubSysAdmin", "AIHubAccess"])
+    access_checker = AccessChecker.from_user(user)
+
+    assert user.openwebui_sys_admin
+    assert not user.is_sys_admin
+    assert user.roles == []
+    assert access_checker.has_access_to_service("agent")
+    assert access_checker.access_level_for_agent("LLMWrappingAgent", "meeting-minutes") == AccessLevel.ACCESS_USER
+    assert access_checker.access_level("aihub.admin.service.tenant") == AccessLevel.ACCESS_DENIED
+
+
+def test_openwebui_auth_does_not_mark_other_users_as_sysadmin(
+    cleanup_document: list[Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = _authenticate_end_user(cleanup_document, monkeypatch, realm_roles=["AIHubAccess"])
+
+    assert not user.is_sys_admin
+    assert not user.openwebui_sys_admin
+
+
+# --- A captured header set stops working ---
+# Run through the composite the API uses, with a bearer the token handler would accept on its own: OpenWebUI's bearer
+# belongs to the superuser, so a refused signature that fell through would be answered as the superuser.
+
+END_USER_NAME, END_USER_EMAIL = "End User", "end.user@example.com"
+TOKEN_OWNER_EMAIL = "svc@example.com"
+MAX_AGE = OpenWebuiAuthHandler.SIGNATURE_MAX_AGE_SECONDS
+
+
+def _member_of_the_startup_tenant(cleanup_document: list[Any], user_id: str, name: str, email: str) -> None:
+    register_fake_keycloak_user(user_id=user_id, name=name, email=email)
+    cleanup_document.append(
+        UserTenantRoleEntity.create_or_update(
+            user_id=user_id, tenant_id=StartupTenantSettings().ID, roles=["aihub-admin"], validate_roles=False
+        )
+    )
+
+
+@pytest.fixture
+def service_token(cleanup_document: list[Any]) -> str:
+    owner_oid = str(ObjectId())
+    _member_of_the_startup_tenant(cleanup_document, owner_oid, "Service Account", TOKEN_OWNER_EMAIL)
+    _member_of_the_startup_tenant(cleanup_document, str(ObjectId()), END_USER_NAME, END_USER_EMAIL)
+    token_doc = BearerToken.create_new_token(
+        name="svc-token", expiry_date=datetime.now(UTC) + timedelta(hours=1), user_oid=owner_oid
+    )
+    cleanup_document.append(token_doc)
+    return token_doc.token
+
+
+def _authenticate(request: Request) -> UserIdentity:
+    token_handler = TokenAuthHandler()
+    composite = TokenAndOauth2Handler(
+        bearer_handlers=[OpenWebuiAuthHandler(base_auth_handler=token_handler), token_handler], oauth2_handlers=[]
+    )
+
+    async def run() -> UserIdentity:
+        return await composite(request, await HTTPBearer(auto_error=False)(request), None)
+
+    return asyncio.run(run())
+
+
+def _refusal(request: Request) -> HTTPException:
+    with pytest.raises(HTTPException) as refused:
+        _authenticate(request)
+    return refused.value
+
+
+@pytest.mark.parametrize("age_seconds", [0, MAX_AGE - 5], ids=["fresh", "just inside the window"])
+def test_a_recently_signed_header_set_names_the_end_user(service_token: str, age_seconds: int) -> None:
+    request = _signed_request(service_token, END_USER_NAME, END_USER_EMAIL, int(time.time()) - age_seconds)
+
+    assert _authenticate(request).email == END_USER_EMAIL
+
+
+@pytest.mark.parametrize("age_seconds", [MAX_AGE + 5, -(MAX_AGE + 5)], ids=["captured earlier", "from the future"])
+def test_a_header_set_outside_the_window_is_refused(service_token: str, age_seconds: int) -> None:
+    request = _signed_request(service_token, END_USER_NAME, END_USER_EMAIL, int(time.time()) - age_seconds)
+
+    refusal = _refusal(request)
+
+    assert (refusal.status_code, refusal.detail) == (401, "Expired OpenWebUI signature.")
+
+
+def _forged_request(token: str, timestamp: str | None, signed_message: str) -> Request:
+    headers = {
+        "X-OpenWebUI-User-Name": END_USER_NAME,
+        "X-OpenWebUI-User-Email": END_USER_EMAIL,
+        "X-OpenWebUI-Signature": _signature(signed_message),
+        "Authorization": f"Bearer {token}",
+    }
+    if timestamp is not None:
+        headers["X-OpenWebUI-Timestamp"] = timestamp
+    return create_dummy_request(headers)
+
+
+def test_a_header_set_signed_by_the_previous_pipe_is_refused(service_token: str) -> None:
+    """What every chat sends until the updated pipe function is provisioned."""
+    request = _forged_request(service_token, None, f"name:{END_USER_NAME},email:{END_USER_EMAIL}")
+
+    refusal = _refusal(request)
+
+    assert (refusal.status_code, refusal.detail) == (401, "Missing or malformed X-OpenWebUI-Timestamp.")
+
+
+@pytest.mark.parametrize("spelling", ["+{}", " {} ", "{:_}"], ids=["plus sign", "padded", "digit separators"])
+def test_a_timestamp_spelled_other_than_plain_digits_is_refused(service_token: str, spelling: str) -> None:
+    """``int()`` reads each of these as the current time, so only the format check refuses them."""
+    timestamp = spelling.format(int(time.time()))
+    request = _forged_request(service_token, timestamp, f"ts:{timestamp},name:{END_USER_NAME},email:{END_USER_EMAIL}")
+
+    refusal = _refusal(request)
+
+    assert (refusal.status_code, refusal.detail) == (401, "Missing or malformed X-OpenWebUI-Timestamp.")
+
+
+def test_a_timestamp_moved_after_signing_is_refused(service_token: str) -> None:
+    signed_at = int(time.time()) - MAX_AGE - 60
+    request = _forged_request(
+        service_token, str(int(time.time())), f"ts:{signed_at},name:{END_USER_NAME},email:{END_USER_EMAIL}"
+    )
+
+    refusal = _refusal(request)
+
+    assert (refusal.status_code, refusal.detail) == (401, "Invalid OpenWebUI signature.")
+
+
+def test_a_previous_pipe_signature_under_a_fresh_timestamp_is_refused(service_token: str) -> None:
+    request = _forged_request(service_token, str(int(time.time())), f"name:{END_USER_NAME},email:{END_USER_EMAIL}")
+
+    refusal = _refusal(request)
+
+    assert (refusal.status_code, refusal.detail) == (401, "Invalid OpenWebUI signature.")
+
+
+def test_unsigned_forwarded_user_headers_still_authenticate_the_token_owner(service_token: str) -> None:
+    """OpenWebUI's own connections (plain chats, images, audio) forward the user unsigned; only a signed request is
+    decided by the signature."""
+    request = create_dummy_request(
+        {
+            "X-OpenWebUI-User-Name": END_USER_NAME,
+            "X-OpenWebUI-User-Email": END_USER_EMAIL,
+            "Authorization": f"Bearer {service_token}",
+        }
+    )
+
+    assert _authenticate(request).email == TOKEN_OWNER_EMAIL

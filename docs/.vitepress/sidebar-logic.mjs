@@ -58,6 +58,11 @@ const findLocalizedIndexFile = (dirPath, locale, isRoot = false) => {
 const buildLocalizedLink = (basePath, locale) =>
   locale === DEFAULT_LOCALE ? basePath : `/${locale}${basePath}`;
 
+// A page without a translation falls back to the default-locale file, which is only published
+// under the default-locale path — linking it under /<locale>/ would 404.
+const buildLinkForSource = (basePath, sourceFile, locale) =>
+  buildLocalizedLink(basePath, sourceFile.endsWith(`.${locale}.md`) ? locale : DEFAULT_LOCALE);
+
 const generateSidebarItemsRecursively = (dirPath, linkPath, locale) => {
   try {
     const entries = readdirSync(dirPath, { withFileTypes: true });
@@ -76,7 +81,7 @@ const generateSidebarItemsRecursively = (dirPath, linkPath, locale) => {
 
         return {
           text: frontmatter.title || formatDirectoryName(entry.name),
-          link: buildLocalizedLink(itemLinkPath, locale),
+          link: buildLinkForSource(itemLinkPath, sourceFile, locale),
           sortOrder: extractNumericPrefix(entry.name),
           items: generateSidebarItemsRecursively(fullPath, itemLinkPath, locale),
           sourceFile,
@@ -114,7 +119,7 @@ const createSpecialPageItem = (fileName, displayName, sortOrder, locale) => {
 
   return {
     text: displayName,
-    link: buildLocalizedLink(`/${fileName}/`, locale),
+    link: buildLinkForSource(`/${fileName}/`, sourceFile, locale),
     sortOrder,
     sourceFile,
     frontmatter,
@@ -139,7 +144,7 @@ const generateDocsSectionItems = (locale) => {
 
         return {
           text: frontmatter.title || formatDirectoryName(entry.name),
-          link: buildLocalizedLink(entryLinkPath, locale),
+          link: buildLinkForSource(entryLinkPath, sourceFile, locale),
           sortOrder: extractNumericPrefix(entry.name),
           items: generateSidebarItemsRecursively(entryBasePath, entryLinkPath, locale),
           sourceFile,

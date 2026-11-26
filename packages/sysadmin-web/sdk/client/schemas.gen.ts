@@ -427,6 +427,19 @@ export const CreateTenantMetadataRequestSchema = {
       description:
         "Access rules granted to this tenant. Omit to start from this instance's default ceiling (every served model minus the configured exclusions); pass an empty list for a tenant that starts with no access at all.",
     },
+    lcdm_tenant_id: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Lcdm Tenant Id",
+      description:
+        "Originating LCDM Hub tenant id (numeric). Set when the tenant is pushed in from the LCDM Hub; it is the value the LCDM MCP expects in its X-LCDM-Tenant header.",
+    },
   },
   type: "object",
   required: ["tenant_id", "name"],
@@ -911,6 +924,19 @@ export const TenantResponseSchema = {
     chat_disclaimer: {
       $ref: "#/components/schemas/LocaleString",
       description: "Chat disclaimer in each supported language.",
+    },
+    lcdm_tenant_id: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Lcdm Tenant Id",
+      description:
+        "Originating LCDM Hub tenant id (numeric), if this tenant was pushed in from the LCDM Hub.",
     },
     state: {
       $ref: "#/components/schemas/TenantState",

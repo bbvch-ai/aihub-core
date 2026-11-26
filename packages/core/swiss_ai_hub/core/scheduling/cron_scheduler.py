@@ -185,18 +185,14 @@ class CronScheduler:
     async def _load_schedulable_snapshot(self, now: datetime, watermark: datetime) -> _SchedulableSnapshot:
         """Reads every schedulable class and its profiles in one pass.
 
-        The classes and the discovery rounds are still MongoEngine entities, synchronous calls in a process also
-        serving all HTTP and WebSocket traffic, so they are read in a worker thread; the profiles are Beanie and
-        awaited on the loop.
-
         The online/offline split is judged against completed discovery rounds, not `now`: a discovery round
         that stalls must not make this tick drop every scheduled run as if all agents had gone away.
         """
-        entities = await asyncio.to_thread(AgentClassEntity.get_all_schedulable)
+        entities = await AgentClassEntity.get_all_schedulable()
         if not entities:
             return _SchedulableSnapshot(window_start=self._clamp_window_start(watermark, now))
 
-        online_threshold = await asyncio.to_thread(AgentClassEntity.online_threshold)
+        online_threshold = await AgentClassEntity.online_threshold()
         offline_last_seen = {
             entity.agent_class: entity.last_discovered
             for entity in entities
@@ -471,7 +467,7 @@ class CronScheduler:
         """Publishes a scheduled start event on the normal agent control path."""
         agent = AgentInstanceRef(agent_class=config.agent_class, agent_id=config.agent_id)
         # Query plus conditional insert, and it runs once per fired occurrence rather than once per tick.
-        thread = await asyncio.to_thread(ThreadEntity.get_or_create_scheduled_thread, _SCHEDULED_THREAD_NAME, agent)
+        thread = await ThreadEntity.get_or_create_scheduled_thread(_SCHEDULED_THREAD_NAME, agent)
 
         external_event = ExternalAgentEvent(
             thread_id=str(thread.id),

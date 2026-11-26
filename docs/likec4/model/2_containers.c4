@@ -75,7 +75,7 @@ model {
       #tier-application
       technology "Dagster (independent instance)"
       icon bootstrap:clock-history
-      description "Scheduled backup/restore/maintenance of stateful stores. Independent Dagster instance separate from Pipeline Orchestrator. Webserver + daemon + grpc. Controls platform containers directly via Docker socket (not via the OIDC-tier socket proxy, which is Traefik-only). Does not back up etcd (excluded as ephemeral)."
+      description "Scheduled backup/restore/maintenance of stateful stores. Independent Dagster instance separate from Pipeline Orchestrator. Webserver + daemon + grpc. Controls platform containers through its own Docker socket proxy, which allows the containers API only (the other socket proxy is Traefik's). Does not back up etcd (excluded as ephemeral)."
     }
 
     openwebui = webapp "OpenWebUI" {
@@ -386,7 +386,7 @@ model {
     litellm -> speaches "Local STT/TTS inference (GPU deployments)"
 
     // Backup fans out to every stateful store (summarised). Several stores are
-    // reached offline — backup stops the container (via Docker socket) and dumps
+    // reached offline — backup stops the container (via its Docker socket proxy) and dumps
     // its volume/backing store rather than connecting over the store's protocol.
     backup_service -[async]-> postgres   "pg_dumpall globals + pg_dump per DB; online maintenance (pg_repack) on dagster DB"
     backup_service -[async]-> ferretdb   "pg_dump of FerretDB's backing Postgres + DocumentDB catalog COPY"

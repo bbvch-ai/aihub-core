@@ -82,10 +82,10 @@ def _config() -> KnowledgeExtractionAgentConfig:
     )
 
 
-def _stub_agent(monkeypatch: pytest.MonkeyPatch) -> dict[str, AsyncMock]:
+def _stub_agent(monkeypatch: pytest.MonkeyPatch, read: ExtractionRequestAnswer = READING) -> dict[str, AsyncMock]:
     """The documents, the reading and the conversation's model calls; the mocks count how often each step ran."""
     _stub(monkeypatch, {None: DOCUMENTS})
-    reading = AsyncMock(return_value=READING)
+    reading = AsyncMock(return_value=read)
     understood = AsyncMock(side_effect=ExtractionRequestForm.understood)
     detect = AsyncMock(return_value=NotAMetaQuestionEvent(reasoning="a table request"))
 
@@ -193,3 +193,18 @@ async def test_a_typed_no_ends_the_run_without_reading_a_document(monkeypatch):
     declined = AgentLocaleHandler("en")("agent.knowledge_extraction_agent.messages.declined")
     assert completion[0].answer.output_messages[-1].content == declined
     assert len(_control(runner, StopEvent)) == 1
+
+
+@async_test
+async def test_the_confirmed_document_condition_reaches_the_extraction(monkeypatch):
+    _stub_agent(monkeypatch, READING.model_copy(update={"document_condition": "only invoices from Hooli"}))
+
+    runner = await _run_with_answer('{"documents": {"type": "option", "option_index": 0}}')
+
+    assert not runner.has_exception_event
+    extraction = _control(runner, ExtractRecordsEvent)
+    assert len(extraction) == 1
+    assert extraction[0].document_condition == "only invoices from Hooli"
+    table = _control(runner, RecordsExtractedEvent)
+    assert (table[0].file_count, table[0].skipped_count) == (2, 1)
+    assert "**Document condition:** only invoices from Hooli" in table[0].summary

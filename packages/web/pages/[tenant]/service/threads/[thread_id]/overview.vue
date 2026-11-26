@@ -2,6 +2,7 @@
   <StructuralColumn
     :title="thread?.name"
     close-route="/service/threads"
+    keep-query
     :loading="threadIsLoading"
     size="large"
   >
@@ -42,7 +43,7 @@
               {{ t('event.list.costs') }}
             </span>
             <Tag
-              :value="thread.llm_cost.toFixed(6) + 'CHF'"
+              :value="`${thread.llm_cost.toFixed(6)} ${t('costs.table.currency')}`"
               severity="secondary"
             />
           </div>

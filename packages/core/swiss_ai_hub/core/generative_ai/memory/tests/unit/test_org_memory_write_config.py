@@ -50,3 +50,10 @@ class TestForm:
         """The admin gets the feedback in the form that the model deliberately no longer raises."""
         default_namespace = OrgMemoryWriteConfig.as_form().default_tenant_namespace
         assert default_namespace.validation == "memberOf:allowed_tenant_namespaces"
+
+
+class TestDefaultTenant:
+    def test_unset_tenant_is_the_startup_tenant(self, monkeypatch):
+        """A profile seeded from code must land in a real tenant, not in an owner no tenant can see."""
+        monkeypatch.setenv("AIHUB_STARTUP_TENANT_ID", "acme")
+        assert OrgMemoryWriteConfig().tenant_id == "acme"

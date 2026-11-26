@@ -99,8 +99,10 @@ class RecordExtraction(Capability):
     - `extract(selection, fields, collections, instructions, row_terms)` is answered with `RecordsExtractedEvent`:
       the selection is resolved within the profile's glob and ceiling, the columns are designed from `fields`, and
       every document is extracted in parallel before one table is assembled and stored as a file. A document that
-      fails is listed, never fatal. A selection too large to extract unasked is sampled first, and `confirm_sample`
-      extracts it whole once the user agrees.
+      fails is listed, never fatal. With a `document_condition`, a document whose start clearly fails it is skipped
+      and listed with its reason, and one the model is unsure about is read whole with its rows marked for checking.
+      A selection too large to extract unasked is sampled first, and `confirm_sample` extracts it whole once the user
+      agrees.
     - In a tool set the model chooses when to extract (`extract_records`); a new extraction is first asked back in
       the request form (`ExtractionCallForm`), which replaces the yes/no approval, and the table then reaches the user
       from the result event itself, and the model reads its summary.
@@ -151,6 +153,7 @@ class RecordExtraction(Capability):
         notices: list[str] | None = None,
         cut_short: bool = False,
         document_terms: str | None = None,
+        document_condition: str | None = None,
     ) -> ExtractRecordsEvent:
         return ExtractRecordsEvent(
             selection=selection,
@@ -158,6 +161,7 @@ class RecordExtraction(Capability):
             instructions=instructions,
             row_terms=row_terms,
             document_terms=document_terms,
+            document_condition=document_condition,
             collections=collections,
             notices=list(notices or []),
             cut_short=cut_short,

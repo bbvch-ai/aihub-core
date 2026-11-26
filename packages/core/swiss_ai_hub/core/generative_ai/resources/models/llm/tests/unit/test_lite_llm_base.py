@@ -11,7 +11,7 @@ def test_token_counter_tokenizes_locally_without_network():
     config = LLMConfig(model_name="text-generation/gemma-4-31B-it")
 
     with patch(
-        "swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base.LiteLLMProxySettings",
+        "swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_model_info.LiteLLMProxySettings",
         side_effect=_deny_network,
     ):
         tokens = config.token_counter("hello world")

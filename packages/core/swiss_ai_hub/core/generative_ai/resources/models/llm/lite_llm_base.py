@@ -1,6 +1,5 @@
 import abc
 from collections.abc import Callable
-from functools import lru_cache
 from typing import Annotated, Any
 
 from llama_index.core.utils import get_tokenizer
@@ -10,13 +9,8 @@ from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
+from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_model_info import LiteLLMModelInfo
 from swiss_ai_hub.core.generative_ai.resources.tokenizers.model_token_budget import ModelTokenBudget
-from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
-
-
-@lru_cache(maxsize=1)
-def _fetch_all_model_info_cached() -> dict[str, Any]:
-    return LiteLLMProxySettings().httpx_client.get("/v1/model/info").json()
 
 
 class LiteLLMBase[OpenAILike](Form, abc.ABC):
@@ -40,7 +34,7 @@ class LiteLLMBase[OpenAILike](Form, abc.ABC):
         pass
 
     def get_model_info(self) -> dict[str, Any]:
-        model_info = _fetch_all_model_info_cached()
+        model_info = LiteLLMModelInfo.all_models()
 
         models = model_info["data"]
         model_info = next((model for model in models if model["model_name"] == self.model_name), None)

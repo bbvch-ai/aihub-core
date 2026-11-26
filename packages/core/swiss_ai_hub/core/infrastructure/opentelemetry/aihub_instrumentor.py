@@ -1,5 +1,6 @@
 import logging
 import traceback
+from urllib.parse import urlsplit, urlunsplit
 
 from aiohttp import (
     TraceRequestEndParams,
@@ -44,11 +45,17 @@ class CustomSpanAttributes(SpanAttributes):
     RESULT_ERRORS = "result.errors"
 
 
+def _url_without_query(url: str) -> str:
+    """Query strings can carry credentials, and span names and URLs are read by everyone with access to the traces."""
+    return urlunsplit(urlsplit(url)._replace(query="", fragment=""))
+
+
 def requests_hook(span: Span, request: PreparedRequest):
-    span.update_name(f"{request.method} {request.url}")
+    url = _url_without_query(request.url)
+    span.update_name(f"{request.method} {url}")
     span.set_attributes(
         attributes={
-            CustomSpanAttributes.HTTP_URL: request.url,
+            CustomSpanAttributes.HTTP_URL: url,
             CustomSpanAttributes.HTTP_METHOD: request.method,
         }
     )
@@ -85,10 +92,11 @@ def redis_request_hook(span: Span, instance: Redis, *args, **kwargs):
 
 
 def httpx_request_hook(span: Span, request: RequestInfo):
-    span.update_name(f"{request.method.decode()} {str(request.url)}")
+    url = _url_without_query(str(request.url))
+    span.update_name(f"{request.method.decode()} {url}")
     span.set_attributes(
         attributes={
-            CustomSpanAttributes.HTTP_URL: str(request.url),
+            CustomSpanAttributes.HTTP_URL: url,
             CustomSpanAttributes.HTTP_METHOD: request.method.decode(),
         }
     )
@@ -113,10 +121,11 @@ async def httpx_async_response_hook(span: Span, request: RequestInfo, response: 
 
 
 def aiohttp_request_hook(span: Span, request: TraceRequestStartParams):
-    span.update_name(f"{request.method} {str(request.url)}")
+    url = _url_without_query(str(request.url))
+    span.update_name(f"{request.method} {url}")
     span.set_attributes(
         attributes={
-            CustomSpanAttributes.HTTP_URL: str(request.url),
+            CustomSpanAttributes.HTTP_URL: url,
             CustomSpanAttributes.HTTP_METHOD: request.method,
         }
     )

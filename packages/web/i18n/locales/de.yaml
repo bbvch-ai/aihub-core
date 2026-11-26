@@ -148,7 +148,6 @@ thread:
       completed: Abgeschlossen
       failed: Fehlgeschlagen
       agent_name_placeholder: Nach Agent filtern
-      user_name_placeholder: Nach Benutzer filtern
       date_range_placeholder: Nach Datum filtern
   utils:
     pendingTypes:
@@ -264,7 +263,6 @@ event:
   retrieveMemory:
     title: Erinnerung abgerufen
     memories: Erinnerungen
-    relations: Wissensgraph
     score: Relevanz
     noMemories: Keine Erinnerungen abgerufen
   storeMemory:
@@ -272,9 +270,6 @@ event:
     added: Hinzugefügt
     updated: Aktualisiert
     deleted: Gelöscht
-    addedRelations: hinzugefügte Beziehungen
-    deletedRelations: gelöschte Beziehungen
-    relationChanges: Beziehungsänderungen
     noChanges: Keine Änderungen
     chars: '{count} Zeichen'
     sourceDocument: '{count} Quelldokument | {count} Quelldokumente'
@@ -361,12 +356,16 @@ event:
   extraction:
     fields: Spalten
     instructions: Zu behaltende Zeilen
+    documentCondition: Zählende Dokumente
+    pathDates: Zeitraum (Daten in den Pfaden)
     criteria: Ausgewählte Dokumente
     collections: Sammlungen
     notices: Hinweise
     documentIds: '{count} gewählte Dokumente'
+    everyDocument: Alle Dokumente im Bereich
     files: Dateien
     failedFiles: Fehlgeschlagene Dateien
+    skippedFiles: Wegen der Dokumentbedingung übersprungene Dateien
     rows: Gezeigte / gefundene Zeilen
     truncated: Gekürzt
     confirmed: Extrahiert alle vom Benutzer bestätigten Dokumente
@@ -636,6 +635,26 @@ knowledge:
       description: Die Quelle synchronisiert diese Datenbank einmal täglich, ihre
         Sammlungen erscheinen hier also nach der nächsten geplanten Synchronisierung.
         Fehlen sie danach noch, prüfen Sie die Einstellungen der Quelle.
+  classification:
+    failed: Die am {date} angeforderte Klassifizierung ist mehrmals fehlgeschlagen
+      und wurde abgebrochen. Fordern Sie sie erneut an oder bitten Sie eine Administratorin
+      oder einen Administrator, die Pipeline zu prüfen.
+    request: Bestehende Dokumente klassifizieren
+    pending: Klassifizierung angefordert am {date}; die Dokumente werden beim nächsten
+      Lauf der Pipeline klassifiziert.
+    confirm:
+      header: Bestehende Dokumente klassifizieren
+      message: Die Dokumente von {name}, die noch keinen Typ haben oder mit einer
+        älteren Version klassifiziert wurden, erhalten aus ihrem gespeicherten Text
+        einen Typ und Attribute. Jedes davon kostet einen Modellaufruf; aktuelle Dokumente
+        werden übersprungen.
+      accept: Klassifizieren
+    requested:
+      summary: Klassifizierung angefordert
+      detail: Die Pipeline klassifiziert die Dokumente in Kürze.
+    error:
+      summary: Klassifizierung konnte nicht angefordert werden
+      detail: Bitte versuchen Sie es später erneut.
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
   pipeline: 'Pipeline: {name}'
@@ -985,6 +1004,8 @@ process:
       done: Abgeschlossen
       steps: Fortschritt
 form:
+  repeater:
+    add_item: Eintrag hinzufügen
   secret_file_input:
     drop_hint: Datei hier ablegen oder zum Auswählen klicken
     limits: '{accept}, bis {size}'
@@ -1008,6 +1029,19 @@ form:
       nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie
       sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
+  modelSelect:
+    contextWindow: 'Kontextfenster: {input} Eingabe- · {output} Ausgabe-Tokens'
+    contextWindowInputOnly: 'Kontextfenster: {input} Eingabe-Tokens'
+    notSelectable: '{model} erfüllt nicht, was dieses Feld verlangt. Wählen Sie vor
+      dem Speichern ein anderes Modell.'
+    specialPurpose: '{model} ist nur für eine bestimmte Aufgabe gebaut und kann hier
+      nicht gewählt werden. Wählen Sie vor dem Speichern ein anderes Modell.'
+    unavailable: '{model} steht Ihnen nicht zur Verfügung. Wählen Sie vor dem Speichern
+      ein anderes Modell.'
+    loadFailed: Die Modelle konnten nicht geladen werden. Laden Sie die Seite neu,
+      um es erneut zu versuchen.
+    empty: Keines der Modelle, die Sie verwenden dürfen, erfüllt, was dieses Feld
+      verlangt.
   modelBound:
     providerDefault: Anbieter-Standard
     overrideRequired: Geben Sie einen Wert ein, oder deaktivieren Sie die Überschreibung,
@@ -1049,8 +1083,6 @@ lib:
       angeboten werden.
     empty: Der gewählte Agent ist für keine Sammlung konfiguriert.
     unavailable: Gespeichert, wird aber vom gewählten Agenten nicht abgerufen
-  knowledgeDatabases:
-    unavailable: '{name} (gelöscht oder für Sie nicht sichtbar)'
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen
@@ -1073,9 +1105,6 @@ lib:
         reservierte Schlüssel `namespace` ist nie erlaubt.
 memory:
   title: Erinnerungen
-  graph:
-    title: Wissensgraph
-    no_results: Keine Erinnerungen gefunden
   list:
     title: Erinnerungsliste
     no_results: Keine Erinnerungen gefunden
@@ -1138,8 +1167,6 @@ openwebui:
   memories:
     title: Agent-Erinnerungen
     select_agent: Agent auswählen
-    list: Liste
-    graph: Graph
     user_memories: Benutzererinnerungen
     org_memories: Organisationserinnerungen
 tenant:
@@ -1222,3 +1249,57 @@ userFiles:
     uploaded: '{count} Datei(en) hochgeladen'
     uploadFailed: Hochladen fehlgeschlagen
     changeFailed: Die Änderung ist fehlgeschlagen
+token:
+  title: API-Token
+  intro: Mit persönlichen Token rufen Skripte und Integrationen die REST API in Ihrem
+    Namen und mit Ihren Berechtigungen auf. Ein Token gilt in allen Mandanten, denen
+    Sie angehören, bis es abläuft oder Sie es widerrufen.
+  list:
+    name: Name
+    created: Erstellt
+    expires: Läuft ab
+    last_used: Zuletzt verwendet
+    never_used: Nie verwendet
+    empty: Sie haben noch keine API-Token.
+  status:
+    active: Aktiv
+    expiring: Läuft bald ab
+    expired: Abgelaufen
+  create:
+    button: Token generieren
+    title: API-Token generieren
+    name:
+      label: Name
+      placeholder: z. B. Reporting-Skript
+      help: Damit erkennen Sie das Token später wieder, etwa am Skript oder an der
+        Integration, die es verwendet.
+    expiry:
+      label: Läuft ab nach
+      preset_30: 30 Tagen
+      preset_90: 90 Tagen
+      preset_180: 6 Monaten
+      preset_365: 1 Jahr
+      custom: Eigenes Datum
+      custom_placeholder: Ablaufdatum wählen
+      help: Das Token läuft am {date} ab.
+    cancel: Abbrechen
+    submit: Generieren
+    error: Das Token konnte nicht generiert werden. Bitte versuchen Sie es erneut.
+  created:
+    title: Neues Token kopieren
+    warning: Das Token wird nur dieses eine Mal angezeigt. Kopieren Sie es jetzt und
+      bewahren Sie es sicher auf. Wenn Sie es verlieren, widerrufen Sie es und generieren
+      Sie ein neues.
+    copy: Kopieren
+    copied: Kopiert
+    usage: Senden Sie es bei jeder API-Anfrage im Authorization-Header, nach dem Wort
+      Bearer und einem Leerzeichen.
+    done: Fertig
+  revoke:
+    button: Widerrufen
+    confirm: Dieses Token widerrufen?
+    explanation: Alles, was «{name}» noch verwendet, verliert sofort den Zugriff.
+      Dies kann nicht rückgängig gemacht werden.
+    cancel: Abbrechen
+    proceed: Widerrufen
+    success: Token widerrufen

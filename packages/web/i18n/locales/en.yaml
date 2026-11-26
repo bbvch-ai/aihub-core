@@ -147,7 +147,6 @@ thread:
       completed: Completed
       failed: Failed
       agent_name_placeholder: Filter by agent
-      user_name_placeholder: Filter by user
       date_range_placeholder: Filter by date
   utils:
     pendingTypes:
@@ -255,7 +254,6 @@ event:
   retrieveMemory:
     title: Memory Retrieved
     memories: Memories
-    relations: Knowledge Graph
     score: Relevance
     noMemories: No memories retrieved
   storeMemory:
@@ -263,9 +261,6 @@ event:
     added: Added
     updated: Updated
     deleted: Deleted
-    addedRelations: added relations
-    deletedRelations: deleted relations
-    relationChanges: Relation Changes
     noChanges: No changes
     documentsSpanning: Spanning {count} documents
     avgScore: 'Avg relevance: {score}%'
@@ -358,12 +353,16 @@ event:
   extraction:
     fields: Columns
     instructions: Rows to keep
+    documentCondition: Documents that count
+    pathDates: Period (dates in the paths)
     criteria: Selected documents
     collections: Collections
     notices: Notices
     documentIds: '{count} chosen documents'
+    everyDocument: Every document in scope
     files: Files
     failedFiles: Files that failed
+    skippedFiles: Files skipped by the document condition
     rows: Rows shown / found
     truncated: Cut short
     confirmed: Extracts every document the user confirmed
@@ -630,6 +629,24 @@ knowledge:
       description: The source syncs this database once a day, so its collections appear
         here after the next scheduled sync. If they still do not, check the source
         settings.
+  classification:
+    failed: The classification requested {date} failed several times and was stopped.
+      Request it again, or ask an administrator to check the pipeline.
+    request: Classify existing documents
+    pending: Classification requested {date}; the documents are classified on the
+      pipeline's next run.
+    confirm:
+      header: Classify existing documents
+      message: The documents of {name} that have no type yet, or were classified by
+        an older version, are given a type and attributes from their stored text.
+        Each of them costs one model call; documents that are up to date are skipped.
+      accept: Classify
+    requested:
+      summary: Classification requested
+      detail: The pipeline classifies the documents shortly.
+    error:
+      summary: Classification could not be requested
+      detail: Please try again later.
   manual_management:
     description: Collections can be created and managed manually
   pipeline: 'Pipeline: {name}'
@@ -853,7 +870,7 @@ role:
   pattern_help_wildcard: All instances of MyAgent
   pattern_help_specific: Only a specific instance
   create_dialog:
-    description: Create a new role with access rules. To assigne the new role to users,
+    description: Create a new role with access rules. To assign the new role to users,
       please use your AD.
     cancel: Cancel
     save: Save
@@ -972,6 +989,8 @@ process:
       done: Done
       steps: Progress
 form:
+  repeater:
+    add_item: Add item
   secret_file_input:
     drop_hint: Drop the file here or click to choose it
     limits: '{accept}, up to {size}'
@@ -994,6 +1013,16 @@ form:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  modelSelect:
+    contextWindow: 'Context window: {input} input · {output} output tokens'
+    contextWindowInputOnly: 'Context window: {input} input tokens'
+    notSelectable: '{model} does not meet what this field requires. Choose another
+      model before saving.'
+    specialPurpose: '{model} is built for one job only and cannot be chosen here.
+      Choose another model before saving.'
+    unavailable: '{model} is not available to you. Choose another model before saving.'
+    loadFailed: The models could not be loaded. Reload the page to try again.
+    empty: No model you can use meets what this field requires.
   modelBound:
     providerDefault: provider default
     overrideRequired: Enter a value, or untick the override to use the default.
@@ -1034,8 +1063,6 @@ lib:
       offered.
     empty: The selected agent is not configured to retrieve from any collection.
     unavailable: Saved, but not retrieved by the selected agent
-  knowledgeDatabases:
-    unavailable: '{name} (deleted or not visible to you)'
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search
@@ -1058,9 +1085,6 @@ lib:
         key is never allowed.
 memory:
   title: Memories
-  graph:
-    title: Knowledge Graph
-    no_results: No memories found
   list:
     title: Memory List
     no_results: No memories found
@@ -1121,8 +1145,6 @@ openwebui:
   memories:
     title: Agent Memories
     select_agent: Select Agent
-    list: List
-    graph: Graph
     user_memories: User Memories
     org_memories: Organization Memories
 tenant:
@@ -1201,3 +1223,56 @@ userFiles:
     uploaded: Uploaded {count} file(s)
     uploadFailed: Upload failed
     changeFailed: The change failed
+token:
+  title: API Tokens
+  intro: Personal tokens let scripts and integrations call the REST API as you, with
+    your own permissions. A token works in every tenant you belong to, until it expires
+    or you revoke it.
+  list:
+    name: Name
+    created: Created
+    expires: Expires
+    last_used: Last used
+    never_used: Never used
+    empty: You have no API tokens yet.
+  status:
+    active: Active
+    expiring: Expires soon
+    expired: Expired
+  create:
+    button: Generate token
+    title: Generate API token
+    name:
+      label: Name
+      placeholder: e.g. Reporting script
+      help: Helps you recognise the token later, for example by the script or integration
+        that uses it.
+    expiry:
+      label: Expires after
+      preset_30: 30 days
+      preset_90: 90 days
+      preset_180: 6 months
+      preset_365: 1 year
+      custom: Custom date
+      custom_placeholder: Pick an expiry date
+      help: The token stops working on {date}.
+    cancel: Cancel
+    submit: Generate
+    error: The token could not be generated. Please try again.
+  created:
+    title: Copy your new token
+    warning: This is the only time the token is shown. Copy it now and keep it somewhere
+      safe. If you lose it, revoke it and generate a new one.
+    copy: Copy
+    copied: Copied
+    usage: Send it with every API request in the Authorization header, after the word
+      Bearer and a space.
+    done: Done
+  revoke:
+    button: Revoke
+    confirm: Revoke this token?
+    explanation: Anything still using "{name}" loses access immediately. This cannot
+      be undone.
+    cancel: Cancel
+    proceed: Revoke
+    success: Token revoked

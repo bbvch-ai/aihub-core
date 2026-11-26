@@ -6,6 +6,7 @@ from mongoengine import connect
 from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
+from pymongo import AsyncMongoClient
 from redis.asyncio import Redis
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.process import (
@@ -17,6 +18,7 @@ from swiss_ai_hub.core.events.process import (
 )
 from swiss_ai_hub.core.form import ConfigSpecs, TemplateData
 from swiss_ai_hub.core.infrastructure import MongoSettings, NatsSettings, RedisSettings
+from swiss_ai_hub.core.persistence import BeanieInitializer
 from swiss_ai_hub.core.processes import ProcessConfig
 from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.routes import (
@@ -88,6 +90,7 @@ class ProcessRunner(HealthCheckProvider):
         self.topic_manager = ProcessClassTopicManager(process_class=self.process_class)
 
         self.nc: NATS | None = None
+        self._beanie_client: AsyncMongoClient | None = None
         self.js: JetStreamContext | None = None
         self.redis: Redis | None = None
 
@@ -212,6 +215,9 @@ class ProcessRunner(HealthCheckProvider):
                 host=MongoSettings().CONNECTION_STRING.get_secret_value(),
                 uuidRepresentation="standard",
             )
+        # Threads are Beanie (#1962). The client lives in the main database, the one the API writes threads to.
+        self._beanie_client = BeanieInitializer.create_client()
+        await BeanieInitializer.initialize(self._beanie_client)
 
         self.nc = await NatsSettings.create_client()
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
@@ -307,6 +313,9 @@ class ProcessRunner(HealthCheckProvider):
 
         if self.redis:
             await self.redis.close()
+
+        if self._beanie_client:
+            await self._beanie_client.close()
 
     async def _run_loop(self):
         """A background task that keeps the runner alive until stopped."""

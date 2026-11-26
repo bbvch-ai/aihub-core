@@ -153,6 +153,10 @@ sensitive_info_guard:
   docstring: |
     Result from analyzing a response for sensitive information that should not be shared externally.
 few_shot_example:
+  list_help: Examples that decide which questions this agent answers. Before searching
+    its knowledge, the agent compares each question with these examples and declines
+    the ones they mark as out of scope, giving a reason. Leave the list empty to accept
+    every question.
   user:
     label: User message
     help: An example user request or message that will be evaluated.

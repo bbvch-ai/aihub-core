@@ -40,8 +40,19 @@ OPENWEBUI_FUNCTION_CALLING_KEY = "aihub_openwebui_function_calling"
 OPENWEBUI_FUNCTION_CALLING_MODES = {"native", "legacy"}
 # Where a model runs. The pii-anonymisation guardrail anonymises every call to a model that is not `local`, and treats a
 # model without the key as external, so a typo would silently anonymise a local model; generation rejects it instead.
+# Keep in sync with HostingLocation in packages/core, which model pickers filter on.
 HOSTING_LOCATION_KEY = "aihub_hosting_location"
 HOSTING_LOCATIONS = {"local", "swiss_cloud", "eu", "global"}
+# Model pickers filter chat models on these, and LiteLLM reports a flag nobody set as null, which a picker requiring
+# that capability treats as unsupported; generation makes every chat model state each one.
+GENERAL_PURPOSE_KEY = "aihub_general_purpose"
+CHAT_FLAG_KEYS = (
+    "supports_function_calling",
+    "supports_response_schema",
+    "supports_vision",
+    "supports_reasoning",
+    GENERAL_PURPOSE_KEY,
+)
 
 # Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
@@ -99,6 +110,7 @@ CONFIG_SPECS = [
     ("templates/configs/s3-ttl-init.sh.j2", "configs/seaweedfs", "ttl-init.sh"),
     ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
     ("templates/configs/openwebui-init-openwebui.sh.j2", "configs/openwebui", "init-openwebui.sh"),
+    ("templates/configs/ferretdb-init.sh.j2", "configs/ferretdb", "init-ferretdb.sh"),
     ("templates/configs/init_etcd.sh.j2", "configs/etcd", "init_etcd.sh"),
     ("templates/configs/keycloak-entrypoint.sh.j2", "configs/keycloak", "keycloak-entrypoint.sh"),
     # Keycloak theme - static files (no stage/hardware variations)
@@ -143,6 +155,7 @@ STATIC_COPY_DIRS = [
 STATIC_COPY_FILES = [
     ("templates/configs/keycloak-theme-logo.png", "configs/keycloak/themes/aihub/login/resources/img", "logo.png"),
     ("templates/configs/presidio-analyzer.yaml", "configs/presidio", "analyzer.yaml"),
+    ("templates/configs/openwebui-code-interpreter-prompt.txt", "configs/openwebui", "code-interpreter-prompt.txt"),
 ]
 
 # Additional static files included only in release bundles (non-config files).
@@ -154,6 +167,35 @@ RELEASE_STATIC_FILES = [
 ]
 
 
+# Placeholders in .env.prod that setup-env.sh replaces with generated values, plus the domain.
+# A deployment still carrying one of them was started without running setup-env.sh (or without
+# editing .env), so the env-guard service refuses to let Traefik and Keycloak start.
+ENV_GUARD_PLACEHOLDERS = (
+    "REPLACE_WITH_RANDOM_STRING",
+    "REPLACE_WITH_64_HEX_CHARS",
+    "REPLACE_WITH_RANDOM_UUID",
+    "REPLACE_WITH_FERNET_KEY",
+    "REPLACE_WITH_LANGFUSE_PUBLIC_KEY",
+    "REPLACE_WITH_LANGFUSE_SECRET_KEY",
+    "REPLACE_WITH_YOUR_DOMAIN",
+)
+
+
+def env_guard_vars():
+    """Names of the .env.prod variables whose template value is one of ENV_GUARD_PLACEHOLDERS."""
+    names = []
+    for raw in (REPO_ROOT / ".env.prod").read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        if any(placeholder in value for placeholder in ENV_GUARD_PLACEHOLDERS):
+            names.append(name.strip())
+    if not names:
+        raise SystemExit("ERROR: no generated-secret placeholders found in .env.prod; env-guard would check nothing")
+    return sorted(names)
+
+
 def load_config():
     """Load compose-config.yml"""
     config_path = DEPLOYMENT_DIR / "compose-config.yml"
@@ -161,12 +203,14 @@ def load_config():
         return yaml.safe_load(f)
 
 
-# Licenses for the images we publish ourselves. The repo's open-source split lives in
+# Licenses for the images we publish ourselves. The repo's license split lives in
 # LICENSES.md — this dict mirrors the per-package license assignment so the rendered
 # compose files can carry an inline `# License:` comment per service. Keys are the
 # compose service-name prefix (= the published image name). Generic placeholders in
 # `licenses.config.json#own_images` (e.g. "agent", "process", "pipeline") that have no
 # corresponding compose service are omitted.
+# The images built from ee/ carry the bbv AI Hub Enterprise License in ee/LICENSE.
+ENTERPRISE_LICENSE = "LicenseRef-bbv-AI-Hub-Enterprise"
 OWN_IMAGE_LICENSES = {
     "api": "Apache-2.0",
     "bot": "Apache-2.0",
@@ -175,14 +219,15 @@ OWN_IMAGE_LICENSES = {
     "sysadmin-api": "AGPL-3.0-or-later",
     "sysadmin-web": "AGPL-3.0-or-later",
     "imap_agent": "Apache-2.0",
-    "email_classification_agent": "Apache-2.0",
+    "email_classification_agent": ENTERPRISE_LICENSE,
     "release_notes_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
-    "universal_agent": "Apache-2.0",
+    "universal_agent": ENTERPRISE_LICENSE,
     "web_fetch_agent": "Apache-2.0",
     "knowledge_extraction_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
+    "mcp_react_agent": "Apache-2.0",
     "expert_rag_agent": "Apache-2.0",
     "expert_asking_agent": "Apache-2.0",
     "namespace_selection_agent": "Apache-2.0",
@@ -216,10 +261,14 @@ DOCKER_LICENSE_ALIASES = {
     "oauth2proxy-attu": "oauth2-proxy",
     "oauth2proxy-backup": "oauth2-proxy",
     "oauth2proxy-dagster": "oauth2-proxy",
+    "oauth2proxy-litellm": "oauth2-proxy",
+    "env-guard": "aws-cli-alpine",
     "backup-webserver": "dagster",
     "backup-daemon": "dagster",
+    "backup-docker-proxy": "docker-socket-proxy",
     "otel-collector": "opentelemetry-collector-contrib",
     "openwebui-init": "postgres",
+    "ferretdb-init": "postgres",
     "keycloak-config": "keycloak-config-cli",
 }
 
@@ -274,6 +323,7 @@ def generate_config(template, context, output_path):
     if template.name == LITELLM_TEMPLATE:
         _validate_openwebui_function_calling(rendered, output_path)
         _validate_hosting_locations(rendered, output_path)
+        _validate_chat_model_flags(rendered, output_path)
     output_path.write_text(rendered, encoding="utf-8")
 
 
@@ -297,6 +347,20 @@ def _validate_hosting_locations(rendered, output_path):
                 f"{entry.get('model_name')}: {HOSTING_LOCATION_KEY} is {location!r} in {output_path.name}, "
                 f"expected one of {sorted(HOSTING_LOCATIONS)}"
             )
+
+
+def _validate_chat_model_flags(rendered, output_path):
+    """Every chat model states its capabilities and purpose, so pickers never guess from a missing flag."""
+    for entry in yaml.safe_load(rendered).get("model_list") or []:
+        model_info = entry.get("model_info") or {}
+        if model_info.get("mode") != "chat":
+            continue
+        for key in CHAT_FLAG_KEYS:
+            if not isinstance(model_info.get(key), bool):
+                raise TypeError(
+                    f"{entry.get('model_name')}: {key} is {model_info.get(key)!r} in {output_path.name}, "
+                    "expected true or false"
+                )
 
 
 def generate_keycloak_realm(env, context, output_path):
@@ -628,6 +692,7 @@ def main():
     env.globals["service_license"] = _make_service_license_fn(_load_license_config())
     # Shared with the compose template so every rendered variant is also mounted.
     env.globals["litellm_variants"] = LITELLM_VARIANTS
+    env.globals["env_guard_vars"] = env_guard_vars()
 
     if args.check_env:
         from env_check import check_env_vs_compose

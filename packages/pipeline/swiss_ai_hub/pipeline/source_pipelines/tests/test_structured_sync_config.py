@@ -98,6 +98,22 @@ class TestAdapter:
         assert row[AbstractStructuredSourceAdapter.OBJECT_KEY_COLUMN] == "ABC/ABC-1.md"
         assert row[AbstractStructuredSourceAdapter.MARKDOWN_COLUMN].startswith("---\ntitle: Title of ABC-1\n")
 
+    @pytest.mark.usefixtures("no_active_dlt_pipeline")
+    def test_reading_reports_its_progress(self, caplog: pytest.LogCaptureFixture):
+        """dlt writes nothing before every record is read, so these lines are what shows a long sync is moving."""
+        FAKE_TRACKERS["https://tracker.test"] = [
+            fake_issue("ABC", f"ABC-{number}", "2026-09-01T10:00:00Z") for number in range(250)
+        ]
+        config = _config()
+
+        with caplog.at_level("INFO"):
+            list(config.adapter().file_source(config.options()))
+
+        assert [record.getMessage() for record in caplog.records if record.getMessage().startswith("Read ")] == [
+            "Read 100 records of 'issues'.",
+            "Read 200 records of 'issues'.",
+        ]
+
 
 class TestScopeFingerprint:
     def test_rotating_a_credential_keeps_the_cursors(self):

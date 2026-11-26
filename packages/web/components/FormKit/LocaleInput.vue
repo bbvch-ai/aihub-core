@@ -139,16 +139,15 @@ const localizedPlaceholder = computed(() => {
   return placeholder.value[activeLocale.value] ?? placeholder.value.en ?? ''
 })
 
+// Whitespace counts as empty, as in the `localeRequired` rule: there is nothing in it to translate
 function hasValue(lang: Locale): boolean {
-  const val = localeValue.value[lang]
-  return val !== null && val !== undefined && val !== ''
+  return !!localeValue.value[lang]?.trim()
 }
 
 // Check if translation is possible (current locale has text and at least one other locale is empty)
 const canTranslate = computed(() => {
   if (props.context.allowTranslation === false) return false
-  const currentText = localeValue.value[activeLocale.value]
-  if (!currentText) return false
+  if (!hasValue(activeLocale.value)) return false
 
   // Check if any other locale is missing a value
   return locales.some(lang => lang !== activeLocale.value && !hasValue(lang))

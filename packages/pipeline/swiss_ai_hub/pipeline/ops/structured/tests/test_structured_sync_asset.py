@@ -4,6 +4,7 @@ import json
 from typing import Annotated, ClassVar
 from unittest.mock import MagicMock, patch
 
+import dlt
 import pytest
 from dagster import AssetKey, DagsterInstance, DagsterRun, DagsterRunStatus, ExecuteInProcessResult, materialize
 from dagster_dlt import DagsterDltResource
@@ -15,7 +16,7 @@ from pydantic import Field
 from swiss_ai_hub.pipeline.assets.factories.structured_to_data_lake.structured_sync_factory import (
     structured_sync_factory,
 )
-from swiss_ai_hub.pipeline.ops.structured.sync_structured_records import _refuse_a_second_sync_of
+from swiss_ai_hub.pipeline.ops.structured.sync_structured_records import BUFFER_MAX_ITEMS, _refuse_a_second_sync_of
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3DataLakeClient
 from swiss_ai_hub.pipeline.resources.structured.tests.fake_s3_client import FakeS3Client
 from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter import AbstractStructuredSourceAdapter
@@ -205,6 +206,14 @@ class TestWrites:
         sync = world.step_metadata(result, "sync_structured_records")
         assert sync["Resumed from stored state"] is True
         assert sync["Files unchanged"] == 0, "nothing was fetched at all, not merely skipped by hash"
+
+    def test_dlt_holds_only_a_few_records_in_memory(self, world):
+        """Set back to dlt's default first, so the test shows the sync sets it."""
+        dlt.config["data_writer.buffer_max_items"] = 5000
+        world.database("db-a", [_issue("ABC", "ABC-1", 1)])
+
+        assert world.sync("db-a").success
+        assert dlt.config["data_writer.buffer_max_items"] == BUFFER_MAX_ITEMS
 
     def test_a_failed_load_keeps_the_previous_state_and_the_next_run_catches_up(self, world):
         issues = world.database("db-a", [_issue("ABC", "ABC-1", 1)])

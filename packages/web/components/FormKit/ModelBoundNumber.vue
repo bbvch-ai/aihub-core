@@ -77,7 +77,7 @@ interface ModelBoundNumberProps {
 }
 
 const props = defineProps<ModelBoundNumberProps>()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 const ERROR_MESSAGE_KEY = 'modelMaximum'
 const REQUIRED_MESSAGE_KEY = 'overrideRequired'
@@ -88,15 +88,11 @@ const minFractionDigits = computed(() => props.context.minFractionDigits ?? 0)
 const maxFractionDigits = computed(() => props.context.maxFractionDigits ?? 6)
 const useGrouping = computed(() => props.context.useGrouping ?? true)
 
-// The German, French and Italian UI is Swiss, so numbers are grouped the Swiss way (155’648); the input and the hint
-// share one locale so they never show different separators.
-const SWISS_NUMBER_LOCALES: Record<string, string> = { de: 'de-CH', fr: 'fr-CH', it: 'it-CH' }
-const numberLocale = computed(() => SWISS_NUMBER_LOCALES[locale.value] ?? locale.value)
-const formatNumber = (value: number) => new Intl.NumberFormat(numberLocale.value).format(value)
+const { numberLocale, formatNumber } = useNumberLocale()
 // A decimal setting such as a temperature reads "1.0", not "1", so its default is not mistaken for a count.
-const formatDefault = (value: number) => new Intl.NumberFormat(numberLocale.value, {
+const formatDefault = (value: number) => formatNumber(value, {
   minimumFractionDigits: (props.context.step ?? 1) < 1 ? 1 : 0,
-}).format(value)
+})
 
 const { modelName, modelInfo } = useReferencedModel(props.context.node, () => props.context.modelRef)
 
@@ -178,7 +174,7 @@ const hint = computed(() => {
     maximum: formatNumber(filledMaximum.value),
     model: modelName.value,
     modelMaximum: formatNumber(modelMax.value),
-    percent: new Intl.NumberFormat(numberLocale.value, { style: 'percent' }).format(fillFactor),
+    percent: formatNumber(fillFactor, { style: 'percent' }),
   })
 })
 

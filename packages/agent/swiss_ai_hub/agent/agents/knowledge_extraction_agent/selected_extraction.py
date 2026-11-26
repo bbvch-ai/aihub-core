@@ -1,4 +1,5 @@
 from swiss_ai_hub.core.events.agent import ExtractRecordsEvent
+from swiss_ai_hub.core.generative_ai import PathDateRange
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_notices import ExtractionNotices
@@ -21,9 +22,12 @@ class SelectedExtraction:
         by_location: bool,
         t: LocaleHandler,
         calculation: str | None = None,
+        document_condition: str | None = None,
+        path_date_range: PathDateRange | None = None,
     ) -> ExtractRecordsEvent:
+        """The confirmed period is set on the selection, whatever the model's own selection says."""
         return RecordExtraction.extract(
-            selection.selection,
+            selection.selection.model_copy(update={"path_date_range": path_date_range}),
             selection.fields,
             scope.pairs(),
             selection.instructions,
@@ -34,4 +38,5 @@ class SelectedExtraction:
             ],
             cut_short=finished.stopped_early and not by_location,
             document_terms=selection.document_terms,
+            document_condition=document_condition,
         )

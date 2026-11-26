@@ -4,6 +4,7 @@ from typing import Annotated, Any, ClassVar, Self
 from pydantic import BaseModel, Field, create_model
 from swiss_ai_hub.jambo import SchemaConverter
 
+from swiss_ai_hub.core.generative_ai.structured_extraction.document_match import DocumentMatch
 from swiss_ai_hub.core.generative_ai.structured_extraction.invalid_record_schema_error import InvalidRecordSchemaError
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_field import RecordField
 
@@ -76,10 +77,22 @@ class RecordSchema(BaseModel):
             "required": self.field_names,
         }
 
-    def to_records_model(self) -> type[BaseModel]:
-        """The record wrapped in a list, so one call returns zero, one or many records."""
+    def to_records_model(self, judged: bool = False) -> type[BaseModel]:
+        """The record wrapped in a list, so one call returns zero, one or many records.
+
+        When `judged`, the document's verdict on the document condition comes first. Field order is generation order
+        on the strict-output path (`ResilientOpenAILike.should_use_structured_outputs`), so the model decides before it
+        lists records; on the fallback path the order is not guaranteed, and correctness does not depend on it.
+        """
         record_model = SchemaConverter.build(self.to_json_schema())
+        records = (list[record_model], Field(description="Every matching record, in document order"))
+        if not judged:
+            return create_model("ExtractedRecords", records=records)
         return create_model(
-            "ExtractedRecords",
-            records=(list[record_model], Field(description="Every matching record, in document order")),
+            "JudgedExtractedRecords",
+            document_match=(
+                DocumentMatch,
+                Field(description="How the whole document meets the document condition, judged before its records"),
+            ),
+            records=records,
         )

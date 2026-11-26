@@ -51,8 +51,8 @@ thread:
   name: Conversazioni
   description: Gestisci la cronologia delle conversazioni
 token:
-  name: Chiavi API
-  description: Crea e gestisci chiavi di accesso API
+  name: Token API
+  description: Crea, consulta e revoca i tuoi token API personali
 translation:
   name: Traduzione
   description: Traduci il testo in tutte le lingue supportate

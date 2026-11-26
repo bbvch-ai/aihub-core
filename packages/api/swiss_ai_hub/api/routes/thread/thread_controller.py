@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Annotated, Self
 
+from beanie.exceptions import DocumentNotFound
 from fastapi import Depends, HTTPException, Path, Query, Security
-from mongoengine import DoesNotExist
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -52,7 +52,7 @@ class ThreadController(TenantScopedController):
     async def _get_thread_or_404(thread_id: str, t: LocaleHandler) -> ThreadDTO:
         try:
             return await ThreadService.get_thread_by_id(thread_id, t=t)
-        except DoesNotExist:
+        except DocumentNotFound:
             raise ThreadController.thread_not_found_exception
 
     @staticmethod
@@ -72,7 +72,6 @@ class ThreadController(TenantScopedController):
             t: Annotated[LocaleHandler, Depends(use_locale)],
             search: Annotated[str | None, Query(description="Search by thread name")] = None,
             agent_id: Annotated[str | None, Query(description="Filter by agent id")] = None,
-            user_id: Annotated[str | None, Query(description="Filter by user id")] = None,
             status: Annotated[
                 str | None,
                 Query(description="Filter by status: active, completed, failed", pattern="^(active|completed|failed)$"),
@@ -108,7 +107,6 @@ class ThreadController(TenantScopedController):
                 sort_order=sort_order,
                 search=search,
                 agent_id=agent_id,
-                user_search_id=user_id,
                 status=status,
                 from_date=from_date,
                 to_date=to_date,

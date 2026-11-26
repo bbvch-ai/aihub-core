@@ -177,13 +177,53 @@ Two things the switch does not cover:
 
 ## Admin Service Authentication via OAuth2 Proxy
 
-Internal admin services (Dagster, Attu, SeaweedFS) are protected by [OAuth2 Proxy](https://oauth2-proxy.github.io/)
-instances that sit in front of each service. OAuth2 Proxy handles the full OIDC login flow against Keycloak before
-forwarding authenticated requests to the upstream service. Only users with the `AIHubSysAdmin` role can access these
-services.
+Internal admin services (Dagster, Attu, SeaweedFS, Backup, LiteLLM) are protected by
+[OAuth2 Proxy](https://oauth2-proxy.github.io/) instances that sit in front of each service. OAuth2 Proxy handles the
+full OIDC login flow against Keycloak before forwarding authenticated requests to the upstream service. Only users with
+the `AIHubSysAdmin` role can access these services, and the session cookie is `Secure`.
+
+Every path on `litellm.<domain>` goes through `oauth2proxy-litellm`, the OpenAI-compatible inference routes included,
+and needs an SSO session with `AIHubSysAdmin` before LiteLLM's own login. LiteLLM has no public route of its own: the
+Hub's services call it inside the Docker network, and a LiteLLM key used from outside would skip the Hub's model access
+rules and usage limits. Clients outside the Hub use the Hub's
+[OpenAI-compatible API](../../18_api/1_openai_compatible_api/) instead.
+
+| Request to `litellm.<domain>` without an SSO session | Result                                        |
+| ---------------------------------------------------- | --------------------------------------------- |
+| `POST /v1/chat/completions` with a LiteLLM key       | OAuth2 Proxy sign-in, never LiteLLM           |
+| `GET /v1/models` without a key                       | OAuth2 Proxy sign-in, never LiteLLM           |
+| `GET /ui/`                                           | OAuth2 Proxy sign-in, then the Keycloak login |
+| `POST /key/generate` with the master key             | OAuth2 Proxy sign-in, never LiteLLM           |
+
+The image is the upstream OAuth2 Proxy release pinned in `compose-config.yml` and mirrored to the platform registry. The
+sign-in button colour comes from `infra/deployment/templates/oauth2-proxy/sign_in.html`, mounted as a custom template;
+re-copy upstream's `sign_in.html` of the new version into it when bumping the tag.
 
 Due to the split-horizon networking in Docker deployments (containers use internal hostnames, browsers use external
 URLs), OIDC discovery is skipped and endpoints are configured explicitly.
+
+## LiteLLM Keys
+
+Every model call the Hub makes for a user carries that user's own LiteLLM key, which books the call to the user's budget
+and spend (see [Cost Control](../../14_cost_control/)). The Hub creates the key on the user's first request. It derives
+the key from the LiteLLM master key with HMAC-SHA256, so the key cannot be computed from the user id or from anything
+else other users can see. Users never see their key.
+
+Earlier releases derived the key from the user id alone. Those keys stay valid, so agents built on an older release keep
+working. Because LiteLLM has no public route, they can only be used from inside the Docker network.
+
+These containers of a Docker Compose deployment hold the master key:
+
+| Container                                                                                                                | Variable                                                                   | Why                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `litellm`                                                                                                                | `LITELLM_MASTER_KEY`                                                       | It is LiteLLM's own master key                                            |
+| `mineru-api`                                                                                                             | `MINERU_VL_API_KEY`                                                        | Calls its vision-language model through LiteLLM                           |
+| `api`, every agent container, and the code servers of the `default_rag`, `shared_rag` and `document_ingestion` pipelines | `LITE_LLM_PROXY_API_KEY`, in most of them also `MINERU_VLM_SERVER_API_KEY` | Create LiteLLM users, derive their keys, and make calls that have no user |
+
+The [environment variables reference](../../3_deployment_guide/9_environment_variables/) names each container. Being
+able to compute every user's key gives these containers nothing new, since the master key can already create a key for
+any user. A new master key gives every user a new key on their next request; the keys derived from the old one stay
+valid until they are removed in LiteLLM.
 
 ## Langfuse Access
 
@@ -193,49 +233,19 @@ marker client scope `langfuse-sysadmin-gate`, which activates a conditional deny
 (`browser-aihub` browser flow and the post-broker-login flow). Users without `AIHubSysAdmin` are denied at the Keycloak
 login — on fresh logins via the identity provider as well as on existing SSO sessions.
 
-## Hardening: Keycloak Admin Console Access
+## Keycloak Admin Console Access
 
-The Keycloak admin console (`https://auth.<domain>/admin/`) is protected by username and password but is accessible from
-any IP address by default. For production deployments, restricting access to the admin console and metrics endpoint to
-known administrator IP addresses is strongly recommended.
+Traefik serves the Keycloak admin console (`https://auth.<domain>/admin/`) and the `master` realm
+(`https://auth.<domain>/realms/master/`) only to the source ranges in `KEYCLOAK_ADMIN_ALLOWED_SOURCE_RANGES`
+(comma-separated CIDRs). Every other client gets `403 Forbidden` from the
+[`ipAllowList`](https://doc.traefik.io/traefik/middlewares/http/ipallowlist/) middleware on a dedicated router (priority
+7500, above the public Keycloak router at 7000). The `aihub` realm's login, token and account endpoints stay public.
 
-### Recommended: IP Allowlisting via Traefik
-
-The platform uses Traefik v3 as its reverse proxy. Traefik's
-[`ipAllowList`](https://doc.traefik.io/traefik/middlewares/http/ipallowlist/) middleware can restrict access to the
-Keycloak admin paths while keeping the OIDC login endpoints publicly accessible for all users.
-
-**Implementation steps:**
-
-1. Add an environment variable to `.env` with your allowed IP ranges:
-
-   ```bash
-   KEYCLOAK_ADMIN_ALLOWED_IPS="203.0.113.0/24,198.51.100.10/32"
-   ```
-
-2. In `docker-compose.yml`, add a second Traefik router for admin paths on the `keycloak` service labels (alongside the
-   existing `keycloak` router):
-
-   ```yaml
-   # Admin-only router with IP restriction (higher priority than public router)
-   - "traefik.http.routers.keycloak-admin.rule=Host(`auth.${DOMAIN}`) && (PathPrefix(`/admin`) || PathPrefix(`/metrics`))"
-   - "traefik.http.routers.keycloak-admin.entrypoints=websecure"
-   - "traefik.http.routers.keycloak-admin.tls=true"
-   - "traefik.http.routers.keycloak-admin.priority=7500"
-   - "traefik.http.routers.keycloak-admin.middlewares=keycloak-admin-ipallowlist,keycloak-security-headers"
-   - "traefik.http.routers.keycloak-admin.service=keycloak"
-   # IP allowlist middleware
-   - "traefik.http.middlewares.keycloak-admin-ipallowlist.ipallowlist.sourcerange=${KEYCLOAK_ADMIN_ALLOWED_IPS}"
-   ```
-
-The public router (priority 7000) continues to serve OIDC endpoints (`/realms/...`) without restriction, while the admin
-router (priority 7500) intercepts `/admin` and `/metrics` requests and rejects connections from non-allowlisted IPs with
-a `403 Forbidden` response.
-
-::: tip
-The same pattern can be applied to any service exposed through Traefik. Consider also restricting access to the Traefik
-dashboard itself if it is enabled in production.
-:::
+- `.env.prod` ships `127.0.0.1/32`, which shuts the console off from every outside address. Set your administrators'
+  office or VPN ranges, for example `KEYCLOAK_ADMIN_ALLOWED_SOURCE_RANGES='203.0.113.0/24,198.51.100.10/32'`, then
+  recreate `keycloak` so Traefik picks up the new label.
+- The platform itself never goes through this route: the API, `keycloak-config` and the OAuth2 proxies call Keycloak at
+  `http://keycloak:8080` inside the Docker network.
 
 ## Keycloak Realm Roles and Automatic Assignment
 
@@ -245,10 +255,10 @@ gates — fine-grained permissions are managed locally by the platform through t
 
 Two realm roles take effect in the platform:
 
-| Role            | Effect                                                                                                                                                   |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AIHubAccess`   | Required for platform login. Users without this role are denied at the Keycloak login flow.                                                              |
-| `AIHubSysAdmin` | Platform administrator. Read from the token to grant admin access and gate the OAuth2-Proxy admin tools (Dagster, Attu, SeaweedFS, Backup) and Langfuse. |
+| Role            | Effect                                                                                                                                                            |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AIHubAccess`   | Required for platform login. Users without this role are denied at the Keycloak login flow.                                                                       |
+| `AIHubSysAdmin` | Platform administrator. Read from the token to grant admin access and gate the OAuth2-Proxy admin tools (Dagster, Attu, SeaweedFS, Backup, LiteLLM) and Langfuse. |
 
 ::: info Realm roles vs. platform roles
 The `aihub` realm defines only these two roles. Fine-grained, day-to-day permissions are handled separately by
@@ -304,9 +314,9 @@ in.
 
 Day-to-day permissions come from **platform roles** (`AIHubUser`, `AIHubAdmin`, `AIHubAgentUser`, …), which are
 tenant-scoped and managed inside the platform — not in Keycloak and not from the IdP. Which roles a new user receives is
-controlled by the `AIHUB_USER_SIGNUP_*` environment variables (`AIHUB_USER_SIGNUP_DEFAULT_ROLES`,
-`AIHUB_USER_SIGNUP_REGULAR_USER_ROLES`, `AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES`), and each tenant is seeded with its
-default role set at creation. See [Access Management](../../11_access_management/1_authentication_setup/) and
+controlled by `AIHUB_USER_SIGNUP_REGULAR_USER_ROLES` and `AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES`, and each tenant is
+seeded with its default role set at creation. See
+[Default Roles and New-User Role Assignment](../../11_access_management/3_default_roles/) and
 [Permissions](../../11_access_management/2_permissions/).
 
 ## Security Standards and Operational Capabilities

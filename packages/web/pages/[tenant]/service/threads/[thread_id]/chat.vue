@@ -2,6 +2,7 @@
   <StructuralColumn
     :title="t('thread.chat.title')"
     close-route="/service/threads"
+    keep-query
     :loading="threadIsLoading || threadEventsAreLoading"
   >
     <ChatThread

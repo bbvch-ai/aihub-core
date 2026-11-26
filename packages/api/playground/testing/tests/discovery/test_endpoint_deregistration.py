@@ -25,7 +25,7 @@ class DiscoveryServiceForTests(EndpointsDiscoveryService[BaseModel]):
     def _register_discovered_class(self, dto: BaseModel) -> bool:
         return True
 
-    def _online_class_names(self) -> set[str]:
+    async def _online_class_names(self) -> set[str]:
         return set()
 
 

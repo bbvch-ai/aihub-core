@@ -19,7 +19,6 @@ import inspect
 import pytest
 
 from swiss_ai_hub.agent.agents.agent import Agent
-from swiss_ai_hub.agent.agents.email_classification_agent import EmailClassificationAgent
 from swiss_ai_hub.agent.agents.expert_asking_agent.expert_asking_agent import ExpertAskingAgent
 from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent import FewShotAgent
@@ -30,7 +29,6 @@ from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.agents.retrieval_agent.retrieval_agent import RetrievalAgent
 
 _AGENTS = [
-    EmailClassificationAgent,
     ExpertAskingAgent,
     ExpertRAGAgent,
     FewShotAgent,

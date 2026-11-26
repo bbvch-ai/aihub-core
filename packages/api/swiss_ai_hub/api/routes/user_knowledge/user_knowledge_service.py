@@ -62,14 +62,14 @@ class UserKnowledgeService:
         relative = SandboxHomePath.shown(folder)
         parent, name = posixpath.split(relative)
         folder_title = (
-            UserKnowledgeService._conversation_titles(user, [name]).get(name)
+            (await UserKnowledgeService._conversation_titles(user, [name])).get(name)
             if parent == UserKnowledgeService.CONVERSATIONS_FOLDER
             else None
         )
         listing = await UserKnowledgeService._listing(user, relative, folder_title is not None)
         entries = [entry for entry in listing.get("entries", []) if not entry["name"].startswith(".")]
         titles = (
-            UserKnowledgeService._conversation_titles(user, [entry["name"] for entry in entries])
+            await UserKnowledgeService._conversation_titles(user, [entry["name"] for entry in entries])
             if relative == UserKnowledgeService.CONVERSATIONS_FOLDER
             else {}
         )
@@ -224,8 +224,8 @@ class UserKnowledgeService:
             raise
 
     @staticmethod
-    def _conversation_titles(user: UserIdentity, folder_names: list[str]) -> dict[str, str]:
+    async def _conversation_titles(user: UserIdentity, folder_names: list[str]) -> dict[str, str]:
         """Conversation folders are named by thread id; only threads the user takes part in give their title."""
         ids = [ObjectId(name) for name in folder_names if ObjectId.is_valid(name)]
-        threads = ThreadEntity.objects(id__in=ids, users__user_id=user.id).only("id", "name")
+        threads = await ThreadEntity.find({"_id": {"$in": ids}, "users.user_id": user.id}).to_list()
         return {str(thread.id): thread.name for thread in threads}

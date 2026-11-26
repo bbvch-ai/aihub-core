@@ -269,14 +269,14 @@ Import any of these from `swiss_ai_hub.agent.agents.<name>` and run them as-is, 
 | `EventDisplayer`               | Streams chunks, thoughts, and LLM output to the UI in real time                                                                                                                  |
 | `AgentRunner`                  | Connects your agent to the platform and runs it; `AgentTestRunner` runs it sandboxed for tests                                                                                   |
 
-See the [documentation](https://bbvch-ai.github.io/aihub-core/) for the full guide, and
+See the [documentation](https://docs.ai-hub.bbv.ch/) for the full guide, and
 [`playground/minimal_workflow`](https://github.com/bbvch-ai/aihub-core/tree/main/packages/agent/playground/minimal_workflow)
 for runnable patterns (conditionals, loops, human-in-the-loop, fan-out, memory, MCP tools, …).
 
 ## Links
 
 - **Source & issues**: https://github.com/bbvch-ai/aihub-core
-- **Documentation**: https://bbvch-ai.github.io/aihub-core/
+- **Documentation**: https://docs.ai-hub.bbv.ch/
 - **The full SDK** (meta package): https://pypi.org/project/swiss-ai-hub/
 
 ## License

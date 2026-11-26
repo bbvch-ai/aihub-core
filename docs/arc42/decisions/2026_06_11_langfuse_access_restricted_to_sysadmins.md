@@ -93,5 +93,5 @@ org/project membership on first login.
   before the rollout, otherwise they lock themselves out of Langfuse.
 
 Related decisions: [Replace Arize Phoenix with Langfuse](2026_02_10_replace_phoenix_with_langfuse.md),
-[Keycloak as Identity Broker](2026_02_28_keycloak_as_identity_broker.md),
+[Keycloak as Identity Broker](2025_12_28_keycloak_as_identity_broker.md),
 [Superuser via Keycloak Realm Role](2026_04_14_superuser_via_keycloak_realm_role.md).

@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, NatsSettings
+from swiss_ai_hub.core.persistence import BeanieInitializer
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 
@@ -24,6 +25,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
         uuidRepresentation="standard",
     )
+    # Threads are Beanie (#1962), read here by the agent event distributor.
+    beanie_client = BeanieInitializer.create_client()
+    await BeanieInitializer.initialize(beanie_client)
 
     # Configure TTL index after connection is established
     if hasattr(app.state, "conversation_ttl_days"):
@@ -64,6 +68,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Shutdown: stop subscribers
         await bot_in_the_loop_subscriber.stop()
         disconnect()
+        await beanie_client.close()
 
     finally:
         # Close NATS connection on exit

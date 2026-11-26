@@ -13,6 +13,8 @@ from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import DEFAULT_TEMPERATURE, LLMConfig, LLMParameter
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.infrastructure.litellm.model_capability import ModelCapability
+from swiss_ai_hub.core.infrastructure.litellm.model_requirements import ModelRequirements
 
 MAIN_MODEL = "text-generation/main-model"
 TASK_MODEL = "text-generation/task-model"
@@ -61,6 +63,21 @@ class TestAsForm:
 
         assert isinstance(form.model_name, ModelSelect)
         assert [element.name for element in form.to_formkit_form()] == ["model_name"]
+
+    def test_the_picker_carries_the_requirements_it_is_given(self) -> None:
+        requirements = ModelRequirements(capabilities={ModelCapability.TOOL_CALLING})
+
+        picker = LLMConfig.as_form(requirements=requirements).to_formkit_form()[0]
+
+        assert isinstance(picker, ModelSelect)
+        assert picker.requirements == requirements
+        assert picker.model_dump(by_alias=True, mode="json")["requirements"] == {
+            "capabilities": ["tool_calling"],
+            "hosting_locations": None,
+        }
+
+    def test_without_requirements_the_picker_requires_nothing(self) -> None:
+        assert LLMConfig.as_form().to_formkit_form()[0].requirements == ModelRequirements()
 
 
 class TestAsTaskLlm:

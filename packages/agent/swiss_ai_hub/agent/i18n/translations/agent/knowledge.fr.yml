@@ -42,6 +42,10 @@ tool:
   collections: Les collections à consulter, par identifiant ; omettre pour les consulter
     toutes.
 config:
+  sources_help: Les bases de connaissances, entières ou limitées à certaines collections,
+    que le modèle peut consulter lorsqu'il le juge utile. Ignoré tant que toutes les
+    collections lisibles par l'utilisateur sont proposées. L'utilisateur ne reçoit
+    que des résultats issus des collections qu'il peut lire.
   retrieve_k:
     label: Sections par base
     help: Combien de sections chaque base consultée renvoie avant que le reclassement

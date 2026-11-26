@@ -1,0 +1,290 @@
+# Offers, quotes, cost estimates and pro-forma invoices, in German, French, Italian and English. Every company and
+# person is made up; every Swiss UID passes its check digit. `expected` holds each value as stored (ISO dates, numbers,
+# ISO currency codes), and None where the document does not state it.
+
+- id: offer-de-1
+  type: offer
+  title: Offerte_OF-2025-221.pdf
+  note: An offer with VAT and a total.
+  text: |
+    # Rhyfall Elektro GmbH
+    Mühlentalstrasse 5, 8200 Schaffhausen · MWST CHE-314.159.269
+
+    Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+    ## Offerte OF-2025-221
+    Schaffhausen, 20.02.2025 · gültig bis 31.03.2025
+
+    | Pos | Artikel | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 1 | LED-Panel 60x60, 4000 K | 24 | 2'160.00 |
+    | 2 | Montage, Stunden (geschätzt) | 6 | 690.00 |
+
+    Total exkl. MWST CHF 2'850.00 · MWST 8.1 % CHF 230.85
+    **Offertsumme CHF 3'080.85**
+
+    Gerne erwarten wir Ihre Bestellung.
+  expected:
+    document_date: "2025-02-20"
+    document_reference_number: OF-2025-221
+    document_issuer: Rhyfall Elektro GmbH
+    document_issuer_tax_id: CHE314159269
+    document_recipient: Seeblick Hotel AG
+    document_total_amount: 3080.85
+    document_currency: CHF
+    document_related_references: null
+    document_valid_until: "2025-03-31"
+
+- id: offer-fr-1
+  type: offer
+  title: devis_D-2025-044.pdf
+  note: A French quote with a validity date.
+  text: |
+    # Atelier Rousseau Sàrl
+    Rue du Rhône 21, 1204 Genève · CHE-273.849.506 TVA
+
+    Lemanic Services SA, Chemin des Vignes 4, 1009 Pully
+
+    ## Devis n° D-2025-044
+    Genève, le 4 mars 2025 · valable 30 jours
+
+    Refonte de l'identité visuelle : logo, papeterie, gabarits de présentation
+    Forfait CHF 6'500.00 · TVA 8,1 % CHF 526.50
+    **Total TTC CHF 7'026.50**
+
+    Bon pour accord, date et signature : ____________________
+  expected:
+    document_date: "2025-03-04"
+    document_reference_number: D-2025-044
+    document_issuer: Atelier Rousseau Sàrl
+    document_issuer_tax_id: CHE273849506
+    document_recipient: Lemanic Services SA
+    document_total_amount: 7026.50
+    document_currency: CHF
+    document_related_references: null
+    document_valid_until: null
+
+- id: offer-it-1
+  type: offer
+  title: offerta_2025_19.pdf
+  note: An Italian offer.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano
+
+    Spett. Studio Bellavista Sagl, Piazza Riforma 3, 6900 Lugano
+
+    ## Offerta n. 2025/19
+    Lugano, 2 settembre 2025
+
+    Trasloco uffici Lugano–Bellinzona, incluso imballaggio: CHF 1'660.00 IVA esclusa
+    IVA 8,1 %: CHF 134.46
+    **Totale offerta: CHF 1'794.46**
+
+    L'offerta è valida fino al 30 settembre 2025.
+  expected:
+    document_date: "2025-09-02"
+    document_reference_number: "2025/19"
+    document_issuer: Ticino Logistica SA
+    document_issuer_tax_id: null
+    document_recipient: Studio Bellavista Sagl
+    document_total_amount: 1794.46
+    document_currency: CHF
+    document_related_references: null
+    document_valid_until: "2025-09-30"
+
+- id: offer-en-1
+  type: offer
+  title: Quote_Q-1183.pdf
+  note: An English quotation in GBP.
+  text: |
+    # Brightwater Analytics Ltd
+    12 Canal Street, Manchester M1 3HE · VAT Reg. No. GB 123 4567 89
+
+    Prepared for: Hooli AG, Zürich
+
+    ## Quotation Q-1183
+    Date: 10 January 2025 · Valid until: 10 February 2025
+
+    | Description | Amount GBP |
+    |---|---:|
+    | Data quality audit (estimated 30 days) | 4,200.00 |
+    | Dashboard maintenance, monthly | 650.00 |
+
+    **Total quoted £4,850.00**
+    To accept this quotation, please sign and return.
+  expected:
+    document_date: "2025-01-10"
+    document_reference_number: Q-1183
+    document_issuer: Brightwater Analytics Ltd
+    document_issuer_tax_id: GB123456789
+    document_recipient: Hooli AG
+    document_total_amount: 4850.00
+    document_currency: GBP
+    document_related_references: null
+    document_valid_until: "2025-02-10"
+
+- id: offer-de-2
+  type: offer
+  title: Angebot_2025-0117.pdf
+  note: A German offer whose wording mentions "Rechnung" for later billing.
+  text: |
+    # Nordlicht Software GmbH
+    Leopoldstraße 90, 80802 München
+
+    Hooli AG, Bahnhofstrasse 10, 8001 Zürich
+
+    ## Angebot 2025-0117
+    München, 15.08.2025
+
+    Wartung Plattform „Nordstern", Q4 2025: 7.800,00 EUR netto
+    Die Rechnungsstellung erfolgt nach Auftragserteilung quartalsweise im Voraus.
+
+    Bindefrist: 15.09.2025
+  expected:
+    document_date: "2025-08-15"
+    document_reference_number: "2025-0117"
+    document_issuer: Nordlicht Software GmbH
+    document_issuer_tax_id: null
+    document_recipient: Hooli AG
+    document_total_amount: 7800.00
+    document_currency: EUR
+    document_related_references: null
+    document_valid_until: "2025-09-15"
+
+- id: offer-de-3
+  type: offer
+  title: Kostenvoranschlag_KV-88.pdf
+  note: A cost estimate with totals and payment terms.
+  text: |
+    # Bergwerk Bau AG
+    Industriestrasse 44, 3600 Thun
+
+    Gemeinde Grünfeld, Bauverwaltung, Dorfplatz 1, 3612 Grünfeld
+
+    ## Kostenvoranschlag KV-88
+    Thun, 12.11.2024
+
+    Sanierung Schulhaus Grünfeld, Werksumme gemäss Leistungsverzeichnis CHF 280'000.00 exkl. MWST
+    Zahlungsplan: 3 Akontozahlungen à 30 %, Rest mit der Schlussrechnung.
+    Zahlungskonditionen: 30 Tage netto.
+  expected:
+    document_date: "2024-11-12"
+    document_reference_number: KV-88
+    document_issuer: Bergwerk Bau AG
+    document_issuer_tax_id: null
+    document_recipient: Gemeinde Grünfeld, Bauverwaltung
+    document_total_amount: 280000.00
+    document_currency: CHF
+    document_related_references: null
+    document_valid_until: null
+
+- id: proforma-de-1
+  type: offer
+  title: Proforma_PF-2025-09.pdf
+  note: A pro-forma invoice requests no payment (C2).
+  text: |
+    # Hooli AG
+    Bahnhofstrasse 10, 8001 Zürich · MWST CHE-602.198.749 MWST
+
+    Brightwater Analytics Ltd, 12 Canal Street, Manchester M1 3HE
+
+    ## Proforma-Rechnung PF-2025-09
+    Zürich, 05.05.2025
+
+    Nur für Zollzwecke – keine Zahlung erforderlich.
+
+    | Artikel | Menge | Warenwert CHF |
+    |---|---:|---:|
+    | Server Rack 42U, gebraucht | 1 | 450.00 |
+
+    Gesamtwarenwert CHF 450.00 · Ursprungsland: Schweiz
+  expected:
+    document_date: "2025-05-05"
+    document_reference_number: PF-2025-09
+    document_issuer: Hooli AG
+    document_issuer_tax_id: CHE602198749
+    document_recipient: Brightwater Analytics Ltd
+    document_total_amount: 450.00
+    document_currency: CHF
+    document_related_references: null
+    document_valid_until: null
+
+- id: proforma-en-1
+  type: offer
+  title: Proforma_Invoice_PI-3021.pdf
+  note: An English pro-forma invoice for a prepayment request, explicitly not a VAT invoice.
+  text: |
+    # Brightwater Analytics Ltd
+    12 Canal Street, Manchester M1 3HE
+
+    Customer: Hooli AG, Bahnhofstrasse 10, 8001 Zürich
+
+    ## PRO FORMA INVOICE PI-3021
+    Date: 2 June 2025
+
+    Annual analytics licence 2025/26: £12,000.00
+
+    This pro forma invoice is not a tax invoice. A VAT invoice will be issued once the licence is activated.
+  expected:
+    document_date: "2025-06-02"
+    document_reference_number: PI-3021
+    document_issuer: Brightwater Analytics Ltd
+    document_issuer_tax_id: null
+    document_recipient: Hooli AG
+    document_total_amount: 12000.00
+    document_currency: GBP
+    document_related_references: null
+    document_valid_until: null
+
+- id: proforma-fr-1
+  type: offer
+  title: facture_proforma_FP-118.pdf
+  note: A French pro-forma invoice.
+  text: |
+    # Atelier Rousseau Sàrl
+    Rue du Rhône 21, 1204 Genève
+
+    Client : Lemanic Services SA, Chemin des Vignes 4, 1009 Pully
+
+    ## Facture pro forma FP-118
+    Genève, le 20 juin 2025
+
+    Brochure de présentation, 500 exemplaires : CHF 3'800.00 HT
+    Document sans valeur comptable, établi à titre indicatif.
+  expected:
+    document_date: "2025-06-20"
+    document_reference_number: FP-118
+    document_issuer: Atelier Rousseau Sàrl
+    document_issuer_tax_id: null
+    document_recipient: Lemanic Services SA
+    document_total_amount: 3800.00
+    document_currency: CHF
+    document_related_references: null
+    document_valid_until: null
+
+- id: proforma-de-2
+  type: offer
+  title: Proformarechnung_2025-77.pdf
+  note: A German pro-forma for an export shipment.
+  text: |
+    # Kaffeerösterei Elbstrand e.K.
+    Hafenstraße 9, 20457 Hamburg
+
+    Empfänger: Seeblick Hotel AG, Uferweg 2, 6006 Luzern, Schweiz
+
+    ## Proformarechnung 2025-77
+    Datum: 01.09.2025
+
+    Espresso Hausmischung 1 kg × 40, Warenwert 996,00 €
+    Proformarechnung für die Verzollung. Die Handelsrechnung folgt nach Lieferung.
+  expected:
+    document_date: "2025-09-01"
+    document_reference_number: "2025-77"
+    document_issuer: Kaffeerösterei Elbstrand e.K.
+    document_issuer_tax_id: null
+    document_recipient: Seeblick Hotel AG
+    document_total_amount: 996.00
+    document_currency: EUR
+    document_related_references: null
+    document_valid_until: null

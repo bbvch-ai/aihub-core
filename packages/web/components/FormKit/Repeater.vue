@@ -4,6 +4,13 @@
       {{ label }}
     </legend>
 
+    <p
+      v-if="help"
+      class="mb-3 text-sm text-surface-500 dark:text-surface-400"
+    >
+      {{ help }}
+    </p>
+
     <div class="flex flex-col gap-3">
       <div
         v-for="(item, index) in items"
@@ -42,7 +49,7 @@
 
     <Button
       type="button"
-      :label="addLabel || 'Add Item'"
+      :label="addLabel || t('form.repeater.add_item')"
       icon="pi pi-plus"
       size="small"
       class="mt-3"
@@ -60,12 +67,15 @@ import type { FormKitSchemaNode } from '@formkit/core'
 const props = defineProps<{
   name: string
   label?: string
+  help?: string
   addLabel?: string
   childrenSchema: FormKitSchemaNode[]
   defaultItem?: Record<string, unknown>
   min?: number
   max?: number
 }>()
+
+const { t } = useI18n()
 
 const modelValue = defineModel<Record<string, unknown>[]>({ default: () => [] })
 

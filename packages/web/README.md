@@ -93,7 +93,7 @@ pnpm add @swiss-ai-hub/web
 Install the required peer dependencies:
 
 ```bash
-npm install primevue@4.5.5 vue@3.5.17
+npm install primevue@4.5.5 vue@3.5.44
 ```
 
 ### Required dependency overrides
@@ -114,17 +114,17 @@ differs per package manager (npm/pnpm use `overrides`, Yarn uses `resolutions`):
 
 ```jsonc
 // npm
-{ "overrides": { "vue": "3.5.17" } }
+{ "overrides": { "vue": "3.5.44" } }
 ```
 
 ```jsonc
 // Yarn
-{ "resolutions": { "vue": "3.5.17" } }
+{ "resolutions": { "vue": "3.5.44" } }
 ```
 
 ```jsonc
 // pnpm
-{ "pnpm": { "overrides": { "vue": "3.5.17" } } }
+{ "pnpm": { "overrides": { "vue": "3.5.44" } } }
 ```
 
 Then reinstall from a clean state so the lockfile is regenerated, and confirm a single Vue instance:
@@ -132,7 +132,7 @@ Then reinstall from a clean state so the lockfile is regenerated, and confirm a 
 ```bash
 rm -rf node_modules package-lock.json   # or yarn.lock / pnpm-lock.yaml
 npm install
-npm ls @vue/runtime-core                # must print exactly one version: 3.5.17
+npm ls @vue/runtime-core                # must print exactly one version: 3.5.44
 ```
 
 The same single-instance requirement applies to **PrimeVue** (its theme system is a global singleton); pinning the
@@ -430,7 +430,7 @@ from a template at startup so the same image works in any environment.
 ```dockerfile
 # 1. Build the static SPA. ENV must be unset (or anything other than 'dev') so
 #    the layer emits the <script src="/config.js"> tag that loads runtime config.
-FROM node:22-alpine AS build
+FROM node:24.22.1-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -456,6 +456,10 @@ location = /config.js {
 }
 location / { try_files $uri /index.html; }
 ```
+
+If you send a `Content-Security-Policy` with `script-src 'self'`, add the hashes of the inline scripts Nuxt writes into
+the generated HTML. `docker/csp-script-hashes.mjs <public dir>` prints them; the Swiss AI Hub images run it after the
+build and render the policy in `docker/start.sh`.
 
 ______________________________________________________________________
 
@@ -537,7 +541,7 @@ If your UI is served from a **different origin** than the API, set the base URL 
 | Package    | Version  | Why                                                                                                                                    |
 | ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `primevue` | `4.5.5`  | UI component library -- must be a single instance to avoid theme-singleton conflicts (see [overrides](#required-dependency-overrides)) |
-| `vue`      | `3.5.17` | Framework runtime -- must be a single instance; enforce with the [required overrides](#required-dependency-overrides)                  |
+| `vue`      | `3.5.44` | Framework runtime -- must be a single instance; enforce with the [required overrides](#required-dependency-overrides)                  |
 
 > These exact versions are what the layer is built and published against. They are declared as `peerDependencies`, so
 > your project must provide them, and the [overrides](#required-dependency-overrides) above ensure every transitive
