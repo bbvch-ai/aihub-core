@@ -391,9 +391,10 @@ async def test_a_run_has_openwebui_groups_follow_keycloak_even_when_litellm_fail
     world.list_users.side_effect = RuntimeError("LiteLLM is down")
     redis = AsyncMock()
     redis.set.return_value = True
+    reconciler = _reconciler(redis)
 
     with patch.object(AccessChangeHook, "notify") as notify, pytest.raises(RuntimeError, match="LiteLLM is down"):
-        await _reconciler(redis).run_if_due()
+        await reconciler.run_if_due()
 
     notify.assert_called_once_with()
 
