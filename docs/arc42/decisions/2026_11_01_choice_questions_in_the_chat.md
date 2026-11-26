@@ -44,8 +44,10 @@ request that had been answered already.
    is either the dialog's answers as JSON or the user's typed reply. A client without a dialog treats it as any chat
    request, so the API, the bots and the web chat need no change.
 2. **OpenWebUI's `request:user_input` is the dialog.** For a chat request with questions, the OpenWebUI pipe opens the
-   dialog through the event caller, without a timeout, lists the chosen answers in the message and sends them as JSON. A
-   cancelled or failed dialog, or an OpenWebUI without the event, falls back to the text question.
+   dialog through the event caller, lists the chosen answers in the message and sends them as JSON. A cancelled, failed
+   or timed-out dialog, or an OpenWebUI without the event, falls back to the text question. From OpenWebUI 0.12.0 the
+   dialog closes after `timeout_ms`, which OpenWebUI clamps to 60–240 s (120 s when unset) with no setting to raise it;
+   the pipe asks for the 240 s maximum, and a slower answer is typed in reply to the text question.
 3. **A table request is confirmed before it is extracted.** The KEA reads every new request once, in both modes, and
    asks it back: **Location** (with the scope's largest folders and their counts as a hint), **Filter Condition** and
    **Values to extract**, and with discovery also **Exact keyword(s)** and **Semantic keyword(s)**, which guide the
@@ -83,8 +85,9 @@ request that had been answered already.
   sample confirmation; a mode that confirms on its own remains a follow-up.
 - The Universal Agent's extraction can now be confirmed from the API and the bots, which the yes/no approval could not.
   A profile that sets an explicit approval rule for **Extract a table** asks for both.
-- The dialog depends on OpenWebUI 0.11.4. A long question is cut at 500 characters with an ellipsis, so the end of the
-  Location hint, where the folder list stands, is what it loses.
+- The dialog depends on OpenWebUI 0.11.4. From 0.12.0 it stays open for at most four minutes; the choices made in it are
+  lost when it closes, and the questions then wait in the chat with no time limit. A long question is cut at 500
+  characters with an ellipsis, so the end of the Location hint, where the folder list stands, is what it loses.
 - Breaking: a KEA profile that had the top-level `discovery` on reads every document again until **Discovery mode** is
   ticked; `semantic_search` values vanish without effect.
 - Ranking on every large sample adds an embedding call and a grouped Milvus search per database; a ranking that fails,

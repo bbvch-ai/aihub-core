@@ -93,9 +93,10 @@ Not every message gets the form. A *yes* to a [waiting sample](#when-more-than-1
 at once, and a greeting or a question about the agent is answered without one.
 
 **What each client shows.** In OpenWebUI the form is a dialog with one page per part, and the answers are listed in the
-chat once it is sent. If the dialog is cancelled or cannot open, the same questions appear as a chat message. Every
-other client (the OpenAI-compatible API, the Teams and Slack bots, the web chat) shows that message, and the next
-message answers it:
+chat once it is sent. The dialog closes after four minutes without an answer, a limit OpenWebUI sets. If it is
+cancelled, closes or cannot open, the same questions appear as a chat message, which has no time limit. Every other
+client (the OpenAI-compatible API, the Teams and Slack bots, the web chat) shows that message, and the next message
+answers it:
 
 - *yes* (also *ok*, *ja*, *oui*, *sì*, *weiter*) extracts the request as understood;
 - *no* (also *nein*, *non*, *cancel*, *stop*, *abbrechen*, *annuler*, *annulla*) declines it, and nothing is read;
