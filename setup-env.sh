@@ -61,9 +61,15 @@ fi
 
 # --- Secret generators ---
 
-# 32 bytes → base64url (matches Python secrets.token_urlsafe(32))
+# 32 bytes → base64url (matches Python secrets.token_urlsafe(32)). Never starts with '-': CLIs
+# such as neo4j-admin set-initial-password would parse that password as an option and fail.
 gen_urlsafe_32() {
-    openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n'
+    local value
+    value=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n')
+    while [[ "$value" == -* ]]; do
+        value=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n')
+    done
+    printf '%s' "$value"
 }
 
 # 24 bytes → base64url (matches Python secrets.token_urlsafe(24))
