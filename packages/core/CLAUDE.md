@@ -476,14 +476,15 @@ Key methods:
 `OpenWebuiAuthHandler` checks the user the OpenWebUI pipe functions name next to OpenWebUI's bearer, the superuser's
 token: an HMAC-SHA256, keyed by `AUTH_OPEN_WEBUI_SIGNING_SECRET`, over
 `ts:<unix seconds>,name:<url-quoted name>,email:<email>`, refused once the timestamp is more than
-`SIGNATURE_MAX_AGE_SECONDS` (300) from the API's clock either way. A refused signature raises
-`OpenWebuiSignatureRejectedError`, which `TokenAndOauth2Handler` re-raises instead of trying `TokenAuthHandler`, as that
-would answer as the superuser. Requests with no signature, such as OpenWebUI's own OpenAI connections forwarding
-unsigned user headers, still fall through. The pipes sign each request as httpx sends it
-(`AuthenticationService.sign_request` passed as the client's `auth`), never when building headers, because a dialog's
-answer reuses the headers of the turn that opened it. Change the signed message in the handler and both
-`infra/deployment/templates/openwebui_functions/{aihub,openai}_pipeline.py` together; `test_pipe_signed_headers.py`
-checks that they agree.
+`SIGNATURE_MAX_AGE_SECONDS` (300) from the API's clock either way. The named user must exist in Keycloak and be enabled,
+since OpenWebUI keeps its own session after Keycloak deletes or disables them. `TokenAndOauth2Handler` lets
+`OpenWebuiAuthHandler` alone answer a request carrying `X-OpenWebUI-Signature`: every refusal of it (signature, unknown
+or disabled user, tenant) is final, never tried on `TokenAuthHandler`, which authenticates the bearer's owner. Requests
+with no signature, such as OpenWebUI's own OpenAI connections forwarding unsigned user headers, still fall through. The
+pipes sign each request as httpx sends it (`AuthenticationService.sign_request` passed as the client's `auth`), never
+when building headers, because a dialog's answer reuses the headers of the turn that opened it. Change the signed
+message in the handler and both `infra/deployment/templates/openwebui_functions/{aihub,openai}_pipeline.py` together;
+`test_pipe_signed_headers.py` checks that they agree.
 
 `OpenWebuiSessionAuthHandler` identifies whoever views something the API serves on OpenWebUI's own origin (knowledge
 figures in sources, ADR `2026_11_17_knowledge_figures_served_through_openwebui_session_proxy`): it checks the `token`
