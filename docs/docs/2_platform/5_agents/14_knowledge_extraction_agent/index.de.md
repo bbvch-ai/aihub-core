@@ -1,7 +1,7 @@
 ---
 title: Wissensextraktions-Agent
 description: Sammelt Datensätze aus vielen Wissensdokumenten in einer Tabelle, etwa jede Hardware-Position auf den Rechnungen 2025 eines Lieferanten, jede Zeile mit der Datei, aus der sie stammt.
-source_sha: 9685f3ecfc1169f45e54d4427008fe1fada8264af2120ec1096d934c39e3f698
+source_sha: 7fd478afdb8173224c41999c3f6b0e3a3e3969b9d2b3d6b92ca03d05286f7e8c
 ---
 
 # Wissensextraktions-Agent
@@ -103,9 +103,10 @@ Nicht jede Nachricht erhält das Formular. Ein *ja* zu einer
 eine Frage über den Agenten wird ohne Formular beantwortet.
 
 **Was jeder Client zeigt.** In OpenWebUI ist das Formular ein Dialog mit einer Seite pro Teil, und die Antworten werden
-nach dem Absenden im Chat aufgelistet. Wird der Dialog abgebrochen oder kann er sich nicht öffnen, erscheinen dieselben
-Fragen als Chat-Nachricht. Jeder andere Client (die OpenAI-kompatible API, die Teams- und Slack-Bots, der Web-Chat)
-zeigt diese Nachricht, und die nächste Nachricht beantwortet sie:
+nach dem Absenden im Chat aufgelistet. Der Dialog schliesst sich nach vier Minuten ohne Antwort, eine Grenze, die
+OpenWebUI setzt. Wird er abgebrochen, schliesst er sich oder kann er sich nicht öffnen, erscheinen dieselben Fragen als
+Chat-Nachricht, die kein Zeitlimit hat. Jeder andere Client (die OpenAI-kompatible API, die Teams- und Slack-Bots, der
+Web-Chat) zeigt diese Nachricht, und die nächste Nachricht beantwortet sie:
 
 - *ja* (auch *yes*, *ok*, *oui*, *sì*, *weiter*) extrahiert die Anfrage wie verstanden;
 - *nein* (auch *no*, *non*, *cancel*, *stop*, *abbrechen*, *annuler*, *annulla*) lehnt sie ab, und nichts wird gelesen;
