@@ -18,8 +18,12 @@ class KnowledgeDocumentSummary(BaseModel):
     id: Annotated[str, Field(description="Document id, unique within its knowledge database")]
     collection: Annotated[BucketNamespacePair, Field(description="Collection the document belongs to")]
     collection_name: Annotated[
-        str, Field(description="The collection as 'database/collection', the name knowledge search gives it too")
-    ]
+        str | None,
+        Field(
+            description="The collection as 'database/collection', the name knowledge search gives it too; None in an "
+            "event stored before summaries carried it, since the database name cannot be told from the bucket name"
+        ),
+    ] = None
     path: Annotated[str, Field(description="Path relative to the collection, e.g. 'invoices/2025/acme.pdf'")]
     filename: Annotated[str, Field(description="Last segment of the path")]
     title: Annotated[str, Field(description="Document title, the filename when the document has none")]

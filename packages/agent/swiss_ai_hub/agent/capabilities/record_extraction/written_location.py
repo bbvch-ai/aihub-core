@@ -36,7 +36,7 @@ class WrittenLocation:
         place = WrittenLocation._place(piece, listing)
         if place is not None:
             return place
-        names = dict.fromkeys(document.collection_name for document in listing.documents)
+        names = dict.fromkeys(document.collection_name for document in listing.documents if document.collection_name)
         wanted = piece.casefold()
         for name in names:
             if wanted == name.casefold():

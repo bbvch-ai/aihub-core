@@ -31,9 +31,10 @@ class RequestedLocation(BaseModel):
     only reading every document can tell which ones hold the wanted rows. A path starts inside its collection, so a
     collection is its own part: a glob prefixed with it matches nothing."""
 
+    # The default lets a reading stored before collections could be named load; strict output still requires it.
     collection: Annotated[
         str | None, Field(description="The collection, as 'database/collection' the scope lists it; null for all.")
-    ]
+    ] = None
     path_glob: Annotated[str | None, Field(description="Glob on the path, e.g. 'contracts/**' or 'invoices/**'.")]
     path_regex: Annotated[str | None, Field(description="Regular expression searched anywhere in the path.")]
 

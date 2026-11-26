@@ -326,6 +326,114 @@ async def test_a_ranking_out_of_time_fails_the_call_and_points_at_the_keyword_to
         await _rank_tool(timeout)
 
 
+LEGAL = BucketNamespacePair(bucket_name="legal-bucket", namespace_name="contracts")
+
+
+def _two_collections() -> KnowledgeDocumentRunScope:
+    return KnowledgeDocumentRunScope(
+        collections=[
+            KnowledgeDocumentCollection(identifier="finance/invoices", collection=FINANCE, label="Finance"),
+            KnowledgeDocumentCollection(identifier="legal/contracts", collection=LEGAL, label="Legal"),
+        ]
+    )
+
+
+def _legal_summary(path: str) -> KnowledgeDocumentSummary:
+    return _summary(path).model_copy(update={"collection": LEGAL, "collection_name": "legal/contracts"})
+
+
+@pytest.mark.parametrize("tool", ["list_knowledge_documents", "search_knowledge_content", "rank_knowledge_documents"])
+def test_the_finding_tools_take_a_collection_and_reading_does_not(tool: str):
+    tools = {tool.metadata.name: tool for tool in _tools().to_tool_list()}
+
+    assert (
+        "database/collection" in tools[tool].metadata.get_parameters_dict()["properties"]["collection"]["description"]
+    )
+    assert "collection" not in tools["read_knowledge_document"].metadata.get_parameters_dict()["properties"]
+
+
+@pytest.mark.asyncio
+async def test_a_listing_of_one_collection_lists_only_that_collection_with_the_glob_inside_it():
+    listing = KnowledgeDocumentListing.from_summaries(
+        [_legal_summary("2025/hooli.pdf"), _legal_summary("2024/hooli.pdf")]
+    )
+    list_documents = AsyncMock(return_value=listing)
+    with (
+        patch(SCOPE, AsyncMock(return_value=_two_collections())),
+        patch(f"{TOOLS}.KnowledgeDocumentReader.list_documents", list_documents),
+    ):
+        text = await _tools().list_knowledge_documents(path_glob="2025/**", collection="legal/contracts")
+
+    assert list_documents.await_args.args[0] == [LEGAL]
+    assert text.startswith("Documents 1-1 of 1.")
+    assert "| legal/contracts | 2025/hooli.pdf |" in text
+
+
+@pytest.mark.asyncio
+async def test_an_empty_collection_name_lists_every_collection():
+    list_documents = AsyncMock(return_value=_listing("invoices/a.pdf"))
+    with (
+        patch(SCOPE, AsyncMock(return_value=_two_collections())),
+        patch(f"{TOOLS}.KnowledgeDocumentReader.list_documents", list_documents),
+    ):
+        await _tools().list_knowledge_documents(path_glob="**", collection="")
+
+    assert list_documents.await_args.args[0] == [FINANCE, LEGAL]
+
+
+@pytest.mark.asyncio
+async def test_a_ranking_of_one_collection_ranks_only_its_documents():
+    rank = AsyncMock(return_value=_ranking(3))
+    with (
+        patch(SCOPE, AsyncMock(return_value=_two_collections())),
+        patch(f"{TOOLS}.KnowledgeSemanticSearch.rank", rank),
+    ):
+        await _tools().rank_knowledge_documents(query="liability cap", collection="legal/contracts")
+
+    assert rank.await_args.args[0] == [LEGAL]
+
+
+@pytest.mark.asyncio
+async def test_a_content_search_in_one_collection_searches_only_that_collection():
+    search = AsyncMock(return_value=KnowledgeContentSearchResult(matches=[], total_documents=0, next_offset=None))
+    with (
+        patch(SCOPE, AsyncMock(return_value=_two_collections())),
+        patch(f"{TOOLS}.KnowledgeContentSearch.search", search),
+    ):
+        await _tools().search_knowledge_content(query="Hooli", collection="finance/invoices", path_glob="**/*.pdf")
+
+    assert search.await_args.args[0] == [FINANCE]
+    assert search.await_args.kwargs["path_globs"] == ["**/*.pdf"]
+
+
+@pytest.mark.parametrize(
+    ("tool", "arguments"),
+    [
+        ("list_knowledge_documents", {"path_glob": "**"}),
+        ("search_knowledge_content", {"query": "Hooli"}),
+        ("rank_knowledge_documents", {"query": "liability cap"}),
+    ],
+)
+@pytest.mark.asyncio
+async def test_a_collection_outside_the_scope_fails_the_call_naming_the_collections_in_scope(
+    tool: str, arguments: dict[str, str]
+):
+    reader = AsyncMock(side_effect=AssertionError("nothing is read for a collection outside the scope"))
+    with (
+        patch(SCOPE, AsyncMock(return_value=_two_collections())),
+        patch(f"{TOOLS}.KnowledgeDocumentReader.list_documents", reader),
+        patch(f"{TOOLS}.KnowledgeContentSearch.search", reader),
+        patch(f"{TOOLS}.KnowledgeSemanticSearch.rank", reader),
+    ):
+        tools = _tools()
+        with pytest.raises(LookupError) as refused:
+            await getattr(tools, tool)(collection="legal", **arguments)
+
+    message = str(refused.value)
+    assert message.startswith("No collection 'legal' in scope.")
+    assert "finance/invoices (Finance), legal/contracts (Legal)" in message
+
+
 def _document(path: str, start: int, text_length: int) -> KnowledgeDocument:
     end = min(start + READ_CHARACTERS, text_length)
     return KnowledgeDocument(
