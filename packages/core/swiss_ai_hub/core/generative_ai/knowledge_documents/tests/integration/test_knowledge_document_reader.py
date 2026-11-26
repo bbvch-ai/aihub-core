@@ -1,5 +1,7 @@
 import asyncio
+import itertools
 import time
+import tracemalloc
 import unicodedata
 import uuid
 from collections.abc import Iterator
@@ -148,6 +150,36 @@ async def test_loads_a_character_range(knowledge_databases: dict[str, str]) -> N
 
     assert document.text == "ACME ACME"
     assert (document.start, document.end, document.text_length) == (5, 14, 5000)
+
+
+_BOUNDS = [None, 0, 1, 2, 5, 26, 27, 100, -1, -2, -5, -27, -100]
+
+
+@pytest.mark.asyncio
+async def test_ranges_are_cut_in_the_database_exactly_as_python_slices() -> None:
+    """Code points, not bytes or UTF-16 units: the emoji and the umlaut each count as one character."""
+    text = "a😀bÄc\r\nd" * 3
+    document_id = KnowledgeDocumentSeeder.insert(_DB_A, "bulk", f"s3://{_DB_A}/bulk/slices.md", text=text)
+
+    for start, end in itertools.product(_BOUNDS, _BOUNDS):
+        document = await KnowledgeDocumentReader.load_document([_BULK], document_id, start, end)
+        range_start, range_end, _ = slice(start, end).indices(len(text))
+        range_end = max(range_start, range_end)
+        assert (document.text, document.start, document.end) == (text[range_start:range_end], range_start, range_end)
+        assert document.text_length == len(text)
+
+
+@pytest.mark.asyncio
+async def test_a_range_of_a_large_document_never_loads_the_rest_of_it() -> None:
+    document_id = KnowledgeDocumentSeeder.insert(_DB_A, "bulk", f"s3://{_DB_A}/bulk/large.md", text="x" * 6_000_000)
+
+    tracemalloc.start()
+    document = await KnowledgeDocumentReader.load_document([_BULK], document_id, 3_000_000, 3_002_000)
+    _, peak_bytes = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    assert (len(document.text), document.text_length) == (2000, 6_000_000)
+    assert peak_bytes < 1_000_000
 
 
 @pytest.mark.asyncio

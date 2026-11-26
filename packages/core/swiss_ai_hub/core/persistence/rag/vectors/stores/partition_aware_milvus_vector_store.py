@@ -11,7 +11,7 @@ from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.milvus.utils import BaseSparseEmbeddingFunction
 from pymilvus import MilvusClient
 
-from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
+from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, HASH, NAMESPACE
 from swiss_ai_hub.core.persistence.rag.vectors.stores.document_passage_hit import DocumentPassageHit
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
     DEFAULT_PARTITION_NAME,
@@ -624,6 +624,46 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
                     self.client.upsert(collection_name=self.collection_name, data=rows, partition_name=partition_name)
                 copied += len(page)
         return copied
+
+    def rewrite_document_metadata(
+        self,
+        document_id: str,
+        namespace: str,
+        content_hash: str,
+        metadata: dict[str, Any],
+        excluded_keys: list[str],
+    ) -> dict[str, list[str]]:
+        """Merge metadata into the stored nodes of one version of a document, embedding nothing again.
+
+        Returns the rewritten node ids per partition, so a caller that finds the document changed meanwhile can
+        delete exactly those rows. Only nodes carrying `content_hash` are touched: if the document is re-ingested
+        while this runs, its new nodes have another hash and are never patched with values read from the old text.
+
+        A node keeps its metadata twice: as dynamic-field keys, which filters read, and inside `_node_content`, from
+        which llama-index rebuilds the node, so both are patched. `excluded_keys` join the node's exclusion lists in
+        `_node_content`, keeping the keys out of embedded and model-facing text as at ingestion. Rows are read whole
+        (`*`, as `restore_stranded_nodes` does; BM25 is recomputed from the unchanged text) and collected before any
+        is written, so the scan never pages over rows it rewrote.
+        """
+        rewritten: dict[str, list[str]] = {}
+        filter_expression = f"{self.doc_id_field} == {json.dumps(document_id)} and {HASH} == {json.dumps(content_hash)}"
+        for partition_name in self.document_partition_names([namespace]):
+            self._ensure_collection_loaded([partition_name])
+            rows = [row for page in self._partition_pages(partition_name, ["*"], filter_expression) for row in page]
+            patched = [self._with_metadata(row, metadata, excluded_keys) for row in rows]
+            for batch in iter_batch(patched, self.batch_size):
+                self.client.upsert(collection_name=self.collection_name, data=batch, partition_name=partition_name)
+            if patched:
+                rewritten[partition_name] = [row["id"] for row in patched]
+        return rewritten
+
+    @staticmethod
+    def _with_metadata(row: dict[str, Any], metadata: dict[str, Any], excluded_keys: list[str]) -> dict[str, Any]:
+        content = json.loads(row["_node_content"])
+        content["metadata"] = {**content.get("metadata", {}), **metadata}
+        for exclusion in ("excluded_embed_metadata_keys", "excluded_llm_metadata_keys"):
+            content[exclusion] = list(dict.fromkeys([*content.get(exclusion, []), *excluded_keys]))
+        return {**row, **metadata, "_node_content": json.dumps(content, ensure_ascii=False)}
 
     def delete_stranded_nodes(self, node_ids: list[str]) -> int:
         """Delete nodes from ``_default`` by primary key; returns the number of deleted nodes."""

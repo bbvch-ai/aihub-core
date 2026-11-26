@@ -29,3 +29,7 @@ document_ingestion:
     with_figure_descriptions:
       label: Describe figures
       help: Generate a textual description for every figure and image.
+    with_document_classification:
+      label: Classify documents
+      help: Assign each document a type (invoice or other) and read its attributes,
+        such as date, issuer and total, so agents can filter by them.

@@ -52,17 +52,17 @@
         </template>
       </Column>
       <Column
-        field="created"
+        field="created_at"
         :header="t('memory.table.created')"
         style="width: 160px"
       >
         <template #body="slotProps">
           <div class="flex flex-col">
             <span class="text-sm font-medium text-surface-700 dark:text-surface-200">
-              {{ useDateFormat(slotProps.data.created, 'DD.MM.YYYY') }}
+              {{ useDateFormat(slotProps.data.created_at, 'DD.MM.YYYY') }}
             </span>
             <span class="text-xs text-surface-500 dark:text-surface-400">
-              {{ useDateFormat(slotProps.data.created, 'HH:mm:ss') }}
+              {{ useDateFormat(slotProps.data.created_at, 'HH:mm:ss') }}
             </span>
           </div>
         </template>

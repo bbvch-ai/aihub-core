@@ -3,6 +3,7 @@
     <StructuralColumn
       :title="t('thread.display.title')"
       close-route="/service/threads"
+      keep-query
       :loading="threadIsLoading"
     >
       <DisplayList
@@ -18,12 +19,16 @@
 import type { DisplayStatistics } from '@core/sdk/client'
 
 const router = useRouter()
+const route = useRoute()
 const tenantPath = useTenantPath()
 const { t } = useI18n()
 
 const { thread, threadIsLoading } = useThread()
 
 const toDisplay = (display: DisplayStatistics) => {
-  router.push(tenantPath(`/service/threads/${thread.value.id}/display/${display.display_id}`))
+  router.push({
+    path: tenantPath(`/service/threads/${thread.value.id}/display/${display.display_id}`),
+    query: route.query,
+  })
 }
 </script>

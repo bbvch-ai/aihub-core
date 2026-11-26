@@ -1,3 +1,5 @@
+import hashlib
+
 import pytest
 from cryptography.fernet import Fernet, InvalidToken
 from pydantic import SecretStr
@@ -63,6 +65,13 @@ class TestFromSettings:
         with pytest.raises(ValueError, match="AIHUB_CONFIG_ENCRYPTION_KEY"):
             SecretEncryptionService.from_settings(settings)
 
+    @pytest.mark.parametrize("blank", ["", "  "])
+    def test_a_blank_key_fails_closed_with_the_variable_name(self, blank: str):
+        settings = ConfigEncryptionSettings(ENCRYPTION_KEY=SecretStr(blank))
+
+        with pytest.raises(ValueError, match="AIHUB_CONFIG_ENCRYPTION_KEY"):
+            SecretEncryptionService.from_settings(settings)
+
     def test_a_malformed_key_is_rejected(self):
         settings = ConfigEncryptionSettings(ENCRYPTION_KEY=SecretStr("not-a-key"))
 
@@ -75,6 +84,24 @@ class TestFromSettings:
         service = SecretEncryptionService.from_settings(settings)
 
         assert service.decrypt(service.encrypt("s3cret")) == "s3cret"
+
+
+class TestDerivedKey:
+    def test_each_purpose_gets_its_own_key(self, service: SecretEncryptionService):
+        assert service.derived_key(b"purpose-a:") != service.derived_key(b"purpose-b:")
+
+    def test_depends_on_the_instance_key(self, service: SecretEncryptionService):
+        other = SecretEncryptionService(Fernet.generate_key().decode())
+
+        assert service.derived_key(b"purpose-a:") != other.derived_key(b"purpose-a:")
+
+    def test_masks_keep_their_handles(self):
+        """The mask handle key is derived the same way as before, so a mask a client still holds keeps naming
+        its secret."""
+        key = Fernet.generate_key().decode()
+        service = SecretEncryptionService(key)
+
+        assert service._handle_key == hashlib.sha256(b"swiss-ai-hub:secret-mask-handle:" + key.encode()).digest()
 
 
 class TestPaths:

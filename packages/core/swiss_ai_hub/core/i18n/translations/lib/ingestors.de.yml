@@ -33,3 +33,7 @@ document_ingestion:
     with_figure_descriptions:
       label: Abbildungen beschreiben
       help: Für jede Abbildung und jedes Bild eine Textbeschreibung erzeugen.
+    with_document_classification:
+      label: Dokumente klassifizieren
+      help: Jedem Dokument einen Typ (Rechnung oder anderes) zuordnen und seine Attribute
+        wie Datum, Aussteller und Total lesen, damit Agents danach filtern können.

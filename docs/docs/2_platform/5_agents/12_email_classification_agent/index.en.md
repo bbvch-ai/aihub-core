@@ -5,6 +5,11 @@ description: A mailbox agent that reads every unread message, decides which cate
 
 # Email Processing Agent
 
+::: info Enterprise feature
+The Email Processing Agent is part of bbv AI Hub Enterprise. Running it needs a bbv AI Hub Enterprise License; see
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
+:::
+
 The **Email Processing Agent** turns a shared mailbox into a queue that sorts itself. On each run it reads every unread
 message in the inbox, decides which of your categories it belongs to, and moves it into that category's folder. Anything
 no category fits goes to a fallback folder, or stays in the inbox if you prefer, rather than being guessed into a

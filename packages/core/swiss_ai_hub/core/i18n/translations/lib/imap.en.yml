@@ -1,5 +1,8 @@
 ---
 config:
+  categories_help: The categories incoming mail is sorted into. For each unread message
+    the model picks the category whose description fits best and files the message
+    into that category's folder, so describe each category clearly.
   host:
     label: IMAP Host
     help: Hostname of the IMAP server (e.g. imap.example.com).

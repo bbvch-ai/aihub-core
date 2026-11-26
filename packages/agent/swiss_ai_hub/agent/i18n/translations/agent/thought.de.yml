@@ -12,3 +12,4 @@ no_few_shot_examples: Es wurden keine Few-Shot-Beispiele konfiguriert und verwen
 reranking_results: Neuordnung der abgerufenen Ergebnisse für bessere Relevanz
 context_sufficient: Genügend Informationen gefunden, um die Frage zu beantworten
 trying_another_retrieval_hop: Mehr Informationen benötigt, suche erneut
+correcting_structured_answer: Bringe die Antwort ins verlangte Format

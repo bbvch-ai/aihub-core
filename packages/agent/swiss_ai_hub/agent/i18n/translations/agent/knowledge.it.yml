@@ -41,6 +41,10 @@ tool:
   collections: Le raccolte da consultare, per identificativo; ometti per consultarle
     tutte.
 config:
+  sources_help: I database di conoscenza, interi o limitati ad alcune raccolte, che
+    il modello può consultare quando lo ritiene utile. Ignorato finché vengono offerte
+    tutte le raccolte leggibili dall'utente. L'utente riceve solo risultati dalle
+    raccolte che può leggere.
   retrieve_k:
     label: Sezioni per database
     help: Quante sezioni restituisce ogni database consultato prima che il riordinamento

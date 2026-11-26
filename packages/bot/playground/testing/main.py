@@ -7,8 +7,9 @@ and a fake token gets rejected with ``401`` by the emulator on outbound.
 
 This runner forces the SDK's built-in unauthenticated mode (``use_anonymous=True`` on the
 channel-service factory) so no Azure/token is needed, binds ``0.0.0.0`` (reachable across the WSL2
-boundary), and optionally stubs the user's email (``BOT_DEV_FAKE_EMAIL``) since the emulator can't do
-the Teams member lookup. LOCAL TESTING USE ONLY — never an entry point for a deployed bot.
+boundary), skips the inbound Bot Framework token check (the emulator sends none), and optionally
+stubs the user's email (``BOT_DEV_FAKE_EMAIL``) since the emulator channel has no verified member
+lookup. LOCAL TESTING USE ONLY — never an entry point for a deployed bot.
 """
 
 from dotenv import find_dotenv, load_dotenv
@@ -74,13 +75,26 @@ def _stub_user_email_for_emulator() -> None:
 
     from swiss_ai_hub.bot.bots.chat.completion_handler import CompletionHandler
 
-    async def _resolve(turn_context):  # noqa: ANN001
+    async def _resolve(turn_context, path):  # noqa: ANN001
         return fake_email
 
     CompletionHandler.resolve_user_email = staticmethod(_resolve)
 
 
 _stub_user_email_for_emulator()
+
+
+def _skip_activity_authentication() -> None:
+    """The emulator sends no Bot Framework token, so the local runner leaves the adapter on anonymous claims."""
+    from swiss_ai_hub.bot.routes.routes_service import RoutesService
+
+    async def _skip(request, path):  # noqa: ANN001
+        return None
+
+    RoutesService.authenticate_activity = staticmethod(_skip)
+
+
+_skip_activity_authentication()
 
 from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
 from swiss_ai_hub.core.routes import HealthController  # noqa: E402

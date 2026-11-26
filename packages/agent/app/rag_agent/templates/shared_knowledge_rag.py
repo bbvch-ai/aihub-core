@@ -78,4 +78,5 @@ def build() -> RAGAgentConfig:
             enable_user_memory_retrieval=True,
             enable_user_memory_storage=True,
         ),
+        restrict_to_user_access=True,
     )

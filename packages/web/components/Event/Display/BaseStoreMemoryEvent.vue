@@ -97,51 +97,6 @@
       >
         {{ t('event.storeMemory.noChanges') }}
       </div>
-
-      <!-- Relation Changes Graph -->
-      <div
-        v-if="hasRelationChanges"
-        class="flex flex-col gap-3"
-      >
-        <div class="flex items-center gap-2 text-sm font-semibold text-surface-700 dark:text-surface-300">
-          <Icon
-            name="lucide:network"
-            class="size-4"
-          />
-          <span>{{ t('event.storeMemory.relationChanges') }}</span>
-        </div>
-
-        <div class="flex flex-col gap-2 text-xs text-surface-600 dark:text-surface-400">
-          <div
-            v-if="event.event.added_relations?.length"
-            class="flex items-center gap-2"
-          >
-            <Icon
-              name="lucide:plus-circle"
-              class="size-3 text-green-600 dark:text-green-400"
-            />
-            <span>{{ event.event.added_relations.length }} {{ t('event.storeMemory.addedRelations') }}</span>
-          </div>
-          <div
-            v-if="event.event.deleted_relations?.length"
-            class="flex items-center gap-2"
-          >
-            <Icon
-              name="lucide:trash-2"
-              class="size-3 text-red-600 dark:text-red-400"
-            />
-            <span>{{ event.event.deleted_relations.length }} {{ t('event.storeMemory.deletedRelations') }}</span>
-          </div>
-        </div>
-
-        <div class="rounded-lg border border-surface-200 dark:border-surface-700">
-          <MemoryGraph
-            :relations="allRelations"
-            :highlighted-relations="event.event.added_relations"
-            height="300px"
-          />
-        </div>
-      </div>
     </div>
   </EventDisplayBase>
 </template>
@@ -164,19 +119,5 @@ const hasMemoryChanges = computed(() => {
     || (props.event.event.updated_memories?.length ?? 0) > 0
     || (props.event.event.deleted_memories?.length ?? 0) > 0
   )
-})
-
-const hasRelationChanges = computed(() => {
-  return (
-    (props.event.event.added_relations?.length ?? 0) > 0
-    || (props.event.event.deleted_relations?.length ?? 0) > 0
-  )
-})
-
-const allRelations = computed(() => {
-  return [
-    ...(props.event.event.added_relations ?? []),
-    ...(props.event.event.deleted_relations ?? []),
-  ]
 })
 </script>

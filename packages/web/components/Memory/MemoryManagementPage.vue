@@ -144,7 +144,10 @@ const {
 const selectedMemoryId = computed(() => route.params.memory_id as string | undefined)
 
 const handleSelectMemory = (memory: { id: string }) => {
-  router.push(tenantPath(`${props.basePath}/${memory.id}?q=${searchInput.value ?? ''}`))
+  router.push({
+    path: tenantPath(`${props.basePath}/${memory.id}`),
+    query: { ...route.query, q: searchInput.value ?? '' },
+  })
 }
 
 const handleDeleteAll = () => {

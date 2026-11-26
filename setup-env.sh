@@ -76,6 +76,11 @@ gen_hex_64() {
     openssl rand -hex 32 | tr -d '\n'
 }
 
+# 32 bytes → padded base64url, the format of a Fernet key (cryptography.fernet.Fernet.generate_key())
+gen_fernet_key() {
+    openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n'
+}
+
 # Random UUIDv4 derived from openssl so the script keeps a single crypto
 # dependency (no uuidgen). openssl emits lowercase hex already.
 gen_uuid() {
@@ -85,11 +90,6 @@ gen_uuid() {
         "${h:0:8}" "${h:8:4}" "${h:13:3}" \
         $((0x8 | (0x${h:16:1} & 0x3))) "${h:17:3}" \
         "${h:20:12}"
-}
-
-# 32 bytes → padded base64url, the format cryptography.fernet.Fernet.generate_key() emits
-gen_fernet() {
-    openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n'
 }
 
 # Langfuse generators produce the full value including prefix
@@ -164,7 +164,7 @@ cp "$TEMPLATE" "$OUTPUT"
 PLACEHOLDERS=(
     "pk-lf-REPLACE_WITH_LANGFUSE_PUBLIC_KEY:gen_langfuse_pk"
     "sk-lf-REPLACE_WITH_LANGFUSE_SECRET_KEY:gen_langfuse_sk"
-    "REPLACE_WITH_FERNET_KEY:gen_fernet"
+    "REPLACE_WITH_FERNET_KEY:gen_fernet_key"
     "REPLACE_WITH_64_HEX_CHARS:gen_hex_64"
     "REPLACE_WITH_RANDOM_UUID:gen_uuid"
     "REPLACE_WITH_RANDOM_STRING:gen_urlsafe_32"

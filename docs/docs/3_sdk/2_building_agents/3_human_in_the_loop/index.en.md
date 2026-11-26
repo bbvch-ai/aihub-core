@@ -13,7 +13,11 @@ The HITL pattern is orchestrated by a pair of events that manage the pause and r
 
 1. **Request**: A step in your agent returns a `HumanInTheLoop.request` event. This is a special `ControlEvent` that
    also acts as a `DisplayEvent`, pausing the workflow and presenting a question to the user in the UI.
-2. **Response**: The user's answer is sent back to the system as a `HumanInTheLoop.response` event.
+2. **Response**: The user's answer is sent back to the system as a `HumanInTheLoop.response` event. Only the user who
+   started the run can answer it: the API refuses another thread member's answer with a 403 before it is stored, so a
+   refused answer never closes the request. The server stamps the authenticated sender on the response as
+   `responded_by`, whatever the client sent, and only routes it into a thread the sender belongs to. The dispatcher
+   checks `responded_by` again, which covers a run whose start was never stored.
 3. **Resume**: Another step in your agent is configured to accept this response event. When the event arrives, the
    dispatcher routes it to the correct step, and the workflow resumes its execution.
 

@@ -1,7 +1,7 @@
 ---
 title: E-Mail-Agent
 description: Ein Postfach-Agent, der ungelesene E-Mails aus einem IMAP-Posteingang liest, sie ablegt und Antworten zur Prüfung durch einen Menschen entwirft — versendet wird nie.
-source_sha: cde114ae1a4e60079fef584776be1c241e71285cc493851a5ce6e593d03af0a6
+source_sha: 9124bddcf9acd425d78f7e84f1ffa8224dc3a36f964feab9d31530a2bdb0dee8
 ---
 
 # E-Mail-Agent
@@ -132,10 +132,10 @@ Postfach-Verbindung und die Entwurfs-Einstellungen.
 | **IMAP-Port**                     | Zahl     | `993`                     | Port des Servers. `993` ist der Standard für implizites TLS. Bereich 1–65535.                                                                                                                                          |
 | **Authentifizierung**             | Auswahl  | Benutzername und Passwort | **Benutzername und Passwort** oder **Microsoft 365 (OAuth 2.0)** für Microsoft-365-Postfächer, bei denen die Standardauthentifizierung deaktiviert ist. Bestimmt, welche der folgenden Anmeldefelder angezeigt werden. |
 | **Benutzername**                  | Text     | —                         | Postfach-Login, üblicherweise die vollständige E-Mail-Adresse. Bei Microsoft 365 (OAuth 2.0) die Adresse des zu verarbeitenden Postfachs. Erforderlich.                                                                |
-| **Passwort**                      | Passwort | *(leer)*                  | Postfach-Passwort oder besser ein anwendungsspezifisches Token. Wird beim Agent-Profil gespeichert. Nur bei Benutzername und Passwort sichtbar.                                                                        |
+| **Passwort**                      | Passwort | *(leer)*                  | Postfach-Passwort oder besser ein anwendungsspezifisches Token. Wird verschlüsselt gespeichert und maskiert angezeigt; lassen Sie die Maske stehen, um es zu behalten. Nur bei Benutzername und Passwort sichtbar.     |
 | **Tenant-ID**                     | Text     | *(leer)*                  | Verzeichnis-ID (Tenant-ID) Ihres Microsoft-Entra-ID-Tenants. Nur sichtbar — und erforderlich — bei Microsoft 365 (OAuth 2.0).                                                                                          |
 | **Client-ID**                     | Text     | *(leer)*                  | Anwendungs-ID (Client-ID) der Entra-ID-App-Registrierung. Nur sichtbar — und erforderlich — bei Microsoft 365 (OAuth 2.0).                                                                                             |
-| **Geheimer Clientschlüssel**      | Passwort | *(leer)*                  | Client Secret der Entra-ID-App-Registrierung. Wird beim Agent-Profil gespeichert. Nur sichtbar — und erforderlich — bei Microsoft 365 (OAuth 2.0).                                                                     |
+| **Geheimer Clientschlüssel**      | Passwort | *(leer)*                  | Client Secret der Entra-ID-App-Registrierung. Wird verschlüsselt gespeichert und maskiert angezeigt; lassen Sie die Maske stehen, um es zu behalten. Nur sichtbar — und erforderlich — bei Microsoft 365 (OAuth 2.0).  |
 | **TLS verwenden**                 | Schalter | An                        | Verbindung über implizites TLS. Nur für einen Klartext-Testserver deaktivieren.                                                                                                                                        |
 | **Posteingang-Ordner**            | Text     | `INBOX`                   | Der Ordner, aus dem eingehende E-Mails gelesen werden.                                                                                                                                                                 |
 | **Max. ungelesene E-Mails**       | Zahl     | `50`                      | Wie viele ungelesene Zusammenfassungen ein einzelner Lauf auflistet. Hält den Lauf klein, wenn der Posteingang überquillt. 1–500.                                                                                      |

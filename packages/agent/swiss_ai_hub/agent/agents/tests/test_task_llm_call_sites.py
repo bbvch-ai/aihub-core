@@ -56,6 +56,11 @@ def _reporting() -> MagicMock:
     return reporting
 
 
+def _without_schema() -> MagicMock:
+    """A run context whose start event asked for no JSON shape."""
+    return MagicMock(get=AsyncMock(return_value=None))
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(("config_fixture", "expected_model"), TASK_LLM_CASES)
 async def test_inspection_uses_task_llm(request, config_fixture: str, expected_model: str) -> None:
@@ -66,6 +71,7 @@ async def test_inspection_uses_task_llm(request, config_fixture: str, expected_m
             RAGAgent(),
             request=Conversation.contextualize(history=TURN.history, message=_event(user_query="hi")),
             conversation=config,
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
             user=fake_user(),

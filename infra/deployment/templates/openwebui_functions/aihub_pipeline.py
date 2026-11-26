@@ -308,7 +308,11 @@ class EventCaller(Protocol):
 
 
 class AuthenticationService:
-    """Handles all authentication-related operations"""
+    """Handles all authentication-related operations.
+
+    The user headers are signed as each request goes out, not when they are built: the API refuses a signature older
+    than a few minutes, and a dialog can wait on the user longer than that before its answer reuses the turn's headers.
+    """
 
     def __init__(
         self,
@@ -320,30 +324,43 @@ class AuthenticationService:
 
     def sign_user_headers(
         self,
-        user_name: Annotated[str, "User's name"],
+        timestamp: Annotated[str, "Unix time in seconds the signature is made at"],
+        user_name: Annotated[str, "User's name, URL-quoted"],
         user_email: Annotated[str, "User's email address"],
     ) -> Annotated[str, "HMAC-SHA256 signature as hex string"]:
         """Generate HMAC-SHA256 signature for user authentication"""
         secret = self._signing_secret.encode("utf-8")
-        message = f"name:{user_name},email:{user_email}".encode()
+        message = f"ts:{timestamp},name:{user_name},email:{user_email}".encode()
         return hmac.new(secret, message, hashlib.sha256).hexdigest()
+
+    def sign_request(
+        self, request: Annotated[httpx.Request, "Request about to be sent"]
+    ) -> Annotated[httpx.Request, "The same request, signed when it names a user"]:
+        """Given to an httpx client as ``auth``, which calls it right before each request is sent. A request that
+        names no user, such as an upload to a presigned storage URL, is left unsigned."""
+        user_name = request.headers.get("X-OpenWebUI-User-Name")
+        user_email = request.headers.get("X-OpenWebUI-User-Email")
+        if user_name is None or user_email is None:
+            return request
+        timestamp = str(int(time.time()))
+        request.headers["X-OpenWebUI-Timestamp"] = timestamp
+        request.headers["X-OpenWebUI-Signature"] = self.sign_user_headers(timestamp, user_name, user_email)
+        return request
 
     def prepare_headers(
         self,
         user_name: Annotated[str, "User's name"],
         user_email: Annotated[str, "User's email address"],
         accept_language: Annotated[str | None, "Accept-Language header value"] = None,
-    ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
-        """Prepare authenticated request headers"""
+    ) -> Annotated[dict[str, str], "HTTP headers naming the user, signed later by sign_request"]:
+        """Prepare request headers that name the user"""
         clean_username = urllib.parse.quote(user_name, safe="") if user_name else ""
-        signature = self.sign_user_headers(clean_username, user_email)
 
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
             "X-OpenWebUI-User-Name": clean_username,
             "X-OpenWebUI-User-Email": user_email,
-            "X-OpenWebUI-Signature": signature,
         }
         if accept_language:
             headers["Accept-Language"] = accept_language
@@ -818,6 +835,14 @@ class EventContext:
         self.chat_id = chat_id
         self.message_id = message_id
         self.redis = redis
+        self._figure_links: Optional[FigureLinks] = None
+
+    async def figure_links(self) -> "FigureLinks":
+        """Built on the first figure only: the route needs the concrete tenant, which costs one call to the AI-Hub."""
+        if self._figure_links is None:
+            tenant_id = await self.stream_service.active_tenant_id(self.headers)
+            self._figure_links = FigureLinks(tenant_id, self.thread_id)
+        return self._figure_links
 
     async def emit_source(
         self,
@@ -1072,12 +1097,18 @@ class HumanInTheLoopHandler(EventHandler):
             return True
 
         if hitl_type == "confirmation":
+            event_names = [event.get("_event_name"), *event.get("_parent_event_names", [])]
+            message = (
+                self._tool_approval_message(question)
+                if "ToolApprovalRequestEvent" in event_names
+                else self._capped_markdown(question)
+            )
             result = await context.caller(
                 {
                     "type": "confirmation",
                     "data": {
                         "title": "Agent Question",
-                        "message": question,
+                        "message": message,
                     },
                 }
             )
@@ -1087,7 +1118,7 @@ class HumanInTheLoopHandler(EventHandler):
                     "type": "input",
                     "data": {
                         "title": "Agent Question",
-                        "message": question,
+                        "message": self._capped_markdown(question),
                         "placeholder": "Enter your response...",
                     },
                 }
@@ -1099,6 +1130,29 @@ class HumanInTheLoopHandler(EventHandler):
             await self._send_response(result, event, context)
 
         return True
+
+    @staticmethod
+    def _tool_approval_message(question: Annotated[str, "Tool approval question"]) -> Annotated[str, "Dialog HTML"]:
+        """OpenWebUI's confirm dialog cannot scroll, so a long tool input would push its buttons off-screen; the input
+        goes into a capped, scrollable box and is escaped because it is model-written code, not markdown."""
+        lines = html.escape(question).split("\n")
+        box_style = (
+            "max-height:50vh;overflow:auto;white-space:{wrap};font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"
+            "font-size:12px;margin:.5rem 0;padding:.5rem;border-radius:.5rem;"
+            "background:rgba(127,127,127,.1);border:1px solid rgba(127,127,127,.25)"
+        )
+        if len(lines) < 3:
+            everything = "\n".join(lines)
+            return f'<pre style="{box_style.format(wrap="pre-wrap")}">{everything}</pre>'
+        middle = "\n".join(lines[1:-1])
+        return "\n\n".join(
+            [f"<p>{lines[0]}</p>", f'<pre style="{box_style.format(wrap="pre")}">{middle}</pre>', f"<p>{lines[-1]}</p>"]
+        )
+
+    @staticmethod
+    def _capped_markdown(question: Annotated[str, "Agent question"]) -> Annotated[str, "Dialog markdown"]:
+        """Keeps any long question from pushing OpenWebUI's dialog buttons off-screen while still rendering markdown."""
+        return f'<div style="max-height:60vh;overflow-y:auto">\n\n{question}\n\n</div>'
 
     @staticmethod
     async def _send_response(
@@ -1260,13 +1314,74 @@ class RetrieverEventHandler(EventHandler):
         return True
 
 
+class FigureLinks:
+    """Points the figures of knowledge sources at the AI-Hub's figure route on Open WebUI's own origin.
+
+    Open WebUI shows only relative, same-origin, data and web images, so an `s3://` figure would show its logo. The
+    route serves a figure to whoever is signed in to Open WebUI and may still view the thread and use the agent that
+    showed it, so the path holds no credential. Like the route, only a figure in its own document's figure folder is
+    linked; any other reference becomes a caption.
+    """
+
+    ROUTE = "/hub-figures"
+    FIGURES_DIRECTORY = "__figures__"
+    RASTER_EXTENSIONS = frozenset({"jpg", "jpeg", "png", "webp", "gif", "bmp"})
+    # A figure node holds exactly one image; its folder path may contain spaces and brackets, which ingestion keeps.
+    _FIGURE = re.compile(r"\s*!\[([^\]]*)\]\((s3://([^/]+)/(.+))\)\s*", re.DOTALL)
+    _FOLDER_UNSAFE = re.compile(r"[\s.%#?&=+/\\]")
+
+    def __init__(
+        self,
+        tenant_id: Annotated[Optional[str], "The concrete tenant the viewer acts in"],
+        thread_id: Annotated[Optional[str], "AI-Hub thread the sources belong to"],
+    ) -> None:
+        self._tenant_id = tenant_id
+        self._thread_id = thread_id
+
+    @staticmethod
+    def is_figure(node: Annotated[dict[str, Any], "Grounding node"]) -> bool:
+        return node.get("content_type") == "figure"
+
+    def rewrite(
+        self, node: Annotated[dict[str, Any], "Grounding node"]
+    ) -> Annotated[str, "The node's content with each figure linked or captioned"]:
+        content = node.get("content", "")
+        match = self._FIGURE.fullmatch(content) if self.is_figure(node) else None
+        if match is None:
+            return content
+        return self._linked(match, self.figures_folder(node.get("source") or ""), node)
+
+    @classmethod
+    def figures_folder(
+        cls, source: Annotated[str, "`s3://` URI of the document"]
+    ) -> Annotated[str, "Where ingestion stored its figures, or '' for a source that is no stored file"]:
+        """Mirrors `create_figures_folder_name` in swiss_ai_hub.core, which named the folder at ingestion."""
+        if not source.startswith("s3://") or "/" not in source.removeprefix("s3://"):
+            return ""
+        base_path, file_name = source.rsplit("/", 1)
+        return f"{base_path}/{cls.FIGURES_DIRECTORY}/{cls._FOLDER_UNSAFE.sub('_', file_name)}"
+
+    def _linked(self, match: re.Match, folder: str, node: dict[str, Any]) -> str:
+        alt, reference, bucket, key = match.groups()
+        extension = key.rsplit(".", 1)[-1].lower() if "." in key else ""
+        if (
+            not (self._tenant_id and self._thread_id and folder)
+            or not reference.startswith(f"{folder}/")
+            or extension not in self.RASTER_EXTENSIONS
+        ):
+            return f"*{alt or 'Figure'} ({GroundingNodesEventHandler.display_name(node)})*"
+        segments = [self._tenant_id, self._thread_id, bucket, *key.split("/")]
+        path = "/".join(urllib.parse.quote(segment, safe="") for segment in segments)
+        return f"![{alt}]({self.ROUTE}/{path})"
+
+
 class GroundingNodesEventHandler(EventHandler):
     """Lists the knowledge documents the answer is grounded in as sources, one per document: a knowledge agent's own
     retrieval, and the collections the user referenced with `#`.
 
     The grounding nodes are exactly what the model reads, after reranking and with carried prior-turn documents, so
     every document it can cite is listed and none it never saw. Chunks of one document share the document's
-    citation id and become one source holding each chunk.
+    citation id and become one source holding each chunk. Figures are linked through `FigureLinks`.
     """
 
     async def can_handle(
@@ -1280,16 +1395,19 @@ class GroundingNodesEventHandler(EventHandler):
         event: Annotated[dict[str, Any], "Grounding nodes event"],
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
+        grounding_nodes = event.get("grounding_nodes") or []
+        figure_links = await context.figure_links() if any(map(FigureLinks.is_figure, grounding_nodes)) else None
         documents: dict[str, list[dict[str, Any]]] = {}
-        for node in event.get("grounding_nodes") or []:
+        for node in grounding_nodes:
             documents.setdefault(node.get("citation_id") or node.get("source", ""), []).append(node)
         for citation_id, nodes in documents.items():
-            await context.emit_source(self.source_data(nodes), citation_id)
+            await context.emit_source(self.source_data(nodes, figure_links), citation_id)
         return True
 
     @staticmethod
     def source_data(
         nodes: Annotated[list[dict[str, Any]], "Nodes of one document"],
+        figure_links: Annotated[Optional[FigureLinks], "Links the figures among the nodes, if any"] = None,
     ) -> Annotated[dict[str, Any], "Source data structure"]:
         first = nodes[0]
         reference_url = GroundingNodesEventHandler.document_link(first)
@@ -1298,7 +1416,7 @@ class GroundingNodesEventHandler(EventHandler):
                 "name": GroundingNodesEventHandler.display_name(first),
                 "id": first.get("document_id", ""),
             },
-            "document": [node.get("content", "") for node in nodes],
+            "document": [figure_links.rewrite(node) if figure_links else node.get("content", "") for node in nodes],
             "metadata": [GroundingNodesEventHandler._node_metadata(node, reference_url) for node in nodes],
         }
         if reference_url:
@@ -1808,11 +1926,21 @@ class StreamingService:
     def __init__(
         self,
         base_url: Annotated[str, "AI-Hub base URL"],
+        auth_service: Annotated[AuthenticationService, "Signs the OpenWebUI user headers"],
         timeout: Annotated[int, "Request timeout in seconds"],
     ):
         self._base_url = base_url
+        self._auth_service = auth_service
         self._timeout = timeout
         self._event_processor = EventProcessorFactory.create_chain()
+
+    async def active_tenant_id(
+        self, headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"]
+    ) -> Annotated[str, "The tenant the user acts in, by id rather than the `active` alias"]:
+        async with httpx.AsyncClient(timeout=30.0, auth=self._auth_service.sign_request) as client:
+            response = await client.get(f"{self._base_url}/api/v1/my-tenants/active", headers=headers)
+            response.raise_for_status()
+            return response.json()["id"]
 
     def build_endpoint_url(
         self,
@@ -1868,7 +1996,9 @@ class StreamingService:
             attachments=attachments,
         )
 
-        async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=None, follow_redirects=True, auth=self._auth_service.sign_request
+        ) as client:
             try:
                 result = await self._process_stream(
                     client,
@@ -2227,8 +2357,9 @@ class KnowledgeReferenceService:
     each one stands for. An entry nobody resolves, such as one a user created in Open WebUI, is left out.
     """
 
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, base_url: str, auth_service: AuthenticationService) -> None:
         self._base_url = base_url
+        self._auth_service = auth_service
 
     async def references_for_event(
         self,
@@ -2240,7 +2371,7 @@ class KnowledgeReferenceService:
         )
         if not openwebui_ids:
             return []
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0, auth=self._auth_service.sign_request) as client:
             response = await client.post(
                 f"{self._base_url}/api/v1/active/knowledge/openwebui-references",
                 json={"openwebui_ids": openwebui_ids},
@@ -2336,8 +2467,16 @@ class FileProcessingService:
     bucket using the two-step initiate/validate flow, preventing IDOR.
     """
 
-    def __init__(self, base_url: str, s3_endpoint: str, s3_access_key: str, s3_secret_key: str) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        auth_service: AuthenticationService,
+        s3_endpoint: str,
+        s3_access_key: str,
+        s3_secret_key: str,
+    ) -> None:
         self._base_url = base_url
+        self._auth_service = auth_service
         self._owui_s3_client = self._create_s3_client(s3_endpoint, s3_access_key, s3_secret_key)
 
     @property
@@ -2623,7 +2762,7 @@ class FileProcessingService:
         if not attachments:
             return set()
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=30.0, auth=self._auth_service.sign_request) as client:
                 response = await client.post(
                     self._files_url(agent_class, agent_id, "validate"),
                     headers=headers,
@@ -2649,7 +2788,7 @@ class FileProcessingService:
             content = attachment.text.encode()
         else:
             content = await asyncio.to_thread(self._read_file_content, attachment.owui_file)
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0, auth=self._auth_service.sign_request) as client:
             initiate_resp = await client.post(
                 self._files_url(agent_class, agent_id, "initiate"),
                 headers=headers,
@@ -2726,7 +2865,7 @@ class ResponseMergeService:
 
         # Inside the try: a failure while building the request must still reach the user as text, or the
         # merged message stays empty — the exact symptom this path exists to remove.
-        client = httpx.AsyncClient(timeout=None, follow_redirects=True)
+        client = httpx.AsyncClient(timeout=None, follow_redirects=True, auth=self._auth_service.sign_request)
         try:
             headers, payload = self._build_request(body, user, metadata, request)
             async with client.stream(
@@ -2764,7 +2903,9 @@ class ResponseMergeService:
         try:
             headers, payload = self._build_request(body, user, metadata, request)
             payload["stream"] = False
-            async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=True) as client:
+            async with httpx.AsyncClient(
+                timeout=self._timeout, follow_redirects=True, auth=self._auth_service.sign_request
+            ) as client:
                 response = await client.post(
                     url=f"{self._base_url}/api/v1/active/openai/chat/completions",
                     json=payload,
@@ -2966,13 +3107,14 @@ class Pipe:
         # File Processing
         self._file_service = FileProcessingService(
             self.valves.AIHUB_BASE_URL,
+            self._auth_service,
             self.valves.S3_STORAGE_ENDPOINT,
             self.valves.S3_STORAGE_ACCESS_KEY,
             self.valves.S3_STORAGE_SECRET_KEY,
         )
 
         # Referenced knowledge collections
-        self._knowledge_reference_service = KnowledgeReferenceService(self.valves.AIHUB_BASE_URL)
+        self._knowledge_reference_service = KnowledgeReferenceService(self.valves.AIHUB_BASE_URL, self._auth_service)
 
         # Message Conversion
         self._message_converter = MessageConverter()
@@ -2987,7 +3129,9 @@ class Pipe:
         )
 
         # Streaming
-        self._streaming_service = StreamingService(self.valves.AIHUB_BASE_URL, self.valves.AIHUB_REQUEST_TIMEOUT)
+        self._streaming_service = StreamingService(
+            self.valves.AIHUB_BASE_URL, self._auth_service, self.valves.AIHUB_REQUEST_TIMEOUT
+        )
 
         # Response merging (plain LLM, never the agent)
         self._merge_service = ResponseMergeService(
@@ -3102,7 +3246,9 @@ class Pipe:
     ) -> Annotated[dict[str, Any] | None, "Open chat HITL request or None"]:
         """Query API for open chat HITL in this thread."""
         try:
-            async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT) as client:
+            async with httpx.AsyncClient(
+                timeout=self.valves.AIHUB_REQUEST_TIMEOUT, auth=self._auth_service.sign_request
+            ) as client:
                 response = await client.get(
                     f"{self.valves.AIHUB_BASE_URL}/api/v1/active/threads/{thread_id}/open-chat-hitl",
                     headers=headers,

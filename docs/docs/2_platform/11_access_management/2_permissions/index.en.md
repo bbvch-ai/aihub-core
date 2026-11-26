@@ -227,4 +227,5 @@ aihub.[user|admin].[resource_type].[resource_category].[resource_identifier]
 - `aihub.user.agent.?>` - User access to any agent (wildcard)
 
 For multi-tenancy and access control details, see the
-[Multi-Tenancy Access Control](../../16_multi_tenancy/4_access_control/) documentation.
+[Multi-Tenancy Access Control](../../16_multi_tenancy/4_access_control/) documentation. For the roles every tenant
+starts with and the rules each grants, see [Default Roles and New-User Role Assignment](../3_default_roles/).

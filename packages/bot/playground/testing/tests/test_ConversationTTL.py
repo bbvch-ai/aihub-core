@@ -14,6 +14,7 @@ from swiss_ai_hub.core.routes import HealthController
 from swiss_ai_hub.core.testing import ASGIAdapter
 from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
+from playground.testing.tests.bot_framework_token_factory import BotFrameworkTokenFactory
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import (
     Content,
     ConversationEntity,
@@ -216,9 +217,14 @@ async def test_conversation_tracker_explicitly_deleted_vs_expired(mongodb_direct
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_conversation_ttl_with_bot(
-    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials
+    test_runner: SimulatedAgentBotTestRunner,
+    client: AsyncClient,
+    patch_requests_adapter,
+    setup_test_credentials,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """Test creation of a conversation via the bot and verify TTL tracking"""
+    BotFrameworkTokenFactory.trust_signing_key(monkeypatch)
     # Load the user message template
     with open(Path(__file__).parent / "user_message.json") as file:
         payload: dict = json.loads(file.read())
@@ -243,6 +249,7 @@ async def test_conversation_ttl_with_bot(
     response = await client.post(
         url=JSON_ENDPOINT,
         json=payload,
+        headers=BotFrameworkTokenFactory.authorization_header(app_id="test_app_id", service_url=SERVICE_ENDPOINT),
     )
     assert response.status_code == 200
 

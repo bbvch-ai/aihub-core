@@ -62,7 +62,10 @@ request to LLM response.
 internet with inter-container communication disabled), `code-sandbox` (single-tenant zone for the `open-terminal`
 code-execution sandbox plus exactly its callers), `pii-detection` (the Presidio analyzer plus exactly its callers), and
 `browser` (the Playwright browser plus exactly its callers, and `browser-proxy`, the browser's only way to the internet,
-which refuses addresses that are not public). Services are assigned only the networks they require.
+which refuses addresses that are not public). The operator control planes get networks of their own: `docker-api`
+(Traefik and its Docker socket proxy), `dagster-ui` / `backup-ui` (each Dagster webserver and its oauth2-proxy), and
+`dagster` / `backup` / `backup-docker` (webservers, daemons, gRPC code servers, and the backup code server's own socket
+proxy). Services are assigned only the networks they require.
 
 ## Dev Stack Services
 
@@ -111,6 +114,8 @@ Code shared by 2+ services belongs in `packages/core`. Service-specific code sta
 - **`packages/sysadmin-web`**: System-administration UI — Nuxt Layer extending `packages/web` (AGPL-3.0-or-later).
 - **`packages/bot`**: Collaboration platform integrations (MS Teams, Slack).
 - **`packages/backup`**: Centralized backup/restore service (independent Dagster instance). AGPL-3.0-or-later.
+- **`ee`**: Paid agents of bbv AI Hub (Universal Agent, Email Classification Agent), built on `packages/agent`. bbv AI
+  Hub Enterprise License. No open package may import it, and it is never published to PyPI.
 - **`.github/actions`**: Reusable GitHub Actions for CI/CD.
 - **`docs`**: arc42 documentation + ADRs (VitePress).
 
@@ -259,8 +264,10 @@ Some findings are deliberately left open; check `git log` and existing comments 
 
 - **Location**: `tests/` dir at same level as code
 - **Naming**: `test_*.py`
-- **Markers**: `slow`, `integration`, `flaky`, `self_hosted`, `experimental` (per-scope `pyproject.toml`)
-- **CI excludes**: `pytest -m "not flaky"` — flaky tests skip in CI
+- **Markers**: `slow`, `integration`, `flaky`, `self_hosted`, `experimental`, `external` (per-scope `pyproject.toml`)
+- **`external`**: mark every test that calls a third-party provider (Swiss LLM Cloud). PR checks run
+  `pytest -m "not flaky and not external"` without provider credentials, so an unmarked live call fails there.
+  `external-tests.yml` runs them nightly on `main`, from the Actions tab, or on a PR labelled `run-external-tests`.
 - **BDD**: Use `pytest-bdd` for agent/process workflows (Gherkin `.feature` files in `tests/features/`)
 - **Async**: pytest-bdd has limitations; use plain pytest for async tests
 

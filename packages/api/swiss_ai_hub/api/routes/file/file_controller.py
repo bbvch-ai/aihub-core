@@ -1,25 +1,31 @@
+import asyncio
 from typing import Annotated, Self
 
-from fastapi import Depends, Query, Security
+from fastapi import Depends, Query, Response, Security
+from redis.asyncio import Redis
+from swiss_ai_hub.core.auth import OpenWebuiSessionAuthHandler
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
-from swiss_ai_hub.core.infrastructure import use_s3_service
+from swiss_ai_hub.core.infrastructure import use_redis, use_s3_service
 from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.file.dto.signed_url_dto import SignedUrlDto
+from swiss_ai_hub.api.routes.file.figure_access import FigureAccess
+from swiss_ai_hub.api.routes.file.figure_image import FigureImage
 from swiss_ai_hub.api.routes.file.file_service import FileService
 
 
 class FileController(TenantScopedController):
     """
-    A controller that manages secure access to files stored in Azure Blob Storage.
+    A controller that manages secure access to files stored in S3.
 
-    Instead of proxying files, this controller generates a temporary, secure Azure SAS
-    URL and redirects the client, offloading the bandwidth to Azure.
+    Instead of proxying files, this controller generates a temporary presigned URL and
+    redirects the client, offloading the bandwidth to the storage.
     """
 
     name = ApiLocaleString.from_i18n_path("api.controllers.file.name")
@@ -36,12 +42,47 @@ class FileController(TenantScopedController):
         async def get_file_url(
             container: str,
             file_path: str,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ) -> SignedUrlDto:
-            """Generates a short-lived secure link to the blob resource, and returns the URL."""
-            sas_url = s3_service.generate_sas_url(container, file_path)
-            return SignedUrlDto(url=sas_url)
+            """Generates a short-lived link to a knowledge document or figure, or to a file attached to an agent.
+
+            The caller needs read access to the knowledge namespace or the agent owning the object; objects of any
+            other bucket are never signed.
+            """
+            url = await asyncio.to_thread(
+                lambda: FileService.get_file_url(AccessChecker.from_user(user), container, file_path, s3_service)
+            )
+            return SignedUrlDto(url=url)
+
+        return self
+
+    def get_figure(
+        self,
+        route: str = "/figures/{thread_id}/{container}/{file_path:path}",
+        viewer: OpenWebuiSessionAuthHandler | None = None,
+    ) -> Self:
+        """Serves knowledge figures to OpenWebUI's sources, reached from its origin under `/hub-figures`.
+
+        Left out of the OpenAPI schema: only an image tag in OpenWebUI calls it, with the session cookie as credential.
+        """
+        session_viewer = viewer or OpenWebuiSessionAuthHandler()
+
+        @self.router.get(route, tags=self.tags, summary="Knowledge figure in a source", include_in_schema=False)
+        async def get_figure(
+            tenant_id: str,
+            thread_id: str,
+            container: str,
+            file_path: str,
+            _requested_from_openwebui: Annotated[None, Depends(FigureAccess.ensure_requested_from_openwebui)],
+            user: Annotated[UserIdentity, Depends(session_viewer)],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+            redis: Annotated[Redis, Depends(use_redis)],
+        ) -> Response:
+            """The figure, re-encoded, when the viewer may read the source an agent showed it in."""
+            await FigureAccess.ensure_may_view(tenant_id, thread_id, container, file_path, user, redis)
+            figure = await FigureImage.from_storage(s3_service, container, file_path)
+            return figure.to_response()
 
         return self
 

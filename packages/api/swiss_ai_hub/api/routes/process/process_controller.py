@@ -71,7 +71,7 @@ class ProcessController(TenantScopedController):
         @self.router.get(route, tags=self.tags)
         async def get_process_class(
             process_class: str,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.process.{process_class}.?>"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.process.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ProcessClassDTO:
             """Retrieve details for a specific process class."""
@@ -84,7 +84,7 @@ class ProcessController(TenantScopedController):
         @self.router.get(route, tags=self.tags)
         async def get_process_class_instances(
             process_class: str,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.process.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[FullProcessInstanceDTO]:
             """Retrieve all instances of a specific process class."""
@@ -105,9 +105,7 @@ class ProcessController(TenantScopedController):
         async def create_process_instance(
             process_class: str,
             request: CreateProcessInstanceRequest,
-            user: Annotated[
-                UserIdentity, Security(self.user_with_permission("aihub.admin.process.{process_class}.?>"))
-            ],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.process"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> FullProcessInstanceDTO:
             """Create a new process instance from an existing process class."""
@@ -152,7 +150,7 @@ class ProcessController(TenantScopedController):
             if not class_entity or not config_entity:
                 raise HTTPException(status_code=404, detail=f"Process instance {process_class}/{process_id} not found.")
 
-            is_online = class_entity.is_online_since(ProcessClassEntity.online_threshold())
+            is_online = class_entity.is_online_since(await ProcessClassEntity.online_threshold())
             return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t, is_online=is_online)
 
         return self
@@ -255,13 +253,15 @@ class ProcessController(TenantScopedController):
             process_class: str,
             process_id: str,
             process_walkthrough_id: str,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[HumanInDTO]:
-            """Returns a list of formkit forms that the user can submit to continue the given process walkthrough"""
-            return await ProcessService.get_process_open_forms(process_class, process_id, process_walkthrough_id, t)
+            """Returns the forms the user can submit to continue the walkthrough: only tasks assigned to them."""
+            return await ProcessService.get_process_open_forms(
+                process_class, process_id, process_walkthrough_id, user, t
+            )
 
         return self
 

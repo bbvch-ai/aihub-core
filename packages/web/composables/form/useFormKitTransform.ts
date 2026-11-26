@@ -4,6 +4,7 @@ export interface RepeaterConfig {
   name: string
   path: string // Full path for nested data access (e.g., "few_shot.few_shot_examples")
   label?: string
+  help?: string
   addLabel?: string
   childrenSchema: FormKitSchemaNode[]
   // Seeded default for a freshly added item. `childrenSchema` is transformed and has its
@@ -609,6 +610,7 @@ export function extractRepeaterConfigs(
           name: elementName,
           path: fullPath,
           label: getLocalizedString(element.label, locale),
+          help: getLocalizedString(element.help, locale),
           addLabel: getLocalizedString(element.addLabel || element.add_label, locale),
           childrenSchema,
           defaultItem: seedFormDefaults({}, itemChildren),

@@ -5,6 +5,11 @@ description: One assistant that decides for itself whether to search your knowle
 
 # Universal Agent
 
+::: info Enterprise feature
+The Universal Agent is part of bbv AI Hub Enterprise. Running it needs a bbv AI Hub Enterprise License; see
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
+:::
+
 The **Universal Agent** works the way people expect a modern assistant to work. Instead of following a fixed sequence of
 steps, it looks at each message and decides for itself what it needs: search your company's knowledge, read a file the
 user attached, recall what it remembers about the user, or answer straight away. It keeps going, one tool after another,
@@ -72,7 +77,8 @@ answers without its tools.
 
 A profile bounds how many decisions and tool calls one answer may take. At the limit, the agent answers with what it has
 found and says that it stopped early. Any tool can be set to need the user's approval before it runs — every time, once
-per answer, or once per conversation.
+per answer, or once per conversation. The approval question shows the call's input exactly as the model wrote it; a long
+command scrolls in its own box.
 
 ## What it does *not* do
 

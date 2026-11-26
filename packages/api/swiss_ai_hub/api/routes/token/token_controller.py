@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from fastapi import HTTPException, Security, status
+from fastapi import Security, status
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.routes import TenantScopedController
@@ -35,14 +35,7 @@ class TokenController(TenantScopedController):
             token_data: CreateTokenRequest,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> CreateTokenResponse:
-            try:
-                return TokenService.create_token(
-                    name=token_data.name,
-                    expiry_date=token_data.expiry_date,
-                    user=user,
-                )
-            except Exception as e:
-                raise HTTPException(status_code=400, detail=str(e))
+            return TokenService.create_token(name=token_data.name, expiry_date=token_data.expiry_date, user=user)
 
         return self
 
@@ -50,7 +43,8 @@ class TokenController(TenantScopedController):
         @self.router.get(
             route,
             summary="List API Tokens",
-            description="Lists all API tokens for the authenticated user. The token value is not returned.",
+            description="Lists the authenticated user's API tokens, newest first, expired ones included. "
+            "The token value is not returned.",
             tags=self.tags,
         )
         async def list_tokens_endpoint(
@@ -64,17 +58,14 @@ class TokenController(TenantScopedController):
         @self.router.delete(
             route,
             summary="Revoke API Token",
-            description="Revokes (deletes) an API token for the authenticated user.",
+            description="Revokes (deletes) one of the authenticated user's API tokens. Answers 404 for any other id.",
             tags=self.tags,
         )
         async def revoke_token_endpoint(
             token_id: str,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> RevokeTokenResponse:
-            try:
-                TokenService.revoke_token(token_id, user)
-                return RevokeTokenResponse(detail="Token revoked successfully.")
-            except Exception as e:
-                raise HTTPException(status_code=400, detail=str(e))
+            TokenService.revoke_token(token_id, user)
+            return RevokeTokenResponse(detail="Token revoked successfully.")
 
         return self

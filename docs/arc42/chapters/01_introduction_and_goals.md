@@ -54,9 +54,10 @@ timeouts, routes tasks to the appropriate participant, and provides a visual pro
 
 ### Development and licensing
 
-The platform is developed by bbv Software Services, a Swiss software engineering company. The platform is fully
-open-source under a dual-license model: Apache 2.0 for the runtime and SDK, and AGPL-3.0-or-later for the web UI, the
-multi-tenant administration plane, and backup orchestration. The full per-package breakdown lives in
+The platform is developed by bbv Software Services, a Swiss software engineering company. It is an open-core project:
+the core is open source under a dual-license model, Apache 2.0 for the runtime and SDK and AGPL-3.0-or-later for the web
+UI, the multi-tenant administration plane, and backup orchestration. Paid agents of bbv AI Hub live in `ee/` under the
+bbv AI Hub Enterprise License, and the open core runs without them. The full per-package breakdown lives in
 [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
 
 ### Key functional requirements

@@ -5,6 +5,9 @@ from fastapi import HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_signature_rejected_error import (
+    OpenWebuiSignatureRejectedError,
+)
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
@@ -62,6 +65,19 @@ class DummyFailureNon401:
         raise HTTPException(status_code=500, detail=self.detail)
 
 
+class DummySignatureRejectedAuth:
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+
+    async def __call__(
+        self, request: Request, bearer_token: HTTPAuthorizationCredentials | None = None
+    ) -> UserIdentity:
+        raise OpenWebuiSignatureRejectedError(self.detail)
+
+    async def authenticate_token(self, token: str) -> UserIdentity:
+        raise OpenWebuiSignatureRejectedError(self.detail)
+
+
 # --- Fixtures to store context ---
 
 
@@ -112,7 +128,7 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handl
 
     """Build a MultiAuthHandler from the provided table."""
     headers = datatable[0]
-    handlers: list[DummySuccessAuth | DummyFailureAuth | DummyFailureNon401] = []
+    handlers: list[DummySuccessAuth | DummyFailureAuth | DummyFailureNon401 | DummySignatureRejectedAuth] = []
     for row in datatable[1:]:
         row_data = dict(zip(headers, row, strict=False))
         behavior = row_data["behavior"].strip().lower()
@@ -125,6 +141,8 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handl
             handlers.append(DummyFailureAuth(detail=detail, status_code=403))
         elif behavior == "failure_non_401":
             handlers.append(DummyFailureNon401(detail=detail))
+        elif behavior == "signature_rejected":
+            handlers.append(DummySignatureRejectedAuth(detail=detail))
     return TokenAndOauth2Handler(bearer_handlers=handlers, oauth2_handlers=[])
 
 

@@ -58,7 +58,13 @@ context, AI-Hub pushes permission state into Open WebUI rather than filtering at
 1. **Groups**: AI-Hub creates Open WebUI groups for each tenant-role combination (named `aihub:{tenant}:{role}`), with
    memberships synced based on email matching between both systems. A user who holds a role in their active tenant but
    has not opened the chat yet gets their Open WebUI account created over SCIM in the same sync, so their models are
-   there on their first chat visit; the chat login then links to that account
+   there on their first chat visit; the chat login then links to that account. Every tenant also has an
+   `aihub:{tenant}:AIHubSysAdmin` group holding the system administrators whose active tenant it is, so a sysadmin sees
+   every agent and model that tenant offers without holding any tenant role, and can chat with them. In the chat a
+   sysadmin has the rights of a regular user of that tenant: requests that come through Open WebUI never carry
+   system-administration rights, such as deleting a tenant. The role name `AIHubSysAdmin` is reserved and cannot be used
+   for a tenant role. Granting or revoking the `AIHubSysAdmin` realm role happens in Keycloak, which does not notify
+   AI-Hub, so it reaches the chat with the next access sync — switching tenants triggers one
 2. **Workspace models**: For each online agent, AI-Hub creates a workspace model that delegates to the corresponding
    pipe function
 3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using the platform's permission
@@ -153,7 +159,9 @@ collapsed thought, so the answer starts where the work ends. While the agent gat
 including when a long conversation is being condensed to fit the model.
 
 - **Approvals**: a tool an admin marked for approval asks a yes/no confirmation in the chat that names the tool and what
-  the call does. A declined tool is not requested again for that answer, and the model answers without it.
+  the call does. The call's input, such as a command the model wrote, is shown exactly as written, not as formatted
+  text, in a box that scrolls when it is long, so the Confirm and Cancel buttons stay on screen. A declined tool is not
+  requested again for that answer, and the model answers without it.
 - **Toggles decide what is offered**: a tool that needs Code Interpreter or My Files is offered only while that toggle
   is on. See [Chat toggles for agents](#chat-toggles-for-agents).
 - **Limits**: a profile caps how often the model may decide and how many calls it may make. At the cap the model answers
@@ -176,7 +184,7 @@ Open WebUI's own marker is a thin pulsing bar that would sit under the "Thinking
 a stray `|`. The platform restyles it through the stylesheet Open WebUI loads from `/static/custom.css`.
 
 Edit `infra/deployment/templates/openwebui-style/custom.css` and run `make generate-compose`. Compose mounts the
-generated copy at `/app/build/static/custom.css`; recreate `open-webui` to apply it. The rules target Open WebUI v0.11.4
+generated copy at `/app/build/static/custom.css`; recreate `open-webui` to apply it. The rules target Open WebUI v0.12.5
 markup. When an upgrade changes that markup they stop matching and Open WebUI's own bar returns, so check the indicator
 after every Open WebUI upgrade.
 

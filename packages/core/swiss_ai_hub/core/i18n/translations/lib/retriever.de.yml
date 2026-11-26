@@ -1,5 +1,8 @@
 ---
 config:
+  list_help: Die Wissensdatenbanken, die dieser Agent bei jeder Frage durchsucht.
+    Pro Datenbank ein Eintrag; jeder hat eigene Einstellungen dafür, wie viele Dokumente
+    abgerufen werden und wie gesucht wird.
   index_namespaces:
     label: Index-Namespaces
     help: Kommagetrennte Liste der Namespaces für den Abruf. Leer lassen, um aus allen

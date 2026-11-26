@@ -3,6 +3,7 @@ import logging
 import uuid
 from typing import Annotated
 
+from nats.errors import MaxPayloadError
 from nats.js import JetStreamContext
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer import get_tracer
@@ -111,6 +112,10 @@ class JSPublisher(AbstractPublisher[TEvent]):
                             f"{self.name} publish timeout ({attempt + 1}/{retries}) for {event.event_name} "
                             f"to subject {subject}"
                         )
+                    except MaxPayloadError:
+                        # The same bytes never fit, so retrying only delays the caller's error handling.
+                        span.set_attribute("messaging.payload_bytes", len(serialized_event.encode()))
+                        raise
                     except Exception as e:
                         logger.exception(
                             f"{self.name} NATS error while publishing event {event.event_name} "

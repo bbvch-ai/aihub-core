@@ -60,6 +60,8 @@ from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.agents.rag_agent.tests.test_rag_agent import build_rag_agent_config
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
+pytestmark = pytest.mark.external
+
 enable_logging()
 
 NAMESPACE_NAME = "ai_knowledge"

@@ -16,24 +16,35 @@ class LLMRequestTimeoutMigration:
     """
 
     @staticmethod
-    def run() -> list[str]:
+    async def run() -> list[str]:
         """Rewrites every agent and process config still holding the old default; returns which ones it rewrote."""
-        agents = LLMRequestTimeoutMigration._migrate(AgentConfigEntityDocument)
-        processes = LLMRequestTimeoutMigration._migrate(ProcessConfigEntityDocument)
+        agents = await LLMRequestTimeoutMigration._migrate_agents()
+        processes = LLMRequestTimeoutMigration._migrate_processes()
         return [f"agent {agent.agent_class}/{agent.agent_id}" for agent in agents] + [
             f"process {process.process_class}/{process.process_id}" for process in processes
         ]
 
     @staticmethod
-    def _migrate[TDocument: AgentConfigEntityDocument | ProcessConfigEntityDocument](
-        document_class: type[TDocument],
-    ) -> list[TDocument]:
-        """The documents of `document_class` that this call rewrote, skipping any saved again meanwhile."""
-        migrated: list[TDocument] = []
-        for document in document_class.find_all():
+    async def _migrate_agents() -> list[AgentConfigEntityDocument]:
+        """The agent profiles this call rewrote, skipping any saved again meanwhile."""
+        migrated: list[AgentConfigEntityDocument] = []
+        for document in await AgentConfigEntityDocument.list_all():
             config_data = document.config_data
             lowered = LLMRequestTimeoutMigration.lowered(config_data)
-            if lowered != config_data and document_class.replace_config_data_if_unchanged(
+            if lowered != config_data and await AgentConfigEntityDocument.replace_config_data_if_unchanged(
+                document.id, config_data, lowered
+            ):
+                migrated.append(document)
+        return migrated
+
+    @staticmethod
+    def _migrate_processes() -> list[ProcessConfigEntityDocument]:
+        """The process configs this call rewrote, skipping any saved again meanwhile; these stay on MongoEngine."""
+        migrated: list[ProcessConfigEntityDocument] = []
+        for document in ProcessConfigEntityDocument.find_all():
+            config_data = document.config_data
+            lowered = LLMRequestTimeoutMigration.lowered(config_data)
+            if lowered != config_data and ProcessConfigEntityDocument.replace_config_data_if_unchanged(
                 document.pk, config_data, lowered
             ):
                 migrated.append(document)

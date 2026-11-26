@@ -8,8 +8,8 @@ from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 class RclonePipelineSettings(EnvironmentSettings):
     """Deployment-level knobs of the rclone source pipeline.
 
-    Only the schedule lives here: which databases to sync, from where and with which credentials is read
-    from the database per run, so a deployment has nothing source-specific to configure.
+    The schedule and which internal hosts a source may name live here: which databases to sync, from where and with
+    which credentials is read from the database per run.
     """
 
     model_config = EnvironmentSettings.create_settings_config("RCLONE_PIPELINE_")
@@ -31,3 +31,16 @@ class RclonePipelineSettings(EnvironmentSettings):
         int,
         Field(default=1000, ge=1, description="Maximum partitions added or removed per database per observation."),
     ]
+    ALLOWED_PRIVATE_HOSTS: Annotated[
+        str,
+        Field(
+            default="",
+            description="Comma-separated host names an S3 endpoint, Azure endpoint or SFTP host may name although "
+            "they are internal, such as an object store reachable only on the company network. Every other internal "
+            "host is refused, because a knowledge administrator sets it and the rclone daemon can reach the "
+            "platform's own services.",
+        ),
+    ]
+
+    def private_host_allow_list(self) -> frozenset[str]:
+        return frozenset(host.strip().lower() for host in self.ALLOWED_PRIVATE_HOSTS.split(",") if host.strip())

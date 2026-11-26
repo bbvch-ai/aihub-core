@@ -22,12 +22,12 @@ DEFAULT_USER_ID = TEST_USER_OID
 def mongodb():
     """Setup MongoDB connection and clear data after tests."""
     yield
-    connect(
+    client = connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
         uuidRepresentation="standard",
     )
-    ThreadEntity.objects.delete()
+    client[AIHubSettings().MONGO_MAIN_DB_NAME][ThreadEntity.Settings.name].delete_many({})
     disconnect()
 
 
@@ -64,7 +64,7 @@ async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClie
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         # Create agent config in database after DB connection is established
-        runner.create_agent_config_in_db()
+        await runner.create_agent_config_in_db()
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test") as client:
             yield client
 

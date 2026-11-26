@@ -1,4 +1,3 @@
-from swiss_ai_hub.core.generative_ai.memory.memory_settings import MemorySettings
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.mem0_service import Mem0Service
 from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
@@ -12,14 +11,14 @@ class OrganizationMemory:
 
     Tenant memories differ from user memories in scope - they're accessible to all users within
     a tenant. Use this for managing company-wide facts, policies, or shared context that should
-    inform all agents serving the tenant. Tenant scoping replaces organization scoping for multi-tenancy support.
+    inform all agents serving the tenant. Every operation is confined to `tenant_id`, which the
+    API takes from the tenant the caller acts within, so one tenant never sees another's memories.
     """
 
-    def __init__(self, t: LocaleHandler):
-        """Initialize tenant memory manager using default tenant from settings."""
+    def __init__(self, tenant_id: str, t: LocaleHandler):
         settings = Mem0Settings()
         self._config = settings.get_config()
-        self._tenant_id = MemorySettings().DEFAULT_TENANT_ID
+        self._tenant_id = tenant_id
         self._t = t
         self.mem0service = Mem0Service(
             self._config,
@@ -28,7 +27,7 @@ class OrganizationMemory:
         )
 
     @property
-    def owner_id(self):
+    def owner_id(self) -> str:
         """Returns the tenant ID as the owner for memory scoping."""
         return self._tenant_id
 
@@ -40,13 +39,23 @@ class OrganizationMemory:
         """Retrieves all organization memories without filtering. Used for admin UI viewing."""
         return await self.mem0service.get_all(owner_id=self.owner_id)
 
-    async def delete_memory(self, memory_id: str):
-        """Deletes a specific organization memory by ID."""
-        return await self.mem0service.delete_memory(memory_id=memory_id)
+    async def delete_memory(self, memory_id: str) -> None:
+        """Deletes one of this tenant's memories; raises `MemoryNotFoundError` for a memory of any other scope."""
+        await self.mem0service.delete_memory(
+            memory_id=memory_id, owner_id=self.owner_id, memory_type=MemoryType.ORGANIZATION_MEMORY
+        )
 
-    async def update_memory(self, memory_id: str, data: str):
-        """Updates the text content of a specific organization memory."""
-        return await self.mem0service.update_memory(memory_id=memory_id, data=data)
+    async def update_memory(self, memory_id: str, data: str) -> None:
+        """Rewrites one of this tenant's memories; raises `MemoryNotFoundError` for a memory of any other scope."""
+        await self.mem0service.update_memory(
+            memory_id=memory_id, owner_id=self.owner_id, memory_type=MemoryType.ORGANIZATION_MEMORY, data=data
+        )
+
+    async def adopt_memories_of(self, previous_tenant_id: str) -> int:
+        """Moves the memories stored under `previous_tenant_id` into this tenant and returns how many moved."""
+        return await self.mem0service.reassign_organization_memories(
+            from_tenant_id=previous_tenant_id, to_tenant_id=self.owner_id
+        )
 
     async def search_organization_memory(
         self,

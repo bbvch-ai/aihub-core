@@ -19,7 +19,7 @@
               class="flex flex-col items-start gap-2"
             >
               <span class="font-semibold">{{ priceItem.label }}</span>
-              <span class="text-lg font-light">${{ priceItem.value.toFixed(4) }}</span>
+              <span class="text-lg font-light">{{ priceItem.value.toFixed(4) }} {{ t('costs.table.currency') }}</span>
             </div>
           </div>
         </div>

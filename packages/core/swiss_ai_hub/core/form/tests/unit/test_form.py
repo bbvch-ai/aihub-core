@@ -10,7 +10,7 @@ Tests cover:
 - Edge cases and backward compatibility
 """
 
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -25,6 +25,7 @@ from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 from swiss_ai_hub.core.form.elements.repeater import Repeater
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.form.template_data import TemplateData
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.processes.process_config import ProcessConfig
 
@@ -92,6 +93,20 @@ class FormWithList(Form):
 
     title: Annotated[str | InputText, Field(description="Title")]
     examples: Annotated[list[ExampleItemForm], Field(description="Examples")]
+
+
+class ExplainedItemForm(Form):
+    """Item form whose list explains itself."""
+
+    repeater_help: ClassVar[LocaleString | None] = LocaleString(en="Why this list exists", de="Wozu diese Liste dient")
+
+    input_text: Annotated[str | InputText, Field(description="Example input")]
+
+
+class FormWithExplainedList(Form):
+    """Form containing a list whose item form carries help."""
+
+    examples: Annotated[list[ExplainedItemForm], Field(description="Examples")]
 
 
 class MixedForm(Form):
@@ -342,6 +357,17 @@ class TestListOfForms:
         child_names = [c.name for c in elements[1].children]
         assert "input_text" in child_names
         assert "is_valid" in child_names
+        assert elements[1].help is None
+
+    def test_repeater_carries_the_item_forms_help(self) -> None:
+        """A list whose item form declares help shows it, so admins learn what the list is for."""
+        form = FormWithExplainedList(examples=[ExplainedItemForm(input_text=InputText(label=LocaleString(en="In")))])
+
+        repeater = form.to_formkit_form()[0]
+
+        assert isinstance(repeater, Repeater)
+        assert repeater.help == ExplainedItemForm.repeater_help
+        assert repeater.in_locale(LocaleHandler("de")).help == "Wozu diese Liste dient"
 
     def test_empty_list_produces_no_repeater(self) -> None:
         """Test that empty list doesn't produce a Repeater."""

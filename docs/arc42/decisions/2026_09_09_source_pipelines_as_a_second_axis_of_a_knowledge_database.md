@@ -81,7 +81,8 @@ is configured, and is resolved per run exactly like an ingestion pipeline.**
 
 6. **Secrets never leave the API.** Secret fields are recognised by their `Password` element, encrypted with the shared
    `SecretEncryptionService` before persisting, returned as a mask, and restored from the stored row when a client
-   resubmits the mask. The pipeline decrypts them per run with the same key.
+   resubmits the mask. The pipeline decrypts them per run with the same key. Since the 2026-11-06 amendment the pipeline
+   also writes one kind of secret: an OAuth token rclone refreshed.
 
 ## Consequences
 
@@ -97,8 +98,8 @@ is configured, and is resolved per run exactly like an ingestion pipeline.**
 
 - **A daily schedule is the only trigger of a sync.** Files reach the ingestion pipeline within a minute of being
   synced, but the sync itself runs once a day; an on-demand trigger is a follow-up.
-- **OAuth tokens are reset to the stored value on every run.** Providers that rotate refresh tokens eventually
-  invalidate the stored one; writing refreshed tokens back is tracked in #1862.
+- **Only the observation writes a refreshed OAuth token back** (2026-11-06 amendment). Write and removal runs reset the
+  token to the stored value; a token they refresh is used for that run and dropped.
 - **Root-level files are never synced.** A source whose files sit directly in the chosen root folder ingests nothing
   until the files are moved into a folder; the observation reports how many were skipped.
 - **A database once sourced keeps its content when the source is cleared.** Clearing only stops the sync; the files stay
@@ -115,3 +116,29 @@ is configured, and is resolved per run exactly like an ingestion pipeline.**
 - `2026_09_04_ingestors_announce_their_configuration_form` — the registration and configuration mechanism this decision
   applies to source pipelines.
 - `2026_07_18_self_service_knowledge_deletion` — the teardown flow a sourced database now also goes through.
+
+## Amendment 2026-11-06: refreshed OAuth tokens are written back
+
+rclone refreshes an expired access token in its in-memory daemon only, and every run rebuilt the remote from the stored
+token. Microsoft rotates the refresh token on every refresh, so a pasted OneDrive or SharePoint token died once its
+original refresh token expired (#1862). The pipeline is now a second writer of one secret:
+
+- **The observation lists through a remote private to its run** (`{source}_{bucket}_obs_{run id}`), built from one read
+  of the row. After the data versions it reads the token back (`config/get`) and, if rclone refreshed it, stores it
+  encrypted with an atomic compare-and-set: the row must still use this source and backend, not be `deleting`, and hold
+  exactly the ciphertext the run read. A user's edit in between wins. A token that lost its refresh token is refused.
+  Only this run can refresh the private section, so a concurrent run on the shared remote can never put an older grant
+  back.
+- **Write and removal runs keep the shared `{source}_{bucket}` remote** and never write back.
+- **The private remote is deleted when the run ends.** The cleanup sensor deletes one left behind by a killed run once
+  Dagster reports that run finished; a killed run stays started until run monitoring ends it, up to about two hours.
+- **OneDrive token mode sends `token_url`.** rclone's OneDrive setup checks the drive with a client that has no token
+  URL (`onedrive.go:612`, v1.71.2, still on master), so an expired access token failed every `config/create` with
+  `Post "": unsupported protocol scheme`: token-mode sources stopped about an hour after the token was pasted. The URL
+  is rclone's own login host for the region, then the tenant (`common` without one), quoted. It is never stored.
+
+**Consequences.** Google Drive does not rotate refresh tokens, so only the access token and its expiry are saved there.
+Writing back replaces the stored ciphertext, so a source dialog opened before a write-back holds a mask that no longer
+matches and is refused with a 400 until the page is reloaded (`2026_09_14_secret_mask_carries_identity_handle`), at most
+once per database per day. rclone logs RC request and reply bodies, tokens included, at `DEBUG`; the daemon runs at
+`INFO` and must stay there (`--rc-no-auth` stays dev-only, since `options/set` could raise the level at runtime).

@@ -34,8 +34,12 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
+from swiss_ai_hub.agent.capabilities.conversation.context_figures import ContextFigures
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.conversation.image_admission import ImageAdmission
+from swiss_ai_hub.agent.capabilities.conversation.structured_answer import StructuredAnswer
+from swiss_ai_hub.agent.capabilities.requested_response_schema import RequestedResponseSchema
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
     generate_follow_up_questions,
@@ -62,7 +66,7 @@ class Conversation(Capability):
     - `compose(history, blocks)` merges context blocks into the history, in the given order, within the input
       budget. Answered with `ContextComposedEvent`, which the chat displays as what the model saw.
     - `complete(answer, stop)` generates the follow-up questions and ends the run with the given stop event, or
-      an `LLMStopEvent` carrying the answer.
+      an `LLMStopEvent` carrying the answer. Both keep the conversation, not the context the model read.
 
     The meta-question gate lives inside `contextualize` on purpose: a blueprint that had to gate its own steps
     could forget to, and detection would race its pipeline. Here nothing downstream exists until the message
@@ -100,8 +104,15 @@ class Conversation(Capability):
 
     @staticmethod
     def complete(answer: LLMEvent, stop: StopEvent | None = None) -> CompleteConversationEvent:
-        """End the turn on this answer; return it last from a step, behind anything that must be published first."""
-        return CompleteConversationEvent(answer=answer, stop=stop)
+        """End the turn on this answer; return it last from a step, behind anything that must be published first.
+
+        Both carry the conversation only (`LLMEvent.for_hand_back`): the context the model read is on
+        `ContextComposedEvent`, and an attached file long in characters made the events ending the turn too large
+        for the broker.
+        """
+        if isinstance(stop, LLMEvent):
+            stop = stop.for_hand_back()
+        return CompleteConversationEvent(answer=answer.for_hand_back(), stop=stop)
 
     @staticmethod
     @step(
@@ -113,13 +124,20 @@ class Conversation(Capability):
         agent: Agent,
         request: ContextualizeConversationEvent,
         conversation: ConversationFields,
+        run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
-        """Classify the message as a meta question or clear it; a programmatic start has no message to inspect."""
+        """Classify the message as a meta question or clear it; a programmatic start has no message to inspect.
+
+        A message asking for a JSON shape is cleared unread: the meta answer is prose that ends the run before the
+        completion could put it into the shape, and such a caller is a program, not someone asking about the agent.
+        """
         if request.user_query is None:
             return NotAMetaQuestionEvent(reasoning="Programmatic start: no user message to inspect.")
+        if await RequestedResponseSchema.of(run_context, type(agent)) is not None:
+            return NotAMetaQuestionEvent(reasoning="The message asks for a JSON shape: not inspected.")
         return await do_detect_meta_question(
             user_query=request.user_query,
             attached_file_names=request.attached_file_names,
@@ -162,7 +180,7 @@ class Conversation(Capability):
             t=t,
         )
         await generate_follow_up_questions(stop_event.chat_messages, conversation.task_llm, displayer, t, user)
-        return stop_event
+        return stop_event.for_hand_back()
 
     @staticmethod
     @step(
@@ -266,15 +284,17 @@ class Conversation(Capability):
         agent: Agent,
         request: ComposeContextEvent,
         conversation: ConversationFields,
+        t: LocaleHandler,
     ) -> ContextComposedEvent:
         """Merge the blocks behind the leading system messages, within budget, as `Conversation.fit` does."""
-        return ContextComposedEvent(history=Conversation.fit(request.history, request.blocks, conversation))
+        return ContextComposedEvent(history=Conversation.fit(request.history, request.blocks, conversation, t))
 
     @staticmethod
     def fit(
         history: list[ChatMessage],
         blocks: Sequence[list[ChatMessage]],
         conversation: ConversationFields,
+        t: LocaleHandler,
         reserve_tokens: int = 0,
     ) -> list[ChatMessage]:
         """The history with the blocks merged behind its leading system messages, re-limited to the input budget.
@@ -285,6 +305,7 @@ class Conversation(Capability):
         over several system messages, and strict chat templates (Qwen) reject a system message anywhere else.
         What gives way when the result does not fit is the oldest turns first, since the blocks were asked for
         this turn; then whole blocks from the front, never part of one, and never the question or the system head.
+        Figures in the merged system messages move onto the question (`ContextFigures`), where the model can see them.
         `reserve_tokens` is room kept free for what the caller sends next to the result (the sufficiency guard's
         documents and instructions).
         """
@@ -294,7 +315,8 @@ class Conversation(Capability):
         room = conversation.input_budget - reserve_tokens - estimate_prompt_tokens([*system_head, *question], counter)
         fitted_blocks = _fit_whole_blocks(blocks, room, counter)
         kept = _fit_newest_turns(earlier, room - estimate_prompt_tokens(fitted_blocks, counter), counter)
-        return merge_consecutive_messages([*system_head, *fitted_blocks, *kept, *question])
+        merged = merge_consecutive_messages([*system_head, *fitted_blocks, *kept, *question])
+        return ContextFigures.on_question(merged, conversation.llm, t)
 
     @staticmethod
     @step(
@@ -306,6 +328,7 @@ class Conversation(Capability):
         agent: Agent,
         request: CompleteConversationEvent,
         conversation: ConversationFields,
+        run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
@@ -313,8 +336,20 @@ class Conversation(Capability):
         """Generate the follow-up questions from the answer, then end the run.
 
         Follow-ups are grounded on the answer, so they cannot start earlier, and emitting them before the stop
-        event puts them on the wire ahead of teardown.
+        event puts them on the wire ahead of teardown. An answer asked for in a JSON shape gets none, since its
+        caller is a program; it ends on the answer validated against the shape instead (`StructuredAnswer`). A stop
+        the blueprint supplies is that answer, since its `answer` may be only the summary the follow-ups are grounded
+        on (the extraction's table, the release notes in every language); a refusal ends the run as it is, without
+        follow-ups either.
         """
+        response_schema = await RequestedResponseSchema.of(run_context, type(agent))
+        if response_schema is not None:
+            if isinstance(request.stop, RefusalStopEvent):
+                return request.stop
+            answered = request.stop if isinstance(request.stop, LLMStopEvent) else request.answer
+            return await StructuredAnswer.stop_for(
+                answered, response_schema, conversation, run_context, displayer, t, user
+            )
         await generate_follow_up_questions(request.answer.chat_messages, conversation.task_llm, displayer, t, user)
         if request.stop is not None:
             return request.stop

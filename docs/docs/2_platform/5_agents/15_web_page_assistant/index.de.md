@@ -46,17 +46,17 @@ Eine Nachricht ohne Links wird wie jede Nachricht an einen Instructed Assistant 
 - **Er durchsucht nicht das Web.** Er liest die Seiten, die der Benutzer verlinkt, sonst nichts.
 - **Er folgt keinen Links auf einer Seite.** Gelesen werden nur die verlinkten Seiten, nicht die Seiten, auf die sie
   verweisen.
-- **Er liest keine Dateien hinter Links.** PDFs, Bilder und Downloads werden als keine Webseiten gemeldet; hängen Sie die
-  Datei stattdessen an.
+- **Er liest keine Dateien hinter Links.** PDFs, Bilder und Downloads werden als keine Webseiten gemeldet; hängen Sie
+  die Datei stattdessen an.
 - **Er meldet sich nicht an.** Seiten hinter einem Login, einer Paywall oder einem Bot-Schutz werden als verweigert
   gemeldet.
 
 ## Vorlagen
 
-| Vorlage                | Was sie tut                                                                                                              |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Vorlage                | Was sie tut                                                                                                                               |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | **Article Summariser** | Für jede verlinkte Seite: 3 bis 5 Kernpunkte und eine Zusammenfassung in zwei Sätzen, jeder Punkt zitiert. Beantwortet zuerst eine Frage. |
-| **Page Comparison**    | Eine Tabelle mit einer Spalte pro verlinkter Seite und einer Zeile pro relevantem Kriterium, dann die wichtigsten Unterschiede. |
+| **Page Comparison**    | Eine Tabelle mit einer Spalte pro verlinkter Seite und einer Zeile pro relevantem Kriterium, dann die wichtigsten Unterschiede.           |
 
 ## Einrichtung
 
@@ -74,11 +74,11 @@ Das Formular ist das des Instructed Assistant (siehe dessen
 [Konfigurationsreferenz](../3_instructed_assistant/#konfigurationsreferenz)), mit **Read Linked Web Pages** immer
 eingeschaltet:
 
-| Feld                        | Standard | Beschreibung                                                                                                                   |
-| --------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Max Links per Message**   | `5`      | Wie viele Links einer Nachricht gelesen werden. Weitere Links werden dem Benutzer gemeldet, nicht gelesen. Bereich: 1–20.     |
-| **Page Timeout (Seconds)**  | `15`     | Wie lange eine Seite laden darf, bevor sie als nicht erreichbar gemeldet wird. Die Antwort wartet auf jede Seite. 5–60.       |
-| **Max Characters per Page** | `20000`  | Längere Seiten werden an einem Absatzende gekürzt. Etwa 4 Zeichen ergeben ein Token. Bereich: 1'000–200'000.                  |
+| Feld                        | Standard | Beschreibung                                                                                                              |
+| --------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Max Links per Message**   | `5`      | Wie viele Links einer Nachricht gelesen werden. Weitere Links werden dem Benutzer gemeldet, nicht gelesen. Bereich: 1–20. |
+| **Page Timeout (Seconds)**  | `15`     | Wie lange eine Seite laden darf, bevor sie als nicht erreichbar gemeldet wird. Die Antwort wartet auf jede Seite. 5–60.   |
+| **Max Characters per Page** | `20000`  | Längere Seiten werden an einem Absatzende gekürzt. Etwa 4 Zeichen ergeben ein Token. Bereich: 1'000–200'000.              |
 
 ::: warning Seiten ergeben lange Prompts
 Jede gelesene Seite geht in den Prompt ein, fünf lange Seiten können also etwa 25'000 Tokens hinzufügen. Halten Sie

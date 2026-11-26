@@ -66,3 +66,21 @@ refuses every destination whose address is not public (ADR
 `2026_10_29_browser_reaches_the_internet_only_through_a_filtering_proxy`). Through `egress` the browser reached the
 Docker host, the customer's network and cloud metadata, and a URL check in the agents could not stop a name resolving
 there. `egress` keeps its rule: only a container that talks to the outside world itself joins it.
+
+## Amendment 2026-11-04: control planes get networks of their own
+
+The Dagster webservers have no authentication of their own (oauth2-proxy guards only the Traefik route), the gRPC code
+servers accept runs from any caller, and the Docker socket proxy hands every container's environment to whoever reaches
+it. Each of them shared `backend`, `data` or `proxy` with every application container, so a foothold in any of them
+could start a restore or read every secret. They now sit on networks that hold only their callers:
+
+- `docker-api`: `traefik` and `docker-socket-proxy`.
+- `dagster-ui` / `backup-ui`: each Dagster webserver and its oauth2-proxy.
+- `dagster`: the pipeline webserver, daemon, `pgbouncer` (their storage) and the pipeline code servers.
+- `backup`: the backup webserver, daemon and `backup-code`.
+- `backup-docker`: `backup-code` and `backup-docker-proxy`, its own socket proxy limited to the containers API.
+
+The code servers keep `backend`/`data`/`storage` for their own work, so they bind gRPC to a network alias that exists
+only on `dagster` or `backup` (`<container>-grpc`, `backup-grpc`): the port is closed on every other network. A new
+pipeline code server needs the same entrypoint override, alias and workspace entry. The UI networks are not internal in
+`local`/`build`, where the webservers publish a port, so those ports bind `127.0.0.1` only.

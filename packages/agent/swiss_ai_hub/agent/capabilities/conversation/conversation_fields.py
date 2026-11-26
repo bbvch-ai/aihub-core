@@ -6,6 +6,7 @@ from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai import LLMConfig, usable_input_budget
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import ModelRequirements
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
@@ -102,10 +103,15 @@ class ConversationFields(Form):
         return self
 
     @classmethod
-    def conversation_form_elements(cls) -> dict[str, Any]:
+    def conversation_form_elements(
+        cls,
+        llm_requirements: Annotated[
+            ModelRequirements | None, "What the answering model must offer; the task model is never restricted"
+        ] = None,
+    ) -> dict[str, Any]:
         """The form elements for this class's own fields, for a subclass's `as_form()` to spread."""
         return {
-            "llm": LLMConfig.as_form(),
+            "llm": LLMConfig.as_form(requirements=llm_requirements),
             "task_llm": LLMConfig.as_form(include_default_parameter=False),
             "number_of_input_tokens": ModelBoundInputNumber(
                 label=AgentLocaleString.from_i18n_path("agent.conversation.config.number_of_input_tokens.label"),

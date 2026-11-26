@@ -64,6 +64,8 @@ approval:
   question: "The assistant wants to use \"%{tool}\": %{summary}\nAllow it?"
   question_plain: The assistant wants to use "%{tool}". Allow it?
 config:
+  approvals_help: Tools whose calls the user must approve before they run, overriding
+    each tool's own default. Tools not listed keep their default.
   max_iterations:
     label: Maximum Decisions
     help: How often the model may choose tools before it must answer.
@@ -78,6 +80,7 @@ config:
     help: Tools this agent never offers.
   approval_tool:
     label: Tool
+    with_default: '%{tool} (default: %{policy})'
   approval_policy:
     label: Approval
   policies:

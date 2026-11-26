@@ -63,7 +63,7 @@ class FakeJira:
         )
         monkeypatch.setattr("swiss_ai_hub.core.jira.jira_client.asyncio.sleep", recorded_sleep)
         monkeypatch.setattr(
-            "swiss_ai_hub.core.network.source_host_guard.socket.getaddrinfo",
+            "swiss_ai_hub.core.network.public_host_guard.socket.getaddrinfo",
             lambda host, port, **_: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (PUBLIC_ADDRESS, port))],
         )
 

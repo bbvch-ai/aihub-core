@@ -1646,6 +1646,11 @@ structured_extraction:
     {{ instructions }}
     </instructions>
     {% endif %}
+    {% if document_condition %}
+    <document_condition>
+    {{ document_condition }}
+    </document_condition>
+    {% endif %}
     <rules>
     1. Every record has every one of these fields: {{ field_names }}. Set a field to null when the excerpt does not state it. Never guess a value.
     2. Copy values as written in the document, converted only to the field's type.
@@ -1656,6 +1661,9 @@ structured_extraction:
     7. The document opening only supplies values that apply to every record. Never extract a record from it.
     {% if instructions %}
     8. The instructions decide which records to keep. Keep every record that may meet them: set record_match to "yes" when it clearly does and to "unsure" when you are not certain. Leave out only records that clearly do not. A condition on the whole document, such as its supplier, party or year, applies to every record in it: when the document clearly does not meet it, keep no record. Instructions that do not say which records to keep, such as "all rows" or "one row per contract", keep every record.
+    {% endif %}
+    {% if document_condition %}
+    {% if instructions %}9{% else %}8{% endif %}. The document condition decides whether the whole document counts. This excerpt is the start of the document: judge the document against the condition from the excerpt and the title before you extract. Set document_match.verdict to "no" when the excerpt or the title states a value that differs from one the condition itself asks for: another supplier, issuer, buyer or party; another currency; another document title or type (a document headed as an order confirmation is not a delivery note); a date outside the period; or, when the condition asks for a status such as signed, approved or final, a stated status that differs, such as draft or unsigned. Judge only what the condition names, never what the request or the fields imply: another document type is "no" only when the condition names a document type, so a condition about dates, parties or currency never fails a document for its type; in the same way, a condition that names no party, currency, period or status never fails a document for its party, currency, date or status. A different name that merely contains the requested name, or is contained in it, is another party: "Meyerhoff GmbH" is not "Meyer GmbH", and "Meyer GmbH" is not "Meyerhoff GmbH". When the excerpt or the title states the requested value in the role the condition gives it, such as the document's supplier, party, currency, date or status, that part of the condition is met and counts as "yes", wherever it stands, such as in the payment details, a signature or the footer, and even if another place, such as the header, states a different or misspelled value. A value that is only mentioned, not stated in that role, does not meet it. A name that differs from the requested one only by a letter or two, as an OCR or typing error would, such as "Mayer AG" for "Meyer AG", is not another party but a possible misspelling: when the requested name is stated nowhere else, it is "unsure", never "no". A period covers exactly its own dates: a quarter is its three calendar months (Q1 January to March, Q2 April to June, Q3 July to September, Q4 October to December). A fact counts as stated only where the excerpt or the title writes it out, never when it would be inferred from the language, a country, an address, the kind of document or other values. The verdict is "unsure" only when the fact the condition asks about is not written in the excerpt or the title, or when a name differs from the requested one only by a letter or two and the requested name is stated nowhere else; any other written value that differs is "no", never "unsure". Set it to "yes" when the excerpt shows that the document meets the condition. In document_match.reason, name or quote the fact that decided it in one short sentence, e.g. "Supplier: Initech AG." When the verdict is "yes" or "unsure", extract the records as the other rules say, as if there were no document condition; when it is "no", return an empty records list.
     {% endif %}
     </rules>
     {% endchat %}
@@ -1671,3 +1679,7 @@ structured_extraction:
     {{ text }}
     </document>
     {% endchat %}
+few_shot_example:
+  list_help: Example exchanges that show the agent how to answer. Each pairs a user
+    message with the response you expect, and the agent follows their style and content
+    when it answers similar messages.

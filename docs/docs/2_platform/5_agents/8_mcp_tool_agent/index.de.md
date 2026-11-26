@@ -1,7 +1,7 @@
 ---
 title: MCP Tool Agent
 description: Verbindet sich mit einem externen Tool-Server (MCP) und nutzt dessen Tools, um Schritt für Schritt Aktionen auszuführen, bis die Aufgabe erledigt ist.
-source_sha: 59834e65a50dab0c26c0de4e12c5f35267301bf9fe37537da168b2710f9d90c7
+source_sha: ecfac94443331608104e167e183d1b4f5b1b1ac2d3804c385befa6b169c0862e
 ---
 
 # MCP Tool Agent
@@ -47,10 +47,18 @@ flowchart LR
 5. **Antworten oder stoppen.** Wenn das Modell bereit ist, antwortet es dem Benutzer. Wenn es zu oft ohne Abschluss in
    einer Schleife läuft, stoppt es elegant bei einer konfigurierten Iterationsgrenze.
 
+Wie die anderen Chat-Agenten ruft es auch Erinnerungen ab, liest Dateien, die der Benutzer angehängt hat, durchsucht mit
+`#` referenzierte Sammlungen und zitiert sie als Quellen. Siehe
+[Gemeinsame Chat-Einstellungen](../2_blueprints_and_profiles/#gemeinsame-chat-einstellungen). Damit das Modell auch
+unter anderen Tools als denen eines MCP-Servers wählen kann, etwa Wissenssuche, Dateien und Erinnerungen, siehe den
+Universal Agent.
+
 ## Was es *nicht* leistet
 
-- **Keine Wissensdatenbank / RAG.** Es durchsucht Ihre Dokumente nicht. Für fundierte Dokumentantworten verwenden Sie
-  den [Document Intelligence Assistant](../5_document_intelligence_assistant/).
+- **Keine eigene Wissensdatenbank / RAG.** Es hat keine konfigurierten Sammlungen, die es durchsucht; über die MCP-Tools
+  hinaus liest es nur die an eine Nachricht angehängten Dateien und die mit `#` referenzierten Sammlungen. Für fundierte
+  Antworten aus einer festen Wissensbasis verwenden Sie den
+  [Document Intelligence Assistant](../5_document_intelligence_assistant/).
 - **Keine Eskalation an Menschen.** Es übergibt nicht an einen Kollegen – seine „Hände“ sind die Tools auf dem
   MCP-Server.
 - **Es ist nur so leistungsfähig wie der Server, mit dem es sich verbindet.** Die Tools, ihr Verhalten und ihre
@@ -71,11 +79,16 @@ flowchart LR
 
 1. **Ein erreichbarer MCP-Server.** Dies ist die zentrale Abhängigkeit. Ein MCP-Server muss bereits laufen und von der
    Plattform aus erreichbar sein, um die Tools bereitzustellen, die der Agent verwenden soll. Der Agent stellt selbst
-   keine Tools bereit – er verbindet sich mit einem Server, der dies tut.
+   keine Tools bereit – er verbindet sich mit einem Server, der dies tut. Ein Server auf einem internen Host (die
+   plattformeigene `api` oder ein Server, den nur das Firmennetzwerk erreicht) muss in `MCP_ALLOWED_PRIVATE_HOSTS`
+   aufgeführt sein, siehe [Umgebungsvariablen](../../3_deployment_guide/9_environment_variables/); jeden anderen
+   internen Host lehnt der Agent ab.
 2. **Die URL des Servers** und, falls der Server dies erfordert, **Anmeldeinformationen** (ein statischer API-Schlüssel
    oder eine Authentifizierung pro Benutzer – siehe die untenstehenden Authentifizierungsmodi).
 3. **Ein Chat-Modell**, das zur Tool-Nutzung fähig ist und über Ihre LiteLLM-Konfiguration verfügbar ist. Die Qualität
    der Tool-Aufrufe hängt stark vom Modell ab, daher ist ein leistungsfähiges Modell vorzuziehen.
+4. **Ein Docker-Compose-Deployment.** Der Agent wird nur mit dem Docker-Compose-Deployment ausgeliefert; auf Kubernetes
+   wird er nicht bereitgestellt.
 
 ::: warning Aktionen sind real
 Im Gegensatz zu den Nur-Lese-Agents kann dieser Agent Dinge in anderen Systemen ändern. Stellen Sie sicher, dass der
@@ -93,7 +106,7 @@ Der Agent wird als **Blueprint** geliefert, aus dem Sie konfigurierte **Profile*
 3. **Konfigurieren Sie die MCP-Verbindung.** Geben Sie einen Namen, die Server-URL an und wählen Sie die
    Authentifizierungsmethode (siehe Authentifizierungsmodi unten).
 4. **Wählen Sie das Chat-Modell.** Wählen Sie ein leistungsfähiges, Tool-aufrufendes Modell und halten Sie die
-   Temperatur niedrig.
+   Temperatur niedrig (schalten Sie die Temperatur-Überschreibung ein und setzen Sie sie).
 5. **Schreiben Sie einen System-Prompt**, der die Rolle des Agenten und alle Regeln für die Verwendung der Tools
    beschreibt.
 6. **Legen Sie die Iterationsgrenze fest**, um zu begrenzen, wie viele Denk-Handel-Schleifen der Agent ausführen darf.
@@ -115,13 +128,13 @@ Der Agent wird als **Blueprint** geliefert, aus dem Sie konfigurierte **Profile*
 
 Wie der Agent den externen Tool-Server erreicht.
 
-| Feld              | Typ             | Standard  | Beschreibung                                                                         |
-| :---------------- | :-------------- | :-------- | :----------------------------------------------------------------------------------- |
-| **Name**          | Text            | —         | Ein logischer Name für diese Verbindung. Erforderlich.                               |
-| **URL**           | Text            | —         | Die URL des MCP-Servers. Der Transport wird automatisch abgeleitet. Erforderlich.    |
-| **Auth-Modus**    | Auswahl         | `api_key` | Wie authentifiziert werden soll (siehe unten).                                       |
-| **API-Schlüssel** | Passwort        | *(leer)*  | Der statische Schlüssel, nur sichtbar, wenn **Auth-Modus** *API key* ist.            |
-| **Timeout**       | Zahl (Sekunden) | `30`      | Wie lange auf den Server gewartet werden soll, bevor aufgegeben wird. Bereich 1–300. |
+| Feld              | Typ             | Standard  | Beschreibung                                                                                                                                                                      |
+| :---------------- | :-------------- | :-------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Name**          | Text            | —         | Ein logischer Name für diese Verbindung. Erforderlich.                                                                                                                            |
+| **URL**           | Text            | —         | Die URL des MCP-Servers. Der Transport wird automatisch abgeleitet. Erforderlich.                                                                                                 |
+| **Auth-Modus**    | Auswahl         | `api_key` | Wie authentifiziert werden soll (siehe unten).                                                                                                                                    |
+| **API-Schlüssel** | Passwort        | *(leer)*  | Der statische Schlüssel, nur sichtbar, wenn **Auth-Modus** *API key* ist. Wird verschlüsselt gespeichert und maskiert angezeigt; lassen Sie die Maske stehen, um ihn zu behalten. |
+| **Timeout**       | Zahl (Sekunden) | `30`      | Wie lange auf den Server gewartet werden soll, bevor aufgegeben wird. Bereich 1–300.                                                                                              |
 
 **Authentifizierungsmodi:**
 
@@ -133,15 +146,16 @@ Wie der Agent den externen Tool-Server erreicht.
 
 ### Logik
 
-| Feld                    | Typ            | Standard | Beschreibung                                                                                                                                 |
-| :---------------------- | :------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Modell**              | Modell-Auswahl | —        | Das Chat-Modell, das argumentiert und Tools auswählt. Bevorzugen Sie ein starkes Tool-Calling-Modell. Erforderlich.                          |
-| **System-Prompt**       | Langer Text    | *(leer)* | Anweisungen, wie sich der Agent verhalten und die Tools verwenden soll.                                                                      |
-| **Max. Iterationen**    | Zahl           | `10`     | Wie viele Denk-Handel-Schleifen der Agent ausführen darf, bevor er elegant stoppt. Bereich 1–100. Begrenzt die unkontrollierte Tool-Nutzung. |
-| **Max. Eingabe-Tokens** | Zahl           | `128000` | Das Eingabebudget; die Konversation wird entsprechend gekürzt. Bereich 1.000–200.000.                                                        |
+| Feld                    | Typ             | Standard             | Beschreibung                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| :---------------------- | :-------------- | :------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Modell**              | Modell-Auswahl  | —                    | Das Chat-Modell, das argumentiert und Tools auswählt. Bevorzugen Sie ein starkes Tool-Calling-Modell. Erforderlich.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **System-Prompt**       | Langer Text     | *(leer)*             | Anweisungen, wie sich der Agent verhalten und die Tools verwenden soll.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Max. Iterationen**    | Zahl            | `10`                 | Wie viele Denk-Handel-Schleifen der Agent ausführen darf, bevor er elegant stoppt. Bereich 1–100. Begrenzt die unkontrollierte Tool-Nutzung.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **Max. Eingabe-Tokens** | Zahl (optional) | Modellfenster (85 %) | Das Eingabebudget; die Konversation wird entsprechend gekürzt. Optional. Standardmässig nicht angekreuzt: Der Agent füllt etwa 85 % des Eingabefensters des gewählten Chat-Modells, das im Label des Kontrollkästchens und im deaktivierten Feld angezeigt wird (z. B. „(78.050)“ für gemma auf Infomaniak) und beim Wechsel des Modells mitgeht. Die Marge von 15 % gleicht Unterschiede zwischen dem Token-Zähler und dem Tokenizer des Modells aus. Kreuzen Sie **Eigenes Eingabe-Limit festlegen** an, um ein niedrigeres Limit zu setzen und Kosten zu sparen: Minimum 1.024, Maximum dieselben 85 %, die der Hinweis unter dem Feld neben dem vollen Fenster des Modells nennt; ein höherer Wert wird im Formular blockiert und von der API abgelehnt. Profile, die ein Limit über diesem Wert gespeichert haben, erhalten es beim Upgrade der Plattform automatisch entfernt. |
 
-Das **Modell** stellt auch die Standardparameter (Temperatur, Timeout, Log-Wahrscheinlichkeitsoptionen) bereit, die auf
-der Seite [Document Intelligence Assistant](../5_document_intelligence_assistant/#sprachmodell) beschrieben sind.
+Das **Modell** stellt auch die Standardparameter (Überschreibungen für Temperatur und Breite der Wortwahl (top_p),
+Bildverarbeitung, Timeout, Log-Wahrscheinlichkeitsoptionen) bereit, die auf der Seite
+[Document Intelligence Assistant](../5_document_intelligence_assistant/#sprachmodell) beschrieben sind.
 
 ## Best Practices
 
@@ -159,7 +173,8 @@ Leitplanke gegen unendliche Schleifen des Agenten.
 
 **Verwenden Sie ein leistungsfähiges, Tool-aufrufendes Modell bei niedriger Temperatur.** Eine zuverlässige Tool-Auswahl
 hängt vom Modell ab. Ein starkes Modell bei niedriger Temperatur wählt das richtige Tool mit den richtigen Argumenten
-weitaus konsistenter aus.
+weitaus konsistenter aus. Schalten Sie die Temperatur-Überschreibung ein und setzen Sie sie, da der Standardwert jetzt
+dem Modell folgt.
 
 **Seien Sie im System-Prompt explizit.** Sagen Sie dem Agenten, wofür er ist, welche Tools er bevorzugen soll und was er
 nicht tun darf. Klare Anweisungen reduzieren falsche oder unnötige Tool-Aufrufe.

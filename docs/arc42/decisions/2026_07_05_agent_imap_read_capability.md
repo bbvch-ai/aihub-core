@@ -45,7 +45,9 @@ contract, which references files by `file_id` and derives the S3 location at run
 
 - **Connection config**: `ImapClientConfig` (a `StepConfig`) lives in `packages/core/imap/`, mirroring
   `McpClientConfig`. Its `password` field is a `Password` form element; the value is stored at-rest in the agent config
-  (MongoDB `agent_configs`), identical to how `McpClientConfig.api_key` is handled today.
+  (MongoDB `agent_configs`), identical to how `McpClientConfig.api_key` is handled today. *Superseded in part by #1587:
+  secret fields are now encrypted at rest and masked in responses, see ADR
+  `2026_11_02_agent_config_secrets_decrypted_at_validation`.*
 - **Result events**: `UnreadMailListedEvent` and `MailFetchedEvent` live in `packages/core` (`events/agent/imap/`) as
   `ControlAndDisplayEvent`s — control, because steps consume them; display, so they render by name in the event
   timeline. They are protocol types deliberately placed in core for reuse by the sibling stories, the same way MCP's
@@ -107,7 +109,8 @@ process; a production email agent can graduate from the final sibling story.
   chosen over inline bytes for the reasons above and is flagged for reviewer sign-off.
 - **Mailbox credentials are stored at-rest in the agent config**, like MCP `api_key`. A platform-wide secret-indirection
   mechanism (Key Vault / references) for agent configs remains a possible follow-up if the security posture needs to
-  tighten.
+  tighten. *Superseded in part by #1587: secret fields are now encrypted at rest and masked in responses, see ADR
+  `2026_11_02_agent_config_secrets_decrypted_at_validation`.*
 - **`imapclient` is a new runtime dependency** in `packages/agent`, adding to the maintenance and supply-chain surface.
   It is BSD-3-Clause (permissive) and has no transitive runtime dependencies of its own.
 - **Mail bodies are protocol payloads.** `MailFetchedEvent` carries only the plain-text `body_text` of arbitrary inbound

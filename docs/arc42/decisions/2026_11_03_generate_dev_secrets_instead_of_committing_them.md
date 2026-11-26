@@ -27,7 +27,7 @@ values.
 
 1. **`.env.dev` holds the placeholders of `.env.prod`.** Every variable `.env.prod` fills from a generated placeholder
    holds the same placeholder in `.env.dev`. A value derived from a generated one (`LITE_LLM_PROXY_API_KEY`,
-   `S3_STORAGE_URL_SIGNING_SECRET`, `MONGO_CONNECTION_STRING`) references it as `'${VAR}'`.
+   `MONGO_CONNECTION_STRING`) references it as `'${VAR}'`.
 2. **`setup-env.sh` generates every development `.env`.** `make setup`, the session hook and CI run
    `./setup-env.sh -t .env.dev -o .env`. The script also learnt to generate the Fernet key, to resolve `${VAR}`
    references after generating, to leave comments alone, and to run on BSD tools and bash 3.2.

@@ -69,11 +69,16 @@ Universal Agent.
 
 1. **A reachable MCP server.** This is the central dependency. An MCP server must already be running and reachable from
    the platform, exposing the tools you want the agent to use. The agent does not provide tools itself — it connects to
-   a server that does.
+   a server that does. A server on an internal host (the platform's own `api`, or a server only the company network
+   reaches) must be named in `MCP_ALLOWED_PRIVATE_HOSTS`, see
+   [Environment variables](../../3_deployment_guide/9_environment_variables/); the agent refuses every other internal
+   host.
 2. **The server's URL** and, if the server requires it, **credentials** (a static API key, or per-user authentication —
    see the auth modes below).
 3. **A chat model** capable of tool use, available through your LiteLLM configuration. Tool-calling quality depends
    heavily on the model, so prefer a capable one.
+4. **A Docker Compose deployment.** The agent ships with the Docker Compose deployment only; it is not deployed on
+   Kubernetes.
 
 ::: warning Actions are real
 Unlike the read-only agents, this agent can change things in other systems. Make sure the MCP server only exposes tools
@@ -111,13 +116,13 @@ The agent is delivered as a **blueprint** from which you create configured **pro
 
 How the agent reaches the external tool server.
 
-| Field         | Type             | Default   | Description                                                              |
-| ------------- | ---------------- | --------- | ------------------------------------------------------------------------ |
-| **Name**      | Text             | —         | A logical name for this connection. Required.                            |
-| **URL**       | Text             | —         | The MCP server's URL. The transport is inferred automatically. Required. |
-| **Auth mode** | Choice           | `api_key` | How to authenticate (see below).                                         |
-| **API key**   | Password         | *(empty)* | The static key, shown only when **Auth mode** is *API key*.              |
-| **Timeout**   | Number (seconds) | `30`      | How long to wait for the server before giving up. Range 1–300.           |
+| Field         | Type             | Default   | Description                                                                                                               |
+| ------------- | ---------------- | --------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Name**      | Text             | —         | A logical name for this connection. Required.                                                                             |
+| **URL**       | Text             | —         | The MCP server's URL. The transport is inferred automatically. Required.                                                  |
+| **Auth mode** | Choice           | `api_key` | How to authenticate (see below).                                                                                          |
+| **API key**   | Password         | *(empty)* | The static key, shown only when **Auth mode** is *API key*. Stored encrypted and shown masked; leave the mask to keep it. |
+| **Timeout**   | Number (seconds) | `30`      | How long to wait for the server before giving up. Range 1–300.                                                            |
 
 **Auth modes:**
 

@@ -15,13 +15,12 @@ export const useThreads = defineQuery(() => {
   const searchQuery = ref<string | null>(null)
   const debouncedSearch = refDebounced(searchQuery, 300)
   const agentInstanceId = useRouteQuery<string | null>('agent_id', null)
-  const userSearchId = useRouteQuery<string | null>('user_id', null)
   const status = useRouteQuery<string | null>('thread_status', null)
   const fromDate = useRouteQuery<string | null>('from', null)
   const toDate = useRouteQuery<string | null>('to', null)
 
   const threadsQuery = useQuery({
-    key: () => ['tenant', tenantId.value, 'threads', currentPage.value, pageSize.value, sortField.value, sortOrder.value, debouncedSearch.value, agentInstanceId.value, userSearchId.value, status.value, fromDate.value, toDate.value],
+    key: () => ['tenant', tenantId.value, 'threads', currentPage.value, pageSize.value, sortField.value, sortOrder.value, debouncedSearch.value, agentInstanceId.value, status.value, fromDate.value, toDate.value],
     enabled: useTenantReady(),
     placeholderData: previousData => previousData,
     query: async () => {
@@ -37,7 +36,6 @@ export const useThreads = defineQuery(() => {
           sort_order: sortOrder.value,
           search: debouncedSearch.value || undefined,
           agent_id: agentInstanceId.value || undefined,
-          user_id: userSearchId.value || undefined,
           status: status.value || undefined,
           from: fromDate.value ? startOfDay(new Date(fromDate.value)).toISOString() : undefined,
           to: toDate.value ? endOfDay(new Date(toDate.value)).toISOString() : undefined,
@@ -99,7 +97,7 @@ export const useThreads = defineQuery(() => {
     },
   })
 
-  watch([status, agentInstanceId, userSearchId, debouncedSearch], () => currentPage.value = 1)
+  watch([status, agentInstanceId, debouncedSearch], () => currentPage.value = 1)
 
   return {
     threads,
@@ -115,7 +113,6 @@ export const useThreads = defineQuery(() => {
     sortOrder,
     searchQuery,
     agentInstanceId,
-    userSearchId,
     status,
     dateRange,
   }

@@ -108,16 +108,16 @@ reasons over placeholders, so two spellings of one value become two unrelated pl
 Measured on knowledge-agent prompts against gemma, three of six questions that the unmasked prompt answered came back as
 "not in the documents".
 
-- `PII_ANONYMISE_EXTERNAL_MODELS` on the `litellm` service decides whether the guardrail runs on calls to models that are
-  not `local`. It is off unless set to `true`, read at gateway start, and one value per deployment, since every customer
-  deploys the same release artifact.
+- `PII_ANONYMISE_EXTERNAL_MODELS` on the `litellm` service decides whether the guardrail runs on calls to models that
+  are not `local`. It is off unless set to `true`, read at gateway start, and one value per deployment, since every
+  customer deploys the same release artifact.
 - A call that requests `pii-anonymisation` by name is anonymised whatever the switch says, so a profile's checkbox and
   the side calls it covers keep working. The Anonymiser agent calls the analyzer directly and is not affected.
 - A value other than `true` or `false` counts as `true` and is logged. The guardrail must not raise while it is built:
   LiteLLM v1.106.2 then starts without it, which would also drop the anonymisation that profiles request.
-- With the switch off, plain chats with an external model send their text unchanged; only profiles with the checkbox
-  and text anonymised by hand are protected. The decision driver "no personal data reaches an external provider" holds
-  only where a deployment turns the switch on.
+- With the switch off, plain chats with an external model send their text unchanged; only profiles with the checkbox and
+  text anonymised by hand are protected. The decision driver "no personal data reaches an external provider" holds only
+  where a deployment turns the switch on.
 
 ### Related Decisions
 

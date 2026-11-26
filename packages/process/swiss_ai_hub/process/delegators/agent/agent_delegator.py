@@ -140,7 +140,7 @@ class AgentDelegator(AbstractEntityDelegator):
                 process_walkthrough_id = str(ObjectId())
                 logger.debug(f"Creating new walkthrough with ID {process_walkthrough_id}")
             else:
-                thread = ThreadEntity.get_thread_by_id(topic.thread_id)
+                thread = await ThreadEntity.get_thread_by_id(topic.thread_id)
 
                 if thread.process_class != self.process_class.__name__:
                     logger.debug("Ignoring agent event because it does not belong to this process")
@@ -167,7 +167,7 @@ class AgentDelegator(AbstractEntityDelegator):
         logger.debug(f"Delegating agent output to external agent: {event.agent_class} with id {event.agent_id}")
         thread_id = ObjectId()
 
-        ThreadEntity.create_process_thread(
+        await ThreadEntity.create_process_thread(
             name=self.process_class.__name__,
             agent=AgentInstanceRef(agent_class=event.agent_class, agent_id=event.agent_id),
             thread_id=thread_id,

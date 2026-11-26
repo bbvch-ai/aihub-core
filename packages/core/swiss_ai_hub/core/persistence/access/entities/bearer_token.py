@@ -1,12 +1,14 @@
 import secrets
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Self
 
-from mongoengine import DateTimeField, Document, IntField, StringField
+from bson import ObjectId
+from mongoengine import BooleanField, DateTimeField, Document, IntField, StringField
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 TOKEN_PREFIX = "sk-"
+LAST_USE_RESOLUTION = timedelta(minutes=5)
 
 
 class BearerToken(Document):
@@ -21,6 +23,17 @@ class BearerToken(Document):
     name = StringField(required=True)
     token = StringField(required=True, unique=True)
     expiry_date = DateTimeField(required=True)
+    last_used_at = DateTimeField()
+    is_static = BooleanField(default=False)
+
+    @property
+    def created_at(self) -> datetime:
+        return self.id.generation_time
+
+    @staticmethod
+    def _as_utc(value: datetime) -> datetime:
+        """MongoEngine hands back naive datetimes that are UTC by convention."""
+        return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
 
     @classmethod
     @trace_fn
@@ -39,14 +52,34 @@ class BearerToken(Document):
         if not token_obj:
             raise ValueError("Unknown token: no matching row (revoked or never issued)")
 
-        expiry_date = token_obj.expiry_date
-        if expiry_date.tzinfo is None:
-            expiry_date = expiry_date.replace(tzinfo=UTC)
-
-        if expiry_date < datetime.now(UTC):
+        if cls._as_utc(token_obj.expiry_date) < datetime.now(UTC):
             raise ValueError("Expired token: expiry is in the past")
 
         return token_obj
+
+    @trace_fn
+    def record_use(self, used_at: datetime) -> None:
+        """Writes at most once per ``LAST_USE_RESOLUTION``, so a script calling the API in a loop does not turn
+        every request into a database write."""
+        if self.last_used_at is not None and self._as_utc(self.last_used_at) > used_at - LAST_USE_RESOLUTION:
+            return
+        self.update(set__last_used_at=used_at)
+        self.last_used_at = used_at
+
+    @classmethod
+    @trace_fn
+    def issued_to(cls, user_oid: str) -> list[Self]:
+        """The user's own tokens, newest first. Static tokens are left out: internal services authenticate with them,
+        and revoking one would cut those services off until the next restart."""
+        return list(cls.objects(user_oid=user_oid, is_static__ne=True).order_by("-id"))
+
+    @classmethod
+    @trace_fn
+    def revoke_issued(cls, token_id: str, user_oid: str) -> bool:
+        """False when the user holds no such token, so a caller cannot tell another user's token from none."""
+        if not ObjectId.is_valid(token_id):
+            return False
+        return cls.objects(id=token_id, user_oid=user_oid, is_static__ne=True).delete() > 0
 
     @classmethod
     @trace_fn
@@ -67,7 +100,8 @@ class BearerToken(Document):
     def upsert_static_token(cls, name: str, token_value: str, expiry_date: datetime, user_oid: str) -> Self:
         """Upserts a fixed-value bearer token (used to materialize the superuser token from env).
 
-        Keyed by ``name`` + ``user_oid`` so repeated startup invocations reuse the same row.
+        Keyed by ``name`` + ``user_oid`` so repeated startup invocations reuse the same row. Marked static so its owner
+        can neither see nor revoke it through the token endpoints.
         """
         if not token_value.startswith(TOKEN_PREFIX):
             raise ValueError(f"Static token must start with '{TOKEN_PREFIX}'")
@@ -76,8 +110,9 @@ class BearerToken(Document):
         if token_obj:
             token_obj.token = token_value
             token_obj.expiry_date = expiry_date
+            token_obj.is_static = True
             token_obj.save()
             return token_obj
-        token_obj = cls(name=name, user_oid=user_oid, token=token_value, expiry_date=expiry_date)
+        token_obj = cls(name=name, user_oid=user_oid, token=token_value, expiry_date=expiry_date, is_static=True)
         token_obj.save()
         return token_obj

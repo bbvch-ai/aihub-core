@@ -1,4 +1,4 @@
-from typing import Annotated, Self
+from typing import Annotated, ClassVar, Self
 
 from pydantic import Field
 
@@ -15,6 +15,8 @@ class FewShotExample(Form):
     - Data mode: LocaleString values for user and agent
     - Form mode: LocaleInput elements for user and agent (use as_form())
     """
+
+    repeater_help: ClassVar[LocaleString | None] = LocaleString.from_i18n_path("lib.prompt.few_shot_example.list_help")
 
     user: Annotated[
         LocaleString | LocaleInput,

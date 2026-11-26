@@ -44,6 +44,13 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
             "clients show a feature's toggle only for agents that support it.",
         ),
     ] = []
+    supports_response_schema: Annotated[
+        bool,
+        Field(
+            description="Whether the blueprint answers in the JSON shape a message's `response_schema` asks for. "
+            "The API refuses the field for agents that do not.",
+        ),
+    ] = False
     form: Annotated[
         list[ALL_FORM_OPTIONS],
         Field(

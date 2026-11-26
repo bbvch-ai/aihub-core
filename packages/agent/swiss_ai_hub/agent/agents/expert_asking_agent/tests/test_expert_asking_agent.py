@@ -32,6 +32,8 @@ from swiss_ai_hub.agent.agents.expert_asking_agent.expert_asking_agent_config im
 )
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
+pytestmark = pytest.mark.external
+
 enable_logging()
 
 scenarios("./features/expert_asking_agent.feature")

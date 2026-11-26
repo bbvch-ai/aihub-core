@@ -34,3 +34,11 @@ Restores via partition selector in the Dagster Launchpad. etcd is not backed up 
 - SQLite run history lost if volume not persisted (acceptable — artifacts live in S3)
 - Two Dagster instances to monitor (intentional — different operational concerns)
 - Docker socket required for container management
+
+## Amendment 2026-11-04: Docker access through a filtered proxy
+
+`backup-code` no longer mounts the Docker socket. It reaches Docker through `backup-docker-proxy` (Tecnativa), which
+allows the containers API and nothing else: no exec, images, volumes, networks or system endpoints. The proxy shares a
+network with `backup-code` alone. `get_container_image` reads the image ID from the container's inspect data instead of
+the images API, and the unused `exec_in_container` was removed. See the 2026-11-04 amendment of
+`2025_12_22_docker_network_isolation` for the networks.

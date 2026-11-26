@@ -38,6 +38,8 @@ _DISCARD_ATTACHMENT_PAYLOADS = 1
 # bounded for exactly that reason. A filename can also carry newlines, which would let a sender forge markdown
 # structure in what the model reads as the document.
 MAX_ATTACHMENT_NAMES = 20
+# A plain part shorter than 1/_STUB_RATIO of the HTML rendering is a "view this in HTML" notice, not the message.
+_STUB_RATIO = 2
 MAX_ATTACHMENT_NAME_CHARACTERS = 120
 
 
@@ -97,22 +99,24 @@ class EmlLoader(BaseReader):
         return [Document(text=self._render(parsed, body, attachment_names), extra_info=metadata)]
 
     async def _body_as_markdown(self, parsed: ParsedMessage) -> str:
-        """Prefer the plain-text part; convert the HTML alternative only when there is no other body.
+        """Prefer the plain-text part; convert the HTML alternative when there is no other body, or when the plain
+        part is a stub.
 
         A `text/plain` part is already close to markdown and is what the sender wrote, so converting the HTML
-        alternative instead would substitute a rendering for the original.
+        alternative instead would substitute a rendering for the original. Some senders, though, write the whole
+        message in HTML and leave the plain part a one-line notice ("this message is in HTML format"); a plain part
+        less than half as long as the HTML rendering is such a stub, and keeping it would lose the conversation.
         """
-        if parsed.body_text:
-            return parsed.body_text.strip()
+        plain = (parsed.body_text or "").strip()
         if not parsed.body_html:
-            return ""
-
+            return plain
         documents = await self._html_converter.aload_data_from_bytes(
             content=parsed.body_html.encode("utf-8"),
             filename="body.html",
             include_images=False,
         )
-        return "\n\n".join(document.text for document in documents).strip()
+        rendered = "\n\n".join(document.text for document in documents).strip()
+        return plain if len(plain) * _STUB_RATIO >= len(rendered) else rendered
 
     @staticmethod
     def _attachment_names(message: EmailMessage) -> list[str]:

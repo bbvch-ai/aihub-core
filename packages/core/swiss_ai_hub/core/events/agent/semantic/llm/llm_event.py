@@ -1,18 +1,25 @@
 import json
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Self
 
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.core.llms import LLM
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
 
-from swiss_ai_hub.core.events.agent.semantic.llm.message import Message
+from swiss_ai_hub.core.events.agent.semantic.llm.message import Message, TextContent
 from swiss_ai_hub.core.events.agent.semantic.semantic_event import SemanticEvent
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.agents.agent_config import AgentConfig
+
+# An answer handed back rides on every event that ends the turn, and the broker refuses an event above its payload limit
+# (1 MB in development) without an error the caller sees, so the run would wait forever. Room for the turns, not for the
+# context the model read: a form of `____` blanks is cheap in tokens and long in characters.
+HAND_BACK_BYTES = 200_000
+_CUT_MARKER = "\n[…]"
+_CONVERSATION_ROLES = (MessageRole.USER, MessageRole.ASSISTANT)
 
 
 class LLMEvent(SemanticEvent):
@@ -61,6 +68,45 @@ class LLMEvent(SemanticEvent):
         output_messages = self.output_messages or []
         messages = [*input_messages, *output_messages]
         return [msg.to_llama_index() for msg in messages]
+
+    def for_hand_back(self, max_bytes: int = HAND_BACK_BYTES) -> Self:
+        """The answer with only the conversation it continues: user and assistant turns, newest first, within
+        `max_bytes` serialized. The context the model read stays on `ContextComposedEvent`; carried on here it pushed
+        the events that end the turn past the broker's limit. The newest turn is kept, cut when it alone is too long.
+        """
+        turns = [
+            message
+            for message in self.input_messages or []
+            if message.role in _CONVERSATION_ROLES and message.content.strip()
+        ]
+        if not turns:
+            return self.model_copy(update={"input_messages": turns})
+        room = max_bytes - sum(LLMEvent._serialized_size(message) for message in self.output_messages or [])
+        *earlier, newest = turns
+        kept = [LLMEvent._cut_to_fit(newest, room)]
+        room -= LLMEvent._serialized_size(kept[0])
+        for message in reversed(earlier):
+            size = LLMEvent._serialized_size(message)
+            if size > room:
+                break
+            kept.insert(0, message)
+            room -= size
+        return self.model_copy(update={"input_messages": kept})
+
+    @staticmethod
+    def _serialized_size(message: Message) -> int:
+        return len(message.model_dump_json().encode())
+
+    @staticmethod
+    def _cut_to_fit(message: Message, room: int) -> Message:
+        """Shorten the text proportionally until the message fits; images and audio are references and stay."""
+        text = message.content
+        others = [block for block in message.contents or [] if not isinstance(block, TextContent)]
+        cut, length = message, len(text)
+        while (size := LLMEvent._serialized_size(cut)) > room and length > 0:
+            length = min(length - 1, length * max(room, 0) // size)
+            cut = message.model_copy(update={"contents": [TextContent(text=text[:length] + _CUT_MARKER), *others]})
+        return cut
 
     def to_semantic_convention(self) -> dict[str, str]:
         attributes = {

@@ -42,6 +42,10 @@ tool:
   collections: Die zu durchsuchenden Sammlungen nach Kennung; weglassen, um alle zu
     durchsuchen.
 config:
+  sources_help: Die Wissensdatenbanken, ganz oder auf einige Sammlungen beschränkt,
+    die das Modell bei Bedarf durchsuchen darf. Nicht verwendet, solange jede Sammlung
+    angeboten wird, die der Benutzer lesen darf. Der fragende Benutzer erhält nur
+    Ergebnisse aus Sammlungen, die er lesen darf.
   retrieve_k:
     label: Abschnitte pro Datenbank
     help: Wie viele Abschnitte jede durchsuchte Datenbank liefert, bevor das Reranking

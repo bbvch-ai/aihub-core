@@ -13,6 +13,11 @@ if TYPE_CHECKING:
         get_expected_user_data,
         mock_keycloak_admin_service,
     )
+    from swiss_ai_hub.core.testing.beanie_isolation import (
+        beanie_test_database,
+        clean_beanie_collections,
+        mark_beanie_test_for_session_loop,
+    )
     from swiss_ai_hub.core.testing.conftest_utils import attach_fixtures_to_items, mark_tests_by_directory
     from swiss_ai_hub.core.testing.db_isolation import isolate_test_db
     from swiss_ai_hub.core.testing.route_adapter.asgi_adapter import ASGIAdapter
@@ -21,7 +26,10 @@ __all__ = [
     "async_test",
     "ASGIAdapter",
     "attach_fixtures_to_items",
+    "beanie_test_database",
+    "clean_beanie_collections",
     "isolate_test_db",
+    "mark_beanie_test_for_session_loop",
     "mark_tests_by_directory",
     "DummyResponse",
     "generate_rsa_keypair",
@@ -35,6 +43,9 @@ __all__ = [
 _LAZY_IMPORTS = {
     "async_test": "swiss_ai_hub.core.testing.asyncio_utils.bdd",
     "attach_fixtures_to_items": "swiss_ai_hub.core.testing.conftest_utils",
+    "beanie_test_database": "swiss_ai_hub.core.testing.beanie_isolation",
+    "clean_beanie_collections": "swiss_ai_hub.core.testing.beanie_isolation",
+    "mark_beanie_test_for_session_loop": "swiss_ai_hub.core.testing.beanie_isolation",
     "isolate_test_db": "swiss_ai_hub.core.testing.db_isolation",
     "mark_tests_by_directory": "swiss_ai_hub.core.testing.conftest_utils",
     "ASGIAdapter": "swiss_ai_hub.core.testing.route_adapter.asgi_adapter",

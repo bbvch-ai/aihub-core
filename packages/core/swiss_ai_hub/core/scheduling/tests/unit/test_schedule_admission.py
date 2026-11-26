@@ -4,6 +4,7 @@ A cron expression is a declaration, so how much work it produces is knowable bef
 tests pin the two ceilings and, just as importantly, pin that neither of them rejects anything by default.
 """
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -29,7 +30,7 @@ def _stored(agent_id: str, raw: dict | None = None, agent_class: str = "CronDemo
 
 def _reject(schedule: CronSchedule, settings: SchedulerSettings, stored: list | None = None) -> str | None:
     with patch(f"{_MODULE}.AgentConfigEntityDocument.find_with_config_key", return_value=stored or []):
-        return ScheduleAdmission.rejection_reason(schedule, "CronDemoAgent", "demo", settings)
+        return asyncio.run(ScheduleAdmission.rejection_reason(schedule, "CronDemoAgent", "demo", settings))
 
 
 class TestTheDefaultsRejectNothing:
@@ -132,7 +133,7 @@ class TestTheCountingIsBounded:
 
         with patch(f"{_MODULE}.AgentConfigEntityDocument.find_with_config_key", return_value=estate):
             with patch(f"{_MODULE}.CronScheduleCalculator.runs_per_month", side_effect=[11, 11]) as runs_per_month:
-                ScheduleAdmission.rejection_reason(_schedule(_HOURLY), "CronDemoAgent", "demo", settings)
+                asyncio.run(ScheduleAdmission.rejection_reason(_schedule(_HOURLY), "CronDemoAgent", "demo", settings))
 
         # Once for the schedule being saved, once for the first stored profile — which already passed it.
         assert runs_per_month.call_count == 2

@@ -42,6 +42,7 @@ class BotInTheLoopController(Controller):
             ],
         ) -> Response:
             path: str = RoutesService.get_path(request)
+            await RoutesService.authenticate_activity(request, path)
             bot_in_the_loop_handler.path = path
             chat_bot: BotInTheLoopBot = BotInTheLoopBot(
                 nc=nc,

@@ -20,8 +20,8 @@ CONFIRMED_KEY = "knowledge_extraction:request_form:confirmed"
 
 
 class ExtractionRequestForm:
-    """Asks the user to confirm where, which rows and which columns before any document is read; with discovery also
-    the exact and the semantic keywords that guide the search.
+    """Asks the user to confirm where, which documents, which rows and which columns before any document is read; with
+    discovery also the exact and the semantic keywords that guide the search.
 
     A misread part otherwise only shows in the finished table. The reading waits in the run for the answer, since the
     answer resumes the same run, and the confirmed reading stays there for the search's selection.

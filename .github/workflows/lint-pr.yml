@@ -3,7 +3,7 @@ name: Lint Code
 on:
   pull_request:
     branches: [main]
-    types: [opened, edited, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review]
 permissions:
   checks: write
   contents: read
@@ -25,6 +25,7 @@ jobs:
           - packages/bot
           - packages/process
           - packages/sysadmin-api
+          - ee
     steps:
       - name: Lint backend
         uses: bbvch-ai/aihub-core/.github/actions/lint_backend@main
@@ -86,7 +87,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
         with:
-          node-version: 25.x
+          node-version: 24.22.1
       - name: Install pnpm via corepack
         run: |
           npm install -g --ignore-scripts corepack@0.34.7

@@ -235,7 +235,9 @@ class TestReferencedKnowledge:
         monkeypatch.setattr(pipe.httpx, "AsyncClient", MagicMock(return_value=client))
         files = [{"type": "collection", "id": "k1"}, {"type": "file", "id": "f1"}, {"type": "collection", "id": "k1"}]
 
-        references = await pipe.KnowledgeReferenceService("http://api").references_for_event(files, {"X": "y"})
+        references = await pipe.KnowledgeReferenceService(
+            "http://api", pipe.AuthenticationService("signing-secret", "api-key")
+        ).references_for_event(files, {"X": "y"})
 
         assert references == [{"database": "hr", "namespace": "policies"}]
         url = client.post.await_args.args[0]
@@ -246,8 +248,95 @@ class TestReferencedKnowledge:
     async def test_a_message_without_references_asks_nothing(self, pipe: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(pipe.httpx, "AsyncClient", MagicMock(side_effect=AssertionError("no request expected")))
 
-        assert await pipe.KnowledgeReferenceService("http://api").references_for_event([{"type": "file"}], {}) == []
+        assert (
+            await pipe.KnowledgeReferenceService(
+                "http://api", pipe.AuthenticationService("signing-secret", "api-key")
+            ).references_for_event([{"type": "file"}], {})
+            == []
+        )
 
 
 def test_generated_copy_matches_template() -> None:
     assert GENERATED_PIPE.read_text() == TEMPLATE_PIPE.read_text()
+
+
+TENANT = "tenant-1"
+THREAD = "0123456789abcdef01234567"
+DOCUMENT = "s3://manuals/devices/Nr 196 1.pdf"
+FIGURE = "s3://manuals/devices/__figures__/Nr_196_1_pdf/figure_0a1b2c3d4e5f6a7b.jpg"
+
+
+def _figure(reference: str = FIGURE, source: str = DOCUMENT) -> dict[str, Any]:
+    return {**_node(source, f"![Figure 1]({reference})"), "content_type": "figure", "document_title": "Nr 196 1"}
+
+
+def _figure_context(pipe: Any, emitter: _Recorder) -> Any:
+    context = _context(pipe, emitter)
+    context.thread_id = THREAD
+    context.stream_service = MagicMock(active_tenant_id=AsyncMock(return_value=TENANT))
+    return context
+
+
+async def _documents(pipe: Any, *nodes: dict[str, Any]) -> tuple[list[str], Any]:
+    emitter = _Recorder()
+    context = _figure_context(pipe, emitter)
+    await pipe.EventProcessorFactory.create_chain().process(_grounding(*nodes), context)
+    return [document for source in emitter.sources for document in source["document"]], context
+
+
+class TestFigures:
+    @pytest.mark.asyncio
+    async def test_a_figure_is_linked_through_the_figure_route_on_open_webui(self, pipe: Any) -> None:
+        documents, _ = await _documents(pipe, _figure())
+
+        assert documents == [
+            f"![Figure 1](/hub-figures/{TENANT}/{THREAD}/manuals/devices/__figures__/Nr_196_1_pdf/"
+            "figure_0a1b2c3d4e5f6a7b.jpg)"
+        ]
+
+    @pytest.mark.asyncio
+    async def test_each_path_segment_is_percent_encoded(self, pipe: Any) -> None:
+        source = "s3://manuals/Geräte X/a b.pdf"
+        reference = "s3://manuals/Geräte X/__figures__/a_b_pdf/figure_1.png"
+
+        documents, _ = await _documents(pipe, _figure(reference, source))
+
+        assert "/manuals/Ger%C3%A4te%20X/__figures__/a_b_pdf/figure_1.png)" in documents[0]
+
+    @pytest.mark.asyncio
+    async def test_the_tenant_is_asked_for_once_per_answer(self, pipe: Any) -> None:
+        _, context = await _documents(pipe, _figure(), _figure(source="s3://manuals/other.pdf"))
+
+        context.stream_service.active_tenant_id.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_text_only_sources_never_ask_for_the_tenant(self, pipe: Any) -> None:
+        _, context = await _documents(pipe, _node("handbook.pdf", "25 days"))
+
+        context.stream_service.active_tenant_id.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "reference",
+        [
+            "s3://other-tenant/folder/__figures__/x_pdf/figure_1.png",
+            "s3://manuals/devices/__figures__/Nr_196_1_pdf/figure_1.svg",
+        ],
+    )
+    async def test_a_figure_the_route_would_refuse_becomes_a_caption(self, pipe: Any, reference: str) -> None:
+        documents, _ = await _documents(pipe, _figure(reference))
+
+        assert documents == ["*Figure 1 (Nr 196 1)*"]
+
+    @pytest.mark.asyncio
+    async def test_a_reference_in_a_text_chunk_is_left_as_written(self, pipe: Any) -> None:
+        documents, _ = await _documents(pipe, _node("notes.pdf", f"see ![x]({FIGURE})"))
+
+        assert documents == [f"see ![x]({FIGURE})"]
+
+
+@pytest.mark.parametrize("source", ["s3://manuals/devices/Nr 196 1.pdf", "s3://b/a/x.y#z?.docx", "s3://b/plain"])
+def test_the_figure_folder_matches_the_one_ingestion_writes(pipe: Any, source: str) -> None:
+    from swiss_ai_hub.core.generative_ai import create_figures_folder_name
+
+    assert pipe.FigureLinks.figures_folder(source) == create_figures_folder_name(source)

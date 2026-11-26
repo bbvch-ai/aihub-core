@@ -27,6 +27,7 @@ from swiss_ai_hub.core.events.agent import (
     NotAMetaQuestionEvent,
     RAGSuccessStopEvent,
     RecallMemoryEvent,
+    ResponseSchema,
     StopEvent,
     UserMessageEvent,
 )
@@ -112,7 +113,7 @@ async def test_a_turn_runs_every_call_through_the_dispatcher(
     async def fake_detect(*, user_query, **_):
         return NotAMetaQuestionEvent(reasoning="normal task")
 
-    async def fake_stream(self, llm_config, llm, messages, as_stop_step=True):
+    async def fake_stream(self, llm_config, llm, messages, as_stop_step=True, **_kwargs):
         return LLMEvent(output_messages=[Message.from_string(role="assistant", content="25 days")])
 
     @asynccontextmanager
@@ -159,6 +160,52 @@ async def test_a_turn_runs_every_call_through_the_dispatcher(
     completion = _control_events(runner, CompleteConversationEvent)[0]
     assert completion.answer.output_messages[-1].content == "25 days", "the answer must travel inside the completion"
     assert len(_control_events(runner, StopEvent)) == 1, "the completion must end the run exactly once"
+
+
+@async_test
+async def test_a_turn_asked_for_a_json_shape_streams_it_natively_and_ends_with_it_parsed(monkeypatch):
+    schema = ResponseSchema(
+        name="vacation",
+        json_schema={"type": "object", "properties": {"days": {"type": "integer"}}, "required": ["days"]},
+    )
+    asked_for: list[ResponseSchema | None] = []
+
+    async def fake_detect(**_):
+        raise AssertionError("a message asking for a JSON shape is not inspected for a meta question")
+
+    async def fake_stream(self, llm_config, llm, messages, as_stop_step=True, **kwargs):
+        asked_for.append(kwargs.get("response_schema"))
+        return LLMEvent(output_messages=[Message.from_string(role="assistant", content='{"days": 25}')])
+
+    @asynccontextmanager
+    async def fake_cost_reporting(self, displayer, user=None):
+        yield MagicMock()
+
+    async def no_metadata(*_args, **_kwargs):
+        pass
+
+    monkeypatch.setattr(f"{CONVERSATION_MODULE}.do_detect_meta_question", fake_detect)
+    monkeypatch.setattr(f"{CONVERSATION_MODULE}.generate_title", no_metadata)
+    monkeypatch.setattr(EventDisplayer, "display_llm_stream", fake_stream)
+    monkeypatch.setattr(LLMConfig, "cost_reporting_llm", fake_cost_reporting)
+    monkeypatch.setattr(LLMConfig, "get_model_info", lambda self: {"model_info": {}})
+
+    runner = AgentTestRunner(agent_type=LLMWrappingAgent, agent_config=_llm_wrapping_config())
+    async with runner.test_run(delay_before_stop=20) as topic:
+        await runner.send_event_from_topic(
+            topic=topic,
+            start_event=UserMessageEvent(
+                messages=[ChatMessage(content="How many vacation days do I get?", role=MessageRole.USER)],
+                user=fake_user(),
+                locale="en",
+                response_schema=schema,
+            ),
+        )
+
+    assert not runner.has_exception_event, _seen(runner)
+    assert asked_for == [schema]
+    stop = _control_events(runner, LLMStopEvent)[0]
+    assert stop.structured_output == {"days": 25}
 
 
 def _seen(runner: AgentTestRunner) -> list[str]:

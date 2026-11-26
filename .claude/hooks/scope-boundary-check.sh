@@ -34,11 +34,15 @@ check_violation() {
   # swiss_ai_hub.process may import swiss_ai_hub.agent
   [[ "$source_scope" == "packages/process" && "$import_scope" == "swiss_ai_hub.agent" ]] && return 0
 
+  # ee/ builds on the agent SDK and imports its own package; nothing outside ee/ may import it
+  [[ "$source_scope" == ee/* && "$import_scope" == "swiss_ai_hub.agent" ]] && return 0
+  [[ "$source_scope" == ee/* && "$import_scope" == "swiss_ai_hub.ee" ]] && return 0
+
   return 1
 }
 
 # Check for cross-scope imports in the new content
-scopes=("swiss_ai_hub.agent" "swiss_ai_hub.api" "swiss_ai_hub.bot" "swiss_ai_hub.pipeline" "swiss_ai_hub.process")
+scopes=("swiss_ai_hub.agent" "swiss_ai_hub.api" "swiss_ai_hub.bot" "swiss_ai_hub.pipeline" "swiss_ai_hub.process" "swiss_ai_hub.ee")
 for scope in "${scopes[@]}"; do
   if echo "$new_string" | grep -qE "from ${scope}[. ]|import ${scope}"; then
     if ! check_violation "$scope"; then

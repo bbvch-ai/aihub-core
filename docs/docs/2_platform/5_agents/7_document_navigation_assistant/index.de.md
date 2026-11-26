@@ -138,7 +138,7 @@ Diese Einstellungen steuern, wie der Assistent entscheidet, wo gesucht werden so
 
 Der **Modell**-Auswahl-Dialog bietet auch die Standard-Parameter des Sprachmodells (Temperatur, Timeout und die
 Log-Wahrscheinlichkeitsoptionen), die auf der Seite
-[Dokumentenintelligenz-Assistent](../5_document_intelligence_assistant/#language-model) beschrieben sind; eine niedrige
+[Dokumentenintelligenz-Assistent](../5_document_intelligence_assistant/#sprachmodell) beschrieben sind; eine niedrige
 Temperatur ist am besten, da das Routing konsistent sein sollte.
 
 ### Konversationsverhalten

@@ -15,6 +15,7 @@ from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
     LangfuseProvisioner,
     LiteLLMProxySettings,
+    LiteLLMUserReconciler,
     MilvusSettings,
     MongoSettings,
     NatsSettings,
@@ -22,7 +23,12 @@ from swiss_ai_hub.core.infrastructure import (
     RedisSettings,
     S3StorageSettings,
 )
-from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook, KnowledgeChangeHook
+from swiss_ai_hub.core.persistence import (
+    AccessChangeHook,
+    AgentConfigChangeHook,
+    BeanieInitializer,
+    KnowledgeChangeHook,
+)
 from swiss_ai_hub.core.scheduling import CronScheduler, SchedulerSettings
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
@@ -35,12 +41,17 @@ from swiss_ai_hub.api.routes.incident.github_issue_client import GitHubIssueClie
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
+    add_process_root_rule,
+    adopt_legacy_organization_memories,
     carry_over_bucket_model_columns,
     carry_over_pre_pair_knowledge_collections,
+    encrypt_plaintext_agent_secrets,
     finalize_role_setup,
     initialize_knowledge_buckets,
     initialize_startup_tenant,
     lower_llm_request_timeouts,
+    remove_stale_role_names,
+    retarget_legacy_organization_memory_profiles,
     strip_retired_agent_config_keys,
     unset_oversized_input_limits,
     widen_empty_retriever_namespace_scopes,
@@ -49,6 +60,7 @@ from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEnd
 from swiss_ai_hub.api.services.process_endpoints_discovery_service import ProcessEndpointsDiscoveryService
 from swiss_ai_hub.api.sockets.manager.web_socket_manager import WebSocketManager
 from swiss_ai_hub.api.sockets.sender.web_socket_sender import WebSocketSender
+from swiss_ai_hub.api.util.config_secrets import ConfigSecrets
 
 logger = logging.getLogger(__name__)
 _background_tasks: set[asyncio.Task] = set()
@@ -114,6 +126,15 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
         uuidRepresentation="standard",
     )
+    # The entities already ported to Beanie (#1634); MongoEngine above keeps serving every other one.
+    beanie_client = BeanieInitializer.create_client()
+    await BeanieInitializer.initialize(beanie_client)
+
+    # Permanent, not a transitional migration: it must outlive `encrypt_plaintext_agent_secrets`. Every response
+    # holding a profile masks its secrets, which needs the key, so without this a missing key surfaces only at
+    # runtime, where discovery drops each profile it cannot build and the OpenWebUI sync deletes its model. Runs
+    # before the config responder and discovery start, and needs nothing but Mongo.
+    await ConfigSecrets.ensure_key_for_stored_secrets()
 
     # Connect to Redis
     redis = RedisSettings.create_client()
@@ -273,14 +294,19 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
         await initialize_startup_tenant()
+        add_process_root_rule()
         await finalize_role_setup(redis)
+        remove_stale_role_names()
         await initialize_knowledge_buckets()
         await carry_over_bucket_model_columns()
-        strip_retired_agent_config_keys()
-        widen_empty_retriever_namespace_scopes()
-        carry_over_pre_pair_knowledge_collections()
-        lower_llm_request_timeouts()
-        unset_oversized_input_limits()
+        await strip_retired_agent_config_keys()
+        await widen_empty_retriever_namespace_scopes()
+        await carry_over_pre_pair_knowledge_collections()
+        await lower_llm_request_timeouts()
+        await unset_oversized_input_limits()
+        await encrypt_plaintext_agent_secrets()
+        await retarget_legacy_organization_memory_profiles()
+        await _provision_non_fatal("Legacy organization memory", adopt_legacy_organization_memories)
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.
         # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
@@ -292,6 +318,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         cron_scheduler.start()
         app.state.cron_scheduler = cron_scheduler
+
+        # Keycloak tells no one when a user is disabled or removed, so their LiteLLM user and key are compared
+        # against it on an interval. A Redis lease keeps it to one run per interval across replicas.
+        litellm_user_reconciler = LiteLLMUserReconciler(redis=redis)
+        litellm_user_reconciler.start()
+        app.state.litellm_user_reconciler = litellm_user_reconciler
 
         # Provision Langfuse with AI-Hub LLM connections
         await _provision_non_fatal("Langfuse", langfuse_provisioner.provision)
@@ -327,6 +359,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         if hasattr(app.state, "cron_scheduler"):
             await app.state.cron_scheduler.stop()
 
+        if hasattr(app.state, "litellm_user_reconciler"):
+            await app.state.litellm_user_reconciler.stop()
+
         # Stop the discovery services
         if hasattr(app.state, "agent_discovery_service"):
             await app.state.agent_discovery_service.stop()
@@ -335,6 +370,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             await app.state.process_discovery_service.stop()
 
         disconnect()
+        await beanie_client.close()
 
         # Close Redis connection
         await redis.aclose()

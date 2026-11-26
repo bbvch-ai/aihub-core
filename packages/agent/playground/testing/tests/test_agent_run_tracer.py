@@ -227,7 +227,7 @@ class TestTraceStepStop:
         assert attrs["langfuse.trace.input"] == "user question"
         assert attrs["langfuse.user.id"] == "user-42"
         assert attrs["langfuse.session.id"] == topic.thread_id
-        mock_span.set_status.assert_called_once_with(StatusCode.OK)
+        mock_span.set_status.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_sets_output_on_final_step(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
@@ -273,6 +273,17 @@ class TestTraceStepError:
         tracer.trace_step_error(mock_span, error)
 
         mock_span.set_status.assert_called_once_with(StatusCode.ERROR, "something broke")
+
+
+class TestTraceStepOk:
+    """Tests for trace_step_ok — marks span as succeeded once the step's results are published."""
+
+    def test_sets_ok_status(self, tracer: AgentRunTracer) -> None:
+        mock_span = MagicMock()
+
+        tracer.trace_step_ok(mock_span)
+
+        mock_span.set_status.assert_called_once_with(StatusCode.OK)
 
 
 class TestAitlWrapperSpan:

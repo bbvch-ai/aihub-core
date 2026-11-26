@@ -433,6 +433,7 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data:z
+    ports: [5433:5432]
     healthcheck:
       test: [CMD-SHELL, 'pg_isready -U ${MONGO_USERNAME} -d postgres']
       interval: 10s
@@ -472,6 +473,30 @@ services:
     networks:
       - data
 
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
+  ferretdb-init:
+    container_name: ferretdb-init
+    image: ghcr.io/bbvch-ai/aihub-core/postgres:17
+    restart: on-failure
+    depends_on:
+      postgres-ferretdb:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres-ferretdb
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${MONGO_USERNAME}
+      POSTGRES_PASSWORD: ${MONGO_PASSWORD}
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
+    volumes: ['./configs/ferretdb/init-ferretdb.sh:/init-ferretdb.sh:ro,z']
+    entrypoint: [/bin/sh, /init-ferretdb.sh]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+
   # ===================================================================
   # Neo4j Stack (Graph Database)
   # ===================================================================
@@ -492,6 +517,9 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/plugins:/plugins:z
     environment:
       NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+      # CVE-2026-114938 (Java4Shell): Neo4j bundles the same affected OpenJDK and Base64-decodes the HTTP Basic
+      # header before authenticating. The image entrypoint appends this setting, keeping its default JVM flags.
+      NEO4J_server_jvm_additional: -XX:-UseBASE64Intrinsics
     healthcheck:
       test:
         - CMD
@@ -745,6 +773,16 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: 'true'
       KC_METRICS_ENABLED: 'true'
+      # Single-node deployments: use the local cache instead of the clustered ispn/jgroups default.
+      # Clustering makes Keycloak spend the first minutes after a (re)start retrying to reach the
+      # previous run's cluster member ("jgroups ... Connection refused"), during which the login
+      # redirect is dead — so a plain container restart locked users out for several minutes. The
+      # local cache removes that warm-up. NOTE: if Keycloak is ever run multi-node/HA, this must
+      # become conditional (local cache does not replicate sessions across nodes).
+      KC_CACHE: local
+      # CVE-2026-114938 (Java4Shell): the JDK's AVX-512 Base64 decoder corrupts memory on input Keycloak
+      # decodes before authentication. Drop once the Keycloak image ships a vendor-fixed OpenJDK.
+      JAVA_OPTS_APPEND: -XX:-UseBASE64Intrinsics
       # Superuser (interactive Keycloak-seeded admin) — passed to realm template
       SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
@@ -759,12 +797,22 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       # Azure Entra ID configuration (for identity provider federation)
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
       KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
       KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET}
+      # Realm mail via Microsoft 365 (XOAUTH2 client credentials). The secret is
+      # written to the tmpfs vault by the entrypoint, never into the realm.
+      KEYCLOAK_SMTP_TENANT_ID: ${KEYCLOAK_SMTP_TENANT_ID}
+      KEYCLOAK_SMTP_CLIENT_ID: ${KEYCLOAK_SMTP_CLIENT_ID}
+      KEYCLOAK_SMTP_CLIENT_SECRET: ${KEYCLOAK_SMTP_CLIENT_SECRET}
+      KEYCLOAK_SMTP_MAILBOX: ${KEYCLOAK_SMTP_MAILBOX}
+    tmpfs: ['/opt/keycloak/vault:mode=0700,uid=1000,gid=0']
     volumes:
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro,z
       - ./configs/keycloak/aihub-realm.dev.gpu.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro,z
@@ -824,8 +872,11 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET}
       # Azure Entra ID vars are NOT needed here — identity providers are
       # bootstrap-only (seeded by the keycloak container's --import-realm), not
       # reconciled by keycloak-config-cli.
@@ -925,10 +976,14 @@ services:
       - --rc-no-auth  # Only in dev!
       - --log-level=INFO
       - --config=/dev/null  # No config file: the rclone pipeline re-creates every remote from the database per run
-    ports: [5572:5572]
+    ports:
+      - 127.0.0.1:5572:5572
+    # Dual-homed like otel-collector: the container name also resolves to the egress address, which egress's
+    # enable_icc=false drops, and rclone_pipeline sits on egress too. The pipeline targets the backend-only alias.
     networks:
-      - backend  # reached by the rclone pipeline
-      - egress  # reaches the cloud providers it syncs from
+      backend:  # reached by the rclone pipeline
+        aliases: [rclone-backend]
+      egress: {}  # reaches the cloud providers it syncs from
     healthcheck:
       test: [CMD, rclone, rc, --rc-addr=localhost:5572, core/version]
       interval: 30s
@@ -985,7 +1040,53 @@ services:
   # ===================================================================
   # Independent 3-container Dagster deployment: gRPC code server, daemon,
   # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
+  # The gRPC code server binds only to its `backup` network alias, so the
+  # webserver and daemon are its only callers; the webserver shares
+  # `backup-ui` with nothing but its oauth2-proxy. Docker access goes through
+  # a dedicated socket proxy limited to the container API.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  backup-docker-proxy:
+    container_name: backup-docker-proxy
+    image: ghcr.io/bbvch-ai/aihub-core/tecnativa/docker-socket-proxy:0.3
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, wget, --spider, -q, http://localhost:2375/_ping]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
+    # (Ubuntu, Docker Desktop) this has no effect.
+    security_opt: [label=disable]
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      EVENTS: 0
+      EXEC: 0
+      IMAGES: 0
+      NETWORKS: 0
+      VOLUMES: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels: [traefik.enable=false]
+    networks:
+      - backup-docker
 
   # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   backup-code:
@@ -1011,6 +1112,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_started
+      backup-docker-proxy:
+        condition: service_healthy
     entrypoint:
       - dagster
       - api
@@ -1018,12 +1121,13 @@ services:
       - -m
       - swiss_ai_hub.backup.dagster
       - -h
-      - 0.0.0.0
+      - backup-grpc
       - -p
       - '4266'
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      DOCKER_HOST: tcp://backup-docker-proxy:2375
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
       BACKUP_MINIMUM_KEEP: ${BACKUP_MINIMUM_KEEP}
       BACKUP_POSTGRES_HOST: postgres
@@ -1059,10 +1163,6 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home:z
       - ./configs/backup/backup-dagster.dev.gpu.yml:/dagster_home/dagster.yaml:ro,z
-      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
-    # SELinux confines containers away from the host's Docker API socket, which a relabel cannot fix; without SELinux
-    # (Ubuntu, Docker Desktop) this has no effect.
-    security_opt: [label=disable]
     healthcheck:
       test:
         - CMD
@@ -1070,7 +1170,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - backup-grpc
         - --port
         - '4266'
       interval: 30s
@@ -1083,8 +1183,12 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
-      - storage
+      data:
+      storage:
+      backup-docker:
+      backup:
+        aliases:
+          - backup-grpc
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-webserver:
@@ -1124,8 +1228,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - proxy
-      - data
+      - backup-ui
+      - backup
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-daemon:
@@ -1157,7 +1261,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
+      - backup
   # ===================================================================
   # AI Model Serving (Local GPU Inference via vLLM)
   # ===================================================================
@@ -1356,7 +1460,7 @@ services:
   # its callers, and needs no outbound internet (models baked in, hub offline).
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-4
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-5-gpu
     restart: always
     ports: [5002:3000]
     environment:
@@ -1387,6 +1491,13 @@ services:
         limits:
           cpus: ${PRESIDIO_ANALYZER_CPUS:-4}
           memory: ${PRESIDIO_ANALYZER_MEMORY:-4G}  # Measured: about 3.1 GiB per worker under load
+        # GLiNER needs about 1.3 GiB of GPU memory per worker (T600, batch size 8, CUDA context included). It takes
+        # it beside vLLM, whose --gpu-memory-utilization shares are fractions of the whole card.
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
     logging:
       driver: json-file
       options:
@@ -1446,6 +1557,7 @@ services:
       - ./configs/litellm/litellm-config.infomaniak.dev.gpu.yml:/app/config.infomaniak.yml:z
       - ./configs/litellm/litellm-config.stoney.dev.gpu.yml:/app/config.stoney.yml:z
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro,z
+      - ./configs/litellm/tenant_attribution.py:/app/tenant_attribution.py:ro,z
       - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro,z
       - ./configs/litellm/pii_anonymisation_audit.py:/app/pii_anonymisation_audit.py:ro,z
     command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
@@ -1616,14 +1728,13 @@ services:
     container_name: mineru-api
     image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
     restart: always
+    # Caps the VLM calls one parse keeps open (MinerU's default is 100). Every parse runs its own cap, so up to
+    # MINERU_API_MAX_CONCURRENT_REQUESTS x 8 calls reach LiteLLM at once; at 5 x 100 its single process stalls for
+    # 10 s and more. A CLI flag only: MinerU reads no environment variable for it.
+    command: [--host, 0.0.0.0, --port, '8000', --max-concurrency, '8']
     ports: [8002:8000]
     environment:
-      # VLM routing through LiteLLM (OpenAI-compatible)
-      # Various API keys for OpenAI client compatibility
-      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
-      OPENAI_BASE_URL: http://litellm:4000/v1
-      LITELLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
-      # MinerU-specific configuration (used by mineru_vl_utils HttpVlmClient)
+      # VLM routing through LiteLLM: mineru_vl_utils' HTTP client reads only these MINERU_VL_* variables
       MINERU_VL_SERVER: http://litellm:4000/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
       MINERU_VL_MODEL_NAME: ${MINERU_VLM_NAME}
@@ -1763,7 +1874,7 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.12.5-playwright1.63.0-1
     restart: always
     network_mode: host
     volumes:
@@ -1797,6 +1908,11 @@ services:
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: false
       ENABLE_COMMUNITY_SHARING: false
+      # Response rating is unused and stores a copy of the whole chat that survives deleting it (#1760). OpenWebUI
+      # only reads these on first boot; an existing deployment keeps its database value until an admin turns off
+      # Message Rating (Settings > General) and Arena Models (Settings > Evaluations).
+      ENABLE_MESSAGE_RATING: false
+      ENABLE_EVALUATION_ARENA_MODELS: false
       BYPASS_MODEL_ACCESS_CONTROL: 'False'
       ENABLE_USER_WEBHOOKS: true
       WEBHOOK_URL: http://localhost:8000/api/v1/webhook/openwebui?token=${OPENWEBUI_WEBHOOK_SECRET}
@@ -1909,6 +2025,10 @@ services:
       DATABASE_HOST: localhost
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
+      # Without session sharing, a model lookup holds one pooled connection while it opens a second one for the
+      # model's access grants. Once as many chats arrive at once as the pool has connections, each holds one and waits
+      # for another, nothing moves until the 30 s pool timeout, and the requests fail as QueuePool / "Model not found".
+      DATABASE_ENABLE_SESSION_SHARING: true
       REDIS_URL: redis://default:${REDIS_TOKEN}@localhost:6379/10
       REDIS_KEY_PREFIX: open-webui
 
@@ -1969,6 +2089,9 @@ services:
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: true
       WEB_LOADER_ENGINE: playwright
       PLAYWRIGHT_WS_URL: ws://localhost:3036
+      # Attach Webpage first fetches the page itself, and without a user agent it sends aiohttp's default, which
+      # Wikipedia refuses with 403. Wikimedia asks for a name and a contact.
+      USER_AGENT: Swiss-AI-Hub (+https://docs.ai-hub.bbv.ch/)
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -2027,9 +2150,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
       FUNCTIONS_DIR: /functions
+      CODE_INTERPRETER_PROMPT_FILE: /code-interpreter-prompt.txt
     volumes:
       - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro,z
       - ./configs/openwebui/functions:/functions:ro,z
+      - ./configs/openwebui/code-interpreter-prompt.txt:/code-interpreter-prompt.txt:ro,z
     entrypoint: [/bin/sh, /init-openwebui.sh]
     logging:
       driver: json-file
@@ -2060,6 +2185,10 @@ services:
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
 # - browser:       The Playwright browser, browser-proxy (its only way out) and its callers (open-webui, the web-fetching agents)
+# - docker-api:    Traefik and the Docker socket proxy
+# - dagster-ui / backup-ui: each Dagster webserver plus only its oauth2-proxy
+# - dagster / backup:       each Dagster webserver + daemon plus the gRPC code servers they load
+# - backup-docker: The backup code server and its own Docker socket proxy
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -2097,6 +2226,20 @@ networks:
   pii-detection:
     name: pii-detection
     driver: bridge
+  # The backup webserver and its oauth2-proxy only. Not internal where the webserver publishes a localhost port.
+  backup-ui:
+    name: backup-ui
+    driver: bridge
+  # Backup webserver, daemon and the backup code server, whose gRPC binds only here
+  backup:
+    name: backup
+    driver: bridge
+    internal: true
+  # The backup code server and its Docker socket proxy only
+  backup-docker:
+    name: backup-docker
+    driver: bridge
+    internal: true
 # ===================================================================
 # Named Volumes
 # ===================================================================

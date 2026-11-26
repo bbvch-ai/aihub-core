@@ -19,7 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     UserUploadedFile,
 )
 from swiss_ai_hub.core.generative_ai import LLMConfig, merge_consecutive_messages
-from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
@@ -50,6 +50,11 @@ def _no_window():
     return patch.object(LLMConfig, "get_model_info", return_value={"model_info": {}})
 
 
+def _without_schema() -> MagicMock:
+    """A run context whose start event asked for no JSON shape."""
+    return MagicMock(get=AsyncMock(return_value=None))
+
+
 @pytest.mark.asyncio
 async def test_a_programmatic_start_is_cleared_without_inspection():
     with patch(f"{CONVERSATION_MODULE}.do_detect_meta_question", new=AsyncMock()) as detect:
@@ -57,6 +62,7 @@ async def test_a_programmatic_start_is_cleared_without_inspection():
             LLMWrappingAgent(),
             request=ContextualizeConversationEvent(history=[], user_query=None),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -81,6 +87,7 @@ async def test_the_inspection_is_told_which_files_are_attached():
             LLMWrappingAgent(),
             request=Conversation.contextualize(history=[question], message=message),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -150,6 +157,7 @@ async def test_compose_puts_blocks_behind_the_system_head_in_order_and_trims_the
             LLMWrappingAgent(),
             request=Conversation.compose([system, turn], blocks=[first, second]),
             conversation=_config(number_of_input_tokens=1_000),
+            t=LocaleHandler("en"),
         )
         assert composed.history == [*merge_consecutive_messages([system, first[0], second[0]]), turn]
         assert [message.role for message in composed.history] == [MessageRole.SYSTEM, MessageRole.USER], (
@@ -160,6 +168,7 @@ async def test_compose_puts_blocks_behind_the_system_head_in_order_and_trims_the
             LLMWrappingAgent(),
             request=Conversation.compose([system, turn], blocks=[first, second]),
             conversation=_config(number_of_input_tokens=60),
+            t=LocaleHandler("en"),
         )
         assert trimmed.history == [system, turn], "the blocks give way, never the turn or the head"
 
@@ -178,6 +187,7 @@ async def test_compose_trims_the_oldest_turns_before_any_block():
             LLMWrappingAgent(),
             request=Conversation.compose([system, *older, question], blocks=[attached_file, documents]),
             conversation=_config(number_of_input_tokens=900),
+            t=LocaleHandler("en"),
         )
 
     head, *turns = composed.history
@@ -194,6 +204,7 @@ async def test_compose_passes_the_history_through_when_every_block_is_empty():
         LLMWrappingAgent(),
         request=ComposeContextEvent(history=history, blocks=[[], []]),
         conversation=_config(),
+        t=LocaleHandler("en"),
     )
     assert composed.history == history
 
@@ -210,6 +221,7 @@ async def test_compose_re_limits_instructions_added_to_the_history_even_without_
             LLMWrappingAgent(),
             request=ComposeContextEvent(history=[instructions, *older, question], blocks=[[], []]),
             conversation=_config(number_of_input_tokens=300),
+            t=LocaleHandler("en"),
         )
 
     assert composed.history == [instructions, question]
@@ -227,6 +239,7 @@ async def test_compose_drops_a_block_whole_rather_than_keeping_its_notes_without
             LLMWrappingAgent(),
             request=Conversation.compose([system, question], blocks=[attached_file]),
             conversation=_config(number_of_input_tokens=200),
+            t=LocaleHandler("en"),
         )
 
     assert composed.history == [system, question]
@@ -243,6 +256,7 @@ async def test_compose_drops_an_earlier_turn_too_long_for_the_room_left():
             LLMWrappingAgent(),
             request=Conversation.compose([system, oversized, question], blocks=[]),
             conversation=_config(number_of_input_tokens=200),
+            t=LocaleHandler("en"),
         )
 
     assert composed.history == [system, question]
@@ -256,6 +270,7 @@ async def test_compose_shows_consecutive_turns_of_one_role_merged_as_the_model_r
         LLMWrappingAgent(),
         request=Conversation.compose([first, second], blocks=[]),
         conversation=_config(),
+        t=LocaleHandler("en"),
     )
 
     assert composed.history == merge_consecutive_messages([first, second])
@@ -271,6 +286,7 @@ async def test_complete_generates_follow_ups_and_ends_with_the_given_stop_or_the
             LLMWrappingAgent(),
             request=CompleteConversationEvent(answer=answer),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -278,6 +294,7 @@ async def test_complete_generates_follow_ups_and_ends_with_the_given_stop_or_the
             LLMWrappingAgent(),
             request=Conversation.complete(answer=answer, stop=RAGSuccessStopEvent(answer="25 days")),
             conversation=_config(),
+            run_context=_without_schema(),
             displayer=MagicMock(),
             t=MagicMock(),
         )
@@ -287,3 +304,34 @@ async def test_complete_generates_follow_ups_and_ends_with_the_given_stop_or_the
     assert default.output_messages == answer.output_messages
     assert default.event_id != answer.event_id
     assert isinstance(given, RAGSuccessStopEvent)
+
+
+@pytest.mark.asyncio
+async def test_completing_hands_back_the_conversation_not_an_attached_form():
+    """A form of `____` blanks is cheap in tokens and long in characters. Carried on the completion and the stop event,
+    the prompt made both larger than the broker accepts (1 MB in development), and the run never ended."""
+    form = ("<tr><td>Name:</td><td>" + "_" * 180 + "</td></tr>\n") * 4300
+    question = Message.from_string(role="user", content="Which fields does the form ask for?")
+    reply = Message.from_string(role="assistant", content="Name and address.")
+    answer = LLMEvent(
+        input_messages=[Message.from_string(role="system", content="You are helpful.\n" + form), question],
+        output_messages=[reply],
+    )
+    explicit_stop = LLMStopEvent.model_validate(answer.model_dump(exclude={"event_id", "created_at"}))
+
+    request = Conversation.complete(answer=answer)
+    with patch(f"{CONVERSATION_MODULE}.generate_follow_up_questions", new=AsyncMock()) as follow_ups:
+        stop = await Conversation.complete_conversation_step(
+            LLMWrappingAgent(),
+            request=request,
+            conversation=_config(),
+            run_context=_without_schema(),
+            displayer=MagicMock(),
+            t=MagicMock(),
+        )
+
+    for event in (request, stop, Conversation.complete(answer=answer, stop=explicit_stop)):
+        assert len(event.model_dump_json(serialize_as_any=True).encode()) < 400_000
+    assert stop.input_messages == [question]
+    assert stop.output_messages == [reply]
+    assert [message.content for message in follow_ups.await_args.args[0]] == [question.content, reply.content]

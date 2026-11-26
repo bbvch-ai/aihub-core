@@ -36,11 +36,11 @@ If the analyzer cannot be reached, the request is refused with an error instead 
 
 Three switches decide, and any one of them is enough:
 
-| Switch | Who sets it | What it anonymises |
-| --- | --- | --- |
-| `PII_ANONYMISE_EXTERNAL_MODELS=true` | The operator, per deployment (off by default) | Every call to a model hosted outside the deployment, for every caller: plain chats, agents (including titles, follow-ups and memory extraction) and bots |
-| **Anonymise personal data** on an agent profile | The profile's admin | Every call of that profile's runs, whatever the model |
-| The [Anonymiser](../../5_agents/14_anonymiser/) agent | Each user, by hand | The text the user sends it |
+| Switch                                                | Who sets it                                   | What it anonymises                                                                                                                                       |
+| ----------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PII_ANONYMISE_EXTERNAL_MODELS=true`                  | The operator, per deployment (off by default) | Every call to a model hosted outside the deployment, for every caller: plain chats, agents (including titles, follow-ups and memory extraction) and bots |
+| **Anonymise personal data** on an agent profile       | The profile's admin                           | Every call of that profile's runs, whatever the model                                                                                                    |
+| The [Anonymiser](../../5_agents/16_anonymiser/) agent | Each user, by hand                            | The text the user sends it                                                                                                                               |
 
 Every model in the gateway configuration declares where it runs (`model_info.aihub_hosting_location`); every model that
 is not `local` (the Swiss cloud providers and any other external provider) counts as outside the deployment. Turn the
@@ -60,8 +60,8 @@ Only chat requests are anonymised. Embeddings, reranking, transcription and imag
 ::: warning Answers can get worse
 The model reasons over placeholders, not values. It cannot tell that two spellings of one value are the same ("Herr
 Meier" in the question, "Hans-Peter Meier" in a document, or "Genf" and "Genève" get different placeholders), compute an
-age from a masked birth date, or use what it knows about a masked city. Knowledge agents then answer that the
-documents hold no answer. Anonymise where the data requires it, not by default.
+age from a masked birth date, or use what it knows about a masked city. Knowledge agents then answer that the documents
+hold no answer. Anonymise where the data requires it, not by default.
 :::
 
 ### Anonymising an agent profile
@@ -95,9 +95,9 @@ Other dates, company names and descriptions that identify a person only through 
 company) are not masked.
 
 Pronouns, roles, salutations, field and room labels ("Sie", "vous", "Benutzer", "Patientin", "Grüezi", "Adresse",
-"IBAN", "Zimmer") are never masked, in German, French, Italian or English, also with a short number ("Position 2",
-"Art. 5", "Zimmer 12"): the detection model tags them as names or as the type they name, and masking them would garble
-the request. The list is `pii_allow_list` in the gateway configuration.
+"IBAN", "Zimmer") are never masked, in German, French, Italian or English, also with a short number ("Position 2", "Art.
+5", "Zimmer 12"): the detection model tags them as names or as the type they name, and masking them would garble the
+request. The list is `pii_allow_list` in the gateway configuration.
 
 ## Checking it in Langfuse
 
@@ -147,11 +147,11 @@ One analysis takes the same time on any number of CPUs: about 0.5 seconds for a 
 4,000 characters and 24 seconds for 20,000. More CPUs let the analyzer serve more calls at once, so users wait less in
 the queue. Measured on the default 4 CPUs and with the CPU limit raised to 8:
 
-| Text | Users at once | 4 CPUs: calls/s, median wait | 8 CPUs: calls/s, median wait |
+| Text         | Users at once | 4 CPUs: calls/s, median wait | 8 CPUs: calls/s, median wait |
 | ------------ | ------------- | ---------------------------- | ---------------------------- |
-| 400 chars | 16 | 2.9, 5.4 s | 5.4, 2.9 s |
-| 4,000 chars | 16 | 0.29, 41 s | 0.53, 29 s |
-| 20,000 chars | 4 | 0.06, 69 s | 0.11, 37 s |
+| 400 chars    | 16            | 2.9, 5.4 s                   | 5.4, 2.9 s                   |
+| 4,000 chars  | 16            | 0.29, 41 s                   | 0.53, 29 s                   |
+| 20,000 chars | 4             | 0.06, 69 s                   | 0.11, 37 s                   |
 
 The gateway analyses only what it has not seen: the messages of one call side by side, and every earlier message of a
 conversation from a cache. Turn 10 of a chat with a 4,000-character system prompt costs the analyzer under 2 seconds
@@ -160,14 +160,14 @@ instead of 25.
 All six are optional: unset, the defaults below apply. Set them in the environment file, then restart the analyzer (and
 `litellm` for the timeout):
 
-| Variable | Default | What it sets |
-| ------------------------------------ | ------- | ---------------------------------------------------------------------- |
-| `PRESIDIO_ANALYZER_CPUS` | `4` | CPU limit of the container |
-| `PRESIDIO_ANALYZER_MEMORY` | `4G` | Memory limit; each worker holds about 3 GiB |
-| `PRESIDIO_ANALYZER_WORKERS` | `1` | Processes, each with its own copy of the models |
-| `PRESIDIO_ANALYZER_THREADS` | `4` | Requests one worker analyses at once |
-| `PRESIDIO_ANALYZER_TORCH_THREADS` | `2` | CPU threads per analysis |
-| `PRESIDIO_ANALYZER_TIMEOUT_SECONDS` | `150` | How long the gateway waits for one analysis before it refuses the call |
+| Variable                            | Default | What it sets                                                           |
+| ----------------------------------- | ------- | ---------------------------------------------------------------------- |
+| `PRESIDIO_ANALYZER_CPUS`            | `4`     | CPU limit of the container                                             |
+| `PRESIDIO_ANALYZER_MEMORY`          | `4G`    | Memory limit; each worker holds about 3 GiB                            |
+| `PRESIDIO_ANALYZER_WORKERS`         | `1`     | Processes, each with its own copy of the models                        |
+| `PRESIDIO_ANALYZER_THREADS`         | `4`     | Requests one worker analyses at once                                   |
+| `PRESIDIO_ANALYZER_TORCH_THREADS`   | `2`     | CPU threads per analysis                                               |
+| `PRESIDIO_ANALYZER_TIMEOUT_SECONDS` | `150`   | How long the gateway waits for one analysis before it refuses the call |
 
 Keep workers × threads × torch threads equal to the CPU limit. For 8 CPUs raising `PRESIDIO_ANALYZER_CPUS` to `8` is
 enough (1 × 4 × 2). For 16 CPUs use 2 workers and `PRESIDIO_ANALYZER_MEMORY=7G`.
@@ -176,6 +176,40 @@ enough (1 × 4 × 2). For 16 CPUs use 2 workers and `PRESIDIO_ANALYZER_MEMORY=7G
 Leave the torch threads at 2: with 1, a 20,000-character text takes 85 seconds instead of 24. The gain above 8 CPUs has
 not been measured on server hardware yet.
 :::
+
+## Running the analyzer on a GPU
+
+On a host with an NVIDIA GPU, the analyzer runs its name and address model on the GPU and one analysis gets several
+times faster; more CPUs cannot do that. The GPU (`.gpu`) deployment variants use the GPU image of the analyzer and
+reserve the GPU for it; the CPU variants keep the CPU image and do not change.
+
+Measured on a small laptop GPU (NVIDIA T600, 4 GB) against the 4-CPU default, model time only:
+
+| Text         | 4 CPUs | T600 GPU | Faster |
+| ------------ | ------ | -------- | ------ |
+| 4,000 chars  | 5.5 s  | 0.7 s    | 7.9×   |
+| 20,000 chars | 29 s   | 3.4 s    | 8.6×   |
+
+The analyzer finds the same entities on the GPU as on the CPU. A server GPU such as a T4 or L4 has several times the
+T600's compute; its numbers are not measured yet.
+
+| What it needs |                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| Host          | NVIDIA driver and the NVIDIA Container Toolkit (`docker run --gpus all … nvidia-smi` works) |
+| GPU memory    | About 1.3 GiB for the analyzer (one worker), on top of what vLLM takes                      |
+| Image         | `presidio-analyzer:<version>-gpu`, set by the `.gpu` variants                               |
+| Download      | 4.8 GB (7.8 GB on disk), against 2.0 GB (3.3 GB) for the CPU image                          |
+
+::: warning
+The `.gpu` variants give 96% of the GPU to vLLM, the embedding and reranking models and MinerU. On a card smaller than
+about 40 GB, the remaining 4% does not hold the analyzer's 1.3 GiB, so check the free GPU memory with `nvidia-smi`
+before you switch.
+:::
+
+Only the `.gpu` variants pull the GPU image; a CPU deployment keeps downloading the CPU image.
+
+To go back to the CPU, run the CPU variant of the deployment, or set the analyzer's image to the CPU tag. The GPU image
+also runs without a GPU: it then analyses on the CPU, as fast as the CPU image.
 
 ## Limits
 

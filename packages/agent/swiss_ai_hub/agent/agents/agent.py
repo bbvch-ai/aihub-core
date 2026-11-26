@@ -5,8 +5,10 @@ from typing import TYPE_CHECKING, ClassVar
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import (
     ChatFeature,
+    CompleteConversationEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
+    LLMStopEvent,
     StartEvent,
     StopEvent,
 )
@@ -141,6 +143,16 @@ class Agent(DispatchableWorkflow):
             for capability in cls.installed_capabilities()
             if capability.chat_feature is not None
         } | {feature for tool_set in cls.tool_sets() for feature in tool_set.chat_features()}
+
+    @classmethod
+    @functools.cache
+    def supports_response_schema(cls) -> bool:
+        """Derived, never declared: a blueprint that ends its turns through `Conversation.complete` on an
+        `LLMStopEvent` has its answer validated, and corrected once, against the schema the caller asked for there.
+        A blueprint ending on its own stop events (RAG's) has no place for the result."""
+        return CompleteConversationEvent in cls.get_output_events() and all(
+            issubclass(stop, LLMStopEvent) for stop in cls.completion_stops
+        )
 
     @classmethod
     @functools.cache

@@ -1,7 +1,7 @@
 ---
 title: Wissensextraktions-Agent
 description: Sammelt Datensätze aus vielen Wissensdokumenten in einer Tabelle, etwa jede Hardware-Position auf den Rechnungen 2025 eines Lieferanten, jede Zeile mit der Datei, aus der sie stammt.
-source_sha: 785e3ae41f05ea53d8aba07ca078855d4f02e2a0a0dc31c7ae27b65111eca1fa
+source_sha: 9685f3ecfc1169f45e54d4427008fe1fada8264af2120ec1096d934c39e3f698
 ---
 
 # Wissensextraktions-Agent
@@ -33,9 +33,10 @@ flowchart LR
     F --> G[Tabellenvorschau,<br/>Zusammenfassung und CSV]
 ```
 
-1. **Anfrage lesen.** Ein Modellaufruf liest die Nachricht: die Spalten, nach denen der Benutzer fragt, welche Zeilen
-   behalten werden, jeden Ordner, jede Datei oder jedes Jahr, die der Benutzer nennt, und jede verlangte Berechnung.
-   Eine Folgefrage wie *«dasselbe für 2024»* wird zusammen mit der Unterhaltung gelesen.
+1. **Anfrage lesen.** Ein Modellaufruf liest die Nachricht: die Spalten, nach denen der Benutzer fragt, welche Dokumente
+   zählen (die Dokumentbedingung), welche Zeilen behalten werden, jeden Ordner und jede Datei, die der Benutzer nennt,
+   den Zeitraum, auf den die gesuchten Dokumente datiert sind, und jede verlangte Berechnung. Eine Folgefrage wie
+   *«dasselbe für 2024»* wird zusammen mit der Unterhaltung gelesen.
 2. **Anfrage bestätigen.** Bevor ein Dokument gelesen wird, zeigt der Agent in einem Formular, was er verstanden hat,
    und der Benutzer bestätigt oder korrigiert es (siehe [Das Anfrageformular](#das-anfrageformular)). Was der Benutzer
    bestätigt, wird gelesen und extrahiert.
@@ -43,18 +44,26 @@ flowchart LR
    eingegrenzt nur durch den bestätigten Ablageort. Eine Datei, die der Benutzer nennt, mit ihrem Pfad oder nur mit
    ihrem Namen, mit oder ohne Endung, meint nur diese Datei, nicht ihren Ordner. Keine Suche entscheidet, welche
    Dokumente zählen, sodass ein Dokument nie übersehen wird, weil es Dinge anders formuliert als die Anfrage. Ein
-   Lieferant oder ein Thema ist eine Bedingung an die Zeilen, kein Ort: *«von Acme»* behält die Zeilen von Acme, es
-   wählt keine Dokumente aus. Mit eingeschaltetem [Discovery-Modus](#discovery-modus) sucht stattdessen das Modell nach
-   den Dokumenten.
+   Lieferant, eine Vertragspartei oder ein Status ist kein Ort, sondern eine *Dokumentbedingung* (*«von Acme»*, *«nur
+   unterschriebene Fassungen»*), die am Anfang jedes Dokuments geprüft wird. Ein Wert, den die Zeilen selbst tragen,
+   etwa der Lieferant auf jeder Zeile eines Kontoauszugs, bleibt eine Bedingung an die Zeilen, ebenso ein Zeitraum für
+   Zeilen mit eigenem Datum, etwa *Auszugszeilen vom Februar 2025*: Er filtert die Zeilen und wird nicht mit den Pfaden
+   abgeglichen, denn der Pfad eines Auszugs nennt den Tag, an dem er ausgestellt wurde, nicht die Tage seiner Buchungen.
+   Auch ein Jahr, ein Quartal oder ein anderer Zeitraum ist nie ein Ort: Er wird als Daten gelesen und mit den Daten in
+   den Pfaden abgeglichen, sodass ein Dokument, dessen Pfad es ausserhalb des Zeitraums datiert, nicht gelesen wird
+   (siehe [Zeiträume und Daten in Pfaden](#zeitr%C3%A4ume-und-daten-in-pfaden)). Mit eingeschaltetem
+   [Discovery-Modus](#discovery-modus) sucht stattdessen das Modell nach den Dokumenten.
 4. **Spalten entwerfen.** Die Spalten werden aus den Worten des Benutzers entworfen, etwa *Datum, Position, Betrag,
    Währung*. Eine Bedingung wie *«nur Hardware»* entscheidet, welche Zeilen behalten werden, und wird nie zur Spalte.
 5. **Extrahieren.** Jedes Dokument wird gelesen und seine passenden Datensätze werden extrahiert, viele Dokumente
    gleichzeitig. Dokumente werden in überlappenden Teilen gelesen, sodass eine Zeile auf der letzten Seite gefunden und
    eine Zeile an der Grenze zwischen zwei Teilen nicht doppelt gezählt wird. Eine Zeile, die die Bedingung vielleicht
    nicht erfüllt, bleibt erhalten und wird in einer Spalte **Treffer** als *unsicher* markiert, sodass eine Person sie
-   prüfen kann, statt dass sie verworfen wird. Eine Bedingung an das ganze Dokument, etwa sein Lieferant, eine
-   Vertragspartei oder ein Jahr, gilt für jede seiner Zeilen: Ein Dokument, das sie eindeutig nicht erfüllt, liefert
-   keine Zeilen und wird unter „Keine Zeilen aus“ aufgeführt.
+   prüfen kann, statt dass sie verworfen wird. Ein Dokument, dessen Anfang der Dokumentbedingung widerspricht, etwa weil
+   er einen anderen Lieferanten nennt, wird nicht weiter gelesen: Es liefert keine Zeilen und wird mit seinem Grund
+   unter «Übersprungen» aufgeführt. Ein Dokument, dessen Anfang es nicht entscheidet, wird ganz gelesen, und seine
+   Zeilen werden mit *unsicher, bitte prüfen* markiert. Der Zeitraum gehört nur dort zu dieser Prüfung, wo der Pfad ihn
+   offenlässt: Ein Dokument, dessen Pfad es ganz innerhalb des Zeitraums datiert, wird nicht daran geprüft.
 6. **Antworten.** Die Antwort zeigt die ersten Zeilen der Tabelle (bis zu 100), gefolgt von der Zusammenfassung, und die
    ganze Tabelle als CSV-Datei: im Chat an die Antwort angehängt, über die API als Download-Link. Ein Dokument, das
    nicht gelesen werden konnte, wird mit dem Grund unter der Tabelle aufgeführt; die Zeilen der anderen Dokumente sind
@@ -64,19 +73,21 @@ flowchart LR
 Der Chat zeigt jeden Schritt, während er geschieht: eine Zeile dazu, wie viele Dokumente gelesen werden, welche Spalten
 die Tabelle hat und wie lange es ungefähr dauert; eine Zeile, wenn ein langes Dokument beginnt; eine Zeile pro Dokument,
 sobald es extrahiert ist, mit seinen ersten Zeilen («12 von 150 · invoice.pdf: 3 Zeilen — Laptop X1, 1,200; Dock D2,
-180»); und, solange ein Dokument länger als eine Minute braucht, eine Zeile, dass es noch gelesen wird. Eine Antwort
-kann viele Minuten dauern, wenn viele Dokumente gelesen werden; der Fortschritt zeigt, dass sie noch läuft.
+180») oder dem Grund, aus dem es übersprungen wurde («14 von 150 · initech-0412.pdf: übersprungen, Lieferant: Initech
+AG»); und, solange ein Dokument länger als eine Minute braucht, eine Zeile, dass es noch gelesen wird. Eine Antwort kann
+viele Minuten dauern, wenn viele Dokumente gelesen werden; der Fortschritt zeigt, dass sie noch läuft.
 
 ### Das Anfrageformular
 
 Ein falsch gelesener Teil einer Anfrage zeigte sich früher erst in der fertigen Tabelle, nachdem jedes Dokument gelesen
-war. Deshalb wird jede neue Tabellenanfrage zuerst zurückgefragt, in drei Teilen:
+war. Deshalb wird jede neue Tabellenanfrage zuerst zurückgefragt, in vier Teilen:
 
-| Teil                       | Was er sagt                                                                                                              | Alternative    |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------- |
-| **Ablageort**              | Die zu lesenden Ordner, Dateien oder Jahre. Der Hinweis nennt die grössten Ordner des Bereichs mit ihrer Anzahl.         | Alle Dokumente |
-| **Filterbedingung**        | Welche Datensätze die Tabelle behält, etwa *von Acme* oder *nur Hardware-Positionen*.                                    | Jede Zeile     |
-| **Zu extrahierende Werte** | Die Spalten der Tabelle; sie entscheiden, was eine Zeile ist: Rechnungsnummer und Total ergeben eine Zeile pro Rechnung. | —              |
+| Teil                       | Was er sagt                                                                                                                                                                                                                                                                                              | Alternative    |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| **Ablageort**              | Die zu lesenden Ordner oder Dateien. Der Hinweis nennt die grössten Ordner des Bereichs mit ihrer Anzahl.                                                                                                                                                                                                | Alle Dokumente |
+| **Dokumentbedingung**      | Welche Dokumente zählen, etwa *von Acme* oder *nur unterschriebene Fassungen*, gefolgt vom Zeitraum, auf den sie datiert sind, etwa *datiert zwischen dem 2026-01-01 und dem 2026-03-31*; am Anfang jedes Dokuments geprüft. *Jedes Dokument*, gewählt oder geschrieben, lässt auch den Zeitraum fallen. | Jedes Dokument |
+| **Filterbedingung**        | Welche Datensätze die Tabelle behält, etwa *nur Hardware-Positionen* oder die Zeilen eines Lieferanten auf einem Kontoauszug.                                                                                                                                                                            | Jede Zeile     |
+| **Zu extrahierende Werte** | Die Spalten der Tabelle; sie entscheiden, was eine Zeile ist: Rechnungsnummer und Total ergeben eine Zeile pro Rechnung.                                                                                                                                                                                 | —              |
 
 Mit eingeschaltetem **Discovery-Modus** folgen zwei weitere Teile: **Exakte Stichwörter**, Wörter, die die gesuchten
 Dokumente wörtlich enthalten (der Name eines Lieferanten, eine Rechnungsnummer), und **Semantische Stichwörter**, wovon
@@ -120,7 +131,7 @@ Antwort zeigt:
   Nummer), danach jene, die typische Wörter der gesuchten Zeilen enthalten;
 - wie sich die Dokumente **nach Ordner**, **nach Jahr im Pfad** und **nach Sammlung** aufteilen;
 - was Sie tun können: mit *ja* antworten, um alle in einer Antwort zu lesen, oder die Anfrage eingrenzen, zum Beispiel
-  auf einen Ordner oder ein Jahr.
+  auf einen Ordner oder einen kürzeren Zeitraum.
 
 Die Stichprobe kann keine Zeile enthalten, zum Beispiel wenn die gesuchten Datensätze selten sind; die Antwort sagt das
 dann und zeigt trotzdem, was die Tabelle enthalten würde. Fragen Sie statt *ja* etwas Neues, ersetzt das die wartende
@@ -143,7 +154,10 @@ Tabelle. Die Suche ist durch **Maximale Entscheidungen** und **Maximale Werkzeug
 der Agent nach Ordner aus und prüft die Bedingungen der Anfrage in jedem Dokument, und die Antwort sagt es.
 
 Was immer die Suche gewählt hat, die bestätigten Teile entscheiden: Der bestätigte **Ablageort** ersetzt jeden Pfad, den
-die Suche gesetzt hat, und die bestätigten **Zu extrahierenden Werte** und die **Filterbedingung** werden extrahiert.
+die Suche gesetzt hat, die bestätigten **Zu extrahierenden Werte**, die **Dokumentbedingung** und die
+**Filterbedingung** werden extrahiert, und der bestätigte Zeitraum wird auf die Daten in den Pfaden der Dokumente
+angewendet, die die Suche ausgewählt hat. Die Suche wird angewiesen, nicht nach einem Jahr auszuwählen: Die Anzahl, die
+`select_knowledge_documents` meldet, wird gezählt, bevor der Zeitraum angewendet wird.
 
 Ohne Discovery-Modus entscheidet die Rangfolge nach Bedeutung nur, welche Dokumente in die Stichprobe kommen und zuerst
 gelesen werden; kein Dokument wird je wegen seines Rangs weggelassen.
@@ -156,14 +170,89 @@ bis der **Discovery-Modus** wieder angekreuzt ist.
 :::
 
 ::: tip Welcher Modus für welches Profil
-Jedes Dokument zu lesen ist der sichere Standard: Nichts wird übersehen, aber die Zeilen jedes Dokuments beurteilt das
-Extraktionsmodell für sich allein. Nennt eine Anfrage einen Lieferanten oder eine Vertragspartei unter vielen in
-denselben Ordnern (*"die Hardware von Acme 2025"* über die Rechnungen aller Lieferanten), behält diese Beurteilung ab
-und zu eine Zeile aus dem Dokument eines anderen Lieferanten, und jedes Dokument kostet einen Modellaufruf. Für Profile,
-die für solche genauen, engen Anfragen über grosse gemischte Sammlungen genutzt werden, schalten Sie den
-**Discovery-Modus** ein: Nur die Dokumente, die die Suche auswählt, werden gelesen, was schneller und günstiger ist, mit
-dem Risiko, dass ein Dokument fehlt, das die Suche nicht findet.
+Jedes Dokument zu lesen ist der sichere Standard: Nichts wird übersehen. Nennt eine Anfrage einen Lieferanten oder eine
+Vertragspartei unter vielen in denselben Ordnern (*"die Hardware von Acme 2025"* über die Rechnungen aller Lieferanten),
+überspringt die **Dokumentbedingung** das Dokument jedes anderen Lieferanten nach seinem ersten Teil, sodass seine
+Zeilen nie in die Tabelle gelangen; doch jedes Dokument kostet weiterhin mindestens einen Modellaufruf, und ein
+Dokument, dessen Anfang seinen Lieferanten nicht nennt, wird ganz gelesen und zur Prüfung markiert. Für Profile, die für
+solche genauen, engen Anfragen über grosse gemischte Sammlungen genutzt werden, schalten Sie den **Discovery-Modus**
+ein: Nur die Dokumente, die die Suche auswählt, werden gelesen, was schneller und günstiger ist, mit dem Risiko, dass
+ein Dokument fehlt, das die Suche nicht findet.
 :::
+
+### Zeiträume und Daten in Pfaden
+
+Ein Zeitraum, den die Anfrage nennt, etwa *«die Rechnungen 2025»*, *«Q1 2026»* oder *«seit März 2025»*, wird als sein
+erster und letzter Tag gelesen, nie als Ordner: Ein Bestand ohne Jahresordner wird gleich gelesen wie einer mit
+Jahresordnern. Der Agent vergleicht den Zeitraum dann per Code mit dem Datum, das der Pfad jedem ausgewählten Dokument
+gibt, bevor ein Dokument gelesen wird. Ein Zeitraum für Zeilen mit eigenem Datum, etwa Auszugszeilen, Buchungen,
+Transaktionen oder Zeiteinträge, wird nicht mit den Pfaden verglichen: Er bleibt eine Bedingung an die Zeilen, sodass
+kein Auszug wegen des Datums in seinem Pfad ausgelassen wird.
+
+Ein Modell kann *«Rechnungssummen 2025»* trotzdem als Ordner `invoices/2025/**` neben dem Zeitraum lesen, was jede
+Rechnung ohne Datum im Pfad auslassen würde. Deshalb nimmt der Agent solche Datumsordner aus den Orten, die die erste
+Lesung geschrieben hat, bevor das Formular erscheint: Ein Ordner, der nur ein Datum ist (`2025`, `2025/q1`, `2025-03`)
+und innerhalb des Zeitraums liegt, wird durch «beliebige Ordner» ersetzt, sodass aus `invoices/2025/**` `invoices/**`
+und aus `2025/**` jedes Dokument wird. Das geschieht, nachdem eine Datei, die die Nachricht nennt, den Ordner ersetzt
+hat, den das Modell aus ihr gemacht hat, sodass der erweiterte Ordner neben der Datei gelesen wird. Ohne Discovery wird
+der Ort nur erweitert. Im [Discovery-Modus](#discovery-modus) erhält die Suche den erweiterten Ort, und ihre eigene
+Auswahl entscheidet, welche Dokumente gelesen werden. Ein Datumsordner ausserhalb des Zeitraums oder breiter als dieser
+(`invoices/2024/**`, oder `invoices/2025/**` für Q1 2025), ein Ordner, der mehr als ein Datum nennt (`invoices-2025`),
+ein Pfad, den der Benutzer schreibt, in dieser oder einer früheren Nachricht und mit `/` oder `\` (*«aus
+invoices/2025»*), ein regulärer Ausdruck und ein im Formular geschriebener Ort bleiben, wie sie sind. Behält der Dialog
+des Formulars den Ort wie angezeigt bei und wird ein anderer Teil geschrieben, wird die Anfrage noch einmal gelesen und
+dieselben Datumsordner werden wieder herausgenommen, während eine Datei oder ein Ordnerpfad, der in diesen Teil
+geschrieben wurde, gelesen wird.
+
+| Ein Pfad wie                                                                 | ist datiert auf             |
+| ---------------------------------------------------------------------------- | --------------------------- |
+| `invoices/2025/a.pdf`, `invoices_2025/a.pdf`                                 | das Jahr 2025               |
+| `2026/03/a.pdf`, `2026-03/a.pdf`, `März 2026/a.pdf`, `202603/a.pdf`          | März 2026                   |
+| `2026-04-06_scan.pdf`, `20260406.pdf`, `06.04.2026.pdf`, `6. April 2026.pdf` | 6. April 2026               |
+| `Q1 2026/a.pdf`, `2026_Q1/a.pdf`, `1. Quartal 2026/a.pdf`                    | das erste Quartal 2026      |
+| `Kontoauszug_01.01.2025-31.03.2025.pdf`, `Jan-März 2025/a.pdf`               | 1. Januar bis 31. März 2025 |
+| `1-15 März 2025.pdf`, `du 1 au 15 mars 2025.pdf`                             | 1. bis 15. März 2025        |
+
+- **Ordner verschachteln sich.** `2026/03/14/a.pdf` ist der 14. März 2026. Ein Monats-, Quartals- oder Tagesordner zählt
+  nur unter einem Ordner, der auf ein Jahr oder einen Monat datiert ist; Monatsnamen werden auf Deutsch, Englisch,
+  Französisch und Italienisch gelesen.
+- **Tag zuerst.** Numerische Daten werden mit dem Tag zuerst gelesen, wie in der Schweiz: `04-06-2026` ist der 4. Juni
+  2026\. Ein Datum, das es so nicht gibt, etwa `04-13-2026`, ergibt kein Datum; die Teile werden nie vertauscht. Eine
+  zweistellige Jahreszahl wird nur in `06.04.26` gelesen.
+- **Zähler stören nicht.** `Scan_2025-03-15_001.pdf` und `2025-03-15-0001.pdf` sind der 15. März 2025.
+- **Ein Monat nach seiner Nummer.** `03 März 2026/` ist der ganze März 2026, da eine zweistellige Zahl, die der eigenen
+  Nummer des Monats entspricht, den Monat nummerieren kann; `3. März 2026` und `15 März 2026` sind Tage.
+- **Im Zweifel kein Datum.** Ein Pfad, dessen Datum das wahre Datum des Dokuments vielleicht nicht enthält, ergibt
+  keines: eine mehrdeutige zweistellige Jahreszahl (`06-04-26`), aufgezählte Monate, Quartale oder Tage, die kein
+  Bereich abdeckt (`Jan_Feb_2025`, `Q1_Q2_2025`, `1 und 15 März 2025`), ein Datum, das ein Ende eines offenen Zeitraums
+  ist (`ab 2020`, `seit März 2025`, `ab Mitte 2020`, `up to 2019`, `2020-heute`, `Archiv bis 2019`, `2024 und älter`,
+  `2020 onwards`, `2020 to date`, `2020+`, `-2019`), eine Zahl mit einem Bindestrich zwischen Leerzeichen vor einem
+  Monat (`Kapitel 3 - März 2025`), ein Bereich von Jahren (`2025-2026`, `FY2025`), eine an Buchstaben angehängte
+  Jahreszahl, auch neben einem anderen Datum (`Offerte_2024_rev2025.pdf`, `2025er Rechnungen/2024-12-30.pdf`), eine Zahl
+  hinter einer Kennung (`Nr. 2024`, `SIA 2024`, `v2025`), ein Jahr vor 1990 oder nach dem nächsten Jahr und Ordner,
+  deren Daten sich widersprechen (`2025/20260406.pdf`).
+
+Jedes ausgewählte Dokument ist dann:
+
+- **im Zeitraum**, wenn sein Pfad es ganz innerhalb datiert: Es wird gelesen und nicht am Zeitraum geprüft;
+- **über den Rand des Zeitraums hinweg** oder **ohne Datum im Pfad**: Es wird gelesen und an seinem Anfang zusammen mit
+  der Dokumentbedingung am Zeitraum geprüft;
+- **ausserhalb des Zeitraums**: Es wird nicht gelesen.
+
+Ein Dokument wird nur ausgelassen, wenn sein Pfad es eindeutig ausserhalb des Zeitraums datiert. Die Zusammenfassung
+nennt den Zeitraum mit der Dokumentbedingung, dann eine Zeile **Zeitraum nach Pfad** mit der Anzahl der Dokumente, die
+darin oder darüber hinweg datiert sind, der ausgelassenen und jener ohne Datum im Pfad, und listet bis zu zehn der
+ausgelassenen Pfade auf. Lässt der Zeitraum jedes Dokument aus, sagt die Antwort, wie viele er ausgelassen hat, nennt
+einige davon und die Jahre, auf die sie datiert sind, sodass eine Anfrage für das falsche Jahr sofort auffällt.
+
+::: warning Daten mit dem Monat zuerst und Postleitzahlen
+Ein Dateiname mit dem Monat zuerst, etwa `04-06-2026` für den 6. April, wird als 4. Juni gelesen, sodass eine Anfrage
+für April ihn auslässt. Ein Ordner, der nach einer Postleitzahl im Jahresbereich benannt ist, etwa `2000 Neuchâtel`,
+wird als Jahr 2000 gelesen. Die Liste der ausgelassenen Pfade unter der Tabelle zeigt beides.
+:::
+
+Das Werkzeug `list_knowledge_documents` des Universal Agent nimmt denselben Zeitraum als `period_start` und `period_end`
+entgegen. Siehe die ADR `2026_11_21_document_periods_matched_against_path_dates_by_code`.
 
 ### Lange Dokumente
 
@@ -173,6 +262,10 @@ und den Teilen, in denen die gesuchten Zeilen am wahrscheinlichsten stehen. Sein
 **(teilweise gelesen)** markiert, und die Zusammenfassung führt es unter «Teilweise gelesen (Zeilen können fehlen)» auf,
 weil eine Zeile in einem nicht gelesenen Teil nicht gefunden wird. Siehe ADR
 `2026_10_21_partial_reads_of_long_documents_in_record_extraction`.
+
+Ein langes Dokument, das die Dokumentbedingung nicht erfüllt, wird nur in seinem ersten Teil gelesen: Sein Anfang
+entscheidet, und seine anderen Teile werden gar nicht gelesen. Siehe ADR
+`2026_11_18_document_condition_judged_in_the_first_extraction_window`.
 
 ## Was er *nicht* tut
 

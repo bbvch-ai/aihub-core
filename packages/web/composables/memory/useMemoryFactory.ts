@@ -128,10 +128,6 @@ export function createMemoryComposables(context: MemoryContext) {
       return Math.ceil(memoriesData.value.memories.length / pageSize.value)
     })
 
-    const allRelations = computed(() => {
-      return memoriesData.value?.relations || []
-    })
-
     const nextPage = () => {
       if (currentPage.value < totalPages.value) {
         currentPage.value++
@@ -148,7 +144,6 @@ export function createMemoryComposables(context: MemoryContext) {
       memoriesData,
       memoriesAreLoading,
       paginatedMemories,
-      allRelations,
       currentPage,
       pageSize,
       totalPages,

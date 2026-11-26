@@ -10,7 +10,6 @@ from playground.testing.tests.agent.events.TestStartEvent import TestStartEvent
 from playground.testing.tests.agent.events.TestStopEvent import TestStopEvent
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
 from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import SimulatedAgentApiTestRunner
-from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 
 pytestmark = pytest.mark.usefixtures("cleanup_db_and_cache")
 
@@ -43,7 +42,7 @@ async def agent_api_client():
 
     async with LifespanManager(app) as lifespan:
         # Create agent config in database after lifespan starts (database is now connected)
-        runner.create_agent_config_in_db()
+        await runner.create_agent_config_in_db()
         async with AsyncClient(
             transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1/active"
         ) as client:
@@ -94,7 +93,7 @@ async def test_get_agent_instance(agent_api_client):
 @pytest.mark.asyncio(loop_scope="module")
 async def test_send_event_to_agent(agent_api_client):
     """Test POST /agents/classes/{agent_class}/instances/{agent_id}/{event_name} returns correct agent details."""
-    start_event_input = ModelCreationService.create_input_model_from_event_class(TestStartEvent)(
+    start_event_input = TestStartEvent.api_input_model()(
         agent_id=AGENT_ID,
         payload="Das ist ein test.",
     )

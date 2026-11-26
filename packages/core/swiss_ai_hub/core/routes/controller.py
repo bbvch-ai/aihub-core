@@ -98,7 +98,8 @@ class Controller(abc.ABC):
         """Return a dependency that authenticates and requires the ``AIHubSysAdmin`` realm role.
 
         Use for global sysadmin-only endpoints. Relies on ``UserIdentity.is_sys_admin``,
-        which is populated from the JWT ``roles`` claim by ``KeycloakAuthHandler``.
+        which the JWT and static-token handlers set from the realm roles. OpenWebUI's signed
+        headers never set it, so this gate refuses every request coming through OpenWebUI.
         """
 
         def check_sys_admin(

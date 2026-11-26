@@ -46,13 +46,6 @@ def _agent_class(agent_class: str = "CronDemoAgent", last_discovered: datetime |
     )
 
 
-def _snapshot_hops(to_thread: MagicMock) -> int:
-    """How many of the offloaded calls were the snapshot read. Mocked callables carry no `__name__`."""
-    return sum(
-        getattr(call.args[0], "__name__", "") == "_load_schedulable_snapshot" for call in to_thread.call_args_list
-    )
-
-
 def _snapshot(online: list | None = None) -> _SchedulableSnapshot:
     return _SchedulableSnapshot(online=online or [])
 
@@ -577,30 +570,16 @@ class TestCatchUp:
 
 class TestTheTickStaysOffTheEventLoop:
     """The scheduler runs inside the API process, so a synchronous Mongo read in the tick stalls every
-    HTTP and WebSocket request for its duration — and the stall grows with the profile count."""
+    HTTP and WebSocket request for its duration — and the stall grows with the profile count. Classes,
+    profiles and threads are Beanie, awaited on the loop rather than offloaded to a thread."""
 
     @pytest.mark.asyncio
-    async def test_the_snapshot_read_is_offloaded_to_a_thread(self, service: CronScheduler) -> None:
-        with patch(f"{_MODULE}.asyncio.to_thread", wraps=asyncio.to_thread) as to_thread:
-            await _run_tick(service)
-
-        assert _snapshot_hops(to_thread) == 1
-
-    @pytest.mark.asyncio
-    async def test_resolving_the_thread_is_offloaded_too(self, service: CronScheduler) -> None:
-        """A query plus conditional insert, and it runs once per fired occurrence rather than per tick."""
+    async def test_the_snapshot_and_the_thread_are_awaited_not_offloaded(self, service: CronScheduler) -> None:
         with patch(f"{_MODULE}.asyncio.to_thread", wraps=asyncio.to_thread) as to_thread:
             scheduled_thread = await _run_tick(service)
 
-        assert any(call.args[0] is scheduled_thread for call in to_thread.call_args_list)
-
-    @pytest.mark.asyncio
-    async def test_the_whole_snapshot_is_one_hop_regardless_of_profile_count(self, service: CronScheduler) -> None:
-        """Reading classes and profiles separately would cost a hop each, every tick."""
-        with patch(f"{_MODULE}.asyncio.to_thread", wraps=asyncio.to_thread) as to_thread:
-            await _run_tick(service, configs=[_config(agent_id="a"), _config(agent_id="b")])
-
-        assert _snapshot_hops(to_thread) == 1
+        to_thread.assert_not_called()
+        scheduled_thread.assert_awaited_once()
 
 
 class TestRetention:

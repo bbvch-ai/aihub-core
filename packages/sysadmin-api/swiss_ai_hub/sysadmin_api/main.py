@@ -36,6 +36,7 @@ runner.mount(
     .get_default_access_rules()
     .get_tenant()
     .create_tenant_metadata()
+    .provision_tenant()
     .update_tenant_metadata()
     .delete_tenant_metadata(),
     # Controllers from packages/api re-mounted here so sysadmin-web's inherited

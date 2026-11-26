@@ -2,6 +2,7 @@ import type { OwuiMessage, OwuiSource } from './openwebui-api'
 
 export type ToolName =
   | 'run_command'
+  | 'send_process_input'
   | 'display_file'
   | 'read_attached_files'
   | 'search_knowledge'
@@ -17,6 +18,7 @@ export type ToolName =
  */
 const TOOL_LABELS: Record<ToolName, string[]> = {
   run_command: ['Run Command', 'Befehl ausführen', 'Exécuter une commande', 'Esegui comando'],
+  send_process_input: ['Type into Command', 'In Befehl eingeben', 'Saisir dans la commande', 'Digita nel comando'],
   display_file: ['Show File', 'Datei zeigen', 'Afficher un fichier', 'Mostra file'],
   read_attached_files: [
     'Read attached files',

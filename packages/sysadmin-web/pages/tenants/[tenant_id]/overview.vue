@@ -15,6 +15,10 @@
         </p>
         <span class="font-mono text-sm">{{ tenantId }}</span>
       </div>
+      <TenantAdminUsageLink
+        :tenant-id="tenantId"
+        :tenant-name="tenant?.name ?? tenantId"
+      />
       <FormKit
         :key="tenantId"
         type="form"

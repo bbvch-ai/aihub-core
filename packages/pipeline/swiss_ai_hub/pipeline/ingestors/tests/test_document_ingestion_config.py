@@ -45,4 +45,5 @@ class TestAsForm:
             "with_summary_nodes",
             "with_table_refinement",
             "with_figure_descriptions",
+            "with_document_classification",
         }

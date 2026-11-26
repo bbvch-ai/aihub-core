@@ -87,7 +87,8 @@ runner.mount(
     .get_agent_instance_threads()
     .get_all_agent_instances()
     .initiate_file_upload()
-    .validate_file_upload(),
+    .validate_file_upload()
+    .get_image(),
     ProcessController(auth=auth)
     .get_process_classes()
     .get_process_class()
@@ -123,6 +124,7 @@ runner.mount(
     .get_source_pipelines()
     .create_database()
     .update_database_source()
+    .request_classification()
     .create_namespace()
     .update_namespace()
     .get_databases()
@@ -139,7 +141,7 @@ runner.mount(
     .batch_delete_documents()
     .delete_namespace()
     .delete_database(),
-    FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
+    FileController(auth=auth).get_file_url().get_figure().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     IncidentController(auth=auth).get_incident_availability().get_incident_form().create_incident(),
     UserKnowledgeController(auth=auth)

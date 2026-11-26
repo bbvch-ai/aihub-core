@@ -95,8 +95,8 @@ it needs no proxy.
   Alpine package, so we would build it from its Go sources and maintain that. Squid is one (`squid-7.6-r0`, pinned in
   the Dockerfile), its `dst` ACL does the same job, and it is widely known.
 - **Squid 6.12 on Alpine 3.22.** The first image used it. Upstream fixes only 7.x now, and 6.12 has 11 published
-  advisories. None applies to this configuration (no ICP, HTCP, SNMP, ESI, `cache_peer`, ICAP or FTP, empty error
-  pages, and every request a `CONNECT` tunnel), but the next one might not need any of those.
+  advisories. None applies to this configuration (no ICP, HTCP, SNMP, ESI, `cache_peer`, ICAP or FTP, empty error pages,
+  and every request a `CONNECT` tunnel), but the next one might not need any of those.
 
 ## Consequences
 

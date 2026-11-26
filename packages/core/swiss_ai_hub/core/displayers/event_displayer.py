@@ -16,6 +16,7 @@ from swiss_ai_hub.core.events.agent.display.thought_event import ThoughtEvent
 from swiss_ai_hub.core.events.agent.semantic.llm.llm_event import LLMEvent
 from swiss_ai_hub.core.events.agent.semantic.llm.llm_stop_event import LLMStopEvent
 from swiss_ai_hub.core.events.agent.semantic.llm.message import Message
+from swiss_ai_hub.core.events.agent.user.response_schema import ResponseSchema
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.publishers.js_publisher import JSPublisher
@@ -143,6 +144,10 @@ class EventDisplayer:
         tools: Annotated[
             list[dict[str, Any]] | None, "OpenAI-format tools the model may call instead of, or after, answering"
         ] = None,
+        response_schema: Annotated[
+            ResponseSchema | None,
+            "The JSON shape the caller asked the answer in, sent as `response_format` to a model that supports it",
+        ] = None,
     ) -> LLMEvent | LLMStopEvent:
         """
         Stream the LLM's response incrementally as chunked events, then return a final LLMEvent encapsulating
@@ -165,7 +170,7 @@ class EventDisplayer:
         processor = StreamProcessor(self, llm_config.model_name)
         tool_calls = None
 
-        stream = await (llm.astream_chat(messages, tools=tools) if tools else llm.astream_chat(messages))
+        stream = await llm.astream_chat(messages, **EventDisplayer._answer_kwargs(llm, tools, response_schema))
         async for chunk in stream:
             await processor.process_chunk(chunk.delta)
             if tools:
@@ -195,6 +200,17 @@ class EventDisplayer:
         if as_stop_step:
             return LLMStopEvent(**llm_event.model_dump())
         return llm_event
+
+    @staticmethod
+    def _answer_kwargs(
+        llm: LLM, tools: list[dict[str, Any]] | None, response_schema: ResponseSchema | None
+    ) -> dict[str, Any]:
+        """A model without structured outputs gets no `response_format`: the conversation's completion corrects
+        its answer into the shape instead of the gateway rejecting the call."""
+        kwargs: dict[str, Any] = {"tools": tools} if tools else {}
+        if response_schema is not None and getattr(llm, "should_use_structured_outputs", False):
+            kwargs["response_format"] = response_schema.response_format()
+        return kwargs
 
     @staticmethod
     def _extract_token_counts(llm: LLM) -> tuple[int, int]:

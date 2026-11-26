@@ -1,5 +1,5 @@
 import logging
-from asyncio import sleep
+from asyncio import sleep, to_thread
 from functools import partial
 from typing import Annotated, override
 
@@ -69,12 +69,14 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService[ProcessClassDTO
         return dto.process_class
 
     @override
-    def _register_discovered_class(self, dto: ProcessClassDTO) -> None:
+    def _register_discovered_class(self, dto: ProcessClassDTO) -> bool:
         self._register_class_endpoints(dto)
+        return True
 
     @override
-    def _online_class_names(self) -> set[str]:
-        return ProcessClassEntity.get_online_class_names()
+    async def _online_class_names(self) -> set[str]:
+        threshold = await ProcessClassEntity.online_threshold()
+        return await to_thread(ProcessClassEntity.get_online_class_names, threshold)
 
     @override
     async def _broadcast_discovery(self) -> list[ProcessClassDTO]:
@@ -119,6 +121,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService[ProcessClassDTO
             process_class_dto = ProcessClassDTO.from_discovery_event(response)
             # Persist the process class entity in database (updates last_discovered timestamp)
             stamp = partial(
+                to_thread,
                 ProcessClassEntity.create_or_update,
                 process_class=process_class_dto.process_class,
                 name=process_class_dto.name,
@@ -301,7 +304,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService[ProcessClassDTO
         async def get_form(
             process_id: Annotated[str, Path(title="Process ID", description="The specific process instance ID")],
             process_walkthrough_id: Annotated[str, Path(title="Walkthrough ID", pattern=r"^[a-f0-9]{24}$")],
-            _: Annotated[
+            user: Annotated[
                 UserIdentity,
                 Security(process_controller.user_with_permission(f"aihub.user.process.{process_class}.{{process_id}}")),
             ],
@@ -317,6 +320,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService[ProcessClassDTO
                 process_class=process_class,
                 process_id=process_id,
                 process_walkthrough_id=process_walkthrough_id,
+                user=user,
                 t=t,
             )
             process_dto = next(

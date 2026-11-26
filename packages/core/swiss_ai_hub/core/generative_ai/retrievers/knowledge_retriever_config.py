@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Self
+from typing import Annotated, ClassVar, Literal, Self
 
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pydantic import Field
@@ -22,6 +22,8 @@ class KnowledgeRetrieverConfig(BaseRetrieverConfig):
 
     Supports duality pattern for form rendering and data validation.
     """
+
+    repeater_help: ClassVar[LocaleString | None] = LocaleString.from_i18n_path("lib.retriever.config.list_help")
 
     embed_model: Annotated[
         EmbeddingModelConfig,

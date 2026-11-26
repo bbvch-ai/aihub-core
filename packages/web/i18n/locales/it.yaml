@@ -147,7 +147,6 @@ thread:
       completed: Completato
       failed: Fallito
       agent_name_placeholder: Filtra per agente
-      user_name_placeholder: Filtra per utente
       date_range_placeholder: Filtra per data
   utils:
     pendingTypes:
@@ -187,6 +186,7 @@ thread:
 chat:
   assistant: Assistente
   document: Documento
+  image: Immagine
 event:
   list:
     firstInteraction: 'Prima interazione:'
@@ -252,7 +252,6 @@ event:
   retrieveMemory:
     title: Memoria recuperata
     memories: Memorie
-    relations: Grafo della conoscenza
     score: Rilevanza
     noMemories: Nessuna memoria recuperata
   storeMemory:
@@ -260,9 +259,6 @@ event:
     added: Aggiunto
     updated: Aggiornato
     deleted: Eliminato
-    addedRelations: relazioni aggiunte
-    deletedRelations: relazioni eliminate
-    relationChanges: Modifiche alle relazioni
     noChanges: Nessuna modifica
   addMemoryToChatHistory:
     summary: '{count} messaggio di memoria aggiunto alla cronologia | {count} messaggi
@@ -359,12 +355,16 @@ event:
   extraction:
     fields: Colonne
     instructions: Righe da tenere
+    documentCondition: Documenti che contano
+    pathDates: Periodo (date nei percorsi)
     criteria: Documenti selezionati
     collections: Raccolte
     notices: Avvisi
     documentIds: '{count} documenti scelti'
+    everyDocument: Tutti i documenti nell'ambito
     files: File
     failedFiles: File non riusciti
+    skippedFiles: File saltati per la condizione sul documento
     rows: Righe mostrate / trovate
     truncated: Abbreviato
     confirmed: Estrae tutti i documenti confermati dall'utente
@@ -455,6 +455,10 @@ agent:
         questo ambiente.
   export:
     button: Esporta
+  storedSecrets:
+    title: Reinserire i segreti
+    detail: 'I segreti salvati non vengono mai copiati in un nuovo profilo. Reinseriscili
+      prima di salvare: {fields}'
   configuration:
     title: Configurazione dell'agente
     description: Configura il comportamento runtime e le impostazioni per questo agente
@@ -632,6 +636,26 @@ knowledge:
       description: La sorgente sincronizza questo database una volta al giorno, quindi
         le sue collezioni compaiono qui dopo la prossima sincronizzazione pianificata.
         Se ancora non compaiono, controlla le impostazioni della sorgente.
+  classification:
+    failed: La classificazione richiesta il {date} non è riuscita più volte ed è stata
+      interrotta. Richiedila di nuovo o chiedi a un amministratore di controllare
+      la pipeline.
+    request: Classifica i documenti esistenti
+    pending: Classificazione richiesta il {date}; i documenti vengono classificati
+      alla prossima esecuzione della pipeline.
+    confirm:
+      header: Classifica i documenti esistenti
+      message: Ai documenti di {name} che non hanno ancora un tipo, o che sono stati
+        classificati da una versione precedente, vengono assegnati un tipo e degli
+        attributi dal testo salvato. Ognuno costa una chiamata al modello; i documenti
+        aggiornati vengono saltati.
+      accept: Classifica
+    requested:
+      summary: Classificazione richiesta
+      detail: La pipeline classifica i documenti a breve.
+    error:
+      summary: Non è stato possibile richiedere la classificazione
+      detail: Riprova più tardi.
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
   pipeline: 'Pipeline: {name}'
@@ -979,6 +1003,8 @@ process:
       done: Completato
       steps: Progresso
 form:
+  repeater:
+    add_item: Aggiungi elemento
   secret_file_input:
     drop_hint: Trascina qui il file o fai clic per sceglierlo
     limits: '{accept}, fino a {size}'
@@ -1002,6 +1028,18 @@ form:
       in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
       fino al rilascio di una correzione.
 lib:
+  modelSelect:
+    contextWindow: 'Finestra di contesto: {input} token in ingresso · {output} in
+      uscita'
+    contextWindowInputOnly: 'Finestra di contesto: {input} token in ingresso'
+    notSelectable: '{model} non soddisfa i requisiti di questo campo. Scegli un altro
+      modello prima di salvare.'
+    specialPurpose: '{model} è pensato per un solo compito e non può essere scelto
+      qui. Scegli un altro modello prima di salvare.'
+    unavailable: '{model} non è disponibile per te. Scegli un altro modello prima
+      di salvare.'
+    loadFailed: Non è stato possibile caricare i modelli. Ricarica la pagina per riprovare.
+    empty: Nessuno dei modelli che puoi usare soddisfa i requisiti di questo campo.
   modelBound:
     providerDefault: predefinito del fornitore
     overrideRequired: Inserisci un valore, oppure deseleziona la sostituzione per
@@ -1044,8 +1082,6 @@ lib:
       è possibile offrire raccolte.
     empty: L'agente selezionato non è configurato per alcuna raccolta.
     unavailable: Salvata, ma non consultata dall'agente selezionato
-  knowledgeDatabases:
-    unavailable: '{name} (eliminato o non visibile a te)'
   vectorStore:
     label: Archivio vettoriale
     help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare
@@ -1068,9 +1104,6 @@ lib:
         La chiave riservata `namespace` non è mai consentita.
 memory:
   title: Ricordi
-  graph:
-    title: Grafo della conoscenza
-    no_results: Nessun ricordo trovato
   list:
     title: Elenco dei ricordi
     no_results: Nessun ricordo trovato
@@ -1131,8 +1164,6 @@ openwebui:
   memories:
     title: Ricordi dell'Agente
     select_agent: Seleziona Agente
-    list: Lista
-    graph: Grafico
     user_memories: Ricordi dell'Utente
     org_memories: Ricordi dell'Organizzazione
 tenant:
@@ -1211,3 +1242,56 @@ userFiles:
     uploaded: '{count} file caricati'
     uploadFailed: Caricamento non riuscito
     changeFailed: La modifica non è riuscita
+token:
+  title: Token API
+  intro: I token personali consentono a script e integrazioni di chiamare la REST
+    API a tuo nome, con le tue autorizzazioni. Un token funziona in tutti i tenant
+    di cui fai parte, finché non scade o non lo revochi.
+  list:
+    name: Nome
+    created: Creato il
+    expires: Scade il
+    last_used: Ultimo utilizzo
+    never_used: Mai utilizzato
+    empty: Non hai ancora nessun token API.
+  status:
+    active: Attivo
+    expiring: In scadenza
+    expired: Scaduto
+  create:
+    button: Genera token
+    title: Genera token API
+    name:
+      label: Nome
+      placeholder: es. script di reporting
+      help: Ti aiuta a riconoscere il token in seguito, ad esempio dallo script o
+        dall'integrazione che lo usa.
+    expiry:
+      label: Scade dopo
+      preset_30: 30 giorni
+      preset_90: 90 giorni
+      preset_180: 6 mesi
+      preset_365: 1 anno
+      custom: Data personalizzata
+      custom_placeholder: Scegli una data di scadenza
+      help: Il token smetterà di funzionare il {date}.
+    cancel: Annulla
+    submit: Genera
+    error: Non è stato possibile generare il token. Riprova.
+  created:
+    title: Copia il nuovo token
+    warning: Il token viene mostrato solo questa volta. Copialo ora e conservalo in
+      un luogo sicuro. Se lo perdi, revocalo e generane uno nuovo.
+    copy: Copia
+    copied: Copiato
+    usage: Invialo con ogni richiesta API nell'header Authorization, dopo la parola
+      Bearer e uno spazio.
+    done: Fine
+  revoke:
+    button: Revoca
+    confirm: Revocare questo token?
+    explanation: Tutto ciò che usa ancora «{name}» perde subito l'accesso. L'operazione
+      è irreversibile.
+    cancel: Annulla
+    proceed: Revoca
+    success: Token revocato

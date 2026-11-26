@@ -10,7 +10,7 @@ from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 # An http(s) URL with no credentials, query or fragment: a "?" or "#" would turn the API path appended to it into a
 # query, so the URL could name any path on any host. Empty is allowed so that an unfilled group still validates and
-# problems() can say what is missing. Which hosts it may name is checked before every search (SourceHostGuard).
+# problems() can say what is missing. Which hosts it may name is checked before every search (PublicHostGuard).
 _BASE_URL_PATTERN = r"^(https?://[^\s/@?#]+(/[^\s?#]*)?)?$"
 _I18N = "lib.jira.config"
 _DEPLOYMENT_REF = "jira_connection_deployment"

@@ -25,13 +25,20 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </attached_files>
     {% endchat %}
-  excerpted: Solo le parti di "%{filename}" più rilevanti per la domanda rientrano
-    nel tuo contesto. Se la tua risposta si basa su questo testo, comunica all'utente
-    che si basa su estratti di questo file; ciò che calcoli con il codice sull'intero
-    file non è parziale.
-  truncated: Solo l'inizio di «%{filename}» è entrato nel tuo contesto. Se la tua
-    risposta si basa su questo testo, comunica all'utente che si basa su una parte
-    di questo file; ciò che calcoli con il codice sull'intero file non è parziale.
+  excerpted: Solo %{kept} delle %{total} sezioni di "%{filename}", le più rilevanti
+    per la domanda, rientrano nel tuo contesto. Se la tua risposta si basa su questo
+    testo, comunica all'utente che si basa su estratti di questo file; ciò che calcoli
+    con il codice sull'intero file non è parziale.
+  truncated: Solo l'inizio di «%{filename}», le sue prime %{kept} sezioni su %{total},
+    è entrato nel tuo contesto. Se la tua risposta si basa su questo testo, comunica
+    all'utente che si basa su una parte di questo file; ciò che calcoli con il codice
+    sull'intero file non è parziale.
+  page_count: Il file ha %{pages} pagine.
+  whole_file_in_code: Un totale, un conteggio o qualsiasi altra cifra sull'intero
+    file "%{filename}" non può venire da queste sezioni, né sommandole né ricopiandole
+    nel codice. Calcolala ora con il codice sull'intero file in run_command, senza
+    chiedere prima all'utente; il file si trova invariato nella cartella della conversazione
+    della sandbox del codice.
   unreadable: L'utente ha allegato «%{filename}», ma non è stato possibile leggerlo
     (%{error}). Comunica all'utente che questo file non è stato letto e suggerisci
     di allegarlo in un altro formato o di incollarne il testo.

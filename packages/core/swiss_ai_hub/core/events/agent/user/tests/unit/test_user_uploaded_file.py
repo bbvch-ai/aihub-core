@@ -45,17 +45,17 @@ class TestUserUploadedFile:
 
 class TestSanitizePathSegment:
     def test_replaces_forward_slashes(self):
-        assert UserUploadedFile._sanitize_path_segment("a/b/c") == "a_b_c"
+        assert UserUploadedFile.sanitize_path_segment("a/b/c") == "a_b_c"
 
     def test_replaces_backslashes(self):
-        assert UserUploadedFile._sanitize_path_segment("a\\b\\c") == "a_b_c"
+        assert UserUploadedFile.sanitize_path_segment("a\\b\\c") == "a_b_c"
 
     def test_replaces_dot_dot_traversal(self):
-        assert UserUploadedFile._sanitize_path_segment("..") == "_"
+        assert UserUploadedFile.sanitize_path_segment("..") == "_"
 
     def test_replaces_embedded_dot_dot(self):
-        assert UserUploadedFile._sanitize_path_segment("foo..bar") == "foo_bar"
+        assert UserUploadedFile.sanitize_path_segment("foo..bar") == "foo_bar"
 
     def test_leaves_clean_values_unchanged(self):
-        assert UserUploadedFile._sanitize_path_segment("MyAgent") == "MyAgent"
-        assert UserUploadedFile._sanitize_path_segment("inst-1") == "inst-1"
+        assert UserUploadedFile.sanitize_path_segment("MyAgent") == "MyAgent"
+        assert UserUploadedFile.sanitize_path_segment("inst-1") == "inst-1"

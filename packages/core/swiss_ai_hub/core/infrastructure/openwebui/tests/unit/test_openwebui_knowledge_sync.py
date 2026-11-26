@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from scim2_models import Group
 
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_OPENWEBUI_ACCESS_RULES, SYS_ADMIN_ROLE
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_knowledge_sync import OpenWebuiKnowledgeSync
 
 MODULE = "swiss_ai_hub.core.infrastructure.openwebui.openwebui_knowledge_sync"
@@ -29,6 +30,7 @@ def _client(existing: list[dict]) -> MagicMock:
     client.list_own_knowledge = AsyncMock(return_value=existing)
     client.create_knowledge = AsyncMock(return_value={"id": "new-id"})
     client.update_knowledge = AsyncMock()
+    client.update_knowledge_access = AsyncMock()
     client.delete_knowledge = AsyncMock()
     return client
 
@@ -64,17 +66,41 @@ async def test_an_unchanged_entry_is_left_alone():
 
     client.create_knowledge.assert_not_awaited()
     client.update_knowledge.assert_not_awaited()
+    client.update_knowledge_access.assert_not_awaited()
     client.delete_knowledge.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_a_renamed_collection_or_changed_access_updates_its_entry():
-    existing = [{"id": "k1", "name": "HR / Old name", "description": "", "access_grants": []}]
+async def test_a_renamed_collection_renames_its_entry_and_leaves_its_access_alone():
+    existing = [{"id": "k1", "name": "HR / Old name", "description": "", "access_grants": HR_READ}]
+
+    client, _ = await _sync({POLICIES: ("HR / Policies", "New text")}, [_entry("k1", *POLICIES)], existing)
+
+    assert client.update_knowledge.await_args.args[1:] == ("k1", "HR / Policies", "New text")
+    client.update_knowledge_access.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_changed_access_goes_to_the_access_endpoint_without_renaming():
+    """OpenWebUI 0.12.4 dropped grants from the regular update, which also re-embeds the entry's name."""
+    existing = [{"id": "k1", "name": "HR / Policies", "description": "", "access_grants": []}]
 
     client, _ = await _sync({POLICIES: ("HR / Policies", "")}, [_entry("k1", *POLICIES)], existing)
 
-    _, knowledge_id, name, _, grants = client.update_knowledge.await_args.args
-    assert (knowledge_id, name, [grant.principal_id for grant in grants]) == ("k1", "HR / Policies", ["g-hr"])
+    _, knowledge_id, grants = client.update_knowledge_access.await_args.args
+    assert (knowledge_id, [grant.principal_id for grant in grants]) == ("k1", ["g-hr"])
+    client.update_knowledge.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_a_group_that_lost_access_is_dropped_from_the_grants():
+    sales_read = [{"principal_type": "group", "principal_id": "g-sales", "permission": "read"}]
+    existing = [{"id": "k1", "name": "HR / Policies", "description": "", "access_grants": HR_READ + sales_read}]
+
+    client, _ = await _sync({POLICIES: ("HR / Policies", "")}, [_entry("k1", *POLICIES)], existing)
+
+    _, _, grants = client.update_knowledge_access.await_args.args
+    assert [grant.principal_id for grant in grants] == ["g-hr"]
 
 
 @pytest.mark.asyncio
@@ -100,6 +126,8 @@ async def test_the_entry_of_a_deleted_collection_is_removed_even_when_creating_a
     existing = [{"id": "k1", "name": "HR / Policies", "description": "", "access_grants": HR_READ}]
     client = _client(existing)
     client.create_knowledge = AsyncMock(side_effect=RuntimeError("OpenWebUI rejected the entry"))
+    knowledge_sync = OpenWebuiKnowledgeSync(client, "en")
+    http = MagicMock()
 
     with (
         patch.object(OpenWebuiKnowledgeSync, "listing", return_value={("hr", "reports"): ("HR / Reports", "")}),
@@ -107,7 +135,7 @@ async def test_the_entry_of_a_deleted_collection_is_removed_even_when_creating_a
     ):
         entity.all_entries.return_value = [_entry("k1", *POLICIES)]
         with pytest.raises(RuntimeError):
-            await OpenWebuiKnowledgeSync(client, "en").sync(MagicMock(), [HR_GROUP], TENANT_RULES, ROLE_RULES)
+            await knowledge_sync.sync(http, [HR_GROUP], TENANT_RULES, ROLE_RULES)
 
     assert client.delete_knowledge.await_args.args[1] == "k1"
     entity.forget.assert_called_once_with("k1")
@@ -120,3 +148,27 @@ async def test_an_entry_we_created_but_never_recorded_is_removed():
     client, _ = await _sync({}, [], existing)
 
     assert client.delete_knowledge.await_args.args[1] == "orphan"
+
+
+@pytest.mark.asyncio
+async def test_the_sys_admin_group_may_reference_every_collection_its_tenant_allows():
+    sys_admin_group = Group(id="g-sys", display_name=f"aihub:acme:{SYS_ADMIN_ROLE}")
+    role_rules = ROLE_RULES | {("acme", SYS_ADMIN_ROLE): SYS_ADMIN_OPENWEBUI_ACCESS_RULES}
+    client = _client([])
+    with (
+        patch.object(
+            OpenWebuiKnowledgeSync,
+            "listing",
+            return_value={POLICIES: ("HR / Policies", "Company policies"), ("legal", "contracts"): ("Legal", "")},
+        ),
+        patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity") as entity,
+    ):
+        entity.all_entries.return_value = []
+        await OpenWebuiKnowledgeSync(client, "en").sync(
+            MagicMock(), [HR_GROUP, sys_admin_group], {"acme": ["aihub.user.knowledge.hr.>"]}, role_rules
+        )
+
+    grants_by_name = {
+        call.args[1]: [g.principal_id for g in call.args[3]] for call in client.create_knowledge.await_args_list
+    }
+    assert grants_by_name == {"HR / Policies": ["g-hr", "g-sys"], "Legal": []}

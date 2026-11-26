@@ -56,10 +56,11 @@ Agents and pipelines can call your existing enterprise systems.
 User authentication requires connectivity to your configured OIDC provider. The example below shows Microsoft Entra ID
 endpoints; substitute with your provider's endpoints as needed.
 
-| Service            | Endpoint                    | Purpose                                                         |
-| ------------------ | --------------------------- | --------------------------------------------------------------- |
-| Microsoft Entra ID | `login.microsoftonline.com` | OAuth2/OIDC user authentication                                 |
-| Microsoft Graph    | `graph.microsoft.com`       | Only needed for SharePoint/OneDrive pipeline sources (not auth) |
+| Service            | Endpoint                    | Purpose                                                                        |
+| ------------------ | --------------------------- | ------------------------------------------------------------------------------ |
+| Microsoft Entra ID | `login.microsoftonline.com` | OAuth2/OIDC user authentication, token for realm mail                          |
+| Microsoft Graph    | `graph.microsoft.com`       | Only needed for SharePoint/OneDrive pipeline sources (not auth)                |
+| Exchange Online    | `smtp.office365.com:587`    | Realm mail (invitations, password resets), see [Realm mail](../11_realm_mail/) |
 
 ### Inbound connections
 
@@ -98,6 +99,7 @@ The Swiss AI Hub needs outbound connectivity for external integrations and updat
 | 100      | AllowHTTPS | 443  | TCP      | API calls to LLM providers, external services |
 | 110      | AllowHTTP  | 80   | TCP      | Let's Encrypt certificate validation          |
 | 120      | AllowDNS   | 53   | UDP      | DNS resolution                                |
+| 130      | AllowSMTP  | 587  | TCP      | Realm mail to `smtp.office365.com`            |
 
 The platform reaches various external APIs based on your integrations. No additional outbound restrictions are needed.
 

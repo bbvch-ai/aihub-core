@@ -17,6 +17,7 @@ def _fake_tenant(tenant_id: str = "my-tenant") -> MagicMock:
     tenant.description = "desc"
     tenant.access_rules = ["aihub.admin.>"]
     tenant.chat_disclaimer = LocaleStringEntity(en="Verify answers.")
+    tenant.lcdm_tenant_id = None
     tenant.created_at = datetime.now(UTC)
     tenant.updated_at = datetime.now(UTC)
     return tenant
@@ -147,6 +148,7 @@ async def test_delete_tenant_restores_row_and_raises_when_concurrent_delete_took
         description="desc",
         access_rules=["aihub.admin.>"],
         chat_disclaimer=LocaleString(en="Verify answers."),
+        lcdm_tenant_id=None,
     )
 
 

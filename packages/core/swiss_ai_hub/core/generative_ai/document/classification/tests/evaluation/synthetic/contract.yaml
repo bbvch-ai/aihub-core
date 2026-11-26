@@ -1,0 +1,441 @@
+# Contracts and agreements between named parties, in German, French, Italian and English. Every company and person is
+# made up; every Swiss UID passes its check digit. `expected` holds each value as stored (ISO dates, numbers, ISO
+# currency codes), and None where the document does not state it.
+
+- id: other-de-1
+  type: contract
+  title: Arbeitsvertrag_Muster.pdf
+  note: An employment contract with only a start date stores that start alone; the employer is the issuer and the salary the total.
+  text: |
+    # Arbeitsvertrag
+
+    zwischen Muster Treuhand GmbH, Spitalgasse 4, 3011 Bern (Arbeitgeberin)
+    und Simon Graf, Lorrainestrasse 9, 3013 Bern (Arbeitnehmer)
+
+    1. Stellenantritt: 1. April 2025
+    2. Funktion: Sachbearbeiter Buchhaltung, 80 %
+    3. Lohn: CHF 5'600.00 brutto pro Monat, 13 Monatslöhne
+  expected:
+    document_date: null
+    document_reference_number: null
+    document_issuer: Muster Treuhand GmbH
+    document_recipient: Simon Graf
+    document_total_amount: 5600.00
+    document_currency: CHF
+    document_period_start: "2025-04-01"
+    document_period_end: null
+    document_related_references: null
+    document_notice_period: null
+    document_jurisdiction: null
+
+- id: contract-de-1
+  type: contract
+  title: Rahmenvertrag_RV-2025-031_IT-Dienstleistungen.pdf
+  note: An IT services framework agreement with a fixed term from start to end, a cost ceiling and the offer it is based on.
+  text: |
+    # Brunnmatt Informatik AG
+    Brunnmattstrasse 21, 3007 Bern · UID CHE-026.583.164
+
+    ## Rahmenvertrag über IT-Dienstleistungen
+    Vertrags-Nr. RV-2025-031
+
+    zwischen
+
+    **Brunnmatt Informatik AG**, Brunnmattstrasse 21, 3007 Bern
+    (nachfolgend «Auftragnehmerin»)
+
+    und
+
+    **Stiftung Alterszentrum Lindenhof**, Lindenweg 3, 3123 Belp
+    (nachfolgend «Auftraggeberin»)
+
+    ### 1. Gegenstand
+    Die Auftragnehmerin erbringt für die Auftraggeberin IT-Dienstleistungen in den Bereichen Betrieb der Arbeitsplatzsysteme,
+    Netzwerk und Anwenderunterstützung. Grundlage bildet die Offerte Nr. OF-2025-0912 vom 14. Oktober 2025.
+    Einzelaufträge werden in schriftlichen Abrufen gestützt auf diesen Rahmenvertrag erteilt.
+
+    ### 2. Vertragsdauer
+    Vertragsdauer: 1. Januar 2026 bis 31. Dezember 2028. Während der festen Laufzeit ist eine ordentliche Kündigung
+    ausgeschlossen; die Kündigung aus wichtigem Grund bleibt vorbehalten.
+
+    ### 3. Vergütung
+    | Leistung | Ansatz |
+    |---|---:|
+    | Systemtechniker | CHF 165.00 / Stunde |
+    | Projektleitung | CHF 195.00 / Stunde |
+
+    Für die gesamte Vertragsdauer gilt ein Kostendach von CHF 480'000.00 exkl. MWST.
+
+    ### 4. Schlussbestimmungen
+    Es gilt schweizerisches Recht. Gerichtsstand ist Bern.
+
+    Bern, 28. November 2025
+
+    | Brunnmatt Informatik AG | Stiftung Alterszentrum Lindenhof |
+    |---|---|
+    | Daniel Moser, CEO | Regula Iseli, Präsidentin des Stiftungsrats |
+  expected:
+    document_date: "2025-11-28"
+    document_reference_number: RV-2025-031
+    document_issuer: Brunnmatt Informatik AG
+    document_recipient: Stiftung Alterszentrum Lindenhof
+    document_total_amount: 480000.00
+    document_currency: CHF
+    document_period_start: "2026-01-01"
+    document_period_end: "2028-12-31"
+    document_related_references: [OF-2025-0912]
+    document_notice_period: null
+    document_jurisdiction: Bern
+
+- id: contract-de-2
+  type: contract
+  title: Mietvertrag_Geschaeftsraeume_Hertensteinstrasse.pdf
+  note: A rental agreement running until terminated stores its start alone; the landlord is the issuer and the notice period is copied as written.
+  text: |
+    # Mietvertrag für Geschäftsräume
+    Mietvertrag Nr. MV-0457-12
+
+    **Vermieterin:** Immobilien Seeblick AG, Haldenstrasse 40, 6006 Luzern
+    **Mieterin:** Praxis Keller Physiotherapie GmbH, Hertensteinstrasse 18, 6004 Luzern
+
+    ### 1. Mietobjekt
+    Geschäftsräume im 1. Obergeschoss der Liegenschaft Hertensteinstrasse 18, 6004 Luzern, ca. 145 m², inkl. zwei
+    Parkplätze in der Einstellhalle.
+
+    ### 2. Mietdauer
+    Das Mietverhältnis beginnt am 1. Juli 2025 und läuft auf unbestimmte Zeit. Es kann von beiden Parteien unter Einhaltung
+    einer Kündigungsfrist von 6 Monaten auf Ende eines Kalenderquartals gekündigt werden, erstmals auf den 30. Juni 2030.
+
+    ### 3. Mietzins
+    | Position | Betrag pro Monat |
+    |---|---:|
+    | Nettomietzins | CHF 2'640.00 |
+    | Nebenkosten (Akonto) | CHF 310.00 |
+    | **Mietzins inkl. Nebenkosten** | **CHF 2'950.00** |
+
+    Der Mietzins ist monatlich im Voraus auf den Ersten des Monats zahlbar.
+
+    ### 4. Sicherheitsleistung
+    Die Mieterin leistet eine Mietkaution von drei Bruttomonatsmieten auf ein Mietkautionskonto.
+
+    Luzern, 15. Mai 2025
+
+    Die Vermieterin: Immobilien Seeblick AG
+    Die Mieterin: Praxis Keller Physiotherapie GmbH
+  expected:
+    document_date: "2025-05-15"
+    document_reference_number: MV-0457-12
+    document_issuer: Immobilien Seeblick AG
+    document_recipient: Praxis Keller Physiotherapie GmbH
+    document_total_amount: 2950.00
+    document_currency: CHF
+    document_period_start: "2025-07-01"
+    document_period_end: null
+    document_related_references: null
+    document_notice_period: 6 Monaten auf Ende eines Kalenderquartals
+    document_jurisdiction: null
+
+- id: contract-de-3
+  type: contract
+  title: Nachtrag_N-2026-02_zu_RV-2023-118.pdf
+  note: An amendment (Nachtrag) is a contract; the contract it amends is a related reference and the date it takes effect is the start of its term.
+  text: |
+    # Tessera Systems AG
+    Grabenstrasse 9, 6300 Zug · UID CHE-870.633.396
+
+    ## Nachtrag N-2026-02
+    zum Rahmenvertrag RV-2023-118 über Betrieb und Wartung der Dispositionssoftware «TransLog»
+
+    zwischen Tessera Systems AG, Zug (Auftragnehmerin)
+    und Hollenstein Transporte AG, Industriering 12, 9500 Wil (Auftraggeberin)
+
+    ### 1. Änderung der Vergütung
+    Ziffer 5.1 des Rahmenvertrags wird wie folgt geändert: Die monatliche Pauschale für Betrieb und Wartung beträgt neu
+    CHF 7'800.00 exkl. MWST (bisher CHF 7'200.00).
+
+    ### 2. Erweiterung des Leistungsumfangs
+    Neu umfasst der Betrieb auch das Modul «Tourenplanung Mobile» für bis zu 60 Fahrzeuge.
+
+    ### 3. Inkrafttreten
+    Dieser Nachtrag tritt am 1. März 2026 in Kraft. Alle übrigen Bestimmungen des Rahmenvertrags RV-2023-118
+    einschliesslich des Nachtrags N-2024-01 bleiben unverändert.
+
+    Zug, 10. Februar 2026
+
+    Tessera Systems AG · Hollenstein Transporte AG
+  expected:
+    document_date: "2026-02-10"
+    document_reference_number: N-2026-02
+    document_issuer: Tessera Systems AG
+    document_recipient: Hollenstein Transporte AG
+    document_total_amount: 7800.00
+    document_currency: CHF
+    document_period_start: "2026-03-01"
+    document_period_end: null
+    document_related_references: [RV-2023-118, N-2024-01]
+    document_notice_period: null
+    document_jurisdiction: null
+
+- id: contract-fr-1
+  type: contract
+  title: contrat_de_prestation_CP-2025-044.pdf
+  note: A French service contract with a fixed one-year term, an annual flat fee and a notice period before expiry.
+  text: |
+    # Fiduciaire Lémanique Sàrl
+    Avenue de Cour 61, 1007 Lausanne · IDE CHE-773.697.972
+
+    ## Contrat de prestation de services comptables
+    Contrat n° CP-2025-044
+
+    Entre **Fiduciaire Lémanique Sàrl**, Avenue de Cour 61, 1007 Lausanne (ci-après « le Prestataire »)
+    et **Boulangerie Favre SA**, Rue du Bourg 7, 1095 Lutry (ci-après « le Client »)
+
+    ### Article 1 – Objet
+    Le Prestataire tient la comptabilité financière du Client, établit les décomptes TVA trimestriels et prépare les
+    comptes annuels.
+
+    ### Article 2 – Durée
+    Le présent contrat est conclu pour la période du 1er janvier 2026 au 31 décembre 2026. Il se renouvelle tacitement
+    d'année en année, sauf résiliation par écrit moyennant un préavis de trois mois avant son échéance.
+
+    ### Article 3 – Honoraires
+    Les prestations sont rémunérées par un forfait annuel de CHF 18'600.00 hors TVA, facturé en quatre acomptes
+    trimestriels.
+
+    ### Article 4 – For
+    Le contrat est soumis au droit suisse. Le for est à Lausanne.
+
+    Fait à Lausanne, le 20 novembre 2025, en deux exemplaires.
+
+    Le Prestataire : Fiduciaire Lémanique Sàrl — Le Client : Boulangerie Favre SA
+  expected:
+    document_date: "2025-11-20"
+    document_reference_number: CP-2025-044
+    document_issuer: Fiduciaire Lémanique Sàrl
+    document_recipient: Boulangerie Favre SA
+    document_total_amount: 18600.00
+    document_currency: CHF
+    document_period_start: "2026-01-01"
+    document_period_end: "2026-12-31"
+    document_related_references: null
+    document_notice_period: trois mois avant son échéance
+    document_jurisdiction: Lausanne
+
+- id: contract-it-1
+  type: contract
+  title: contratto_servizi_pulizia_CS-25-017.pdf
+  note: An Italian cleaning services contract; its term is written with the ordinal "1°", which is read like "1".
+  text: |
+    # Splendor Servizi Sagl
+    Via Cantonale 14, 6928 Manno · IDI CHE-767.720.120
+
+    ## Contratto di appalto di servizi di pulizia
+    Contratto n. CS-25-017
+
+    tra **Splendor Servizi Sagl**, Via Cantonale 14, 6928 Manno (di seguito «l'Appaltatore»)
+    e **Residenza Al Lago SA**, Riva Caccia 3, 6900 Lugano (di seguito «il Committente»)
+
+    ### Art. 1 – Oggetto
+    L'Appaltatore esegue la pulizia ordinaria delle parti comuni e degli uffici della Residenza Al Lago cinque giorni
+    alla settimana, secondo il capitolato allegato e l'offerta n. OF-2025-388.
+
+    ### Art. 2 – Durata
+    Il contratto ha durata dal 1° febbraio 2026 al 31 gennaio 2027 e si rinnova tacitamente di anno in anno.
+    Ciascuna parte può disdirlo con un preavviso di 2 mesi per la fine di un mese.
+
+    ### Art. 3 – Corrispettivo
+    Il corrispettivo ammonta a CHF 4'250.00 mensili, IVA esclusa.
+
+    ### Art. 4 – Foro competente
+    Per ogni controversia il foro competente è Lugano.
+
+    Lugano, 9 gennaio 2026
+
+    L'Appaltatore: Splendor Servizi Sagl — Il Committente: Residenza Al Lago SA
+  expected:
+    document_date: "2026-01-09"
+    document_reference_number: CS-25-017
+    document_issuer: Splendor Servizi Sagl
+    document_recipient: Residenza Al Lago SA
+    document_total_amount: 4250.00
+    document_currency: CHF
+    document_period_start: "2026-02-01"
+    document_period_end: "2027-01-31"
+    document_related_references: [OF-2025-388]
+    document_notice_period: 2 mesi per la fine di un mese
+    document_jurisdiction: Lugano
+
+- id: contract-en-1
+  type: contract
+  title: Software_Licence_Agreement_LA-2025-0219.pdf
+  note: An English software licence agreement; the licensor is the issuer and the annual licence fee the total; a governing law without a court stores no jurisdiction.
+  text: |
+    # SOFTWARE LICENCE AGREEMENT
+    Agreement No. LA-2025-0219
+
+    Dated 15 December 2025
+
+    **Between**
+
+    (1) **Quillfield Software Ltd**, 4 Canal Wharf, Leeds LS11 5PS, United Kingdom ("Licensor"); and
+    (2) **Hartmann Präzisionsteile AG**, Werkstrasse 30, 8400 Winterthur, Switzerland ("Licensee").
+
+    ## 1. Grant of Licence
+    The Licensor grants the Licensee a non-exclusive, non-transferable licence to use the software "QF Quality Suite"
+    for up to 150 named users at the Licensee's sites in Switzerland.
+
+    ## 2. Term
+    Term: 1 January 2026 to 31 December 2027 (the "Initial Term"). Thereafter the Agreement renews for successive
+    periods of twelve months unless either party terminates it by giving not less than 90 days' written notice before
+    the end of the then current term.
+
+    ## 3. Fees
+    The Licensee shall pay an annual licence fee of EUR 24,000.00, invoiced yearly in advance. Maintenance and support
+    are included in the fee.
+
+    ## 4. Governing Law
+    This Agreement is governed by the laws of England and Wales.
+
+    Signed for and on behalf of Quillfield Software Ltd: Oliver Pennington, Director
+    Signed for and on behalf of Hartmann Präzisionsteile AG: Sandra Hartmann, CEO
+  expected:
+    document_date: "2025-12-15"
+    document_reference_number: LA-2025-0219
+    document_issuer: Quillfield Software Ltd
+    document_recipient: Hartmann Präzisionsteile AG
+    document_total_amount: 24000.00
+    document_currency: EUR
+    document_period_start: "2026-01-01"
+    document_period_end: "2027-12-31"
+    document_related_references: null
+    document_notice_period: not less than 90 days' written notice
+    document_jurisdiction: null
+
+- id: contract-fr-2
+  type: contract
+  title: contrat_services_geres_CSG-2026-07.pdf
+  note: A managed services contract that includes a service level annex among its terms stays a contract.
+  text: |
+    # Rhodanie IT Services SA
+    Route des Acacias 45, 1227 Carouge · IDE CHE-856.099.871 TVA
+
+    ## Contrat de services informatiques gérés
+    Contrat n° CSG-2026-07
+
+    Entre **Rhodanie IT Services SA**, Route des Acacias 45, 1227 Carouge (« le Prestataire »)
+    et **Commune de Belmont-Fleuri**, Place de la Mairie 1, 1092 Belmont-Fleuri (« le Client »)
+
+    ### Article 1 – Objet
+    Le Prestataire exploite et surveille l'infrastructure informatique du Client (serveurs, postes de travail, réseau,
+    sauvegardes) et assure le support aux utilisateurs.
+
+    ### Article 2 – Durée et résiliation
+    Le contrat court du 1er avril 2026 au 31 mars 2029. Il se prolonge ensuite d'année en année, sauf résiliation
+    notifiée au moins six mois avant l'échéance.
+
+    ### Article 3 – Rémunération
+    Forfait mensuel : CHF 9'400.00 hors TVA, facturé mensuellement.
+
+    ### Article 4 – Protection des données
+    Les données du Client sont hébergées exclusivement en Suisse.
+
+    ### Annexe 1 – Niveaux de service
+
+    | Indicateur | Engagement |
+    |---|---|
+    | Disponibilité des serveurs | 99,7 % par mois |
+    | Délai de réaction, priorité 1 | 30 minutes |
+    | Délai de résolution, priorité 1 | 4 heures |
+
+    En cas de non-respect, une pénalité de 5 % du forfait mensuel est créditée au Client.
+
+    Genève, le 3 mars 2026
+
+    Pour le Prestataire : Rhodanie IT Services SA — Pour le Client : Commune de Belmont-Fleuri
+  expected:
+    document_date: "2026-03-03"
+    document_reference_number: CSG-2026-07
+    document_issuer: Rhodanie IT Services SA
+    document_recipient: Commune de Belmont-Fleuri
+    document_total_amount: 9400.00
+    document_currency: CHF
+    document_period_start: "2026-04-01"
+    document_period_end: "2029-03-31"
+    document_related_references: null
+    document_notice_period: au moins six mois avant l'échéance
+    document_jurisdiction: null
+
+- id: contract-en-2
+  type: contract
+  title: Consulting_Agreement_CA-2026-005.pdf
+  note: A consulting agreement that starts on a date and runs until the services are completed stores its start alone; the fixed fee is the contract value.
+  text: |
+    # Northgate Advisory GmbH
+    Bahnhofstrasse 7, 6300 Zug · UID CHE-218.906.929
+
+    ## CONSULTING AGREEMENT
+    Agreement No. CA-2026-005
+
+    This Consulting Agreement is entered into between **Northgate Advisory GmbH**, Bahnhofstrasse 7, 6300 Zug
+    (the "Consultant") and **Velora Pharma AG**, Industriestrasse 88, 4133 Pratteln (the "Client").
+
+    1. **Services.** The Consultant shall carry out a review of the Client's supply chain processes as described in
+       Proposal No. P-2025-311.
+    2. **Commencement.** The services commence on 1 February 2026 and continue until they are completed.
+    3. **Fees.** The Client shall pay a fixed fee of CHF 64,500.00, excluding VAT, in three instalments.
+    4. **Termination.** Either party may terminate this Agreement with 30 days' written notice.
+    5. **Confidentiality.** Each party shall keep the other party's information confidential.
+
+    Zug, 22 January 2026
+
+    Northgate Advisory GmbH — Velora Pharma AG
+  expected:
+    document_date: "2026-01-22"
+    document_reference_number: CA-2026-005
+    document_issuer: Northgate Advisory GmbH
+    document_recipient: Velora Pharma AG
+    document_total_amount: 64500.00
+    document_currency: CHF
+    document_period_start: "2026-02-01"
+    document_period_end: null
+    document_related_references: [P-2025-311]
+    document_notice_period: 30 days' written notice
+    document_jurisdiction: null
+
+- id: contract-de-4
+  type: contract
+  title: Mietvertrag_Lagerplatz_Kriens.pdf
+  note: A contract that names only its end stores the end alone; the place of jurisdiction is copied as written.
+  text: |
+    # Mietvertrag für einen Lagerplatz
+
+    zwischen der Pilatus Logistik AG, Industriestrasse 12, 6010 Kriens (Vermieterin)
+    und der Bergwerk Bau AG, Seetalstrasse 40, 6020 Emmenbrücke (Mieterin)
+
+    ## 1. Mietobjekt
+    Aussenlagerplatz Nr. 7, 400 m², Industriestrasse 12, Kriens.
+
+    ## 2. Mietzins
+    CHF 1'800.00 pro Monat, zahlbar im Voraus auf den Ersten des Monats.
+
+    ## 3. Dauer
+    Das Mietverhältnis ist fest vereinbart und endet ohne Kündigung am 30. Juni 2027.
+
+    ## 4. Gerichtsstand
+    Gerichtsstand ist Luzern. Es gilt schweizerisches Recht.
+
+    Kriens, 3. Februar 2026
+
+    Pilatus Logistik AG — Bergwerk Bau AG
+  expected:
+    document_date: "2026-02-03"
+    document_reference_number: null
+    document_issuer: Pilatus Logistik AG
+    document_recipient: Bergwerk Bau AG
+    document_total_amount: 1800.00
+    document_currency: CHF
+    document_period_start: null
+    document_period_end: "2027-06-30"
+    document_related_references: null
+    document_notice_period: null
+    document_jurisdiction: Luzern

@@ -74,16 +74,16 @@ aligns with the project's architecture *before* you invest a lot of time.
 We do not include the full setup instructions here, as our documentation is the single source of truth.
 
 - **To Build with the SDK:** If you are building a new agent, pipeline, or process, follow the
-  **[SDK Quick Start Guide](https://bbvch-ai.github.io/aihub-core/docs/3_sdk/1_quick_start/)**.
+  **[SDK Quick Start Guide](https://docs.ai-hub.bbv.ch/docs/3_sdk/1_quick_start/)**.
 - **To Deploy the Platform:** If you just want to run the platform locally or on-prem to try it out, follow the
-  **[Platform Deployment Guide](https://bbvch-ai.github.io/aihub-core/docs/2_platform/3_deployment_guide/)**.
+  **[Platform Deployment Guide](https://docs.ai-hub.bbv.ch/docs/2_platform/3_deployment_guide/)**.
 
 ### Step 4: Develop and Create Your PR
 
 We have a detailed guide on our Git workflow, branching strategy, and code conventions. Please read it carefully.
 
 **➡️
-[Full details are in our Ecosystem Contributing Guide](https://bbvch-ai.github.io/aihub-core/docs/4_ecosystem/1_contributing/)**
+[Full details are in our Ecosystem Contributing Guide](https://docs.ai-hub.bbv.ch/docs/4_ecosystem/1_contributing/)**
 
 Here is the short version:
 
@@ -137,10 +137,11 @@ and the grants described in the agreement.
 
 ## ⚖️ License
 
-Swiss AI Hub is fully open-source under a **dual-license model** — each package carries its own license. Most packages
-are Apache-2.0; the web frontend (`packages/web`), the multi-tenant administration plane (`packages/sysadmin-api`,
-`packages/sysadmin-web`), and the backup service (`packages/backup`) are AGPL-3.0-or-later. The full per-package matrix
-is in [`LICENSES.md`](LICENSES.md).
+Swiss AI Hub is an open-core project with a **dual-license** open core — each package carries its own license. Most
+packages are Apache-2.0; the web frontend (`packages/web`), the multi-tenant administration plane
+(`packages/sysadmin-api`, `packages/sysadmin-web`), and the backup service (`packages/backup`) are AGPL-3.0-or-later.
+The paid agents in `ee/` are under the bbv AI Hub Enterprise License, and bbv Software Services owns modifications to
+them. The full per-package matrix is in [`LICENSES.md`](LICENSES.md).
 
 By contributing, you agree that your contribution is licensed under the license of the package it targets, as listed in
 [`LICENSES.md`](LICENSES.md). Contributions are additionally covered by our Contributor License Agreement (CLA), which

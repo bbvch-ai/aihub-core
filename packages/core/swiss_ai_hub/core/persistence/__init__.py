@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
     from swiss_ai_hub.core.persistence.agents.agent_config_change_hook import AgentConfigChangeHook
     from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+    from swiss_ai_hub.core.persistence.beanie_initializer import BeanieInitializer
     from swiss_ai_hub.core.persistence.discovery.discovery_round_entity import DiscoveryRoundEntity
     from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
     from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
@@ -54,9 +55,14 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
     from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
         CREATED_AT,
+        DOCUMENT_CLASSIFICATION_VERSION,
         DOCUMENT_ID,
+        DOCUMENT_NORMALIZER_VERSION,
         DOCUMENT_STORE_NAME,
         DOCUMENT_TITLE,
+        DOCUMENT_TYPE,
+        DOCUMENT_TYPE_VERSION,
+        DOCUMENT_TYPES,
         H1,
         H2,
         H3,
@@ -108,6 +114,7 @@ __all__ = [
     "AgentConfigChangeHook",
     "KnowledgeChangeHook",
     "AgentConfigEntityDocument",
+    "BeanieInitializer",
     "AgentInSpecsEntity",
     "AgentInstanceRef",
     "BearerToken",
@@ -137,6 +144,11 @@ __all__ = [
     "SourcePipelineType",
     "INSERTED_AT",
     "IS_INGESTED",
+    "DOCUMENT_CLASSIFICATION_VERSION",
+    "DOCUMENT_NORMALIZER_VERSION",
+    "DOCUMENT_TYPE",
+    "DOCUMENT_TYPES",
+    "DOCUMENT_TYPE_VERSION",
     "LANGUAGE",
     "LocaleStringEntity",
     "MilvusIndexType",
@@ -193,6 +205,7 @@ _LAZY_IMPORTS = {
     "AgentConfigChangeHook": "swiss_ai_hub.core.persistence.agents.agent_config_change_hook",
     "KnowledgeChangeHook": "swiss_ai_hub.core.persistence.rag.datalake.knowledge_change_hook",
     "AgentConfigEntityDocument": "swiss_ai_hub.core.persistence.agents.agent_config_entity_document",
+    "BeanieInitializer": "swiss_ai_hub.core.persistence.beanie_initializer",
     "AgentInSpecsEntity": "swiss_ai_hub.core.persistence.process.process_class_entity",
     "AgentInstanceRef": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",
     "BearerToken": "swiss_ai_hub.core.persistence.access.entities.bearer_token",
@@ -222,6 +235,11 @@ _LAZY_IMPORTS = {
     "SourcePipelineType": "swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_type",
     "INSERTED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "IS_INGESTED": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
+    "DOCUMENT_CLASSIFICATION_VERSION": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
+    "DOCUMENT_NORMALIZER_VERSION": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
+    "DOCUMENT_TYPE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
+    "DOCUMENT_TYPES": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
+    "DOCUMENT_TYPE_VERSION": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "LANGUAGE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "LocaleStringEntity": "swiss_ai_hub.core.persistence.i18n.locale_string_entity",
     "MilvusIndexType": "swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory",

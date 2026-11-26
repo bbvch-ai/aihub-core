@@ -31,6 +31,10 @@ class MinimalAgentInstanceDTO(BaseModel):
     is_schedulable: Annotated[
         bool, Field(description="Whether the agent can be run automatically on a cron schedule")
     ] = False
+    supports_response_schema: Annotated[
+        bool,
+        Field(description="Whether the agent answers in the JSON shape a message's `response_schema` asks for"),
+    ] = False
 
     @property
     def name(self) -> str:
@@ -55,4 +59,5 @@ class MinimalAgentInstanceDTO(BaseModel):
             agent_config=agent_config_dto,
             is_conversational=class_entity.is_conversational,
             is_schedulable=class_entity.is_schedulable,
+            supports_response_schema=class_entity.supports_response_schema,
         )

@@ -44,6 +44,9 @@ class Repeater(FormkitElement):
     )
     name: Annotated[str, Field(description="Key name for the array data in the form output")]
     label: Annotated[LocaleString | str | None, Field(description="Label displayed as the section header")] = None
+    help: Annotated[
+        LocaleString | str | None, Field(description="Explanation of what the list is for, shown under the header")
+    ] = None
     add_label: Annotated[LocaleString | str | None, Field(description="Text for the add button", alias="addLabel")] = (
         None
     )
@@ -61,6 +64,8 @@ class Repeater(FormkitElement):
         self_copy = self.model_copy(deep=True)
         if isinstance(self_copy.label, LocaleString):
             self_copy.label = t.extract(self_copy.label)
+        if isinstance(self_copy.help, LocaleString):
+            self_copy.help = t.extract(self_copy.help)
         if isinstance(self_copy.add_label, LocaleString):
             self_copy.add_label = t.extract(self_copy.add_label)
         if isinstance(self_copy.remove_label, LocaleString):
