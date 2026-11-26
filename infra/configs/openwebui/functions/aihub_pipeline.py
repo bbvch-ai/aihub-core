@@ -1056,6 +1056,10 @@ class HumanInTheLoopHandler(EventHandler):
     - HumanInTheLoopChatRequestEvent: Chat-style input (appears as regular message)
     """
 
+    # OpenWebUI 0.12+ cancels the question dialog after timeout_ms, clamped to 60-240 s (120 s when unset); a slower
+    # answer is still taken from the chat after the text fallback
+    QUESTION_DIALOG_TIMEOUT_MS = 240_000
+
     async def can_handle(
         self, event: Annotated[dict[str, Any], "Event to check"]
     ) -> Annotated[bool, "True if HITL request event"]:
@@ -1180,7 +1184,11 @@ class HumanInTheLoopHandler(EventHandler):
             result = await context.caller(
                 {
                     "type": "request:user_input",
-                    "data": {"questions": questions, "allow_other": True, "timeout_ms": None},
+                    "data": {
+                        "questions": questions,
+                        "allow_other": True,
+                        "timeout_ms": HumanInTheLoopHandler.QUESTION_DIALOG_TIMEOUT_MS,
+                    },
                 }
             )
         except Exception as e:
