@@ -21,8 +21,9 @@ RAG_MODULE = "swiss_ai_hub.agent.agents.rag_agent.rag_agent"
 
 
 @pytest.fixture(autouse=True)
-def _fresh_cache() -> None:
+def _fresh_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     ExternalAccessFilters.forget_answers()
+    monkeypatch.setenv("EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS", "resolver")
 
 
 def _node(document_id: str, code: str | list[str] | None) -> IngestedNode:

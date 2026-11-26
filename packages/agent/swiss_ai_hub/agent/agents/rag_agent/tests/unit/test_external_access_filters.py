@@ -21,8 +21,27 @@ API_KEY = "resolver-key"
 
 
 @pytest.fixture(autouse=True)
-def _fresh_cache() -> None:
+def _fresh_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     ExternalAccessFilters.forget_answers()
+    # the test host does not resolve; allowed like a resolver on the company network
+    monkeypatch.setenv("EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS", "lcdm-mcp.example")
+
+
+def test_an_internal_resolver_host_is_not_called_unless_allowed(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS", "")
+    resolver = _Resolver(httpx.Response(200, json={"values": ["NEST/DOK"]}))
+    internal = _config().model_copy(update={"resolver_url": "http://api:8000/values"})
+
+    assert _apply(resolver, internal) == []
+    assert resolver.calls == []
+
+
+def test_an_allowed_internal_resolver_host_is_called(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS", "acl-stub-resolver")
+    resolver = _Resolver(httpx.Response(200, json={"values": ["NEST/DOK"]}))
+    internal = _config().model_copy(update={"resolver_url": "http://acl-stub-resolver:8099/values"})
+
+    assert _apply(resolver, internal)[0].additional_metadata_filters[0].value == ["NEST/DOK"]
 
 
 def _config(cache_ttl_seconds: int = 60) -> ExternalAccessFilterConfig:

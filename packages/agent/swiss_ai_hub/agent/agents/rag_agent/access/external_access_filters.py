@@ -6,8 +6,10 @@ import httpx
 from pydantic import ValidationError
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.generative_ai import IngestedNode, MetadataFilterPair, RetrievalRuntimeConfig
+from swiss_ai_hub.core.network import PublicHostGuard
 
 from swiss_ai_hub.agent.agents.rag_agent.access.external_access_answer import ExternalAccessAnswer
+from swiss_ai_hub.agent.agents.rag_agent.access.external_access_filter_settings import ExternalAccessFilterSettings
 from swiss_ai_hub.agent.agents.rag_agent.configs.external_access_filter_config import ExternalAccessFilterConfig
 
 logger = logging.getLogger(__name__)
@@ -108,8 +110,17 @@ class ExternalAccessFilters:
     async def _ask_resolver(
         config: ExternalAccessFilterConfig, user: UserIdentity, transport: httpx.AsyncBaseTransport | None
     ) -> list[str] | None:
-        """None is a failure and is not cached, so the next question asks again; an empty list is an answer."""
+        """None is a failure and is not cached, so the next question asks again; an empty list is an answer.
+
+        Only public hosts, or those named in ``EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS``, are called, and redirects
+        are not followed (httpx's default): a profile editor sets the URL, and the API key goes with the request.
+        """
         try:
+            await PublicHostGuard.require_public_async(
+                str(config.resolver_url),
+                ExternalAccessFilterSettings().private_host_allow_list(),
+                "EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS",
+            )
             async with httpx.AsyncClient(timeout=float(config.timeout_seconds), transport=transport) as client:
                 response = await client.get(
                     str(config.resolver_url), headers=ExternalAccessFilters._headers(config, user)

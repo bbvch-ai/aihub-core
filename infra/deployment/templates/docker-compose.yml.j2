@@ -4267,6 +4267,11 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('rag_agent') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+
+      # External access filter: decrypts the resolver API key of a profile; internal resolver hosts an operator
+      # allows (every other internal host is refused, because a profile editor sets the URL)
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
+      EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS: ${EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
       interval: 30s
@@ -4278,6 +4283,7 @@ services:
       - data
       - storage
       - browser  # Caller of the Playwright browser zone (web fetch)
+      - egress  # Outbound access to the external access resolver a profile points at
   {%- endif %}
 
   {%- if image_tags.mcp_react_agent[stage] %}
@@ -4474,6 +4480,10 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('expert_rag_agent') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+
+      # External access filter (inherited from the RAG agent): resolver API key and allowed internal resolver hosts
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
+      EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS: ${EXTERNAL_ACCESS_FILTER_ALLOWED_PRIVATE_HOSTS}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
       interval: 30s
@@ -4485,6 +4495,7 @@ services:
       - data
       - storage
       - browser  # Caller of the Playwright browser zone (web fetch)
+      - egress  # Outbound access to the external access resolver a profile points at
   {%- endif %}
 
   {%- if image_tags.expert_asking_agent[stage] %}
