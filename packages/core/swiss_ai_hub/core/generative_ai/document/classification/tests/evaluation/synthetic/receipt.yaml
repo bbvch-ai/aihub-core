@@ -1,0 +1,259 @@
+# Receipts for a payment already made, in German, French, Italian and English. Every company and person is made up;
+# every Swiss UID passes its check digit. `expected` holds each value as stored (ISO dates, numbers, ISO currency
+# codes), and None where the document does not state it.
+
+- id: receipt-de-1
+  type: receipt
+  title: Kassenbon_0412.jpg
+  note: A till receipt for a payment already made.
+  text: |
+    ALPENGLÜCK BÜROBEDARF AG
+    Marktgasse 30, 3011 Bern
+    MWST-Nr. CHE-481.516.232 MWST
+
+    Kassenbon 0412 · 21.05.2025 14:32
+    Ordner A4 breit        3 x 4.90     14.70
+    Kugelschreiber blau   10 x 1.20     12.00
+    TOTAL CHF                           26.70
+    Bezahlt Maestro                      26.70
+    MWST 8.1 % inkl.                      2.00
+
+    Vielen Dank für Ihren Einkauf!
+  expected:
+    document_date: "2025-05-21"
+    document_reference_number: "0412"
+    document_issuer: ALPENGLÜCK BÜROBEDARF AG
+    document_issuer_tax_id: CHE481516232
+    document_recipient: null
+    document_total_amount: 26.70
+    document_currency: CHF
+    document_related_references: null
+
+- id: receipt-de-2
+  type: receipt
+  title: Quittung_Barzahlung.pdf
+  note: A receipt confirming a cash payment of an invoice.
+  text: |
+    # Quittung
+
+    Erhalten von: Muster Treuhand GmbH, Spitalgasse 4, 3011 Bern
+    Betrag: CHF 1'082.08 (in Worten: eintausendzweiundachtzig 08/100)
+    für: Rechnung 2025-1142 vom 21.05.2025
+
+    Bern, 28.05.2025
+    Alpenglück Bürobedarf AG, Unterschrift: ____________________
+  expected:
+    document_date: "2025-05-28"
+    document_reference_number: null
+    document_issuer: Alpenglück Bürobedarf AG
+    document_issuer_tax_id: null
+    document_recipient: Muster Treuhand GmbH
+    document_total_amount: 1082.08
+    document_currency: CHF
+    document_related_references: [2025-1142]
+
+- id: receipt-fr-1
+  type: receipt
+  title: ticket_restaurant_2025-03-14.jpg
+  note: A French restaurant receipt.
+  text: |
+    BRASSERIE DU LAC
+    Quai Perdonnet 9, 1800 Vevey
+    TVA CHE-112.233.445 TVA
+
+    14.03.2025 12:47 · Table 7 · Couverts 2
+    Menu du jour       2 x 26.00    52.00
+    Eau minérale       1 x  6.50     6.50
+    Café               2 x  4.20     8.40
+    TOTAL CHF                       66.90
+    Payé par carte VISA ****4821     66.90
+    dont TVA 8,1 %                    5.01
+
+    Merci de votre visite !
+  expected:
+    document_date: "2025-03-14"
+    document_reference_number: null
+    document_issuer: BRASSERIE DU LAC
+    document_issuer_tax_id: CHE112233445
+    document_recipient: null
+    document_total_amount: 66.90
+    document_currency: CHF
+    document_related_references: null
+
+- id: receipt-en-1
+  type: receipt
+  title: payment_receipt_RC-55120.pdf
+  note: An English payment receipt for an invoice already paid.
+  text: |
+    # Quillfeather Supplies Inc.
+    ## Payment Receipt RC-55120
+
+    Received from: Brightwater Analytics Ltd
+    Payment date: April 2, 2025
+    Payment method: Wire transfer
+    Amount received: USD 1,716.00
+    Applied to: Invoice #7781
+
+    Balance due: USD 0.00 · Thank you for your payment.
+  expected:
+    document_date: "2025-04-02"
+    document_reference_number: RC-55120
+    document_issuer: Quillfeather Supplies Inc.
+    document_issuer_tax_id: null
+    document_recipient: Brightwater Analytics Ltd
+    document_total_amount: 1716.00
+    document_currency: USD
+    document_related_references: ["#7781"]
+
+- id: receipt-it-1
+  type: receipt
+  title: scontrino_2025-09-18.jpg
+  note: An Italian till receipt.
+  text: |
+    CARTOLERIA CENTRALE SA
+    Via Nassa 12, 6900 Lugano
+
+    Scontrino n. 0087 · 18.09.2025 09:15
+    Carta A4 risma        2 x 6.90    13.80
+    Evidenziatori set     1 x 8.50     8.50
+    TOTALE CHF                        22.30
+    Contanti                          30.00
+    Resto                              7.70
+  expected:
+    document_date: "2025-09-18"
+    document_reference_number: "0087"
+    document_issuer: CARTOLERIA CENTRALE SA
+    document_issuer_tax_id: null
+    document_recipient: null
+    document_total_amount: 22.30
+    document_currency: CHF
+    document_related_references: null
+
+- id: receipt-fr-2
+  type: receipt
+  title: ticket_carburant_2025-06-03.jpg
+  note: A French fuel receipt from a petrol station; a till receipt names no payer, so the recipient is null.
+  text: |
+    STATION DU JORAT SA
+    Route de Berne 112, 1010 Lausanne
+    N° TVA CHE-582.047.163 TVA
+
+    TICKET N° 004817
+    Date : 03.06.2025   Heure : 07:52
+    Pompe 4 · Sans plomb 95
+    Volume                42.18 L
+    Prix/L            CHF 1.849
+    MONTANT TTC       CHF 77.99
+    dont TVA 8,1 %    CHF  5.84
+
+    Paiement : Carte Maestro ****2290
+    Merci et bonne route !
+  expected:
+    document_date: "2025-06-03"
+    document_reference_number: "004817"
+    document_issuer: STATION DU JORAT SA
+    document_issuer_tax_id: CHE582047163
+    document_recipient: null
+    document_total_amount: 77.99
+    document_currency: CHF
+    document_related_references: null
+
+- id: receipt-de-3
+  type: receipt
+  title: Zahlungsbestaetigung_ZB-2025-0815.pdf
+  note: >-
+    A German payment confirmation (Zahlungsbestätigung) for an invoice already paid: the invoice it settles is a
+    related reference, and its date is the payment date, not the letter's date.
+  text: |
+    # Sonnenhof Immobilien Treuhand AG
+    Bahnhofplatz 3, 9000 St. Gallen · UID CHE-913.726.482 MWST
+
+    Familie Corinne und Daniel Keller
+    Rosenbergstrasse 18
+    9000 St. Gallen
+
+    ## Zahlungsbestätigung
+    St. Gallen, 12. August 2025
+    Unsere Referenz: ZB-2025-0815
+
+    Sehr geehrte Familie Keller
+
+    Wir bestätigen den Eingang Ihrer Zahlung vom 08.08.2025 über **CHF 2'350.00** für unsere Rechnung NK-2025-1187
+    (Nebenkostenabrechnung 2024/25). Die Rechnung ist damit vollständig beglichen.
+
+    Freundliche Grüsse
+
+    Sonnenhof Immobilien Treuhand AG
+  expected:
+    document_date: "2025-08-12"
+    document_reference_number: ZB-2025-0815
+    document_issuer: Sonnenhof Immobilien Treuhand AG
+    document_issuer_tax_id: CHE913726482
+    document_recipient: Familie Corinne und Daniel Keller
+    document_total_amount: 2350.00
+    document_currency: CHF
+    document_related_references: [NK-2025-1187]
+
+- id: receipt-en-2
+  type: receipt
+  title: Cloudnest_receipt_2417-8830.pdf
+  note: An English online payment receipt that names the payer, so the payer is the recipient.
+  text: |
+    # Cloudnest Hosting Ltd
+    4 Wharf Lane, Bristol BS1 6PN · VAT Reg. No. GB 987 6543 21
+
+    ## Receipt #2417-8830
+    Paid on 3 September 2025
+
+    Paid by: Lindqvist Design Studio Ltd, 22 Harbour Road, Leeds LS1 4AP
+    Payment method: Visa •••• 4417
+    Invoice number: CNH-2025-09-4471
+
+    | Description | Qty | Unit price | Amount |
+    |---|---:|---:|---:|
+    | Business Hosting Plan, Sep 3 – Oct 2, 2025 | 1 | £50.00 | £50.00 |
+    | VAT 20% | | | £10.00 |
+
+    **Amount paid £60.00**
+
+    Questions about this receipt? Visit the billing section of your Cloudnest account.
+  expected:
+    document_date: "2025-09-03"
+    document_reference_number: 2417-8830
+    document_issuer: Cloudnest Hosting Ltd
+    document_issuer_tax_id: GB987654321
+    document_recipient: Lindqvist Design Studio Ltd
+    document_total_amount: 60.00
+    document_currency: GBP
+    document_related_references: [CNH-2025-09-4471]
+
+- id: receipt-it-2
+  type: receipt
+  title: ricevuta_parcheggio_2025-10-22.jpg
+  note: An Italian parking receipt from a car park pay station, with no payer named.
+  text: |
+    AUTOSILO BALESTRA SA
+    Via Balestra 9, 6900 Lugano
+    IVA CHE-473.029.154 IVA
+
+    RICEVUTA DI PAGAMENTO
+    Ricevuta n. 25-118734
+    Entrata   22.10.2025 08:14
+    Uscita    22.10.2025 17:41
+    Durata    9 h 27 min
+    Tariffa giornaliera    CHF 24.00
+    TOTALE PAGATO          CHF 24.00
+    IVA 8,1 % inclusa      CHF  1.80
+    Pagamento: TWINT
+
+    Grazie e arrivederci
+  expected:
+    document_date: "2025-10-22"
+    document_reference_number: 25-118734
+    document_issuer: AUTOSILO BALESTRA SA
+    document_issuer_tax_id: CHE473029154
+    document_recipient: null
+    document_total_amount: 24.00
+    document_currency: CHF
+    document_related_references: null
+

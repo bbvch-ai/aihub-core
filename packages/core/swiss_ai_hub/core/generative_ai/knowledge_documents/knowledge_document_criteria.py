@@ -14,14 +14,15 @@ class KnowledgeDocumentCriteria(BaseModel):
         ),
     ] = None
     path_glob: Annotated[
-        str | None, Field(description="Glob on the path relative to the collection, e.g. 'invoices/2025/**'.")
+        str | None,
+        Field(description="Glob on the path relative to the collection, e.g. 'invoices/**' or 'contracts/*.pdf'."),
     ] = None
     path_regex: Annotated[str | None, Field(description="Regular expression searched anywhere in the path.")] = None
     content_query: Annotated[
         str | None,
         Field(
             description="Only documents whose text contains this term, or matches it as a regex. Use terms that "
-            "identify documents (a supplier, a number, a year, a contract party), never a word describing the "
+            "identify documents (a supplier, a number, a contract party), never a word describing the "
             "records wanted, such as 'hardware': lines rarely contain it, so documents would be missed."
         ),
     ] = None

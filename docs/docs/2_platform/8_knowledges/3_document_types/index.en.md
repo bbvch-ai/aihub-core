@@ -15,23 +15,130 @@ database.
 
 ## Types
 
-| Type      | A document of this type…                                                                                                                                                                                                 |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `invoice` | requests payment for goods or services that were delivered or agreed, and states an amount the recipient owes the issuer. Includes partial, final and advance-payment invoices, QR-bills, and utility and telecom bills. |
-| `other`   | is anything else.                                                                                                                                                                                                        |
+| Type                      | A document of this type…                                                                                                                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `invoice`                 | requests payment for goods or services that were delivered or agreed. Includes partial, final and advance-payment invoices, QR-bills, and utility and telecom bills.                                                |
+| `credit_note`             | reduces, cancels or credits an amount instead of requesting one: credit notes, cancellations (Storno), corrections with a negative total, and a self-billing Gutschrift under § 14 UStG.                            |
+| `offer`                   | proposes goods or services at a stated price before they are ordered: offers, quotes, cost estimates and pro-forma invoices.                                                                                        |
+| `order`                   | places or confirms an order: purchase orders the buyer sends and order confirmations the supplier sends back.                                                                                                       |
+| `delivery_note`           | accompanies delivered goods or confirms their delivery: delivery notes and packing slips.                                                                                                                           |
+| `receipt`                 | confirms a payment already made: till receipts, cash receipts (Quittung) and payment confirmations.                                                                                                                 |
+| `account_statement`       | lists the movements, balance or open items of an account: bank and credit card statements, and a supplier's statement of open items.                                                                                |
+| `payment_reminder`        | asks for payment of overdue invoices: payment reminders, dunning letters (Mahnung) and overdue notices.                                                                                                             |
+| `contract`                | records an agreement between named parties: contracts, framework, employment, rental and licence agreements, and amendments.                                                                                        |
+| `service_level_agreement` | defines the service levels a provider commits to, such as availability and response times: a stand-alone SLA or a service level annex.                                                                              |
+| `letter`                  | is a single letter or e-mail of no other type: notices, requests, confirmations, terminations and invitations.                                                                                                      |
+| `report`                  | reports results, status or findings: annual and quarterly reports, project status, audit and inspection reports.                                                                                                    |
+| `documentation`           | explains how to install, use, operate or maintain a product, system or process: handbooks, manuals, guides, technical documentation and specifications, technical or not.                                           |
+| `policy`                  | sets rules that employees, members or customers must follow: policies, guidelines, directives, regulations, codes of conduct, staff handbooks that set working hours or holidays, and general terms and conditions. |
+| `email_thread`            | is a conversation of several e-mails, replies or forwards kept in one document, such as an exported thread or a mailbox history.                                                                                    |
+| `other`                   | is anything else, for example meeting minutes, presentations, forms and tenders.                                                                                                                                    |
 
-Not invoices, although they look alike: offers and quotes, order confirmations (even with a total), delivery notes,
-receipts for a payment already made, credit notes, payment reminders, account statements and pro-forma invoices. They
-are `other` until the list has a type for them. A German "Gutschrift" is `other` too, even a self-billing one issued by
-the buyer under § 14 UStG: the word also means credit note, and the two are told apart once the list has a credit note
-type.
+A final invoice stays an invoice when the advance payments it deducts make its total negative; a correction of an
+earlier invoice whose total is negative is a credit note. A QR payment part on its own, without its invoice, is `other`.
+An offer, order, invoice or contract sent as a letter is of that type, not a letter. A conversation of several e-mails
+is an `email_thread`; a single e-mail is a `letter`. A policy, guideline or regulation that sets rules is a `policy`,
+not `documentation`, even when it carries a version number or explains what to do; so is a staff or employee handbook,
+even when it explains how to request holidays or report sick. General terms and conditions not agreed between named
+parties are a `policy`, not a `contract`, and a service level annex that commits to service levels is a
+`service_level_agreement` even when it is called a service description (Leistungsbeschreibung).
 
 A document has one **primary type**, the one that describes it as a whole. It may also list up to three **secondary
-types**, for example an invoice that is also its delivery note. Attributes always belong to the primary type; a
-secondary type only makes the document findable under that type too. A document that merely mentions another document's
-number is not of that document's type.
+types**, for example an invoice that is also its delivery note, or a contract with a service level annex (`contract`,
+with `service_level_agreement` as a secondary type). Attributes always belong to the primary type; a secondary type only
+makes the document findable under that type too. A document that merely mentions another document's number is not of
+that document's type.
 
-## Invoice attributes
+## Attributes per type
+
+Attributes are shared across types, so one filter such as "dated 2025" or "issuer Hooli AG" works on every type that has
+the attribute. Each type has only the attributes that make sense for it:
+
+| Attribute                     | invoice, credit note | offer | order | delivery note | receipt | statement | reminder | contract | SLA | letter | report | documentation | policy | e-mail thread |
+| ----------------------------- | :------------------: | :---: | :---: | :-----------: | :-----: | :-------: | :------: | :------: | :-: | :----: | :----: | :-----------: | :----: | :-----------: |
+| `document_date`               |          ✓           |   ✓   |   ✓   |       ✓       |    ✓    |     ✓     |    ✓     |    ✓     |  ✓  |   ✓    |   ✓    |       ✓       |   ✓    |       ✓       |
+| `document_reference_number`   |          ✓           |   ✓   |   ✓   |       ✓       |    ✓    |     ✓     |    ✓     |    ✓     |  ✓  |   ✓    |        |       ✓       |   ✓    |               |
+| `document_issuer`             |          ✓           |   ✓   |   ✓   |       ✓       |    ✓    |     ✓     |    ✓     |    ✓     |  ✓  |   ✓    |   ✓    |       ✓       |   ✓    |               |
+| `document_issuer_tax_id`      |          ✓           |   ✓   |   ✓   |               |    ✓    |           |          |          |     |        |        |               |        |               |
+| `document_recipient`          |          ✓           |   ✓   |   ✓   |       ✓       |    ✓    |     ✓     |    ✓     |    ✓     |  ✓  |   ✓    |        |               |        |               |
+| `document_parties`            |          ✓           |   ✓   |   ✓   |       ✓       |    ✓    |     ✓     |    ✓     |    ✓     |  ✓  |   ✓    |        |               |        |       ✓       |
+| `document_total_amount`       |          ✓           |   ✓   |   ✓   |               |    ✓    |     ✓     |    ✓     |    ✓     |     |        |        |               |        |               |
+| `document_currency`           |          ✓           |   ✓   |   ✓   |               |    ✓    |     ✓     |    ✓     |    ✓     |     |        |        |               |        |               |
+| `document_due_date`           |          ✓           |       |   ✓   |               |         |     ✓     |    ✓     |          |     |        |        |               |        |               |
+| `document_period_start`/`end` |          ✓           |       |       |               |         |     ✓     |          |    ✓     |  ✓  |        |   ✓    |               |        |               |
+| `document_related_references` |          ✓           |   ✓   |   ✓   |       ✓       |    ✓    |           |    ✓     |    ✓     |  ✓  |   ✓    |        |               |        |       ✓       |
+| `document_valid_until`        |                      |   ✓   |       |               |         |           |          |          |     |        |        |               |        |               |
+| `document_notice_period`      |                      |       |       |               |         |           |          |    ✓     |  ✓  |        |        |               |        |               |
+| `document_service_levels`     |                      |       |       |               |         |           |          |          |  ✓  |        |        |               |        |               |
+| `document_product`            |                      |       |       |               |         |           |          |          |     |        |        |       ✓       |        |               |
+| `document_participants`       |                      |       |       |               |         |           |          |          |     |        |        |               |        |       ✓       |
+| `document_jurisdiction`       |                      |       |       |               |         |           |          |    ✓     |  ✓  |        |        |               |   ✓    |               |
+
+Where an attribute means something specific for a type:
+
+- **Issuer and recipient.** The issuer is the party that sends the document; the recipient is the party it is addressed
+  to. For an order, the issuer is the buyer on a purchase order and the supplier on an order confirmation. For a
+  contract or SLA, the issuer is the party that provides the goods, service, premises, licence or position (supplier,
+  contractor, landlord, licensor, employer, service provider) and the recipient the other party. For a receipt, the
+  issuer is the merchant and the recipient the payer, only when named. For a self-billing Gutschrift, the issuer is the
+  buyer who issues it. For documentation, the issuer is the manufacturer, publisher or organisation that wrote it, or
+  the author when no organisation is named. For a policy, the issuer is the organisation that sets the rules.
+- **Total amount.** For a credit note, the amount credited with its sign as written; for a statement, the closing
+  balance or the amount due; for a reminder, the amount now to pay including fees and interest; for a contract, the
+  contract value or else the recurring fee, rent or salary.
+- **Due date.** For an order, the delivery date; for a reminder, the new payment deadline; for a credit note, the date
+  the credit is paid out.
+- **Reference number.** A statement's own number, never an account number or IBAN; a reminder's own number, never the
+  number of the invoice it chases (that one is a related reference); a letter's own reference, such as "Unser Zeichen";
+  for documentation and a policy, its document number, and its version or release number without the word "Version" only
+  when it has no document number.
+- **Date.** For documentation, its publication or revision date; for a policy, the date it takes effect, else the date
+  it was issued or revised; for an e-mail thread, the date of the latest message.
+- **Period.** For a contract or SLA, its term. A single date is the whole period unless a word next to it says which end
+  it is: a contract that begins on a date and runs until terminated ("ab 1. Juli 2025", "tritt am 1. März 2026 in
+  Kraft", "prend effet le", "from") stores only its start, and one that names only its end ("endet am 30. Juni 2027",
+  "until") only its end. Only words in the date's own sentence count. So "contracts ending in 2026" finds every contract
+  that states its end, and the date it was signed is never its start. A contract that states its start and its end on
+  lines of their own ("Vertragsbeginn 1. April 2025", "Vertragsende 31. März 2028") keeps both, when every date the model
+  names is in the document; a word the model adds to a date is not read, only the date's own line. Every other type's
+  period stays whole, whatever words stand near it.
+- **Valid until**, **notice period** and **service levels** are new with these types: the date an offer is valid until;
+  the notice period of a contract or SLA, kept as written; and up to five service levels an SLA commits to, copied as
+  written ("Verfügbarkeit 99,9 % pro Monat").
+- **Product** applies to documentation only: the product, system or service it documents, by its name as written, so a
+  filter can find "the manuals for the AquaTherm WP 12". Empty when it names none; neither a work process it describes
+  nor a handbook's own title is a product.
+- **Participants** applies to e-mail threads only: up to ten people and organisations that send or receive a message of
+  the conversation, by the name a header or signature gives, including the company a signature names for a person. An
+  e-mail address or a domain is never a participant.
+- **Jurisdiction** applies to contracts, SLAs and policies: the place of jurisdiction for disputes as written
+  (Gerichtsstand, for, foro, courts of), such as "Luzern". A governing law alone ("Es gilt schweizerisches Recht"), a
+  party's address and the place it was signed are no jurisdiction: code keeps a place only where its line, or the
+  heading above it, names a court.
+- **Parties** lists the issuer and the recipient, or the participants of an e-mail thread, so one parties filter finds a
+  company's invoices, contracts and conversations alike.
+
+The types and their meanings follow [UBL 2.1](https://docs.oasis-open.org/ubl/os-UBL-2.1/UBL-2.1.html) and the Peppol
+[credit note](https://docs.peppol.eu/poacc/billing/3.0/syntax/ubl-creditnote/tree/),
+[order](https://docs.peppol.eu/poacc/upgrade-3/syntax/Order/tree/),
+[order response](https://docs.peppol.eu/poacc/upgrade-3/syntax/OrderResponse/tree/) and
+[despatch advice](https://docs.peppol.eu/poacc/upgrade-3/syntax/DespatchAdvice/tree/) documents, the Azure Document
+Intelligence [receipt](https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/receipt),
+[bank statement](https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/bank-statement) and
+[contract](https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/contract) models, the
+[CUAD](https://www.atticusprojectai.org/cuad) contract dataset, the Swiss Code of Obligations on default
+([Art. 102 OR](https://www.fedlex.admin.ch/eli/cc/27/317_321_377/de#art_102)) and the EU
+[cloud SLA standardisation guidelines](https://digital-strategy.ec.europa.eu/en/news/cloud-service-level-agreement-standardisation-guidelines).
+
+### E-mail threads and personal data
+
+Participants are names of people, and they are stored as written, like the recipient of a letter. A thread exported from
+an internal mailbox therefore puts employees' names into the filter metadata of every chunk. When the knowledge
+database's text model is an external one behind the PII guardrail, the model sees `<PERSON_1>` instead of a name; that
+placeholder is not in the document, so it is dropped and the participants stay empty. Whether participants of internal
+e-mails should be stored at all is an open decision for the data protection owner.
+
+## Invoice attributes in detail
 
 | Attribute                     | Value type | Meaning                                                                                                                                                                            | Example: copied → stored                     |
 | ----------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
@@ -90,7 +197,8 @@ chunks in the vector store carry:
 - the **value**, under the attribute's key, read by code from the copied text and empty when it cannot be read;
 - the **copied text**, under the key with `_raw` appended;
 - for dates and periods, the **precision** (`day`, `month`, `quarter` or `year`), under the key with `_precision`
-  appended, so "März 2025" is never mistaken for 1 March.
+  appended, so "März 2025" is never mistaken for 1 March. For a period it describes each end that is stored: a term "ab
+  März 2025" stores its start at month precision and no end.
 
 Every attribute of the type is present, empty where unknown. A filter should treat an empty value as unknown, not as a
 mismatch. An attribute that does not apply to a type is not stored on documents of that type.
@@ -98,11 +206,19 @@ mismatch. An attribute that does not apply to a type is not stored on documents 
 Rules that keep values from being guessed:
 
 - **Not in the document, not stored.** Text the model copied that the document does not contain is dropped.
+- **A template's gap is no value.** A copy holding an unfilled placeholder (`[YYYY]`, `[####]`, `______`, an empty box)
+  is stored empty, so a half-filled template does not file "NW-SLA-[YYYY]-[####]" as its number.
+- **Stored text uses plain letters.** A ligature a PDF writes as one character ("ﬀ" in "Schaﬀhausen") is stored as its
+  letters, so a filter for "Schaffhausen" finds it; the copied text is kept as written.
 - **Ambiguous dates are read only in the document's own order.** Dates with dots or dashes are read day first. A slash
   date such as `03/04/2025` could be March or April. The document's other slash dates settle it when one of them allows
   only one order (`17/11/2025` is day first, `11/17/2025` month first). Without such a date, it is read day first on a
   document whose currency is CHF, EUR or another non-dollar currency, since month first is the US order, and stays
   empty, with only its text kept, with USD, a bare `$`, no currency, or slash dates that contradict each other.
+- **A name is never an e-mail address.** An e-mail address copied with an issuer, recipient or participant is removed
+  from the stored name ("Anna Meier <anna@example.ch>" is stored as "Anna Meier"), and one copied without a name is
+  stored empty, with its text kept: the address names a mailbox, not a party. A name the document writes only inside an
+  e-mail address ("Northpeak" from billing@northpeak.example) is dropped the same way.
 - **Tax IDs are checked.** A Swiss UID must pass its check digit. An EU VAT number must match its country's format. A
   German tax office number (Steuernummer) has no standard form and is kept as text only.
 - **Amounts in every convention.** `12'496.36`, `12.496,36`, `12 496,36` and `12,496.36` are the same amount; the Swiss

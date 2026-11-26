@@ -7,7 +7,7 @@ import contextlib
 import functools
 import json
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -30,6 +30,7 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
     DocumentExtractionResult,
+    DocumentMatch,
     ExtractedTableFile,
     ExtractedTableMarkup,
     ExtractionFileStore,
@@ -40,6 +41,8 @@ from swiss_ai_hub.core.generative_ai import (
     KnowledgeDocumentSelectionResult,
     KnowledgeDocumentSummary,
     LLMConfig,
+    PathDateCounts,
+    PathDateRange,
     RecordField,
     RecordProvenance,
     RecordSchema,
@@ -201,6 +204,14 @@ def _result(
 
 def _selection() -> KnowledgeDocumentSelection:
     return KnowledgeDocumentSelection(any_of=[KnowledgeDocumentCriteria(path_glob="invoices/2025/**")])
+
+
+_YEAR_2025 = PathDateRange(start=date(2025, 1, 1), end=date(2025, 12, 31))
+_PERIOD_WORDS = "dated between 2025-01-01 and 2025-12-31"
+
+
+def _dated_selection() -> KnowledgeDocumentSelection:
+    return _selection().model_copy(update={"path_date_range": _YEAR_2025})
 
 
 def _body_lines(table: str) -> list[str]:
@@ -432,6 +443,137 @@ class TestTable:
 
         assert ExtractedTableMarkup.condensed(table.table) == "[A table of 1 extracted rows was shown here.]"
 
+    @pytest.mark.asyncio
+    async def test_skipped_documents_are_listed_with_reasons_and_counted_apart_from_failures(self, store: _Store):
+        run = _run(file_count=4, document_condition="only invoices from Hooli")
+        results = [
+            _result(run, "a.pdf", [{"item": "Rack", "amount": 1}], store),
+            _result(run, "b.pdf", skipped_reason="Supplier: Initech AG"),
+            _result(run, "c.pdf", failure_reason="boom"),
+            _result(run, "d.pdf"),
+        ]
+
+        table = await ExtractionTable.assemble(run, results, T)
+
+        assert (table.file_count, table.failed_count, table.skipped_count) == (4, 1, 1)
+        assert "**Document condition:** only invoices from Hooli" in table.summary
+        assert "**Skipped, not meeting the document condition:** 1 documents\n\n- b.pdf: Supplier: Initech AG" in (
+            table.summary
+        )
+        assert "**No rows from:** d.pdf\n" in table.summary + "\n"
+        assert "**Files that could not be extracted:**\n\n- c.pdf: boom" in table.summary
+
+    @pytest.mark.asyncio
+    async def test_a_long_skipped_list_says_how_many_more(self, store: _Store):
+        run = _run(file_count=200, document_condition="only invoices from Hooli")
+        reason = "Lieferant: Müller & Söhne AG, Zürich, " + "ü" * 150
+        results = [_result(run, f"invoices/{index:03d}.pdf", skipped_reason=reason) for index in range(200)]
+
+        table = await ExtractionTable.assemble(run, results, T)
+
+        assert table.skipped_count == 200
+        assert "**Skipped, not meeting the document condition:** 200 documents" in table.summary
+        listed = table.summary.count(f": {reason}")
+        assert 0 < listed < 200
+        assert f"…and {200 - listed} more skipped documents, each named with its reason in the progress above." in (
+            table.summary
+        )
+
+    @pytest.mark.asyncio
+    async def test_an_unsure_document_shows_the_match_column_and_is_named(self, store: _Store):
+        run = _run(file_count=2, document_condition="only invoices from Hooli")
+        rows = [{"item": "Rack", "amount": 1.0, RecordSchema.MATCH_FIELD: RecordSchema.MATCH_UNSURE}]
+        results = [
+            _result(run, "a.pdf", rows, store, document_unsure=True),
+            _result(run, "b.pdf", document_unsure=True),
+        ]
+
+        table = await ExtractionTable.assemble(run, results, T)
+
+        assert table.columns[-1] == "Match"
+        assert "| Rack | 1.0 | unsure, please check |" in table.table
+        assert "**Unsure whether they meet the document condition, read and marked for checking:** a.pdf\n" in (
+            table.summary + "\n"
+        )
+        assert "**No rows from:** b.pdf\n" in table.summary + "\n"
+
+    @pytest.mark.asyncio
+    async def test_the_failed_block_stands_before_the_notices(self, store: _Store):
+        run = _run(file_count=1, notices=["A notice from the caller."])
+
+        table = await ExtractionTable.assemble(run, [_result(run, "a.pdf", failure_reason="boom")], T)
+
+        assert table.summary.index("- a.pdf: boom") < table.summary.index("A notice from the caller.")
+
+    @pytest.mark.asyncio
+    async def test_without_a_condition_only_the_failed_block_moved(self, store: _Store):
+        run = _run(file_count=3, criteria="path matches `invoices/**`", notices=["note"])
+        results = [
+            _result(run, "a.pdf", [{"item": "Rack", "amount": 1}], store),
+            _result(run, "b.pdf", failure_reason="boom"),
+            _result(run, "c.pdf"),
+        ]
+
+        table = await ExtractionTable.assemble(run, results, T)
+
+        assert table.skipped_count == 0
+        assert table.summary == (
+            "**Files:** 3 · **Rows found:** 1 · **Files that failed:** 1\n\n"
+            "**Selected:** path matches `invoices/**`\n\n"
+            "**No rows from:** c.pdf\n\n"
+            "**Files that could not be extracted:**\n\n- b.pdf: boom\n\n"
+            "note"
+        )
+
+    @pytest.mark.asyncio
+    async def test_the_period_line_follows_the_document_condition(self, store: _Store):
+        counts = PathDateCounts(in_range=2, excluded=3, undated=1, excluded_examples=["2024/x.pdf", "2023/y.pdf"])
+        run = _run(file_count=2, document_condition="only Hooli", period=_YEAR_2025, path_dates=counts)
+        results = [_result(run, "a.pdf"), _result(run, "b.pdf", skipped_reason="Supplier: Initech AG")]
+
+        table = await ExtractionTable.assemble(run, results, T)
+
+        assert (
+            f"**Document condition:** only Hooli; {_PERIOD_WORDS}\n\n"
+            "**Period by path:** 2 documents dated in or across it · 3 left out, dated outside it · 1 without a date "
+            "in their path\n\n"
+            "**Left out by the date in their path:** 2024/x.pdf, 2023/y.pdf, and 1 more\n\n"
+            "**Skipped, not meeting the document condition:**"
+        ) in table.summary
+
+    @pytest.mark.asyncio
+    async def test_a_long_condition_is_cut_before_the_period(self, store: _Store):
+        run = _run(file_count=1, document_condition="x" * 600, period=_YEAR_2025)
+
+        table = await ExtractionTable.assemble(run, [_result(run, "a.pdf")], T)
+
+        assert f"**Document condition:** {'x' * 499}…; {_PERIOD_WORDS}\n" in table.summary
+
+    @pytest.mark.asyncio
+    async def test_without_a_period_the_summary_has_no_period_line(self, store: _Store):
+        run = _run(file_count=1, document_condition="only Hooli")
+
+        table = await ExtractionTable.assemble(run, [_result(run, "a.pdf")], T)
+
+        assert "**Document condition:** only Hooli\n" in table.summary
+        assert "dated" not in table.summary
+        assert "Period by path" not in table.summary
+
+    @pytest.mark.asyncio
+    async def test_the_excluded_paths_are_listed_with_how_many_more(self, store: _Store):
+        examples = [f"invoices/2024/{index}.pdf" for index in range(10)]
+        counts = PathDateCounts(in_range=1, excluded=25, excluded_examples=examples)
+
+        lines = ExtractionTable.path_date_lines(counts, T)
+
+        assert lines[1] == f"**Left out by the date in their path:** {', '.join(examples)}, and 15 more"
+
+    def test_listed_keeps_its_default_limit_and_count_for_existing_callers(self):
+        paths = [f"invoices/{index:02d}.pdf" for index in range(40)]
+
+        assert ExtractionTable._listed(paths[:2], T) == "invoices/00.pdf, invoices/01.pdf"
+        assert ExtractionTable._listed(paths, T).endswith(", invoices/29.pdf, and 10 more")
+
 
 def _request(path: str = "invoices/2025/a.pdf") -> DocumentExtractionRequestedEvent:
     return DocumentExtractionRequestedEvent(run=_run(file_count=1), document=_summary(path), record_schema=SCHEMA)
@@ -513,6 +655,15 @@ async def _extract_document(
 
 def _provenance() -> RecordProvenance:
     return RecordProvenance.from_summary(_summary("invoices/2025/a.pdf"))
+
+
+def _conditioned_request() -> DocumentExtractionRequestedEvent:
+    run = _run(file_count=1, document_condition="only invoices from Hooli")
+    return DocumentExtractionRequestedEvent(run=run, document=_summary("invoices/2025/a.pdf"), record_schema=SCHEMA)
+
+
+def _skipped(reason: str = "Supplier: Initech AG") -> DocumentExtractionResult:
+    return DocumentExtractionResult.skipped_by(_provenance(), DocumentMatch(verdict="no", reason=reason), 1)
 
 
 class TestDocumentExtraction:
@@ -644,6 +795,83 @@ class TestDocumentExtraction:
         assert still[0] == "Still reading invoices/2025/a.pdf (1 min)."
         assert _thoughts(displayer)[-1] == "1 of 1 · invoices/2025/a.pdf: 0 rows"
 
+    @pytest.mark.asyncio
+    async def test_a_skipped_document_stores_no_rows_and_is_not_a_failure(self, store: _Store):
+        result = await _extract_document(_skipped(), request=_conditioned_request())
+
+        store.put_rows.assert_not_awaited()
+        assert (result.rows_key, result.row_count, result.failure_reason) == (None, 0, None)
+        assert result.skipped_reason == "Supplier: Initech AG"
+
+    @pytest.mark.asyncio
+    async def test_the_progress_names_a_skipped_document_with_its_reason(self, store: _Store):
+        displayer = _displayer()
+
+        await _extract_document(_skipped(), request=_conditioned_request(), displayer=displayer)
+
+        assert _thoughts(displayer) == ["1 of 1 · invoices/2025/a.pdf: skipped, Supplier: Initech AG"]
+
+    @pytest.mark.asyncio
+    async def test_a_skip_without_a_reason_gets_the_default(self, store: _Store):
+        result = await _extract_document(_skipped(reason=" \n "), request=_conditioned_request())
+
+        assert result.skipped_reason == "does not meet the document condition"
+
+    @pytest.mark.asyncio
+    async def test_reasons_cannot_break_the_summary_list(self, store: _Store):
+        skipped = await _extract_document(_skipped(reason="# Supplier:\n\n- Initech AG\n| x |"))
+        failed = await _extract_document(DocumentExtractionResult.failed_with(_provenance(), "\n- boom\n\n## next", 1))
+        emphasised = await _extract_document(_skipped(reason="**Supplier:** Initech AG"))
+
+        assert skipped.skipped_reason == "Supplier: - Initech AG | x |"
+        assert failed.failure_reason == "boom ## next"
+        assert emphasised.skipped_reason == "**Supplier:** Initech AG"
+
+    @pytest.mark.asyncio
+    async def test_the_condition_is_passed_to_the_extractor(self, store: _Store):
+        extract = AsyncMock(return_value=DocumentExtractionResult.succeeded(_provenance(), [], 1))
+
+        await _extract_document(extract, request=_conditioned_request())
+
+        assert extract.await_args.kwargs["document_condition"] == "only invoices from Hooli"
+
+    @pytest.mark.asyncio
+    async def test_an_unsure_documents_rows_are_marked_for_checking(self, store: _Store):
+        unsure = DocumentMatch(verdict="unsure", reason="The excerpt names no supplier.")
+        rows = [{"item": "Rack", "amount": 1.0}, {"item": "Cable", "amount": 2.0, RecordSchema.MATCH_FIELD: "yes"}]
+        extracted = DocumentExtractionResult.succeeded(_provenance(), rows, 1, document_match=unsure)
+
+        result = await _extract_document(extracted, request=_conditioned_request())
+
+        assert result.document_unsure
+        assert (result.row_count, result.unsure_count) == (2, 2)
+        assert [row[RecordSchema.MATCH_FIELD] for row in store.stored_rows[result.rows_key]] == ["unsure", "unsure"]
+
+    @pytest.mark.asyncio
+    async def test_the_judge_reads_the_period_only_where_the_path_does_not_settle_it(self, store: _Store):
+        run = _run(file_count=2, document_condition="only Hooli", period=_YEAR_2025)
+        judged = {}
+        for dated_by_path in (True, False):
+            extract = AsyncMock(return_value=DocumentExtractionResult.succeeded(_provenance(), [], 1))
+            request = DocumentExtractionRequestedEvent(
+                run=run, document=_summary("invoices/a.pdf"), record_schema=SCHEMA, dated_by_path=dated_by_path
+            )
+            await _extract_document(extract, request=request)
+            judged[dated_by_path] = extract.await_args.kwargs["document_condition"]
+
+        assert judged == {True: "only Hooli", False: f"only Hooli; {_PERIOD_WORDS}"}
+
+    @pytest.mark.asyncio
+    async def test_without_a_period_the_judge_reads_the_run_condition_unchanged(self, store: _Store):
+        extract = AsyncMock(return_value=DocumentExtractionResult.succeeded(_provenance(), [], 1))
+        request = DocumentExtractionRequestedEvent(
+            run=_run(file_count=1, document_condition="only Hooli"), document=_summary("x.pdf"), record_schema=SCHEMA
+        )
+
+        await _extract_document(extract, request=request)
+
+        assert extract.await_args.kwargs["document_condition"] == "only Hooli"
+
 
 class TestHeartbeat:
     @pytest.mark.asyncio
@@ -704,6 +932,19 @@ def _schema_llm() -> Any:
     context.__aenter__ = AsyncMock(return_value=MagicMock())
     context.__aexit__ = AsyncMock(return_value=None)
     return context
+
+
+async def _planned(
+    selected: KnowledgeDocumentSelectionResult, selection: KnowledgeDocumentSelection
+) -> list[DocumentExtractionRequestedEvent] | RecordsExtractedEvent:
+    with (
+        patch(f"{PLANNER}.KnowledgeDocumentSelector.resolve", AsyncMock(return_value=selected)),
+        patch(f"{PLANNER}.RecordSchemaBuilder.build", AsyncMock(return_value=SCHEMA)),
+        patch.object(LLMConfig, "get_model_info", return_value={}),
+        patch.object(LLMConfig, "cost_reporting_llm", return_value=_schema_llm()),
+    ):
+        request = _extract_request().model_copy(update={"selection": selection})
+        return await ExtractionPlanner.plan(request, _config(), _displayer(), T, _Thread(), None)
 
 
 class TestPlanning:
@@ -785,6 +1026,86 @@ class TestPlanning:
             answer = await ExtractionPlanner.plan(_extract_request(), _config(), _displayer(), T, _Thread(), None)
 
         assert answer.summary.startswith("The table could not be extracted: no columns")
+
+    @pytest.mark.asyncio
+    async def test_the_document_condition_rides_on_every_documents_run(self):
+        documents = [_summary("invoices/2025/a.pdf"), _summary("invoices/2025/b.pdf")]
+        with (
+            patch(
+                f"{PLANNER}.KnowledgeDocumentSelector.resolve",
+                AsyncMock(return_value=KnowledgeDocumentSelectionResult(documents=documents)),
+            ),
+            patch(f"{PLANNER}.RecordSchemaBuilder.build", AsyncMock(return_value=SCHEMA)),
+            patch.object(LLMConfig, "get_model_info", return_value={}),
+            patch.object(LLMConfig, "cost_reporting_llm", return_value=_schema_llm()),
+        ):
+            planned = await ExtractionPlanner.plan(
+                _extract_request(document_condition="only invoices from Hooli"),
+                _config(),
+                _displayer(),
+                T,
+                _Thread(),
+                None,
+            )
+
+        assert [request.run.document_condition for request in planned] == ["only invoices from Hooli"] * 2
+
+    def test_the_semantic_query_includes_the_document_condition(self):
+        request = _extract_request(document_terms="Hooli", document_condition="from Q1 2026", instructions="hardware")
+
+        assert ExtractionPlanner._semantic_query(request, _config(), T) == "Hooli from Q1 2026 hardware item, amount"
+
+    def test_the_semantic_query_includes_the_period(self):
+        request = _extract_request(document_condition="from Hooli").model_copy(update={"selection": _dated_selection()})
+
+        assert ExtractionPlanner._semantic_query(request, _config(), T) == f"from Hooli; {_PERIOD_WORDS} item, amount"
+
+    @pytest.mark.asyncio
+    async def test_a_document_dated_wholly_in_the_period_is_not_judged_on_it(self):
+        documents = [_summary("invoices/2025/a.pdf"), _summary("invoices/b.pdf"), _summary("x/2024-12_2025-01.pdf")]
+
+        planned = await _planned(KnowledgeDocumentSelectionResult(documents=documents), _dated_selection())
+
+        assert [request.dated_by_path for request in planned] == [True, False, False]
+
+    @pytest.mark.asyncio
+    async def test_the_path_date_counts_and_period_ride_on_the_run(self):
+        counts = PathDateCounts(in_range=1, excluded=4, undated=0, excluded_examples=["invoices/2024/c.pdf"])
+        selected = KnowledgeDocumentSelectionResult(documents=[_summary("invoices/2025/a.pdf")], path_dates=counts)
+
+        planned = await _planned(selected, _dated_selection())
+
+        assert (planned[0].run.period, planned[0].run.path_dates) == (_YEAR_2025, counts)
+
+    @pytest.mark.asyncio
+    async def test_a_period_that_leaves_out_every_document_says_how_many_which_and_which_years(self):
+        counts = PathDateCounts(excluded=2, outside_years=[2023, 2024], excluded_examples=["2023/a.pdf", "2024/b.pdf"])
+
+        answer = await _planned(KnowledgeDocumentSelectionResult(documents=[], path_dates=counts), _dated_selection())
+
+        assert isinstance(answer, RecordsExtractedEvent)
+        assert answer.summary == (
+            "No document matches the selection, so nothing was extracted.\n\n"
+            "**Period by path:** 0 documents dated in or across it · 2 left out, dated outside it · 0 without a date "
+            "in their path\n\n"
+            "**Left out by the date in their path:** 2023/a.pdf, 2024/b.pdf\n\n"
+            "The paths left out are dated in: 2023, 2024."
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("counts", [None, PathDateCounts()])
+    async def test_nothing_selected_without_path_dates_has_no_period_line(self, counts: PathDateCounts | None):
+        answer = await _planned(KnowledgeDocumentSelectionResult(documents=[], path_dates=counts), _dated_selection())
+
+        assert answer.summary == "No document matches the selection, so nothing was extracted."
+
+    @pytest.mark.asyncio
+    async def test_without_a_period_the_run_is_as_before(self):
+        documents = [_summary("invoices/2025/a.pdf")]
+
+        planned = await _planned(KnowledgeDocumentSelectionResult(documents=documents), _selection())
+
+        assert (planned[0].run.period, planned[0].run.path_dates, planned[0].dated_by_path) == (None, None, False)
 
     def test_a_stored_profile_with_the_removed_limits_still_validates(self):
         config = RecordExtractionConfig.model_validate(
@@ -1062,6 +1383,16 @@ class TestAsATool:
         assert "confirm_sample" in properties
         assert "document_terms" in properties
         assert "continue_pending" not in properties
+
+    def test_the_tool_arguments_have_no_document_condition(self):
+        """The Universal Agent keeps conditions on whole documents in the row condition (#2347 follow-up)."""
+        from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_arguments import ExtractRecordsArguments
+        from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_tool_arguments import (
+            ExtractRecordsToolArguments,
+        )
+
+        assert "document_condition" not in ExtractRecordsToolArguments.model_json_schema()["properties"]
+        assert "document_condition" not in ExtractRecordsArguments.model_fields
 
     @pytest.mark.asyncio
     async def test_one_answer_confirms_once_and_a_redelivered_call_still_runs(self):

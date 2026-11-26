@@ -25,6 +25,7 @@ class SampleAwaitingConfirmation(BaseModel):
     instructions: Annotated[str | None, Field(description="Which records to keep.")] = None
     row_terms: Annotated[str | None, Field(description="What lines holding wanted records usually contain.")] = None
     document_terms: Annotated[str | None, Field(description="What documents holding wanted records contain.")] = None
+    document_condition: Annotated[str | None, Field(description="Which documents count.")] = None
     total_documents: Annotated[int, Field(description="Documents the selection held when sampled.", ge=0)] = 0
     cut_short: Annotated[bool, Field(description="Whether the search that chose the documents stopped early.")] = False
     notices: Annotated[list[str], Field(description="What the sampled answer told the user about its scope.")] = []
@@ -42,6 +43,7 @@ class SampleAwaitingConfirmation(BaseModel):
             instructions=request.instructions,
             row_terms=request.row_terms,
             document_terms=request.document_terms,
+            document_condition=request.document_condition,
             total_documents=total_documents,
             cut_short=request.cut_short,
             notices=request.notices,
@@ -62,6 +64,7 @@ class SampleAwaitingConfirmation(BaseModel):
                 "instructions": self.instructions,
                 "row_terms": self.row_terms,
                 "document_terms": self.document_terms,
+                "document_condition": self.document_condition,
                 "collections": self.collections,
                 "cut_short": confirming.cut_short or self.cut_short,
                 "notices": list(dict.fromkeys([*confirming.notices, *self.notices])),

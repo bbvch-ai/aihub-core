@@ -2,7 +2,12 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, Field, computed_field
 
+from swiss_ai_hub.core.generative_ai.document.classification.normalized_date import NormalizedDate
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary import KnowledgeDocumentSummary
+from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_counts import PathDateCounts
+from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_parser import PathDateParser
+from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_range import PathDateRange
+from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_verdict import PathDateVerdict
 from swiss_ai_hub.core.generative_ai.knowledge_documents.path_glob import PathGlob
 from swiss_ai_hub.core.generative_ai.knowledge_documents.path_regex import PathRegex
 
@@ -44,3 +49,18 @@ class KnowledgeDocumentListing(BaseModel):
         return self.model_copy(
             update={"documents": [doc for doc, is_match in zip(self.documents, matched, strict=True) if is_match]}
         )
+
+    def dated_within(self, date_range: PathDateRange) -> tuple[Self, PathDateCounts]:
+        """The documents a period keeps (every one its path does not date outside it), in order, with the counts.
+
+        CPU-bound, one parse per path: callers in async code run it with `asyncio.to_thread`.
+        """
+        kept: list[KnowledgeDocumentSummary] = []
+        outcomes: list[tuple[str, NormalizedDate | None, PathDateVerdict]] = []
+        for document in self.documents:
+            dated = PathDateParser.parse(document.path)
+            verdict = date_range.verdict_of(dated)
+            outcomes.append((document.path, dated, verdict))
+            if verdict is not PathDateVerdict.OUTSIDE:
+                kept.append(document)
+        return self.model_copy(update={"documents": kept}), PathDateCounts.collect(outcomes, date_range)

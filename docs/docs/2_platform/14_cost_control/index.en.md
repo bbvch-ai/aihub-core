@@ -13,9 +13,9 @@ AI providers charge based on token usage. Tokens are small chunks of text (rough
 
 Cost model comparison:
 
-| Model               | Type               | Cost Structure                                                                                                                                          |
-| ------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API (Pay-per-token) | Variable OPEX      | Pay providers (OpenAI, Google) for each token processed                                                                                                 |
+| Model               | Type               | Cost Structure                                                                                                                                        |
+| ------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API (Pay-per-token) | Variable OPEX      | Pay providers (OpenAI, Google) for each token processed                                                                                               |
 | Locally Hosted      | CAPEX + Fixed OPEX | Capital expense for hardware (GPUs, servers) plus ongoing costs for power and MLOps staff. Per-token cost is 0, but fixed infrastructure cost is high |
 
 Each interaction consumes different types of tokens at different price points:

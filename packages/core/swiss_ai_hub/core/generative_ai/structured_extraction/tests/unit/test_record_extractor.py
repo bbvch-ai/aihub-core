@@ -1,16 +1,19 @@
 import asyncio
 import re
 from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, call
 
 import pytest
+from llama_index.core.prompts.rich import RichPromptTemplate
 from pydantic import BaseModel
 
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document import KnowledgeDocument
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary import KnowledgeDocumentSummary
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
+from swiss_ai_hub.core.generative_ai.structured_extraction import record_extractor
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_extractor import RecordExtractor
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_field import RecordField
 from swiss_ai_hub.core.generative_ai.structured_extraction.record_schema import RecordSchema
@@ -19,6 +22,8 @@ from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 pytestmark = pytest.mark.unit
 
 _LINE = re.compile(r"Position (\d+): (\w+) item costs (\d+) CHF\.")
+
+_FIXTURES = Path(__file__).parent / "fixtures"
 
 _SCHEMA = RecordSchema(
     fields=[
@@ -53,16 +58,38 @@ def _llm_config(max_input_tokens: int = 100_000, max_output_tokens: int = 8192) 
     return SimpleNamespace(model_name="test-model", token_counter=str.split, get_model_info=lambda: model_info)
 
 
+def _rows(text: str) -> list[dict[str, Any]]:
+    return [{"position": int(n), "amount": float(a)} for n, _, a in _LINE.findall(text)]
+
+
 def _reading_llm() -> Mock:
     """A model that extracts exactly the lines present in the window it is shown, as a faithful model would."""
 
     def answer(records_model: type[BaseModel], _prompt: Any, **window_args: Any) -> BaseModel:
-        rows = [{"position": int(n), "amount": float(a)} for n, _, a in _LINE.findall(window_args["text"])]
-        return records_model(records=rows)
+        return records_model(records=_rows(window_args["text"]))
 
     llm = Mock()
     llm.astructured_predict = AsyncMock(side_effect=answer)
     return llm
+
+
+def _judging_llm(verdict: str, reason: str = "Supplier: Initech AG", records_in_no: bool = False) -> Mock:
+    """As `_reading_llm`, and on the judged window it states `verdict` before the records it read."""
+
+    def answer(records_model: type[BaseModel], _prompt: Any, **window_args: Any) -> BaseModel:
+        rows = _rows(window_args["text"])
+        if "document_match" not in records_model.model_fields:
+            return records_model(records=rows)
+        kept = rows if verdict != "no" or records_in_no else []
+        return records_model(document_match={"verdict": verdict, "reason": reason}, records=kept)
+
+    llm = Mock()
+    llm.astructured_predict = AsyncMock(side_effect=answer)
+    return llm
+
+
+def _is_judged(awaited_call: Any) -> bool:
+    return "document_match" in awaited_call.args[0].model_fields
 
 
 @pytest.mark.asyncio
@@ -334,3 +361,271 @@ async def test_a_record_carrying_only_its_match_mark_is_dropped() -> None:
     )
 
     assert [record.values for record in result.records] == [{"position": 1, "amount": 5.0, "record_match": "unsure"}]
+
+
+def _rendered_prompt(locale: str, instructions: str, document_condition: str) -> str:
+    """Every message of the extraction prompt, as the fixtures captured from main hold it."""
+    t = LocaleHandler(locale)
+    schema = _SCHEMA.with_match() if instructions else _SCHEMA
+    messages = RichPromptTemplate(t("lib.prompt.structured_extraction.extraction_prompt")).format_messages(
+        fields=schema.fields,
+        field_names=", ".join(schema.field_names),
+        instructions=instructions,
+        document_condition=document_condition,
+        title="Acme invoice",
+        text="Position 7: hardware item costs 700 CHF.",
+        position=2,
+        total=3,
+        opening="Invoice INV-7 from Acme AG.",
+    )
+    return "\n".join(f"[{message.role.value}]\n{message.content}" for message in messages) + "\n"
+
+
+@pytest.mark.parametrize("locale", ["en", "de", "fr", "it"])
+@pytest.mark.parametrize(("variant", "instructions"), [("plain", ""), ("instructions", "only hardware")])
+def test_the_prompt_without_a_condition_equals_main(locale: str, variant: str, instructions: str) -> None:
+    expected = (_FIXTURES / f"extraction_prompt_{locale}_{variant}.txt").read_text()
+
+    assert _rendered_prompt(locale, instructions, document_condition="") == expected
+
+
+@pytest.mark.parametrize(("instructions", "number"), [("", 8), ("only hardware", 9)])
+def test_the_prompt_with_a_condition_adds_the_block_and_the_rule(instructions: str, number: int) -> None:
+    rendered = _rendered_prompt("en", instructions, document_condition="only contracts with Hooli")
+
+    assert "<document_condition>\nonly contracts with Hooli\n</document_condition>" in rendered
+    assert f"\n{number}. The document condition decides whether the whole document counts." in rendered
+
+
+@pytest.mark.asyncio
+async def test_a_document_that_clearly_fails_the_condition_yields_no_records() -> None:
+    result = await RecordExtractor.extract(
+        _SCHEMA,
+        _document(_invoice(5)),
+        _judging_llm("no"),
+        _llm_config(),
+        LocaleHandler("en"),
+        document_condition="only invoices from Hooli",
+    )
+
+    assert result.skipped
+    assert not result.failed
+    assert result.records == []
+    assert result.document_match.reason == "Supplier: Initech AG"
+
+
+@pytest.mark.asyncio
+async def test_records_returned_with_a_no_verdict_are_dropped() -> None:
+    result = await RecordExtractor.extract(
+        _SCHEMA,
+        _document(_invoice(5)),
+        _judging_llm("no", records_in_no=True),
+        _llm_config(),
+        LocaleHandler("en"),
+        document_condition="only invoices from Hooli",
+    )
+
+    assert result.skipped
+    assert result.records == []
+
+
+@pytest.mark.asyncio
+async def test_a_long_document_failing_the_condition_is_read_only_in_its_first_window() -> None:
+    llm = _judging_llm("no")
+
+    result = await RecordExtractor.extract(
+        _SCHEMA,
+        _document(_invoice(300)),
+        llm,
+        _llm_config(max_output_tokens=600),
+        LocaleHandler("en"),
+        limiter=asyncio.Semaphore(4),
+        document_condition="only invoices from Hooli",
+    )
+
+    assert result.window_count > 1
+    assert result.skipped
+    assert llm.astructured_predict.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_a_qualifying_long_document_reads_its_other_windows_after_the_first() -> None:
+    llm = _judging_llm("yes", reason="Supplier: Hooli AG")
+
+    result = await RecordExtractor.extract(
+        _SCHEMA,
+        _document(_invoice(300)),
+        llm,
+        _llm_config(max_output_tokens=600),
+        LocaleHandler("en"),
+        limiter=asyncio.Semaphore(4),
+        document_condition="only invoices from Hooli",
+    )
+
+    first, *others = llm.astructured_predict.await_args_list
+    assert _is_judged(first)
+    assert first.kwargs["document_condition"] == "only invoices from Hooli"
+    assert others
+    assert not any(_is_judged(other) for other in others)
+    assert all(other.kwargs["document_condition"] == "" for other in others)
+    assert [record.values["position"] for record in result.records] == list(range(1, 301))
+    assert result.document_match.verdict == "yes"
+
+
+@pytest.mark.asyncio
+async def test_with_a_condition_the_first_window_runs_alone() -> None:
+    running, alongside_first = 0, []
+    judging = _judging_llm("yes")
+    answer = judging.astructured_predict.side_effect
+
+    async def slow(records_model: type[BaseModel], prompt: Any, **window_args: Any) -> BaseModel:
+        nonlocal running
+        running += 1
+        await asyncio.sleep(0.01)
+        if window_args["position"] == 1:
+            alongside_first.append(running)
+        running -= 1
+        return answer(records_model, prompt, **window_args)
+
+    judging.astructured_predict = AsyncMock(side_effect=slow)
+
+    await RecordExtractor.extract(
+        _SCHEMA,
+        _document(_invoice(400)),
+        judging,
+        _llm_config(max_output_tokens=600),
+        LocaleHandler("en"),
+        limiter=asyncio.Semaphore(4),
+        document_condition="only invoices from Hooli",
+    )
+
+    assert alongside_first == [1]
+    assert judging.astructured_predict.await_count > 2
+
+
+@pytest.mark.asyncio
+async def test_a_yes_verdict_extracts_the_same_records_as_without_a_condition() -> None:
+    document, config = _document(_invoice(5)), _llm_config()
+    t = LocaleHandler("en")
+
+    plain = await RecordExtractor.extract(_SCHEMA, document, _judging_llm("yes"), config, t)
+    judged = await RecordExtractor.extract(
+        _SCHEMA, document, _judging_llm("yes"), config, t, document_condition="only invoices from Hooli"
+    )
+
+    assert [record.values for record in judged.records] == [record.values for record in plain.records]
+    assert plain.document_match is None
+    assert judged.document_match.verdict == "yes"
+
+
+@pytest.mark.asyncio
+async def test_an_unsure_document_is_read_whole_as_today() -> None:
+    document, config = _document(_invoice(300)), _llm_config(max_output_tokens=600)
+    t = LocaleHandler("en")
+    llm = _judging_llm("unsure", reason="The excerpt names no supplier.")
+
+    plain = await RecordExtractor.extract(_SCHEMA, document, _reading_llm(), config, t)
+    unsure = await RecordExtractor.extract(_SCHEMA, document, llm, config, t, document_condition="only Hooli")
+
+    assert not unsure.skipped
+    assert unsure.document_match.unsure
+    assert llm.astructured_predict.await_count == unsure.window_count
+    assert [record.values for record in unsure.records] == [record.values for record in plain.records]
+
+
+@pytest.mark.asyncio
+async def test_a_malformed_first_window_fails_the_document_and_reads_no_other() -> None:
+    llm = Mock()
+    llm.astructured_predict = AsyncMock(side_effect=ValueError("no usable content"))
+
+    result = await RecordExtractor.extract(
+        _SCHEMA,
+        _document(_invoice(300)),
+        llm,
+        _llm_config(max_output_tokens=600),
+        LocaleHandler("en"),
+        document_condition="only Hooli",
+    )
+
+    assert result.failed
+    assert not result.skipped
+    assert result.failure_reason.startswith("Excerpt 1 of")
+    assert llm.astructured_predict.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_without_a_condition_no_window_is_judged_and_all_run_side_by_side() -> None:
+    running, most = 0, 0
+    reading = _reading_llm()
+    answer = reading.astructured_predict.side_effect
+
+    async def slow(records_model: type[BaseModel], prompt: Any, **window_args: Any) -> BaseModel:
+        nonlocal running, most
+        running += 1
+        most = max(most, running)
+        await asyncio.sleep(0.01)
+        running -= 1
+        return answer(records_model, prompt, **window_args)
+
+    reading.astructured_predict = AsyncMock(side_effect=slow)
+
+    result = await RecordExtractor.extract(
+        _SCHEMA,
+        _document(_invoice(400)),
+        reading,
+        _llm_config(max_output_tokens=600),
+        LocaleHandler("en"),
+        limiter=asyncio.Semaphore(2),
+    )
+
+    assert most == 2
+    assert not any(_is_judged(awaited) for awaited in reading.astructured_predict.await_args_list)
+    assert result.document_match is None
+
+
+@pytest.mark.asyncio
+async def test_an_empty_document_with_a_condition_makes_no_call() -> None:
+    llm = _judging_llm("no")
+
+    result = await RecordExtractor.extract(
+        _SCHEMA, _document(""), llm, _llm_config(), LocaleHandler("en"), document_condition="only Hooli"
+    )
+
+    assert not result.skipped
+    assert result.records == []
+    llm.astructured_predict.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_a_partly_read_document_failing_the_condition_reads_one_window() -> None:
+    llm = _judging_llm("no")
+
+    result = await RecordExtractor.extract(
+        _SCHEMA,
+        _document(_invoice(400)),
+        llm,
+        _llm_config(max_output_tokens=600),
+        LocaleHandler("en"),
+        max_windows=3,
+        document_condition="only Hooli",
+    )
+
+    assert result.skipped
+    assert llm.astructured_predict.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_the_verdict_and_reason_are_set_on_the_current_span(monkeypatch: pytest.MonkeyPatch) -> None:
+    span = MagicMock()
+    monkeypatch.setattr(record_extractor, "trace", SimpleNamespace(get_current_span=lambda: span))
+    document, config, t = _document(_invoice(5)), _llm_config(), LocaleHandler("en")
+
+    await RecordExtractor.extract(_SCHEMA, document, _judging_llm("no"), config, t)
+    assert span.set_attribute.call_count == 0
+
+    await RecordExtractor.extract(_SCHEMA, document, _judging_llm("no"), config, t, document_condition="only Hooli")
+    assert span.set_attribute.call_args_list == [
+        call("extraction.document.path", "invoices/2025/acme.pdf"),
+        call("extraction.document_condition.verdict", "no"),
+        call("extraction.document_condition.reason", "Supplier: Initech AG"),
+    ]

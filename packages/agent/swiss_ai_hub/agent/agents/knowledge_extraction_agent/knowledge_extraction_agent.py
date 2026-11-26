@@ -53,11 +53,11 @@ class KnowledgeExtractionAgent(Agent):
 
     One structured call reads where, which rows and which columns from the message, and the user confirms or corrects
     them in a form before any document is read. By default every document in the profile's collections and glob is
-    then read, narrowed only by the folders, files or years the user named, so the table cannot miss a document for its
-    wording. With `knowledge_documents.discovery`, the model instead finds the documents in a bounded loop over the
-    document tools and settles them with `select_knowledge_documents`. Either way the selection is resolved within the
-    profile's glob and ceiling, `RecordExtraction` extracts every document in parallel (a large selection
-    after the user confirmed its sample), and the table's preview is the answer, its whole as a file.
+    then read, narrowed only by the folders or files the user named and the period the paths date, so the table cannot
+    miss a document for its wording. With `knowledge_documents.discovery`, the model instead finds the documents in a
+    bounded loop over the document tools and settles them with `select_knowledge_documents`. Either way the selection
+    is resolved within the profile's glob and ceiling, `RecordExtraction` extracts every document in parallel (a large
+    selection after the user confirmed its sample), and the table's preview is the answer, its whole as a file.
     """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path(
@@ -176,7 +176,16 @@ class KnowledgeExtractionAgent(Agent):
         if answers.correction is not None:
             history = ExtractionRequestForm.answered(ctx.history, response.request_event.question, answers.correction)
             reading = await WholeScopeRequest.read(
-                history, scope, listing, agent_config, False, displayer, user, t, event.locale
+                history,
+                scope,
+                listing,
+                agent_config,
+                False,
+                displayer,
+                user,
+                t,
+                event.locale,
+                widens_period_folders=answers.keeps_location,
             )
         if reading is None or not reading.is_table_request:
             return await ExtractionAnswer.notice(
@@ -222,8 +231,9 @@ class KnowledgeExtractionAgent(Agent):
         user confirmed. A model that ended its search without stating a selection is asked once for the selection its
         searches point to; one stopped at its limit before it did is asked for folders and paths only, since its hits
         are incomplete. A stopped search whose own selection stands still marks the table as possibly incomplete. The
-        confirmed values and condition are what is extracted, whatever the model passed; the confirmed exact keywords
-        order the documents when the model named none, and a confirmed calculation is named under the table."""
+        confirmed values, document condition and row condition are what is extracted, whatever the model passed, and the
+        confirmed period is applied to the dates in the paths; the confirmed exact keywords order the documents when
+        the model named none, and a confirmed calculation is named under the table."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
@@ -256,7 +266,16 @@ class KnowledgeExtractionAgent(Agent):
             }
         )
         calculation = confirmed.calculation
-        return SelectedExtraction.of(as_confirmed, scope, finished, by_location, t, calculation)
+        return SelectedExtraction.of(
+            as_confirmed,
+            scope,
+            finished,
+            by_location,
+            t,
+            calculation,
+            confirmed.document_condition,
+            confirmed.path_date_range,
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.steps.complete.name"),

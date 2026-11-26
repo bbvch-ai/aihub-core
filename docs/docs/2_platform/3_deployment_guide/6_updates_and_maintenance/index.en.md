@@ -192,8 +192,8 @@ cannot run against it afterwards, and going back to 0.11.4 means restoring the d
 
    On its first start, OpenWebUI copies each of these into a new collection and only finishes starting once every copy
    is done. If the list is not empty, back up Milvus as well, and let the first start run a single OpenWebUI worker:
-   every worker starts the copy, and the eight workers of a production deployment could drop each other's copies.
-   Create `openwebui-one-worker.yml` next to `docker-compose.yml`:
+   every worker starts the copy, and the eight workers of a production deployment could drop each other's copies. Create
+   `openwebui-one-worker.yml` next to `docker-compose.yml`:
 
    ```yaml
    services:
@@ -217,9 +217,9 @@ After the update:
 
 - Users who never picked a language now start in English, whatever their browser's language. `openwebui-init` moves a
   default language of `de` stored by earlier releases to `en-US`. Users pick theirs under **Settings > General**.
-- A browser that opened the chat in the days before the update can still load the previous OpenWebUI from its cache.
-  A hard reload (`Ctrl+Shift+R`, or `Cmd+Shift+R` on macOS) loads the new one. From 0.12.5 on, OpenWebUI tells
-  browsers to check for a newer page on every visit, so later updates no longer need this.
+- A browser that opened the chat in the days before the update can still load the previous OpenWebUI from its cache. A
+  hard reload (`Ctrl+Shift+R`, or `Cmd+Shift+R` on macOS) loads the new one. From 0.12.5 on, OpenWebUI tells browsers to
+  check for a newer page on every visit, so later updates no longer need this.
 
 ### Customer code updates
 

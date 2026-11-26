@@ -1,9 +1,9 @@
 # Invoices written to test the boundary decisions of #2346 (C2, C5, C6, C7, C13), in German, French, Italian and
-# English. Every company and person is made up; every Swiss UID passes its check digit. `expected` holds the value as
-# stored (ISO dates, numbers, ISO currency codes), and None where the document does not state the attribute.
+# English. Every company and person is made up; every Swiss UID passes its check digit. `expected` holds each value as
+# stored (ISO dates, numbers, ISO currency codes), and None where the document does not state it.
 
 - id: invoice-advance-payment-de
-  kind: boundary_invoice
+  type: invoice
   title: Akontorechnung_AK-2025-017.pdf
   note: An advance-payment invoice is an invoice (C2).
   text: |
@@ -43,7 +43,7 @@
     document_related_references: [WV-2024-088]
 
 - id: invoice-utility-de
-  kind: boundary_invoice
+  type: invoice
   title: Stromrechnung_Q1_2025.pdf
   note: A utility bill is an invoice; the customer number is not a related reference.
   text: |
@@ -85,7 +85,7 @@
     document_related_references: null
 
 - id: invoice-telecom-fr
-  kind: boundary_invoice
+  type: invoice
   title: facture_alpenfunk_2025-03.pdf
   note: A telecom bill in French, with a period written "du 1er au 31 mars 2025".
   text: |
@@ -125,7 +125,7 @@
     document_related_references: null
 
 - id: invoice-factoring-de
-  kind: boundary_invoice
+  type: invoice
   title: RE-88341.pdf
   note: The payee is a factoring company; the issuer is still the seller (C7).
   text: |
@@ -167,7 +167,7 @@
     document_related_references: [BE-77120]
 
 - id: invoice-terms-only-de
-  kind: boundary_invoice
+  type: invoice
   title: Rechnung_2025_1142.pdf
   note: Payment terms without a date leave the due date empty.
   text: |
@@ -203,7 +203,7 @@
     document_related_references: null
 
 - id: invoice-negative-final-de
-  kind: boundary_invoice
+  type: invoice
   title: Schlussrechnung_SR-2025-004.pdf
   note: >-
     A final invoice whose advance payments exceed the work keeps its negative total (C5). The earlier advance-payment
@@ -240,10 +240,10 @@
     document_due_date: null
     document_period_start: null
     document_period_end: null
-    document_related_references: [WV-2024-088]
+    document_related_references: [WV-2024-088, AK-2025-009, AK-2025-017, AK-2025-031]
 
 - id: invoice-steuernummer-de
-  kind: boundary_invoice
+  type: invoice
   title: Rechnung_R25-0612.pdf
   note: A German tax office number has no standard form, so the tax ID stays empty (C6).
   text: |
@@ -283,7 +283,7 @@
     document_related_references: null
 
 - id: invoice-long-total-on-last-page-de
-  kind: boundary_invoice
+  type: invoice
   title: Rechnung_IT-2025-0388.pdf
   note: The total and due date are on the last of four pages, outside the first two (C13).
   text: |
@@ -364,7 +364,7 @@
     document_related_references: [PO-3333, LS-8812]
 
 - id: invoice-eur-with-chf-equivalent-de
-  kind: boundary_invoice
+  type: invoice
   title: Invoice_NS-2025-1207.pdf
   note: The total is in EUR; the CHF equivalent is a conversion and must not become the currency.
   text: |
@@ -403,7 +403,7 @@
     document_related_references: [SLA-2023-14]
 
 - id: invoice-it
-  kind: boundary_invoice
+  type: invoice
   title: fattura_2025_00456.pdf
   note: An Italian invoice from Ticino.
   text: |
@@ -443,7 +443,7 @@
     document_related_references: [ORD-5521]
 
 - id: invoice-en-uk
-  kind: boundary_invoice
+  type: invoice
   title: BWA-INV-2025-077.pdf
   note: An English invoice with a UK VAT number and dates written with month names.
   text: |
@@ -484,7 +484,7 @@
     document_related_references: [PO-3391]
 
 - id: invoice-qr-bill-de
-  kind: boundary_invoice
+  type: invoice
   title: QR-Rechnung_10442.pdf
   note: The QR payment reference is not a related reference.
   text: |
@@ -524,7 +524,7 @@
     document_related_references: [AU-2025-301]
 
 - id: invoice-partial-de
-  kind: boundary_invoice
+  type: invoice
   title: Teilrechnung_TR-2025-02.pdf
   note: A partial invoice with a shortened period "1.–28.2.2025".
   text: |
@@ -559,7 +559,7 @@
     document_related_references: [RV-2024-19]
 
 - id: invoice-ambiguous-us-date-en
-  kind: boundary_invoice
+  type: invoice
   title: invoice_7781.pdf
   note: >-
     "04/03/2025" could be 3 April or 4 March, so no date may be stored; the copied text is kept. The label states
@@ -594,7 +594,7 @@
     document_related_references: null
 
 - id: invoice-sender-line-heading-de
-  kind: boundary_invoice
+  type: invoice
   title: Rechnung_HB-2026-118.pdf
   note: >-
     The supplier appears only in the letterhead, the sender line above the address and the UID; the customer's name is
@@ -632,7 +632,7 @@
     document_related_references: null
 
 - id: invoice-sender-line-two-columns-de
-  kind: boundary_invoice
+  type: invoice
   title: Rechnung_HB-2026-131.pdf
   note: >-
     A two-column letter flattened into one: the supplier's phone and e-mail follow the customer's address. They belong
@@ -681,7 +681,7 @@
     document_related_references: null
 
 - id: invoice-sender-line-heading-fr
-  kind: boundary_invoice
+  type: invoice
   title: Facture_AR-2026-0412.pdf
   note: The same layout in French; the addressee in a heading is the recipient.
   text: |
@@ -716,7 +716,7 @@
     document_related_references: null
 
 - id: invoice-previous-balance-de
-  kind: boundary_invoice
+  type: invoice
   title: Beitragsrechnung_VB-2026-4471.pdf
   note: >-
     The amount to pay adds an unpaid balance from the previous period; the invoice's own total is the premium of this
@@ -754,7 +754,7 @@
     document_related_references: ["44.812.330"]
 
 - id: invoice-previous-balance-fr
-  kind: boundary_invoice
+  type: invoice
   title: Facture_TC-88213.pdf
   note: A telecom bill adding an unpaid earlier balance; the total is this period's own amount.
   text: |
@@ -789,7 +789,7 @@
     document_related_references: null
 
 - id: invoice-slash-date-chf-fr
-  kind: boundary_invoice
+  type: invoice
   title: Facture_F-2026-410.pdf
   note: >-
     A slash date both orders allow, on a CHF invoice with no other slash date: read day first, as in Switzerland and
@@ -824,7 +824,7 @@
     document_related_references: null
 
 - id: invoice-slash-date-month-first-eur
-  kind: boundary_invoice
+  type: invoice
   title: Invoice_FX-2026-0057.pdf
   note: >-
     A EUR invoice written in the US order: its own 11/17/2026 can only be month first, so 11/03/2026 is 3 November,

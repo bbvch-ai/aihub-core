@@ -1,8 +1,9 @@
 ---
 steps:
   answer_form:
-    name: "Answer the Request Form"
-    description: "Runs the extraction the user confirmed or corrected in the request form"
+    name: Answer the Request Form
+    description: Runs the extraction the user confirmed or corrected in the request
+      form
   plan:
     name: Plan the Table
     description: Resolves the selected documents and designs the table's columns
@@ -40,7 +41,17 @@ tools:
   extract:
     label: Extract a Table
     approval: 'Extract a table with these columns from knowledge documents: {fields}'
-    description: "Extracts one table from many knowledge documents, one row per record found, each row naming its file. Use it when the user wants records collected across documents, such as every hardware position on the 2025 invoices of a supplier; not for a question one document or the knowledge search answers. First find the documents with the listing and search tools and check them with select_knowledge_documents; then call this with the same conditions. The user sees the table directly and can download all of it; you get its summary. When more documents match than one answer extracts unasked, the user gets a sample and decides; extract them all only when they agree, with confirm_sample set to true. Before a new extraction runs, the user confirms or corrects it in a form; follow what the result then says."
+    description: Extracts one table from many knowledge documents, one row per record
+      found, each row naming its file. Use it when the user wants records collected
+      across documents, such as every hardware position on the 2025 invoices of a
+      supplier; not for a question one document or the knowledge search answers. First
+      find the documents with the listing and search tools and check them with select_knowledge_documents;
+      then call this with the same conditions. The user sees the table directly and
+      can download all of it; you get its summary. When more documents match than
+      one answer extracts unasked, the user gets a sample and decides; extract them
+      all only when they agree, with confirm_sample set to true. Before a new extraction
+      runs, the user confirms or corrects it in a form; follow what the result then
+      says.
   select:
     label: Select Documents
     approval: 'Select knowledge documents for a table with these columns: {fields}'
@@ -53,6 +64,14 @@ table:
   path: Path
   filename: File
 summary:
+  document_condition: '**Document condition:** %{condition}'
+  skipped: '**Skipped, not meeting the document condition:** %{count} documents'
+  skipped_more: …and %{count} more skipped documents, each named with its reason in
+    the progress above.
+  documents_unsure: '**Unsure whether they meet the document condition, read and marked
+    for checking:** %{files}'
+  interpretation_documents: '**Columns:** %{columns} · **Documents:** %{documents}
+    · **Rows kept:** %{kept}'
   no_rows: '**No rows from:** %{files}'
   unsure: '**Unsure:** %{count} rows may not meet the condition; they are kept and
     marked in the Match column so you can check them.'
@@ -85,13 +104,23 @@ summary:
     narrow the request, for example to one of the folders or years above.
   nothing_awaiting: There is no sampled table extraction to go on with in this conversation.
     Please ask for the table again.
+  path_dates: '**Period by path:** %{in_range} documents dated in or across it · %{excluded}
+    left out, dated outside it · %{undated} without a date in their path'
+  path_dates_years: 'The paths left out are dated in: %{years}.'
+  path_dates_excluded: '**Left out by the date in their path:** %{files}'
 facets:
   folders: '**By folder:** %{entries}'
   years: '**By year in the path:** %{entries}'
   collections: '**By collection:** %{entries}'
   first: These are the folders and years of the first %{total} documents by path;
     there are more.
+period:
+  between: dated between %{start} and %{end}
+  from: dated on or after %{start}
+  until: dated on or before %{end}
 progress:
+  skipped: '%{done} of %{files} · %{path}: skipped, %{reason}'
+  skipped_unknown: does not meet the document condition
   partial: '%{path} is long: reading only its relevant parts.'
   plan: Extracting %{fields} from %{files} documents, about %{minutes} minutes (%{criteria}).
   sample: '%{total} documents match; extracting a sample from %{files} of them (%{fields}).'
@@ -101,50 +130,73 @@ progress:
   still_reading: Still reading %{path} (%{minutes} min).
   extracted_rows: '%{done} of %{files} · %{path}: %{rows} rows — %{first}'
 form:
-  intro: "Before I read the documents, please confirm what I understood:"
-  reply_hint: "Reply *yes* to go ahead, or write what to change:"
-  as_understood: "As understood"
+  intro: 'Before I read the documents, please confirm what I understood:'
+  reply_hint: 'Reply *yes* to go ahead, or write what to change:'
+  as_understood: As understood
   where:
-    header: "Location"
-    question: "Which documents should I read? I understood: %{value}."
-    hint: "To read only some, name a collection, a folder, a file or a year."
-    collections: "Collections: %{collections}"
-    folders: "Folders: %{folders}"
-    anything: "All documents"
-    anything_description: "Read every document in this agent's scope"
-    everything: "all documents in scope"
-    line: "**Location:** %{value}"
+    header: Location
+    question: 'Which documents should I read? I understood: %{value}.'
+    hint: To read only some, name a collection, a folder, a file or a year.
+    hint_with_documents: To read only some, name a collection, a folder or a file;
+      a period goes under Document Condition.
+    collections: 'Collections: %{collections}'
+    folders: 'Folders: %{folders}'
+    anything: All documents
+    anything_description: Read every document in this agent's scope
+    everything: all documents in scope
+    line: '**Location:** %{value}'
+  documents:
+    header: Document Condition
+    question: 'Which documents count? I understood: %{value}.'
+    hint: A condition the whole document must meet, checked at its start, e.g. from
+      Lieferant GmbH · dated between 1 January and 31 March 2026 · signed versions
+      only. Documents that clearly fail it are skipped and listed.
+    anything: Every document
+    anything_description: Read every document at the location
+    everything: every document at the location
+    line: '**Document Condition:** %{value}'
   rows:
-    header: "Filter Condition"
-    question: "Which records should the table keep? I understood: %{value}."
-    hint: "A condition on the records, not a calculation, e.g. from Lieferant GmbH · dated 2018 · only hardware items."
-    anything: "Every row"
-    anything_description: "Keep every row the documents hold"
-    everything: "every row"
-    line: "**Filter Condition:** %{value}"
+    header: Filter Condition
+    question: 'Which records should the table keep? I understood: %{value}.'
+    hint: A condition on the records, not a calculation, e.g. from Lieferant GmbH
+      · dated 2018 · only hardware items.
+    hint_with_documents: A condition on each record, not on the whole document and
+      not a calculation, e.g. only hardware items · amounts above CHF 1,000 · lines
+      from Lieferant GmbH on a statement.
+    anything: Every row
+    anything_description: Keep every row the documents hold
+    everything: every row
+    line: '**Filter Condition:** %{value}'
   columns:
-    header: "Values to extract"
-    question: "Which values should each row hold? I understood: %{value}."
-    hint: "The values decide what a row is, e.g. invoice number, date, net total → one row per invoice; item, quantity, net amount → one row per line item."
-    anything: "Let the agent choose"
-    anything_description: "Values that fit the records asked for"
-    unnamed: "none named"
-    line: "**Values to extract:** %{value}"
+    header: Values to extract
+    question: 'Which values should each row hold? I understood: %{value}.'
+    hint: The values decide what a row is, e.g. invoice number, date, net total →
+      one row per invoice; item, quantity, net amount → one row per line item.
+    anything: Let the agent choose
+    anything_description: Values that fit the records asked for
+    unnamed: none named
+    line: '**Values to extract:** %{value}'
   exact:
-    header: "Exact keyword(s)"
-    question: "Which words do the wanted documents literally contain? I understood: %{value}."
-    hint: "Optional, e.g. a supplier name such as Lieferant GmbH · an invoice or contract number. They guide the search and never filter."
-    anything: "None"
-    anything_description: "Let the search decide"
-    none: "none"
-    line: "**Exact keyword(s):** %{value}"
+    header: Exact keyword(s)
+    question: 'Which words do the wanted documents literally contain? I understood:
+      %{value}.'
+    hint: Optional, e.g. a supplier name such as Lieferant GmbH · an invoice or contract
+      number. They guide the search and never filter.
+    anything: None
+    anything_description: Let the search decide
+    none: none
+    line: '**Exact keyword(s):** %{value}'
   semantic:
-    header: "Semantic keyword(s)"
-    question: "What are the wanted documents about? I understood: %{value}."
-    hint: "Optional, e.g. supplier invoice with line items · rental contract · insurance policy. They rank the documents by meaning and never filter."
-    anything: "None"
-    anything_description: "Let the search decide"
-    none: "none"
-    line: "**Semantic keyword(s):** %{value}"
-  declined: "The user declined this extraction in the request form. Do not extract; ask what they would like instead."
-  rewritten: "The user answered the request form for this extraction with: \"%{reply}\". Call extract_records again with the arguments changed to match; it runs without asking again."
+    header: Semantic keyword(s)
+    question: 'What are the wanted documents about? I understood: %{value}.'
+    hint: Optional, e.g. supplier invoice with line items · rental contract · insurance
+      policy. They rank the documents by meaning and never filter.
+    anything: None
+    anything_description: Let the search decide
+    none: none
+    line: '**Semantic keyword(s):** %{value}'
+  declined: The user declined this extraction in the request form. Do not extract;
+    ask what they would like instead.
+  rewritten: 'The user answered the request form for this extraction with: "%{reply}".
+    Call extract_records again with the arguments changed to match; it runs without
+    asking again.'

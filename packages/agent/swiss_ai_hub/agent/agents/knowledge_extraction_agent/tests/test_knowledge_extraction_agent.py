@@ -4,7 +4,7 @@ to a sample extracts the whole selection, and it answers with the table; whateve
 ends in a clear answer."""
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -26,7 +26,7 @@ from swiss_ai_hub.core.events.agent import (
     ToolResultEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.form import Checkbox
+from swiss_ai_hub.core.form import Checkbox, InputText, VectorStoreInput
 from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
     ExtractedTableMarkup,
@@ -35,6 +35,7 @@ from swiss_ai_hub.core.generative_ai import (
     KnowledgeDocumentSelection,
     KnowledgeDocumentSummary,
     LLMConfig,
+    PathDateRange,
     RecordField,
     RecordSchema,
 )
@@ -50,6 +51,7 @@ from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_for
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_form_response_event import (
     ExtractionRequestFormResponseEvent,
 )
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_parts import ExtractionRequestParts
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_plain_answer import (
     ExtractionRequestPlainAnswer,
 )
@@ -60,6 +62,7 @@ from swiss_ai_hub.agent.agents.knowledge_extraction_agent.knowledge_extraction_a
 )
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.requested_location import RequestedLocation
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_call import SelectionCall
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback_criteria import SelectionFallbackCriteria
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_collection import (
     KnowledgeDocumentCollection,
 )
@@ -68,12 +71,14 @@ from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_
     KnowledgeDocumentRunScope,
 )
 from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_arguments import ExtractRecordsArguments
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import FORM, ExtractionForm
 from swiss_ai_hub.agent.capabilities.record_extraction.sample_awaiting_confirmation import SampleAwaitingConfirmation
 from swiss_ai_hub.agent.capabilities.record_extraction.selection_facets import SelectionFacets
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
 T = AgentLocaleHandler("en")
+LOCALES = ("en", "de", "fr", "it")
 SCOPE_OF = "swiss_ai_hub.agent.agents.knowledge_extraction_agent.knowledge_extraction_agent.KnowledgeDocumentScope.of"
 FINANCE = BucketNamespacePair(bucket_name="finance-db", namespace_name="invoices")
 CONTRACTS = KnowledgeReference(database="legal", namespace="contracts")
@@ -82,7 +87,7 @@ WHOLE = "swiss_ai_hub.agent.agents.knowledge_extraction_agent.whole_scope_reques
 
 
 def _discovering(discovery: bool) -> KnowledgeDocumentConfig:
-    return KnowledgeDocumentConfig(enabled=True, narrow_references=True, discovery=discovery)
+    return KnowledgeDocumentConfig(discovery=discovery)
 
 
 def _config(**fields: Any) -> KnowledgeExtractionAgentConfig:
@@ -187,13 +192,19 @@ def test_the_blueprint_validates_and_offers_the_document_tools_and_the_selection
     assert "continue_extraction" not in KnowledgeExtractionAgent.tools.names()
 
 
-def test_the_profile_form_fixes_the_document_tools_on_and_narrowing():
+def test_the_profile_form_offers_only_discovery_and_the_path_glob_for_documents():
     form = KnowledgeExtractionAgentConfig.as_form()
 
-    assert form.knowledge_documents.enabled is True
-    assert form.knowledge_documents.narrow_references is True
-    assert form.knowledge_tool.every_readable_collection is False
     assert isinstance(form.knowledge_documents.discovery, Checkbox)
+    assert isinstance(form.knowledge_documents.path_glob, InputText)
+    for fixed in (
+        form.knowledge_documents.enabled,
+        form.knowledge_documents.narrow_references,
+        form.knowledge_tool.every_readable_collection,
+    ):
+        assert isinstance(fixed, bool)
+    assert {"knowledge_documents", "knowledge_tool"} <= set(form.get_configurable_fields())
+    assert isinstance(form.knowledge_tool.sources[0].vector_store, VectorStoreInput)
     assert _config().knowledge_documents.discovery is False
     assert "discovery" not in KnowledgeExtractionAgentConfig.model_fields
     assert KnowledgeDocumentConfig.as_form().discovery is False
@@ -582,17 +593,33 @@ def _reading(
     confirms_sample: bool = False,
     calculation: str | None = None,
     document_kind: str | None = None,
+    document_condition: str | None = None,
+    period_start: str | None = None,
+    period_end: str | None = None,
 ) -> ExtractionRequestAnswer:
     return ExtractionRequestAnswer(
         is_table_request=is_table_request,
         confirms_sample=confirms_sample,
         locations=list(locations),
         fields="item, amount",
+        document_condition=document_condition,
+        period_start=period_start,
+        period_end=period_end,
         instructions="only Hooli hardware",
         calculation=calculation,
         document_kind=document_kind,
         row_terms="Laptop|Server",
         document_terms="Hooli",
+    )
+
+
+YEAR_2025 = PathDateRange(start=date(2025, 1, 1), end=date(2025, 12, 31))
+PERIOD_WORDS = "dated between 2025-01-01 and 2025-12-31"
+
+
+def _dated_reading(*locations: RequestedLocation, document_condition: str | None = None) -> ExtractionRequestAnswer:
+    return _reading(
+        *locations, document_condition=document_condition, period_start="2025-01-01", period_end="2025-12-31"
     )
 
 
@@ -638,11 +665,13 @@ async def _discover(
     message: str = "Hooli hardware",
     answer: str | None = AS_UNDERSTOOD,
     reread: ExtractionRequestAnswer | None = None,
+    earlier: tuple[ChatMessage, ...] = (),
 ) -> tuple[Any, AsyncMock, AsyncMock]:
     """The discover step, and, when it asks the request form, the confirm step with the given answer."""
     ask = AsyncMock(side_effect=[reading, reread])
     list_documents = AsyncMock(return_value=listing or _listing())
-    ctx = ConversationContextualizedEvent(history=[ChatMessage(role=MessageRole.USER, content=message)], query=message)
+    history = [*earlier, ChatMessage(role=MessageRole.USER, content=message)]
+    ctx = ConversationContextualizedEvent(history=history, query=message)
     run_context = _Thread()
     with (
         patch(SCOPE_OF, return_value=scope or _scope()),
@@ -692,12 +721,164 @@ class TestWholeScope:
         assert any(line.startswith("**By folder:**") for line in ask.await_args.args[2])
 
     @pytest.mark.asyncio
+    async def test_the_document_condition_reaches_the_extraction(self):
+        request, _, _ = await _discover(_reading(document_condition="from Hooli"))
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert (request.document_condition, request.instructions) == ("from Hooli", "only Hooli hardware")
+
+    @pytest.mark.asyncio
+    async def test_a_period_reaches_the_selection_and_the_condition_stays_the_users(self):
+        request, _, _ = await _discover(_dated_reading(document_condition="from Hooli"))
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert request.selection == KnowledgeDocumentSelection(
+            any_of=[KnowledgeDocumentCriteria()], path_date_range=YEAR_2025
+        )
+        assert request.document_condition == "from Hooli"
+
+    @pytest.mark.asyncio
+    async def test_without_a_period_the_selection_has_no_date_range(self):
+        request, _, _ = await _discover(_reading(document_condition="from Hooli"))
+
+        assert request.selection.path_date_range is None
+
+    @pytest.mark.asyncio
+    async def test_without_a_document_condition_the_extraction_is_as_before(self):
+        request, _, _ = await _discover(_reading())
+
+        assert request.document_condition is None
+
+    @pytest.mark.asyncio
     async def test_a_named_place_narrows_the_scope_by_path(self):
         location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
 
         request, _, _ = await _discover(_reading(location))
 
         assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="invoices/2025/**")]
+
+    @pytest.mark.asyncio
+    async def test_a_year_folder_the_first_reading_made_of_the_period_is_widened_before_the_form(self):
+        """e2e N1: "invoice totals 2025" read as invoices/2025/** plus the period left out every undated invoice."""
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
+
+        form, _, _ = await _discover(_dated_reading(location), message="invoice totals 2025", answer=None)
+        request, _, _ = await _discover(_dated_reading(location), message="invoice totals 2025")
+
+        assert "- **Location:** invoices/**" in form.question
+        assert request.selection == KnowledgeDocumentSelection(
+            any_of=[KnowledgeDocumentCriteria(path_glob="invoices/**")], path_date_range=YEAR_2025
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("glob", "named", "widened"),
+        [
+            (
+                "invoices/2025/**",
+                "invoices/acme/credit_note_2025.pdf",
+                [KnowledgeDocumentCriteria(path_glob="invoices/**")],
+            ),
+            ("2025/**", "other/report_2025.pdf", []),
+        ],
+        ids=["folder-widened", "whole-scope"],
+    )
+    async def test_a_widened_year_folder_is_kept_next_to_a_file_the_message_names(
+        self, glob: str, named: str, widened: list[KnowledgeDocumentCriteria]
+    ):
+        """Review C1: widened first, the place held the named file and was dropped as the folder made of it, so only
+        the file was read, fewer documents than the model's own glob."""
+        name = named.rsplit("/", 1)[-1]
+        listing = _listing("invoices/2025/b.pdf", "2025/x.pdf", "invoices/acme/g.pdf", named)
+        scope = _scope().model_copy(update={"restricting_glob": None})
+        reading = _dated_reading(RequestedLocation(collection=None, path_glob=glob, path_regex=None))
+
+        request, _, _ = await _discover(
+            reading, message=f"invoice totals 2025, also {name}", listing=listing, scope=scope
+        )
+
+        expected = (
+            [KnowledgeDocumentCriteria(path_glob=f"**/{name}"), *widened] if widened else [KnowledgeDocumentCriteria()]
+        )
+        assert request.selection == KnowledgeDocumentSelection(any_of=expected, path_date_range=YEAR_2025)
+
+    @pytest.mark.asyncio
+    async def test_a_year_folder_typed_in_an_earlier_turn_stays_in_a_follow_up(self):
+        """Review suggestion 1: "the same, only Q1" is a first reading too; the folder the user typed before stays."""
+        earlier = (
+            ChatMessage(role=MessageRole.USER, content="invoice totals 2025 from invoices/2025"),
+            ChatMessage(role=MessageRole.ASSISTANT, content="Here are the invoice totals."),
+        )
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
+
+        request, _, _ = await _discover(_dated_reading(location), message="the same, only for 2025", earlier=earlier)
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="invoices/2025/**")]
+
+    @pytest.mark.asyncio
+    async def test_a_location_the_dialog_keeps_is_not_brought_back_by_the_second_reading(self):
+        """Review suggestion 8: a written Filter Condition is read again over the whole conversation, and the model
+        wrote the year folder of the first message once more; the Location the dialog kept is the widened one."""
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
+        answer = _dialog(rows={"type": "other", "text": "only hardware lines"})
+
+        request, ask, _ = await _discover(
+            _dated_reading(location), message="invoice totals 2025", answer=answer, reread=_dated_reading(location)
+        )
+
+        assert ask.await_count == 2
+        assert request.selection == KnowledgeDocumentSelection(
+            any_of=[KnowledgeDocumentCriteria(path_glob="invoices/**")], path_date_range=YEAR_2025
+        )
+
+    @pytest.mark.asyncio
+    async def test_a_file_written_into_another_dialog_part_is_read_alone(self):
+        """Round-2 review S1: keeping the dialog's Location over the second reading read the whole scope instead."""
+        named = "invoices/acme/credit_note_2025.pdf"
+        listing = _listing("invoices/2025/b.pdf", "invoices/acme/g.pdf", named)
+        answer = _dialog(documents={"type": "other", "text": "only credit_note_2025.pdf"})
+        reread = _reading(RequestedLocation(collection=None, path_glob="**/credit_note_2025.pdf", path_regex=None))
+
+        request, ask, _ = await _discover(_reading(), answer=answer, reread=reread, listing=listing)
+
+        assert ask.await_count == 2
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="**/credit_note_2025.pdf")]
+
+    @pytest.mark.asyncio
+    async def test_a_folder_written_as_a_path_into_another_dialog_part_is_read(self):
+        location = RequestedLocation(collection=None, path_glob="invoices/**", path_regex=None)
+        listing = _listing("invoices/2025/b.pdf", "archive/2024/x.pdf")
+        scope = _scope().model_copy(update={"restricting_glob": None})
+        answer = _dialog(documents={"type": "other", "text": "only archive/2024"})
+        reread = _reading(RequestedLocation(collection=None, path_glob="archive/2024/**", path_regex=None))
+
+        request, _, _ = await _discover(_reading(location), answer=answer, reread=reread, listing=listing, scope=scope)
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="archive/2024/**")]
+
+    @pytest.mark.asyncio
+    async def test_a_location_the_dialog_drops_stays_dropped_and_a_typed_reply_keeps_the_second_reading(self):
+        location = RequestedLocation(collection=None, path_glob="invoices/2024/**", path_regex=None)
+        dropped = _dialog(where={"type": "option", "option_index": 1}, rows={"type": "other", "text": "only hardware"})
+
+        dropped_request, _, _ = await _discover(_reading(location), answer=dropped, reread=_reading(location))
+        typed_request, _, _ = await _discover(_reading(), answer="also the 2024 invoices", reread=_reading(location))
+
+        assert dropped_request.selection.any_of == [KnowledgeDocumentCriteria()]
+        assert typed_request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="invoices/2024/**")]
+
+    @pytest.mark.asyncio
+    async def test_a_year_folder_the_user_types_into_the_form_is_read_as_typed(self):
+        """The answer names the folder in words, so only reading it as the user's own keeps the folder."""
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
+        answer = _dialog(where={"type": "other", "text": "only the 2025 folder under invoices"})
+
+        request, ask, _ = await _discover(_dated_reading(), answer=answer, reread=_dated_reading(location))
+
+        assert ask.await_count == 2
+        assert request.selection == KnowledgeDocumentSelection(
+            any_of=[KnowledgeDocumentCriteria(path_glob="invoices/2025/**")], path_date_range=YEAR_2025
+        )
 
     @pytest.mark.asyncio
     async def test_several_named_places_select_any_of_them(self):
@@ -932,7 +1113,7 @@ class TestCollectionAsLocation:
 
         notice = (
             "No document in this agent's scope is at `uatinvoices/receipts/**`. Name another collection, folder or "
-            "year, or choose all documents."
+            "file, or choose all documents."
         )
         assert form.question.startswith(notice)
         assert form.questions[0].question.startswith(notice)
@@ -970,33 +1151,41 @@ def _dialog(**answers: dict[str, Any]) -> str:
 
 class TestRequestForm:
     @pytest.mark.asyncio
-    async def test_the_request_is_asked_back_as_three_questions_and_as_text(self):
+    async def test_the_request_is_asked_back_as_four_questions_and_as_text(self):
         form, ask, _ = await _discover(_reading(), answer=None)
 
         assert isinstance(form, ExtractionRequestFormRequestEvent)
         assert form.hitl_type == "chat"
         assert form.topic.event_name == "ExtractionRequestFormResponseEvent"
-        where, rows, columns = form.questions
+        where, documents, rows, columns = form.questions
         assert [option.label for option in where.options] == ["All documents"]
+        assert [option.label for option in documents.options] == ["Every document"]
         assert [option.label for option in rows.options] == ["As understood", "Every row"]
         assert rows.options[0].description == "only Hooli hardware"
         assert [(option.label, option.description) for option in columns.options] == [("As understood", "item, amount")]
         assert all(question.allow_other for question in form.questions)
-        assert [question.header for question in form.questions] == ["Location", "Filter Condition", "Values to extract"]
+        assert [question.header for question in form.questions] == [
+            "Location",
+            "Document Condition",
+            "Filter Condition",
+            "Values to extract",
+        ]
         assert where.question == (
             "Which documents should I read? I understood: all documents in scope. To read only some, name a "
-            "collection, a folder, a file or a year. Folders: invoices/2024/q1 (1), invoices/2024/q2 (1), "
-            "invoices/2025/q1 (1)"
+            "collection, a folder or a file; a period goes under Document Condition. Folders: invoices/2024/q1 (1), "
+            "invoices/2024/q2 (1), invoices/2025/q1 (1)"
         )
+        assert documents.question.startswith("Which documents count? I understood: every document at the location.")
         assert rows.question.endswith(
-            "A condition on the records, not a calculation, e.g. from Lieferant GmbH · dated 2018 · "
-            "only hardware items."
+            "A condition on each record, not on the whole document and not a calculation, e.g. only hardware items · "
+            "amounts above CHF 1,000 · lines from Lieferant GmbH on a statement."
         )
         assert "→ one row per invoice; item, quantity, net amount → one row per line item." in columns.question
         assert "- **Filter Condition:** only Hooli hardware" in form.question
-        reply, location, condition, values = form.question.split("\n")[-4:]
+        reply, location, document, condition, values = form.question.split("\n")[-5:]
         assert reply == "Reply *yes* to go ahead, or write what to change:"
         assert location == f"- **Location:** {where.question.split('scope. ')[1]}"
+        assert document.startswith("- **Document Condition:** A condition the whole document must meet")
         assert condition.endswith(rows.question.split("Hooli hardware. ")[1])
         assert values.startswith("- **Values to extract:** The values decide what a row is")
         ask.assert_awaited_once()
@@ -1060,6 +1249,7 @@ class TestRequestForm:
         assert "- **Filter Condition:** only Hooli hardware" in history[-2].content
         assert history[-1].content.splitlines() == [
             "**Location:** all documents in scope",
+            "**Document Condition:** every document at the location",
             "**Filter Condition:** only invoices dated June 2018",
             "**Values to extract:** item, amount",
         ]
@@ -1113,12 +1303,13 @@ class TestRequestForm:
 
         assert [question.header for question in form.questions] == [
             "Location",
+            "Document Condition",
             "Filter Condition",
             "Values to extract",
             "Exact keyword(s)",
             "Semantic keyword(s)",
         ]
-        exact, semantic = form.questions[3:]
+        exact, semantic = form.questions[4:]
         assert [(option.label, option.description) for option in exact.options] == [
             ("As understood", "Hooli"),
             ("None", "Let the search decide"),
@@ -1133,14 +1324,216 @@ class TestRequestForm:
 
         form, _, _ = await _discover(reading, discovery=True, answer=None)
 
-        assert [option.label for option in form.questions[3].options] == ["None"]
         assert [option.label for option in form.questions[4].options] == ["None"]
+        assert [option.label for option in form.questions[5].options] == ["None"]
 
     @pytest.mark.asyncio
-    async def test_without_discovery_the_form_asks_three_parts(self):
+    async def test_without_discovery_the_form_asks_four_parts(self):
         form, _, _ = await _discover(_reading(document_kind="supplier invoice"), answer=None)
 
-        assert len(form.questions) == 3
+        assert len(form.questions) == 4
+
+    @pytest.mark.asyncio
+    async def test_a_named_document_condition_can_be_kept_or_dropped(self):
+        form, _, _ = await _discover(_reading(document_condition="from Hooli"), answer=None)
+
+        documents = form.questions[1]
+        assert [(option.label, option.description) for option in documents.options] == [
+            ("As understood", "from Hooli"),
+            ("Every document", "Read every document at the location"),
+        ]
+        assert "- **Document Condition:** from Hooli" in form.question
+
+    @pytest.mark.asyncio
+    async def test_a_written_document_condition_is_read_again(self):
+        reread = _reading(document_condition="only signed versions")
+        answer = _dialog(documents={"type": "other", "text": "only signed versions"})
+
+        request, ask, _ = await _discover(_reading(document_condition="from Hooli"), answer=answer, reread=reread)
+
+        assert request.document_condition == "only signed versions"
+        assert "**Document Condition:** only signed versions" in ask.await_args_list[1].args[0][-1].content.splitlines()
+
+    @pytest.mark.asyncio
+    async def test_dropping_the_document_condition_extracts_every_document(self):
+        answer = _dialog(documents={"type": "option", "option_index": 1})
+
+        request, ask, _ = await _discover(_reading(document_condition="from Hooli"), answer=answer)
+
+        assert request.document_condition is None
+        assert request.instructions == "only Hooli hardware"
+        ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("dropped", "written", "cleared"),
+        [
+            ("where", "rows", {"selection": KnowledgeDocumentSelection(any_of=[KnowledgeDocumentCriteria()])}),
+            ("documents", "rows", {"document_condition": None}),
+            ("rows", "columns", {"instructions": None}),
+        ],
+    )
+    async def test_a_part_dropped_next_to_a_written_one_stays_dropped_after_the_second_reading(
+        self, dropped: str, written: str, cleared: dict[str, Any]
+    ):
+        """The second reading sees the first message too and may bring the dropped part back (e2e S8c)."""
+        place = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
+        understood = _reading(place, document_condition="from Hooli")
+        answer = json.dumps(
+            {dropped: {"type": "option", "option_index": 1}, written: {"type": "other", "text": "only hardware lines"}}
+        )
+
+        request, ask, _ = await _discover(understood, answer=answer, reread=understood)
+
+        assert ask.await_count == 2
+        assert {field: getattr(request, field) for field in cleared} == cleared
+
+    @pytest.mark.asyncio
+    async def test_the_form_shows_the_period_under_document_condition(self):
+        form, _, _ = await _discover(_dated_reading(document_condition="from Hooli"), answer=None)
+        period_only, _, _ = await _discover(_dated_reading(), answer=None)
+
+        assert form.questions[1].options[0].description == f"from Hooli; {PERIOD_WORDS}"
+        assert f"- **Document Condition:** from Hooli; {PERIOD_WORDS}" in form.question
+        assert period_only.questions[1].options[0].description == PERIOD_WORDS
+
+    @pytest.mark.asyncio
+    async def test_dropping_the_document_condition_drops_the_period(self):
+        answer = _dialog(documents={"type": "option", "option_index": 1})
+
+        request, _, _ = await _discover(_dated_reading(document_condition="from Hooli"), answer=answer)
+
+        assert request.document_condition is None
+        assert request.selection.path_date_range is None
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "typed",
+        [
+            "Document Condition: Every document",
+            "document condition: every document at the location.",
+            "- **Document Condition:** Every document\nFilter Condition: only hardware lines",
+        ],
+    )
+    async def test_typing_every_document_drops_the_period_even_when_the_second_reading_keeps_it(self, typed: str):
+        """A typed correction is read again, and the model kept the period from the first message (e2e F2)."""
+        kept_by_the_model = _dated_reading(document_condition="from Hooli")
+
+        request, ask, _ = await _discover(_dated_reading(), answer=typed, reread=kept_by_the_model)
+
+        assert ask.await_count == 2
+        assert request.document_condition is None
+        assert request.selection.path_date_range is None
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("typed", "kept"),
+        [
+            ("Document Condition: dated 2024", "dated 2024"),
+            ("Document Condition: Every document from Hooli", "Every document from Hooli"),
+            ("Every document", None),
+        ],
+    )
+    async def test_a_typed_document_condition_that_is_not_the_drop_option_keeps_the_second_reading(
+        self, typed: str, kept: str | None
+    ):
+        reread = _dated_reading(document_condition=kept)
+
+        request, ask, _ = await _discover(_dated_reading(), answer=typed, reread=reread)
+
+        assert ask.await_count == 2
+        assert request.document_condition == kept
+        assert request.selection.path_date_range is not None
+
+    @pytest.mark.asyncio
+    async def test_the_form_pasted_back_unchanged_drops_no_part_the_request_did_not_name(self):
+        """The unnamed parts read "all documents in scope", "every document at the location" and "every row", the
+        texts that drop a named part; pasted back with a period and more written below, they must not clear what the
+        second reading takes from it (round-3 review S1)."""
+        understood = _reading().model_copy(update={"instructions": None})
+        form, _, _ = await _discover(understood, answer=None)
+        place = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
+        reread = _reading(place, period_start="2024-01-01", period_end="2024-12-31")
+        reply = f"{form.question}\n\nonly 2024, from invoices/2025, only Hooli hardware"
+
+        request, ask, _ = await _discover(understood, answer=reply, reread=reread)
+
+        assert "- **Document Condition:** every document at the location" in form.question
+        assert ask.await_count == 2
+        assert request.selection.path_date_range == PathDateRange(start=date(2024, 1, 1), end=date(2024, 12, 31))
+        assert request.selection.any_of == [place.as_criteria()]
+        assert request.instructions == "only Hooli hardware"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "answer",
+        [
+            "Document Condition: Every document\nLocation: 2024",
+            _dialog(documents={"type": "option", "option_index": 1}, where={"type": "other", "text": "2024"}),
+        ],
+    )
+    async def test_dropping_the_document_condition_keeps_a_new_period_written_elsewhere(self, answer: str):
+        """Only the period understood before is cleared again; one the second reading took from another part stays."""
+        reread = _reading(document_condition="from Hooli", period_start="2024-01-01", period_end="2024-12-31")
+
+        request, ask, _ = await _discover(_dated_reading(document_condition="from Hooli"), answer=answer, reread=reread)
+
+        assert ask.await_count == 2
+        assert request.document_condition is None
+        assert request.selection.path_date_range == PathDateRange(start=date(2024, 1, 1), end=date(2024, 12, 31))
+
+    @pytest.mark.parametrize("locale", LOCALES)
+    @pytest.mark.parametrize("key", ["where", "documents", "rows"])
+    @pytest.mark.parametrize("label", ["anything", "everything"])
+    def test_a_typed_drop_line_as_the_form_writes_it_drops_that_part_alone(self, locale: str, key: str, label: str):
+        t = AgentLocaleHandler(locale)
+        reply = f"- {ExtractionForm.line(key, t(f'{FORM}.{key}.{label}'), t)}"
+        dropped = [part for part in ("where", "documents", "rows") if ExtractionForm.typed_dropped(reply, part, t)]
+
+        assert dropped == [key]
+
+    @pytest.mark.parametrize(
+        ("locale", "reply", "key"),
+        [
+            ("en", "filter condition: every row.", "rows"),
+            ("de", "Dokumentbedingung: jedes Dokument", "documents"),
+            ("de", "Ablageort: Alle Dokumente", "where"),
+            ("fr", "- **Condition sur le document\u00a0:** Chaque document", "documents"),
+            ("fr", "Emplacement: tous les documents du périmètre", "where"),
+            ("it", "Condizione sul documento: Ogni documento", "documents"),
+            ("it", "Condizione di filtro: ogni riga", "rows"),
+        ],
+    )
+    def test_a_typed_drop_line_is_recognised_in_the_runs_locale(self, locale: str, reply: str, key: str):
+        assert ExtractionForm.typed_dropped(reply, key, AgentLocaleHandler(locale))
+
+    @pytest.mark.parametrize(
+        ("locale", "reply"),
+        [
+            ("de", "Document Condition: Every document"),
+            ("fr", "Condition sur le document : chaque document de l\u2019emplacement"),
+        ],
+    )
+    def test_a_drop_line_in_another_locale_or_spelling_is_left_to_the_model(self, locale: str, reply: str):
+        """A header of another locale, or a typographic apostrophe, is not matched: the second reading reads it."""
+        assert not ExtractionForm.typed_dropped(reply, "documents", AgentLocaleHandler(locale))
+
+    @pytest.mark.asyncio
+    async def test_a_period_written_into_document_condition_is_read_again(self):
+        reread = _reading(document_condition="from Hooli", period_start="2024-01-01", period_end="2024-12-31")
+        answer = _dialog(documents={"type": "other", "text": "from Hooli, dated 2024"})
+
+        request, ask, _ = await _discover(_dated_reading(document_condition="from Hooli"), answer=answer, reread=reread)
+
+        assert ask.await_count == 2
+        assert request.selection.path_date_range == PathDateRange(start=date(2024, 1, 1), end=date(2024, 12, 31))
+        assert request.document_condition == "from Hooli"
+
+    def test_the_lines_without_a_condition_name_every_document_at_the_location(self):
+        """A correction of the rows alone sends these lines, so the second reading keeps the condition null."""
+        lines = ExtractionRequestParts.of(_reading(), T).lines(T)
+
+        assert "**Document Condition:** every document at the location" in lines
 
     @pytest.mark.asyncio
     async def test_none_on_both_keywords_lets_the_search_decide(self):
@@ -1289,6 +1682,7 @@ class TestRequestReading:
         assert kwargs["profile_instructions"] == "Profile rule."
         assert kwargs["facets"] == "**By folder:** a (1)"
         assert kwargs["conversation"] == "user: Hardware on the 2025 invoices\n\nassistant: Here is the sample."
+        assert kwargs["today"] == date.today().isoformat()
 
     @pytest.mark.asyncio
     async def test_an_unusable_answer_is_none(self):
@@ -1354,17 +1748,23 @@ class TestRequestReading:
         [
             (
                 "en",
-                'Filter Condition: "sum all the items in the invoice", goes into calculation, never into instructions',
+                'Filter Condition: "sum all the items in the invoice", goes into calculation, never into '
+                "document_condition, instructions",
             ),
             (
                 "de",
-                'Filterbedingung: "summiere alle Positionen der Rechnung", gehört in calculation, nie in instructions',
+                'Filterbedingung: "summiere alle Positionen der Rechnung", gehört in calculation, nie in '
+                "document_condition, instructions",
             ),
             (
                 "fr",
                 'Condition de filtre : "additionne toutes les positions de la facture", va dans calculation, jamais',
             ),
-            ("it", 'Condizione di filtro: "somma tutte le voci della fattura", va in calculation, mai in instructions'),
+            (
+                "it",
+                'Condizione di filtro: "somma tutte le voci della fattura", va in calculation, mai in '
+                "document_condition, instructions",
+            ),
         ],
     )
     def test_a_calculation_written_into_the_form_is_read_as_a_calculation_not_a_condition(
@@ -1375,6 +1775,212 @@ class TestRequestReading:
         prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.read_request")
 
         assert example in prompt
+
+    @pytest.mark.parametrize("locale", LOCALES)
+    def test_a_period_is_read_into_period_start_and_period_end(self, locale: str):
+        """The model writes the period as dates and code puts it into words, never the model into the condition."""
+        prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.read_request")
+        fields = ExtractionRequestPlainAnswer.model_fields
+
+        assert all(text in prompt for text in ("2018-10-01", "2018-12-31", "{{ today }}", "period_start", "period_end"))
+        assert "dated between 1 October 2018" not in prompt
+        assert "'2018-10-01' for Q4 2018" in (fields["period_start"].description or "")
+        assert "period_start" in (fields["document_condition"].description or "")
+
+    @pytest.mark.parametrize(
+        ("locale", "rows", "example"),
+        [
+            (
+                "en",
+                "statement lines, bookings, transactions or time entries",
+                '"booking date in February 2025" for "statement lines from February 2025", and period_start and '
+                "period_end stay null",
+            ),
+            (
+                "de",
+                "Zeilen eines Kontoauszugs, Buchungen, Transaktionen oder Zeiteinträge",
+                '"Buchungsdatum im Februar 2025" für "Auszugszeilen vom Februar 2025", und period_start und '
+                "period_end bleiben null",
+            ),
+            (
+                "fr",
+                "les lignes d'un relevé, les écritures, les transactions ou les saisies de temps",
+                "« date d'écriture en février 2025 » pour « lignes de relevé de février 2025 », et period_start et "
+                "period_end restent null",
+            ),
+            (
+                "it",
+                "le righe di un estratto conto, le registrazioni, le transazioni o le ore registrate",
+                '"data di registrazione a febbraio 2025" per "righe dell\'estratto di febbraio 2025", '
+                "e period_start e period_end restano null",
+            ),
+        ],
+    )
+    def test_a_period_on_dated_rows_filters_the_rows_and_dates_no_document(self, locale: str, rows: str, example: str):
+        """A statement's path names its issue date, not its bookings', so a period on its rows matched against the
+        paths would leave out a statement holding the wanted rows (round-3 review S2, user decision: row filter only).
+        Both bullets name the same rows."""
+        prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.read_request")
+        lines = prompt.splitlines()
+        period_bullet = next(line for line in lines if line.startswith("- period_start"))
+        instructions_bullet = next(line for line in lines if line.startswith("- instructions"))
+
+        assert example in instructions_bullet
+        assert rows in instructions_bullet
+        assert rows in period_bullet
+
+    @pytest.mark.parametrize(
+        ("locale", "examples"),
+        [
+            (
+                "en",
+                (
+                    '"Document Condition: dated 2024" means',
+                    'keeps only "from Hooli"',
+                    "A folder path such as invoices/2025 stays the location as written",
+                    "from an earlier message",
+                ),
+            ),
+            (
+                "de",
+                (
+                    '"Dokumentbedingung: datiert 2024" bedeutet',
+                    'behält nur "von Hooli"',
+                    "Ein Ordnerpfad wie invoices/2025 bleibt der Ablageort, wie geschrieben",
+                    "früheren Nachricht",
+                ),
+            ),
+            (
+                "fr",
+                (
+                    '"Condition sur le document : datés de 2024"',
+                    'ne garde que "de Hooli"',
+                    "Un chemin de dossier comme invoices/2025 reste l'emplacement tel qu'écrit",
+                    "message précédent",
+                ),
+            ),
+            (
+                "it",
+                (
+                    '"Condizione sul documento: datati 2024"',
+                    'tiene solo "di Hooli"',
+                    "Un percorso di cartella come invoices/2025 resta la posizione così come è scritto",
+                    "messaggio precedente",
+                ),
+            ),
+        ],
+    )
+    def test_a_period_written_into_the_form_leaves_the_condition_and_every_document_drops_it(
+        self, locale: str, examples: tuple[str, ...]
+    ):
+        """e2e F3: "Document Condition: dated 2024" was kept as the condition next to the period, while a folder path
+        stays the location; F2: a typed "every document" kept the period read from the first message."""
+        prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.read_request")
+
+        assert all(example in prompt for example in examples)
+
+    @pytest.mark.asyncio
+    async def test_a_readable_period_is_normalised_once_at_reading(self):
+        predict = AsyncMock(return_value=_reading(period_start="2025", period_end="März 2025"))
+
+        reading = await ExtractionRequestReading.ask(
+            [ChatMessage(role=MessageRole.USER, content="x")],
+            _scope(),
+            [],
+            None,
+            False,
+            self._llm_config(predict),
+            _displayer(),
+            None,
+            T,
+        )
+
+        assert reading is not None
+        assert (reading.period_start, reading.period_end) == ("2025-01-01", "2025-03-31")
+
+    @pytest.mark.asyncio
+    async def test_an_unreadable_period_is_kept_in_the_condition_and_narrows_nothing(self):
+        predict = AsyncMock(return_value=_reading(document_condition="from Hooli", period_start="last spring"))
+
+        reading = await ExtractionRequestReading.ask(
+            [ChatMessage(role=MessageRole.USER, content="x")],
+            _scope(),
+            [],
+            None,
+            False,
+            self._llm_config(predict),
+            _displayer(),
+            None,
+            T,
+        )
+
+        assert reading is not None
+        assert reading.document_condition == "from Hooli; dated on or after last spring"
+        assert (reading.period_start, reading.period_end, reading.path_date_range) == (None, None, None)
+        assert reading.selection.path_date_range is None
+
+    @pytest.mark.asyncio
+    async def test_the_period_is_normalised_after_the_reading_succeeds_not_inside_its_retry(self):
+        predict = AsyncMock(side_effect=[_reading(period_start="2025-12-31", period_end="2025-01-01"), _reading()])
+
+        reading = await ExtractionRequestReading.ask(
+            [ChatMessage(role=MessageRole.USER, content="x")],
+            _scope(),
+            [],
+            None,
+            False,
+            self._llm_config(predict),
+            _displayer(),
+            None,
+            T,
+        )
+
+        assert predict.await_count == 1
+        assert reading is not None
+        assert reading.document_condition == "dated between 2025-12-31 and 2025-01-01"
+
+    @pytest.mark.parametrize("locale", LOCALES)
+    def test_a_year_is_never_offered_as_a_location(self, locale: str):
+        handler = AgentLocaleHandler(locale)
+        read_request = handler("agent.knowledge_extraction_agent.prompt.read_request")
+        select_now = handler("agent.knowledge_extraction_agent.prompt.select_now")
+        locations_bullet = next(line for line in read_request.splitlines() if line.startswith("- locations"))
+
+        assert "2025/**" not in read_request
+        assert "2025/**" not in select_now
+        assert "period_start" in locations_bullet
+        assert "2025" not in (RequestedLocation.model_fields["path_glob"].description or "")
+        assert "year" not in (SelectionFallbackCriteria.model_fields["content_query"].description or "")
+        assert "year" not in (ExtractionRequestPlainAnswer.model_fields["locations"].description or "")
+
+    def test_a_reading_stored_before_the_period_still_loads(self):
+        stored = _reading().model_dump(mode="json")
+        del stored["period_start"]
+        del stored["period_end"]
+
+        loaded = ExtractionRequestAnswer.model_validate(stored)
+
+        assert (loaded.period_start, loaded.period_end, loaded.path_date_range) == (None, None, None)
+
+    def test_the_plain_fallback_keeps_the_document_condition(self):
+        plain = ExtractionRequestPlainAnswer(
+            is_table_request=True,
+            confirms_sample=False,
+            locations=[],
+            fields="item, amount",
+            document_condition="from Hooli",
+            instructions=None,
+            calculation=None,
+            document_kind=None,
+        )
+
+        assert ExtractionRequestAnswer.without_terms(plain).document_condition == "from Hooli"
+
+    def test_a_reading_stored_before_the_document_condition_still_loads(self):
+        stored = _reading().model_dump(mode="json")
+        del stored["document_condition"]
+
+        assert ExtractionRequestAnswer.model_validate(stored).document_condition is None
 
     @pytest.mark.parametrize("locale", ["en", "de", "fr", "it"])
     def test_the_prompt_names_every_field_of_the_answer(self, locale: str):
@@ -1455,7 +2061,6 @@ class TestDeclinedRequest:
         assert len(texts) == len(LOCALES)
 
 
-LOCALES = ("en", "de", "fr", "it")
 CONFIRMED_PLACE = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
 
 
@@ -1517,6 +2122,21 @@ class TestConfirmedRequestInDiscovery:
             "Laptop|Server",
         )
         assert request.selection.any_of == [KnowledgeDocumentCriteria(content_query="Hooli")]
+
+    @pytest.mark.asyncio
+    async def test_the_confirmed_document_condition_wins_over_the_search(self):
+        confirmed = _reading(document_condition="only signed versions")
+
+        request, _ = await _plan(confirmed, [_selecting([{"content_query": "Hooli"}])])
+
+        assert request.document_condition == "only signed versions"
+
+    @pytest.mark.asyncio
+    async def test_the_discovery_loop_is_told_the_document_condition(self):
+        loop, _, _ = await _discover(_reading(document_condition="from Hooli"), discovery=True)
+
+        assert loop.mode == ToolLoopMode.GATHER
+        assert "**Document Condition:** from Hooli" in loop.history[-1].content.splitlines()
 
     @pytest.mark.asyncio
     async def test_a_selection_without_a_path_is_kept_within_the_confirmed_place(self):
@@ -1605,6 +2225,50 @@ class TestConfirmedRequestInDiscovery:
         assert (request.fields, request.instructions) == ("supplier", "only hardware")
         assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="other/**")]
         ask.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_the_confirmed_period_is_applied_to_the_selection(self):
+        request, _ = await _plan(_dated_reading(), [_selecting([{"content_query": "Hooli"}])])
+
+        assert request.selection.path_date_range == YEAR_2025
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(content_query="Hooli")]
+
+    @pytest.mark.asyncio
+    async def test_the_confirmed_period_is_applied_to_the_fallback_selection(self):
+        search = ToolCallApprovedEvent(
+            tool_call_id="c1", name="search_knowledge_content", arguments={"query": "Hooli"}, kind="function"
+        )
+        stated = ExtractRecordsArguments(any_of=[{"content_query": "Hooli"}], fields="supplier")
+
+        request, ask = await _plan(_dated_reading(), [search], fallback=stated)
+
+        ask.assert_awaited_once()
+        assert request.selection.path_date_range == YEAR_2025
+
+    @pytest.mark.asyncio
+    async def test_without_a_confirmed_period_the_selection_has_none(self):
+        request, _ = await _plan(_reading(), [_selecting([{"content_query": "Hooli"}])])
+
+        assert request.selection.path_date_range is None
+
+    @pytest.mark.parametrize("locale", LOCALES)
+    def test_the_discovery_prompt_says_the_period_is_applied_to_the_paths_and_select_counts_before_it(
+        self, locale: str
+    ):
+        prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.instructions", scope="s")
+        bullet = next(line for line in prompt.splitlines() if "period_start" in line)
+
+        assert "select_knowledge_documents" in bullet
+        assert "list_knowledge_documents" in bullet
+        if locale == "en":
+            assert "select_knowledge_documents counts documents before the period is applied" in bullet
+
+    @pytest.mark.parametrize("locale", LOCALES)
+    def test_the_fallback_prompt_offers_no_year_glob(self, locale: str):
+        prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.select_now")
+
+        assert "2025/**" not in prompt
+        assert "content_query" in prompt
 
     def test_the_fallback_prompt_shows_the_confirmed_request_in_every_locale(self):
         for locale in LOCALES:

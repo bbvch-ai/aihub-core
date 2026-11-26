@@ -2,13 +2,15 @@
 
 An oversized event is dropped by the broker without an error, and the join or the chat then waits forever. Rows and
 tables travel by reference (`ExtractionFileStore`), so every event stays small whatever a document yields. The sizes
-are checked the way events are serialized, with the worst content: a thousand documents, half of them failing, twenty
-columns of whole clauses full of quotes, pipes, backslashes and umlauts, and many rows per document.
+are checked the way events are serialized, with the worst content: a thousand documents, half of them failing and a
+third of the rest skipped by a long document condition and a period that left out ten thousand paths of a thousand
+umlauts, twenty columns of whole clauses full of quotes, pipes, backslashes and umlauts, and many rows per document.
 """
 
 import contextlib
+import json
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -19,7 +21,10 @@ from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
     ExtractedTableFile,
     ExtractionFileStore,
+    KnowledgeDocumentListing,
     KnowledgeDocumentSummary,
+    PathDateCounts,
+    PathDateRange,
     RecordField,
     RecordSchema,
 )
@@ -31,7 +36,7 @@ from swiss_ai_hub.agent.capabilities.record_extraction.document_extraction_reque
 )
 from swiss_ai_hub.agent.capabilities.record_extraction.document_record_extraction import DocumentRecordExtraction
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_run import ExtractionRun
-from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import ExtractionTable
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import SUMMARY_BYTES, ExtractionTable
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
 # Well below the development broker's 1 MB `max_payload`: headers and the subject need room, and an answer carries the
@@ -44,6 +49,9 @@ CLAUSE = ('Kündigung "fristlos" | Gerät \\ Prüfung Ä ö ü ß ' * 100)[:2000
 COLLECTION = BucketNamespacePair(bucket_name="lieferanten-verträge", namespace_name="verträge")
 DOCUMENTS = 1000
 ROWS_PER_DOCUMENT = 40
+CONDITION = ("Nur Verträge mit der Müller & Söhne AG, Zürich, gültig ab März 2026, unterschrieben " * 10)[:800]
+SKIP_REASON = ("Lieferant: Hänggi Gerätebau AG, Bülach — nicht Müller & Söhne " * 5)[:200]
+PERIOD = PathDateRange(start=date(2026, 3, 1), end=date(2026, 12, 31))
 
 
 def _size(event: Any) -> int:
@@ -58,6 +66,9 @@ def _run() -> ExtractionRun:
         criteria="Pfad passt auf 'verträge/**' und Text enthält 'Kündigungsfrist' " * 15,
         notices=["Ein Hinweis über die Suche, die Grenzen und die Auswahl der Dokumente. " * 5] * 3,
         show_collection=True,
+        document_condition=CONDITION,
+        period=PERIOD,
+        path_dates=PATH_DATES,
     )
 
 
@@ -73,6 +84,15 @@ def _document(index: int) -> KnowledgeDocumentSummary:
         file_type="pdf",
         updated_at=datetime(2025, 1, 1, tzinfo=UTC),
     )
+
+
+def _left_out() -> KnowledgeDocumentSummary:
+    path = f"2025/{'ö' * 1_000}.pdf"
+    return _document(0).model_copy(update={"path": path, "filename": path.rsplit("/", 1)[-1]})
+
+
+# One path repeated: the parse is memoised, so the worst case costs milliseconds at import rather than seconds.
+PATH_DATES = KnowledgeDocumentListing(documents=[_left_out()] * 9_999).dated_within(PERIOD)[1]
 
 
 def _request(index: int) -> DocumentExtractionRequestedEvent:
@@ -118,7 +138,12 @@ async def _extracted(index: int, rows_per_document: int) -> DocumentExtractedEve
     request = _request(index)
     if index % 2:
         return DocumentRecordExtraction._failed(request, "Fehler bei der Prüfung: " + "ü" * 400)
-    return await DocumentRecordExtraction._stored(request, [dict.fromkeys(FIELDS, CLAUSE)] * rows_per_document, False)
+    if index % 3 == 2:
+        return DocumentRecordExtraction._skipped(request, SKIP_REASON, T)
+    stored, _ = await DocumentRecordExtraction._stored(
+        request, [dict.fromkeys(FIELDS, CLAUSE)] * rows_per_document, False
+    )
+    return stored
 
 
 async def _table(rows_per_document: int) -> tuple[list[DocumentExtractedEvent], RecordsExtractedEvent]:
@@ -132,9 +157,11 @@ async def test_a_documents_result_stays_small_however_many_rows_it_yielded():
     with _Store().patched():
         few, many = await _extracted(0, 1), await _extracted(0, ROWS_PER_DOCUMENT * 10)
         failed = await _extracted(1, ROWS_PER_DOCUMENT)
+        skipped = await _extracted(2, ROWS_PER_DOCUMENT)
 
     assert (few.row_count, many.row_count) == (1, 400)
-    assert max(_size(few), _size(many), _size(failed)) < EVENT_LIMIT_BYTES
+    assert skipped.skipped_reason == SKIP_REASON
+    assert max(_size(few), _size(many), _size(failed), _size(skipped)) < EVENT_LIMIT_BYTES
     assert abs(_size(many) - _size(few)) < 10
 
 
@@ -147,9 +174,11 @@ async def test_the_table_and_the_blueprints_answer_stay_small_however_many_rows_
 
     completion = await ExtractionAnswer.table(table, "Kündigungsfristen aller Verträge? " * 50, displayer)
 
+    extracted = [result for result in results if result.row_count]
     assert all(_size(result) < EVENT_LIMIT_BYTES for result in results)
     assert table.failed_count == DOCUMENTS // 2
-    assert table.total_row_count == DOCUMENTS // 2 * ROWS_PER_DOCUMENT
+    assert table.skipped_count == sum(1 for result in results if result.skipped_reason is not None) > 0
+    assert table.total_row_count == len(extracted) * ROWS_PER_DOCUMENT
     assert 0 < table.row_count < table.total_row_count
     assert table.file is not None
     assert table.file.row_count == table.total_row_count
@@ -161,3 +190,55 @@ async def test_the_table_and_the_blueprints_answer_stay_small_however_many_rows_
     assert len(chunks) >= 2
     assert all(ExtractionTable.serialized_bytes(chunk) < EVENT_LIMIT_BYTES // 2 for chunk in chunks)
     assert _size(completion) < EVENT_LIMIT_BYTES
+
+
+async def _mixed(index: int) -> DocumentExtractedEvent:
+    """Failed, skipped, unsure, empty or partly read, every list of the summary as long as it gets."""
+    request = _request(index)
+    match index % 5:
+        case 0:
+            return DocumentRecordExtraction._failed(request, "Fehler bei der Prüfung: " + "ü" * 400)
+        case 1:
+            return DocumentRecordExtraction._skipped(request, SKIP_REASON, T)
+        case 2:
+            stored, _ = await DocumentRecordExtraction._stored(request, [dict.fromkeys(FIELDS, "x")], False, True)
+            return stored
+        case 3:
+            stored, _ = await DocumentRecordExtraction._stored(request, [], False)
+            return stored
+        case _:
+            stored, _ = await DocumentRecordExtraction._stored(request, [dict.fromkeys(FIELDS, "x")], True)
+            return stored
+
+
+@pytest.mark.asyncio
+async def test_the_failed_block_survives_when_every_list_is_full():
+    with _Store().patched():
+        results = [await _mixed(index) for index in range(DOCUMENTS)]
+        table = await ExtractionTable.assemble(_run(), results, T)
+        without_notices = await ExtractionTable.assemble(_run().model_copy(update={"notices": []}), results, T)
+
+    summary = table.summary
+    assert ExtractionTable.serialized_bytes(summary) <= SUMMARY_BYTES
+    assert "**Übersprungen, Dokumentbedingung nicht erfüllt:** 200 Dokumente" in summary
+    assert "weitere übersprungene Dokumente" in summary
+    assert "**Dateien, die nicht extrahiert werden konnten:**" in summary
+    assert "weitere Dateien" in summary
+    assert ExtractionTable.serialized_bytes(without_notices.summary) <= SUMMARY_BYTES
+    assert not without_notices.summary.endswith("…")
+    assert summary.startswith(without_notices.summary)
+    assert "**Zeitraum nach Pfad:**" in summary
+    assert "**Wegen des Datums im Pfad ausgelassen:**" in summary
+
+
+@pytest.mark.asyncio
+async def test_the_left_out_paths_are_bounded_on_every_documents_event():
+    examples = PATH_DATES.excluded_examples
+    with _Store().patched():
+        requested = _request(0)
+        extracted = await _extracted(0, 1)
+
+    assert PATH_DATES.excluded == 9_999
+    assert 0 < len(examples) <= PathDateCounts.EXCLUDED_EXAMPLE_LIMIT
+    assert sum(len(json.dumps(example)) for example in examples) <= PathDateCounts.EXCLUDED_EXAMPLE_BYTES
+    assert max(_size(requested), _size(extracted)) < EVENT_LIMIT_BYTES

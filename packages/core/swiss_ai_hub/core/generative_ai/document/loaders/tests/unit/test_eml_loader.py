@@ -68,6 +68,20 @@ def test_plain_text_is_preferred_over_the_html_alternative():
     assert "HTML rendering" not in text
 
 
+def test_a_plain_part_that_only_points_to_the_html_gives_way_to_the_html():
+    message = EmailMessage()
+    message["Subject"] = "Re: Reclamo consegna errata"
+    message["From"] = "info@example.ch"
+    message.set_content("Questo messaggio è in formato HTML.")
+    thread = "".join(f"<p>Messaggio {number}: la consegna dell'ordine 77120 era errata.</p>" for number in range(5))
+    message.add_alternative(f"<html><body>{thread}</body></html>", subtype="html")
+
+    text = _load(message.as_bytes())
+
+    assert "Messaggio 4: la consegna dell'ordine 77120 era errata." in text
+    assert "formato HTML" not in text
+
+
 def test_subject_is_published_in_metadata():
     documents = asyncio.run(EmlLoader().aload_data_from_bytes(content=_mail(), filename="anfrage.eml"))
     assert documents[0].metadata["subject"] == _SUBJECT

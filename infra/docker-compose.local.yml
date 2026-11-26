@@ -728,6 +728,9 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/plugins:/plugins
     environment:
       NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+      # CVE-2026-114938 (Java4Shell): Neo4j bundles the same affected OpenJDK and Base64-decodes the HTTP Basic
+      # header before authenticating. The image entrypoint appends this setting, keeping its default JVM flags.
+      NEO4J_server_jvm_additional: -XX:-UseBASE64Intrinsics
     healthcheck:
       test:
         - CMD
@@ -1013,6 +1016,9 @@ services:
       # local cache removes that warm-up. NOTE: if Keycloak is ever run multi-node/HA, this must
       # become conditional (local cache does not replicate sessions across nodes).
       KC_CACHE: local
+      # CVE-2026-114938 (Java4Shell): the JDK's AVX-512 Base64 decoder corrupts memory on input Keycloak
+      # decodes before authentication. Drop once the Keycloak image ships a vendor-fixed OpenJDK.
+      JAVA_OPTS_APPEND: -XX:-UseBASE64Intrinsics
       DOMAIN: ${DOMAIN}
       # Superuser (interactive Keycloak-seeded admin) — passed to realm template
       SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
@@ -1035,6 +1041,8 @@ services:
       KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
       KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET}
       # Realm mail via Microsoft 365 (XOAUTH2 client credentials). The secret is
       # written to the tmpfs vault by the entrypoint, never into the realm.
       KEYCLOAK_SMTP_TENANT_ID: ${KEYCLOAK_SMTP_TENANT_ID}
@@ -1137,6 +1145,8 @@ services:
       KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET}
       # Azure Entra ID vars are NOT needed here — identity providers are
       # bootstrap-only (seeded by the keycloak container's --import-realm), not
       # reconciled by keycloak-config-cli.
@@ -2511,6 +2521,7 @@ services:
       ETCD_TOKEN: ${ETCD_TOKEN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET: ${KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
       KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}

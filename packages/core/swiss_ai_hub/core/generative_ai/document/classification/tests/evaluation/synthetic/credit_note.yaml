@@ -1,0 +1,365 @@
+# Credit notes, cancellations and negative invoice corrections, in German, French, Italian and English. Every company
+# and person is made up; every Swiss UID passes its check digit. `expected` holds each value as stored (ISO dates,
+# numbers, ISO currency codes), and None where the document does not state it.
+
+- id: credit-note-de-1
+  type: credit_note
+  title: Gutschrift_GU-2025-014.pdf
+  note: A credit note reducing an earlier invoice.
+  text: |
+    # Rhyfall Elektro GmbH
+    Mühlentalstrasse 5, 8200 Schaffhausen · MWST CHE-314.159.269
+
+    Seeblick Hotel AG, Uferweg 2, 6006 Luzern
+
+    ## Gutschrift GU-2025-014
+    Schaffhausen, 28.03.2025
+    Bezug: Rechnung 88341 vom 17.03.2025
+
+    | Pos | Artikel | Menge | Betrag CHF |
+    |---|---|---:|---:|
+    | 1 | Rücknahme LED-Panel 60x60, defekt | 2 | -180.00 |
+
+    MWST 8.1 % CHF -14.58
+    **Gutschrift total CHF -194.58**
+
+    Der Betrag wird mit Ihrer nächsten Zahlung verrechnet.
+  expected:
+    document_date: "2025-03-28"
+    document_reference_number: GU-2025-014
+    document_issuer: Rhyfall Elektro GmbH
+    document_issuer_tax_id: CHE314159269
+    document_recipient: Seeblick Hotel AG
+    document_total_amount: -194.58
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+    document_related_references: ["88341"]
+
+- id: credit-note-self-billing-de
+  type: credit_note
+  title: Gutschrift_GS-2025-0031.pdf
+  note: >-
+    A self-billing Gutschrift under § 14 UStG is a credit note whose issuer is the buyer who issues it; the
+    USt-IdNr. shown is the supplier's, so the issuer has no tax ID.
+  text: |
+    # Nordlicht Software GmbH
+    Leopoldstrasse 90, 80802 München
+
+    An
+    Studio Pixelwerk Inh. Lena Vogt
+    Kastanienallee 3, 10435 Berlin
+    USt-IdNr. des Leistenden: DE 284 519 377
+
+    ## Gutschrift Nr. GS-2025-0031
+    im Sinne des § 14 Abs. 2 Satz 2 UStG
+    Datum: 31.01.2025
+    Leistungszeitraum: Januar 2025
+
+    Für die von Ihnen im Januar 2025 erbrachten Designleistungen schreiben wir Ihnen gut:
+
+    | Leistung | Stunden | Satz EUR | Betrag EUR |
+    |---|---:|---:|---:|
+    | UI-Design Projekt „Atlas" | 42 | 85,00 | 3.570,00 |
+
+    Nettobetrag EUR 3.570,00
+    USt. 19 % EUR 678,30
+    **Gutschriftsbetrag EUR 4.248,30**
+
+    Der Betrag wird am 14.02.2025 auf Ihr Konto überwiesen.
+  expected:
+    document_date: "2025-01-31"
+    document_reference_number: GS-2025-0031
+    document_issuer: Nordlicht Software GmbH
+    document_issuer_tax_id: null
+    document_recipient: Studio Pixelwerk Inh. Lena Vogt
+    document_total_amount: 4248.30
+    document_currency: EUR
+    document_due_date: "2025-02-14"
+    document_period_start: "2025-01-01"
+    document_period_end: "2025-01-31"
+    document_related_references: null
+
+- id: credit-note-fr-1
+  type: credit_note
+  title: note_de_credit_NC-0007.pdf
+  note: A French credit note.
+  text: |
+    # Alpenfunk Télécom SA
+    Avenue de la Gare 18, 1003 Lausanne
+
+    Atelier Rousseau Sàrl, Rue du Rhône 21, 1204 Genève
+
+    ## Note de crédit NC-0007
+    Lausanne, le 15 avril 2025
+    Référence : facture AF-2503-99127
+
+    Geste commercial pour interruption du service du 12 au 14 mars 2025 : CHF -30.00
+    TVA 8,1 % : CHF -2.43
+    **Total crédité CHF -32.43**
+
+    Ce montant sera déduit de votre prochaine facture.
+  expected:
+    document_date: "2025-04-15"
+    document_reference_number: NC-0007
+    document_issuer: Alpenfunk Télécom SA
+    document_issuer_tax_id: null
+    document_recipient: Atelier Rousseau Sàrl
+    document_total_amount: -32.43
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: "2025-03-12"
+    document_period_end: "2025-03-14"
+    document_related_references: [AF-2503-99127]
+
+- id: credit-note-en-1
+  type: credit_note
+  title: Credit_Note_CN-2025-03.pdf
+  note: An English credit note.
+  text: |
+    # Brightwater Analytics Ltd
+    12 Canal Street, Manchester M1 3HE · VAT Reg. No. GB 123 4567 89
+
+    Customer: Hooli AG, Bahnhofstrasse 10, 8001 Zürich
+
+    ## Credit Note CN-2025-03
+    Date: 25 March 2025
+    Against invoice: BWA-INV-2025-077
+
+    Dashboard maintenance not delivered in February: -£650.00
+    **Total credit £650.00**
+  expected:
+    document_date: "2025-03-25"
+    document_reference_number: CN-2025-03
+    document_issuer: Brightwater Analytics Ltd
+    document_issuer_tax_id: GB123456789
+    document_recipient: Hooli AG
+    document_total_amount: 650.00
+    document_currency: GBP
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [BWA-INV-2025-077]
+
+- id: credit-note-de-2
+  type: credit_note
+  title: Rechnungskorrektur_RK-2025-02.pdf
+  note: A cancellation (Stornorechnung) of an earlier invoice.
+  text: |
+    # Kaffeerösterei Elbstrand e.K.
+    Hafenstraße 9, 20457 Hamburg · Steuernummer 43/123/45678
+
+    Nordlicht Software GmbH, Leopoldstraße 90, 80802 München
+
+    ## Stornorechnung zu Rechnung R25-0612
+    Storno-Nr. ST-2025-02 · Datum: 20.06.2025
+
+    Hiermit stornieren wir die Rechnung R25-0612 vom 12.06.2025 vollständig.
+    Stornobetrag: -496,27 € (inkl. 7 % USt.)
+  expected:
+    document_date: "2025-06-20"
+    document_reference_number: ST-2025-02
+    document_issuer: Kaffeerösterei Elbstrand e.K.
+    document_issuer_tax_id: null
+    document_recipient: Nordlicht Software GmbH
+    document_total_amount: -496.27
+    document_currency: EUR
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [R25-0612]
+
+- id: credit-note-it-1
+  type: credit_note
+  title: nota_di_credito_NC-12.pdf
+  note: An Italian credit note.
+  text: |
+    # Ticino Logistica SA
+    Via Cantonale 15, 6900 Lugano
+
+    Studio Bellavista Sagl, Piazza Riforma 3, 6900 Lugano
+
+    ## Nota di credito n. NC-12
+    Lugano, 30 settembre 2025
+    Rif. fattura n. 2025/00456
+
+    Sconto per ritardo nella consegna: CHF -150.00
+    IVA 8,1 %: CHF -12.15
+    **Totale nota di credito: CHF -162.15**
+  expected:
+    document_date: "2025-09-30"
+    document_reference_number: NC-12
+    document_issuer: Ticino Logistica SA
+    document_issuer_tax_id: null
+    document_recipient: Studio Bellavista Sagl
+    document_total_amount: -162.15
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [2025/00456]
+
+- id: credit-correction-negative-de
+  type: credit_note
+  title: Rechnungskorrektur_RK-2026-07.pdf
+  note: A correction of an earlier invoice with a negative total works as a credit note, so it is not an invoice.
+  text: |
+    # Holzwerk Brunner GmbH
+    Sägestrasse 4, 6300 Zug · UID CHE-271.828.189 MWST
+
+    Lena Kramer, Bahnhofweg 9, 6340 Baar
+
+    ## Rechnungskorrektur Nr. RK-2026-07
+    zu Rechnung HB-2026-118 vom 12.10.2026 · Datum 20.10.2026
+
+    | Pos | Beschreibung | Betrag CHF |
+    |-----|--------------|-----------:|
+    | 1 | Minderlieferung: 1 Regalboden weniger | -50.00 |
+    | | MWST 8.1 % | -4.05 |
+    | | **Korrekturbetrag** | **-54.05** |
+
+    Der Betrag wird Ihnen zurückerstattet.
+  expected:
+    document_date: "2026-10-20"
+    document_reference_number: RK-2026-07
+    document_issuer: Holzwerk Brunner GmbH
+    document_issuer_tax_id: CHE271828189
+    document_recipient: Lena Kramer
+    document_total_amount: -54.05
+    document_currency: CHF
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [HB-2026-118]
+
+- id: credit-note-fr-2
+  type: credit_note
+  title: facture_annulation_AN-2025-0042.pdf
+  note: >-
+    A French cancellation (facture d'annulation) of a named invoice is a credit note even though it says "facture";
+    the refund date is its due date.
+  text: |
+    # Imprimerie du Léman SA
+    Chemin des Ateliers 7, 1110 Morges · IDE CHE-246.813.575 TVA
+
+    Fondation Les Tilleuls
+    Service administratif
+    Route de Lausanne 40, 1110 Morges
+
+    ## Facture d'annulation n° AN-2025-0042
+    Morges, le 9 juillet 2025
+    Annule la facture n° F-2025-0934 du 30 juin 2025
+
+    La facture n° F-2025-0934 (impression de 500 brochures annuelles) a été établie par erreur en double et est
+    annulée dans son intégralité.
+
+    | Désignation | Montant CHF |
+    |---|---:|
+    | Annulation facture F-2025-0934 | -1'480.00 |
+    | TVA 8,1 % | -119.88 |
+    | **Total de l'annulation** | **-1'599.88** |
+
+    Aucun paiement n'est dû. Si vous avez déjà réglé la facture, le montant vous sera remboursé d'ici le
+    31 juillet 2025.
+  expected:
+    document_date: "2025-07-09"
+    document_reference_number: AN-2025-0042
+    document_issuer: Imprimerie du Léman SA
+    document_issuer_tax_id: CHE246813575
+    document_recipient: Fondation Les Tilleuls
+    document_total_amount: -1599.88
+    document_currency: CHF
+    document_due_date: "2025-07-31"
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [F-2025-0934]
+
+- id: credit-note-en-2
+  type: credit_note
+  title: Credit_Memo_CM-30417.pdf
+  note: >-
+    An English credit memo for returned goods, dated month first in a USD document; the RMA number is a return
+    authorisation, not an invoice or order, so only the invoice and the PO are related references.
+  text: |
+    # Harborline Office Supply Inc.
+    455 Commerce Drive, Columbus, OH 43215
+
+    Bill To:
+    Brightwater Analytics Ltd
+    12 Canal Street
+    Manchester M1 3HE, United Kingdom
+
+    ## CREDIT MEMO
+
+    | Credit Memo No. | Date | Original Invoice | Customer PO |
+    |---|---|---|---|
+    | CM-30417 | 06/18/2025 | INV-118204 | PO-7730 |
+
+    Reason: Goods returned under RMA 5521 (damaged in transit)
+
+    | Item | Description | Qty Returned | Unit Price | Amount |
+    |---|---|---:|---:|---:|
+    | HL-2210 | Ergonomic desk chair, black | 2 | 189.00 | -378.00 |
+    | HL-0415 | Monitor arm, dual | 1 | 72.50 | -72.50 |
+
+    Subtotal: -450.50
+    Restocking fee: waived
+    **Total Credit: USD -450.50**
+
+    This credit will be applied to your next invoice.
+  expected:
+    document_date: "2025-06-18"
+    document_reference_number: CM-30417
+    document_issuer: Harborline Office Supply Inc.
+    document_issuer_tax_id: null
+    document_recipient: Brightwater Analytics Ltd
+    document_total_amount: -450.50
+    document_currency: USD
+    document_due_date: null
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [INV-118204, PO-7730]
+
+- id: credit-note-it-2
+  type: credit_note
+  title: nota_di_credito_NC-2026-003.pdf
+  note: >-
+    An Italian annual rebate credited to the customer, its total written without a minus sign, with the period it
+    concerns, the framework contract and a payout date.
+  text: |
+    # Vini del Mendrisiotto SA
+    Via ai Vigneti 22, 6850 Mendrisio · IVA CHE-369.258.142 IVA
+
+    Spett.le
+    Ristorante Al Grotto Sagl
+    Via Bosco 5
+    6987 Caslano
+
+    ## Nota di credito n. NC-2026-003
+    Mendrisio, 15 gennaio 2026
+
+    Oggetto: ristorno annuo sul fatturato 2025
+    Periodo di riferimento: dal 01.01.2025 al 31.12.2025
+    Contratto quadro n. CQ-2023-17
+
+    | Descrizione | Fatturato CHF | Ristorno | Importo CHF |
+    |---|---:|---:|---:|
+    | Ristorno 3 % sugli acquisti 2025 | 41'200.00 | 3 % | 1'236.00 |
+
+    IVA 8,1 % CHF 100.12
+    **Totale a vostro favore CHF 1'336.12**
+
+    L'importo vi sarà accreditato sul conto entro il 31 gennaio 2026.
+  expected:
+    document_date: "2026-01-15"
+    document_reference_number: NC-2026-003
+    document_issuer: Vini del Mendrisiotto SA
+    document_issuer_tax_id: CHE369258142
+    document_recipient: Ristorante Al Grotto Sagl
+    document_total_amount: 1336.12
+    document_currency: CHF
+    document_due_date: "2026-01-31"
+    document_period_start: "2025-01-01"
+    document_period_end: "2025-12-31"
+    document_related_references: [CQ-2023-17]

@@ -1,8 +1,9 @@
 ---
 steps:
   answer_form:
-    name: "Rispondere al modulo"
-    description: "Esegue l'estrazione che l'utente ha confermato o corretto nel modulo della richiesta"
+    name: Rispondere al modulo
+    description: Esegue l'estrazione che l'utente ha confermato o corretto nel modulo
+      della richiesta
   plan:
     name: Pianificare la tabella
     description: Determina i documenti selezionati e progetta le colonne della tabella
@@ -42,7 +43,18 @@ tools:
     label: Estrai una tabella
     approval: 'Estrarre una tabella con queste colonne dai documenti di conoscenza:
       {fields}'
-    description: "Estrae una tabella da molti documenti di conoscenza, una riga per ogni record trovato, ogni riga con il suo file. Usalo quando l'utente vuole record raccolti da più documenti, ad esempio ogni posizione hardware sulle fatture 2025 di un fornitore; non per una domanda a cui risponde un solo documento o la ricerca nella conoscenza. Trova prima i documenti con gli strumenti di elenco e ricerca e verificali con select_knowledge_documents; poi chiamalo con le stesse condizioni. L'utente vede la tabella direttamente e può scaricarla per intero; tu ricevi il suo riepilogo. Quando corrispondono più documenti di quanti una risposta ne estrae senza chiedere, l'utente riceve un campione e decide; estraili tutti solo se è d'accordo, con confirm_sample impostato a true. Prima che una nuova estrazione venga eseguita, l'utente la conferma o la corregge in un modulo; segui poi ciò che dice il risultato."
+    description: Estrae una tabella da molti documenti di conoscenza, una riga per
+      ogni record trovato, ogni riga con il suo file. Usalo quando l'utente vuole
+      record raccolti da più documenti, ad esempio ogni posizione hardware sulle fatture
+      2025 di un fornitore; non per una domanda a cui risponde un solo documento o
+      la ricerca nella conoscenza. Trova prima i documenti con gli strumenti di elenco
+      e ricerca e verificali con select_knowledge_documents; poi chiamalo con le stesse
+      condizioni. L'utente vede la tabella direttamente e può scaricarla per intero;
+      tu ricevi il suo riepilogo. Quando corrispondono più documenti di quanti una
+      risposta ne estrae senza chiedere, l'utente riceve un campione e decide; estraili
+      tutti solo se è d'accordo, con confirm_sample impostato a true. Prima che una
+      nuova estrazione venga eseguita, l'utente la conferma o la corregge in un modulo;
+      segui poi ciò che dice il risultato.
   select:
     label: Seleziona documenti
     approval: 'Selezionare documenti di conoscenza per una tabella con queste colonne:
@@ -56,6 +68,14 @@ table:
   path: Percorso
   filename: File
 summary:
+  document_condition: '**Condizione sul documento:** %{condition}'
+  skipped: '**Saltati, condizione sul documento non soddisfatta:** %{count} documenti'
+  skipped_more: …e altri %{count} documenti saltati, ciascuno con il motivo nell'avanzamento
+    qui sopra.
+  documents_unsure: '**Incerto se soddisfano la condizione sul documento, letti e
+    segnati da verificare:** %{files}'
+  interpretation_documents: '**Colonne:** %{columns} · **Documenti:** %{documents}
+    · **Righe mantenute:** %{kept}'
   no_rows: '**Nessuna riga da:** %{files}'
   unsure: '**Incerto:** %{count} righe potrebbero non soddisfare la condizione; sono
     mantenute e segnate nella colonna Corrispondenza perché possiate verificarle.'
@@ -89,13 +109,24 @@ summary:
     oppure restringa la richiesta, ad esempio a una delle cartelle o degli anni sopra.
   nothing_awaiting: In questa conversazione non c'è alcuna estrazione di tabella con
     campione da proseguire. Chieda di nuovo la tabella.
+  path_dates: '**Periodo dal percorso:** %{in_range} documenti datati nel periodo
+    o a cavallo di esso · %{excluded} esclusi, datati fuori dal periodo · %{undated}
+    senza data nel percorso'
+  path_dates_years: 'I percorsi esclusi sono datati: %{years}.'
+  path_dates_excluded: '**Esclusi per la data nel percorso:** %{files}'
 facets:
   folders: '**Per cartella:** %{entries}'
   years: '**Per anno nel percorso:** %{entries}'
   collections: '**Per collezione:** %{entries}'
   first: Sono le cartelle e gli anni dei primi %{total} documenti per percorso; ce
     ne sono altri.
+period:
+  between: datato tra il %{start} e il %{end}
+  from: datato il %{start} o dopo
+  until: datato il %{end} o prima
 progress:
+  skipped: '%{done} di %{files} · %{path}: saltato, %{reason}'
+  skipped_unknown: non soddisfa la condizione sul documento
   partial: '%{path} è lungo: vengono lette solo le parti pertinenti.'
   plan: Estrazione di %{fields} da %{files} documenti, circa %{minutes} minuti (%{criteria}).
   sample: '%{total} documenti corrispondono; estraggo un campione da %{files} di essi
@@ -106,50 +137,76 @@ progress:
   still_reading: Sto ancora leggendo %{path} (%{minutes} min).
   extracted_rows: '%{done} di %{files} · %{path}: %{rows} righe — %{first}'
 form:
-  intro: "Prima di leggere i documenti, conferma per favore ciò che ho capito:"
-  reply_hint: "Rispondi *sì* per procedere, oppure scrivi cosa cambiare:"
-  as_understood: "Come capito"
+  intro: 'Prima di leggere i documenti, conferma per favore ciò che ho capito:'
+  reply_hint: 'Rispondi *sì* per procedere, oppure scrivi cosa cambiare:'
+  as_understood: Come capito
   where:
-    header: "Posizione"
-    question: "Quali documenti devo leggere? Ho capito: %{value}."
-    hint: "Per leggerne solo una parte, indica una raccolta, una cartella, un file o un anno."
-    collections: "Raccolte: %{collections}"
-    folders: "Cartelle: %{folders}"
-    anything: "Tutti i documenti"
-    anything_description: "Leggere ogni documento nell'ambito di questo agente"
-    everything: "tutti i documenti nell'ambito"
-    line: "**Posizione:** %{value}"
+    header: Posizione
+    question: 'Quali documenti devo leggere? Ho capito: %{value}.'
+    hint: Per leggerne solo una parte, indica una raccolta, una cartella, un file o un anno.
+    hint_with_documents: Per leggerne solo una parte, indica una raccolta, una cartella
+      o un file; un periodo va sotto Condizione sul documento.
+    collections: 'Raccolte: %{collections}'
+    folders: 'Cartelle: %{folders}'
+    anything: Tutti i documenti
+    anything_description: Leggere ogni documento nell'ambito di questo agente
+    everything: tutti i documenti nell'ambito
+    line: '**Posizione:** %{value}'
+  documents:
+    header: Condizione sul documento
+    question: 'Quali documenti contano? Ho capito: %{value}.'
+    hint: Una condizione che l'intero documento deve soddisfare, verificata all'inizio,
+      p. es. di Lieferant GmbH · datato tra il 1° gennaio e il 31 marzo 2026 · solo
+      versioni firmate. I documenti che chiaramente non la soddisfano sono saltati
+      ed elencati.
+    anything: Ogni documento
+    anything_description: Leggere ogni documento della posizione
+    everything: ogni documento della posizione
+    line: '**Condizione sul documento:** %{value}'
   rows:
-    header: "Condizione di filtro"
-    question: "Quali record deve tenere la tabella? Ho capito: %{value}."
-    hint: "Una condizione sui record, non un calcolo, p. es. di Lieferant GmbH · datate 2018 · solo voci hardware."
-    anything: "Ogni riga"
-    anything_description: "Tenere ogni riga dei documenti"
-    everything: "ogni riga"
-    line: "**Condizione di filtro:** %{value}"
+    header: Condizione di filtro
+    question: 'Quali record deve tenere la tabella? Ho capito: %{value}.'
+    hint: Una condizione sui record, non un calcolo, p. es. di Lieferant GmbH · datate
+      2018 · solo voci hardware.
+    hint_with_documents: Una condizione su ogni record, non sull'intero documento
+      né un calcolo, p. es. solo voci hardware · importi oltre CHF 1'000 · righe di
+      Lieferant GmbH su un estratto conto.
+    anything: Ogni riga
+    anything_description: Tenere ogni riga dei documenti
+    everything: ogni riga
+    line: '**Condizione di filtro:** %{value}'
   columns:
-    header: "Valori da estrarre"
-    question: "Quali valori deve contenere ogni riga? Ho capito: %{value}."
-    hint: "I valori decidono che cos'è una riga, p. es. numero di fattura, data, totale netto → una riga per fattura; articolo, quantità, importo netto → una riga per voce."
-    anything: "Sceglie l'agente"
-    anything_description: "Valori adatti ai record richiesti"
-    unnamed: "nessuno indicato"
-    line: "**Valori da estrarre:** %{value}"
+    header: Valori da estrarre
+    question: 'Quali valori deve contenere ogni riga? Ho capito: %{value}.'
+    hint: I valori decidono che cos'è una riga, p. es. numero di fattura, data, totale
+      netto → una riga per fattura; articolo, quantità, importo netto → una riga per
+      voce.
+    anything: Sceglie l'agente
+    anything_description: Valori adatti ai record richiesti
+    unnamed: nessuno indicato
+    line: '**Valori da estrarre:** %{value}'
   exact:
-    header: "Parole chiave esatte"
-    question: "Quali parole contengono letteralmente i documenti cercati? Ho capito: %{value}."
-    hint: "Facoltativo, p. es. il nome di un fornitore come Lieferant GmbH · un numero di fattura o di contratto. Guidano la ricerca e non filtrano mai."
-    anything: "Nessuna"
-    anything_description: "Decide la ricerca"
-    none: "nessuna"
-    line: "**Parole chiave esatte:** %{value}"
+    header: Parole chiave esatte
+    question: 'Quali parole contengono letteralmente i documenti cercati? Ho capito:
+      %{value}.'
+    hint: Facoltativo, p. es. il nome di un fornitore come Lieferant GmbH · un numero
+      di fattura o di contratto. Guidano la ricerca e non filtrano mai.
+    anything: Nessuna
+    anything_description: Decide la ricerca
+    none: nessuna
+    line: '**Parole chiave esatte:** %{value}'
   semantic:
-    header: "Parole chiave semantiche"
-    question: "Di che cosa parlano i documenti cercati? Ho capito: %{value}."
-    hint: "Facoltativo, p. es. fattura fornitore con voci · contratto di locazione · polizza assicurativa. Ordinano i documenti per significato e non filtrano mai."
-    anything: "Nessuna"
-    anything_description: "Decide la ricerca"
-    none: "nessuna"
-    line: "**Parole chiave semantiche:** %{value}"
-  declined: "L'utente ha rifiutato questa estrazione nel modulo della richiesta. Non estrarre; chiedi che cosa desidera invece."
-  rewritten: "L'utente ha risposto al modulo di questa estrazione con: \"%{reply}\". Chiama di nuovo extract_records con gli argomenti modificati di conseguenza; viene eseguito senza chiedere di nuovo."
+    header: Parole chiave semantiche
+    question: 'Di che cosa parlano i documenti cercati? Ho capito: %{value}.'
+    hint: Facoltativo, p. es. fattura fornitore con voci · contratto di locazione
+      · polizza assicurativa. Ordinano i documenti per significato e non filtrano
+      mai.
+    anything: Nessuna
+    anything_description: Decide la ricerca
+    none: nessuna
+    line: '**Parole chiave semantiche:** %{value}'
+  declined: L'utente ha rifiutato questa estrazione nel modulo della richiesta. Non
+    estrarre; chiedi che cosa desidera invece.
+  rewritten: "L'utente ha risposto al modulo di questa estrazione con: \"%{reply}\"\
+    . Chiama di nuovo extract_records con gli argomenti modificati di conseguenza;\
+    \ viene eseguito senza chiedere di nuovo."

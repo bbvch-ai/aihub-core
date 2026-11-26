@@ -7164,9 +7164,8 @@ export const CreateTokenRequestSchema = {
   required: ["name", "expiry_date"],
   title: "CreateTokenRequest",
   example: {
-    expiry_date: "2025-12-31T23:59:59Z",
+    expiry_date: "2027-12-31T23:59:59Z",
     name: "My API Token",
-    roles: ["read", "write"],
   },
 } as const;
 
@@ -9611,6 +9610,19 @@ export const ExtractRecordsEventSchema = {
       title: "Instructions",
       description:
         "Which records to keep, e.g. 'only hardware'; never turned into a column.",
+    },
+    document_condition: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Condition",
+      description:
+        "Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows, and never the period, which is the selection's `path_date_range`.",
     },
     row_terms: {
       anyOf: [
@@ -12241,7 +12253,7 @@ export const HumanInTheLoopQuestionsRequestEventSchema = {
         $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
       },
       type: "array",
-      maxItems: 5,
+      maxItems: 6,
       minItems: 1,
       title: "Questions",
       description: "The question's parts, for clients that show a dialog.",
@@ -12275,7 +12287,7 @@ export const HumanInTheLoopQuestionsRequestEventSchema = {
   ],
   title: "HumanInTheLoopQuestionsRequestEvent",
   description:
-    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nfive questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
+    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nsix questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -16103,7 +16115,7 @@ export const KnowledgeDocumentCriteriaSchema = {
       ],
       title: "Path Glob",
       description:
-        "Glob on the path relative to the collection, e.g. 'invoices/2025/**'.",
+        "Glob on the path relative to the collection, e.g. 'invoices/**' or 'contracts/*.pdf'.",
     },
     path_regex: {
       anyOf: [
@@ -16128,7 +16140,7 @@ export const KnowledgeDocumentCriteriaSchema = {
       ],
       title: "Content Query",
       description:
-        "Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a year, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.",
+        "Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.",
     },
     content_is_regex: {
       type: "boolean",
@@ -16165,12 +16177,24 @@ export const KnowledgeDocumentSelectionSchema = {
       description:
         "A document is selected when it meets every condition of at least one entry.",
     },
+    path_date_range: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/PathDateRange",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Leaves out the selected documents whose path dates them outside this period, such as a year folder, 2026-03 or 20260406 in a file name; a document whose path gives no clear date is kept.",
+    },
   },
   type: "object",
   required: ["any_of"],
   title: "KnowledgeDocumentSelection",
   description:
-    "The documents a request is about, described rather than listed: a document is selected when it meets any of the\ncriteria.\n\nDescribing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob\nand limits when it resolves the set, so a model can only narrow what it was given.",
+    "The documents a request is about, described rather than listed: a document is selected when it meets any of the\ncriteria.\n\nDescribing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob\nand limits when it resolves the set, so a model can only narrow what it was given. A selection has one period,\napplied after the entries to all they selected, because a request names its period once.",
 } as const;
 
 export const KnowledgeReferenceSchema = {
@@ -22579,6 +22603,41 @@ export const PasswordSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/Password",
 } as const;
 
+export const PathDateRangeSchema = {
+  properties: {
+    start: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Start",
+      description: "First day of the period; null when it has no start.",
+    },
+    end: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "End",
+      description: "Last day of the period; null when it has no end.",
+    },
+  },
+  type: "object",
+  title: "PathDateRange",
+  description:
+    'A period the wanted documents are dated in, matched by code against the dates their paths give them.\n\nEither bound may be open ("since March 2025"), never both. Bounds are inclusive days.',
+} as const;
+
 export const ProcessClassDTOSchema = {
   properties: {
     process_class: {
@@ -24406,6 +24465,14 @@ export const RecordsExtractedEventSchema = {
       minimum: 0,
       title: "Failed Count",
       description: "Documents that could not be extracted.",
+      default: 0,
+    },
+    skipped_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Skipped Count",
+      description:
+        "Documents left out because they clearly fail the document condition; never counted as failed.",
       default: 0,
     },
     row_count: {
@@ -30059,23 +30126,35 @@ export const TokenResponseSchema = {
       description: "The name of the API token",
       example: "My API Token",
     },
+    created_at: {
+      type: "string",
+      format: "date-time",
+      title: "Created At",
+      description: "When the token was created",
+    },
     expiry_date: {
       type: "string",
       format: "date-time",
       title: "Expiry Date",
       description: "Expiry date",
     },
-    roles: {
-      items: {
-        type: "string",
-      },
-      type: "array",
-      title: "Roles",
-      description: "List of roles granted to the access token",
+    last_used_at: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date-time",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Last Used At",
+      description:
+        "When the token last authenticated a request, to within five minutes; null if never",
     },
   },
   type: "object",
-  required: ["id", "name", "expiry_date", "roles"],
+  required: ["id", "name", "created_at", "expiry_date", "last_used_at"],
   title: "TokenResponse",
 } as const;
 
@@ -37781,6 +37860,19 @@ export const ExtractRecordsEventWritableSchema = {
       description:
         "Which records to keep, e.g. 'only hardware'; never turned into a column.",
     },
+    document_condition: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Condition",
+      description:
+        "Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows, and never the period, which is the selection's `path_date_range`.",
+    },
     row_terms: {
       anyOf: [
         {
@@ -39596,7 +39688,7 @@ export const HumanInTheLoopQuestionsRequestEventWritableSchema = {
         $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
       },
       type: "array",
-      maxItems: 5,
+      maxItems: 6,
       minItems: 1,
       title: "Questions",
       description: "The question's parts, for clients that show a dialog.",
@@ -39607,7 +39699,7 @@ export const HumanInTheLoopQuestionsRequestEventWritableSchema = {
   required: ["question", "topic", "questions"],
   title: "HumanInTheLoopQuestionsRequestEvent",
   description:
-    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nfive questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
+    "A chat question that also carries its parts as choice questions.\n\nClients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows\n`question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to\nsix questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.",
 } as const;
 
 export const HumanInTheLoopRequestEventWritableSchema = {
@@ -47576,6 +47668,14 @@ export const RecordsExtractedEventWritableSchema = {
       minimum: 0,
       title: "Failed Count",
       description: "Documents that could not be extracted.",
+      default: 0,
+    },
+    skipped_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Skipped Count",
+      description:
+        "Documents left out because they clearly fail the document condition; never counted as failed.",
       default: 0,
     },
     row_count: {

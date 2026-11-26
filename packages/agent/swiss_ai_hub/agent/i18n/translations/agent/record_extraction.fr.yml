@@ -1,8 +1,9 @@
 ---
 steps:
   answer_form:
-    name: "Répondre au formulaire"
-    description: "Exécute l'extraction que l'utilisateur a confirmée ou corrigée dans le formulaire de la demande"
+    name: Répondre au formulaire
+    description: Exécute l'extraction que l'utilisateur a confirmée ou corrigée dans
+      le formulaire de la demande
   plan:
     name: Planifier le tableau
     description: Détermine les documents sélectionnés et conçoit les colonnes du tableau
@@ -41,7 +42,19 @@ tools:
     label: Extraire un tableau
     approval: 'Extraire un tableau avec ces colonnes des documents de connaissances
       : {fields}'
-    description: "Extrait un tableau de nombreux documents de connaissances, une ligne par enregistrement trouvé, chaque ligne indiquant son fichier. Utilise-le quand l'utilisateur veut des enregistrements rassemblés à travers plusieurs documents, par exemple chaque position de matériel sur les factures 2025 d'un fournisseur ; pas pour une question à laquelle un seul document ou la recherche de connaissances répond. Trouve d'abord les documents avec les outils de liste et de recherche et vérifie-les avec select_knowledge_documents ; puis appelle-le avec les mêmes conditions. L'utilisateur voit le tableau directement et peut le télécharger en entier ; tu reçois son résumé. Quand plus de documents correspondent qu'une réponse n'en extrait sans demander, l'utilisateur reçoit un échantillon et décide ; extrais-les tous seulement s'il est d'accord, avec confirm_sample à true. Avant qu'une nouvelle extraction ne s'exécute, l'utilisateur la confirme ou la corrige dans un formulaire ; suis ensuite ce que dit le résultat."
+    description: Extrait un tableau de nombreux documents de connaissances, une ligne
+      par enregistrement trouvé, chaque ligne indiquant son fichier. Utilise-le quand
+      l'utilisateur veut des enregistrements rassemblés à travers plusieurs documents,
+      par exemple chaque position de matériel sur les factures 2025 d'un fournisseur
+      ; pas pour une question à laquelle un seul document ou la recherche de connaissances
+      répond. Trouve d'abord les documents avec les outils de liste et de recherche
+      et vérifie-les avec select_knowledge_documents ; puis appelle-le avec les mêmes
+      conditions. L'utilisateur voit le tableau directement et peut le télécharger
+      en entier ; tu reçois son résumé. Quand plus de documents correspondent qu'une
+      réponse n'en extrait sans demander, l'utilisateur reçoit un échantillon et décide
+      ; extrais-les tous seulement s'il est d'accord, avec confirm_sample à true.
+      Avant qu'une nouvelle extraction ne s'exécute, l'utilisateur la confirme ou
+      la corrige dans un formulaire ; suis ensuite ce que dit le résultat.
   select:
     label: Sélectionner des documents
     approval: 'Sélectionner des documents de connaissances pour un tableau avec ces
@@ -55,6 +68,14 @@ table:
   path: Chemin
   filename: Fichier
 summary:
+  document_condition: '**Condition sur le document :** %{condition}'
+  skipped: '**Ignorés, condition sur le document non remplie :** %{count} documents'
+  skipped_more: …et %{count} autres documents ignorés, chacun avec sa raison dans
+    la progression ci-dessus.
+  documents_unsure: "**Incertain s'ils remplissent la condition sur le document, lus\
+    \ et marqués à vérifier :** %{files}"
+  interpretation_documents: '**Colonnes :** %{columns} · **Documents :** %{documents}
+    · **Lignes conservées :** %{kept}'
   no_rows: '**Aucune ligne de :** %{files}'
   unsure: '**Incertain :** %{count} lignes ne remplissent peut-être pas la condition
     ; elles sont gardées et marquées dans la colonne Correspondance pour que vous
@@ -90,13 +111,24 @@ summary:
     ou précisez la demande, par exemple à l'un des dossiers ou l'une des années ci-dessus.
   nothing_awaiting: Il n'y a dans cette conversation aucune extraction de tableau
     avec échantillon à poursuivre. Veuillez redemander le tableau.
+  path_dates: '**Période selon le chemin :** %{in_range} documents datés dans la période
+    ou à cheval sur elle · %{excluded} écartés, datés hors de la période · %{undated}
+    sans date dans leur chemin'
+  path_dates_years: 'Les chemins écartés sont datés de : %{years}.'
+  path_dates_excluded: '**Écartés selon la date de leur chemin :** %{files}'
 facets:
   folders: '**Par dossier :** %{entries}'
   years: '**Par année dans le chemin :** %{entries}'
   collections: '**Par collection :** %{entries}'
   first: Ce sont les dossiers et années des %{total} premiers documents par chemin
     ; il y en a d’autres.
+period:
+  between: daté entre le %{start} et le %{end}
+  from: daté du %{start} ou après
+  until: daté du %{end} ou avant
 progress:
+  skipped: '%{done} sur %{files} · %{path} : ignoré, %{reason}'
+  skipped_unknown: ne remplit pas la condition sur le document
   partial: '%{path} est long : seules ses parties pertinentes sont lues.'
   plan: Extraction de %{fields} de %{files} documents, environ %{minutes} minutes
     (%{criteria}).
@@ -110,48 +142,74 @@ progress:
 form:
   intro: "Avant de lire les documents, merci de confirmer ce que j'ai compris :"
   reply_hint: "Réponds *oui* pour continuer, ou écris ce qu'il faut changer :"
-  as_understood: "Comme compris"
+  as_understood: Comme compris
   where:
-    header: "Emplacement"
+    header: Emplacement
     question: "Quels documents dois-je lire ? J'ai compris : %{value}."
-    hint: "Pour n'en lire qu'une partie, nomme une collection, un dossier, un fichier ou une année."
-    collections: "Collections : %{collections}"
-    folders: "Dossiers : %{folders}"
-    anything: "Tous les documents"
-    anything_description: "Lire chaque document du périmètre de cet agent"
-    everything: "tous les documents du périmètre"
-    line: "**Emplacement :** %{value}"
+    hint: Pour n'en lire qu'une partie, nomme une collection, un dossier, un fichier ou une année.
+    hint_with_documents: Pour n'en lire qu'une partie, nomme une collection, un dossier
+      ou un fichier ; une période va sous Condition sur le document.
+    collections: 'Collections : %{collections}'
+    folders: 'Dossiers : %{folders}'
+    anything: Tous les documents
+    anything_description: Lire chaque document du périmètre de cet agent
+    everything: tous les documents du périmètre
+    line: '**Emplacement :** %{value}'
+  documents:
+    header: Condition sur le document
+    question: "Quels documents comptent ? J'ai compris : %{value}."
+    hint: Une condition que le document entier doit remplir, vérifiée à son début,
+      p. ex. de Lieferant GmbH · daté entre le 1er janvier et le 31 mars 2026 · seulement
+      les versions signées. Les documents qui ne la remplissent clairement pas sont
+      ignorés et listés.
+    anything: Chaque document
+    anything_description: Lire chaque document de l'emplacement
+    everything: chaque document de l'emplacement
+    line: '**Condition sur le document :** %{value}'
   rows:
-    header: "Condition de filtre"
+    header: Condition de filtre
     question: "Quels enregistrements le tableau doit-il garder ? J'ai compris : %{value}."
-    hint: "Une condition sur les enregistrements, pas un calcul, p. ex. de Lieferant GmbH · datées de 2018 · seulement le matériel."
-    anything: "Chaque ligne"
-    anything_description: "Garder chaque ligne des documents"
-    everything: "chaque ligne"
-    line: "**Condition de filtre :** %{value}"
+    hint: Une condition sur les enregistrements, pas un calcul, p. ex. de Lieferant
+      GmbH · datées de 2018 · seulement le matériel.
+    hint_with_documents: Une condition sur chaque enregistrement, pas sur le document
+      entier ni un calcul, p. ex. seulement le matériel · montants supérieurs à CHF
+      1'000 · lignes de Lieferant GmbH sur un relevé.
+    anything: Chaque ligne
+    anything_description: Garder chaque ligne des documents
+    everything: chaque ligne
+    line: '**Condition de filtre :** %{value}'
   columns:
-    header: "Valeurs à extraire"
+    header: Valeurs à extraire
     question: "Quelles valeurs chaque ligne doit-elle contenir ? J'ai compris : %{value}."
-    hint: "Les valeurs décident de ce qu'est une ligne, p. ex. numéro de facture, date, total net → une ligne par facture ; article, quantité, montant net → une ligne par position."
-    anything: "L'agent choisit"
-    anything_description: "Des valeurs adaptées aux enregistrements demandés"
-    unnamed: "aucune nommée"
-    line: "**Valeurs à extraire :** %{value}"
+    hint: Les valeurs décident de ce qu'est une ligne, p. ex. numéro de facture, date,
+      total net → une ligne par facture ; article, quantité, montant net → une ligne
+      par position.
+    anything: L'agent choisit
+    anything_description: Des valeurs adaptées aux enregistrements demandés
+    unnamed: aucune nommée
+    line: '**Valeurs à extraire :** %{value}'
   exact:
-    header: "Mots-clés exacts"
-    question: "Quels mots les documents voulus contiennent-ils tels quels ? J'ai compris : %{value}."
-    hint: "Facultatif, p. ex. un nom de fournisseur comme Lieferant GmbH · un numéro de facture ou de contrat. Ils guident la recherche et ne filtrent jamais."
-    anything: "Aucun"
-    anything_description: "La recherche décide"
-    none: "aucun"
-    line: "**Mots-clés exacts :** %{value}"
+    header: Mots-clés exacts
+    question: "Quels mots les documents voulus contiennent-ils tels quels ? J'ai compris\
+      \ : %{value}."
+    hint: Facultatif, p. ex. un nom de fournisseur comme Lieferant GmbH · un numéro
+      de facture ou de contrat. Ils guident la recherche et ne filtrent jamais.
+    anything: Aucun
+    anything_description: La recherche décide
+    none: aucun
+    line: '**Mots-clés exacts :** %{value}'
   semantic:
-    header: "Mots-clés sémantiques"
+    header: Mots-clés sémantiques
     question: "De quoi parlent les documents voulus ? J'ai compris : %{value}."
-    hint: "Facultatif, p. ex. facture fournisseur avec positions · contrat de location · police d'assurance. Ils classent les documents par le sens et ne filtrent jamais."
-    anything: "Aucun"
-    anything_description: "La recherche décide"
-    none: "aucun"
-    line: "**Mots-clés sémantiques :** %{value}"
-  declined: "L'utilisateur a refusé cette extraction dans le formulaire de la demande. N'extrais pas ; demande-lui ce qu'il souhaite à la place."
-  rewritten: "L'utilisateur a répondu au formulaire de cette extraction par : \"%{reply}\". Appelle à nouveau extract_records avec les arguments modifiés en conséquence ; l'appel s'exécute sans nouvelle question."
+    hint: Facultatif, p. ex. facture fournisseur avec positions · contrat de location
+      · police d'assurance. Ils classent les documents par le sens et ne filtrent
+      jamais.
+    anything: Aucun
+    anything_description: La recherche décide
+    none: aucun
+    line: '**Mots-clés sémantiques :** %{value}'
+  declined: L'utilisateur a refusé cette extraction dans le formulaire de la demande.
+    N'extrais pas ; demande-lui ce qu'il souhaite à la place.
+  rewritten: "L'utilisateur a répondu au formulaire de cette extraction par : \"%{reply}\"\
+    . Appelle à nouveau extract_records avec les arguments modifiés en conséquence\
+    \ ; l'appel s'exécute sans nouvelle question."

@@ -178,11 +178,28 @@ runs:
       shell: bash
       run: |
         docker compose -f infra/docker-compose.dev.yml --env-file .env.dev up -d ${{ inputs.docker_compose_services }}
+    # The Ubuntu mirror serves the ~70 MB of FFmpeg packages anywhere between seconds and several minutes, so the
+    # downloaded .deb files are cached per runner image and apt only fetches what changed since.
+    - name: Read runner image
+      id: runner_image
+      if: inputs.install_ffmpeg == 'true'
+      shell: bash
+      run: echo "version=${ImageOS}-${ImageVersion}" >> "$GITHUB_OUTPUT"
+    - name: Restore FFmpeg packages
+      if: inputs.install_ffmpeg == 'true'
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+      with:
+        path: ~/apt-archives
+        key: ${{ runner.os }}-${{ steps.runner_image.outputs.version }}-apt-ffmpeg
     - name: Install FFmpeg
       if: inputs.install_ffmpeg == 'true'
       shell: bash
-      run: make install-ffmpeg
-      working-directory: ${{ inputs.working_directory }}
+      run: |
+        mkdir -p ~/apt-archives/partial
+        sudo apt-get update
+        sudo apt-get install -y -o Dir::Cache::Archives="$HOME/apt-archives" ffmpeg
+        # apt leaves root-owned files behind that the cache step could not read when saving.
+        sudo chown -R "$(id -u):$(id -g)" ~/apt-archives
     - name: Setup environment variables for tests
       shell: bash
       run: |

@@ -235,7 +235,9 @@ class TestReferencedKnowledge:
         monkeypatch.setattr(pipe.httpx, "AsyncClient", MagicMock(return_value=client))
         files = [{"type": "collection", "id": "k1"}, {"type": "file", "id": "f1"}, {"type": "collection", "id": "k1"}]
 
-        references = await pipe.KnowledgeReferenceService("http://api").references_for_event(files, {"X": "y"})
+        references = await pipe.KnowledgeReferenceService(
+            "http://api", pipe.AuthenticationService("signing-secret", "api-key")
+        ).references_for_event(files, {"X": "y"})
 
         assert references == [{"database": "hr", "namespace": "policies"}]
         url = client.post.await_args.args[0]
@@ -246,7 +248,12 @@ class TestReferencedKnowledge:
     async def test_a_message_without_references_asks_nothing(self, pipe: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(pipe.httpx, "AsyncClient", MagicMock(side_effect=AssertionError("no request expected")))
 
-        assert await pipe.KnowledgeReferenceService("http://api").references_for_event([{"type": "file"}], {}) == []
+        assert (
+            await pipe.KnowledgeReferenceService(
+                "http://api", pipe.AuthenticationService("signing-secret", "api-key")
+            ).references_for_event([{"type": "file"}], {})
+            == []
+        )
 
 
 def test_generated_copy_matches_template() -> None:

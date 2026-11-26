@@ -1,0 +1,466 @@
+# Service level agreements and service level annexes, in German, French, Italian and English. Every company and person
+# is made up; every Swiss UID passes its check digit. `expected` holds each value as stored (ISO dates, service levels
+# copied as written), and None where the document does not state it.
+
+- id: sla-de-1
+  type: service_level_agreement
+  title: Anhang_2_SLA_zum_Rahmenvertrag_RV-2025-031.pdf
+  note: A service level annex names its framework contract as a related reference; it runs for the contract's term, so it states no period of its own.
+  text: |
+    # Anhang 2: Service Level Agreement zum Rahmenvertrag RV-2025-031
+
+    zwischen Brunnmatt Informatik AG, Brunnmattstrasse 21, 3007 Bern (Auftragnehmerin)
+    und Stiftung Alterszentrum Lindenhof, Lindenweg 3, 3123 Belp (Auftraggeberin)
+
+    ## 1. Geltungsbereich
+    Dieses Service Level Agreement regelt die Servicequalität für den Betrieb der Arbeitsplatzsysteme und des Netzwerks.
+    Es gilt für die gesamte Laufzeit des Rahmenvertrags und endet mit diesem.
+
+    ## 2. Servicezeiten
+    Montag bis Freitag, 07:00–18:00 Uhr, ausgenommen gesetzliche Feiertage des Kantons Bern.
+
+    ## 3. Service Levels
+
+    | Kennzahl | Zielwert |
+    |---|---|
+    | Verfügbarkeit Netzwerk und Server | 99,5 % pro Kalendermonat |
+    | Reaktionszeit Priorität 1 | 30 Minuten |
+    | Lösungszeit Priorität 1 | 4 Stunden |
+    | Reaktionszeit Priorität 2 | 2 Stunden |
+
+    ## 4. Konventionalstrafe
+    Wird die Verfügbarkeit unterschritten, reduziert sich die monatliche Pauschale um 5 % je angefangenen 0,5 %.
+
+    Bern, 28. November 2025
+
+    Brunnmatt Informatik AG · Stiftung Alterszentrum Lindenhof
+  expected:
+    document_date: "2025-11-28"
+    document_reference_number: null
+    document_issuer: Brunnmatt Informatik AG
+    document_recipient: Stiftung Alterszentrum Lindenhof
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [RV-2025-031]
+    document_notice_period: null
+    document_service_levels:
+      - Verfügbarkeit Netzwerk und Server | 99,5 % pro Kalendermonat
+      - Reaktionszeit Priorität 1 | 30 Minuten
+      - Lösungszeit Priorität 1 | 4 Stunden
+      - Reaktionszeit Priorität 2 | 2 Stunden
+    document_jurisdiction: null
+
+- id: sla-de-2
+  type: service_level_agreement
+  title: SLA_Hosting_SLA-H-2026-04.pdf
+  note: A stand-alone hosting SLA with its service levels in prose, a fixed term and a notice period for its renewal.
+  text: |
+    # Gotthard Datacenter AG
+    Gotthardstrasse 52, 6490 Andermatt · UID CHE-462.200.774
+
+    Weber & Söhne Treuhand AG
+    Marktgasse 15
+    9000 St. Gallen
+
+    ## Service Level Agreement Managed Hosting
+    SLA-Nr. SLA-H-2026-04
+
+    ### 1. Leistung
+    Gotthard Datacenter AG betreibt für Weber & Söhne Treuhand AG zwei virtuelle Server, den Mailserver und die
+    Datensicherung in den Rechenzentren Andermatt und Altdorf.
+
+    ### 2. Service Levels
+    Die Hosting-Plattform erreicht eine Verfügbarkeit von 99,9 % im Kalendermonat, gemessen ohne angekündigte
+    Wartungsfenster. Störungsmeldungen werden rund um die Uhr innerhalb von 15 Minuten bestätigt. Ein Totalausfall wird
+    innerhalb von 2 Stunden behoben. Die Datensicherung erfolgt täglich mit einer Aufbewahrung von 30 Tagen.
+
+    ### 3. Gutschriften
+    Für jede angefangene Stunde ungeplanter Nichtverfügbarkeit über dem Zielwert erhält die Kundin eine Gutschrift von
+    2 % der monatlichen Hostinggebühr, höchstens 30 %.
+
+    ### 4. Laufzeit und Kündigung
+    Laufzeit: 1. Januar 2026 bis 31. Dezember 2027. Das SLA verlängert sich danach jeweils um ein Jahr, sofern es nicht
+    mit einer Frist von 3 Monaten auf das Ende der Laufzeit gekündigt wird.
+
+    Andermatt, 12. Dezember 2025
+  expected:
+    document_date: "2025-12-12"
+    document_reference_number: SLA-H-2026-04
+    document_issuer: Gotthard Datacenter AG
+    document_recipient: Weber & Söhne Treuhand AG
+    document_period_start: "2026-01-01"
+    document_period_end: "2027-12-31"
+    document_related_references: null
+    document_notice_period: 3 Monaten auf das Ende der Laufzeit
+    document_service_levels:
+      - Verfügbarkeit von 99,9 % im Kalendermonat
+      - innerhalb von 15 Minuten bestätigt
+      - innerhalb von 2 Stunden behoben
+      - täglich mit einer Aufbewahrung von 30 Tagen
+    document_jurisdiction: null
+
+- id: sla-de-3
+  type: service_level_agreement
+  title: SLA_Facility_Services_DV-2024-552.pdf
+  note: Looks like a contract (parties, term, termination, signatures) but its substance is service levels and maluses for a service whose price is set in a separate contract, so it is primarily an SLA.
+  text: |
+    # Service Level Agreement Facility Services
+
+    ## Vertragsparteien
+    **Dienstleisterin:** Rheintal Facility Management AG, Salinenstrasse 60, 4310 Rheinfelden
+    **Kundin:** Gesundheitszentrum Fricktal AG, Riburgerstrasse 12, 4310 Rheinfelden
+
+    ## 1. Grundlage
+    Dieses SLA konkretisiert die Leistungsqualität des Dienstleistungsvertrags DV-2024-552. Preise und Zahlungsbedingungen
+    richten sich ausschliesslich nach dem Dienstleistungsvertrag.
+
+    ## 2. Leistungsumfang
+    Unterhaltsreinigung, Haustechnik (Heizung, Lüftung, Sanitär) und Winterdienst für das Areal Riburgerstrasse 12.
+
+    ## 3. Service Levels
+    1. Störungen der Haustechnik: Reaktionszeit 1 Stunde, rund um die Uhr.
+    2. Behebung von Störungen der Lüftung in Operationsräumen innert 4 Stunden.
+    3. Unterhaltsreinigung: Qualitätsgrad mindestens 90 % gemäss monatlicher Stichprobenkontrolle.
+    4. Winterdienst: Zugänge und Notfallzufahrt bis 06:00 Uhr geräumt.
+
+    ## 4. Malus
+    Bei Unterschreitung eines Service Levels in zwei aufeinanderfolgenden Monaten reduziert sich die Monatspauschale um 3 %.
+
+    ## 5. Reporting
+    Die Dienstleisterin liefert bis zum 10. des Folgemonats einen Servicebericht.
+
+    ## 6. Laufzeit und Kündigung
+    Das SLA gilt vom 1. Januar 2026 bis 31. Dezember 2026 und kann mit einer Frist von 3 Monaten auf Ende eines
+    Kalenderquartals gekündigt werden.
+
+    Rheinfelden, 4. Dezember 2025
+
+    | Rheintal Facility Management AG | Gesundheitszentrum Fricktal AG |
+    |---|---|
+    | Marcel Bühler, Geschäftsführer | Dr. Andrea Wyss, CEO |
+  expected:
+    document_date: "2025-12-04"
+    document_reference_number: null
+    document_issuer: Rheintal Facility Management AG
+    document_recipient: Gesundheitszentrum Fricktal AG
+    document_period_start: "2026-01-01"
+    document_period_end: "2026-12-31"
+    document_related_references: [DV-2024-552]
+    document_notice_period: 3 Monaten auf Ende eines Kalenderquartals
+    document_service_levels:
+      - "Reaktionszeit 1 Stunde, rund um die Uhr"
+      - Behebung von Störungen der Lüftung in Operationsräumen innert 4 Stunden
+      - "Qualitätsgrad mindestens 90 % gemäss monatlicher Stichprobenkontrolle"
+      - Zugänge und Notfallzufahrt bis 06:00 Uhr geräumt
+    document_jurisdiction: null
+
+- id: sla-fr-1
+  type: service_level_agreement
+  title: annexe_3_accord_niveau_service_CC-2025-210.pdf
+  note: A French service level annex to a framework contract, with its levels in a table by priority and a fixed term.
+  text: |
+    # Annexe 3 – Accord de niveau de service
+    au contrat-cadre CC-2025-210 relatif au support informatique
+
+    Prestataire : **Alpinfo Support SA**, Rue de la Dixence 20, 1950 Sion
+    Client : **Cave Coopérative du Valais Central**, Route de Riddes 4, 1958 Uvrier
+
+    ## 1. Durée
+    Le présent accord s'applique du 1er mars 2026 au 28 février 2027.
+
+    ## 2. Heures de service
+    Du lundi au vendredi, de 7 h 30 à 17 h 30.
+
+    ## 3. Niveaux de service
+
+    | Priorité | Délai de réaction | Délai de résolution |
+    |---|---|---|
+    | Critique | 30 minutes | 4 heures ouvrables |
+    | Haute | 2 heures | 1 jour ouvrable |
+    | Normale | 1 jour ouvrable | 5 jours ouvrables |
+
+    Le taux de résolution au premier appel visé est d'au moins 70 %.
+
+    ## 4. Rapports
+    Un rapport mensuel sur le respect des niveaux de service est remis au Client.
+
+    ## 5. For
+    Le for juridique est à Sion.
+
+    Sion, le 16 février 2026
+  expected:
+    document_date: "2026-02-16"
+    document_reference_number: null
+    document_issuer: Alpinfo Support SA
+    document_recipient: Cave Coopérative du Valais Central
+    document_period_start: "2026-03-01"
+    document_period_end: "2027-02-28"
+    document_related_references: [CC-2025-210]
+    document_notice_period: null
+    document_service_levels:
+      - Critique | 30 minutes | 4 heures ouvrables
+      - Haute | 2 heures | 1 jour ouvrable
+      - Normale | 1 jour ouvrable | 5 jours ouvrables
+      - taux de résolution au premier appel visé est d'au moins 70 %
+    document_jurisdiction: Sion
+
+- id: sla-fr-2
+  type: service_level_agreement
+  title: accord_niveau_service_hebergement_ANS-2025-12.pdf
+  note: A stand-alone French hosting SLA with its levels in prose; a term given as a start and a number of months stores its start alone.
+  text: |
+    # Helvécloud Hébergement Sàrl
+    Chemin du Closel 5, 1020 Renens · IDE CHE-532.556.965
+
+    Éditions du Jorat SA
+    Route de Berne 112
+    1010 Lausanne
+
+    ## Accord de niveau de service – Hébergement web
+    Référence : ANS-2025-12
+
+    ### Engagements
+    Helvécloud Hébergement Sàrl garantit une disponibilité de 99,8 % par mois pour les sites web et la boutique en ligne
+    du Client. Toute panne signalée est prise en charge dans un délai de 1 heure, 7 jours sur 7. En cas de sinistre, les
+    services sont rétablis dans un délai de 8 heures à partir de la dernière sauvegarde.
+
+    ### Pénalités
+    Si la disponibilité mensuelle est inférieure à l'engagement, 10 % de l'abonnement mensuel est crédité au Client.
+
+    ### Durée
+    L'accord prend effet le 1er décembre 2025 et est conclu pour une durée de 24 mois.
+
+    Renens, le 24 novembre 2025
+  expected:
+    document_date: "2025-11-24"
+    document_reference_number: ANS-2025-12
+    document_issuer: Helvécloud Hébergement Sàrl
+    document_recipient: Éditions du Jorat SA
+    document_period_start: "2025-12-01"
+    document_period_end: null
+    document_related_references: null
+    document_notice_period: null
+    document_service_levels:
+      - disponibilité de 99,8 % par mois
+      - prise en charge dans un délai de 1 heure, 7 jours sur 7
+      - rétablis dans un délai de 8 heures
+    document_jurisdiction: null
+
+- id: sla-it-1
+  type: service_level_agreement
+  title: Allegato_B_SLA_contratto_quadro_CQ-2024-77.pdf
+  note: An Italian service level annex for managed services, referring to its framework contract, with a numeric term.
+  text: |
+    # Allegato B – Accordo sul livello di servizio
+    al contratto quadro n. CQ-2024-77 per servizi gestiti
+
+    Fornitore: **Ceresio Managed Services SA**, Via Pretorio 11, 6900 Lugano
+    Cliente: **Banca Privata Malcantone SA**, Piazza Grande 2, 6982 Agno
+
+    ## 1. Durata
+    Validità: 01.03.2026 – 28.02.2027
+
+    ## 2. Livelli di servizio
+
+    | Indicatore | Valore garantito |
+    |---|---|
+    | Disponibilità dei sistemi core | 99,95 % su base mensile |
+    | Tempo di presa in carico, priorità 1 | 15 minuti |
+    | Tempo di risoluzione, priorità 1 | 2 ore |
+    | Applicazione patch di sicurezza critiche | entro 72 ore |
+
+    ## 3. Penali
+    Per ogni livello non rispettato si applica una penale pari al 5 % del canone mensile, fino a un massimo del 20 %.
+
+    Lugano, 20 febbraio 2026
+  expected:
+    document_date: "2026-02-20"
+    document_reference_number: null
+    document_issuer: Ceresio Managed Services SA
+    document_recipient: Banca Privata Malcantone SA
+    document_period_start: "2026-03-01"
+    document_period_end: "2027-02-28"
+    document_related_references: [CQ-2024-77]
+    document_notice_period: null
+    document_service_levels:
+      - Disponibilità dei sistemi core | 99,95 % su base mensile
+      - Tempo di presa in carico, priorità 1 | 15 minuti
+      - Tempo di risoluzione, priorità 1 | 2 ore
+      - Applicazione patch di sicurezza critiche | entro 72 ore
+    document_jurisdiction: null
+
+- id: sla-it-2
+  type: service_level_agreement
+  title: SLA_manutenzione_impianti_HVAC_2026.pdf
+  note: A stand-alone Italian SLA for building services maintenance, with its levels in prose and a notice period.
+  text: |
+    # Termotecnica Ticino SA
+    Via Industria 8, 6814 Lamone · IDI CHE-352.552.478
+
+    Spettabile
+    Centro Commerciale Vedeggio SA
+    Via Cantonale 50
+    6814 Cadempino
+
+    ## Accordo sul livello di servizio – Manutenzione impianti HVAC
+    SLA n. TT-SLA-2026-03
+
+    ### Livelli di servizio
+    Termotecnica Ticino SA interviene sul posto entro 2 ore dalla segnalazione di un guasto bloccante, 24 ore su 24.
+    I guasti non bloccanti sono risolti entro 3 giorni lavorativi. La manutenzione preventiva è eseguita due volte
+    all'anno, in aprile e in ottobre.
+
+    ### Durata e disdetta
+    L'accordo decorre dal 1.1.2026 al 31.12.2026 e si rinnova tacitamente di anno in anno, salvo disdetta con un
+    preavviso di 3 mesi per la scadenza.
+
+    Lamone, 1 dicembre 2025
+  expected:
+    document_date: "2025-12-01"
+    document_reference_number: TT-SLA-2026-03
+    document_issuer: Termotecnica Ticino SA
+    document_recipient: Centro Commerciale Vedeggio SA
+    document_period_start: "2026-01-01"
+    document_period_end: "2026-12-31"
+    document_related_references: null
+    document_notice_period: 3 mesi per la scadenza
+    document_service_levels:
+      - entro 2 ore dalla segnalazione di un guasto bloccante, 24 ore su 24
+      - I guasti non bloccanti sono risolti entro 3 giorni lavorativi
+      - manutenzione preventiva è eseguita due volte all'anno
+    document_jurisdiction: null
+
+- id: sla-en-1
+  type: service_level_agreement
+  title: Service_Level_Agreement_SLA-0042_Managed_Services.pdf
+  note: A stand-alone English managed services SLA with its levels in a table and a fixed term.
+  text: |
+    # Brightwater Managed IT Ltd
+    7 Harbour Street, Bristol BS1 4QA, United Kingdom
+
+    ## SERVICE LEVEL AGREEMENT
+    SLA Reference: SLA-0042
+    Date: 5 January 2026
+
+    **Service Provider:** Brightwater Managed IT Ltd
+    **Customer:** Fenwick & Rowe Architects LLP, 22 Queen Square, Bath BA1 2HN
+
+    ### 1. Term
+    This SLA applies from 1 February 2026 to 31 January 2028.
+
+    ### 2. Service Levels
+
+    | Metric | Target |
+    |---|---|
+    | Network availability | 99.9% per calendar month |
+    | Priority 1 response time | 15 minutes, 24/7 |
+    | Priority 1 resolution time | 4 hours |
+    | Service desk calls answered | 90% within 60 seconds |
+
+    ### 3. Service Credits
+    Where a target is missed in any month, the Customer is entitled to a service credit of 5% of the monthly charge for
+    that service, up to 25% in total.
+
+    ### 4. Jurisdiction
+    This SLA is governed by Swiss law. The courts of Zurich have exclusive jurisdiction.
+
+    Signed for Brightwater Managed IT Ltd and for Fenwick & Rowe Architects LLP.
+  expected:
+    document_date: "2026-01-05"
+    document_reference_number: SLA-0042
+    document_issuer: Brightwater Managed IT Ltd
+    document_recipient: Fenwick & Rowe Architects LLP
+    document_period_start: "2026-02-01"
+    document_period_end: "2028-01-31"
+    document_related_references: null
+    document_notice_period: null
+    document_service_levels:
+      - Network availability | 99.9% per calendar month
+      - Priority 1 response time | 15 minutes, 24/7
+      - Priority 1 resolution time | 4 hours
+      - Service desk calls answered | 90% within 60 seconds
+    document_jurisdiction: Zurich
+
+- id: sla-en-2
+  type: service_level_agreement
+  title: Schedule_4_Service_Levels_MSA-2025-19.pdf
+  note: An English service level schedule to a master services agreement, with prose service levels and a notice period.
+  text: |
+    # SCHEDULE 4 – SERVICE LEVELS
+    to the Master Services Agreement MSA-2025-19
+
+    between **Kestrel Support Services AG**, Seefeldstrasse 101, 8008 Zürich (the "Supplier")
+    and **Aldridge Instruments AG**, Hohlstrasse 400, 8048 Zürich (the "Customer")
+
+    ## 1. Scope
+    This Schedule sets out the service levels for the IT service desk and on-site support provided under the Agreement.
+
+    ## 2. Service Levels
+    2.1 The service desk is available Monday to Friday, 07:00 to 19:00 CET.
+    2.2 The Supplier shall respond to Priority 1 incidents within 20 minutes and resolve them within 6 hours.
+    2.3 On-site support is provided at the Customer's premises within 4 business hours of a request.
+    2.4 Customer satisfaction shall average at least 4.2 out of 5 per quarter.
+
+    ## 3. Term and Termination
+    This Schedule applies from 1 April 2026 until 31 March 2028. The Customer may terminate it separately on 60 days'
+    written notice if service levels are missed in three consecutive months.
+
+    Zürich, 18 March 2026
+  expected:
+    document_date: "2026-03-18"
+    document_reference_number: null
+    document_issuer: Kestrel Support Services AG
+    document_recipient: Aldridge Instruments AG
+    document_period_start: "2026-04-01"
+    document_period_end: "2028-03-31"
+    document_related_references: [MSA-2025-19]
+    document_notice_period: 60 days' written notice
+    document_service_levels:
+      - Monday to Friday, 07:00 to 19:00 CET
+      - respond to Priority 1 incidents within 20 minutes
+      - resolve them within 6 hours
+      - within 4 business hours of a request
+      - at least 4.2 out of 5 per quarter
+    document_jurisdiction: null
+
+- id: sla-de-leistungsbeschreibung-1
+  type: service_level_agreement
+  title: Anhang_B_Leistungsbeschreibung_Managed_Backup.pdf
+  note: A "Leistungsbeschreibung" annex that commits to service levels is an SLA, not documentation of the service.
+  text: |
+    # Anhang B – Leistungsbeschreibung und Service Levels Managed Backup
+    zum Dienstleistungsvertrag DV-2025-208
+
+    Anbieterin: Datenhafen Ost AG, Rorschacherstrasse 50, 9000 St. Gallen
+    Kundin: Gemeindeverwaltung Wilerberg, Dorfplatz 1, 9535 Wilerberg
+
+    ## 1. Leistungsumfang
+    Die Anbieterin sichert jede Nacht die Server und Datenbanken der Kundin in ihr Rechenzentrum in St. Gallen.
+    Sicherungen werden 30 Tage aufbewahrt, Monatssicherungen 12 Monate.
+
+    ## 2. Service Levels
+
+    | Kennzahl | Zusage |
+    |---|---|
+    | Erfolgreiche tägliche Sicherung | 98 % der Sicherungen pro Monat |
+    | Wiederherstellung einzelner Dateien | innert 4 Stunden |
+    | Reaktionszeit bei Störungen | 1 Stunde während der Servicezeiten |
+
+    ## 3. Gutschriften
+    Wird eine Zusage verfehlt, schreibt die Anbieterin der Kundin 10 % der Monatspauschale gut.
+
+    St. Gallen, 12. August 2025
+  expected:
+    document_date: "2025-08-12"
+    document_reference_number: null
+    document_issuer: Datenhafen Ost AG
+    document_recipient: Gemeindeverwaltung Wilerberg
+    document_period_start: null
+    document_period_end: null
+    document_related_references: [DV-2025-208]
+    document_notice_period: null
+    document_service_levels:
+      - Erfolgreiche tägliche Sicherung | 98 % der Sicherungen pro Monat
+      - Wiederherstellung einzelner Dateien | innert 4 Stunden
+      - Reaktionszeit bei Störungen | 1 Stunde während der Servicezeiten
+    document_jurisdiction: null

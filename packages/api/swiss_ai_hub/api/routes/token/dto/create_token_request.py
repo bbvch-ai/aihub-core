@@ -25,8 +25,4 @@ class CreateTokenRequest(BaseModel):
             raise ValueError("Expiry date must be in the future")
         return v
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {"name": "My API Token", "expiry_date": "2025-12-31T23:59:59Z", "roles": ["read", "write"]}
-        }
-    }
+    model_config = {"json_schema_extra": {"example": {"name": "My API Token", "expiry_date": "2027-12-31T23:59:59Z"}}}

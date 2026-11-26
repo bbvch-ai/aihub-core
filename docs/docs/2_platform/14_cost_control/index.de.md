@@ -1,6 +1,6 @@
 ---
 title: Kostenkontrolle
-source_sha: d4cc52b5dacec3a4851b902216768261e1ad67c812b1176456c2c7225c1cec43
+source_sha: c414a365e36714dcd6efe19a491b149e55021963ef457522933ef896893947cf
 ---
 
 # Kostenkontrolle
@@ -15,9 +15,9 @@ die Modelle verarbeiten.
 
 Kostenmodell-Vergleich:
 
-| Modell              | Typ                | Kostenstruktur                                                                                                                                                                     |
-| :------------------ | :----------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API (Pay-per-token) | Variable OPEX      | Bezahlen Sie Anbieter (OpenAI, Google) für jedes verarbeitete Token                                                                                                                |
+| Modell              | Typ                | Kostenstruktur                                                                                                                                                                   |
+| :------------------ | :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API (Pay-per-token) | Variable OPEX      | Bezahlen Sie Anbieter (OpenAI, Google) für jedes verarbeitete Token                                                                                                              |
 | Lokal gehostet      | CAPEX + Feste OPEX | Investitionskosten für Hardware (GPUs, Server) plus laufende Kosten für Strom und MLOps-Personal. Die Kosten pro Token betragen 0, aber die festen Infrastrukturkosten sind hoch |
 
 Jede Interaktion verbraucht verschiedene Arten von Tokens zu unterschiedlichen Preisen:

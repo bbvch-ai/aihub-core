@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from typing import ClassVar
 
 from swiss_ai_hub.core.generative_ai.document.classification.date_precision import DatePrecision
@@ -48,20 +49,131 @@ class PeriodTextParser:
         _P.MONTH_NAME_DAY_PATTERN,
     )
     _MONTH_NAME: ClassVar[re.Pattern[str]] = re.compile(rf"\b(?:{_P.MONTH_PATTERN})\b")
+    _TERM_COMPOUND: ClassVar[str] = r"(?:vertrags|miet|pacht|laufzeit|abonnements?|arbeits|anstellungs|frist)?"
+    """German writes an end of a term as one word (Mietende, Vertragsablauf); only these prefixes count, since a bare
+    "-ende" also ends adjectives such as "geltende" or "folgende"."""
+    _START_WORDS: ClassVar[re.Pattern[str]] = re.compile(
+        r"\b(?:ab|seit|\w*beginn\w*|\w*antritt|\w*eintritt\w*|in kraft|dès|à partir|début|prend effet|en vigueur|"
+        r"a partire|dal|decorr\w*|inizio|in vigore|from|start\w*|commenc\w*|effective)\b"
+    )
+    _END_WORDS: ClassVar[re.Pattern[str]] = re.compile(
+        rf"\b(?:bis|endet|{_TERM_COMPOUND}ende|{_TERM_COMPOUND}ablauf|jusqu|fin|échéance|expir\w*|fino|scad\w*|"
+        r"termina|until|till|through|ends?)\b"
+    )
+    _TAKES_EFFECT: ClassVar[re.Pattern[str]] = re.compile(
+        r"\b(?:in kraft|en vigueur|in vigore|takes effect|comes into force)\b"
+    )
+    _DAY_AND_MONTH_NAME: ClassVar[re.Pattern[str]] = re.compile(
+        rf"(?:\b\d{{1,2}}\W{{0,2}}\s*)?\b(?:{_P.MONTH_PATTERN})\b"
+    )
+    _YEAR: ClassVar[re.Pattern[str]] = re.compile(r"\b\d{4}\b")
+    _ORDINAL: ClassVar[re.Pattern[str]] = re.compile(r"\b(\d{1,2})((?:er|re|st|nd|rd|th|o)\b|°)", re.IGNORECASE)
+    """An ordinal suffix, blanked out at its own length so a date is found where the text writes "1er" or "1°"."""
+    _REACH: ClassVar[int] = 60
+    _SENTENCE_END: ClassVar[re.Pattern[str]] = re.compile(r"(?:(?<=\w{4})(?<!inkl)(?<!zzgl)\.|[!?;])\s")
+    """A full stop after a word of four letters or more ends a sentence; shorter words ("ca.", "Nr.", "z. B.") and
+    "inkl." / "zzgl." are abbreviations, so "bis inkl. 31.12.2026" keeps its "bis"."""
+    _EMPHASIS: ClassVar[re.Pattern[str]] = re.compile(r"[*_]")
+    _OPEN_ENDED: ClassVar[re.Pattern[str]] = re.compile(
+        r"unbefristet|unbestimmte zeit|auf weiteres|indéterminée|indeterminat|indefinite|until terminated|"
+        r"until further notice|until (?:they are|it is) completed"
+    )
 
     @classmethod
     def parse(cls, raw: str | None, slash_order: SlashDateOrder | None = None) -> NormalizedDate | None:
         if not raw:
             return None
         text = DateTextParser.normalized(raw)
-        if written_range := cls._shortened_range(text) or cls._month_range(text):
+        if written_range := cls._written_range(text, slash_order):
             return written_range
         dates = cls._full_dates(text, slash_order)
-        if len(dates) >= 2:
-            return cls._range(dates[0], dates[-1])
         if len(dates) + len(cls._MONTH_NAME.findall(cls._without_full_dates(text))) >= 2:
             return None
         return DateTextParser.parse(raw, slash_order)
+
+    @classmethod
+    def dates_written(cls, raw: str) -> list[str]:
+        """Each complete date in the text as written, in order, so each can be checked against the document."""
+        text = unicodedata.normalize("NFKC", raw)
+        searched = cls._ORDINAL.sub(lambda match: match[1] + " " * len(match[2]), text)
+        spans = sorted(
+            {
+                (match.start(), match.end())
+                for pattern in cls._FULL_DATE_PATTERNS
+                for match in re.finditer(pattern.pattern, searched, re.IGNORECASE)
+            }
+        )
+        kept: list[tuple[int, int]] = []
+        for start, end in spans:
+            if kept and start < kept[-1][1]:
+                if end - start > kept[-1][1] - kept[-1][0]:
+                    kept[-1] = (start, end)
+                continue
+            kept.append((start, end))
+        return [text[start:end] for start, end in kept]
+
+    @classmethod
+    def stated_ends(
+        cls, raw: str | None, slash_order: SlashDateOrder | None = None, context: str | None = None
+    ) -> tuple[bool, bool]:
+        """Whether the text states the period's start and its end.
+
+        A single date is the whole period unless a word next to it says which end it is: "ab 1. April 2025", "tritt am
+        1. März 2026 in Kraft" or a term "auf unbestimmte Zeit" state only the start, "bis 31. Dezember 2026" only the
+        end. Only the words between the date and its neighbouring numbers count, so "Lieferdatum 14.03.2025, zahlbar
+        bis 13.04.2025" stays one day. The copy is read first, then the document line it came from, since a model
+        often copies the date without the word.
+        """
+        if not raw:
+            return False, False
+        text = DateTextParser.normalized(raw)
+        if cls._written_range(text, slash_order):
+            return True, True
+        if ends := cls._ends_named_around(text, *cls._date_span(text)):
+            return ends
+        surrounding = DateTextParser.normalized(cls._EMPHASIS.sub("", context)) if context else ""
+        position = surrounding.find(text)
+        if position >= 0 and (ends := cls._ends_named_around(surrounding, position, position + len(text))):
+            return ends
+        return True, True
+
+    @classmethod
+    def _ends_named_around(cls, text: str, date_start: int, date_end: int) -> tuple[bool, bool] | None:
+        before = cls._SENTENCE_END.split(re.split(r"\d", text[max(0, date_start - cls._REACH) : date_start])[-1])[-1]
+        after = re.split(r"\d", text[date_end : date_end + cls._REACH])[0]
+        if cls._OPEN_ENDED.search(f"{before} {after}") or cls._TAKES_EFFECT.search(after):
+            return True, False
+        nearest = cls._named_ends(before)[-1:]
+        return (nearest[0], not nearest[0]) if nearest else None
+
+    @classmethod
+    def _named_ends(cls, text: str) -> list[bool]:
+        """For each word naming an end of a period, in the order written, whether it names the start."""
+        return [
+            starts
+            for _, starts in sorted(
+                (match.start(), pattern is cls._START_WORDS)
+                for pattern in (cls._START_WORDS, cls._END_WORDS)
+                for match in pattern.finditer(text)
+            )
+        ]
+
+    @classmethod
+    def _date_span(cls, text: str) -> tuple[int, int]:
+        """Where the date stands: its first complete date, else its first month name with any day before it, else its
+        first year."""
+        for pattern in (*cls._FULL_DATE_PATTERNS, cls._DAY_AND_MONTH_NAME, cls._YEAR):
+            if match := min(pattern.finditer(text), key=lambda found: found.start(), default=None):
+                return match.start(), match.end()
+        return len(text), len(text)
+
+    @classmethod
+    def _written_range(cls, text: str, slash_order: SlashDateOrder | None) -> NormalizedDate | None:
+        """A range the text writes out, in a shortened form or as two complete dates."""
+        if written_range := cls._shortened_range(text) or cls._month_range(text):
+            return written_range
+        dates = cls._full_dates(text, slash_order)
+        return cls._range(dates[0], dates[-1]) if len(dates) >= 2 else None
 
     @classmethod
     def _full_dates(cls, text: str, slash_order: SlashDateOrder | None) -> list[NormalizedDate]:

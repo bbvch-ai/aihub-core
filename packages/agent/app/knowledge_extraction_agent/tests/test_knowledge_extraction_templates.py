@@ -2,6 +2,7 @@
 since a setting outside it would be dropped silently or saved as a profile the Admin UI cannot edit."""
 
 import pytest
+from swiss_ai_hub.core.form import Form, transform_formkit_arrays
 
 from app.knowledge_extraction_agent.templates import get_all_templates
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent import (
@@ -41,8 +42,20 @@ def test_the_extraction_settings_survive_publishing(template: KnowledgeExtractio
     assert template_data["tool_loop"]["max_tool_calls"] == template.tool_loop.max_tool_calls
 
 
-def test_the_document_tools_stay_on_and_narrowing_whatever_a_template_says(template: KnowledgeExtractionAgentConfig):
-    """Both are fixed by the blueprint's form, so a profile can never switch them off."""
-    published = _PUBLISHED_CONFIG.knowledge_documents
+def test_a_template_saved_and_loaded_back_keeps_the_document_tools_on_and_narrowing(
+    template: KnowledgeExtractionAgentConfig,
+):
+    """The Admin UI stores only the form's inputs, so the profile is loaded back the way the dispatcher loads it."""
+    stored = template.to_template_data(_PUBLISHED_CONFIG).model_dump()
+    stored["knowledge_documents"] = {
+        key: value for key, value in stored["knowledge_documents"].items() if key in ("path_glob", "discovery")
+    }
 
-    assert (published.enabled, published.narrow_references) == (True, True)
+    loaded = KnowledgeExtractionAgentConfig.model_validate(
+        transform_formkit_arrays(
+            Form.deep_merge(KnowledgeExtractionAgentConfig.as_form().get_non_configurable_values(), stored)
+        )
+    )
+
+    assert (loaded.knowledge_documents.enabled, loaded.knowledge_documents.narrow_references) == (True, True)
+    assert loaded.knowledge_tool.every_readable_collection is False

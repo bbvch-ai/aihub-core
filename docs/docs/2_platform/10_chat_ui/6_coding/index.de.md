@@ -58,8 +58,8 @@ In-Browser-WebAssembly, leichtgewichtig, auf die mitgelieferten Packages beschr�
 dem Server zu schreiben**. Diagramme kommen auf diesem Pfad als Inline-Bilder zurück, nicht als Dateien.
 
 Eine Datei, die das Modell auf dem Pyodide-Pfad speichert, landet in `/mnt/uploads`, einem Ordner, der nur in Ihrem
-Browser existiert. Sie hat keine Webadresse; laden Sie sie über den Tab **Files** im **Controls**-Panel des Chats herunter
-(das Regler-Symbol oben rechts). AI-Hub ersetzt den Code-Interpreter-Prompt von OpenWebUI, damit das Modell den
+Browser existiert. Sie hat keine Webadresse; laden Sie sie über den Tab **Files** im **Controls**-Panel des Chats
+herunter (das Regler-Symbol oben rechts). AI-Hub ersetzt den Code-Interpreter-Prompt von OpenWebUI, damit das Modell den
 Dateinamen nennt und auf diesen Tab verweist, statt einen `/mnt/uploads/...`-Link zu schreiben, der eine Seite „404: Not
 Found" öffnen würde. Der Ersatz ist `infra/configs/openwebui/code-interpreter-prompt.txt` und wird von `openwebui-init`
 bei jedem Start geschrieben; eine Änderung unter Admin → Settings → Code Execution überlebt deshalb keinen Neustart. Er

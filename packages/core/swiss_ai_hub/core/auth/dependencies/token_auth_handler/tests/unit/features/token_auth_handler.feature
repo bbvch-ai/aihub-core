@@ -7,6 +7,7 @@ Feature: TokenAuthHandler
     And the returned user should have preferred_username "token@example.com"
     And the returned user should have oid matching the token's user id
     And the returned user should have roles "user" and "editor"
+    And the token should be marked as used
 
   Scenario: Token with invalid format is rejected
     Given an invalid token format "not_a_valid_token"
@@ -29,3 +30,4 @@ Feature: TokenAuthHandler
     And I set the token expiry to a past time
     When I invoke the TokenAuthHandler with an Authorization header using the token expecting error
     Then I should receive an HTTP error with detail "Expired token: expiry is in the past"
+    And the token should not be marked as used

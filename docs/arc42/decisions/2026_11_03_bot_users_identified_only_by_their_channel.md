@@ -3,9 +3,9 @@
 ## Context
 
 `packages/bot` receives Bot Framework activities from Azure Bot Service and answers them by running an agent or an LLM
-chat as the platform user behind the message. That user is the Keycloak account found by email
-(ADR `2026_06_08_no_bot_first_keycloak_provisioning`). Each endpoint is configured by a `PathEntity` holding the Azure
-bot's credentials (`APP_ID`, `APP_PASSWORD`, `APP_TENANTID`) and, for Slack, a bot token.
+chat as the platform user behind the message. That user is the Keycloak account found by email (ADR
+`2026_06_08_no_bot_first_keycloak_provisioning`). Each endpoint is configured by a `PathEntity` holding the Azure bot's
+credentials (`APP_ID`, `APP_PASSWORD`, `APP_TENANTID`) and, for Slack, a bot token.
 
 Three things were missing (aihub-core-private#378):
 

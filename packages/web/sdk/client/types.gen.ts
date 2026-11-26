@@ -6568,6 +6568,12 @@ export type ExtractRecordsEvent = {
    */
   instructions?: string | null;
   /**
+   * Document Condition
+   *
+   * Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows, and never the period, which is the selection's `path_date_range`.
+   */
+  document_condition?: string | null;
+  /**
    * Row Terms
    *
    * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
@@ -8317,7 +8323,7 @@ export type HumanInTheLoopInputResponseEvent = {
  *
  * Clients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows
  * `question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to
- * five questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
+ * six questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
  */
 export type HumanInTheLoopQuestionsRequestEvent = {
   /**
@@ -10626,7 +10632,7 @@ export type KnowledgeDocumentCriteria = {
   /**
    * Path Glob
    *
-   * Glob on the path relative to the collection, e.g. 'invoices/2025**'.
+   * Glob on the path relative to the collection, e.g. 'invoices**' or 'contracts*.pdf'.
    */
   path_glob?: string | null;
   /**
@@ -10638,7 +10644,7 @@ export type KnowledgeDocumentCriteria = {
   /**
    * Content Query
    *
-   * Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a year, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.
+   * Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.
    */
   content_query?: string | null;
   /**
@@ -10662,7 +10668,8 @@ export type KnowledgeDocumentCriteria = {
  * criteria.
  *
  * Describing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob
- * and limits when it resolves the set, so a model can only narrow what it was given.
+ * and limits when it resolves the set, so a model can only narrow what it was given. A selection has one period,
+ * applied after the entries to all they selected, because a request names its period once.
  */
 export type KnowledgeDocumentSelection = {
   /**
@@ -10671,6 +10678,10 @@ export type KnowledgeDocumentSelection = {
    * A document is selected when it meets every condition of at least one entry.
    */
   any_of: Array<KnowledgeDocumentCriteria>;
+  /**
+   * Leaves out the selected documents whose path dates them outside this period, such as a year folder, 2026-03 or 20260406 in a file name; a document whose path gives no clear date is kept.
+   */
+  path_date_range?: PathDateRange | null;
 };
 
 /**
@@ -15024,6 +15035,28 @@ export type Password = {
 };
 
 /**
+ * PathDateRange
+ *
+ * A period the wanted documents are dated in, matched by code against the dates their paths give them.
+ *
+ * Either bound may be open ("since March 2025"), never both. Bounds are inclusive days.
+ */
+export type PathDateRange = {
+  /**
+   * Start
+   *
+   * First day of the period; null when it has no start.
+   */
+  start?: Date | null;
+  /**
+   * End
+   *
+   * Last day of the period; null when it has no end.
+   */
+  end?: Date | null;
+};
+
+/**
  * ProcessClassDTO
  *
  * Encapsulates the data transfer object (DTO) for a process class.
@@ -16228,6 +16261,12 @@ export type RecordsExtractedEvent = {
    * Documents that could not be extracted.
    */
   failed_count?: number;
+  /**
+   * Skipped Count
+   *
+   * Documents left out because they clearly fail the document condition; never counted as failed.
+   */
+  skipped_count?: number;
   /**
    * Row Count
    *
@@ -19929,17 +19968,23 @@ export type TokenResponse = {
    */
   name: string;
   /**
+   * Created At
+   *
+   * When the token was created
+   */
+  created_at: Date;
+  /**
    * Expiry Date
    *
    * Expiry date
    */
   expiry_date: Date;
   /**
-   * Roles
+   * Last Used At
    *
-   * List of roles granted to the access token
+   * When the token last authenticated a request, to within five minutes; null if never
    */
-  roles: Array<string>;
+  last_used_at: Date | null;
 };
 
 /**
@@ -25187,6 +25232,12 @@ export type ExtractRecordsEventWritable = {
    */
   instructions?: string | null;
   /**
+   * Document Condition
+   *
+   * Which documents count, e.g. 'only contracts with Hooli'; judged on the start of each document, and a document that clearly fails it yields no rows and is not read further. Never a condition on single rows, and never the period, which is the selection's `path_date_range`.
+   */
+  document_condition?: string | null;
+  /**
    * Row Terms
    *
    * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
@@ -26286,7 +26337,7 @@ export type HumanInTheLoopInputResponseEventWritable = {
  *
  * Clients with a dialog show the questions and answer with the JSON of the chosen answers; every other client shows
  * `question` as text, and the next chat message answers it, so the request works everywhere a chat request does. Up to
- * five questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
+ * six questions: OpenWebUI's dialog steps through any number, only its own ask_user tool stops at three.
  */
 export type HumanInTheLoopQuestionsRequestEventWritable = {
   /**
@@ -31162,6 +31213,12 @@ export type RecordsExtractedEventWritable = {
    * Documents that could not be extracted.
    */
   failed_count?: number;
+  /**
+   * Skipped Count
+   *
+   * Documents left out because they clearly fail the document condition; never counted as failed.
+   */
+  skipped_count?: number;
   /**
    * Row Count
    *

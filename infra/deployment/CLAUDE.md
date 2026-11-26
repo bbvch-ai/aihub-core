@@ -512,6 +512,20 @@ query-groups, view-groups, view-realm, view-clients
 (`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status. Role changes here now reach running
 deployments on the next start.
 
+**External knowledge writer** (`managed/30-clients.json.j2`): a client-credentials client for external systems that
+upload documents into tenant knowledge databases, its id and secret from `KEYCLOAK_KNOWLEDGE_WRITER_CLIENT_ID` /
+`_SECRET`. It needs the `tenants` default scope and the `account` audience mapper, or the API rejects its tokens. Never
+create such a client by hand: keycloak-config-cli deletes every client not in this file. Its tenant groups and tenant
+role are operational config, see `docs/docs/6_code_deep_dive/2_keycloak_configuration/`. Set them up BEFORE the writer's
+first API call:
+
+- **Upload role.** In each target tenant, give the service-account user a role that holds only
+  `aihub.user.service.knowledge` (the service gate) and `aihub.admin.knowledge.<db>.<namespace>` (what `initiate` and
+  `validate` require). `AIHubUser` gets 403. `AIHubKnowledgeAdmin` can also create and delete databases.
+- **Startup tenant.** `/tenants/<startup tenant>` is a realm default group, so the service-account user starts out in
+  the startup tenant. A user without roles in a tenant gets the signup roles on its first call there, or the admin roles
+  if it is the tenant's first member. Remove the user from that group, or give it a harmless role there first.
+
 **AIHubAccess gate**: `Post Broker Login - AIHubAccess Check` only runs for users brokered through an external IdP, so
 `browser-aihub` carries its own CONDITIONAL `aihub-access-gate-browser` sub-flow (deny unless the user has
 `AIHubAccess`) right after the REQUIRED authenticate wrapper and before the Langfuse gate. It is the only `AIHubAccess`
@@ -591,11 +605,11 @@ and the VM's real `host.name`), and a second tailer would ingest every line twic
   included: `litellm` itself carries no Traefik labels and sits on `proxy` only for outbound traffic. Do not give it a
   public router again: a user's LiteLLM key used from outside skips the Hub's model access rules, and the keys derived
   from the user id alone in earlier releases are still valid. External clients use the Hub's `/api/v1/active/openai`
-- The `api` container carries a second router, `api-figures` (priority 6100): `/hub-figures/` on the **OpenWebUI**
-  host, rewritten by `replacePathRegex` to the API's figure route, so the browser sends OpenWebUI's session cookie with
-  figure requests from sources. The regex accepts only a tenant id, a 24-character thread id and a bucket name before
-  the key; keep it that strict. k8s deployments need the same rule in their ingress, and the `dev` stage (no Traefik)
-  has none, so figures show only on `local`/`build` and deployed stages
+- The `api` container carries a second router, `api-figures` (priority 6100): `/hub-figures/` on the **OpenWebUI** host,
+  rewritten by `replacePathRegex` to the API's figure route, so the browser sends OpenWebUI's session cookie with figure
+  requests from sources. The regex accepts only a tenant id, a 24-character thread id and a bucket name before the key;
+  keep it that strict. k8s deployments need the same rule in their ingress, and the `dev` stage (no Traefik) has none,
+  so figures show only on `local`/`build` and deployed stages
 - The oauth2-proxy image is upstream `quay.io/oauth2-proxy/oauth2-proxy`, mirrored under the pinned tag in
   `compose-config.yml`. Our only change, the sign-in button colour, is `templates/oauth2-proxy/sign_in.html`, mounted
   via `OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR`: on a version bump, copy upstream's `pkg/app/pagewriter/sign_in.html` of the

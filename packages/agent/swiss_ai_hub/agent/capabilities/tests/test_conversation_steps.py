@@ -19,7 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     UserUploadedFile,
 )
 from swiss_ai_hub.core.generative_ai import LLMConfig, merge_consecutive_messages
-from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
@@ -157,6 +157,7 @@ async def test_compose_puts_blocks_behind_the_system_head_in_order_and_trims_the
             LLMWrappingAgent(),
             request=Conversation.compose([system, turn], blocks=[first, second]),
             conversation=_config(number_of_input_tokens=1_000),
+            t=LocaleHandler("en"),
         )
         assert composed.history == [*merge_consecutive_messages([system, first[0], second[0]]), turn]
         assert [message.role for message in composed.history] == [MessageRole.SYSTEM, MessageRole.USER], (
@@ -167,6 +168,7 @@ async def test_compose_puts_blocks_behind_the_system_head_in_order_and_trims_the
             LLMWrappingAgent(),
             request=Conversation.compose([system, turn], blocks=[first, second]),
             conversation=_config(number_of_input_tokens=60),
+            t=LocaleHandler("en"),
         )
         assert trimmed.history == [system, turn], "the blocks give way, never the turn or the head"
 
@@ -185,6 +187,7 @@ async def test_compose_trims_the_oldest_turns_before_any_block():
             LLMWrappingAgent(),
             request=Conversation.compose([system, *older, question], blocks=[attached_file, documents]),
             conversation=_config(number_of_input_tokens=900),
+            t=LocaleHandler("en"),
         )
 
     head, *turns = composed.history
@@ -201,6 +204,7 @@ async def test_compose_passes_the_history_through_when_every_block_is_empty():
         LLMWrappingAgent(),
         request=ComposeContextEvent(history=history, blocks=[[], []]),
         conversation=_config(),
+        t=LocaleHandler("en"),
     )
     assert composed.history == history
 
@@ -217,6 +221,7 @@ async def test_compose_re_limits_instructions_added_to_the_history_even_without_
             LLMWrappingAgent(),
             request=ComposeContextEvent(history=[instructions, *older, question], blocks=[[], []]),
             conversation=_config(number_of_input_tokens=300),
+            t=LocaleHandler("en"),
         )
 
     assert composed.history == [instructions, question]
@@ -234,6 +239,7 @@ async def test_compose_drops_a_block_whole_rather_than_keeping_its_notes_without
             LLMWrappingAgent(),
             request=Conversation.compose([system, question], blocks=[attached_file]),
             conversation=_config(number_of_input_tokens=200),
+            t=LocaleHandler("en"),
         )
 
     assert composed.history == [system, question]
@@ -250,6 +256,7 @@ async def test_compose_drops_an_earlier_turn_too_long_for_the_room_left():
             LLMWrappingAgent(),
             request=Conversation.compose([system, oversized, question], blocks=[]),
             conversation=_config(number_of_input_tokens=200),
+            t=LocaleHandler("en"),
         )
 
     assert composed.history == [system, question]
@@ -263,6 +270,7 @@ async def test_compose_shows_consecutive_turns_of_one_role_merged_as_the_model_r
         LLMWrappingAgent(),
         request=Conversation.compose([first, second], blocks=[]),
         conversation=_config(),
+        t=LocaleHandler("en"),
     )
 
     assert composed.history == merge_consecutive_messages([first, second])

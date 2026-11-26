@@ -25,6 +25,7 @@ from tenacity import (
 
 from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import PAGE_BREAK
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_file_result import MineruFileResult
+from swiss_ai_hub.core.generative_ai.document.loaders.mineru_inline_latex import MineruInlineLatex
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_page_breaks import MineruPageBreaks
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_page_margins import MineruPageMargins
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_parse_cache import MineruParseCache
@@ -489,6 +490,7 @@ class MineruLoader(BaseReader):
         # Converting first would leave every table wrapped twice as <table><table>...</table></table>.
         md_content = wrap_markdown_tables(md_content)
         md_content = HtmlTableConverter.convert(md_content)
+        md_content = MineruInlineLatex.as_text(md_content)
 
         metadata = {
             NUMBER_OF_PAGES: result.num_pages,

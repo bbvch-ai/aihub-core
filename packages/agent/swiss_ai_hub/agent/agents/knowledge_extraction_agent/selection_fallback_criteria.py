@@ -17,7 +17,7 @@ class SelectionFallbackCriteria(BaseModel):
     path_glob: Annotated[str | None, Field(description="Glob on the path, e.g. 'contracts/**'.")] = None
     path_regex: Annotated[str | None, Field(description="Regular expression searched anywhere in the path.")] = None
     content_query: Annotated[
-        str | None, Field(description="Text identifying the documents, such as a supplier, a number or a year.")
+        str | None, Field(description="Text identifying the documents, such as a supplier or a number.")
     ] = None
     content_is_regex: Annotated[bool, Field(description="Whether `content_query` is a regular expression.")] = False
 

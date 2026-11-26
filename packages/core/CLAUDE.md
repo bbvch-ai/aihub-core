@@ -217,7 +217,7 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   ├── StartEvent, StopEvent (workflow lifecycle)                 [events/agent/control/]
 │   ├── HumanInTheLoopRequest/Response (HITL)                     [events/agent/hitl/]
 │   │   ├── Input, Confirmation, Chat requests (popup, yes/no, next chat message answers)
-│   │   └── QuestionsRequest (a Chat request + ≤5 HumanInTheLoopChoiceQuestion: OpenWebUI's dialog, else `question` as text)
+│   │   └── QuestionsRequest (a Chat request + ≤6 HumanInTheLoopChoiceQuestion: OpenWebUI's dialog, else `question` as text)
 │   ├── AgentInTheLoopRequest/Response (AITL)                     [events/agent/aitl/]
 │   ├── BotInTheLoopRequest/Response (BITL)                       [events/agent/bitl/]
 │   ├── SemanticEvent (OpenInference tracing)                     [events/agent/semantic/]
@@ -464,14 +464,26 @@ Key methods:
 
 `AuthHandler` (abstract) → extracts/validates credentials from HTTP requests → returns `UserIdentity`.
 
-| Handler                       | Mechanism                                    |
-| ----------------------------- | -------------------------------------------- |
-| `KeycloakAuthHandler`         | Keycloak OIDC (JWT + JWKS)                   |
-| `TokenAuthHandler`            | Simple token validation                      |
-| `BearerAuthHandler`           | Bearer token header                          |
-| `TokenAndOauth2Handler`       | Combined token + OAuth2                      |
-| `OpenWebuiAuthHandler`        | OpenWebUI session integration                |
-| `OpenWebuiSessionAuthHandler` | OpenWebUI's session cookie, one route only   |
+| Handler                       | Mechanism                                  |
+| ----------------------------- | ------------------------------------------ |
+| `KeycloakAuthHandler`         | Keycloak OIDC (JWT + JWKS)                 |
+| `TokenAuthHandler`            | Simple token validation                    |
+| `BearerAuthHandler`           | Bearer token header                        |
+| `TokenAndOauth2Handler`       | Combined token + OAuth2                    |
+| `OpenWebuiAuthHandler`        | OpenWebUI pipe's signed user headers       |
+| `OpenWebuiSessionAuthHandler` | OpenWebUI's session cookie, one route only |
+
+`OpenWebuiAuthHandler` checks the user the OpenWebUI pipe functions name next to OpenWebUI's bearer, the superuser's
+token: an HMAC-SHA256, keyed by `AUTH_OPEN_WEBUI_SIGNING_SECRET`, over
+`ts:<unix seconds>,name:<url-quoted name>,email:<email>`, refused once the timestamp is more than
+`SIGNATURE_MAX_AGE_SECONDS` (300) from the API's clock either way. A refused signature raises
+`OpenWebuiSignatureRejectedError`, which `TokenAndOauth2Handler` re-raises instead of trying `TokenAuthHandler`, as that
+would answer as the superuser. Requests with no signature, such as OpenWebUI's own OpenAI connections forwarding
+unsigned user headers, still fall through. The pipes sign each request as httpx sends it
+(`AuthenticationService.sign_request` passed as the client's `auth`), never when building headers, because a dialog's
+answer reuses the headers of the turn that opened it. Change the signed message in the handler and both
+`infra/deployment/templates/openwebui_functions/{aihub,openai}_pipeline.py` together; `test_pipe_signed_headers.py`
+checks that they agree.
 
 `OpenWebuiSessionAuthHandler` identifies whoever views something the API serves on OpenWebUI's own origin (knowledge
 figures in sources, ADR `2026_11_17_knowledge_figures_served_through_openwebui_session_proxy`): it checks the `token`
@@ -640,21 +652,21 @@ Real-time event emission for streaming LLM output to the UI:
 
 ## Generative AI Utilities
 
-| Module                   | Purpose                                    | Key Entry Points                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `memory/`                | Agent-scoped memory (user + org)           | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `retrieval/`             | RAG node retrieval                         | `retrieve_nodes()` (dense results below `KnowledgeRetrieverConfig.min_similarity`, default 0.35, are dropped before neighbours and summaries are fetched; ADR `2026_10_12`), `condense_standalone_question()`                                                                                                                                                                                                                                                                                                                                                 |
-| `retrievers/`            | Vector store abstraction                   | `KnowledgeRetriever`, `BaseRetriever`, `MetadataFilterPair.to_llama_index()` (runtime filter: a text value matches a scalar or a list item, numbers by equality, booleans as `"true"`/`"false"` because llama-index filters reject them)                                                                                                                                                                                                                                                                                                                      |
-| `knowledge_documents/`   | Whole-document read access                 | `KnowledgeDocumentReader.list_documents()`, `.load_document()`, `.load_document_by_path()`, `KnowledgeDocumentListing.matching_glob()` / `.matching_regex()`, `KnowledgeContentSearch.search()`                                                                                                                                                                                                                                                                                                                                                               |
-| `rerank/`                | Result reranking                           | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `guards/`                | Input/output guards                        | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `processors/`            | Retrieval post-processors                  | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `resources/`             | LLM/embedding model configs, token budgets | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`; `ModelTokenBudget` / `ModelTokenizer` (`tokenizers/`): an embedding or reranking model whose LiteLLM entry declares `aihub_tokenizer` and `aihub_input_overhead_tokens` is counted in-process with its vendored tokenizer (`tokenizers/vendored/`, own MIT `LICENSE` + `SOURCE.json`); undeclared models keep tiktoken and the safety factors. `LiteLLMBase.token_budget()` builds it, `token_counter` stays tiktoken (ADR `2026_10_30_count_tokens_with_the_models_own_tokenizer`)              |
-| `document/`              | Document loading and parsing               | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` and `MarkItDownLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache` / `MarkItDownParseCache`; the agent's `AttachedFileSectionCache` keeps attached files' sections and embeddings there under `attached-files/`, through the exported `ParseCacheBucket`; xlsx streamed by `XlsxMarkdownConverter`, not MarkItDown), `EmlLoader`, `MarkdownStructuralNodeParser`, `DocumentClassifier` (closed-set type + attributes, see below) |
-| `prompting/`             | Few-shot examples, language detection      | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `chat_history/`          | Chat context management                    | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22))                                                                                                                                                                                                     |
-| `routing/`               | LLM-based event routing                    | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `structured_extraction/` | Records from one document, runtime schema  | `RecordSchemaBuilder.build()`, `RecordExtractor.extract()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Module                   | Purpose                                    | Key Entry Points                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------ | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `memory/`                | Agent-scoped memory (user + org)           | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `retrieval/`             | RAG node retrieval                         | `retrieve_nodes()` (dense results below `KnowledgeRetrieverConfig.min_similarity`, default 0.35, are dropped before neighbours and summaries are fetched; ADR `2026_10_12`), `condense_standalone_question()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `retrievers/`            | Vector store abstraction                   | `KnowledgeRetriever`, `BaseRetriever`, `MetadataFilterPair.to_llama_index()` (runtime filter: a text value matches a scalar or a list item, numbers by equality, booleans as `"true"`/`"false"` because llama-index filters reject them)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `knowledge_documents/`   | Whole-document read access                 | `KnowledgeDocumentReader.list_documents()`, `.load_document()`, `.load_document_by_path()`, `KnowledgeDocumentListing.matching_glob()` / `.matching_regex()`, `KnowledgeContentSearch.search()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `rerank/`                | Result reranking                           | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `guards/`                | Input/output guards                        | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `processors/`            | Retrieval post-processors                  | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `resources/`             | LLM/embedding model configs, token budgets | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`; `ModelTokenBudget` / `ModelTokenizer` (`tokenizers/`): an embedding or reranking model whose LiteLLM entry declares `aihub_tokenizer` and `aihub_input_overhead_tokens` is counted in-process with its vendored tokenizer (`tokenizers/vendored/`, own MIT `LICENSE` + `SOURCE.json`); undeclared models keep tiktoken and the safety factors. `LiteLLMBase.token_budget()` builds it, `token_counter` stays tiktoken (ADR `2026_10_30_count_tokens_with_the_models_own_tokenizer`)                                                                                                                                                                                                                                                                                              |
+| `document/`              | Document loading and parsing               | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` and `MarkItDownLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache` / `MarkItDownParseCache`; after the cache, `MineruInlineLatex` rewrites the inline LaTeX MinerU writes for ordinary text (`$1^{\text{er}}$`, `$52^{\mathrm{bis}}$`, `$\mathrm{CO}_{2}$`, `$50\%$`) as plain text and leaves formulas alone, so exact search and classification see "1er", "52bis", "CO2"; the agent's `AttachedFileSectionCache` keeps attached files' sections and embeddings there under `attached-files/`, through the exported `ParseCacheBucket`; xlsx streamed by `XlsxMarkdownConverter`, not MarkItDown), `EmlLoader`, `MarkdownStructuralNodeParser`, `DocumentClassifier` (closed-set type + attributes, see below) |
+| `prompting/`             | Few-shot examples, language detection      | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `chat_history/`          | Chat context management                    | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `routing/`               | LLM-based event routing                    | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `structured_extraction/` | Records from one document, runtime schema  | `RecordSchemaBuilder.build()`, `RecordExtractor.extract()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 `retrieval/combine_nodes_in_order()` renders retrieved nodes as `<REFERENCE_DOCUMENT …>` blocks, one per document. The
 header carries the document's id, source, title, version and timestamps, then the fields of the record it was synced
@@ -668,7 +680,9 @@ header: ingestion detects none.
 `knowledge_documents/` gives agents whole-file access to knowledge collections next to vector search.
 `KnowledgeDocumentReader.list_documents(collections)` returns a `KnowledgeDocumentListing` of fully ingested documents
 (id, path relative to the collection's **folder**, filename, title, type), loaded without their text and sorted by
-database, collection and path. `matching_glob()` and `matching_regex()` chain:
+database, collection and path. `matching_glob()` and `matching_regex()` chain, and `dated_within(PathDateRange)` keeps
+every document its path does not date outside a period and returns the `PathDateCounts` (CPU-bound: async callers run it
+in `asyncio.to_thread`):
 
 - **Glob:** the shell/ripgrep dialect, matched against the whole path, ignoring case, with `{a,b}` expanded.
 - **Regex:** searched anywhere in the path, on the `regex` engine with one time budget per call.
@@ -732,7 +746,40 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
   literal as `search` does, no text loaded, no per-line check, so it may count a document the line check would drop),
   with the restricting glob next to the criterion's own, so a model's selection can only narrow the caller's. The
   record-extraction capability resolves the selection a model wrote this way rather than trusting a list of ids, with
-  its ceiling as `limit`.
+  its ceiling as `limit`. A selection has one period, `path_date_range` (`PathDateRange`, either bound open, its bounds
+  dumped as ISO text in every mode because events are persisted as BSON, which has no plain date), applied after the
+  entries to their union, before `limit`; the result then carries `path_dates` (`PathDateCounts`: in range, excluded,
+  undated, the years the excluded paths are dated in, and up to ten of them within 2,000 serialized bytes, each cut at
+  200 characters). Without a period the result is unchanged and `path_dates` is None.
+- **Dates in paths** (#2349, ADR `2026_11_21_document_periods_matched_against_path_dates_by_code`).
+  `PathDateParser.parse(path, today)` gives the period a path dates its document in, or None, and never narrows on
+  doubt. Per segment (the extension stripped from the last, each `DateTextParser.normalized`): ISO and compact days
+  (counters such as `_001` or `-0001` after them are fine, a `.digit` suffix is not), day-first dot, dash and underscore
+  dates with a four-digit year (**always day first**: `04-06-2026` is 4 June; one invalid that way gives no date, never
+  swapped), `dd.mm.yy` only with two-digit day and month (`06-04-26` makes the path unknown), day + month name + year,
+  quarters (`Q1 2026`, `2026_Q1`, `T1`, `1. Quartal`, `primo trimestre`), month name + year in de/en/fr/it (plus `gen`,
+  `mag`), `2026-03`/`03.2026`, `202603` as a folder only, and years. Digit guards and an identifier stop-list (`Nr`,
+  `SIA`, `ISO`, `RE`, `v`, …) keep numbers from reading as dates; years outside 1990 to next year give none. A year
+  glued to letters that no pattern reads (`rev2025`, `Stand2025`, `2025er`) makes its segment unknown, unless it is
+  glued to a stop-listed identifier (`RE2025-003`). A segment writing a range or a list (a joiner next to a leftover
+  month, quarter, day fragment or year; own dates that do not nest; a leftover month or quarter word, or a bare day
+  number, next to a finer date) is read as `PeriodTextParser`'s span only if it covers every date the segment states and
+  is wider than each, otherwise the path is unknown. A bare day number counts before a date (`1-15 März 2025`) and after
+  one with a connector or a spaced dash (`2025-03-01 - 15`), never as a counter glued on with `_` or `-`. A segment that
+  is no span and makes its date one end of an open period is unknown (`_OPEN_BOUND`): a word before it (`_OPEN_BEFORE`:
+  `ab`, `seit`, `since`, `dès`, `dal`, `bis`, `vor`, `pre`, `up to`, `through`, …, with up to two fillers such as
+  `Mitte`, `Ende`, `fin`, `mi` in between), a word after it (`_OPEN_AFTER`: `heute`, `present`, `ff`, `und älter`,
+  `und später`, `onwards`, `or later`, `to date`, `à ce jour`, `ad oggi`, …), or a sign between it and the segment's
+  edge (`2020+`, `2020-`, `-2019`, `>2020`, `<2020`); whole words only, so `Update 2025` or `Mitarbeiter 2025` keep
+  their year. A two-digit day number equal to its month's own (`03 März 2026`) reads as the whole month, and a dash
+  joins a day to a month name only unspaced (`15-mar-2025`, not `Kapitel 3 - März 2025`). Folders nest (`2026/03/14/`; a
+  month, quarter or day folder counts only under a folder dated exactly a year or a month), the shortest date wins, and
+  dates of different segments that do not nest make the path unknown. Results are memoised as tuples
+  (`PARSED_PATHS_CACHED`, 50,000). `PathDateRange.verdict_of` sorts a path date into `PathDateVerdict` WITHIN,
+  OVERLAPPING, OUTSIDE or UNDATED, bounds inclusive. `PathDateParser.folder_dates(folders, today)` gives each folder of
+  a path the date it is when it is nothing but a date (a year, month or quarter folder, also under its dated parent:
+  `2025/q1`), None otherwise (`invoices-2025`); the KEA uses it to take date folders that repeat a period out of a
+  model's location. `PathDateParser` and `NormalizedDate` are exported for it.
 - **Limits.** Case folding is simple, so `ß` never matches `SS`. Decomposed (NFD) text is matched for literal text but
   not by a class such as `[üu]`. `$` does not match before `\r\n`. DocumentDB rejects numbered backreferences (`\1`);
   named ones, `(?P<x>…)(?P=x)`, work. PCRE2 reports hitting its backtracking limit as no match, so ambiguous nested
@@ -745,7 +792,7 @@ read no agent configuration:
 - **`RecordSchemaBuilder.build(description, llm, t)`** returns a validated `RecordSchema`: primitive fields only, at
   most `DEFAULT_MAX_FIELDS`, names normalised to snake_case. It calls a copy of `llm` at temperature zero and raises
   `InvalidRecordSchemaError` (a `ValueError`) rather than degrading, since without a schema there is nothing to extract.
-- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None, *, limiter=None, max_windows=None, row_terms=None)`**
+- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None, *, limiter=None, max_windows=None, row_terms=None, document_condition=None)`**
   returns a `DocumentExtractionResult` whose records carry `RecordProvenance`. `instructions` is the filter ("only
   hardware"); filters never become fields. The document must be loaded whole. Windows run side by side under the
   caller's `limiter` (one by one without). With `max_windows` a longer document is read in part: `WindowSelection` keeps
@@ -759,6 +806,15 @@ read no agent configuration:
   `RecordMerger` drops overlap copies between adjacent windows only. Every later window is also shown the document's
   opening (`DOCUMENT_OPENING_TOKENS`, at most half a window), so header values such as an invoice number reach records
   far below the header.
+- **Document condition:** with `document_condition` ("only contracts with Hooli"), window 0 runs first and alone with a
+  records model whose first field is `DocumentMatch` (`verdict` "yes" / "no" / "unsure", `reason`); the prompt's
+  condition block and rule appear only then, so without a condition the prompt is main's (pinned by
+  `tests/unit/fixtures/`). Only a stated contradicting fact gives "no": the document is then
+  `DocumentExtractionResult.skipped_by` (no records, `skipped`, never `failed`) and its other windows are not read.
+  "yes" and "unsure" read the other windows side by side as before, without the condition, and the result carries the
+  `document_match`. Each verdict is set on the current span (`extraction.document.path`,
+  `extraction.document_condition.verdict`, `.reason`) and logged, so false skips can be sampled later. ADR
+  `2026_11_18_document_condition_judged_in_the_first_extraction_window`.
 - **Failure:** malformed output fails that document as a whole with a `failure_reason`, never with a partial list.
   Infrastructure errors still raise.
 
@@ -773,19 +829,31 @@ not mapped back to them yet.
 
 `document/classification/` assigns a document one type from a closed set and reads that type's attributes (#2346, ADR
 `2026_11_13_closed_document_types_and_attributes_at_ingestion`). **`DocumentClassifier.classify(text, title, llm)`**
-makes one structured-output call on `DocumentOpeningText.of(text)` (first two pages capped at 8,000 characters, plus the
-last 1,500 of the rest) and returns a `DocumentClassification` whose `to_metadata()` is what ingestion stores:
+makes one structured-output call on `DocumentOpeningText.of(text)` (first two pages capped at 8,000 characters, at most
+two excerpts each of term, notice, court and signing-date clauses from the middle, plus the last 1,500 of the rest) and
+returns a `DocumentClassification` whose `to_metadata()` is what ingestion stores:
 
-- **`DocumentTypeCatalog` is the only list.** Types (`invoice`, `other`), shared attributes, which apply to which type
-  and per-type meanings; the prompt, `metadata_keys()` (every stored key, for exclusion lists, frontmatter reservation
-  and filters) and `value_keys()` come from it. `DocumentClassificationAnswer` must have one field per non-derived
-  attribute; a catalog test checks it.
+- **`DocumentTypeCatalog` is the only list.** Types (16 since #2485: `invoice`, `credit_note`, `offer`, `order`,
+  `delivery_note`, `receipt`, `account_statement`, `payment_reminder`, `contract`, `service_level_agreement`, `letter`,
+  `report`, `documentation`, `policy`, `email_thread`, `other`), shared attributes, which apply to which type and
+  per-type meanings (only where a type's differs: the prompt names types sharing a meaning together, so keep overrides
+  that merely restate the general meaning out); the prompt, `metadata_keys()` (every stored key, for exclusion lists,
+  frontmatter reservation and filters) and `value_keys()` come from it. `DocumentClassificationAnswer` must have one
+  field per non-derived attribute; a catalog test checks it. The evaluation (`tests/evaluation/`, one synthetic YAML per
+  type, at least 8 documents each) measures recall and precision per type and wrong-plus-guessed values per type and
+  attribute.
 - **The model copies, code reads.** `DocumentValueNormalizer` drops copied text that `RawValueLocator` cannot find in
-  the whole document, stores no attribute the type lacks, and reads dates (`DateTextParser`; a slash date both orders
-  allow only in the order `SlashDateOrder` the normaliser settles from the document's unambiguous slash dates, else day
-  first unless the currency is USD, a bare `$` or unknown), periods, amounts (Swiss, EU and English separators),
-  currencies (a bare `$` stays unread) and tax IDs (a Swiss UID must pass its check digit). Each attribute keeps its
-  copy under `<key>_raw`, dates their `<key>_precision`, and an unreadable copy has an empty value.
+  the whole document (both it and `DateTextParser` read MinerU's inline LaTeX as the text it stands for, so a copy "1er
+  janvier 2003" is found in a document ingested before MinerU's output was rewritten), stores no attribute the type
+  lacks, and reads dates (`DateTextParser`; a slash date both orders allow only in the order `SlashDateOrder` the
+  normaliser settles from the document's unambiguous slash dates, else day first unless the currency is USD, a bare `$`
+  or unknown), periods (for contract and SLA terms only, `PeriodTextParser.stated_ends`: a single date in the same
+  sentence next to "ab", "in Kraft" or "from", or in a term "auf unbestimmte Zeit", is only the start, next to "endet",
+  "bis" or "until" only the end), amounts (Swiss, EU and English separators), currencies (a bare `$` stays unread) and
+  tax IDs (a Swiss UID must pass its check digit). Names (issuer, recipient, a thread's participants) lose any e-mail
+  address copied with them; a bare address is stored empty. `document_parties` is derived from issuer, recipient and
+  participants, and a type lists it when it has any of them. Each attribute keeps its copy under `<key>_raw`, dates
+  their `<key>_precision`, and an unreadable copy has an empty value.
 - **Versions, at the narrowest level.** Each re-classified document costs a model call, so raise only what a change
   needs. A type's `DocumentTypeDefinition.version` when only its documents could be classified differently, and
   `OTHER`'s when a type is added or narrowed: only `other` documents can move into the new one.

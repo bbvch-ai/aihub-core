@@ -117,3 +117,20 @@ class TestRejectsRoleRename:
 
         role.save.assert_called_once()
         assert role.description == "new description"
+
+
+class TestDeleteRoleRevokesAssignments:
+    """Users hold roles by name, so deleting only the role document left the name on every user
+    that had it and the user management page kept showing a chip for a role that no longer exists."""
+
+    def test_delete_role_cascades_to_user_assignments(self):
+        role = MagicMock()
+        role.tenant_id = "tenant-1"
+        role.name = "Sales"
+
+        with patch(f"{_ROLE_SERVICE}.RoleEntity") as mock_entity:
+            mock_entity.objects.get.return_value = role
+            RoleService.delete_role(role_id="role-1", tenant_id="tenant-1")
+
+        mock_entity.delete_role.assert_called_once_with("Sales", "tenant-1")
+        role.delete.assert_not_called()

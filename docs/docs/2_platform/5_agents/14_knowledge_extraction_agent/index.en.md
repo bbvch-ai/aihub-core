@@ -31,26 +31,34 @@ flowchart LR
     F --> G[Table preview,<br/>summary and CSV]
 ```
 
-1. **Read the request.** One model call reads the message: the columns the user asks for, which rows to keep, any
-   folder, file or year the user names, and any calculation asked for. A follow-up such as *"the same for 2024"* is read
-   with the conversation.
+1. **Read the request.** One model call reads the message: the columns the user asks for, which documents count (the
+   document condition), which rows to keep, any folder or file the user names, the period that dates the wanted
+   documents, and any calculation asked for. A follow-up such as *"the same for 2024"* is read with the conversation.
 2. **Confirm the request.** Before any document is read, the agent shows what it understood in a form, and the user
    confirms or corrects it (see [The request form](#the-request-form)). What the user confirms is what is read and
    extracted.
 3. **Take every document in scope.** Every document in the profile's collections and path filter is read, narrowed only
    by the confirmed location. A file the user names, by its path or only by its name, with or without the extension,
    means that file alone, not the folder it is in. No search decides which documents count, so a document is never
-   missed because it words things differently from the request. A supplier or a topic is a condition on the rows, not a
-   place: *"from Acme"* keeps Acme's rows, it does not pick documents. With [Discovery mode](#discovery-mode) on, the
-   model searches for the documents instead.
+   missed because it words things differently from the request. A supplier, a party or a status is not a place but a
+   *document condition* (*"from Acme"*, *"signed versions only"*), checked at the start of each document. A value the
+   rows carry themselves, such as the supplier on each line of a statement, stays a condition on the rows, and so does a
+   period on lines that carry their own date, such as *statement lines from February 2025*: it filters the rows and is
+   not matched against the paths, since a statement's path names the day it was issued, not the days of its bookings. A
+   year, a quarter or any other period is never a place either: it is read as dates and matched against the dates in the
+   paths, so a document whose path dates it outside the period is not read (see
+   [Periods and dates in paths](#periods-and-dates-in-paths)). With [Discovery mode](#discovery-mode) on, the model
+   searches for the documents instead.
 4. **Design the columns.** The columns are designed from the user's words, such as *date, item, amount, currency*. A
    condition like *"only hardware"* decides which rows are kept and never becomes a column.
 5. **Extract.** Every document is read and its matching records are extracted, many documents at the same time.
    Documents are read in overlapping parts, so a line on the last page is found and a line at the boundary between parts
    is not counted twice. A row that may not meet the condition is kept and marked *unsure* in a **Match** column, so a
-   person can check it instead of it being dropped. A condition on the whole document, such as its supplier, party or
-   year, applies to every row in it: a document that clearly does not meet it gives no rows and is listed under "No rows
-   from".
+   person can check it instead of it being dropped. A document whose start contradicts the document condition, for
+   example by naming another supplier, is not read further: it gives no rows and is listed with its reason under
+   "Skipped". A document whose start does not settle it is read whole, and its rows are marked *unsure, please check*.
+   The period is part of that check only where the path leaves it open: a document whose path dates it wholly inside the
+   period is not checked against it.
 6. **Answer.** The answer shows the first rows of the table (up to 100), followed by the summary, and the whole table as
    a CSV file: attached to the answer in the chat, a download link through the API. A document that could not be read is
    listed under the table with the reason; the other documents' rows are unaffected. Documents that were read but gave
@@ -58,20 +66,21 @@ flowchart LR
 
 The chat shows each step as it happens: a line saying how many documents will be read, which columns the table has and
 about how long it takes; a line when a long document starts; one line per document as it is extracted, with its first
-rows ("12 of 150 · invoice.pdf: 3 rows — Laptop X1, 1,200; Dock D2, 180"); and, while a document takes more than a
-minute, a line saying it is still being read. An answer can take many minutes when many documents are read; the progress
-shows it is alive.
+rows ("12 of 150 · invoice.pdf: 3 rows — Laptop X1, 1,200; Dock D2, 180") or why it was skipped ("14 of 150 ·
+initech-0412.pdf: skipped, Supplier: Initech AG"); and, while a document takes more than a minute, a line saying it is
+still being read. An answer can take many minutes when many documents are read; the progress shows it is alive.
 
 ### The request form
 
 A misread part of a request used to show only in the finished table, after every document had been read. So every new
-table request is first asked back, in three parts:
+table request is first asked back, in four parts:
 
-| Part                  | What it says                                                                                             | Alternative   |
-| --------------------- | -------------------------------------------------------------------------------------------------------- | ------------- |
-| **Location**          | The folders, files or years to read. The hint lists the scope's largest folders with their counts.       | All documents |
-| **Filter Condition**  | Which records the table keeps, such as *from Acme* or *only hardware items*.                             | Every row     |
-| **Values to extract** | The table's columns, which decide what a row is: an invoice number and a total give one row per invoice. | —             |
+| Part                   | What it says                                                                                                                                                                                                                                                | Alternative    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| **Location**           | The folders or files to read. The hint lists the scope's largest folders with their counts.                                                                                                                                                                 | All documents  |
+| **Document Condition** | Which documents count, such as *from Acme* or *signed versions only*, followed by the period that dates them, such as *dated between 2026-01-01 and 2026-03-31*; checked at each document's start. *Every document*, chosen or typed, drops the period too. | Every document |
+| **Filter Condition**   | Which records the table keeps, such as *only hardware items*, or the lines of one supplier on a statement.                                                                                                                                                  | Every row      |
+| **Values to extract**  | The table's columns, which decide what a row is: an invoice number and a total give one row per invoice.                                                                                                                                                    | —              |
 
 With **Discovery mode** on, two more parts follow: **Exact keyword(s)**, words the wanted documents literally contain (a
 supplier's name, an invoice number), and **Semantic keyword(s)**, what the documents are about (*supplier invoice with
@@ -108,8 +117,8 @@ Reading every document of a large scope takes long, so above 100 documents the a
   meaning to the request; when that ranking places none, or with **Discovery mode** on, documents whose text names what
   identifies them (a supplier, a number), then those containing typical words of the wanted lines;
 - how the documents break down **by folder**, **by year in the path** and **by collection**;
-- what you can do: reply *yes* to read all of them in one answer, or narrow the request, for example to one folder or
-  year.
+- what you can do: reply *yes* to read all of them in one answer, or narrow the request, for example to one folder or a
+  shorter period.
 
 The sample can hold no row, for example when the wanted records are rare; the answer then says so and still shows what
 the table would hold. Asking something new instead of *yes* replaces the waiting request. Confirming needs the same
@@ -130,8 +139,10 @@ and only those are extracted. This is faster on large collections, but a documen
 from the table. The search is bounded by **Maximum Decisions** and **Maximum Tool Calls**; at the limit the agent
 selects by folder and checks the request's conditions in each document, and the answer says so.
 
-Whatever the search chose, the confirmed parts decide: the confirmed **Location** replaces any path the search set, and
-the confirmed **Values to extract** and **Filter Condition** are what is extracted.
+Whatever the search chose, the confirmed parts decide: the confirmed **Location** replaces any path the search set, the
+confirmed **Values to extract**, **Document Condition** and **Filter Condition** are what is extracted, and the
+confirmed period is applied to the dates in the paths of the documents the search selected. The search is told not to
+select by a year: the count `select_knowledge_documents` reports is taken before the period is applied.
 
 Without Discovery mode, ranking by meaning only decides which documents are sampled and read first; no document is ever
 left out because of its rank.
@@ -143,13 +154,82 @@ ignored: a profile that had the search switched on reads every document until **
 :::
 
 ::: tip Which mode for which profile
-Reading every document is the safe default: nothing is missed, but each document's rows are judged by the extraction
-model on its own. When a request names one supplier or party among many in the same folders (*"Acme's 2025 hardware"*
-over every supplier's invoices), that judgement now and then keeps a row from another supplier's document, and every
-document costs a model call. For profiles used for such exact, narrow requests over large mixed collections, switch on
-**Discovery mode**: only the documents the search selects are read, which is faster and cheaper, at the risk that a
-document the search does not find is missing.
+Reading every document is the safe default: nothing is missed. When a request names one supplier or party among many in
+the same folders (*"Acme's 2025 hardware"* over every supplier's invoices), the **Document Condition** skips each other
+supplier's document after its first part, so its rows never reach the table; but every document still costs at least one
+model call, and a document whose start does not name its supplier is read whole and marked for checking. For profiles
+used for such exact, narrow requests over large mixed collections, switch on **Discovery mode**: only the documents the
+search selects are read, which is faster and cheaper, at the risk that a document the search does not find is missing.
 :::
+
+### Periods and dates in paths
+
+A period the request names, such as *"the 2025 invoices"*, *"Q1 2026"* or *"since March 2025"*, is read as its first and
+last day, never as a folder: a corpus without year folders is read the same way as one with them. The agent then
+compares the period with the date each selected document's path gives it, by code, before any document is read. A period
+on rows that carry their own date, such as statement lines, bookings, transactions or time entries, is not compared with
+the paths: it stays a condition on the rows, so no statement is left out by the date in its path.
+
+A model can still read *"invoice totals 2025"* as the folder `invoices/2025/**` next to the period, which would leave
+out every invoice without a date in its path. So before the form is shown, the agent takes such date folders out of the
+locations the first reading wrote: a folder that is nothing but a date (`2025`, `2025/q1`, `2025-03`) and lies within
+the period is replaced by "any folders", so `invoices/2025/**` becomes `invoices/**` and `2025/**` becomes every
+document. It runs after a file the message names has replaced the folder the model made of it, so the widened folder is
+read next to the file. Without discovery the location only ever widens. In [Discovery mode](#discovery-mode) the widened
+Location is what the search is told, and the search's own selection decides which documents are read. A date folder
+outside or wider than the period (`invoices/2024/**`, or `invoices/2025/**` for Q1 2025), a folder that names more than
+a date (`invoices-2025`), a path the user writes, in this message or an earlier one and with `/` or `\` (*"from
+invoices/2025"*), a regular expression and a Location typed into the form stay as they are. When the form's dialog keeps
+the Location as shown and another part is written, the request is read once more and the same date folders are taken out
+again, while a file or a folder path written into that part is read.
+
+| A path such as                                                               | is dated                   |
+| ---------------------------------------------------------------------------- | -------------------------- |
+| `invoices/2025/a.pdf`, `invoices_2025/a.pdf`                                 | the year 2025              |
+| `2026/03/a.pdf`, `2026-03/a.pdf`, `März 2026/a.pdf`, `202603/a.pdf`          | March 2026                 |
+| `2026-04-06_scan.pdf`, `20260406.pdf`, `06.04.2026.pdf`, `6. April 2026.pdf` | 6 April 2026               |
+| `Q1 2026/a.pdf`, `2026_Q1/a.pdf`, `1. Quartal 2026/a.pdf`                    | the first quarter of 2026  |
+| `Kontoauszug_01.01.2025-31.03.2025.pdf`, `Jan-März 2025/a.pdf`               | 1 January to 31 March 2025 |
+| `1-15 März 2025.pdf`, `du 1 au 15 mars 2025.pdf`                             | 1 to 15 March 2025         |
+
+- **Folders nest.** `2026/03/14/a.pdf` is 14 March 2026. A month, quarter or day folder counts only under a folder dated
+  as a year or a month; month names are read in German, English, French and Italian.
+- **Day first.** Numeric dates are read day first, as in Switzerland: `04-06-2026` is 4 June 2026. A date that does not
+  exist that way, such as `04-13-2026`, gives no date; the parts are never swapped. A two-digit year is read only in
+  `06.04.26`.
+- **Counters are fine.** `Scan_2025-03-15_001.pdf` and `2025-03-15-0001.pdf` are 15 March 2025.
+- **A month by its number.** `03 März 2026/` is all of March 2026, since a two-digit number equal to the month's own may
+  number the month; `3. März 2026` and `15 März 2026` are days.
+- **Doubt gives no date.** A path whose date might not contain the document's true date gives none: an ambiguous
+  two-digit year (`06-04-26`), listed months, quarters or days no range covers (`Jan_Feb_2025`, `Q1_Q2_2025`,
+  `1 und 15 März 2025`), a date that is one end of an open period (`ab 2020`, `seit März 2025`, `ab Mitte 2020`,
+  `up to 2019`, `2020-heute`, `Archiv bis 2019`, `2024 und älter`, `2020 onwards`, `2020 to date`, `2020+`, `-2019`), a
+  number with a spaced dash before a month (`Kapitel 3 - März 2025`), a range of years (`2025-2026`, `FY2025`), a year
+  glued to letters, even next to another date (`Offerte_2024_rev2025.pdf`, `2025er Rechnungen/2024-12-30.pdf`), a number
+  behind an identifier (`Nr. 2024`, `SIA 2024`, `v2025`), a year before 1990 or after next year, and folders whose dates
+  contradict each other (`2025/20260406.pdf`).
+
+Each selected document is then:
+
+- **in the period**, when its path dates it wholly inside: read, and not checked against the period;
+- **across the period's edge** or **without a date in its path**: read, and checked against the period at its start,
+  with the document condition;
+- **outside the period**: not read.
+
+A document is left out only when its path clearly dates it outside the period. The summary names the period with the
+document condition, then a **Period by path** line with how many documents were dated in or across it, how many were
+left out and how many have no date in their path, and lists up to ten of the paths left out. When the period leaves out
+every document, the answer says how many it left out, names some of them and the years they are dated in, so a request
+for the wrong year shows at once.
+
+::: warning Month-first dates and postcodes
+A file name written month first, such as `04-06-2026` for 6 April, is read as 4 June, so an April request leaves it out.
+A folder named after a postcode inside the year range, such as `2000 Neuchâtel`, reads as the year 2000. The list of
+paths left out under the table shows both.
+:::
+
+The Universal Agent's `list_knowledge_documents` tool takes the same period as `period_start` and `period_end`. See the
+ADR `2026_11_21_document_periods_matched_against_path_dates_by_code`.
 
 ### Long documents
 
@@ -158,6 +238,9 @@ in its relevant parts: its opening, which states what every row shares, and the 
 are. Its rows are marked **(partly read)** next to the file name, and the summary lists it under "Partly read (rows may
 be missing)", because a line in a part that was not read is not found. See the ADR
 `2026_10_21_partial_reads_of_long_documents_in_record_extraction`.
+
+A long document that fails the document condition is read only in its first part: its start decides, and its other parts
+are not read at all. See the ADR `2026_11_18_document_condition_judged_in_the_first_extraction_window`.
 
 ## What it does *not* do
 

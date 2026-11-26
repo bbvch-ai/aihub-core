@@ -74,6 +74,18 @@ class ExtractionForm:
         return bool(answer) and answer.get("type") == "option" and int(answer.get("option_index") or 0) > 0
 
     @staticmethod
+    def typed_dropped(reply: str, key: str, t: LocaleHandler) -> bool:
+        """Whether a typed reply gives the part as its option that drops it, on a line of its own as the form's text
+        lists it, e.g. "Document Condition: Every document", so a typed answer drops it as the dialog's option does."""
+        header = t(f"{FORM}.{key}.header").casefold()
+        dropping = {ExtractionForm._plain(t(f"{FORM}.{key}.{label}")) for label in ("anything", "everything")}
+        for line in reply.splitlines():
+            named, colon, value = line.strip(_PUNCTUATION + "-").partition(":")
+            if colon and ExtractionForm._plain(named) == header and ExtractionForm._plain(value) in dropping:
+                return True
+        return False
+
+    @staticmethod
     def written(answer: dict[str, Any] | None) -> str | None:
         """What the user wrote instead of choosing; None when they chose."""
         if not answer or answer.get("type") != "other":

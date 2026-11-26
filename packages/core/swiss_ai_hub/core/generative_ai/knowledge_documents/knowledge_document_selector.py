@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search import KnowledgeContentSearch
@@ -27,7 +28,8 @@ class KnowledgeDocumentSelector:
 
     One deadline covers the listing and every content query, and a content query is one id-only scan per collection, so
     resolving a broad selection costs the same as a narrow one: the caller learns how many documents match before
-    anything is loaded or extracted.
+    anything is loaded or extracted. The selection's period is applied last, to the union of its entries, so `limit`
+    and `truncated` count what it keeps.
     """
 
     @staticmethod
@@ -53,8 +55,14 @@ class KnowledgeDocumentSelector:
                 budget,
             )
             selected.update((KnowledgeDocumentSelector._key(document), document) for document in documents)
-        ordered = KnowledgeDocumentListing.from_summaries(list(selected.values())).documents
-        return KnowledgeDocumentSelectionResult(documents=ordered[:limit], truncated=len(ordered) > limit)
+        listing = KnowledgeDocumentListing.from_summaries(list(selected.values()))
+        path_dates = None
+        if selection.path_date_range is not None:
+            listing, path_dates = await asyncio.to_thread(listing.dated_within, selection.path_date_range)
+        ordered = listing.documents
+        return KnowledgeDocumentSelectionResult(
+            documents=ordered[:limit], truncated=len(ordered) > limit, path_dates=path_dates
+        )
 
     @staticmethod
     async def _matching(

@@ -31,7 +31,7 @@ For the `.env.*` and compose template hits, check the diff actually touches `AIH
 | Source of truth                                                                                                      | Page section                                            |
 | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `_DEFAULT_ROLE_DEFINITIONS` in `packages/api/swiss_ai_hub/api/runners/lifetime/initialize_db.py`                     | "The default application roles" table                   |
-| `_reconcile_default_role_rules`, `initialize_default_roles_for_tenant` (same file)                                   | "When the roles are created"                            |
+| `initialize_default_roles_for_tenant` (same file), and any transitional migration that rewrites stored default roles | "When the roles are created"                            |
 | Callers of `initialize_default_roles_for_tenant` in `packages/sysadmin-api/.../tenant_admin/tenant_admin_service.py` | "When the roles are created" (which tenants get them)   |
 | `UserSignupSettings` in `packages/core/swiss_ai_hub/core/infrastructure/api/user_signup_settings.py`                 | "Changing which roles new users receive" code block     |
 | `.env.dev` / `.env.prod` `# User Signup Settings` block                                                              | Same code block: it quotes the `.env` comments verbatim |

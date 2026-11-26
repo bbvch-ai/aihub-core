@@ -38,6 +38,13 @@ class RecordsExtractedEvent(ControlAndDisplayEvent):
     ]
     file_count: Annotated[int, Field(description="Documents extracted from.", ge=0)] = 0
     failed_count: Annotated[int, Field(description="Documents that could not be extracted.", ge=0)] = 0
+    skipped_count: Annotated[
+        int,
+        Field(
+            description="Documents left out because they clearly fail the document condition; never counted as failed.",
+            ge=0,
+        ),
+    ] = 0
     row_count: Annotated[int, Field(description="Rows in the preview.", ge=0)] = 0
     total_row_count: Annotated[int, Field(description="Rows found; every one of them is in `file`.", ge=0)] = 0
     truncated: Annotated[
