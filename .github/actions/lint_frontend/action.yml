@@ -50,7 +50,7 @@ runs:
       run: pnpm exec nuxi prepare && pnpm exec nuxi prepare .app
       working-directory: ${{ inputs.working_directory }}
     - name: Lint frontend
-      uses: reviewdog/action-eslint@b6303df522851d0e9abaea654da0222037d97e75  # v1.36.0
+      uses: reviewdog/action-eslint@6dad10dc50476699ad1ddbbb19bf55d36f311a39  # v1.37.0
       with:
         github_token: ${{ inputs.github_token }}
         reporter: github-pr-review
