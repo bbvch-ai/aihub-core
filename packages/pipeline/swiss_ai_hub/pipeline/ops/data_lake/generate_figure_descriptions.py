@@ -1,7 +1,9 @@
 import html
 import json
+from collections.abc import Iterable
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, PageElement, Tag
+from bs4.element import PreformattedString
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
 from llama_index.core.base.llms.types import ImageBlock, TextBlock
@@ -15,17 +17,21 @@ from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.model_builders import build_vision_model, ingestor_config_for_bucket
 from swiss_ai_hub.pipeline.util.run_routing import bucket_from_partition_key
 
+_CONTEXT_CHARACTERS = 1500
 
-@op(code_version="v2")
+
+@op(code_version="v3")
 def generate_figure_descriptions(
     context: OpExecutionContext,
     ref_doc: RefDocDocument,
     data_lake_file_system: ResourceParam[AbstractFileSystem],
 ) -> RefDocDocument:
-    """Injects image Markdown tags into the document content by replacing HTML figure tags.
+    """Fills each HTML figure tag with an image Markdown tag that carries the figure's description.
 
     Described with the knowledge database's own vision model (its text model unless it chose one), and only if the
-    database asks for figure descriptions at all.
+    database asks for figure descriptions at all. A figure's context stops at the neighbouring figure, at a tag holding
+    one, or at a page break, so the model reads the text that belongs to this figure and never another figure's
+    description.
     """
     bucket = bucket_from_partition_key(context.partition_key)
     if not ingestor_config_for_bucket(bucket).with_figure_descriptions:
@@ -39,10 +45,9 @@ def generate_figure_descriptions(
 
     soup = BeautifulSoup(ref_doc.text_resource.text, "html.parser")
     figure_tags = soup.find_all(NODE_CONTENT_TYPE_FIGURE)
-    for i, figure_tag in enumerate(figure_tags):
-        # 3000 characters of surrounding text, 1500 before and 1500 after the figure tag
-        text_before = figure_tag.previous_sibling[-1500:] if figure_tag.previous_sibling else ""
-        text_after = figure_tag.next_sibling[:1500] if figure_tag.next_sibling else ""
+    for figure_tag in figure_tags:
+        text_before = _text_before(figure_tag)
+        text_after = _text_after(figure_tag)
         figure_path = figure_tag.text.split("](")[1][:-1]
         with data_lake_file_system.open(figure_path) as f:
             figure_bytes = f.read()
@@ -55,11 +60,46 @@ def generate_figure_descriptions(
             context=context,
         )
         markdown_figure = f"![{figure_description}]({figure_path})"
-        figure_tag.replace_with(f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>")
+        figure_tag.string = markdown_figure
 
     ref_doc.text_resource.text = html.unescape(str(soup))
 
     return ref_doc
+
+
+def _text_before(figure_tag: Tag) -> str:
+    return "".join(reversed(_texts_up_to_boundary(figure_tag.previous_siblings)))[-_CONTEXT_CHARACTERS:].strip()
+
+
+def _text_after(figure_tag: Tag) -> str:
+    return "".join(_texts_up_to_boundary(figure_tag.next_siblings))[:_CONTEXT_CHARACTERS].strip()
+
+
+def _texts_up_to_boundary(siblings: Iterable[PageElement]) -> list[str]:
+    texts: list[str] = []
+    collected_characters = 0
+    for sibling in siblings:
+        if collected_characters >= _CONTEXT_CHARACTERS or _is_boundary(sibling):
+            break
+        text = _plain_text(sibling)
+        texts.append(text)
+        collected_characters += len(text)
+    return texts
+
+
+def _is_boundary(element: PageElement) -> bool:
+    """A tag holding a figure counts too: html.parser nests the rest of the document in an unclosed `<https://…>`."""
+    return isinstance(element, PreformattedString) or (
+        isinstance(element, Tag)
+        and (element.name == NODE_CONTENT_TYPE_FIGURE or element.find(NODE_CONTENT_TYPE_FIGURE) is not None)
+    )
+
+
+def _plain_text(element: PageElement) -> str:
+    """Pads a tag's text with spaces so that words on either side of a `<br>` or a table do not run together."""
+    if isinstance(element, Tag):
+        return f" {element.get_text(' ', strip=True)} "
+    return str(element)
 
 
 def generate_description(
