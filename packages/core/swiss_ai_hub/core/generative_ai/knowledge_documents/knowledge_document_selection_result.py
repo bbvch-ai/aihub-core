@@ -2,6 +2,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from swiss_ai_hub.core.generative_ai.knowledge_documents.document_metadata_counts import DocumentMetadataCounts
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary import KnowledgeDocumentSummary
 from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_counts import PathDateCounts
 
@@ -16,4 +17,8 @@ class KnowledgeDocumentSelectionResult(BaseModel):
     path_dates: Annotated[
         PathDateCounts | None,
         Field(description="How the selection's period sorted the documents by their paths; null without a period."),
+    ] = None
+    metadata: Annotated[
+        DocumentMetadataCounts | None,
+        Field(description="How the selection's metadata filter sorted the documents; null without a filter."),
     ] = None

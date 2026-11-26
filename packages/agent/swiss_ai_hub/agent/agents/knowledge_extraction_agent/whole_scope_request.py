@@ -88,7 +88,16 @@ class WholeScopeRequest:
         facets = SelectionFacets.lines(listing.documents, t)
         instructions = agent_config.instructions.in_locale(locale) if agent_config.instructions else None
         reading = await ExtractionRequestReading.ask(
-            history, scope, facets, instructions, awaiting_sample, agent_config.llm, displayer, user, t
+            history,
+            scope,
+            facets,
+            instructions,
+            awaiting_sample,
+            agent_config.llm,
+            displayer,
+            user,
+            t,
+            document_types=SelectionFacets.document_types(listing.documents),
         )
         if reading is None:
             return None

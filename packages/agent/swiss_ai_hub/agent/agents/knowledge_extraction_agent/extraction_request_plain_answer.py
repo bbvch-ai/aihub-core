@@ -2,7 +2,14 @@ import logging
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.generative_ai import KnowledgeDocumentCriteria, KnowledgeDocumentSelection, PathDateRange
+from swiss_ai_hub.core.generative_ai import (
+    DocumentAttributeCondition,
+    DocumentMetadataFilter,
+    DocumentType,
+    KnowledgeDocumentCriteria,
+    KnowledgeDocumentSelection,
+    PathDateRange,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.requested_location import RequestedLocation
@@ -65,6 +72,21 @@ class ExtractionRequestPlainAnswer(BaseModel):
             "request names no such period or it has no end."
         ),
     ] = None
+    document_types: Annotated[
+        list[DocumentType],
+        Field(
+            description="The types of document the request names, among the types in scope, e.g. ['contract'] for "
+            "'contracts with Hooli'; empty when it names none. A document whose type was not recorded is still read."
+        ),
+    ] = []
+    attribute_conditions: Annotated[
+        list[DocumentAttributeCondition],
+        Field(
+            description="Conditions the request names on a document's recorded values, among the attributes of the "
+            "types in scope, e.g. parties containing 'Hooli'; never the period, which goes into period_start and "
+            "period_end. Empty when it names none. Each condition stays in document_condition in words as well."
+        ),
+    ] = []
     instructions: Annotated[
         str | None,
         Field(
@@ -95,11 +117,19 @@ class ExtractionRequestPlainAnswer(BaseModel):
         return PathDateRange.written(self.period_start, self.period_end)
 
     @property
+    def metadata_filter(self) -> DocumentMetadataFilter | None:
+        """The named types and the conditions code can compare; None when the request names neither."""
+        return DocumentMetadataFilter.of(self.document_types, self.attribute_conditions)
+
+    @property
     def selection(self) -> KnowledgeDocumentSelection:
-        """The named places, or the whole scope when the user named none, dated within the period."""
+        """The named places, or the whole scope when the user named none, dated within the period and narrowed by the
+        named types and values."""
         criteria = [location.as_criteria() for location in self.locations if location.path_glob or location.path_regex]
         return KnowledgeDocumentSelection(
-            any_of=criteria or [KnowledgeDocumentCriteria()], path_date_range=self.path_date_range
+            any_of=criteria or [KnowledgeDocumentCriteria()],
+            path_date_range=self.path_date_range,
+            metadata_filter=self.metadata_filter,
         )
 
     def without_period_folders(self, message: Annotated[str, "What the user wrote, every turn of it"]) -> Self:

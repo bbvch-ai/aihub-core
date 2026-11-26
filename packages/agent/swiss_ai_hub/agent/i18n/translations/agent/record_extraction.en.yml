@@ -108,9 +108,13 @@ summary:
     left out, dated outside it · %{undated} without a date in their path'
   path_dates_years: 'The paths left out are dated in: %{years}.'
   path_dates_excluded: '**Left out by the date in their path:** %{files}'
+  metadata: '**Type and attributes:** %{matched} documents match · %{excluded} left
+    out · %{unknown} kept, their type or value was not recorded'
+  metadata_excluded: '**Left out by type or attribute:** %{files}'
 facets:
   folders: '**By folder:** %{entries}'
   years: '**By year in the path:** %{entries}'
+  types: '**By document type:** %{entries}'
   collections: '**By collection:** %{entries}'
   first: These are the folders and years of the first %{total} documents by path;
     there are more.
@@ -118,6 +122,12 @@ period:
   between: dated between %{start} and %{end}
   from: dated on or after %{start}
   until: dated on or before %{end}
+metadata:
+  types: 'recorded as %{types}'
+  contains: '%{attribute} contains "%{text}"'
+  between: '%{attribute} from %{low} to %{high}'
+  at_least: '%{attribute} at least %{low}'
+  at_most: '%{attribute} at most %{high}'
 progress:
   skipped: '%{done} of %{files} · %{path}: skipped, %{reason}'
   skipped_unknown: does not meet the document condition

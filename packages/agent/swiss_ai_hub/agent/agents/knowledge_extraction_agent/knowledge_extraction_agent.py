@@ -271,6 +271,7 @@ class KnowledgeExtractionAgent(Agent):
             calculation,
             confirmed.document_condition,
             confirmed.path_date_range,
+            confirmed.metadata_filter,
         )
 
     @step(

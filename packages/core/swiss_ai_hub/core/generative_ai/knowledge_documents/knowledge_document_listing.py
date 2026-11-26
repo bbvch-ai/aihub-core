@@ -3,6 +3,9 @@ from typing import Annotated, Self
 from pydantic import BaseModel, Field, computed_field
 
 from swiss_ai_hub.core.generative_ai.document.classification.normalized_date import NormalizedDate
+from swiss_ai_hub.core.generative_ai.knowledge_documents.document_metadata_counts import DocumentMetadataCounts
+from swiss_ai_hub.core.generative_ai.knowledge_documents.document_metadata_filter import DocumentMetadataFilter
+from swiss_ai_hub.core.generative_ai.knowledge_documents.document_metadata_verdict import DocumentMetadataVerdict
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary import KnowledgeDocumentSummary
 from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_counts import PathDateCounts
 from swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_parser import PathDateParser
@@ -60,3 +63,16 @@ class KnowledgeDocumentListing(BaseModel):
             if verdict is not PathDateVerdict.OUTSIDE:
                 kept.append(document)
         return self.model_copy(update={"documents": kept}), PathDateCounts.collect(outcomes, date_range)
+
+    def with_metadata(
+        self,
+        metadata_filter: DocumentMetadataFilter,
+        period: Annotated[
+            PathDateRange | None, "The request's period, matched against each document's own date"
+        ] = None,
+    ) -> tuple[Self, DocumentMetadataCounts]:
+        """The documents a metadata filter keeps (every one it does not exclude), in order, with the counts."""
+        outcomes = [(document, metadata_filter.verdict(document, period)) for document in self.documents]
+        kept = [document for document, verdict in outcomes if verdict is not DocumentMetadataVerdict.EXCLUDED]
+        counts = DocumentMetadataCounts.collect([(document.path, verdict) for document, verdict in outcomes])
+        return self.model_copy(update={"documents": kept}), counts

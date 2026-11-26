@@ -2,16 +2,20 @@ import re
 from collections import Counter
 from typing import Annotated
 
-from swiss_ai_hub.core.generative_ai import KnowledgeDocumentSummary
+from swiss_ai_hub.core.generative_ai import DocumentType, DocumentTypeCatalog, KnowledgeDocumentSummary
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 MAX_ENTRIES = 8
 _YEAR = re.compile(r"(?<!\d)(?:19|20)\d{2}(?!\d)")
 
 
+UNCLASSIFIED = "unclassified"
+
+
 class SelectionFacets:
-    """How a broad selection breaks down, so the user can narrow it: by folder, by a year in the path and by
-    collection, counted from the listing alone, and a small sample spread over the largest folders."""
+    """How a broad selection breaks down, so the user can narrow it: by folder, by a year in the path, by the type
+    ingestion classified it as and by collection, counted from the listing alone, and a small sample spread over the
+    largest folders."""
 
     @staticmethod
     def lines(
@@ -25,6 +29,7 @@ class SelectionFacets:
             for key_name, counts in (
                 ("folders", Counter(SelectionFacets._folder(document) for document in documents)),
                 ("years", Counter(year for document in documents for year in set(_YEAR.findall(document.path)))),
+                ("types", Counter(document.document_type for document in documents if document.document_type)),
                 ("collections", Counter(SelectionFacets._collection(document) for document in documents)),
             )
             if len(counts) > 1
@@ -39,6 +44,20 @@ class SelectionFacets:
         counts = Counter(SelectionFacets._folder(document) for document in documents)
         counts.pop("/", None)
         return SelectionFacets._entries(counts, True)
+
+    @staticmethod
+    def document_types(documents: Annotated[list[KnowledgeDocumentSummary], "The documents in scope"]) -> str:
+        """The types in scope with their counts and the attributes each carries, for a model to write a metadata
+        filter against; read from the catalog, so a type added to it reaches the model without a change here."""
+        counts = Counter(document.document_type or UNCLASSIFIED for document in documents)
+        lines = []
+        for name, count in counts.most_common():
+            if name not in DocumentType:
+                lines.append(f"- {name} ({count})")
+                continue
+            attributes = ", ".join(definition.key for definition in DocumentTypeCatalog.applicable(DocumentType(name)))
+            lines.append(f"- {name} ({count}): {attributes or '-'}")
+        return "\n".join(lines)
 
     @staticmethod
     def sample(

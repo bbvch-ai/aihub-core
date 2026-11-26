@@ -114,9 +114,13 @@ summary:
     senza data nel percorso'
   path_dates_years: 'I percorsi esclusi sono datati: %{years}.'
   path_dates_excluded: '**Esclusi per la data nel percorso:** %{files}'
+  metadata: '**Tipo e attributi:** %{matched} documenti corrispondono · %{excluded}
+    esclusi · %{unknown} tenuti, il loro tipo o valore non è stato registrato'
+  metadata_excluded: '**Esclusi per tipo o attributo:** %{files}'
 facets:
   folders: '**Per cartella:** %{entries}'
   years: '**Per anno nel percorso:** %{entries}'
+  types: '**Per tipo di documento:** %{entries}'
   collections: '**Per collezione:** %{entries}'
   first: Sono le cartelle e gli anni dei primi %{total} documenti per percorso; ce
     ne sono altri.
@@ -124,6 +128,12 @@ period:
   between: datato tra il %{start} e il %{end}
   from: datato il %{start} o dopo
   until: datato il %{end} o prima
+metadata:
+  types: 'registrato come %{types}'
+  contains: '%{attribute} contiene «%{text}»'
+  between: '%{attribute} da %{low} a %{high}'
+  at_least: '%{attribute} almeno %{low}'
+  at_most: '%{attribute} al massimo %{high}'
 progress:
   skipped: '%{done} di %{files} · %{path}: saltato, %{reason}'
   skipped_unknown: non soddisfa la condizione sul documento

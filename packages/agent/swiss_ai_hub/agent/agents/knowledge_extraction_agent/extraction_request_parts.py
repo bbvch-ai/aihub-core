@@ -25,7 +25,9 @@ class ExtractionRequestParts(BaseModel):
     def of(cls, reading: ExtractionRequestAnswer, t: LocaleHandler, keywords: bool = False) -> Self:
         return cls(
             where=", ".join(location.describe() for location in reading.locations) or t(f"{FORM}.where.everything"),
-            documents=DocumentConditionText.of(reading.document_condition, reading.path_date_range, t)
+            documents=DocumentConditionText.of(
+                reading.document_condition, reading.path_date_range, t, reading.metadata_filter
+            )
             or t(f"{FORM}.documents.everything"),
             rows=reading.instructions or t(f"{FORM}.rows.everything"),
             columns=reading.fields or t(f"{FORM}.columns.unnamed"),
@@ -38,7 +40,7 @@ class ExtractionRequestParts(BaseModel):
         """Which parts the request named; a part it did not name has nothing to drop, in the dialog or typed."""
         return {
             "where": bool(reading.locations),
-            "documents": bool(reading.document_condition or reading.path_date_range),
+            "documents": bool(reading.document_condition or reading.path_date_range or reading.metadata_filter),
             "rows": bool(reading.instructions),
             "columns": bool(reading.fields),
             "exact": bool(reading.document_terms),

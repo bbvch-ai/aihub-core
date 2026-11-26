@@ -116,9 +116,13 @@ summary:
     sans date dans leur chemin'
   path_dates_years: 'Les chemins écartés sont datés de : %{years}.'
   path_dates_excluded: '**Écartés selon la date de leur chemin :** %{files}'
+  metadata: '**Type et attributs :** %{matched} documents correspondent · %{excluded}
+    écartés · %{unknown} gardés, leur type ou leur valeur n''a pas été enregistré'
+  metadata_excluded: '**Écartés selon leur type ou un attribut :** %{files}'
 facets:
   folders: '**Par dossier :** %{entries}'
   years: '**Par année dans le chemin :** %{entries}'
+  types: '**Par type de document :** %{entries}'
   collections: '**Par collection :** %{entries}'
   first: Ce sont les dossiers et années des %{total} premiers documents par chemin
     ; il y en a d’autres.
@@ -126,6 +130,12 @@ period:
   between: daté entre le %{start} et le %{end}
   from: daté du %{start} ou après
   until: daté du %{end} ou avant
+metadata:
+  types: 'enregistré comme %{types}'
+  contains: '%{attribute} contient « %{text} »'
+  between: '%{attribute} de %{low} à %{high}'
+  at_least: '%{attribute} au moins %{low}'
+  at_most: '%{attribute} au plus %{high}'
 progress:
   skipped: '%{done} sur %{files} · %{path} : ignoré, %{reason}'
   skipped_unknown: ne remplit pas la condition sur le document

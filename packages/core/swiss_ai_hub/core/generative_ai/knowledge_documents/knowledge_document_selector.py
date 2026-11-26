@@ -28,8 +28,8 @@ class KnowledgeDocumentSelector:
 
     One deadline covers the listing and every content query, and a content query is one id-only scan per collection, so
     resolving a broad selection costs the same as a narrow one: the caller learns how many documents match before
-    anything is loaded or extracted. The selection's period is applied last, to the union of its entries, so `limit`
-    and `truncated` count what it keeps.
+    anything is loaded or extracted. The selection's period and then its metadata filter are applied last, to the union
+    of its entries, so `limit` and `truncated` count what they keep.
     """
 
     @staticmethod
@@ -55,9 +55,12 @@ class KnowledgeDocumentSelector:
         path_dates = None
         if selection.path_date_range is not None:
             listing, path_dates = await asyncio.to_thread(listing.dated_within, selection.path_date_range)
+        metadata = None
+        if selection.metadata_filter is not None:
+            listing, metadata = listing.with_metadata(selection.metadata_filter, selection.path_date_range)
         ordered = listing.documents
         return KnowledgeDocumentSelectionResult(
-            documents=ordered[:limit], truncated=len(ordered) > limit, path_dates=path_dates
+            documents=ordered[:limit], truncated=len(ordered) > limit, path_dates=path_dates, metadata=metadata
         )
 
     @staticmethod

@@ -749,7 +749,14 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
   dumped as ISO text in every mode because events are persisted as BSON, which has no plain date), applied after the
   entries to their union, before `limit`; the result then carries `path_dates` (`PathDateCounts`: in range, excluded,
   undated, the years the excluded paths are dated in, and up to ten of them within 2,000 serialized bytes, each cut at
-  200 characters). Without a period the result is unchanged and `path_dates` is None.
+  200 characters). Without a period the result is unchanged and `path_dates` is None. Its `metadata_filter`
+  (`DocumentMetadataFilter`: `types` and `DocumentAttributeCondition`s, #2348, ADR
+  `2026_11_26_documents_selected_by_ingested_type_and_attributes`) is applied next, by code against what classification
+  stored (`KnowledgeDocumentListing.with_metadata`): an unclassified document or an empty value is unknown and kept, an
+  attribute the primary type does not carry excludes, text matches by case-insensitive containment, dates and amounts
+  by range (a stored date covers its precision's span), and the selection's period is matched against `document_date`
+  too, unknown where the type has none. The result's `metadata` (`DocumentMetadataCounts`) counts matched, excluded and
+  unknown documents, with left-out paths bounded like `path_dates`'.
 - **Dates in paths** (#2349, ADR `2026_11_21_document_periods_matched_against_path_dates_by_code`).
   `PathDateParser.parse(path, today)` gives the period a path dates its document in, or None, and never narrows on
   doubt. Per segment (the extension stripped from the last, each `DateTextParser.normalized`): ISO and compact days

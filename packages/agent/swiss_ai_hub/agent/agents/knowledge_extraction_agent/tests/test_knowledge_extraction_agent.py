@@ -29,6 +29,10 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.form import Checkbox, InputText, VectorStoreInput
 from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
+    DocumentAttribute,
+    DocumentAttributeCondition,
+    DocumentMetadataFilter,
+    DocumentType,
     ExtractedTableMarkup,
     KnowledgeDocumentCriteria,
     KnowledgeDocumentListing,
@@ -2163,3 +2167,38 @@ class TestConfirmedRequestInDiscovery:
             prompt = AgentLocaleHandler(locale)("agent.knowledge_extraction_agent.prompt.select_now")
             assert "{% if confirmed %}" in prompt
             assert "{{ confirmed }}" in prompt
+
+
+HOOLI_CONTRACTS = DocumentMetadataFilter(
+    types=[DocumentType.CONTRACT],
+    conditions=[DocumentAttributeCondition(attribute=DocumentAttribute.PARTIES, contains="Hooli")],
+)
+
+
+def _typed_reading() -> ExtractionRequestAnswer:
+    return _reading(document_condition="contracts with Hooli").model_copy(
+        update={"document_types": HOOLI_CONTRACTS.types, "attribute_conditions": HOOLI_CONTRACTS.conditions}
+    )
+
+
+class TestMetadataFilter:
+    """#2348: the types and values the request names narrow the documents in both modes."""
+
+    @pytest.mark.asyncio
+    async def test_the_confirmed_whole_scope_extraction_filters_by_type_and_value(self):
+        request, _, _ = await _discover(_typed_reading())
+
+        assert request.selection.metadata_filter == HOOLI_CONTRACTS
+        assert request.document_condition == "contracts with Hooli"
+
+    @pytest.mark.asyncio
+    async def test_the_confirmed_filter_is_set_on_the_discovered_selection(self):
+        request, _ = await _plan(_typed_reading(), [_selecting([{"content_query": "Hooli"}])])
+
+        assert request.selection.metadata_filter == HOOLI_CONTRACTS
+
+    @pytest.mark.asyncio
+    async def test_a_request_naming_no_type_extracts_without_a_filter(self):
+        request, _, _ = await _discover(_reading())
+
+        assert request.selection.metadata_filter is None

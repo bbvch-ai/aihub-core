@@ -435,6 +435,15 @@ the model:
     sample's interpretation and the semantic ranking read; the user's condition is cut before the period is appended.
     When the period leaves nothing, the answer gives the counts, up to ten left-out paths and their years. Without a
     period the run, the judge input and the summary are unchanged.
+  - **Type and attributes** (#2348, ADR `2026_11_26_documents_selected_by_ingested_type_and_attributes`). The KEA's
+    reading adds `document_types` and `attribute_conditions`, written against the types in scope and their attributes
+    (`SelectionFacets.document_types`, from the catalog); `ExtractionRequestPlainAnswer.metadata_filter` keeps the
+    readable ones and `selection` carries it. The condition stays in `document_condition` in words, so the judge still
+    reads unknown documents. The form shows it under Document Condition (`DocumentConditionText.metadata`), dropping that
+    part drops it, and `SelectedExtraction.of` sets the confirmed filter on a discovered selection. The selector's
+    `DocumentMetadataCounts` ride on `ExtractionRun.metadata` into the summary (`summary.metadata`,
+    `summary.metadata_excluded`), the sample's notices and the "nothing selected" answer; `_criteria` names the filter.
+    Without a named type or value the run is unchanged.
   - **Rows and tables by reference** (#2220). A document's rows go to core's `ExtractionFileStore` (`agent-files`
     bucket) and its `DocumentExtractedEvent` carries `rows_key`, `row_count` and `unsure_count`; `ExtractionTable` loads
     them, writes the CSV (`ExtractedTableCsv`) and puts a preview of at most 100 rows (cells cut there only) and the
