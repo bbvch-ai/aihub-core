@@ -1,6 +1,9 @@
 <template>
   <div class="relative">
-    <div class="relative z-10 flex w-fit max-w-full flex-col gap-1">
+    <div
+      ref="titleBlock"
+      class="relative z-10 flex w-fit max-w-full flex-col gap-1"
+    >
       <div class="flex min-w-0 gap-4">
         <DashboardTruncatedText
           tag="p"
@@ -23,7 +26,7 @@
         <VueApexChart
           v-if="chartSeries && chartOptions"
           type="area"
-          height="250px"
+          :height="CHART_HEIGHT_PX"
           :options="chartOptions"
           :series="chartSeries"
         />
@@ -51,6 +54,22 @@ const { t } = useI18n()
 
 const { agentName } = useAgentNameFromDashboardWidget(props.widgetData)
 
+const CHART_HEIGHT_PX = 250
+const PEAK_GAP_BELOW_TITLE_PX = 12
+
+const titleBlock = ref<HTMLElement | null>(null)
+const { height: titleBlockHeight } = useElementSize(titleBlock)
+
+// The chart sits behind the title, so the axis is stretched until the highest peak ends below it.
+const yAxisMax = computed(() => {
+  const largestValue = Math.max(0, ...(props.timeseries?.buckets ?? []).map(bucket => bucket.total_events ?? 0))
+  if (largestValue === 0) {
+    return undefined
+  }
+  const reservedHeightPx = Math.min(CHART_HEIGHT_PX / 2, titleBlockHeight.value + PEAK_GAP_BELOW_TITLE_PX)
+  return largestValue * CHART_HEIGHT_PX / (CHART_HEIGHT_PX - reservedHeightPx)
+})
+
 const chartSeries = computed(() => {
   if (!props.timeseries?.buckets?.length) {
     return [{ data: [] }]
@@ -73,7 +92,7 @@ const chartOptions = computed<ApexOptions>(() => {
     colors: [lineColor],
     chart: {
       type: 'area',
-      height: '250px',
+      height: CHART_HEIGHT_PX,
       sparkline: {
         enabled: true,
       },
@@ -90,6 +109,11 @@ const chartOptions = computed<ApexOptions>(() => {
           speed: 300,
         },
       },
+    },
+    yaxis: {
+      show: false,
+      min: 0,
+      max: yAxisMax.value,
     },
     stroke: {
       curve: 'smooth',
