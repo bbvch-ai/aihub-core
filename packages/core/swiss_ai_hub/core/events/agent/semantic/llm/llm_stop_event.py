@@ -21,3 +21,6 @@ class LLMStopEvent(LLMEvent, StopEvent):
             "The answer text holds the same JSON, so clients that read text only keep working.",
         ),
     ] = None
+
+    def answer_text(self) -> str | None:
+        return self.output_messages[-1].content if self.output_messages else None

@@ -1,4 +1,3 @@
-import asyncio
 from typing import Annotated, Any, Literal
 
 from llama_index.core.base.llms.types import ChatMessage
@@ -17,6 +16,7 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 
 
 class ToolSet(BaseModel):
@@ -105,14 +105,26 @@ class ToolSet(BaseModel):
             *(tool.metadata.name for tool in self.functions),
         ]
 
+    def owner(self, name: str | None) -> Any:
+        """The capability offering the tool, a member of its family included; None for a function tool."""
+        return next((capability for capability in self.capabilities if capability.owns_tool(name)), None)
+
+    def offers(self, name: str | None) -> bool:
+        return name in self.names() or self.owner(name) is not None
+
+    def family_of(self, name: str) -> str:
+        """The name the profile knows the tool by: its family's for a member of one, its own otherwise."""
+        owner = self.owner(name)
+        return owner.tool_name if owner is not None else name
+
     def kind(self, name: str) -> Literal["capability", "function"] | None:
-        if any(capability.tool_name == name for capability in self.capabilities):
+        if self.owner(name) is not None:
             return "capability"
         return "function" if name in self.names() else None
 
     def source(self, name: str) -> object:
         """What defines the tool: its capability, its spec's method or the tool itself."""
-        capability = next((c for c in self.capabilities if c.tool_name == name), None)
+        capability = self.owner(name)
         if capability:
             return capability
         spec = next((spec for spec in self.specs if name in map(self._spec_function_name, spec.spec_functions)), None)
@@ -121,7 +133,7 @@ class ToolSet(BaseModel):
         return next(tool for tool in self.functions if tool.metadata.name == name)
 
     def options(self, name: str) -> ToolOptions:
-        capability = next((c for c in self.capabilities if c.tool_name == name), None)
+        capability = self.owner(name)
         if capability:
             return capability.tool_options.model_copy(update={"chat_feature": capability.chat_feature})
         for spec in self.specs:
@@ -129,6 +141,14 @@ class ToolSet(BaseModel):
                 return ToolOptions.of_function(getattr(spec, name))
         tool = next((tool for tool in self.functions if tool.metadata.name == name), None)
         return ToolOptions.of_function(getattr(tool, "async_fn", None) or getattr(tool, "fn", None))
+
+    async def options_in_run(self, name: str, run_context: RunContext) -> ToolOptions:
+        """The tool's options as offered in this run: a family member's come from its capability."""
+        capability = self.owner(name)
+        if capability is None or name == capability.tool_name:
+            return self.options(name)
+        options = await capability.member_options(name, run_context)
+        return options.model_copy(update={"chat_feature": capability.chat_feature})
 
     def chat_features(self) -> set[ChatFeature]:
         return {self.options(name).chat_feature for name in self.names()} - {None}
@@ -150,8 +170,7 @@ class ToolSet(BaseModel):
         for capability in self.capabilities:
             if config.is_disabled(capability.tool_name):
                 continue
-            definition = await asyncio.to_thread(capability.tool_definition, context)
-            if definition is not None:
+            for definition in await capability.tool_definitions(context):
                 definitions[definition.name] = definition
         for name, tool in self.function_tools(context, config).items():
             function = tool.metadata.to_openai_tool(skip_length_check=True)["function"]

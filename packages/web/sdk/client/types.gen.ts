@@ -557,6 +557,12 @@ export type AgentDelegation = {
    * 1 for a run delegated to by a run nobody delegated to, and so on.
    */
   depth: number;
+  /**
+   * Tool Call Id
+   *
+   * The caller's tool call, under which this run's progress is shown.
+   */
+  tool_call_id?: string | null;
 };
 
 /**
@@ -873,6 +879,12 @@ export type AgentInTheLoopRequestEvent = {
    * Whether to share the display context with the other agent for UI consistency.
    */
   share_display_id?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call the delegation answers, when a model chose it in a tool loop.
+   */
+  tool_call_id?: string | null;
   /**
    * Timeout Seconds
    *
@@ -4522,6 +4534,7 @@ export type ContextualizedAgentEvent = {
     | AgentInTheLoopRequestEvent
     | AgentInTheLoopExceptionEvent
     | AgentInTheLoopTimeoutEvent
+    | DelegatedProgressEvent
     | HumanInTheLoopTimeoutEvent
     | BotInTheLoopTimeoutEvent
     | HumanInTheLoopInputResponseEvent
@@ -5756,6 +5769,79 @@ export type DatePicker = {
    * Validation
    */
   readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
+ * DelegatedProgressEvent
+ *
+ * A step a delegated agent started, shown in the delegating run.
+ *
+ * A delegation a model chose as a tool runs on a thread and display of its own, so its answer reaches the model
+ * and not the user. This is what the user sees of it instead: each step as it starts, under the tool call.
+ */
+export type DelegatedProgressEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the delegating `AgentInTheLoopRequestEvent`.
+   */
+  request_event_id: string;
+  /**
+   * Tool Call Id
+   *
+   * The tool call the delegation answers, if any.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Agent Class
+   *
+   * The delegated agent's class.
+   */
+  agent_class: string;
+  /**
+   * Agent Id
+   *
+   * The delegated agent's profile.
+   */
+  agent_id: string;
+  /**
+   * Step
+   *
+   * The step that started, in the run's locale.
+   */
+  step: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -22962,6 +23048,12 @@ export type AgentInTheLoopRequestEventWritable = {
    */
   share_display_id?: boolean;
   /**
+   * Tool Call Id
+   *
+   * The tool call the delegation answers, when a model chose it in a tool loop.
+   */
+  tool_call_id?: string | null;
+  /**
    * Timeout Seconds
    *
    * How long to wait for the delegated agent before the run receives an `AgentInTheLoopTimeoutEvent` instead. `None` (the default) waits for as long as the run lives, which suits a chat-facing delegation, where a deadline would only turn a slow answer into a wrong one.
@@ -24744,6 +24836,7 @@ export type ContextualizedAgentEventWritable = {
     | AgentInTheLoopRequestEventWritable
     | AgentInTheLoopExceptionEventWritable
     | AgentInTheLoopTimeoutEventWritable
+    | DelegatedProgressEventWritable
     | HumanInTheLoopTimeoutEventWritable
     | BotInTheLoopTimeoutEventWritable
     | HumanInTheLoopInputResponseEventWritable
@@ -25293,6 +25386,66 @@ export type DatePickerWritable = {
    * Whether to allow manual input
    */
   manualInput?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * DelegatedProgressEvent
+ *
+ * A step a delegated agent started, shown in the delegating run.
+ *
+ * A delegation a model chose as a tool runs on a thread and display of its own, so its answer reaches the model
+ * and not the user. This is what the user sees of it instead: each step as it starts, under the tool call.
+ */
+export type DelegatedProgressEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the delegating `AgentInTheLoopRequestEvent`.
+   */
+  request_event_id: string;
+  /**
+   * Tool Call Id
+   *
+   * The tool call the delegation answers, if any.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Agent Class
+   *
+   * The delegated agent's class.
+   */
+  agent_class: string;
+  /**
+   * Agent Id
+   *
+   * The delegated agent's profile.
+   */
+  agent_id: string;
+  /**
+   * Step
+   *
+   * The step that started, in the run's locale.
+   */
+  step: string;
   [key: string]: unknown;
 };
 

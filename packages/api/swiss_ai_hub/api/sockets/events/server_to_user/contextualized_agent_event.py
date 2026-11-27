@@ -29,6 +29,7 @@ from swiss_ai_hub.core.events.agent import (
     ConversationContextualizedEvent,
     ConversationTitleEvent,
     CronStartEvent,
+    DelegatedProgressEvent,
     DisplayEvent,
     EmbeddingEvent,
     ExceptionEvent,
@@ -117,6 +118,7 @@ DisplayEvents = (
     | Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")]
     | Annotated[AgentInTheLoopTimeoutEvent, Tag("AgentInTheLoopTimeoutEvent")]
+    | Annotated[DelegatedProgressEvent, Tag("DelegatedProgressEvent")]
     | Annotated[HumanInTheLoopTimeoutEvent, Tag("HumanInTheLoopTimeoutEvent")]
     | Annotated[BotInTheLoopTimeoutEvent, Tag("BotInTheLoopTimeoutEvent")]
     | Annotated[HumanInTheLoopInputResponseEvent, Tag("HumanInTheLoopInputResponseEvent")]

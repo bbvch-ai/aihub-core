@@ -11,9 +11,12 @@ class ToolApprovals:
     """Which calls need the user's approval, and which approvals the user already gave for the run or conversation."""
 
     @staticmethod
-    def policy(name: str, options: ToolOptions, config: ToolLoopConfig) -> ToolApprovalPolicy:
-        """The profile's rule, else the tool's default; a tool approved per call never lets an approval carry over."""
-        rule = config.approval_rule_for(name)
+    def policy(
+        name: str, options: ToolOptions, config: ToolLoopConfig, family: str | None = None
+    ) -> ToolApprovalPolicy:
+        """The profile's rule for the tool or its family, else the tool's default; a tool approved per call never lets
+        an approval carry over."""
+        rule = config.approval_rule_for(name) or (config.approval_rule_for(family) if family else None)
         policy = ToolApprovalPolicy(rule.policy) if rule else options.default_approval
         if options.approve_every_call and policy in {
             ToolApprovalPolicy.ONCE_PER_RUN,
@@ -30,8 +33,9 @@ class ToolApprovals:
         run_context: RunContext,
         thread_context: ThreadContext,
         user: UserIdentity | None,
+        family: str | None = None,
     ) -> bool:
-        match ToolApprovals.policy(name, options, config):
+        match ToolApprovals.policy(name, options, config, family):
             case ToolApprovalPolicy.NEVER:
                 return False
             case ToolApprovalPolicy.ONCE_PER_RUN:
@@ -48,8 +52,9 @@ class ToolApprovals:
         run_context: RunContext,
         thread_context: ThreadContext,
         user: UserIdentity | None,
+        family: str | None = None,
     ) -> None:
-        match ToolApprovals.policy(name, options, config):
+        match ToolApprovals.policy(name, options, config, family):
             case ToolApprovalPolicy.ONCE_PER_RUN:
                 await run_context.set(ToolApprovals._key(name), True)
             case ToolApprovalPolicy.ONCE_PER_THREAD:
@@ -57,11 +62,11 @@ class ToolApprovals:
 
     @staticmethod
     def remembered_approver(
-        name: str, options: ToolOptions, config: ToolLoopConfig, user: UserIdentity | None
+        name: str, options: ToolOptions, config: ToolLoopConfig, user: UserIdentity | None, family: str | None = None
     ) -> str | None:
         """Who approved a call that runs without asking: the run's user when an approval of theirs carried over, since
         approvals are remembered per run and per user; nobody for a tool that never asks."""
-        if user is None or ToolApprovals.policy(name, options, config) == ToolApprovalPolicy.NEVER:
+        if user is None or ToolApprovals.policy(name, options, config, family) == ToolApprovalPolicy.NEVER:
             return None
         return user.id
 

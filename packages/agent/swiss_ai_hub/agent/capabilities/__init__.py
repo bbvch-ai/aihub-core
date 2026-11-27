@@ -3,6 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.agent.capabilities.agent_tools.agent_tool_choice import AgentToolChoice
+    from swiss_ai_hub.agent.capabilities.agent_tools.agent_tool_fields import AgentToolFields
+    from swiss_ai_hub.agent.capabilities.agent_tools.agent_tools import AgentTools
+    from swiss_ai_hub.agent.capabilities.agent_tools.agent_tools_config import AgentToolsConfig
     from swiss_ai_hub.agent.capabilities.attached_files.attached_files import READ_ATTACHED_FILES_TOOL, AttachedFiles
     from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
     from swiss_ai_hub.agent.capabilities.capability import Capability
@@ -65,6 +69,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch_fields import WebFetchFields
 
 __all__ = [
+    "AgentTools",
+    "AgentToolFields",
+    "AgentToolsConfig",
+    "AgentToolChoice",
     "EXTRACT_RECORDS_TOOL",
     "LIST_KNOWLEDGE_DOCUMENTS_TOOL",
     "READ_ATTACHED_FILES_TOOL",
@@ -124,6 +132,10 @@ _RECORD_EXTRACTION_MODULE = "swiss_ai_hub.agent.capabilities.record_extraction.r
 _RECORD_SELECTION_TOOLS_MODULE = "swiss_ai_hub.agent.capabilities.record_extraction.record_selection_tools"
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "AgentTools": "swiss_ai_hub.agent.capabilities.agent_tools.agent_tools",
+    "AgentToolFields": "swiss_ai_hub.agent.capabilities.agent_tools.agent_tool_fields",
+    "AgentToolsConfig": "swiss_ai_hub.agent.capabilities.agent_tools.agent_tools_config",
+    "AgentToolChoice": "swiss_ai_hub.agent.capabilities.agent_tools.agent_tool_choice",
     "EXTRACT_RECORDS_TOOL": _RECORD_EXTRACTION_MODULE,
     "LIST_KNOWLEDGE_DOCUMENTS_TOOL": _KNOWLEDGE_DOCUMENT_TOOLS_MODULE,
     "READ_ATTACHED_FILES_TOOL": _ATTACHED_FILES_MODULE,

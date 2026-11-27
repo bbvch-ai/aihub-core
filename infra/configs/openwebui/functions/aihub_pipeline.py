@@ -199,6 +199,7 @@ class ToolBlock(ContentBlock):
     tool_name: Annotated[str, "Name of the tool being called"]
     tool_params: Annotated[dict[str, Any], "Parameters passed to the tool"] = Field(default_factory=dict)
     result: Annotated[Optional[str], "What the tool returned, once it has"] = None
+    steps: Annotated[list[str], "Steps of an agent the tool call asked, as it reported them"] = Field(default_factory=list)
     closed: Annotated[bool, "Whether tool execution is complete"] = False
     ended_at: Annotated[Optional[float], "Unix timestamp when tool finished"] = None
 
@@ -218,7 +219,10 @@ class ToolBlock(ContentBlock):
         escaped_params = html.escape(json.dumps(self.tool_params))
         done_status = "true" if self.closed or self.result is not None else "false"
         # Open WebUI shows the result inside the tool's collapsible, in the attribute its own tools use.
-        result_attribute = f' result="{html.escape(json.dumps(self.result, ensure_ascii=False))}"' if self.result is not None else ""
+        shown = self.result
+        if shown is not None and self.steps:
+            shown = "Steps: " + " → ".join(self.steps) + "\n\n" + shown
+        result_attribute = f' result="{html.escape(json.dumps(shown, ensure_ascii=False))}"' if shown is not None else ""
 
         status_text = "Tool Executed" if done_status == "true" else f"Calling {self.tool_name}..."
 
@@ -702,6 +706,21 @@ class StreamingStateManager:
             if isinstance(block, ToolBlock) and block.tool_id == tool_id:
                 self._content_blocks[index] = block.model_copy(update={"result": result, "closed": True})
 
+    def add_tool_step(
+        self,
+        tool_id: Annotated[str, "Tool call identifier"],
+        step: Annotated[str, "A step the agent the tool call asked has started"],
+    ) -> Optional[str]:
+        """Note a step under its tool call, wherever the block ended up; the tool's name, or None for an unknown call"""
+        if isinstance(self._current_block, ToolBlock) and self._current_block.tool_id == tool_id:
+            self._current_block = self._current_block.model_copy(update={"steps": [*self._current_block.steps, step]})
+            return self._current_block.tool_name
+        for index, block in enumerate(self._content_blocks):
+            if isinstance(block, ToolBlock) and block.tool_id == tool_id:
+                self._content_blocks[index] = block.model_copy(update={"steps": [*block.steps, step]})
+                return block.tool_name
+        return None
+
     def add_table_block(self, content: Annotated[str, "The table and its summary, as markdown"]) -> None:
         """Pin an extracted table where the run has got to, behind the blocks so far"""
         self._close_open_blocks()
@@ -1016,6 +1035,26 @@ class ToolResultEventHandler(EventHandler):
         context.state_manager.complete_tool_block(event.get("tool_call_id", ""), result)
         await context.emitter({"type": "replace", "data": {"content": context.state_manager.serialize_to_html()}})
         await context.emitter({"type": "status", "data": {"action": None, "description": "", "done": True}})
+        return True
+
+
+class DelegatedProgressEventHandler(EventHandler):
+    """A step of an agent the model asked as a tool: shown as status while it runs, and listed in the tool's block."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if delegated progress event"]:
+        return "DelegatedProgressEvent" in [event.get("_event_name"), *event.get("_parent_event_names", [])]
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Delegated progress event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        step = event.get("step", "")
+        tool_name = context.state_manager.add_tool_step(event.get("tool_call_id") or "", step)
+        description = f"{tool_name}: {step}" if tool_name else step
+        await context.emitter({"type": "status", "data": {"action": None, "description": description, "done": False}})
         return True
 
 
@@ -1898,6 +1937,7 @@ class EventProcessorFactory:
             ChunkEventHandler(),
             ToolEventHandler(),
             ToolResultEventHandler(),
+            DelegatedProgressEventHandler(),
             ToolLoopStatusEventHandler(),
             HumanInTheLoopHandler(),
             ExceptionEventHandler(),

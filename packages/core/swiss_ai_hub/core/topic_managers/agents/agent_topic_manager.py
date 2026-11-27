@@ -9,6 +9,12 @@ class AgentTopicManager(TopicManager):
     DISPLAY_EVENT: ClassVar[str] = "display_event"
     CONTROL_EVENT: ClassVar[str] = "control_event"
 
+    CALLABLE_AGENTS_RPC_SERVICE: ClassVar[str] = "callable_agents"
+
+    def get_callable_agents_rpc_subject(self) -> str:
+        """The subject an agent asks for the online agent profiles it may offer its model as tools."""
+        return f"{self.RPC_TOPIC}.{self.CALLABLE_AGENTS_RPC_SERVICE}.{self.AGENT_TOPIC}"
+
     def get_agent_config_rpc_subject(
         self,
         agent_class: Annotated[str, "Agent class identifier or '*' for wildcard"] = "*",

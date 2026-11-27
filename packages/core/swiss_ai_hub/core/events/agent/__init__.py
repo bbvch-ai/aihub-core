@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.aitl.exception.agent_in_the_loop_exception_event import (
         AgentInTheLoopExceptionEvent,
     )
+    from swiss_ai_hub.core.events.agent.aitl.progress.delegated_progress_event import DelegatedProgressEvent
     from swiss_ai_hub.core.events.agent.aitl.request.agent_in_the_loop_request_event import AgentInTheLoopRequestEvent
     from swiss_ai_hub.core.events.agent.aitl.response.agent_in_the_loop_response_event import (
         AgentInTheLoopResponseEvent,
@@ -196,6 +197,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.web_fetch.web_pages_fetched_event import WebPagesFetchedEvent
 
 __all__ = [
+    "DelegatedProgressEvent",
     "AgentDelegation",
     "AgentInTheLoopTimeoutEvent",
     "BotInTheLoopTimeoutEvent",
@@ -347,6 +349,7 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "DelegatedProgressEvent": "swiss_ai_hub.core.events.agent.aitl.progress.delegated_progress_event",
     "AgentDelegation": "swiss_ai_hub.core.events.agent.aitl.agent_delegation",
     "AgentInTheLoopTimeoutEvent": "swiss_ai_hub.core.events.agent.aitl.timeout.agent_in_the_loop_timeout_event",
     "BotInTheLoopTimeoutEvent": "swiss_ai_hub.core.events.agent.bitl.timeout.bot_in_the_loop_timeout_event",

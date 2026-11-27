@@ -32,21 +32,23 @@ class StreamManager:
         allow_msg_schedules: Annotated[
             bool, "Whether messages may be scheduled for later delivery (NATS 2.12+)"
         ] = False,
+        allow_msg_ttl: Annotated[bool, "Whether a message may carry its own time to live (NATS 2.11+)"] = False,
     ):
         self.js = js
         self.stream_name = stream_name
         self.stream_subject = stream_subject
         self.extra_subjects = extra_subjects or []
         self.allow_msg_schedules = allow_msg_schedules
+        self.allow_msg_ttl = allow_msg_ttl
 
     async def ensure_stream_exists(self):
         """
         Creates the stream with file storage and the default retention policies when it is missing, and adds the
-        subjects and the scheduling flag this manager asks for to a stream that exists without them.
+        subjects and the scheduling and TTL flags this manager asks for to a stream that exists without them.
 
         Several services create the same stream, and the first one wins, so a stream created without the extras is
-        brought up to date by whichever caller asks for them. Nothing is ever removed: enabling message schedules
-        cannot be undone on the server.
+        brought up to date by whichever caller asks for them. Nothing is ever removed: enabling message schedules or
+        TTLs cannot be undone on the server.
         """
         try:
             stream = await self.js.stream_info(self.stream_name)
@@ -63,6 +65,7 @@ class StreamManager:
                     max_age=60 * 60 * 24 * 30,
                     duplicate_window=60 * 1,
                     allow_msg_schedules=self.allow_msg_schedules or None,
+                    allow_msg_ttl=self.allow_msg_ttl or None,
                 )
             )
             return
@@ -72,7 +75,8 @@ class StreamManager:
         subjects = list(config.subjects or [])
         missing_subjects = [subject for subject in self.extra_subjects if subject not in subjects]
         missing_schedules = self.allow_msg_schedules and not config.allow_msg_schedules
-        if not missing_subjects and not missing_schedules:
+        missing_ttl = self.allow_msg_ttl and not config.allow_msg_ttl
+        if not missing_subjects and not missing_schedules and not missing_ttl:
             return
         logger.info(
             f"Updating stream '{self.stream_name}': adding subjects {missing_subjects}, "
@@ -81,6 +85,8 @@ class StreamManager:
         config.subjects = [*subjects, *missing_subjects]
         if missing_schedules:
             config.allow_msg_schedules = True
+        if missing_ttl:
+            config.allow_msg_ttl = True
         await self.js.update_stream(config)
 
     def __repr__(self):

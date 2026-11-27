@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import logging
+import math
 from collections.abc import Awaitable, Callable
 from typing import Annotated, Any, cast, get_args, override
 
@@ -23,6 +24,7 @@ from swiss_ai_hub.core.events.agent import (
     AgentInTheLoopResponseEvent,
     BotInTheLoopRequestEvent,
     ControlEvent,
+    DelegatedProgressEvent,
     ExceptionEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
@@ -35,7 +37,7 @@ from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.generative_ai import AgentMemory, GatewayGuardrails
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.rpc import AgentConfigClient
+from swiss_ai_hub.core.rpc import AgentConfigClient, CallableAgentsClient
 from swiss_ai_hub.core.secrets import SecretEncryptionService
 from swiss_ai_hub.core.streams import StreamManager
 from swiss_ai_hub.core.topic_managers import AgentClassTopicManager, AgentThreadTopicManager, AgentTopicManager
@@ -111,6 +113,7 @@ class AgentDispatcher(BaseDispatcher):
 
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
+        self._callable_agents = CallableAgentsClient(nc=nc)
         # Filled by `_decrypted` on the first config holding ciphertext, never here: `secret_field_paths` builds the
         # form, which a config not overriding `as_form()` cannot do.
         self._secret_field_paths: set[str] | None = None
@@ -119,7 +122,8 @@ class AgentDispatcher(BaseDispatcher):
 
     @override
     async def start(self):
-        """Makes sure the class's stream can hold in-the-loop deadlines before the first request asks for one."""
+        """Makes sure the class's stream can hold in-the-loop deadlines, and delegated starts that expire, before the
+        first request needs them."""
         stream_name, stream_subject = self.topic_manager.get_stream()
         await StreamManager(
             self.js,
@@ -127,6 +131,7 @@ class AgentDispatcher(BaseDispatcher):
             stream_subject,
             extra_subjects=[self.topic_manager.get_subject_for_all_in_the_loop_deadlines()],
             allow_msg_schedules=True,
+            allow_msg_ttl=True,
         ).ensure_stream_exists()
         await super().start()
 
@@ -424,6 +429,28 @@ class AgentDispatcher(BaseDispatcher):
         )
         await self._publish_on(answer, AgentThreadTopicManager.from_agent_topic(delegation.caller))
 
+    async def _show_step_to_delegating_run(
+        self,
+        step_method: Annotated[Callable, "The step about to run."],
+        run_context: Annotated[RunContext, "Per-run context, holding the delegation if there is one."],
+        topic: Annotated[AgentInstanceTopic, "This run."],
+    ) -> None:
+        """A run a model called as a tool has a display nobody watches, so its steps are shown under that tool call."""
+        delegation_data = await run_context.get(self._DELEGATED_BY_KEY)
+        if not delegation_data or not delegation_data.get("tool_call_id"):
+            return
+        delegation = AgentDelegation.model_validate(delegation_data)
+        locale = await run_context.get("locale", LocaleHandler.DEFAULT_LOCALE)
+        name = getattr(step_method, Agent.STEP_NAME_ANNOTATION, None)
+        progress = DelegatedProgressEvent(
+            request_event_id=delegation.request_event_id,
+            tool_call_id=delegation.tool_call_id,
+            agent_class=topic.agent_class,
+            agent_id=topic.agent_id,
+            step=name.in_locale(locale) if name else step_method.__name__.replace("_", " "),
+        )
+        await self._publish_on(progress, AgentThreadTopicManager.from_agent_topic(delegation.caller))
+
     async def _display_fired_timeout(
         self,
         event: Annotated[ControlEvent, "A timeout event NATS delivered at its deadline."],
@@ -534,6 +561,7 @@ class AgentDispatcher(BaseDispatcher):
         await self.step_store.report_execution_context_with_events(
             topic.execution_context_id, step_method.__name__, events_and_kwargs.events
         )
+        await self._show_step_to_delegating_run(step_method, run_context, topic)
 
         agent_instance = self.agent()
         guardrails = await RunAnonymisation.requested_guardrails(agent_config, run_context)
@@ -622,6 +650,15 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_aitl_request_event:
             logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event.event_name}")
             await self.trigger_agent_in_the_loop(cast(AgentInTheLoopRequestEvent, event), topic)
+        elif event.is_hitl_request_event and await self._is_called_as_a_tool(topic):
+            await self.publish_event(
+                ExceptionEvent(
+                    message=f"{topic.agent_class}/{topic.agent_id} needs to ask the user, which an agent "
+                    f"called as a tool cannot: {cast(HumanInTheLoopRequestEvent, event).question}"
+                ),
+                topic,
+            )
+            return
         elif event.is_hitl_request_event or event.is_bitl_request_event:
             await self.in_the_loop_deadlines.arm(
                 cast(HumanInTheLoopRequestEvent | BotInTheLoopRequestEvent, event),
@@ -635,6 +672,11 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_memory_storage_request_event:
             logger.debug(f"Handling special event: MemoryStorageRequestedEvent: {event.event_name}")
             await self.trigger_memory_storage(cast(MemoryStorageRequestedEvent, event), topic)
+
+    async def _is_called_as_a_tool(self, topic: Annotated[AgentInstanceTopic, "This run."]) -> bool:
+        """Whether a model in another run called this one as a tool, so nobody sees what it shows."""
+        delegation_data = await RunContext.for_topic(self.redis, topic).get(self._DELEGATED_BY_KEY)
+        return bool(delegation_data and delegation_data.get("tool_call_id"))
 
     async def trigger_memory_storage(
         self,
@@ -767,6 +809,9 @@ class AgentDispatcher(BaseDispatcher):
             user_data = await run_context.get("user")
             return UserIdentity.model_validate(user_data) if user_data else None
 
+        if CallableAgentsClient in (param.annotation, *get_args(param.annotation)):
+            return self._callable_agents
+
         if param.annotation == EventDisplayer:
             return EventDisplayer(
                 self.js_publisher,
@@ -850,7 +895,10 @@ class AgentDispatcher(BaseDispatcher):
         aitl_request_event.other_agent_topic = target_topic
         start_event = aitl_request_event.start_event
         start_event.delegated_by = AgentDelegation(
-            caller=topic, request_event_id=aitl_request_event.event_id, depth=depth
+            caller=topic,
+            request_event_id=aitl_request_event.event_id,
+            depth=depth,
+            tool_call_id=aitl_request_event.tool_call_id,
         )
 
         await self.in_the_loop_deadlines.arm(aitl_request_event, self.get_topic_manager_for_thread(topic), run_context)
@@ -865,5 +913,9 @@ class AgentDispatcher(BaseDispatcher):
         )
         subject = target_topic.to_subject()
         logger.debug(f"Publishing to Agent in the Loop to subject {subject}")
-        await self.js_publisher.publish_event(start_event, subject, RunAnonymisation.delegation_headers())
+        # A start nobody picked up by the deadline expires, so an agent back online later does not run it for nobody.
+        ttl_seconds = math.ceil(aitl_request_event.timeout_seconds) if aitl_request_event.timeout_seconds else None
+        await self.js_publisher.publish_event(
+            start_event, subject, RunAnonymisation.delegation_headers(), ttl_seconds=ttl_seconds
+        )
         await self.agent_run_tracer.end_aitl_wrapper_span(aitl_wrapper_span, success=True, target_topic=target_topic)

@@ -16,3 +16,6 @@ class AgentDelegation(BaseModel):
     caller: Annotated[AgentInstanceTopic, Field(description="The delegating run, where the answer is published.")]
     request_event_id: Annotated[str, Field(description="`event_id` of the caller's `AgentInTheLoopRequestEvent`.")]
     depth: Annotated[int, Field(ge=1, description="1 for a run delegated to by a run nobody delegated to, and so on.")]
+    tool_call_id: Annotated[
+        str | None, Field(description="The caller's tool call, under which this run's progress is shown.")
+    ] = None

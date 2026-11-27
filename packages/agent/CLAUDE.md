@@ -348,6 +348,16 @@ the model:
   when the profile turned web fetch on and the message links pages, listed in the description within the 1024-character
   limit). It reads only those pages: a call naming any other URL is refused whole, since a URL the model wrote could
   carry the conversation to a site an instruction hidden in a page or file named.
+- **Tool families**: a capability with `tool_family = True` owns every tool named `{tool_name}__{member}`, returns its
+  members per run from the async `tool_definitions(context)` and each member's options from
+  `member_options(name, run_context)`; the profile disables or rules on the family by `tool_name`. **`AgentTools`**
+  (`ask_agent`, needs `AgentToolFields`: `agent_tools: AgentToolsConfig | None`) offers one `ask_agent__{profile}` per
+  online conversational agent the asking user may use (`CallableAgentsClient`, injected by the dispatcher, filtered by
+  `AccessChecker`, the profile's `only_listed`/`agents` and never the caller, kept in the run context by
+  `OfferedAgents`; none at `max_depth`). A call is an `AgentInTheLoop` delegation with the user, its own thread and
+  display, `timeout_seconds` and the `tool_call_id`; the answer text, failure or timeout is the tool result. The
+  delegated run's steps reach the caller as `DelegatedProgressEvent`s, and a HITL request in it ends it with an
+  exception. ADR `2026_11_27_agents_called_as_tools_through_tool_families`.
 - **LlamaIndex tool specs** (`BaseToolSpec` subclasses, built per run with a `ToolContext`) and **LlamaIndex tools**
   (`FunctionTool.from_defaults(...)`), run in `run_function_step`; a raising tool returns an error result instead of
   ending the run. `@ToolOptions.of(...)` on the function sets its label, approval summary, default approval, whether

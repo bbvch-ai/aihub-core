@@ -398,6 +398,8 @@ export {
   type DatasetUpdate,
   type DatePicker,
   type DatePickerWritable,
+  type DelegatedProgressEvent,
+  type DelegatedProgressEventWritable,
   type DeleteAgentInstanceData,
   type DeleteAgentInstanceError,
   type DeleteAgentInstanceErrors,

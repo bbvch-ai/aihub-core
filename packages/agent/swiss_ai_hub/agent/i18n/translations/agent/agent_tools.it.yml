@@ -1,0 +1,17 @@
+---
+tool:
+  label: "Chiedere a un agente"
+  approval_summary: "Chiedere a {agent}: {message}"
+  message: "La richiesta all'agente, completa e autonoma: l'agente non vede questa conversazione, quindi fornisci ogni dettaglio necessario."
+  description: "Chiedi all'agente %{agent}. %{purpose}"
+result:
+  not_offered: "Questo agente non è disponibile in questa conversazione."
+  no_answer: "L'agente non ha risposto entro %{seconds} s. Rispondi senza di lui e dillo."
+  failed: "L'agente ha fallito: %{message}. Rispondi senza di lui e dillo."
+steps:
+  ask_as_tool:
+    name: "Chiedere a un altro agente"
+    description: "Avvia l'agente scelto dal modello, per l'utente che chiede"
+  answer_tool_call:
+    name: "Restituire la risposta dell'agente"
+    description: "Restituisce la risposta dell'agente al ciclo di strumenti del modello"

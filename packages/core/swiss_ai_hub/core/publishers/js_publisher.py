@@ -52,6 +52,7 @@ class JSPublisher(AbstractPublisher[TEvent]):
         subject: str,
         extra_headers: dict[str, str] | None = None,
         retries: int = 10,
+        ttl_seconds: int | None = None,
     ):
         """
         Publishes the given event to the specified JetStream subject, encoding it as JSON.
@@ -60,7 +61,8 @@ class JSPublisher(AbstractPublisher[TEvent]):
         This ensures developers can catch configuration issues early and maintain consistent
         event routing conventions.
 
-        `extra_headers` is forwarded as NATS message headers, filtered to the ``X-AIHub-*`` prefix.
+        `extra_headers` is forwarded as NATS message headers, filtered to the ``X-AIHub-*`` prefix. `ttl_seconds`
+        removes the message from its stream once that long has passed; the stream must allow message TTLs.
         """
         tracer = get_tracer(__name__)
         with tracer.start_as_current_span(
@@ -90,6 +92,8 @@ class JSPublisher(AbstractPublisher[TEvent]):
                     .with_aihub_headers(extra_headers)
                     .to_dict()
                 )
+                if ttl_seconds is not None:
+                    headers["Nats-TTL"] = f"{ttl_seconds}s"
 
                 for attempt in range(retries):
                     try:

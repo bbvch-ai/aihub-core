@@ -39,6 +39,7 @@ from swiss_ai_hub.api.persistance.threads.thread_title_persister import ThreadTi
 from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
 from swiss_ai_hub.api.routes.incident.github_issue_client import GitHubIssueClient
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
+from swiss_ai_hub.api.rpc.callable_agents_responder import CallableAgentsResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     add_knowledge_root_rule,
@@ -231,6 +232,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         agent_config_responder = AgentConfigResponder(nc=nc)
         await agent_config_responder.start()
 
+        callable_agents_responder = CallableAgentsResponder(nc=nc)
+        await callable_agents_responder.start()
+
         process_config_responder = ProcessConfigResponder(nc=nc)
         await process_config_responder.start()
 
@@ -257,6 +261,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         app.state.external_agent_event_distributor = external_agent_event_distributor
         app.state.external_process_event_distributor = external_process_event_distributor
         app.state.agent_config_responder = agent_config_responder
+        app.state.callable_agents_responder = callable_agents_responder
         app.state.process_config_responder = process_config_responder
 
         api_app = app.state.api_app
@@ -357,6 +362,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Stop RPC responders
         if hasattr(app.state, "agent_config_responder"):
             await app.state.agent_config_responder.stop()
+        if hasattr(app.state, "callable_agents_responder"):
+            await app.state.callable_agents_responder.stop()
         if hasattr(app.state, "process_config_responder"):
             await app.state.process_config_responder.stop()
 

@@ -117,7 +117,7 @@ class Agent(DispatchableWorkflow):
 
     @classmethod
     def tool_set_offering(cls, tool_name: str | None) -> "ToolSet | None":
-        return next((tool_set for tool_set in cls.tool_sets() if tool_name in tool_set.names()), None)
+        return next((tool_set for tool_set in cls.tool_sets() if tool_set.offers(tool_name)), None)
 
     @classmethod
     def declared_tool_capabilities(cls) -> list["type[Capability]"]:

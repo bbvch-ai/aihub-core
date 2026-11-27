@@ -4,15 +4,18 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
+    from swiss_ai_hub.api.rpc.callable_agents_responder import CallableAgentsResponder
     from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 
 __all__ = [
     "AgentConfigResponder",
+    "CallableAgentsResponder",
     "ProcessConfigResponder",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
     "AgentConfigResponder": "swiss_ai_hub.api.rpc.agent_config_responder",
+    "CallableAgentsResponder": "swiss_ai_hub.api.rpc.callable_agents_responder",
     "ProcessConfigResponder": "swiss_ai_hub.api.rpc.process_config_responder",
 }
 

@@ -788,6 +788,19 @@ export const AgentDelegationSchema = {
       description:
         "1 for a run delegated to by a run nobody delegated to, and so on.",
     },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The caller's tool call, under which this run's progress is shown.",
+    },
   },
   type: "object",
   required: ["caller", "request_event_id", "depth"],
@@ -1193,6 +1206,19 @@ export const AgentInTheLoopRequestEventSchema = {
       description:
         "Whether to share the display context with the other agent for UI consistency.",
       default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call the delegation answers, when a model chose it in a tool loop.",
     },
     timeout_seconds: {
       anyOf: [
@@ -6639,6 +6665,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/AgentInTheLoopTimeoutEvent",
         },
         {
+          $ref: "#/components/schemas/DelegatedProgressEvent",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopTimeoutEvent",
         },
         {
@@ -8540,6 +8569,105 @@ export const DatePickerSchema = {
   required: ["label", "validation"],
   title: "DatePicker",
   description: "https://formkit-primevue.netlify.app/inputs/DatePicker",
+} as const;
+
+export const DelegatedProgressEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description: "`event_id` of the delegating `AgentInTheLoopRequestEvent`.",
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description: "The tool call the delegation answers, if any.",
+    },
+    agent_class: {
+      type: "string",
+      title: "Agent Class",
+      description: "The delegated agent's class.",
+    },
+    agent_id: {
+      type: "string",
+      title: "Agent Id",
+      description: "The delegated agent's profile.",
+    },
+    step: {
+      type: "string",
+      title: "Step",
+      description: "The step that started, in the run's locale.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "request_event_id",
+    "agent_class",
+    "agent_id",
+    "step",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "DelegatedProgressEvent",
+  description:
+    "A step a delegated agent started, shown in the delegating run.\n\nA delegation a model chose as a tool runs on a thread and display of its own, so its answer reaches the model\nand not the user. This is what the user sees of it instead: each step as it starts, under the tool call.",
 } as const;
 
 export const DeleteAllMemoriesResponseSchema = {
@@ -34403,6 +34531,19 @@ export const AgentInTheLoopRequestEventWritableSchema = {
         "Whether to share the display context with the other agent for UI consistency.",
       default: true,
     },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call the delegation answers, when a model chose it in a tool loop.",
+    },
     timeout_seconds: {
       anyOf: [
         {
@@ -37076,6 +37217,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/AgentInTheLoopTimeoutEventWritable",
         },
         {
+          $ref: "#/components/schemas/DelegatedProgressEventWritable",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopTimeoutEventWritable",
         },
         {
@@ -38044,6 +38188,81 @@ export const DatePickerWritableSchema = {
   required: ["label"],
   title: "DatePicker",
   description: "https://formkit-primevue.netlify.app/inputs/DatePicker",
+} as const;
+
+export const DelegatedProgressEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description: "`event_id` of the delegating `AgentInTheLoopRequestEvent`.",
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description: "The tool call the delegation answers, if any.",
+    },
+    agent_class: {
+      type: "string",
+      title: "Agent Class",
+      description: "The delegated agent's class.",
+    },
+    agent_id: {
+      type: "string",
+      title: "Agent Id",
+      description: "The delegated agent's profile.",
+    },
+    step: {
+      type: "string",
+      title: "Step",
+      description: "The step that started, in the run's locale.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["request_event_id", "agent_class", "agent_id", "step"],
+  title: "DelegatedProgressEvent",
+  description:
+    "A step a delegated agent started, shown in the delegating run.\n\nA delegation a model chose as a tool runs on a thread and display of its own, so its answer reaches the model\nand not the user. This is what the user sees of it instead: each step as it starts, under the tool call.",
 } as const;
 
 export const DisplayEventWritableSchema = {

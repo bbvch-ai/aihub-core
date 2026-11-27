@@ -1,4 +1,5 @@
 import abc
+import asyncio
 import functools
 import inspect
 from collections.abc import Callable
@@ -13,6 +14,7 @@ from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 
 
 class Capability(abc.ABC):
@@ -45,11 +47,31 @@ class Capability(abc.ABC):
     # The form mixin a blueprint's config needs when it offers the tool, on top of `required_config`: settings that
     # only mean something for a model-chosen call, such as which collections the knowledge tool may search.
     tool_config: ClassVar[type[Form] | None] = None
+    # Whether the capability offers a family of tools decided per run, named `{tool_name}__{member}`, instead of one.
+    # `tool_name` then names the family wherever the profile refers to it: disabling it, or an approval rule.
+    tool_family: ClassVar[bool] = False
 
     @classmethod
     def tool_definition(cls, context: ToolContext) -> ToolDefinition | None:
         """The tool as the model is offered it in this run; none when the profile and message give it nothing to do."""
         return None
+
+    @classmethod
+    async def tool_definitions(cls, context: ToolContext) -> list[ToolDefinition]:
+        """Every tool the capability offers in this run: its one tool, or the members of its family."""
+        definition = await asyncio.to_thread(cls.tool_definition, context)
+        return [definition] if definition is not None else []
+
+    @classmethod
+    def owns_tool(cls, name: str | None) -> bool:
+        if name is None or cls.tool_name is None:
+            return False
+        return name == cls.tool_name or (cls.tool_family and name.startswith(f"{cls.tool_name}__"))
+
+    @classmethod
+    async def member_options(cls, name: str, run_context: RunContext) -> ToolOptions:
+        """How one member of the family presents itself and when its calls need approval, as offered in this run."""
+        return cls.tool_options
 
     @classmethod
     def published_config[TConfig: AgentConfig](cls, config: TConfig, blueprint: type[Agent]) -> TConfig:
