@@ -6,7 +6,7 @@ title: Coding / Software Development
 
 OpenWebUI integrates with **Open Terminal** — a sandboxed Linux environment with Python 3.12, common document libraries
 (pandas, openpyxl, xlsxwriter, python-docx, python-pptx, reportlab, fpdf2, weasyprint, pypdf, matplotlib, Pillow, numpy,
-scipy, lxml, PyYAML) and the `ffmpeg` and `pandoc` command-line tools. Code runs in an isolated per-user environment, in
+scipy, lxml, PyYAML) and the `ffmpeg`, `pandoc`, `unzip` and `7z` command-line tools. Code runs in an isolated per-user environment, in
 that user's own home directory inside the sandbox.
 
 ::: warning Requirements & current limitations
