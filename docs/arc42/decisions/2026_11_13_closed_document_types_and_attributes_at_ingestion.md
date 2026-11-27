@@ -59,9 +59,9 @@ stores it (#2481). Further types follow in #2485.
 
 The classifier reads a document's first two pages, capped at 8,000 characters, and the last 1,500 characters of the
 rest, where totals and payment terms often stand. From the middle in between it reads at most two short excerpts each
-that state a term, a notice period, a court or the signing date, since a long contract states those in numbered
-articles and is signed before its annexes; this raised the contract, SLA and policy type versions rather than the
-catalog's, so a backfill re-classifies only those documents.
+that state a term, a notice period, a court or the signing date, since a long contract states those in numbered articles
+and is signed before its annexes; this raised the contract, SLA and policy type versions rather than the catalog's, so a
+backfill re-classifies only those documents.
 
 ## Consequences
 

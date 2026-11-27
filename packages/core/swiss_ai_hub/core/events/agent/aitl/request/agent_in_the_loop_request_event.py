@@ -8,6 +8,7 @@ from swiss_ai_hub.core.events.agent.aitl.exception.agent_in_the_loop_exception_e
 from swiss_ai_hub.core.events.agent.aitl.response.agent_in_the_loop_response_event import (
     AgentInTheLoopResponseEvent,
 )
+from swiss_ai_hub.core.events.agent.aitl.timeout.agent_in_the_loop_timeout_event import AgentInTheLoopTimeoutEvent
 from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
 from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
 from swiss_ai_hub.core.events.agent.display.display_event import DisplayEvent
@@ -54,22 +55,13 @@ class AgentInTheLoopRequestEvent(DisplayEvent, ControlEvent):
     share_display_id: Annotated[
         bool, Field(description="Whether to share the display context with the other agent for UI consistency.")
     ] = True
-    share_run_id: Annotated[
-        bool,
-        Field(
-            description="Whether to share the run context with the other agent. "
-            "Warning: In almost all cases, you will not want to share the run! The response subscription is scoped "
-            "to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.",
-        ),
-    ] = False
     timeout_seconds: Annotated[
         float | None,
         Field(
-            description="How long to wait for the delegated agent before synthesizing a failure. `None` (the "
-            "default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped "
-            "agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set "
-            "it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the "
-            "timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.",
+            gt=0,
+            description="How long to wait for the delegated agent before the run receives an "
+            "`AgentInTheLoopTimeoutEvent` instead. `None` (the default) waits for as long as the run lives, which "
+            "suits a chat-facing delegation, where a deadline would only turn a slow answer into a wrong one.",
         ),
     ] = None
 
@@ -90,3 +82,7 @@ class AgentInTheLoopRequestEvent(DisplayEvent, ControlEvent):
     @property
     def exception(self) -> type[AgentInTheLoopExceptionEvent] | None:
         return self._exception
+
+    def timed_out(self) -> AgentInTheLoopTimeoutEvent:
+        """What the run receives at this request's deadline; only meaningful when `timeout_seconds` is set."""
+        return AgentInTheLoopTimeoutEvent(request_event_id=self.event_id, timeout_seconds=self.timeout_seconds or 0)

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.core.events.agent.aitl.agent_delegation import AgentDelegation
     from swiss_ai_hub.core.events.agent.aitl.agent_in_the_loop import AgentInTheLoop
     from swiss_ai_hub.core.events.agent.aitl.exception.agent_in_the_loop_exception_event import (
         AgentInTheLoopExceptionEvent,
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.aitl.response.agent_in_the_loop_response_event import (
         AgentInTheLoopResponseEvent,
     )
+    from swiss_ai_hub.core.events.agent.aitl.timeout.agent_in_the_loop_timeout_event import AgentInTheLoopTimeoutEvent
     from swiss_ai_hub.core.events.agent.attached_file.attached_file_event import AttachedFileEvent
     from swiss_ai_hub.core.events.agent.attached_file.attached_file_status import AttachedFileStatus
     from swiss_ai_hub.core.events.agent.attached_file.attached_files_read_event import AttachedFilesReadEvent
@@ -25,6 +27,7 @@ if TYPE_CHECKING:
         BotInTheLoopResponderInfo,
         BotInTheLoopResponseEvent,
     )
+    from swiss_ai_hub.core.events.agent.bitl.timeout.bot_in_the_loop_timeout_event import BotInTheLoopTimeoutEvent
     from swiss_ai_hub.core.events.agent.common.language_event import LanguageEvent
     from swiss_ai_hub.core.events.agent.common.limit_chat_history_event import LimitChatHistoryEvent
     from swiss_ai_hub.core.events.agent.common.standalone_question_condenser_event import (
@@ -42,6 +45,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.control.stop.refusal_reason import RefusalReason
     from swiss_ai_hub.core.events.agent.control.stop.refusal_stop_event import RefusalStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
+    from swiss_ai_hub.core.events.agent.control.timeout.in_the_loop_timeout_event import InTheLoopTimeoutEvent
     from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
     from swiss_ai_hub.core.events.agent.conversation.complete_conversation_event import CompleteConversationEvent
     from swiss_ai_hub.core.events.agent.conversation.compose_context_event import ComposeContextEvent
@@ -106,6 +110,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_event import (
         HumanInTheLoopResponseEvent,
     )
+    from swiss_ai_hub.core.events.agent.hitl.timeout.human_in_the_loop_timeout_event import HumanInTheLoopTimeoutEvent
     from swiss_ai_hub.core.events.agent.imap.drafted_reply_ref import DraftedReplyRef
     from swiss_ai_hub.core.events.agent.imap.mail_attachment_ref import MailAttachmentRef
     from swiss_ai_hub.core.events.agent.imap.mail_batch_classified_event import MailBatchClassifiedEvent
@@ -191,6 +196,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.web_fetch.web_pages_fetched_event import WebPagesFetchedEvent
 
 __all__ = [
+    "AgentDelegation",
+    "AgentInTheLoopTimeoutEvent",
+    "BotInTheLoopTimeoutEvent",
+    "HumanInTheLoopTimeoutEvent",
+    "InTheLoopTimeoutEvent",
     "CompleteConversationEvent",
     "ComposeContextEvent",
     "ContextComposedEvent",
@@ -337,6 +347,11 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "AgentDelegation": "swiss_ai_hub.core.events.agent.aitl.agent_delegation",
+    "AgentInTheLoopTimeoutEvent": "swiss_ai_hub.core.events.agent.aitl.timeout.agent_in_the_loop_timeout_event",
+    "BotInTheLoopTimeoutEvent": "swiss_ai_hub.core.events.agent.bitl.timeout.bot_in_the_loop_timeout_event",
+    "HumanInTheLoopTimeoutEvent": "swiss_ai_hub.core.events.agent.hitl.timeout.human_in_the_loop_timeout_event",
+    "InTheLoopTimeoutEvent": "swiss_ai_hub.core.events.agent.control.timeout.in_the_loop_timeout_event",
     "CompleteConversationEvent": "swiss_ai_hub.core.events.agent.conversation.complete_conversation_event",
     "ComposeContextEvent": "swiss_ai_hub.core.events.agent.conversation.compose_context_event",
     "ContextComposedEvent": "swiss_ai_hub.core.events.agent.conversation.context_composed_event",

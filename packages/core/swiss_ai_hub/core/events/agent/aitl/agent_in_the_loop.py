@@ -9,6 +9,7 @@ from swiss_ai_hub.core.events.agent.aitl.request.agent_in_the_loop_request_event
 from swiss_ai_hub.core.events.agent.aitl.response.agent_in_the_loop_response_event import (
     AgentInTheLoopResponseEvent,
 )
+from swiss_ai_hub.core.events.agent.aitl.timeout.agent_in_the_loop_timeout_event import AgentInTheLoopTimeoutEvent
 from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
 from swiss_ai_hub.core.topic_managers.agents.agent_topic_manager import AgentTopicManager
 from swiss_ai_hub.core.topics import PartialAgentTopic
@@ -38,6 +39,7 @@ class AgentInTheLoop:
     request = AgentInTheLoopRequestEvent
     response = AgentInTheLoopResponseEvent
     exception = AgentInTheLoopExceptionEvent
+    timeout = AgentInTheLoopTimeoutEvent
 
     @classmethod
     def invoke(
@@ -47,7 +49,6 @@ class AgentInTheLoop:
         start_event: StartEvent,
         share_thread_id: bool = True,
         share_display_id: bool = True,
-        share_run_id: bool = False,
         timeout_seconds: float | None = None,
     ):
         """
@@ -78,7 +79,6 @@ class AgentInTheLoop:
             ),
             share_thread_id=share_thread_id,
             share_display_id=share_display_id,
-            share_run_id=share_run_id,
             timeout_seconds=timeout_seconds,
             response=cls.response,
             exception=cls.exception,

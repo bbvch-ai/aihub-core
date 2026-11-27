@@ -770,6 +770,32 @@ export const AgentConfigDTOSchema = {
     "Encapsulates the data transfer object for an agent INSTANCE's configuration.\n\nContains instance-level data (agent_id, name, description, icon) and the\nconfiguration form. Values come from both:\n- AgentClassEntity: class-level form schema\n- AgentConfigEntityDocument: instance-specific name, description, icon, agent_id\n\nNOTE: This represents config for an INSTANCE (with agent_id), not an agent CLASS.",
 } as const;
 
+export const AgentDelegationSchema = {
+  properties: {
+    caller: {
+      $ref: "#/components/schemas/AgentInstanceTopic",
+      description: "The delegating run, where the answer is published.",
+    },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description: "`event_id` of the caller's `AgentInTheLoopRequestEvent`.",
+    },
+    depth: {
+      type: "integer",
+      minimum: 1,
+      title: "Depth",
+      description:
+        "1 for a run delegated to by a run nobody delegated to, and so on.",
+    },
+  },
+  type: "object",
+  required: ["caller", "request_event_id", "depth"],
+  title: "AgentDelegation",
+  description:
+    "Who started a run through `AgentInTheLoop`, carried on the delegated run's start event.\n\nThe delegated run's dispatcher answers the caller from it when the run stops or fails, through JetStream, so the\nanswer survives a restart of either side. It also bounds chains of delegations by their depth.",
+} as const;
+
 export const AgentEventSchema = {
   properties: {
     event_id: {
@@ -1168,17 +1194,11 @@ export const AgentInTheLoopRequestEventSchema = {
         "Whether to share the display context with the other agent for UI consistency.",
       default: true,
     },
-    share_run_id: {
-      type: "boolean",
-      title: "Share Run Id",
-      description:
-        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.",
-      default: false,
-    },
     timeout_seconds: {
       anyOf: [
         {
           type: "number",
+          exclusiveMinimum: 0,
         },
         {
           type: "null",
@@ -1186,7 +1206,7 @@ export const AgentInTheLoopRequestEventSchema = {
       ],
       title: "Timeout Seconds",
       description:
-        "How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.",
+        "How long to wait for the delegated agent before the run receives an `AgentInTheLoopTimeoutEvent` instead. `None` (the default) waits for as long as the run lives, which suits a chat-facing delegation, where a deadline would only turn a slow answer into a wrong one.",
     },
     _event_name: {
       type: "string",
@@ -1293,6 +1313,81 @@ export const AgentInTheLoopResponseEventSchema = {
   title: "AgentInTheLoopResponseEvent",
   description:
     "A response from an agent after completing a delegated task.\n\n### Why AgentInTheLoopResponseEvent?\nWhen an agent completes a task delegated through an `AgentInTheLoopRequestEvent`, the response:\n- Influences the workflow (since it's a `ControlEvent`), allowing the original agent to resume based on the result\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring of agent interactions",
+} as const;
+
+export const AgentInTheLoopTimeoutEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description: "`event_id` of the request that went unanswered.",
+    },
+    timeout_seconds: {
+      type: "number",
+      title: "Timeout Seconds",
+      description: "How long the run waited before giving up.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "request_event_id",
+    "timeout_seconds",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "AgentInTheLoopTimeoutEvent",
+  description:
+    "The agent a run delegated to did not stop or fail within the request's `timeout_seconds`.",
 } as const;
 
 export const AgentInstanceTopicSchema = {
@@ -2802,6 +2897,81 @@ export const Body_upload_user_fileSchema = {
   type: "object",
   required: ["file"],
   title: "Body_upload_user_file",
+} as const;
+
+export const BotInTheLoopTimeoutEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description: "`event_id` of the request that went unanswered.",
+    },
+    timeout_seconds: {
+      type: "number",
+      title: "Timeout Seconds",
+      description: "How long the run waited before giving up.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "request_event_id",
+    "timeout_seconds",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "BotInTheLoopTimeoutEvent",
+  description:
+    "Nobody answered the question a `BotInTheLoopRequestEvent` posted to Slack or Teams in time.",
 } as const;
 
 export const BucketMetadataFiltersSchema = {
@@ -6466,6 +6636,15 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/AgentInTheLoopExceptionEvent",
         },
         {
+          $ref: "#/components/schemas/AgentInTheLoopTimeoutEvent",
+        },
+        {
+          $ref: "#/components/schemas/HumanInTheLoopTimeoutEvent",
+        },
+        {
+          $ref: "#/components/schemas/BotInTheLoopTimeoutEvent",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopInputResponseEvent",
         },
         {
@@ -7479,6 +7658,18 @@ export const CronStartEventSchema = {
       ],
       description: "Display description for the event",
     },
+    delegated_by: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/AgentDelegation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The run that delegated this one through `AgentInTheLoop`, answered when this run ends.",
+    },
     locale: {
       type: "string",
       title: "Locale",
@@ -8473,6 +8664,12 @@ export const DisplayStatisticsSchema = {
       type: "boolean",
       title: "Has Errors",
       description: "Has error events",
+      default: false,
+    },
+    has_timeouts: {
+      type: "boolean",
+      title: "Has Timeouts",
+      description: "A human, agent or bot did not answer a request in time",
       default: false,
     },
     has_pending: {
@@ -11680,6 +11877,20 @@ export const HumanInTheLoopChatRequestEventSchema = {
       title: "Hitl Type",
       default: "chat",
     },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -11916,6 +12127,20 @@ export const HumanInTheLoopConfirmationRequestEventSchema = {
       title: "Hitl Type",
       default: "confirmation",
     },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -12081,6 +12306,20 @@ export const HumanInTheLoopInputRequestEventSchema = {
       const: "input",
       title: "Hitl Type",
       default: "input",
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
     },
     _event_name: {
       type: "string",
@@ -12248,6 +12487,20 @@ export const HumanInTheLoopQuestionsRequestEventSchema = {
       title: "Hitl Type",
       default: "chat",
     },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
+    },
     questions: {
       items: {
         $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
@@ -12348,6 +12601,20 @@ export const HumanInTheLoopRequestEventSchema = {
       title: "Hitl Type",
       description:
         "HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).",
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
     },
     _event_name: {
       type: "string",
@@ -12469,6 +12736,81 @@ export const HumanInTheLoopResponseEventSchema = {
   title: "HumanInTheLoopResponseEvent",
   description:
     "Base response from a human operator after a HITL request.\n\nUse the specific subclasses:\n- `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)\n- `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)\n- `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)",
+} as const;
+
+export const HumanInTheLoopTimeoutEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description: "`event_id` of the request that went unanswered.",
+    },
+    timeout_seconds: {
+      type: "number",
+      title: "Timeout Seconds",
+      description: "How long the run waited before giving up.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "request_event_id",
+    "timeout_seconds",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "HumanInTheLoopTimeoutEvent",
+  description:
+    "The person asked by a `HumanInTheLoopRequestEvent` did not answer within its `timeout_seconds`.",
 } as const;
 
 export const HumanProcessStepDTOSchema = {
@@ -23451,6 +23793,18 @@ export const RAGStartEventSchema = {
       ],
       description: "Display description for the event",
     },
+    delegated_by: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/AgentDelegation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The run that delegated this one through `AgentInTheLoop`, answered when this run ends.",
+    },
     locale: {
       type: "string",
       title: "Locale",
@@ -25894,6 +26248,12 @@ export const RunStatisticsSchema = {
       description: "Has error events",
       default: false,
     },
+    has_timeouts: {
+      type: "boolean",
+      title: "Has Timeouts",
+      description: "A human, agent or bot did not answer a request in time",
+      default: false,
+    },
     has_pending: {
       type: "boolean",
       title: "Has Pending",
@@ -28013,6 +28373,18 @@ export const StartEventSchema = {
       ],
       description: "Display description for the event",
     },
+    delegated_by: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/AgentDelegation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The run that delegated this one through `AgentInTheLoop`, answered when this run ends.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -28374,6 +28746,18 @@ export const StoreUserMemoryRequestedEventSchema = {
         },
       ],
       description: "Display description for the event",
+    },
+    delegated_by: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/AgentDelegation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The run that delegated this one through `AgentInTheLoop`, answered when this run ends.",
     },
     locale: {
       type: "string",
@@ -29449,6 +29833,12 @@ export const ThreadDTOSchema = {
       description: "There are ExceptionEvent in the thread",
       default: false,
     },
+    has_timeouts: {
+      type: "boolean",
+      title: "Has Timeouts",
+      description: "A human, agent or bot did not answer a request in time",
+      default: false,
+    },
     is_hitl: {
       type: "boolean",
       title: "Is Hitl",
@@ -30228,6 +30618,20 @@ export const ToolApprovalRequestEventSchema = {
       const: "confirmation",
       title: "Hitl Type",
       default: "confirmation",
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
     },
     tool_call_id: {
       type: "string",
@@ -32308,6 +32712,18 @@ export const UserMessageEventSchema = {
       ],
       description: "Display description for the event",
     },
+    delegated_by: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/AgentDelegation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The run that delegated this one through `AgentInTheLoop`, answered when this run ends.",
+    },
     locale: {
       type: "string",
       title: "Locale",
@@ -33987,17 +34403,11 @@ export const AgentInTheLoopRequestEventWritableSchema = {
         "Whether to share the display context with the other agent for UI consistency.",
       default: true,
     },
-    share_run_id: {
-      type: "boolean",
-      title: "Share Run Id",
-      description:
-        "Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.",
-      default: false,
-    },
     timeout_seconds: {
       anyOf: [
         {
           type: "number",
+          exclusiveMinimum: 0,
         },
         {
           type: "null",
@@ -34005,7 +34415,7 @@ export const AgentInTheLoopRequestEventWritableSchema = {
       ],
       title: "Timeout Seconds",
       description:
-        "How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.",
+        "How long to wait for the delegated agent before the run receives an `AgentInTheLoopTimeoutEvent` instead. `None` (the default) waits for as long as the run lives, which suits a chat-facing delegation, where a deadline would only turn a slow answer into a wrong one.",
     },
   },
   additionalProperties: true,
@@ -34068,6 +34478,59 @@ export const AgentInTheLoopResponseEventWritableSchema = {
   title: "AgentInTheLoopResponseEvent",
   description:
     "A response from an agent after completing a delegated task.\n\n### Why AgentInTheLoopResponseEvent?\nWhen an agent completes a task delegated through an `AgentInTheLoopRequestEvent`, the response:\n- Influences the workflow (since it's a `ControlEvent`), allowing the original agent to resume based on the result\n- Is visible to the UI (since it's also a `DisplayEvent`), enabling monitoring of agent interactions",
+} as const;
+
+export const AgentInTheLoopTimeoutEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description: "`event_id` of the request that went unanswered.",
+    },
+    timeout_seconds: {
+      type: "number",
+      title: "Timeout Seconds",
+      description: "How long the run waited before giving up.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["request_event_id", "timeout_seconds"],
+  title: "AgentInTheLoopTimeoutEvent",
+  description:
+    "The agent a run delegated to did not stop or fail within the request's `timeout_seconds`.",
 } as const;
 
 export const AgentProcessStepDTOWritableSchema = {
@@ -34996,6 +35459,59 @@ export const BaseStoreMemoryEventWritableSchema = {
   title: "BaseStoreMemoryEvent",
   description:
     "Abstract base class for memory storage events.\n\n### Why BaseStoreMemoryEvent?\nThis event serves dual purposes in the Swiss AI Agent Protocol:\n- As a control event, it notifies downstream systems that memory state has changed\n- As a display event, it provides transparency to users about what was learned or stored\n\nAgents emit this event after persisting insights to long-term memory storage. The event captures\nboth the semantic changes (added/updated/deleted memories) and the knowledge graph updates\n(new/removed relations between entities). This transparency is crucial for user trust - they can\nsee what the agent learned and verify accuracy.\n\nThe event structure follows mem0's MemoryAdded response format, enabling real-time UI updates,\naudit trails, and triggering downstream workflows that depend on memory state.\n\nConcrete subclasses differentiate between user-scoped and organization-scoped memory storage.",
+} as const;
+
+export const BotInTheLoopTimeoutEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description: "`event_id` of the request that went unanswered.",
+    },
+    timeout_seconds: {
+      type: "number",
+      title: "Timeout Seconds",
+      description: "How long the run waited before giving up.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["request_event_id", "timeout_seconds"],
+  title: "BotInTheLoopTimeoutEvent",
+  description:
+    "Nobody answered the question a `BotInTheLoopRequestEvent` posted to Slack or Teams in time.",
 } as const;
 
 export const CascadeSelectWritableSchema = {
@@ -36557,6 +37073,15 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/AgentInTheLoopExceptionEventWritable",
         },
         {
+          $ref: "#/components/schemas/AgentInTheLoopTimeoutEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/HumanInTheLoopTimeoutEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/BotInTheLoopTimeoutEventWritable",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopInputResponseEventWritable",
         },
         {
@@ -37211,6 +37736,18 @@ export const CronStartEventWritableSchema = {
       ],
       description: "Display description for the event",
     },
+    delegated_by: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/AgentDelegation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The run that delegated this one through `AgentInTheLoop`, answered when this run ends.",
+    },
     locale: {
       type: "string",
       title: "Locale",
@@ -37563,6 +38100,12 @@ export const DisplayStatisticsWritableSchema = {
       type: "boolean",
       title: "Has Errors",
       description: "Has error events",
+      default: false,
+    },
+    has_timeouts: {
+      type: "boolean",
+      title: "Has Timeouts",
+      description: "A human, agent or bot did not answer a request in time",
       default: false,
     },
     has_pending: {
@@ -39300,6 +39843,20 @@ export const HumanInTheLoopChatRequestEventWritableSchema = {
       title: "Hitl Type",
       default: "chat",
     },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -39431,6 +39988,20 @@ export const HumanInTheLoopConfirmationRequestEventWritableSchema = {
       const: "confirmation",
       title: "Hitl Type",
       default: "confirmation",
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
     },
   },
   additionalProperties: true,
@@ -39564,6 +40135,20 @@ export const HumanInTheLoopInputRequestEventWritableSchema = {
       title: "Hitl Type",
       default: "input",
     },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -39696,6 +40281,20 @@ export const HumanInTheLoopQuestionsRequestEventWritableSchema = {
       title: "Hitl Type",
       default: "chat",
     },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
+    },
     questions: {
       items: {
         $ref: "#/components/schemas/HumanInTheLoopChoiceQuestion",
@@ -39773,6 +40372,20 @@ export const HumanInTheLoopRequestEventWritableSchema = {
       title: "Hitl Type",
       description:
         "HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).",
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
     },
   },
   additionalProperties: true,
@@ -39854,6 +40467,59 @@ export const HumanInTheLoopResponseEventWritableSchema = {
   title: "HumanInTheLoopResponseEvent",
   description:
     "Base response from a human operator after a HITL request.\n\nUse the specific subclasses:\n- `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)\n- `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)\n- `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)",
+} as const;
+
+export const HumanInTheLoopTimeoutEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    request_event_id: {
+      type: "string",
+      title: "Request Event Id",
+      description: "`event_id` of the request that went unanswered.",
+    },
+    timeout_seconds: {
+      type: "number",
+      title: "Timeout Seconds",
+      description: "How long the run waited before giving up.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["request_event_id", "timeout_seconds"],
+  title: "HumanInTheLoopTimeoutEvent",
+  description:
+    "The person asked by a `HumanInTheLoopRequestEvent` did not answer within its `timeout_seconds`.",
 } as const;
 
 export const IconSelectorWritableSchema = {
@@ -46734,6 +47400,18 @@ export const RAGStartEventWritableSchema = {
       ],
       description: "Display description for the event",
     },
+    delegated_by: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/AgentDelegation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The run that delegated this one through `AgentInTheLoop`, answered when this run ends.",
+    },
     locale: {
       type: "string",
       title: "Locale",
@@ -48748,6 +49426,12 @@ export const RunStatisticsWritableSchema = {
       description: "Has error events",
       default: false,
     },
+    has_timeouts: {
+      type: "boolean",
+      title: "Has Timeouts",
+      description: "A human, agent or bot did not answer a request in time",
+      default: false,
+    },
     has_pending: {
       type: "boolean",
       title: "Has Pending",
@@ -50603,6 +51287,18 @@ export const StartEventWritableSchema = {
       ],
       description: "Display description for the event",
     },
+    delegated_by: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/AgentDelegation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The run that delegated this one through `AgentInTheLoop`, answered when this run ends.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -50890,6 +51586,18 @@ export const StoreUserMemoryRequestedEventWritableSchema = {
         },
       ],
       description: "Display description for the event",
+    },
+    delegated_by: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/AgentDelegation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The run that delegated this one through `AgentInTheLoop`, answered when this run ends.",
     },
     locale: {
       type: "string",
@@ -51597,6 +52305,12 @@ export const ThreadDTOWritableSchema = {
       description: "There are ExceptionEvent in the thread",
       default: false,
     },
+    has_timeouts: {
+      type: "boolean",
+      title: "Has Timeouts",
+      description: "A human, agent or bot did not answer a request in time",
+      default: false,
+    },
     is_hitl: {
       type: "boolean",
       title: "Is Hitl",
@@ -52298,6 +53012,20 @@ export const ToolApprovalRequestEventWritableSchema = {
       const: "confirmation",
       title: "Hitl Type",
       default: "confirmation",
+    },
+    timeout_seconds: {
+      anyOf: [
+        {
+          type: "number",
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timeout Seconds",
+      description:
+        "How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
     },
     tool_call_id: {
       type: "string",
@@ -53196,6 +53924,18 @@ export const UserMessageEventWritableSchema = {
         },
       ],
       description: "Display description for the event",
+    },
+    delegated_by: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/AgentDelegation",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The run that delegated this one through `AgentInTheLoop`, answered when this run ends.",
     },
     locale: {
       type: "string",

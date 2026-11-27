@@ -431,11 +431,12 @@ class ThreadService:
             # Sum up individual event counts for overall flags
             stats.has_errors = stats.has_errors or (agg.exception_events > 0)
             stats.is_hitl = stats.is_hitl or (agg.hitl_request_events > 0)
-            stats.open_hitl = stats.open_hitl or (agg.hitl_request_events > agg.hitl_response_events)
+            stats.open_hitl = stats.open_hitl or agg.open_hitl
             stats.is_bitl = stats.is_bitl or (agg.bitl_request_events > 0)
-            stats.open_bitl = stats.open_bitl or (agg.bitl_request_events > agg.bitl_response_events)
+            stats.open_bitl = stats.open_bitl or agg.open_bitl
             stats.is_aitl = stats.is_aitl or (agg.aitl_request_events > 0)
-            stats.open_aitl = stats.open_aitl or (agg.aitl_request_events > agg.aitl_response_events)
+            stats.open_aitl = stats.open_aitl or agg.open_aitl
+            stats.has_timeouts = stats.has_timeouts or agg.has_timeouts
             stats.has_pending = stats.has_pending or (agg.start_events > (agg.stop_events + agg.exception_events))
 
             if agg.first_event_time:
@@ -548,6 +549,7 @@ class ThreadService:
         response.num_turns = overall_stats.num_turns
         response.has_pending = overall_stats.has_pending
         response.has_errors = overall_stats.has_errors
+        response.has_timeouts = overall_stats.has_timeouts
         response.is_hitl = overall_stats.is_hitl
         response.open_hitl = overall_stats.open_hitl
         response.is_bitl = overall_stats.is_bitl

@@ -36,6 +36,7 @@ class RunStatistics(BaseEventStatistics):
             agent=agent_dto,
             n_events=run_data.get("n_events", 0),
             has_errors=run_data.get("has_errors", False),
+            has_timeouts=run_data.get("has_timeouts", False),
             has_pending=run_data.get("has_pending", False),
             is_hitl=run_data.get("is_hitl", False),
             open_hitl=run_data.get("open_hitl", False),

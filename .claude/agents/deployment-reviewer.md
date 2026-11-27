@@ -60,7 +60,7 @@ infra/configs/{service}/*.{stage}{.gpu}.*    → ~80 generated config files
 
 ```
 image_tags.{service} in compose-config.yml:
-  - Flat string (e.g., "nats:2.11.4") → infrastructure, always included
+  - Flat string (e.g., "nats:2.14.10") → infrastructure, always included
   - Dict with stage keys → included only in stages where a key exists
   - Dict key "build: localbuild" → triggers build: directive instead of image:
   - No key for a stage → service excluded from that stage's compose file

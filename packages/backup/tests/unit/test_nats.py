@@ -132,7 +132,7 @@ def test_run_nats_does_not_retry_on_non_transient_error(nats_handler: NatsHandle
         pytest.raises(RuntimeError, match="failed"),
     ):
         mock_run.return_value = MagicMock(stdout="", stderr="stream not found", returncode=1)
-        nats_handler._run_nats(["stream", "backup", "MISSING", "/tmp/x"])
+        nats_handler._run_nats(["backup", "stream", "MISSING", "/tmp/x"])
 
     assert mock_run.call_count == 1
     mock_wait.assert_not_called()

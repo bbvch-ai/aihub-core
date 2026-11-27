@@ -371,12 +371,14 @@ These events provide detailed telemetry for monitoring, debugging, and cost mana
 
 These events manage complex, multi-step interactions that require pausing and resuming a workflow.
 
-| Event                             | Category          | Purpose                                                                                           |
-| :-------------------------------- | :---------------- | :------------------------------------------------------------------------------------------------ |
-| **`HumanInTheLoopRequestEvent`**  | Control & Display | Pauses the workflow and sends a request to a human user for input or approval.                    |
-| **`HumanInTheLoopResponseEvent`** | Control & Display | Carries the response from a human user, allowing the paused workflow to resume.                   |
-| **`AgentInTheLoopRequestEvent`**  | Control & Display | Pauses the workflow and delegates a task to another agent.                                        |
-| **`AgentInTheLoopResponseEvent`** | Control & Display | Carries the final `StopEvent` from the delegated agent, allowing the original workflow to resume. |
+| Event                                                                                              | Category          | Purpose                                                                                                                                                               |
+| :------------------------------------------------------------------------------------------------- | :---------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`HumanInTheLoopRequestEvent`**                                                                   | Control & Display | Pauses the workflow and sends a request to a human user for input or approval.                                                                                        |
+| **`HumanInTheLoopResponseEvent`**                                                                  | Control & Display | Carries the response from a human user, allowing the paused workflow to resume.                                                                                       |
+| **`AgentInTheLoopRequestEvent`**                                                                   | Control & Display | Pauses the workflow and delegates a task to another agent.                                                                                                            |
+| **`AgentInTheLoopResponseEvent`**                                                                  | Control & Display | Carries the final `StopEvent` from the delegated agent, allowing the original workflow to resume.                                                                     |
+| **`AgentInTheLoopExceptionEvent`**                                                                 | Control & Display | Carries the `ExceptionEvent` of a delegated agent that failed.                                                                                                        |
+| **`HumanInTheLoopTimeoutEvent`**, **`AgentInTheLoopTimeoutEvent`**, **`BotInTheLoopTimeoutEvent`** | Control & Display | Delivered by NATS at the deadline of a request with `timeout_seconds`, so the workflow can take a fallback path. The first of answer and timeout settles the request. |
 
 ## Protocol in action: sequence diagrams
 

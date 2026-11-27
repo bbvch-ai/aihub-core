@@ -10,12 +10,14 @@ from swiss_ai_hub.core.events.agent import (
     AgentInTheLoopExceptionEvent,
     AgentInTheLoopRequestEvent,
     AgentInTheLoopResponseEvent,
+    AgentInTheLoopTimeoutEvent,
     AgentSuitabilityAcceptEvent,
     AgentSuitabilityRejectEvent,
     AttachedFileEvent,
     AttachedFilesReadEvent,
     BaseRetrieveMemoryEvent,
     BaseStoreMemoryEvent,
+    BotInTheLoopTimeoutEvent,
     ChainEvent,
     ChunkEvent,
     CompleteConversationEvent,
@@ -47,6 +49,7 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopQuestionsRequestEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
+    HumanInTheLoopTimeoutEvent,
     KnowledgeSearchedEvent,
     LimitChatHistoryEvent,
     LLMCostEvent,
@@ -113,6 +116,9 @@ DisplayEvents = (
     | Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")]
+    | Annotated[AgentInTheLoopTimeoutEvent, Tag("AgentInTheLoopTimeoutEvent")]
+    | Annotated[HumanInTheLoopTimeoutEvent, Tag("HumanInTheLoopTimeoutEvent")]
+    | Annotated[BotInTheLoopTimeoutEvent, Tag("BotInTheLoopTimeoutEvent")]
     | Annotated[HumanInTheLoopInputResponseEvent, Tag("HumanInTheLoopInputResponseEvent")]
     | Annotated[ToolApprovalResponseEvent, Tag("ToolApprovalResponseEvent")]
     | Annotated[HumanInTheLoopConfirmationResponseEvent, Tag("HumanInTheLoopConfirmationResponseEvent")]

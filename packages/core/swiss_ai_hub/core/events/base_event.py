@@ -221,6 +221,10 @@ class BaseEvent(BaseModel):
         return "AgentInTheLoopExceptionEvent" in self._parent_event_names
 
     @property
+    def is_in_the_loop_timeout_event(self) -> bool:
+        return "InTheLoopTimeoutEvent" in self._parent_event_names
+
+    @property
     def is_bitl_request_event(self) -> bool:
         return "BotInTheLoopRequestEvent" in self._parent_event_names
 

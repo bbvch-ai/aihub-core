@@ -1,4 +1,4 @@
-from typing import Annotated, override
+from typing import Annotated, ClassVar, override
 
 from pydantic import Field
 
@@ -31,6 +31,8 @@ class AgentClassTopicManager(AgentTopicManager, AbstractStreamTopicManager):
     - **Per-Agent Control:** An orchestrator that needs to send requests
       or receive responses only from a known agent instance.
     """
+
+    IN_THE_LOOP_DEADLINE_TOPIC: ClassVar[str] = "agent_deadline"
 
     agent_class: Annotated[str, Field(description="Agent class identifier")]
 
@@ -187,6 +189,19 @@ class AgentClassTopicManager(AgentTopicManager, AbstractStreamTopicManager):
     @override
     def get_stream(self) -> tuple[str, str]:
         return self._get_stream_name_for_all_events(), self._get_subject_for_all_events_in_agent_class()
+
+    def get_subject_for_in_the_loop_deadline(
+        self, request_event_id: Annotated[str, "The request whose deadline the subject holds"]
+    ) -> str:
+        """The schedule subject of one request's deadline, in this class's stream.
+
+        Outside `agent.>` on purpose: the API and the bot subscribe to every `agent.` subject with NATS Core, and
+        would read the pending timeout event published here as if it had already fired.
+        """
+        return f"{self.IN_THE_LOOP_DEADLINE_TOPIC}.{self.agent_class}.{request_event_id}"
+
+    def get_subject_for_all_in_the_loop_deadlines(self) -> str:
+        return f"{self.IN_THE_LOOP_DEADLINE_TOPIC}.{self.agent_class}.*"
 
     def _get_stream_name_for_all_events(self) -> str:
         """Returns the stream name used for all agent events."""

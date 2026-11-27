@@ -30,11 +30,11 @@ class DisplayStatistics(BaseEventStatistics):
         has_pending = intermediate.start_events > (intermediate.stop_events + intermediate.exception_events)
         has_errors = intermediate.exception_events > 0
         is_hitl = intermediate.hitl_request_events > 0
-        open_hitl = intermediate.hitl_request_events > intermediate.hitl_response_events
+        open_hitl = intermediate.open_hitl
         is_bitl = intermediate.bitl_request_events > 0
-        open_bitl = intermediate.bitl_request_events > intermediate.bitl_response_events
+        open_bitl = intermediate.open_bitl
         is_aitl = intermediate.aitl_request_events > 0
-        open_aitl = intermediate.aitl_request_events > intermediate.aitl_response_events
+        open_aitl = intermediate.open_aitl
 
         # Calculate duration from intermediate datetime objects
         duration = None
@@ -69,6 +69,7 @@ class DisplayStatistics(BaseEventStatistics):
             runs=sorted_runs,
             n_events=intermediate.n_events,
             has_errors=has_errors,
+            has_timeouts=intermediate.has_timeouts,
             has_pending=has_pending,
             is_hitl=is_hitl,
             open_hitl=open_hitl,

@@ -64,7 +64,7 @@ class NatsHandler(BackupHandler):
                 for stream_name in stream_names:
                     stream_backup_path = backup_dir / stream_name
                     logger.info("Backing up stream: %s", stream_name)
-                    self._run_nats(["stream", "backup", stream_name, str(stream_backup_path)])
+                    self._run_nats(["backup", "stream", stream_name, str(stream_backup_path)])
 
             logger.info("Compressing...")
             with tarfile.open(tar_file, "w:gz") as tar:
@@ -111,7 +111,7 @@ class NatsHandler(BackupHandler):
 
             for stream_dir in stream_dirs:
                 logger.info("Restoring stream: %s", stream_dir.name)
-                self._run_nats(["stream", "restore", str(stream_dir)])
+                self._run_nats(["backup", "restore", "stream", str(stream_dir)])
 
             logger.info("NATS restore complete (%d stream(s))", len(stream_dirs))
         finally:
@@ -183,8 +183,8 @@ class NatsHandler(BackupHandler):
         safe. Between attempts we re-probe readiness so we don't hammer a
         still-restarting server.
 
-        Partial-execution caveat for write commands (`stream backup`,
-        `stream restore`, `stream rm`): a "connection reset" can fire AFTER
+        Partial-execution caveat for write commands (`backup stream`,
+        `backup restore stream`, `stream rm`): a "connection reset" can fire AFTER
         the server received the request, so a retry may hit a non-transient
         follow-up error (e.g. "stream already exists" on restore, or refusal
         to overwrite an existing backup directory). Those surface as

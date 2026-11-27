@@ -347,5 +347,15 @@ records_extracted_event:
 hitl_questions_request_event:
   name: Domande da confermare
   description: L'agente chiede all'utente di confermare o correggere le parti di una
-    richiesta, come modulo dove il client ne mostra uno, altrimenti come messaggio di
-    chat.
+    richiesta, come modulo dove il client ne mostra uno, altrimenti come messaggio
+    di chat.
+hitl_timeout_event:
+  name: Nessuna risposta in tempo
+  description: Nessuno ha risposto alla domanda in tempo, l'agente continua senza
+    risposta.
+aitl_timeout_event:
+  name: L'agente delegato non ha risposto
+  description: L'agente a cui è stato delegato un compito non ha risposto in tempo.
+bitl_timeout_event:
+  name: Nessuna risposta nel canale
+  description: Nessuno ha risposto alla domanda in Slack o Teams in tempo.

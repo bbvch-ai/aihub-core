@@ -1,7 +1,11 @@
-from typing import Any
+from typing import Annotated, Any, ClassVar
 
+from pydantic import Field
+
+from swiss_ai_hub.core.events.agent.aitl.agent_delegation import AgentDelegation
 from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
 from swiss_ai_hub.core.events.api_payload_context import ApiPayloadContext
+from swiss_ai_hub.core.events.base_event import BaseEvent
 
 
 class StartEvent(ControlAndDisplayEvent):
@@ -23,6 +27,13 @@ class StartEvent(ControlAndDisplayEvent):
     StartEvent lightweight and decouples config management from event payloads.
     """
 
+    _api_server_fields: ClassVar[frozenset[str]] = BaseEvent._api_server_fields | {"delegated_by"}
+
+    delegated_by: Annotated[
+        AgentDelegation | None,
+        Field(description="The run that delegated this one through `AgentInTheLoop`, answered when this run ends."),
+    ] = None
+
     def to_context_dict(self) -> dict[str, Any]:
         """
         Returns a dictionary suitable for context injection, excluding internal event fields like
@@ -42,10 +53,11 @@ class StartEvent(ControlAndDisplayEvent):
     @classmethod
     def _api_server_data(cls, context: ApiPayloadContext) -> dict[str, Any]:
         """
-        Every start event runs on behalf of the caller, in their locale.
+        Every start event runs on behalf of the caller, in their locale. An API caller never names a delegating
+        run: the answer would be published into that run.
 
         Note: agent_id is NOT included in the event. It comes from the NATS subject/topic
         that the event is published to. The AgentDispatcher extracts it from the topic
         and uses it to fetch configuration via RPC.
         """
-        return {"user": context.user, "locale": context.locale}
+        return {"user": context.user, "locale": context.locale, "delegated_by": None}

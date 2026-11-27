@@ -29,7 +29,7 @@ image_tags:
   clickhouse: clickhouse/clickhouse-server:25.8
   langfuse_web: langfuse/langfuse:3.225.14
   langfuse_worker: langfuse/langfuse-worker:3.225.14
-  nats: nats:2.11.4
+  nats: nats:2.14.10
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
   neo4j: neo4j:5.26.32-community-trixie

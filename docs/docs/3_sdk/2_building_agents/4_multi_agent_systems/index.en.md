@@ -26,8 +26,9 @@ The AITL pattern is managed by a trio of events that orchestrate the delegation,
 3. **Worker completes and responds**: When the Worker finishes, it returns a `StopEvent` (or an `ExceptionEvent` if it
    fails). The system automatically wraps this final event into either an `AgentInTheLoop.response` or
    `AgentInTheLoop.exception` event.
-4. **Orchestrator resumes**: The dispatcher routes the response or exception event back to the Orchestrator, which
-   resumes its workflow in a separate step designed to handle the result.
+4. **Orchestrator resumes**: The Worker's dispatcher publishes the response or exception event into the Orchestrator's
+   run through JetStream, so the answer arrives even when either agent restarted in between. The Orchestrator resumes in
+   a separate step designed to handle the result.
 
 The `AgentInTheLoop` helper class simplifies this process by providing a convenient `invoke` method to create the
 request event.
@@ -91,7 +92,8 @@ consistent conversation or UI experience.
 - `share_thread_id=True` (Default): The Worker shares the same conversation memory (`ThreadContext`) as the
   Orchestrator.
 - `share_display_id=True` (Default): The Worker's `DisplayEvent`s appear in the same UI stream as the Orchestrator's.
-- `share_run_id=False` (Default): The Worker executes in its own independent run.
+
+The Worker always executes in its own run.
 
 ```python
 AgentInTheLoop.invoke(
@@ -100,14 +102,8 @@ AgentInTheLoop.invoke(
     start_event=event,
     share_thread_id=True,      # Share conversation memory
     share_display_id=True,     # Share UI context
-    share_run_id=False         # Recommended: Keep runs separate
 )
 ```
-
-::: warning
-Sharing the `run_id` is an advanced feature and can lead to unexpected behavior, as both agents would be writing to the
-same ephemeral `RunContext`. It is almost always better to keep it `False`.
-:::
 
 ## Common Multi-Agent Patterns
 
@@ -155,7 +151,7 @@ class ParallelProcessorAgent(Agent):
     @step()
     async def fan_out(self, event: UserMessageEvent) -> list[FanOutStartedEvent | AgentInTheLoop.request]:
         requests = [
-            AgentInTheLoop.invoke(agent_class="ProcessorAgent", agent_id=agent_id, start_event=..., share_run_id=False)
+            AgentInTheLoop.invoke(agent_class="ProcessorAgent", agent_id=agent_id, start_event=..., timeout_seconds=120)
             for agent_id in ("processor_a", "processor_b")
         ]
         # The marker carries the count the join waits for, and is emitted even when nothing is delegated.
@@ -165,7 +161,7 @@ class ParallelProcessorAgent(Agent):
     async def combine_results(
         self,
         event: FanOutStartedEvent,
-        answers: list[AgentInTheLoop.response | AgentInTheLoop.exception],
+        answers: list[AgentInTheLoop.response | AgentInTheLoop.exception | AgentInTheLoop.timeout],
     ) -> StopEvent:
         results = [answer.stop_event.result for answer in answers if answer.is_aitl_response_event]
         return StopEvent(final_message=f"Combined results: {results}")
@@ -174,7 +170,7 @@ class ParallelProcessorAgent(Agent):
 @precondition()
 async def all_delegates_answered(
     event: FanOutStartedEvent,
-    answers: list[AgentInTheLoop.response | AgentInTheLoop.exception],
+    answers: list[AgentInTheLoop.response | AgentInTheLoop.exception | AgentInTheLoop.timeout],
 ) -> bool:
     return len({answer.request_event_id for answer in answers}) >= event.expected
 ```
@@ -188,20 +184,18 @@ Three things about that shape are load-bearing, and each is a bug if you leave i
   time, so it cannot express a count only known at runtime. Count *distinct* `request_event_id`s and compare with `>=` —
   JetStream delivery is at-least-once, so a redelivered answer is an ordinary event, and `==` over a raw count would
   overshoot and wedge the run at the point it was supposed to finish.
-- **Responses and exceptions arrive on one parameter.** A delegate that fails produces an
-  `AgentInTheLoopExceptionEvent`, never a response, so a join that waits only on responses waits forever as soon as one
-  delegate fails.
+- **Responses, exceptions and timeouts arrive on one parameter.** A delegate that fails produces an
+  `AgentInTheLoopExceptionEvent`, and one that misses its deadline an `AgentInTheLoopTimeoutEvent`, never a response, so
+  a join that waits only on responses waits forever as soon as one delegate fails.
 
 Answers are told apart by `request_event_id`, which names the `AgentInTheLoopRequestEvent` each one answers. Without it,
 N parallel answers arrive on one topic indistinguishable from one another.
 
 ::: warning A delegate that never answers blocks the caller forever
-`AgentInTheLoop` waits indefinitely by default. An agent that is offline, or a mistyped `agent_id`, publishes neither a
-stop event nor an exception, so the caller's run never resumes — and in a fan-out one silent delegate wedges the whole
-batch. Pass `timeout_seconds` when the caller cannot tolerate that; it synthesises the exception on expiry. It covers a
-delegate that does not answer, not a caller that restarts: the timer and the response subscription both live in the
-caller's dispatcher process.
-
-Keep `share_run_id=False` (the default) in a fan-out. The response subscription is keyed by the delegated run id, so
-sharing it makes every subscriber fire on every delegate's answer.
+`AgentInTheLoop` waits for as long as the run lives by default. An agent that is offline, or a mistyped `agent_id`,
+publishes neither a stop event nor an exception, so the caller's run never resumes — and in a fan-out one silent
+delegate wedges the whole batch. Pass `timeout_seconds` when the caller cannot tolerate that: at the deadline NATS
+delivers an `AgentInTheLoop.timeout` event into the caller's run, which a step takes next to the response. The deadline
+is a scheduled NATS message, so it fires even when the caller's dispatcher restarted. Whichever of answer and timeout
+arrives first settles the request; the other is dropped.
 :::

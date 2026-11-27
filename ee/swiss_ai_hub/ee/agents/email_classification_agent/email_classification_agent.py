@@ -62,7 +62,7 @@ GROUNDED_REQUEST_INDEX_KEY = "grounded_draft_requests"
 @precondition()
 async def all_delegated_drafts_returned(
     event: GroundedDraftsRequestedEvent,
-    answers: list[AgentInTheLoop.response | AgentInTheLoop.exception],
+    answers: list[AgentInTheLoop.response | AgentInTheLoop.exception | AgentInTheLoop.timeout],
 ) -> bool:
     """Hold the drafting step until every delegated RAG run has come back, one way or the other.
 
@@ -363,7 +363,7 @@ class EmailClassificationAgent(Agent):
         self,
         event: GroundedDraftsRequestedEvent,
         classified: MailBatchClassifiedEvent,
-        answers: list[AgentInTheLoop.response | AgentInTheLoop.exception],
+        answers: list[AgentInTheLoop.response | AgentInTheLoop.exception | AgentInTheLoop.timeout],
         agent_config: EmailClassificationAgentConfig,
         imap_config: ImapClientConfig,
         classification: EmailClassificationSettings,

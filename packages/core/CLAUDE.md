@@ -741,17 +741,18 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
 - **Selections.** `KnowledgeDocumentSelector.resolve(collections, selection, limit, restricting_glob)` turns a
   `KnowledgeDocumentSelection` (`any_of` `KnowledgeDocumentCriteria`: collection, path glob, path regex, content query,
   ids; AND within one, OR across; a path is relative to its collection, so a collection is named by `collection`, as
-  `database/collection` like `KnowledgeDocumentSummary.collection_name`, and one outside the caller's selects nothing) into the documents it describes, sorted and cut at `limit` with `truncated`. One
-  `KnowledgeSearchBudget` covers the listing (`list_documents(..., budget)`) and every content query, and a content
-  query is one id-only search per collection (`KnowledgeContentSearch.matching_ids`, through the trigram index for a
-  literal as `search` does, no text loaded, no per-line check, so it may count a document the line check would drop),
-  with the restricting glob next to the criterion's own, so a model's selection can only narrow the caller's. The
-  record-extraction capability resolves the selection a model wrote this way rather than trusting a list of ids, with
-  its ceiling as `limit`. A selection has one period, `path_date_range` (`PathDateRange`, either bound open, its bounds
-  dumped as ISO text in every mode because events are persisted as BSON, which has no plain date), applied after the
-  entries to their union, before `limit`; the result then carries `path_dates` (`PathDateCounts`: in range, excluded,
-  undated, the years the excluded paths are dated in, and up to ten of them within 2,000 serialized bytes, each cut at
-  200 characters). Without a period the result is unchanged and `path_dates` is None.
+  `database/collection` like `KnowledgeDocumentSummary.collection_name`, and one outside the caller's selects nothing)
+  into the documents it describes, sorted and cut at `limit` with `truncated`. One `KnowledgeSearchBudget` covers the
+  listing (`list_documents(..., budget)`) and every content query, and a content query is one id-only search per
+  collection (`KnowledgeContentSearch.matching_ids`, through the trigram index for a literal as `search` does, no text
+  loaded, no per-line check, so it may count a document the line check would drop), with the restricting glob next to
+  the criterion's own, so a model's selection can only narrow the caller's. The record-extraction capability resolves
+  the selection a model wrote this way rather than trusting a list of ids, with its ceiling as `limit`. A selection has
+  one period, `path_date_range` (`PathDateRange`, either bound open, its bounds dumped as ISO text in every mode because
+  events are persisted as BSON, which has no plain date), applied after the entries to their union, before `limit`; the
+  result then carries `path_dates` (`PathDateCounts`: in range, excluded, undated, the years the excluded paths are
+  dated in, and up to ten of them within 2,000 serialized bytes, each cut at 200 characters). Without a period the
+  result is unchanged and `path_dates` is None.
 - **Dates in paths** (#2349, ADR `2026_11_21_document_periods_matched_against_path_dates_by_code`).
   `PathDateParser.parse(path, today)` gives the period a path dates its document in, or None, and never narrows on
   doubt. Per segment (the extension stripped from the last, each `DateTextParser.normalized`): ISO and compact days

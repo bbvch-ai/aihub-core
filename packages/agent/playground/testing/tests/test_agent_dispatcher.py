@@ -539,9 +539,10 @@ class TestAgentDispatcherHandleEvent:
         """Test handling ExceptionEvent marks execution context as crashed."""
         # Arrange
         exception_event = ExceptionEvent(message="Test exception")
+        stored = {AgentDispatcher._AGENT_CONFIG_KEY: agent_dispatcher.agent_config.model_dump()}
 
         mock_run_context = Mock(spec=RunContext)
-        mock_run_context.get = AsyncMock(return_value=agent_dispatcher.agent_config.model_dump())
+        mock_run_context.get = AsyncMock(side_effect=lambda key, default=None: stored.get(key, default))
 
         mock_thread_context = Mock(spec=ThreadContext)
 
