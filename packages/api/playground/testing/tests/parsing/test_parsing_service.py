@@ -6,9 +6,10 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from fastapi import HTTPException
 from pypdf import PdfWriter
 from swiss_ai_hub.core.generative_ai import MineruLoader, ParseCacheBucket
-from swiss_ai_hub.core.infrastructure import MineruSettings
+from swiss_ai_hub.core.infrastructure import MineruSettings, ParsingSettings
 
 from swiss_ai_hub.api.routes.parsing import parsing_service
 from swiss_ai_hub.api.routes.parsing.dto.image_mode import ImageMode
@@ -25,6 +26,13 @@ def in_memory_parse_cache(monkeypatch: pytest.MonkeyPatch) -> dict[str, bytes]:
         ParseCacheBucket, "write", lambda _self, key, content, _content_type: store.update({key: content})
     )
     return store
+
+
+@pytest.fixture
+def archives_pass_through(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Set the way `.env.dev` and `.env.prod` set it, so the JSON array is what the settings parse."""
+    monkeypatch.setenv("PARSING_PASSTHROUGH_EXTENSIONS", '["zip","7z"]')
+    monkeypatch.setattr(parsing_service, "_parsing_settings", ParsingSettings())
 
 
 @pytest.fixture
@@ -138,3 +146,27 @@ async def test_should_serve_a_parsed_upload_from_the_cache_when_every_slot_is_bu
 
     assert content == "known.pdf"
     assert tracker.requests == 1
+
+
+@pytest.mark.parametrize(
+    ("filename", "content_type"), [("bundle.zip", "application/zip"), ("bundle.7z", "application/x-7z-compressed")]
+)
+@pytest.mark.asyncio
+async def test_should_accept_an_archive_with_empty_content_when_its_extension_passes_through(
+    archives_pass_through, filename: str, content_type: str
+):
+    response = await ParsingService.convert_from_bytes(
+        content=b"PK\x03\x04", filename=filename, content_type=content_type, image_mode=ImageMode.BASE64
+    )
+
+    assert (response.page_content, response.metadata.filename) == ("", filename)
+
+
+@pytest.mark.asyncio
+async def test_should_refuse_an_archive_when_its_extension_does_not_pass_through(archives_pass_through):
+    with pytest.raises(HTTPException) as refused:
+        await ParsingService.convert_from_bytes(
+            content=b"Rar!", filename="bundle.rar", content_type="application/vnd.rar", image_mode=ImageMode.BASE64
+        )
+
+    assert refused.value.status_code == 400

@@ -25,6 +25,14 @@ whole when they fit; otherwise the agent keeps the parts that matter for your qu
 based on part of the file.
 :::
 
+::: tip Zip and 7z archives
+You can attach a `.zip` or `.7z` archive, but only the [Universal Agent](../../5_agents/13_universal_agent/) reads it,
+and only with Code Interpreter switched on: it unpacks the archive in your code sandbox and opens the files your
+question needs. It lists an archive before unpacking it and does not unpack one whose files add up to more than 500 MB.
+Without Code Interpreter, or with any other agent, the archive is attached but its contents are not read, and the agent
+says so.
+:::
+
 ::: tip Point an agent at company knowledge with #
 Type `#` in the message box to pick one of the company's knowledge collections. The agent searches it for your question
 and cites what it finds, but only if your roles let you read the collection.
