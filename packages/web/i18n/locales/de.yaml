@@ -190,6 +190,8 @@ chat:
   document: Dokument
   image: Bild
 event:
+  inTheLoopTimeout:
+    summary: Keine Antwort innerhalb von {seconds} s, der Lauf ging ohne sie weiter.
   list:
     firstInteraction: 'Erste Interaktion:'
     lastInteraction: 'Letzte Interaktion:'

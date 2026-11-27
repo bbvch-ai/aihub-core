@@ -533,6 +533,33 @@ export type AgentConfigDto = {
 };
 
 /**
+ * AgentDelegation
+ *
+ * Who started a run through `AgentInTheLoop`, carried on the delegated run's start event.
+ *
+ * The delegated run's dispatcher answers the caller from it when the run stops or fails, through JetStream, so the
+ * answer survives a restart of either side. It also bounds chains of delegations by their depth.
+ */
+export type AgentDelegation = {
+  /**
+   * The delegating run, where the answer is published.
+   */
+  caller: AgentInstanceTopic;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the caller's `AgentInTheLoopRequestEvent`.
+   */
+  request_event_id: string;
+  /**
+   * Depth
+   *
+   * 1 for a run delegated to by a run nobody delegated to, and so on.
+   */
+  depth: number;
+};
+
+/**
  * AgentEvent
  */
 export type AgentEvent = {
@@ -847,15 +874,9 @@ export type AgentInTheLoopRequestEvent = {
    */
   share_display_id?: boolean;
   /**
-   * Share Run Id
-   *
-   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.
-   */
-  share_run_id?: boolean;
-  /**
    * Timeout Seconds
    *
-   * How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.
+   * How long to wait for the delegated agent before the run receives an `AgentInTheLoopTimeoutEvent` instead. `None` (the default) waits for as long as the run lives, which suits a chat-facing delegation, where a deadline would only turn a slow answer into a wrong one.
    */
   timeout_seconds?: number | null;
   /**
@@ -913,6 +934,58 @@ export type AgentInTheLoopResponseEvent = {
    * `event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.
    */
   request_event_id: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * AgentInTheLoopTimeoutEvent
+ *
+ * The agent a run delegated to did not stop or fail within the request's `timeout_seconds`.
+ */
+export type AgentInTheLoopTimeoutEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the request that went unanswered.
+   */
+  request_event_id: string;
+  /**
+   * Timeout Seconds
+   *
+   * How long the run waited before giving up.
+   */
+  timeout_seconds: number;
   /**
    * Event Name
    *
@@ -2080,6 +2153,58 @@ export type BodyUploadUserFile = {
    * The file to add; one with the same name is replaced.
    */
   file: Blob | File;
+};
+
+/**
+ * BotInTheLoopTimeoutEvent
+ *
+ * Nobody answered the question a `BotInTheLoopRequestEvent` posted to Slack or Teams in time.
+ */
+export type BotInTheLoopTimeoutEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the request that went unanswered.
+   */
+  request_event_id: string;
+  /**
+   * Timeout Seconds
+   *
+   * How long the run waited before giving up.
+   */
+  timeout_seconds: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
 };
 
 /**
@@ -4396,6 +4521,9 @@ export type ContextualizedAgentEvent = {
     | HumanInTheLoopRequestEvent
     | AgentInTheLoopRequestEvent
     | AgentInTheLoopExceptionEvent
+    | AgentInTheLoopTimeoutEvent
+    | HumanInTheLoopTimeoutEvent
+    | BotInTheLoopTimeoutEvent
     | HumanInTheLoopInputResponseEvent
     | ToolApprovalResponseEvent
     | HumanInTheLoopConfirmationResponseEvent
@@ -5064,6 +5192,10 @@ export type CronStartEvent = {
    * Display description for the event
    */
   display_description?: LocaleString | null;
+  /**
+   * The run that delegated this one through `AgentInTheLoop`, answered when this run ends.
+   */
+  delegated_by?: AgentDelegation | null;
   /**
    * Locale
    *
@@ -5745,6 +5877,12 @@ export type DisplayStatistics = {
    * Has error events
    */
   has_errors?: boolean;
+  /**
+   * Has Timeouts
+   *
+   * A human, agent or bot did not answer a request in time
+   */
+  has_timeouts?: boolean;
   /**
    * Has Pending
    *
@@ -7963,6 +8101,12 @@ export type HumanInTheLoopChatRequestEvent = {
    */
   hitl_type?: "chat";
   /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8133,6 +8277,12 @@ export type HumanInTheLoopConfirmationRequestEvent = {
    */
   hitl_type?: "confirmation";
   /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8244,6 +8394,12 @@ export type HumanInTheLoopInputRequestEvent = {
    * Hitl Type
    */
   hitl_type?: "input";
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
   /**
    * Event Name
    *
@@ -8361,6 +8517,12 @@ export type HumanInTheLoopQuestionsRequestEvent = {
    */
   hitl_type?: "chat";
   /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
+  /**
    * Questions
    *
    * The question's parts, for clients that show a dialog.
@@ -8430,6 +8592,12 @@ export type HumanInTheLoopRequestEvent = {
    */
   hitl_type: "input" | "confirmation" | "chat";
   /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8490,6 +8658,58 @@ export type HumanInTheLoopResponseEvent = {
    * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
    */
   responded_by?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * HumanInTheLoopTimeoutEvent
+ *
+ * The person asked by a `HumanInTheLoopRequestEvent` did not answer within its `timeout_seconds`.
+ */
+export type HumanInTheLoopTimeoutEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the request that went unanswered.
+   */
+  request_event_id: string;
+  /**
+   * Timeout Seconds
+   *
+   * How long the run waited before giving up.
+   */
+  timeout_seconds: number;
   /**
    * Event Name
    *
@@ -15632,6 +15852,10 @@ export type RagStartEvent = {
    */
   display_description?: LocaleString | null;
   /**
+   * The run that delegated this one through `AgentInTheLoop`, answered when this run ends.
+   */
+  delegated_by?: AgentDelegation | null;
+  /**
    * Locale
    *
    * The user's locale, guiding language or regional adaptations.
@@ -17192,6 +17416,12 @@ export type RunStatistics = {
    */
   has_errors?: boolean;
   /**
+   * Has Timeouts
+   *
+   * A human, agent or bot did not answer a request in time
+   */
+  has_timeouts?: boolean;
+  /**
    * Has Pending
    *
    * Has pending events (more start than stop/exception events)
@@ -18538,6 +18768,10 @@ export type StartEvent = {
    */
   display_description?: LocaleString | null;
   /**
+   * The run that delegated this one through `AgentInTheLoop`, answered when this run ends.
+   */
+  delegated_by?: AgentDelegation | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -18802,6 +19036,10 @@ export type StoreUserMemoryRequestedEvent = {
    * Display description for the event
    */
   display_description?: LocaleString | null;
+  /**
+   * The run that delegated this one through `AgentInTheLoop`, answered when this run ends.
+   */
+  delegated_by?: AgentDelegation | null;
   /**
    * Locale
    *
@@ -19565,6 +19803,12 @@ export type ThreadDto = {
    */
   has_errors?: boolean;
   /**
+   * Has Timeouts
+   *
+   * A human, agent or bot did not answer a request in time
+   */
+  has_timeouts?: boolean;
+  /**
    * Is Hitl
    *
    * There are HumanInTheLoopRequest events present
@@ -20033,6 +20277,12 @@ export type ToolApprovalRequestEvent = {
    * Hitl Type
    */
   hitl_type?: "confirmation";
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
   /**
    * Tool Call Id
    *
@@ -21564,6 +21814,10 @@ export type UserMessageEvent = {
    */
   display_description?: LocaleString | null;
   /**
+   * The run that delegated this one through `AgentInTheLoop`, answered when this run ends.
+   */
+  delegated_by?: AgentDelegation | null;
+  /**
    * Locale
    *
    * The user’s locale, defaults to a system-wide default locale, guiding language or regional adaptations.
@@ -22708,15 +22962,9 @@ export type AgentInTheLoopRequestEventWritable = {
    */
   share_display_id?: boolean;
   /**
-   * Share Run Id
-   *
-   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.
-   */
-  share_run_id?: boolean;
-  /**
    * Timeout Seconds
    *
-   * How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.
+   * How long to wait for the delegated agent before the run receives an `AgentInTheLoopTimeoutEvent` instead. `None` (the default) waits for as long as the run lives, which suits a chat-facing delegation, where a deadline would only turn a slow answer into a wrong one.
    */
   timeout_seconds?: number | null;
   [key: string]: unknown;
@@ -22761,6 +23009,45 @@ export type AgentInTheLoopResponseEventWritable = {
    * `event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.
    */
   request_event_id: string;
+  [key: string]: unknown;
+};
+
+/**
+ * AgentInTheLoopTimeoutEvent
+ *
+ * The agent a run delegated to did not stop or fail within the request's `timeout_seconds`.
+ */
+export type AgentInTheLoopTimeoutEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the request that went unanswered.
+   */
+  request_event_id: string;
+  /**
+   * Timeout Seconds
+   *
+   * How long the run waited before giving up.
+   */
+  timeout_seconds: number;
   [key: string]: unknown;
 };
 
@@ -23452,6 +23739,45 @@ export type BaseStoreMemoryEventWritable = {
    * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
    */
   llm_model_name?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * BotInTheLoopTimeoutEvent
+ *
+ * Nobody answered the question a `BotInTheLoopRequestEvent` posted to Slack or Teams in time.
+ */
+export type BotInTheLoopTimeoutEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the request that went unanswered.
+   */
+  request_event_id: string;
+  /**
+   * Timeout Seconds
+   *
+   * How long the run waited before giving up.
+   */
+  timeout_seconds: number;
   [key: string]: unknown;
 };
 
@@ -24417,6 +24743,9 @@ export type ContextualizedAgentEventWritable = {
     | HumanInTheLoopRequestEventWritable
     | AgentInTheLoopRequestEventWritable
     | AgentInTheLoopExceptionEventWritable
+    | AgentInTheLoopTimeoutEventWritable
+    | HumanInTheLoopTimeoutEventWritable
+    | BotInTheLoopTimeoutEventWritable
     | HumanInTheLoopInputResponseEventWritable
     | ToolApprovalResponseEventWritable
     | HumanInTheLoopConfirmationResponseEventWritable
@@ -24795,6 +25124,10 @@ export type CronStartEventWritable = {
    */
   display_description?: LocaleString | null;
   /**
+   * The run that delegated this one through `AgentInTheLoop`, answered when this run ends.
+   */
+  delegated_by?: AgentDelegation | null;
+  /**
    * Locale
    *
    * The locale the scheduled run reports its display output in.
@@ -25020,6 +25353,12 @@ export type DisplayStatisticsWritable = {
    * Has error events
    */
   has_errors?: boolean;
+  /**
+   * Has Timeouts
+   *
+   * A human, agent or bot did not answer a request in time
+   */
+  has_timeouts?: boolean;
   /**
    * Has Pending
    *
@@ -26118,6 +26457,12 @@ export type HumanInTheLoopChatRequestEventWritable = {
    * Hitl Type
    */
   hitl_type?: "chat";
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
   [key: string]: unknown;
 };
 
@@ -26204,6 +26549,12 @@ export type HumanInTheLoopConfirmationRequestEventWritable = {
    * Hitl Type
    */
   hitl_type?: "confirmation";
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
   [key: string]: unknown;
 };
 
@@ -26290,6 +26641,12 @@ export type HumanInTheLoopInputRequestEventWritable = {
    * Hitl Type
    */
   hitl_type?: "input";
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
   [key: string]: unknown;
 };
 
@@ -26381,6 +26738,12 @@ export type HumanInTheLoopQuestionsRequestEventWritable = {
    */
   hitl_type?: "chat";
   /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
+  /**
    * Questions
    *
    * The question's parts, for clients that show a dialog.
@@ -26436,6 +26799,12 @@ export type HumanInTheLoopRequestEventWritable = {
    * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
    */
   hitl_type: "input" | "confirmation" | "chat";
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
   [key: string]: unknown;
 };
 
@@ -26484,6 +26853,45 @@ export type HumanInTheLoopResponseEventWritable = {
    * The id of the user who answered. Set by the server from the authenticated sender, never taken from the client; none when no user answered.
    */
   responded_by?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * HumanInTheLoopTimeoutEvent
+ *
+ * The person asked by a `HumanInTheLoopRequestEvent` did not answer within its `timeout_seconds`.
+ */
+export type HumanInTheLoopTimeoutEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the request that went unanswered.
+   */
+  request_event_id: string;
+  /**
+   * Timeout Seconds
+   *
+   * How long the run waited before giving up.
+   */
+  timeout_seconds: number;
   [key: string]: unknown;
 };
 
@@ -30644,6 +31052,10 @@ export type RagStartEventWritable = {
    */
   display_description?: LocaleString | null;
   /**
+   * The run that delegated this one through `AgentInTheLoop`, answered when this run ends.
+   */
+  delegated_by?: AgentDelegation | null;
+  /**
    * Locale
    *
    * The user's locale, guiding language or regional adaptations.
@@ -31852,6 +32264,12 @@ export type RunStatisticsWritable = {
    */
   has_errors?: boolean;
   /**
+   * Has Timeouts
+   *
+   * A human, agent or bot did not answer a request in time
+   */
+  has_timeouts?: boolean;
+  /**
    * Has Pending
    *
    * Has pending events (more start than stop/exception events)
@@ -32992,6 +33410,10 @@ export type StartEventWritable = {
    * Display description for the event
    */
   display_description?: LocaleString | null;
+  /**
+   * The run that delegated this one through `AgentInTheLoop`, answered when this run ends.
+   */
+  delegated_by?: AgentDelegation | null;
   [key: string]: unknown;
 };
 
@@ -33205,6 +33627,10 @@ export type StoreUserMemoryRequestedEventWritable = {
    * Display description for the event
    */
   display_description?: LocaleString | null;
+  /**
+   * The run that delegated this one through `AgentInTheLoop`, answered when this run ends.
+   */
+  delegated_by?: AgentDelegation | null;
   /**
    * Locale
    *
@@ -33670,6 +34096,12 @@ export type ThreadDtoWritable = {
    */
   has_errors?: boolean;
   /**
+   * Has Timeouts
+   *
+   * A human, agent or bot did not answer a request in time
+   */
+  has_timeouts?: boolean;
+  /**
    * Is Hitl
    *
    * There are HumanInTheLoopRequest events present
@@ -34065,6 +34497,12 @@ export type ToolApprovalRequestEventWritable = {
    * Hitl Type
    */
   hitl_type?: "confirmation";
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the person's answer before the run receives a `HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.
+   */
+  timeout_seconds?: number | null;
   /**
    * Tool Call Id
    *
@@ -34723,6 +35161,10 @@ export type UserMessageEventWritable = {
    * Display description for the event
    */
   display_description?: LocaleString | null;
+  /**
+   * The run that delegated this one through `AgentInTheLoop`, answered when this run ends.
+   */
+  delegated_by?: AgentDelegation | null;
   /**
    * Locale
    *

@@ -334,3 +334,13 @@ hitl_questions_request_event:
   name: Questions to Confirm
   description: The agent has asked the user to confirm or correct the parts of a request,
     as a form where the client shows one and as a chat message otherwise.
+hitl_timeout_event:
+  name: No Answer in Time
+  description: Nobody answered the question in time, so the agent continues without
+    the answer.
+aitl_timeout_event:
+  name: Delegated Agent Did Not Answer
+  description: The agent a task was delegated to did not answer in time.
+bitl_timeout_event:
+  name: No Reply in the Channel
+  description: Nobody replied to the question in Slack or Teams in time.

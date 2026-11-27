@@ -1,5 +1,6 @@
 from swiss_ai_hub.core.events.agent.bitl.request.bot_in_the_loop_request_event import BotInTheLoopRequestEvent
 from swiss_ai_hub.core.events.agent.bitl.response.bot_in_the_loop_response_event import BotInTheLoopResponseEvent
+from swiss_ai_hub.core.events.agent.bitl.timeout.bot_in_the_loop_timeout_event import BotInTheLoopTimeoutEvent
 from swiss_ai_hub.core.topic_managers.agents.agent_topic_manager import AgentTopicManager
 from swiss_ai_hub.core.topics.agents.partial_agent_topic import PartialAgentTopic
 
@@ -24,6 +25,7 @@ class BotInTheLoop:
 
     request = BotInTheLoopRequestEvent
     response = BotInTheLoopResponseEvent
+    timeout = BotInTheLoopTimeoutEvent
 
     @classmethod
     def invoke(cls, **kwargs):

@@ -456,8 +456,29 @@ class PersistedAgentEventEntity(Document):
                     "aitl_request_events": {
                         "$sum": {"$cond": [{"$in": ["AgentInTheLoopRequestEvent", "$event_parents"]}, 1, 0]}
                     },
+                    # A failed delegation is answered too: counted here, it no longer reads as open forever.
                     "aitl_response_events": {
-                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopResponseEvent", "$event_parents"]}, 1, 0]}
+                        "$sum": {
+                            "$cond": [
+                                {
+                                    "$or": [
+                                        {"$in": ["AgentInTheLoopResponseEvent", "$event_parents"]},
+                                        {"$in": ["AgentInTheLoopExceptionEvent", "$event_parents"]},
+                                    ]
+                                },
+                                1,
+                                0,
+                            ]
+                        }
+                    },
+                    "hitl_timeout_events": {
+                        "$sum": {"$cond": [{"$in": ["HumanInTheLoopTimeoutEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "bitl_timeout_events": {
+                        "$sum": {"$cond": [{"$in": ["BotInTheLoopTimeoutEvent", "$event_parents"]}, 1, 0]}
+                    },
+                    "aitl_timeout_events": {
+                        "$sum": {"$cond": [{"$in": ["AgentInTheLoopTimeoutEvent", "$event_parents"]}, 1, 0]}
                     },
                     # --- Calculate LLM Cost ---
                     "llm_cost": {
@@ -507,11 +528,23 @@ class PersistedAgentEventEntity(Document):
                     "has_pending": {"$gt": ["$start_events", {"$add": ["$stop_events", "$exception_events"]}]},
                     "has_errors": {"$gt": ["$exception_events", 0]},
                     "is_hitl": {"$gt": ["$hitl_request_events", 0]},
-                    "open_hitl": {"$gt": ["$hitl_request_events", "$hitl_response_events"]},
+                    "open_hitl": {
+                        "$gt": ["$hitl_request_events", {"$add": ["$hitl_response_events", "$hitl_timeout_events"]}]
+                    },
                     "is_bitl": {"$gt": ["$bitl_request_events", 0]},
-                    "open_bitl": {"$gt": ["$bitl_request_events", "$bitl_response_events"]},
+                    "open_bitl": {
+                        "$gt": ["$bitl_request_events", {"$add": ["$bitl_response_events", "$bitl_timeout_events"]}]
+                    },
                     "is_aitl": {"$gt": ["$aitl_request_events", 0]},
-                    "open_aitl": {"$gt": ["$aitl_request_events", "$aitl_response_events"]},
+                    "open_aitl": {
+                        "$gt": ["$aitl_request_events", {"$add": ["$aitl_response_events", "$aitl_timeout_events"]}]
+                    },
+                    "has_timeouts": {
+                        "$gt": [
+                            {"$add": ["$hitl_timeout_events", "$bitl_timeout_events", "$aitl_timeout_events"]},
+                            0,
+                        ]
+                    },
                     "start_event_info": {
                         "$first": {
                             "$filter": {
@@ -541,6 +574,7 @@ class PersistedAgentEventEntity(Document):
                     "open_bitl": 1,
                     "is_aitl": 1,
                     "open_aitl": 1,
+                    "has_timeouts": 1,
                     "llm_cost": 1,
                     "participating_agents_in_run": 1,
                     "start_agent_class": "$start_event_info.agent_class",
@@ -555,6 +589,9 @@ class PersistedAgentEventEntity(Document):
                     "bitl_response_events": 1,
                     "aitl_request_events": 1,
                     "aitl_response_events": 1,
+                    "hitl_timeout_events": 1,
+                    "bitl_timeout_events": 1,
+                    "aitl_timeout_events": 1,
                 }
             },
         ]

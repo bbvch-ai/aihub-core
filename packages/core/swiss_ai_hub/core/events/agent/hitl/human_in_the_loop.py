@@ -7,6 +7,7 @@ from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event
 from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_event import (
     HumanInTheLoopResponseEvent,
 )
+from swiss_ai_hub.core.events.agent.hitl.timeout.human_in_the_loop_timeout_event import HumanInTheLoopTimeoutEvent
 
 
 class HumanInTheLoop:
@@ -23,6 +24,7 @@ class HumanInTheLoop:
 
     request = HumanInTheLoopRequestEvent
     response = HumanInTheLoopResponseEvent
+    timeout = HumanInTheLoopTimeoutEvent
 
     # Typed helpers
     input = HumanInTheLoopInput

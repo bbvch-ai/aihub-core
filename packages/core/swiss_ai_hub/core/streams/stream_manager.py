@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from nats.js import JetStreamContext, api
 from nats.js.errors import NotFoundError
@@ -22,38 +23,65 @@ class StreamManager:
     do not. This makes your infrastructure more self-healing and reduces operational overhead.
     """
 
-    def __init__(self, js: JetStreamContext, stream_name: str, stream_subject: str):
+    def __init__(
+        self,
+        js: JetStreamContext,
+        stream_name: str,
+        stream_subject: str,
+        extra_subjects: Annotated[list[str] | None, "Further subjects the stream must cover"] = None,
+        allow_msg_schedules: Annotated[
+            bool, "Whether messages may be scheduled for later delivery (NATS 2.12+)"
+        ] = False,
+    ):
         self.js = js
         self.stream_name = stream_name
         self.stream_subject = stream_subject
+        self.extra_subjects = extra_subjects or []
+        self.allow_msg_schedules = allow_msg_schedules
 
     async def ensure_stream_exists(self):
         """
-        Checks if a JetStream stream with the given name exists.
-        If not found, it creates it with the specified subject, file storage,
-        and default retention policies.
+        Creates the stream with file storage and the default retention policies when it is missing, and adds the
+        subjects and the scheduling flag this manager asks for to a stream that exists without them.
 
-        This should be called once during initialization, ensuring that producers
-        or consumers can safely interact with the stream without prior manual setup.
+        Several services create the same stream, and the first one wins, so a stream created without the extras is
+        brought up to date by whichever caller asks for them. Nothing is ever removed: enabling message schedules
+        cannot be undone on the server.
         """
         try:
-            await self.js.stream_info(self.stream_name)
-            # Stream already exists
+            stream = await self.js.stream_info(self.stream_name)
         except NotFoundError:
-            # Stream does not exist; create it
             logger.debug(f"Creating stream '{self.stream_name}' with subject '{self.stream_subject}'")
             await self.js.add_stream(
                 config=api.StreamConfig(
                     name=self.stream_name,
-                    subjects=[self.stream_subject],
+                    subjects=[self.stream_subject, *self.extra_subjects],
                     storage=api.StorageType.FILE,
                     retention=api.RetentionPolicy.LIMITS,
                     max_msgs=10_000_000,
                     discard=api.DiscardPolicy.OLD,
                     max_age=60 * 60 * 24 * 30,
                     duplicate_window=60 * 1,
+                    allow_msg_schedules=self.allow_msg_schedules or None,
                 )
             )
+            return
+        await self._add_missing(stream.config)
+
+    async def _add_missing(self, config: api.StreamConfig) -> None:
+        subjects = list(config.subjects or [])
+        missing_subjects = [subject for subject in self.extra_subjects if subject not in subjects]
+        missing_schedules = self.allow_msg_schedules and not config.allow_msg_schedules
+        if not missing_subjects and not missing_schedules:
+            return
+        logger.info(
+            f"Updating stream '{self.stream_name}': adding subjects {missing_subjects}, "
+            f"message schedules {'on' if missing_schedules else 'unchanged'}"
+        )
+        config.subjects = [*subjects, *missing_subjects]
+        if missing_schedules:
+            config.allow_msg_schedules = True
+        await self.js.update_stream(config)
 
     def __repr__(self):
         return f"JSManager(stream_name={self.stream_name}, stream_subject={self.stream_subject})"

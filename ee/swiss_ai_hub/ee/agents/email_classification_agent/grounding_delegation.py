@@ -76,11 +76,7 @@ class GroundingDelegation:
                 files=[],
                 selected_namespaces=category.knowledge_namespaces or [],
             ),
-            # `share_run_id=False` is the correctness constraint, not a preference: the response subscription is
-            # keyed by the delegated run id, so sharing it would make every subscriber of this fan-out fire on every
-            # delegate's answer and the batch could not be attributed at all. The other two are isolation — N
-            # concurrent runs must not share one ThreadContext, nor interleave their streams into one display.
-            share_run_id=False,
+            # N concurrent runs must not share one ThreadContext, nor interleave their streams into one display.
             share_thread_id=False,
             share_display_id=False,
             timeout_seconds=draft.grounding_timeout_seconds,
@@ -120,7 +116,7 @@ class GroundingDelegation:
 
     @staticmethod
     async def bodies_from_answers(
-        answers: list[AgentInTheLoop.response | AgentInTheLoop.exception],
+        answers: list[AgentInTheLoop.response | AgentInTheLoop.exception | AgentInTheLoop.timeout],
         request_index: dict[str, str],
         draft: DraftEmailSettings,
         displayer: EventDisplayer,
@@ -150,7 +146,7 @@ class GroundingDelegation:
 
     @staticmethod
     async def _body_for(
-        answer: AgentInTheLoop.response | AgentInTheLoop.exception,
+        answer: AgentInTheLoop.response | AgentInTheLoop.exception | AgentInTheLoop.timeout,
         message_id: str,
         draft: DraftEmailSettings,
         displayer: EventDisplayer,
@@ -170,11 +166,13 @@ class GroundingDelegation:
         The model is never asked to write around an empty context. An ungrounded reply that reads like a grounded one
         is worse than an honest blank, because a reviewer skims it and sends it.
         """
-        if answer.is_aitl_exception_event:
+        if answer.is_in_the_loop_timeout_event or answer.is_aitl_exception_event:
             logger.warning(
                 "[draft] grounding uid=%s failed: %s — drafting the configured failure text instead",
                 message_id,
-                answer.exception_event.message,
+                f"no answer within {answer.timeout_seconds}s"
+                if answer.is_in_the_loop_timeout_event
+                else answer.exception_event.message,
             )
             await displayer.display_thought(
                 "The knowledge lookup failed for one message — drafting the configured fallback text for it."

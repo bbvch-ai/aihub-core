@@ -188,6 +188,8 @@ chat:
   document: Documento
   image: Immagine
 event:
+  inTheLoopTimeout:
+    summary: Nessuna risposta entro {seconds} s, l'esecuzione è proseguita senza.
   list:
     firstInteraction: 'Prima interazione:'
     lastInteraction: 'Ultima interazione:'

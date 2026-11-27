@@ -347,5 +347,14 @@ records_extracted_event:
 hitl_questions_request_event:
   name: Questions à confirmer
   description: L'agent demande à l'utilisateur de confirmer ou de corriger les parties
-    d'une demande, sous forme de formulaire si le client en affiche un, sinon comme message
-    de chat.
+    d'une demande, sous forme de formulaire si le client en affiche un, sinon comme
+    message de chat.
+hitl_timeout_event:
+  name: Pas de réponse à temps
+  description: Personne n'a répondu à la question à temps, l'agent continue sans réponse.
+aitl_timeout_event:
+  name: L'agent délégué n'a pas répondu
+  description: L'agent auquel une tâche a été déléguée n'a pas répondu à temps.
+bitl_timeout_event:
+  name: Pas de réponse dans le canal
+  description: Personne n'a répondu à la question dans Slack ou Teams à temps.

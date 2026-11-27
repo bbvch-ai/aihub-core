@@ -226,7 +226,7 @@ This file drives everything: template rendering, CI/CD service discovery, and im
 
 ```yaml
 # Infrastructure (flat string — always included):
-nats: nats:2.11.4
+nats: nats:2.14.10
 
 # Custom service (dict — per-stage tags):
 api:

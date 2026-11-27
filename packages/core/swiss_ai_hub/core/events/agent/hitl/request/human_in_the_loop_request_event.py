@@ -3,6 +3,7 @@ from typing import Annotated, ClassVar, Literal
 from pydantic import Field
 
 from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
+from swiss_ai_hub.core.events.agent.hitl.timeout.human_in_the_loop_timeout_event import HumanInTheLoopTimeoutEvent
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.topics.agents.agent_instance_topic import AgentInstanceTopic
 from swiss_ai_hub.core.topics.agents.partial_agent_topic import PartialAgentTopic
@@ -40,3 +41,15 @@ class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
             description="HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).",
         ),
     ]
+    timeout_seconds: Annotated[
+        float | None,
+        Field(
+            gt=0,
+            description="How long to wait for the person's answer before the run receives a "
+            "`HumanInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
+        ),
+    ] = None
+
+    def timed_out(self) -> HumanInTheLoopTimeoutEvent:
+        """What the run receives at this request's deadline; only meaningful when `timeout_seconds` is set."""
+        return HumanInTheLoopTimeoutEvent(request_event_id=self.event_id, timeout_seconds=self.timeout_seconds or 0)

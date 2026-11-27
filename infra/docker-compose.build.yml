@@ -1180,7 +1180,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   nats:
     container_name: nats
-    image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
+    image: ghcr.io/bbvch-ai/aihub-core/nats:2.14.10
     restart: always
     command: -c /etc/nats/nats-server.conf
     environment:

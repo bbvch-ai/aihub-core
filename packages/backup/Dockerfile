@@ -41,9 +41,9 @@ RUN ARCH=$([ "$TARGETARCH" = "arm64" ] && echo "arm64" || echo "x86_64") && \
 
 # nats CLI (official backup/restore tool for NATS JetStream streams)
 # Checksums come from the release's SHA256SUMS; update them with the version.
-ARG NATS_CLI_VERSION=0.3.1
-ARG NATS_CLI_SHA256_AMD64=f48374be6fc903b954b90b729321772bdd5bc745234edf3d31cd17ab79e85629
-ARG NATS_CLI_SHA256_ARM64=ae8f6a743c7f787ec0c72d8c48b0b1045a350ca290a3a36e09509f2500ae12ad
+ARG NATS_CLI_VERSION=0.5.2
+ARG NATS_CLI_SHA256_AMD64=9dddf92072bba154c11a08165718fb6ee42af1f25ce4f1bb284d2fc141abcff2
+ARG NATS_CLI_SHA256_ARM64=7ecb342d66e67eb236d634cd8e9741ab69c53063dc0020e7e4cde05669533404
 RUN ARCH=$([ "$TARGETARCH" = "arm64" ] && echo "arm64" || echo "amd64") && \
     SHA256=$([ "$TARGETARCH" = "arm64" ] && echo "$NATS_CLI_SHA256_ARM64" || echo "$NATS_CLI_SHA256_AMD64") && \
     wget -q "https://github.com/nats-io/natscli/releases/download/v${NATS_CLI_VERSION}/nats-${NATS_CLI_VERSION}-linux-${ARCH}.zip" -O /tmp/nats-cli.zip && \

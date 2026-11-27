@@ -3,6 +3,7 @@ from typing import Annotated, ClassVar, Self
 from pydantic import Field
 
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.events.agent.bitl.timeout.bot_in_the_loop_timeout_event import BotInTheLoopTimeoutEvent
 from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
 from swiss_ai_hub.core.form.constraints import Pattern
 from swiss_ai_hub.core.form.elements.input_text import InputText
@@ -153,3 +154,15 @@ class BotInTheLoopRequestEvent(ControlEvent):
             "event, ensuring the correct workflow step resumes once the human replies.",
         ),
     ]
+    timeout_seconds: Annotated[
+        float | None,
+        Field(
+            gt=0,
+            description="How long to wait for an answer in the channel before the run receives a "
+            "`BotInTheLoopTimeoutEvent` instead. `None` waits for as long as the run lives.",
+        ),
+    ] = None
+
+    def timed_out(self) -> BotInTheLoopTimeoutEvent:
+        """What the run receives at this request's deadline; only meaningful when `timeout_seconds` is set."""
+        return BotInTheLoopTimeoutEvent(request_event_id=self.event_id, timeout_seconds=self.timeout_seconds or 0)

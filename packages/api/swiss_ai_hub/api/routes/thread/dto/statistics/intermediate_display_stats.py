@@ -25,7 +25,12 @@ class IntermediateDisplayStats(BaseModel):
     bitl_request_events: Annotated[int, Field(..., description="Number of Bot-In-The-Loop request events")] = 0
     bitl_response_events: Annotated[int, Field(..., description="Number of Bot-In-The-Loop response events")] = 0
     aitl_request_events: Annotated[int, Field(..., description="Number of AI-In-The-Loop request events")] = 0
-    aitl_response_events: Annotated[int, Field(..., description="Number of AI-In-The-Loop response events")] = 0
+    aitl_response_events: Annotated[
+        int, Field(..., description="Number of AI-In-The-Loop answers, failures of the delegated agent included")
+    ] = 0
+    hitl_timeout_events: Annotated[int, Field(..., description="Number of unanswered Human-In-The-Loop requests")] = 0
+    bitl_timeout_events: Annotated[int, Field(..., description="Number of unanswered Bot-In-The-Loop requests")] = 0
+    aitl_timeout_events: Annotated[int, Field(..., description="Number of unanswered AI-In-The-Loop requests")] = 0
     llm_cost: Annotated[float, Field(..., description="Total cost incurred by LLM operations")] = 0.0
 
     first_event_time: Annotated[
@@ -34,6 +39,22 @@ class IntermediateDisplayStats(BaseModel):
     latest_event_time: Annotated[
         datetime | None, Field(None, description="Timestamp of the most recent event in this display")
     ] = None
+
+    @property
+    def open_hitl(self) -> bool:
+        return self.hitl_request_events > self.hitl_response_events + self.hitl_timeout_events
+
+    @property
+    def open_bitl(self) -> bool:
+        return self.bitl_request_events > self.bitl_response_events + self.bitl_timeout_events
+
+    @property
+    def open_aitl(self) -> bool:
+        return self.aitl_request_events > self.aitl_response_events + self.aitl_timeout_events
+
+    @property
+    def has_timeouts(self) -> bool:
+        return self.hitl_timeout_events + self.bitl_timeout_events + self.aitl_timeout_events > 0
 
     def update_from_run_data(self, run_data: dict[str, Any]):
         """Updates counts and times based on raw data dictionary from aggregation."""
@@ -47,6 +68,9 @@ class IntermediateDisplayStats(BaseModel):
         self.bitl_response_events += run_data.get("bitl_response_events", 0)
         self.aitl_request_events += run_data.get("aitl_request_events", 0)
         self.aitl_response_events += run_data.get("aitl_response_events", 0)
+        self.hitl_timeout_events += run_data.get("hitl_timeout_events", 0)
+        self.bitl_timeout_events += run_data.get("bitl_timeout_events", 0)
+        self.aitl_timeout_events += run_data.get("aitl_timeout_events", 0)
         self.llm_cost += run_data.get("llm_cost", 0.0)
 
         run_started_at = run_data.get("started_at")

@@ -11,6 +11,7 @@ class CalculatedThreadStats(BaseModel):
     num_turns: Annotated[int, Field(..., description="Number of conversation turns in this thread")] = 0
     has_pending: Annotated[bool, Field(..., description="Indicates if the thread has pending operations")] = False
     has_errors: Annotated[bool, Field(..., description="Indicates if the thread has encountered errors")] = False
+    has_timeouts: Annotated[bool, Field(description="A human, agent or bot did not answer a request in time")] = False
     is_hitl: Annotated[bool, Field(..., description="Indicates if Human-In-The-Loop is enabled for this thread")] = (
         False
     )

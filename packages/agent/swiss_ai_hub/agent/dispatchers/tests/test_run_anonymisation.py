@@ -76,6 +76,7 @@ def _redis() -> Mock:
 def dispatcher() -> AgentDispatcher:
     topic_manager = Mock(spec=AgentClassTopicManager)
     topic_manager.get_stream = Mock(return_value=("stream", "agent._RecordingAgent.*"))
+    topic_manager.agent_class = "_RecordingAgent"
     dispatcher = AgentDispatcher(
         agent=_RecordingAgent,
         agent_config=_config(anonymise=False),
@@ -94,7 +95,10 @@ def dispatcher() -> AgentDispatcher:
         yield Mock()
 
     dispatcher.agent_run_tracer = Mock(
-        trace_step_start=span, trace_step_stop=AsyncMock(), start_aitl_wrapper_span=AsyncMock()
+        trace_step_start=span,
+        trace_step_stop=AsyncMock(),
+        start_aitl_wrapper_span=AsyncMock(),
+        end_aitl_wrapper_span=AsyncMock(),
     )
     dispatcher._build_method_kwargs = AsyncMock(return_value=EventsAndKwargs(events=[], kwargs={"event": StartEvent()}))
     dispatcher.js_publisher = Mock(publish_event=AsyncMock())
@@ -141,10 +145,8 @@ async def test_should_anonymise_a_delegated_run_whose_own_profile_does_not(dispa
 @pytest.mark.asyncio
 async def test_should_tell_the_delegated_run_to_anonymise(dispatcher) -> None:
     request = AgentInTheLoop.invoke(agent_class="RAGAgent", agent_id="rag", start_event=StartEvent())
-    subscriber = Mock(start=AsyncMock())
-    target = "swiss_ai_hub.agent.dispatchers.agent_dispatcher.AgentNCSubscriber.for_thread_control_events"
 
-    with patch(target, return_value=subscriber), GatewayGuardrails.requesting(PII):
+    with GatewayGuardrails.requesting(PII):
         await dispatcher.trigger_agent_in_the_loop(request, _topic())
 
     assert dispatcher.js_publisher.publish_event.await_args.args[2] == {RunAnonymisation.HEADER: "true"}
@@ -153,10 +155,8 @@ async def test_should_tell_the_delegated_run_to_anonymise(dispatcher) -> None:
 @pytest.mark.asyncio
 async def test_should_send_no_header_when_the_delegating_run_does_not_anonymise(dispatcher) -> None:
     request = AgentInTheLoop.invoke(agent_class="RAGAgent", agent_id="rag", start_event=StartEvent())
-    target = "swiss_ai_hub.agent.dispatchers.agent_dispatcher.AgentNCSubscriber.for_thread_control_events"
 
-    with patch(target, return_value=Mock(start=AsyncMock())):
-        await dispatcher.trigger_agent_in_the_loop(request, _topic())
+    await dispatcher.trigger_agent_in_the_loop(request, _topic())
 
     assert dispatcher.js_publisher.publish_event.await_args.args[2] is None
 

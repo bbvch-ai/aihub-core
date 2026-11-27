@@ -55,3 +55,24 @@ def test_a_delegation_waits_forever_unless_a_timeout_is_asked_for():
         ).timeout_seconds
         == 30
     )
+
+
+def test_a_timeout_names_the_request_it_ends():
+    request = AgentInTheLoop.invoke(
+        agent_class="RAGAgent", agent_id="agent-a", start_event=StartEvent(), timeout_seconds=5
+    )
+
+    timeout = request.timed_out()
+
+    assert isinstance(timeout, AgentInTheLoop.timeout)
+    assert timeout.request_event_id == request.event_id
+    assert timeout.is_control_event and timeout.is_display_event
+
+
+def test_an_api_caller_cannot_name_a_delegating_run():
+    """The delegated run answers into the run named here, so a caller naming one could write into any run."""
+    from swiss_ai_hub.core.events.api_payload_context import ApiPayloadContext
+
+    assert "delegated_by" not in StartEvent.api_input_model().model_fields
+    context = ApiPayloadContext.model_construct(user=None, locale="en")
+    assert StartEvent._api_server_data(context)["delegated_by"] is None

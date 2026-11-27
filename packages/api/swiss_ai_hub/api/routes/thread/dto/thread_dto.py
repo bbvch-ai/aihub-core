@@ -35,6 +35,7 @@ class ThreadDTO(BaseModel):
         bool, Field(description="Thread has more StartEvent than StopEvent+ExceptionEvent overall")
     ] = False
     has_errors: Annotated[bool, Field(description="There are ExceptionEvent in the thread")] = False
+    has_timeouts: Annotated[bool, Field(description="A human, agent or bot did not answer a request in time")] = False
     is_hitl: Annotated[bool, Field(description="There are HumanInTheLoopRequest events present")] = False
     open_hitl: Annotated[bool, Field(description="More HumanInTheLoopRequest than Response overall")] = False
     is_bitl: Annotated[bool, Field(description="There are BotInTheLoopRequest events present")] = False

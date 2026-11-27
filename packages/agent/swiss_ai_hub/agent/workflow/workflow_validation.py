@@ -6,8 +6,11 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import (
     AgentInTheLoopExceptionEvent,
     AgentInTheLoopResponseEvent,
+    AgentInTheLoopTimeoutEvent,
     BotInTheLoopResponseEvent,
+    BotInTheLoopTimeoutEvent,
     HumanInTheLoopResponseEvent,
+    HumanInTheLoopTimeoutEvent,
     StartEvent,
     StopEvent,
 )
@@ -20,9 +23,12 @@ from swiss_ai_hub.agent.agents.agent import Agent
 ARRIVES_FROM_OUTSIDE: tuple[type[BaseEvent], ...] = (
     StartEvent,
     HumanInTheLoopResponseEvent,
+    HumanInTheLoopTimeoutEvent,
     AgentInTheLoopResponseEvent,
     AgentInTheLoopExceptionEvent,
+    AgentInTheLoopTimeoutEvent,
     BotInTheLoopResponseEvent,
+    BotInTheLoopTimeoutEvent,
 )
 
 

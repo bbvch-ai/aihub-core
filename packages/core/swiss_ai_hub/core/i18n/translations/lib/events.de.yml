@@ -349,5 +349,16 @@ records_extracted_event:
   description: Die aus den ausgewählten Dokumenten extrahierte Tabelle
 hitl_questions_request_event:
   name: Fragen zur Bestätigung
-  description: Der Agent bittet den Benutzer, die Teile einer Anfrage zu bestätigen oder
-    zu korrigieren, als Formular, wo der Client eines zeigt, sonst als Chat-Nachricht.
+  description: Der Agent bittet den Benutzer, die Teile einer Anfrage zu bestätigen
+    oder zu korrigieren, als Formular, wo der Client eines zeigt, sonst als Chat-Nachricht.
+hitl_timeout_event:
+  name: Keine Antwort erhalten
+  description: Niemand hat die Frage rechtzeitig beantwortet, der Agent fährt ohne
+    Antwort fort.
+aitl_timeout_event:
+  name: Beauftragter Agent antwortet nicht
+  description: Der Agent, an den eine Aufgabe übergeben wurde, hat nicht rechtzeitig
+    geantwortet.
+bitl_timeout_event:
+  name: Keine Antwort im Kanal
+  description: Niemand hat die Frage in Slack oder Teams rechtzeitig beantwortet.

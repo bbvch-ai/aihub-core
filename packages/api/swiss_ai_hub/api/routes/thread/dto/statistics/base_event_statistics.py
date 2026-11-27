@@ -8,6 +8,7 @@ class BaseEventStatistics(BaseModel):
 
     n_events: Annotated[int, Field(description="Total number of events")] = 0
     has_errors: Annotated[bool, Field(description="Has error events")] = False
+    has_timeouts: Annotated[bool, Field(description="A human, agent or bot did not answer a request in time")] = False
     has_pending: Annotated[bool, Field(description="Has pending events (more start than stop/exception events)")] = (
         False
     )
