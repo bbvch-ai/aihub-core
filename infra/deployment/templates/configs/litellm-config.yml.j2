@@ -266,7 +266,8 @@ model_list:
       # Probed 2026-11-27: images are read (colours named correctly).
       supports_vision: true
       # Always thinks. The template reads reasoning_effort low and high and turns any other value into max; none also
-      # puts the thinking in the answer, as described above.
+      # puts the thinking in the answer, as described above. reasoning_effort is not dropped on purpose: low is the
+      # only way to shorten the thinking.
       supports_reasoning: true
       # No max_images: none was hit up to 128 images per request; the input window bounds it instead.
       # Sampling defaults from the model's generation_config.json.
