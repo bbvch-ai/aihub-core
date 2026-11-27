@@ -19,6 +19,34 @@ ARTICLE = """
 """
 
 
+HEADLINES = [
+    "Parliament passes the budget",
+    "Storm closes mountain passes",
+    "Central bank holds rates",
+    "Hospital opens a new wing",
+    "Home side wins the derby",
+    "Museum returns stolen paintings",
+    "Night trains return to the Alps",
+    "City plants a thousand trees",
+]
+STORIES = "".join(
+    f'<section><header><h3><a href="/story/{number}">{headline}</a></h3></header>'
+    f"<span>What happened, who is affected and what comes next, in our reporters' summary.</span></section>"
+    for number, headline in enumerate(HEADLINES)
+)
+# Shaped like srf.ch/news, where article detection kept the login notice and dropped every headline.
+FRONT_PAGE = f"""
+<html><head><title>News</title></head><body>
+<noscript>Some parts of this site only work with JavaScript.</noscript>
+<header><nav><a href="/">Home</a> <a href="/sport">Sport</a> <a href="/weather">Weather</a></nav></header>
+<main>
+  <section><h2>Your account</h2><p>Log in to comment and personalise your news.</p></section>
+  {STORIES}
+</main>
+</body></html>
+"""
+
+
 async def convert(html: str = ARTICLE, title: str = "Pricing", max_characters: int = 10_000):
     return await PageContentConverter.convert(URL, "https://www.example.com/pricing", title, html, max_characters)
 
@@ -61,6 +89,15 @@ class TestConversion:
         assert isinstance(page, FetchedWebPage)
         assert "documentation examples" in page.markdown
 
+    async def test_reads_a_short_page_written_without_spaces(self):
+        """Chinese and Japanese leave no spaces between words, so a whole paragraph would count as one word."""
+        html = "<html><body><h1>通知</h1><p>本周六上午九点至十二点，系统将进行例行维护，暂停服务。</p></body></html>"
+
+        page = await convert(html)
+
+        assert isinstance(page, FetchedWebPage)
+        assert "例行维护" in page.markdown
+
     @pytest.mark.parametrize(
         "html",
         [
@@ -73,6 +110,35 @@ class TestConversion:
         result = await convert(html)
 
         assert result == WebFetchFailure(url=URL, reason=WebFetchFailureReason.EMPTY_CONTENT)
+
+
+@pytest.mark.asyncio
+class TestPageListingManyStories:
+    async def test_reads_every_headline(self):
+        """Article detection keeps one block of a front page, which held a login notice instead of the news."""
+        page = await convert(FRONT_PAGE, title="News")
+
+        assert isinstance(page, FetchedWebPage)
+        assert all(headline in page.markdown for headline in HEADLINES)
+
+    async def test_leaves_the_menus_out(self):
+        page = await convert(FRONT_PAGE, title="News")
+
+        assert "Weather" not in page.markdown
+
+    async def test_leaves_out_what_only_a_browser_without_scripts_shows(self):
+        """srf.ch/news opened with its notice that the site needs JavaScript, which the reader never saw."""
+        page = await convert(FRONT_PAGE, title="News")
+
+        assert "only work with JavaScript" not in page.markdown
+
+    async def test_reads_a_page_wrapped_in_a_form(self):
+        """ASP.NET sites such as chinhphu.vn put the whole page inside one form."""
+        html = FRONT_PAGE.replace("<body>", "<body><form>").replace("</body>", "</form></body>")
+
+        page = await convert(html, title="News")
+
+        assert all(headline in page.markdown for headline in HEADLINES)
 
 
 @pytest.mark.asyncio

@@ -292,11 +292,14 @@ refuses non-public addresses for the address it connects to; `RequestGuard.reaso
 `X-Squid-Error` (`ERR_ACCESS_DENIED` → blocked host, `ERR_DNS_FAIL` → not found), so its 403 never reads as the site
 denying access. `route.fetch` tunnels plain `http://` with `CONNECT` too, and the proxy's error pages are empty, or a
 refusal surfaces as `Route.fetch: aborted`. `PageContentConverter` keeps the main content as markdown (Trafilatura).
-Each page becomes one `IngestedNode` (`FetchedWebPage.to_ingested_node`, id from the URL, `source_origin` the URL chat
-clients link), rendered with `combine_nodes_in_order` and cited like retrieved knowledge; the result is a
-`SemanticEvent`, so the fetch shows in the trace as a retrieval. Failing to reach the browser raises (a platform fault,
-not an unreadable page). `RAGAgent`, `ExpertRAGAgent`, `LLMWrappingAgent` and `WebFetchAgent` call it from
-`gather_context_step`, reserving `WebFetchFields.web_fetch_reserve(links)` in `AttachedFiles.read`, and compose its
+When that is under a tenth of the page's text, it reads the page whole as plain text, without menus, banners and
+dialogs: on a news front page article detection keeps one teaser or a login notice (srf.ch/news kept 188 of 25,000
+characters). A page is empty below 25 visible characters, counted in characters because Chinese and Japanese leave no
+spaces between words. Each page becomes one `IngestedNode` (`FetchedWebPage.to_ingested_node`, id from the URL,
+`source_origin` the URL chat clients link), rendered with `combine_nodes_in_order` and cited like retrieved knowledge;
+the result is a `SemanticEvent`, so the fetch shows in the trace as a retrieval. Failing to reach the browser raises (a
+platform fault, not an unreadable page). `RAGAgent`, `ExpertRAGAgent`, `LLMWrappingAgent` and `WebFetchAgent` call it
+from `gather_context_step`, reserving `WebFetchFields.web_fetch_reserve(links)` in `AttachedFiles.read`, and compose its
 block after the knowledge and before the files; RAG's sufficiency guard weighs it too, so a page that answers the
 question is not rejected for retrieval finding nothing. `UniversalAgent` offers it as a tool with
 `web_references=WebFetch.links_of(event)`.
