@@ -170,6 +170,10 @@ model_list:
       api_base: os.environ/STONEY_CLOUD_API_BASE_URL
       api_key: os.environ/STONEY_CLOUD_API_KEY
       drop_params: true
+      # With thinking switched off, stoney's GLM writes its thinking into the answer instead of leaving it out (probed
+      # 2026-11-27 with chat_template_kwargs and with reasoning_effort none). That breaks the one-word answers
+      # ReasoningFreeChat callers parse, so the switch is dropped and the thinking stays in the reasoning field.
+      additional_drop_params: [chat_template_kwargs]
     model_info:
       aihub_display_name: GLM 5.3 Flash
       aihub_hosting_location: swiss_cloud
@@ -183,8 +187,8 @@ model_list:
       supports_response_schema: true
       # Probed 2026-11-27: images are read (colours named correctly).
       supports_vision: true
-      # Probed 2026-11-27: thinks by default; reasoning_effort none and chat_template_kwargs.enable_thinking false
-      # turn it off, and no reasoning_effort value is rejected.
+      # Probed 2026-11-27: thinks by default, and no reasoning_effort value is rejected; none leaks the thinking into
+      # the answer as described above, low does not.
       supports_reasoning: true
       # No max_images: none was hit up to 128 images per request; the input window bounds it instead.
       # Sampling defaults from the model's generation_config.json.
@@ -204,7 +208,9 @@ model_list:
       aihub_hosting_location: swiss_cloud
       aihub_general_purpose: true
       mode: chat
-      # stoney's max_model_len 524288 is input + output combined, so these two must sum to it.
+      # stoney's max_model_len 524288 bounds input + output, so these two sum to it. Unlike GLM's, this vLLM build
+      # caps max_tokens instead of refusing (probed 2026-11-27: 503010 input tokens with max_tokens 65536 answered),
+      # so the split only keeps room for the answer.
       max_input_tokens: 458752
       max_output_tokens: 65536
       supports_function_calling: true
@@ -213,7 +219,7 @@ model_list:
       # card describes an image-text-to-text model.
       supports_vision: false
       # Probed 2026-11-27: thinks by default; reasoning_effort none and chat_template_kwargs.thinking false turn it
-      # off, and no reasoning_effort value is rejected.
+      # off and leave a clean answer, and no reasoning_effort value is rejected.
       supports_reasoning: true
       # Sampling defaults recommended on the model card, which ships no generation_config.json.
       default_temperature: 1.0
