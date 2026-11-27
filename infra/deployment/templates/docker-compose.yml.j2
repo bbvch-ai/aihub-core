@@ -1228,6 +1228,12 @@ services:
       {%- if stage != 'dev' %}
       DOMAIN: ${DOMAIN}
       {%- endif %}
+      # AI Hub address the aihub login theme links to from "Account updated" (theme.properties aihubUrl)
+      {%- if stage == 'dev' %}
+      AIHUB_FRONTEND_ORIGIN: ${AIHUB_FRONTEND_ORIGIN}
+      {%- else %}
+      AIHUB_FRONTEND_ORIGIN: https://${DOMAIN}
+      {%- endif %}
       # Superuser (interactive Keycloak-seeded admin) — passed to realm template
       SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}

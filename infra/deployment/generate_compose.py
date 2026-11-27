@@ -154,6 +154,12 @@ STATIC_COPY_DIRS = [
 # (source relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR, output_name)
 STATIC_COPY_FILES = [
     ("templates/configs/keycloak-theme-logo.png", "configs/keycloak/themes/aihub/login/resources/img", "logo.png"),
+    ("templates/configs/keycloak-theme-info.ftl", "configs/keycloak/themes/aihub/login", "info.ftl"),
+    (
+        "templates/configs/keycloak-theme-messages_en.properties",
+        "configs/keycloak/themes/aihub/login/messages",
+        "messages_en.properties",
+    ),
     ("templates/configs/presidio-analyzer.yaml", "configs/presidio", "analyzer.yaml"),
     ("templates/configs/openwebui-code-interpreter-prompt.txt", "configs/openwebui", "code-interpreter-prompt.txt"),
 ]
