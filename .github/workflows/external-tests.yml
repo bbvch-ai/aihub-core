@@ -13,7 +13,8 @@ on:
 concurrency:
   # Every label added to a PR starts this workflow; keying the group on the label keeps an unrelated label (and the
   # nightly run vs a manual one) from cancelling a running external test run.
-  group: external-tests-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.label.name }}
+  group: external-tests-${{ github.event_name }}-${{ github.event.pull_request.number
+    || github.ref }}-${{ github.event.label.name }}
   cancel-in-progress: true
 permissions:
   contents: read
@@ -87,27 +88,48 @@ jobs:
           regenerate_compose: 'true'
   report-nightly-failure:
     name: Report Nightly Failure
-    needs: external-tests
-    runs-on: ubuntu-slim
+    needs: [select, external-tests]
+    runs-on: ubuntu-latest
     if: ${{ failure() && github.event_name == 'schedule' }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     permissions:
+      actions: read
+      contents: read
       issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{
+        github.run_id }}
     steps:
-      - name: Record the failure on the tracking issue
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - name: Download the test reports
+        # Missing reports show up as such in the body; they must not stop the issue from being written.
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          pattern: '*-pytest-report'
+          path: reports
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+      - name: Write the failure report
         env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{
-            github.run_id }}
+          TEST_MATRIX: ${{ needs.select.outputs.test_matrix }}
+        # A plain report still beats no report: if the detailed one cannot be built, fall back to the run link.
+        run: |
+          uv run --no-project --with pydantic python .github/scripts/nightly_failure_report.py \
+            --repo "$GITHUB_REPOSITORY" --run-url "$RUN_URL" --sha "$GITHUB_SHA" --reports reports \
+            --test-matrix "$TEST_MATRIX" --output body.md \
+            || echo "External provider tests failed on main ($(date -u +%Y-%m-%d)): $RUN_URL" > body.md
+      - name: Record the failure on the tracking issue
         run: |-
           gh label create "$TRACKING_LABEL" --repo "$GITHUB_REPOSITORY" --force \
             --description "Nightly third-party provider tests" --color D93F0B
-          body="External provider tests failed on main ($(date -u +%Y-%m-%d)): $RUN_URL"
           issue=$(gh issue list --repo "$GITHUB_REPOSITORY" --label "$TRACKING_LABEL" --state open \
             --json number --jq '.[0].number')
           if [[ -n "$issue" ]]; then
-            gh issue comment "$issue" --repo "$GITHUB_REPOSITORY" --body "$body"
+            gh issue comment "$issue" --repo "$GITHUB_REPOSITORY" --body-file body.md
           else
             gh issue create --repo "$GITHUB_REPOSITORY" --label "$TRACKING_LABEL" \
-              --title "External provider tests failing on main" --body "$body"
+              --title "External provider tests failing on main" --body-file body.md
           fi

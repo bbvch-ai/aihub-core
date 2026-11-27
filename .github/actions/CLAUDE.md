@@ -73,6 +73,12 @@ a shared input (core, `uv.lock`, root `pyproject.toml`, `infra/`, `Makefile`, `.
 the script) changed, and api also runs for the default-roles docs page its drift test reads; pushes to `main` test every
 module. Every required SonarCloud check still reports, with coverage only for the modules that were tested.
 
+**Nightly failure issue**: when the scheduled `external-tests.yml` run fails, `report-nightly-failure` opens (or
+comments on) the open issue labelled `external-tests`. `.github/scripts/nightly_failure_report.py` writes the body from
+the run's `*-pytest-report` artifacts and the GitHub API: the failed tests with their messages and the PR that last
+changed each test file, the PRs merged since the last green nightly (marked when they touch a failing test's folder),
+and each module's status. If the script fails, the body falls back to the run link.
+
 **lint_backend**: Uses `ruff format` via reviewdog. Aligned with local development (`make pr-ready` also uses
 `ruff format`).
 
