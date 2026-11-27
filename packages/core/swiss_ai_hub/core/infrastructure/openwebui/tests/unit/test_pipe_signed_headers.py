@@ -16,12 +16,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
-from fastapi import Request
+from fastapi import HTTPException, Request
 
 from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_auth_handler import OpenWebuiAuthHandler
-from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_signature_rejected_error import (
-    OpenWebuiSignatureRejectedError,
-)
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 
 pytestmark = pytest.mark.unit
@@ -179,7 +176,7 @@ def test_a_signature_made_when_the_dialog_opened_would_be_refused(
     pipe_clock[0] -= AN_HOUR
     signed_an_hour_ago = auth.sign_request(request)
 
-    with pytest.raises(OpenWebuiSignatureRejectedError, match="Expired"):
+    with pytest.raises(HTTPException, match="Expired"):
         _check_with_the_api(api_handler, signed_an_hour_ago)
 
 

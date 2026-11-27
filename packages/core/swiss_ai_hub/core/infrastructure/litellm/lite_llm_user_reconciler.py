@@ -11,6 +11,7 @@ from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import Lit
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_reconciliation_report import LiteLLMReconciliationReport
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_admin_service import LiteLLMUserAdminService
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_user_limits import LiteLLMUserLimits
+from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
 
 logger = logging.getLogger(__name__)
 
@@ -116,10 +117,14 @@ class LiteLLMUserReconciler:
         Runs unless another replica, or this one, ran within the interval. The run is cut off when its lease expires,
         so two runs never overlap: one could otherwise clear the record of keys the other is about to block. A run cut
         off part-way is safe, and the next one finishes it.
+
+        Each run also has OpenWebUI's groups follow Keycloak, whatever LiteLLM answers. Keycloak tells OpenWebUI nothing
+        either, and a deleted or disabled user's session there keeps offering every model their groups grant.
         """
         interval_seconds = self._settings.USER_RECONCILE_INTERVAL_SECONDS
         if not await self._redis.set(self._LEASE_KEY, "held", nx=True, px=int(interval_seconds * 1000)):
             return
+        AccessChangeHook.notify()
         async with asyncio.timeout(interval_seconds):
             report = await self.reconcile()
         self._log(report)

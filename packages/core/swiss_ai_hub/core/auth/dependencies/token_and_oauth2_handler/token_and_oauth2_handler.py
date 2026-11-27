@@ -7,9 +7,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_auth_handler import KeycloakAuthHandler
 from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_auth_handler import OpenWebuiAuthHandler
-from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_signature_rejected_error import (
-    OpenWebuiSignatureRejectedError,
-)
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
@@ -20,7 +17,7 @@ logger = logging.getLogger(__name__)
 class TokenAndOauth2Handler:
     """A composite authentication handler that sequentially attempts both OAuth2 and Bearer auth strategies.
 
-    A rejected OpenWebUI signature ends the attempt instead of falling through, see ``OpenWebuiSignatureRejectedError``.
+    A request OpenWebUI signed is answered by ``OpenWebuiAuthHandler`` alone, see ``_answers_alone``.
     """
 
     def __init__(self, bearer_handlers: list[AuthHandler], oauth2_handlers: list[KeycloakAuthHandler]):
@@ -38,10 +35,11 @@ class TokenAndOauth2Handler:
         for bearer_handler in self.bearer_handlers:
             try:
                 return await bearer_handler(request, bearer_token)
-            except OpenWebuiSignatureRejectedError:
-                raise
             except Exception as e:
-                failures.append(self._log_failure("Bearer", bearer_handler, e))
+                failure = self._log_failure("Bearer", bearer_handler, e)
+                if self._answers_alone(bearer_handler, request):
+                    raise
+                failures.append(failure)
 
         if oauth_token:
             for oauth2_handler in self.oauth2_handlers:
@@ -69,6 +67,14 @@ class TokenAndOauth2Handler:
                 failures.append(self._log_failure("Bearer", bearer_handler, e))
 
         self._raise_failure(failures)
+
+    @staticmethod
+    def _answers_alone(handler: AuthHandler, request: Request) -> bool:
+        """
+        Every refusal of a signed request is final: the next handler authenticates the bearer's owner, never the user
+        the request names.
+        """
+        return isinstance(handler, OpenWebuiAuthHandler) and OpenWebuiAuthHandler.is_signed(request)
 
     @staticmethod
     def _log_failure(scheme: str, handler: object, error: Exception) -> tuple[str, Exception]:
