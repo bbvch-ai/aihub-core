@@ -25,7 +25,8 @@ search:
   formats: [html, json]
 server:
   # Internal-only service: SearXNG is reachable solely from the `backend`
-  # network (Open-WebUI is the only client) and is never exposed via Traefik.
+  # network (Open-WebUI's own search and the agents' web search capability are
+  # its clients) and is never exposed via Traefik.
   # `limiter: false` and `image_proxy: false` are safe in this topology and
   # avoid the bot-detection false-positives the limiter triggers for trusted
   # automated callers. Do NOT copy this config to a public-facing instance.

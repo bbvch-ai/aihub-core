@@ -36,6 +36,9 @@ class Capability(abc.ABC):
     # The chat feature this capability serves, if any. A blueprint supports exactly the features of the
     # capabilities it installs, which is what chat clients use to decide which toggles to show.
     chat_feature: ClassVar[ChatFeature | None] = None
+    # The config field that switches `chat_feature` off for a profile: a profile where it is unset shows no toggle
+    # for the feature. None when every profile of a blueprint installing the capability offers it.
+    chat_feature_config_field: ClassVar[str | None] = None
 
     # The tool the capability offers a blueprint's tool loop, if any. A model-chosen call then runs the capability's
     # own steps, with the same events as an explicit call: the capability's adapter steps turn a

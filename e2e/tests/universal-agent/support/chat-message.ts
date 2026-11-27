@@ -11,6 +11,7 @@ export type ToolName =
   | 'read_knowledge_document'
   | 'select_knowledge_documents'
   | 'extract_records'
+  | 'search_web'
 
 /**
  * The pipe names a tool block by the tool's label in the run's locale (`ToolEvent.label`), so a call is recognised
@@ -57,6 +58,7 @@ const TOOL_LABELS: Record<ToolName, string[]> = {
     'Seleziona documenti',
   ],
   extract_records: ['Extract a Table', 'Tabelle extrahieren', 'Extraire un tableau', 'Estrai una tabella'],
+  search_web: ['Search the web', 'Im Web suchen', 'Rechercher sur le web', 'Cerca nel web'],
 }
 
 export const STOPPED_EARLY_NOTICE = 'I stopped looking into this before I was done'

@@ -341,6 +341,9 @@ event:
     links: Links
     webReferences: Referenzierte Webseiten
     pagesRead: Gelesene Seiten
+    searchQueries: Suchanfragen
+    sitesFound: Gefundene Seiten
+    unresponsiveEngines: Suchmaschinen ohne Antwort
     notRead: Nicht gelesen
     webFetchFailure:
       malformed_url: Ungültiger Link

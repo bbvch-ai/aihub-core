@@ -63,6 +63,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
     from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch_config import WebFetchConfig
     from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch_fields import WebFetchFields
+    from swiss_ai_hub.agent.capabilities.web_search.web_search import WebSearch
+    from swiss_ai_hub.agent.capabilities.web_search.web_search_config import WebSearchConfig
+    from swiss_ai_hub.agent.capabilities.web_search.web_search_fields import WebSearchFields
 
 __all__ = [
     "EXTRACT_RECORDS_TOOL",
@@ -114,6 +117,9 @@ __all__ = [
     "WebFetch",
     "WebFetchConfig",
     "WebFetchFields",
+    "WebSearch",
+    "WebSearchConfig",
+    "WebSearchFields",
 ]
 
 _ATTACHED_FILES_MODULE = "swiss_ai_hub.agent.capabilities.attached_files.attached_files"
@@ -179,6 +185,9 @@ _LAZY_IMPORTS: dict[str, str] = {
     "WebFetch": "swiss_ai_hub.agent.capabilities.web_fetch.web_fetch",
     "WebFetchConfig": "swiss_ai_hub.agent.capabilities.web_fetch.web_fetch_config",
     "WebFetchFields": "swiss_ai_hub.agent.capabilities.web_fetch.web_fetch_fields",
+    "WebSearch": "swiss_ai_hub.agent.capabilities.web_search.web_search",
+    "WebSearchConfig": "swiss_ai_hub.agent.capabilities.web_search.web_search_config",
+    "WebSearchFields": "swiss_ai_hub.agent.capabilities.web_search.web_search_fields",
 }
 
 

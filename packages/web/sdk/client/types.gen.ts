@@ -4414,6 +4414,7 @@ export type ContextualizedAgentEvent = {
     | MemoryStorageRequestedEvent
     | SearchKnowledgeEvent
     | FetchWebPagesEvent
+    | SearchWebEvent
     | ExtractRecordsEvent
     | ReadAttachedFilesEvent
     | AttachedFilesReadEvent
@@ -4431,6 +4432,7 @@ export type ContextualizedAgentEvent = {
     | AttachedFileEvent
     | KnowledgeSearchedEvent
     | WebPagesFetchedEvent
+    | WebSearchedEvent
     | RecordsExtractedEvent
     | ToolResultEvent
     | ToolLoopStatusEvent
@@ -17535,6 +17537,73 @@ export type SearchKnowledgeEvent = {
 };
 
 /**
+ * SearchWebEvent
+ *
+ * Asks the web search capability to search the web for the given queries and read the best hits.
+ *
+ * Built with `WebSearch.search(...)` or from the model's `search_web` tool call; answered with `WebSearchedEvent`.
+ * Displayed with its queries, so a chat client can show what is being searched for while the search runs.
+ */
+export type SearchWebEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Queries
+   *
+   * The search queries, each sent to the search engines.
+   */
+  queries?: Array<string>;
+  /**
+   * Searching
+   *
+   * Whether the profile searches the web, so a chat client shows no search progress while it does not. The step also checks the user's Web Search toggle and answers empty while it is off.
+   */
+  searching?: boolean;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the hits by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * SecretFileInput
  *
  * A secret that is handed out as a file, such as a service-account key, picked instead of pasted.
@@ -22081,6 +22150,130 @@ export type WebPagesFetchedEvent = {
 };
 
 /**
+ * WebSearchResult
+ *
+ * One hit a web search returned, as a chat client lists it under "searched N sites".
+ */
+export type WebSearchResult = {
+  /**
+   * Url
+   *
+   * The page the hit links to.
+   */
+  url: string;
+  /**
+   * Title
+   *
+   * The page's title as the search engine reported it.
+   */
+  title?: string;
+  /**
+   * Snippet
+   *
+   * The search engine's excerpt of the page.
+   */
+  snippet?: string;
+  /**
+   * Engine
+   *
+   * The search engine that ranked the hit highest.
+   */
+  engine?: string;
+  /**
+   * Read
+   *
+   * Whether the whole page was read, rather than only its snippet handed to the model.
+   */
+  read?: boolean;
+};
+
+/**
+ * WebSearchedEvent
+ *
+ * The answer to `SearchWebEvent`: the hits, and one context block with the pages read and the snippets of the rest.
+ *
+ * `results` is what a chat client lists as the sites searched; `grounding_nodes` are what the model is handed, one
+ * per hit, so a client lists exactly the sources the answer can cite. A semantic event, so the search shows in the
+ * trace as a retrieval of those hits, with the queries and the pages that could not be read beside them.
+ */
+export type WebSearchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Queries
+   *
+   * The queries that were searched.
+   */
+  queries?: Array<string>;
+  /**
+   * Results
+   *
+   * The hits, best first, without duplicates.
+   */
+  results?: Array<WebSearchResult>;
+  /**
+   * Block
+   *
+   * System messages carrying the pages read and the other hits' snippets.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The hits the block holds, one per hit, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNode>;
+  /**
+   * Failures
+   *
+   * Hits whose page could not be read, so only their snippet was used.
+   */
+  failures?: Array<WebFetchFailure>;
+  /**
+   * Unresponsive Engines
+   *
+   * Search engines that did not answer, with SearXNG's reason (a CAPTCHA, a rate limit), so a search every engine refused does not read as one that matched nothing.
+   */
+  unresponsive_engines?: Array<string>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * WebhookResponse
  */
 export type WebhookResponse = {
@@ -24435,6 +24628,7 @@ export type ContextualizedAgentEventWritable = {
     | MemoryStorageRequestedEventWritable
     | SearchKnowledgeEventWritable
     | FetchWebPagesEventWritable
+    | SearchWebEventWritable
     | ExtractRecordsEventWritable
     | ReadAttachedFilesEventWritable
     | AttachedFilesReadEventWritable
@@ -24452,6 +24646,7 @@ export type ContextualizedAgentEventWritable = {
     | AttachedFileEventWritable
     | KnowledgeSearchedEventWritable
     | WebPagesFetchedEventWritable
+    | WebSearchedEventWritable
     | RecordsExtractedEventWritable
     | ToolResultEventWritable
     | ToolLoopStatusEventWritable
@@ -32130,6 +32325,60 @@ export type SearchKnowledgeEventWritable = {
 };
 
 /**
+ * SearchWebEvent
+ *
+ * Asks the web search capability to search the web for the given queries and read the best hits.
+ *
+ * Built with `WebSearch.search(...)` or from the model's `search_web` tool call; answered with `WebSearchedEvent`.
+ * Displayed with its queries, so a chat client can show what is being searched for while the search runs.
+ */
+export type SearchWebEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Queries
+   *
+   * The search queries, each sent to the search engines.
+   */
+  queries?: Array<string>;
+  /**
+   * Searching
+   *
+   * Whether the profile searches the web, so a chat client shows no search progress while it does not. The step also checks the user's Web Search toggle and answers empty while it is off.
+   */
+  searching?: boolean;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the hits by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * SecretFileInput
  *
  * A secret that is handed out as a file, such as a service-account key, picked instead of pasted.
@@ -34993,6 +35242,79 @@ export type WebPagesFetchedEventWritable = {
    * Tool Call Id
    *
    * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * WebSearchedEvent
+ *
+ * The answer to `SearchWebEvent`: the hits, and one context block with the pages read and the snippets of the rest.
+ *
+ * `results` is what a chat client lists as the sites searched; `grounding_nodes` are what the model is handed, one
+ * per hit, so a client lists exactly the sources the answer can cite. A semantic event, so the search shows in the
+ * trace as a retrieval of those hits, with the queries and the pages that could not be read beside them.
+ */
+export type WebSearchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Queries
+   *
+   * The queries that were searched.
+   */
+  queries?: Array<string>;
+  /**
+   * Results
+   *
+   * The hits, best first, without duplicates.
+   */
+  results?: Array<WebSearchResult>;
+  /**
+   * Block
+   *
+   * System messages carrying the pages read and the other hits' snippets.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The hits the block holds, one per hit, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNodeWritable>;
+  /**
+   * Failures
+   *
+   * Hits whose page could not be read, so only their snippet was used.
+   */
+  failures?: Array<WebFetchFailure>;
+  /**
+   * Unresponsive Engines
+   *
+   * Search engines that did not answer, with SearXNG's reason (a CAPTCHA, a rate limit), so a search every engine refused does not read as one that matched nothing.
+   */
+  unresponsive_engines?: Array<string>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
    */
   tool_call_id?: string | null;
   [key: string]: unknown;

@@ -62,14 +62,33 @@ export class ChatDriver {
   }
 
   async setCodeInterpreter(enabled: boolean): Promise<void> {
+    await this.setIntegration('Code Interpreter', enabled)
+  }
+
+  async setWebSearch(enabled: boolean): Promise<void> {
+    await this.setIntegration('Web Search', enabled)
+  }
+
+  async integrationOffered(name: string): Promise<boolean> {
     const menu = await this.openIntegrations()
-    const toggle = menu.getByRole('button', { name: 'Code Interpreter' })
-    if ((await toggle.getAttribute('aria-pressed')) !== String(enabled)) {
+    const offered = (await ChatDriver.integration(menu, name).count()) > 0
+    await this.closeMenu(menu)
+    return offered
+  }
+
+  /** OpenWebUI 0.12 lists each integration as a menu item checkbox holding a switch. */
+  static integration(menu: Locator, name: string): Locator {
+    return menu.getByRole('menuitemcheckbox', { name })
+  }
+
+  private async setIntegration(name: string, enabled: boolean): Promise<void> {
+    const menu = await this.openIntegrations()
+    const toggle = ChatDriver.integration(menu, name)
+    if ((await toggle.getAttribute('aria-checked')) !== String(enabled)) {
       await toggle.click()
     }
-    await expect(toggle).toHaveAttribute('aria-pressed', String(enabled))
+    await expect(toggle).toHaveAttribute('aria-checked', String(enabled))
     await this.closeMenu(menu)
-    await expect(this.page.getByRole('button', { name: 'Disable Code Interpreter' })).toHaveCount(enabled ? 1 : 0)
   }
 
   async attach(files: string[]): Promise<void> {

@@ -15,6 +15,7 @@ from swiss_ai_hub.agent.capabilities import (
     ToolLoop,
     UserFilesTools,
     WebFetch,
+    WebSearch,
 )
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.events.agent import MemoryStorageRequestedEvent, UserMessageEvent
@@ -28,9 +29,9 @@ from swiss_ai_hub.ee.i18n.enterprise_locale_string import EnterpriseLocaleString
 
 class UniversalAgent(Agent):
     """One agent an admin configures once: the model decides for itself whether to search our knowledge, read the
-    attached files, recall memory, read the web pages the user links, work on whole knowledge documents and extract
-    tables from them (when the profile switches the document tools on) or, with Code Interpreter on, work in the
-    user's code sandbox, and keeps going until it can answer.
+    attached files, recall memory, read the web pages the user links, search the web (with Web Search on), work on
+    whole knowledge documents and extract tables from them (when the profile switches the document tools on) or, with
+    Code Interpreter on, work in the user's code sandbox, and keeps going until it can answer.
 
     Three steps of its own: hand the instructed history to the conversation, let the model work through its tools,
     and complete with the reply. Nothing is loaded into the prompt up front; every tool call shows in the chat as the
@@ -49,6 +50,7 @@ class UniversalAgent(Agent):
         AttachedFiles,
         Memory,
         WebFetch,
+        WebSearch,
         SandboxTools,
         UserFilesTools,
         KnowledgeDocumentTools,

@@ -80,6 +80,8 @@
 {%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
 {#- Resolved by the Playwright server, on the browser network, so the same name works in every stage, dev included. #}
 {%- set PLAYWRIGHT_PROXY_URL = "http://browser-proxy:3128" %}
+{#- Agents always run in containers next to SearXNG, so they reach it by name in every stage. #}
+{%- set SEARXNG_BASE_URL = "http://searxng:8080" %}
 {%- set SEARXNG_QUERY_URL = "http://localhost:8881/search?q=<query>&format=json" if stage == 'dev' else "http://searxng:8080/search?q=<query>&format=json" %}
 {%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
 {%- set NOTIFICATION_DAGSTER_UI_BASE_URL = "http://localhost:3000" if stage == 'dev' else "https://dagster.${DOMAIN}" %}
@@ -4052,6 +4054,7 @@ services:
       # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
       PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
       PLAYWRIGHT_PROXY_URL: {{ PLAYWRIGHT_PROXY_URL }}
+      SEARXNG_BASE_URL: {{ SEARXNG_BASE_URL }}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}

@@ -47,7 +47,7 @@ def _message(*messages: ChatMessage) -> UserMessageEvent:
     )
 
 
-def test_the_blueprint_offers_knowledge_files_memory_web_pages_and_the_sandbox_in_one_loop():
+def test_the_blueprint_offers_knowledge_files_memory_web_pages_web_search_and_the_sandbox_in_one_loop():
     UniversalAgent.validate_workflow(UniversalAgentConfig)
 
     assert {capability.__name__ for capability in UniversalAgent.installed_capabilities()} == {
@@ -57,6 +57,7 @@ def test_the_blueprint_offers_knowledge_files_memory_web_pages_and_the_sandbox_i
         "AttachedFiles",
         "Memory",
         "WebFetch",
+        "WebSearch",
         "RecordExtraction",
     }
     assert UniversalAgent.tools.names() == [
@@ -64,6 +65,7 @@ def test_the_blueprint_offers_knowledge_files_memory_web_pages_and_the_sandbox_i
         "read_attached_files",
         "recall_memory",
         "fetch_web_pages",
+        "search_web",
         "extract_records",
         "run_command",
         "get_process_status",

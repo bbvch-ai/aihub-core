@@ -1,6 +1,6 @@
 ---
 title: Web search
-description: How Open-WebUI fetches results from the web through the platform's self-hosted SearXNG instance, and how to customise the engine list.
+description: How Open-WebUI and agents fetch results from the web through the platform's self-hosted SearXNG instance, and how to customise the engine list.
 ---
 
 # Web search
@@ -91,9 +91,17 @@ Whenever you change the engine list, update the [Network requirements](../7_netw
 the new outbound hostnames.
 :::
 
+## Agents
+
+Agents whose profile turns on **Web Search** query the same SearXNG instance, at `SEARXNG_BASE_URL`
+(`http://searxng:8080` on the `backend` network; `http://localhost:8881` in `.env.dev` for agents run outside Docker).
+They ask the engines a profile picks, or every engine above when it picks none, so the engine list here bounds what any
+profile can use. The pages an agent reads whole go through the Playwright browser and `browser-proxy`, like the linked
+pages agents read. See [Web search](../../10_chat_ui/5_websearch/#web-search-in-agents).
+
 ## Disabling web search entirely
 
 To remove web search from the platform, set `ENABLE_WEB_SEARCH: False` in the Open-WebUI environment block in
-`infra/deployment/templates/docker-compose.yml.j2`, regenerate the compose files, and recreate Open-WebUI. The `searxng`
-service can then also be removed from the template if no longer needed; this drops all web-search-related outbound
-network requirements.
+`infra/deployment/templates/docker-compose.yml.j2`, regenerate the compose files, and recreate Open-WebUI. Agents search
+only when a profile turns **Web Search** on, so leave it off in every profile. The `searxng` service can then also be
+removed from the template if no longer needed; this drops all web-search-related outbound network requirements.

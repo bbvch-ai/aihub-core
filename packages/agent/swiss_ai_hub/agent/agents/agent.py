@@ -145,6 +145,19 @@ class Agent(DispatchableWorkflow):
         } | {feature for tool_set in cls.tool_sets() for feature in tool_set.chat_features()}
 
     @classmethod
+    def feature_config_fields(cls) -> dict[ChatFeature, str]:
+        """For each supported feature a profile can switch off, the config field that does; derived like the features.
+
+        Chat clients show such a feature's toggle only on profiles where the field is set, so a profile with web search
+        off shows no Web Search toggle that would silently do nothing.
+        """
+        return {
+            capability.chat_feature: capability.chat_feature_config_field
+            for capability in cls.installed_capabilities()
+            if capability.chat_feature is not None and capability.chat_feature_config_field is not None
+        }
+
+    @classmethod
     @functools.cache
     def supports_response_schema(cls) -> bool:
         """Derived, never declared: a blueprint that ends its turns through `Conversation.complete` on an

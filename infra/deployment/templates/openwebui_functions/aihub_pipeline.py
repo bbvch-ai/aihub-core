@@ -1565,6 +1565,58 @@ class WebPagesFetchedEventHandler(EventHandler):
         return True
 
 
+class SearchWebEventHandler(EventHandler):
+    """Shows the queries while the agent searches, as OpenWebUI's own search shows the queries it generated."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if search web event"]:
+        return event.get("_event_name") == "SearchWebEvent"
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Search web event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        queries = event.get("queries") or []
+        if queries and event.get("searching", True):
+            status = {"action": "web_search_queries_generated", "queries": queries, "done": False}
+            await context.emitter({"type": "status", "data": status})
+        return True
+
+
+class WebSearchedEventHandler(EventHandler):
+    """Shows the search as OpenWebUI's own: "Searched N sites" with the sites listed, and each hit as a source.
+
+    OpenWebUI renders a `web_search` status with `items` as its native search result list, and translates the
+    `{{count}}` in its description itself.
+    """
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if web searched event"]:
+        return event.get("_event_name") == "WebSearchedEvent"
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Web searched event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        results = event.get("results") or []
+        for node in event.get("grounding_nodes") or []:
+            await context.emit_source(GroundingNodesEventHandler.source_data([node]), node.get("citation_id"))
+        if results:
+            items = [{"title": hit.get("title") or hit.get("url"), "link": hit.get("url")} for hit in results]
+            status = {"action": "web_search", "description": "Searched {{count}} sites", "items": items, "done": True}
+            await context.emitter({"type": "status", "data": status})
+        elif event.get("queries"):
+            status = {"action": "web_search", "description": "No search results found", "urls": [], "done": True}
+            await context.emitter({"type": "status", "data": status})
+        else:
+            await context.emitter({"type": "status", "data": {"action": None, "description": "", "done": True}})
+        return True
+
+
 class RecordsExtractedEventHandler(EventHandler):
     """Attaches the whole table of an extraction to the answer, and shows the preview of one a model extracted.
 
@@ -1907,6 +1959,8 @@ class EventProcessorFactory:
             AttachedFileEventHandler(),
             FetchWebPagesEventHandler(),
             WebPagesFetchedEventHandler(),
+            SearchWebEventHandler(),
+            WebSearchedEventHandler(),
             SandboxFileDisplayedEventHandler(),
             RecordsExtractedEventHandler(),
             RetrieveUserMemoryEventHandler(),

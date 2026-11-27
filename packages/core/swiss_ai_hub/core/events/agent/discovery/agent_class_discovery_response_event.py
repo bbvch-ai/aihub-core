@@ -44,6 +44,13 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
             "clients show a feature's toggle only for agents that support it.",
         ),
     ] = []
+    feature_config_fields: Annotated[
+        dict[ChatFeature, str],
+        Field(
+            description="For a supported feature a profile can switch off, the config field that switches it: the "
+            "feature is offered only by profiles where that field is set. Features not listed are always offered.",
+        ),
+    ] = {}
     supports_response_schema: Annotated[
         bool,
         Field(

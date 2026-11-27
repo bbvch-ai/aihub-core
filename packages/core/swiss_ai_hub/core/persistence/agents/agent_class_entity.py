@@ -54,6 +54,7 @@ class AgentClassEntity(Document):
     # value, and reads must not yield None into the non-optional DTO field. Self-heals on next discovery.
     is_schedulable: bool = False
     supported_features: list[str] = Field(default_factory=list)
+    feature_config_fields: dict[str, str] = Field(default_factory=dict)
     supports_response_schema: bool = False
     start_events: list[EventSpec]
     stop_events: list[EventSpec]
@@ -78,6 +79,14 @@ class AgentClassEntity(Document):
         would otherwise raise inside a caller's loop — the scheduler's snapshot would abort every tick.
         """
         return self.last_discovered is not None and self.last_discovered >= threshold
+
+    def features_offered_by(self, config_data: dict[str, Any]) -> list[str]:
+        """The supported features a profile offers: a feature its profile has switched off shows no toggle."""
+        return sorted(
+            feature
+            for feature in self.supported_features
+            if (field := self.feature_config_fields.get(feature)) is None or config_data.get(field) is not None
+        )
 
     @property
     def form_elements(self) -> list["FormkitElement"]:
@@ -126,6 +135,9 @@ class AgentClassEntity(Document):
             "is_conversational": discovery.is_conversational,
             "is_schedulable": discovery.is_schedulable,
             "supported_features": [str(feature) for feature in discovery.supported_features],
+            "feature_config_fields": {
+                str(feature): field for feature, field in discovery.feature_config_fields.items()
+            },
             "supports_response_schema": discovery.supports_response_schema,
             "start_events": [EventSpec.from_specs(event) for event in discovery.start_events],
             "stop_events": [EventSpec.from_specs(event) for event in discovery.stop_events],

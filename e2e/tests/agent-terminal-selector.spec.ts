@@ -21,7 +21,7 @@ test.describe('Terminal selector on agent and LLM models', () => {
     await chat.open(ModelCatalog.universalAgent(await owui.models()).id)
 
     const menu = await chat.openIntegrations()
-    await expect(menu.getByRole('button', { name: 'Code Interpreter' })).toBeVisible()
+    await expect(menu.getByRole('menuitemcheckbox', { name: 'Code Interpreter' })).toBeVisible()
     await chat.closeMenu(menu)
 
     await expect(chat.terminalSelector).toHaveCount(0)

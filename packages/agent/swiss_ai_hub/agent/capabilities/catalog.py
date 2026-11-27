@@ -19,8 +19,9 @@ class CapabilityCatalog:
         from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import RecordExtraction
         from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
         from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
+        from swiss_ai_hub.agent.capabilities.web_search.web_search import WebSearch
 
-        return [Conversation, Memory, AttachedFiles, Knowledge, WebFetch, RecordExtraction, ToolLoop]
+        return [Conversation, Memory, AttachedFiles, Knowledge, WebFetch, WebSearch, RecordExtraction, ToolLoop]
 
     @classmethod
     def called_by(cls, steps: list[Callable], declared: list[type[Capability]] = ()) -> list[type[Capability]]:

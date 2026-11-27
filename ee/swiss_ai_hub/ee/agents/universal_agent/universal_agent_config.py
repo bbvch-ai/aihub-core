@@ -10,6 +10,7 @@ from swiss_ai_hub.agent.capabilities import (
     RecordExtractionFields,
     ToolLoopFields,
     WebFetchFields,
+    WebSearchFields,
 )
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import LocaleInput
@@ -25,6 +26,7 @@ class UniversalAgentConfig(
     KnowledgeToolFields,
     KnowledgeFields,
     WebFetchFields,
+    WebSearchFields,
     ToolLoopFields,
     ConversationFields,
     AgentConfig,
@@ -60,6 +62,7 @@ class UniversalAgentConfig(
             **cls.knowledge_form_elements(),
             **cls.knowledge_tool_form_elements(),
             **cls.web_fetch_form_elements(),
+            **cls.web_search_form_elements(),
             **cls.knowledge_document_form_elements(),
             **cls.record_extraction_form_elements(),
         )

@@ -1130,6 +1130,8 @@ export {
   type SearchUserMemoriesErrors,
   type SearchUserMemoriesResponse,
   type SearchUserMemoriesResponses,
+  type SearchWebEvent,
+  type SearchWebEventWritable,
   type SecretFileInput,
   type SecretFileInputWritable,
   type Select,
@@ -1351,5 +1353,8 @@ export {
   type WebhookResponse,
   type WebPagesFetchedEvent,
   type WebPagesFetchedEventWritable,
+  type WebSearchedEvent,
+  type WebSearchedEventWritable,
+  type WebSearchResult,
   type WorkflowGraph,
 } from "./types.gen";

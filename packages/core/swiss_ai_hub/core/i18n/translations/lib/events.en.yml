@@ -334,3 +334,9 @@ hitl_questions_request_event:
   name: Questions to Confirm
   description: The agent has asked the user to confirm or correct the parts of a request,
     as a form where the client shows one and as a chat message otherwise.
+search_web_event:
+  name: Search Web
+  description: Searching the web
+web_searched_event:
+  name: Web Searched
+  description: The agent searched the web and read the best hits.

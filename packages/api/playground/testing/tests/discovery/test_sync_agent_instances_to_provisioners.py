@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 
 from swiss_ai_hub.api.services.agent_endpoints_discovery_service import (
     AgentEndpointsDiscoveryService,
@@ -11,12 +12,23 @@ from swiss_ai_hub.api.services.agent_endpoints_discovery_service import (
 )
 
 
-def _make_instance(agent_class: str, agent_id: str, *, is_conversational: bool = True) -> SimpleNamespace:
+def _make_instance(
+    agent_class: str, agent_id: str, *, is_conversational: bool = True, configuration: dict | None = None
+) -> SimpleNamespace:
     return SimpleNamespace(
         agent_class=agent_class,
         agent_id=agent_id,
         name=f"{agent_class}/{agent_id}",
         is_conversational=is_conversational,
+        configuration=configuration or {},
+    )
+
+
+def _agent_class(
+    agent_class: str, features: list[str], config_fields: dict[str, str] | None = None
+) -> AgentClassEntity:
+    return AgentClassEntity.model_construct(
+        agent_class=agent_class, supported_features=features, feature_config_fields=config_fields or {}
     )
 
 
@@ -66,7 +78,7 @@ class TestSupportedFeaturesInHash:
 
     @pytest.mark.asyncio
     async def test_openwebui_agents_carry_their_class_features(self, no_supported_features) -> None:
-        no_supported_features.return_value = {"rag": ["web_search"]}
+        no_supported_features.return_value = [_agent_class("rag", ["web_search"])]
         service = _make_service(redis=_make_redis())
         service._openwebui_provisioner = SimpleNamespace(model_name_locale="en", sync_agents=AsyncMock())
 
@@ -77,6 +89,26 @@ class TestSupportedFeaturesInHash:
             for agent in service._openwebui_provisioner.sync_agents.await_args.args[0]
         }
         assert synced == {"rag": ["web_search"], "chat": []}
+
+    @pytest.mark.asyncio
+    async def test_a_profile_that_switched_a_feature_off_shows_no_toggle_for_it(self, no_supported_features) -> None:
+        no_supported_features.return_value = [
+            _agent_class("universal", ["code_interpreter", "web_search"], {"web_search": "web_search"})
+        ]
+        instances = [
+            _make_instance("universal", "searching", configuration={"web_search": {"max_results": 5}}),
+            _make_instance("universal", "offline", configuration={"web_search": None}),
+        ]
+        service = _make_service(redis=_make_redis())
+        service._openwebui_provisioner = SimpleNamespace(model_name_locale="en", sync_agents=AsyncMock())
+
+        await service._sync_agent_instances_to_openwebui(instances)
+
+        synced = {
+            agent.agent_id: agent.supported_features
+            for agent in service._openwebui_provisioner.sync_agents.await_args.args[0]
+        }
+        assert synced == {"searching": ["code_interpreter", "web_search"], "offline": ["code_interpreter"]}
 
 
 class TestSyncAgentInstancesToProvisioners:

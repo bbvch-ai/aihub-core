@@ -73,6 +73,14 @@ if TYPE_CHECKING:
         use_s3,
         use_s3_service,
     )
+    from swiss_ai_hub.core.infrastructure.searxng.searxng_answer import SearxngAnswer
+    from swiss_ai_hub.core.infrastructure.searxng.searxng_client import SearxngClient
+    from swiss_ai_hub.core.infrastructure.searxng.searxng_engine import SearxngEngine
+    from swiss_ai_hub.core.infrastructure.searxng.searxng_language import SearxngLanguage
+    from swiss_ai_hub.core.infrastructure.searxng.searxng_result import SearxngResult
+    from swiss_ai_hub.core.infrastructure.searxng.searxng_safe_search import SearxngSafeSearch
+    from swiss_ai_hub.core.infrastructure.searxng.searxng_settings import SearxngSettings
+    from swiss_ai_hub.core.infrastructure.searxng.searxng_time_range import SearxngTimeRange
     from swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings import SharePointSettings
     from swiss_ai_hub.core.infrastructure.structured_pipeline.structured_pipeline_settings import (
         StructuredPipelineSettings,
@@ -118,6 +126,14 @@ __all__ = [
     "PresidioAnalyzerSettings",
     "SandboxHomePath",
     "PlaywrightSettings",
+    "SearxngClient",
+    "SearxngLanguage",
+    "SearxngAnswer",
+    "SearxngEngine",
+    "SearxngResult",
+    "SearxngSafeSearch",
+    "SearxngSettings",
+    "SearxngTimeRange",
     "MongoConnectionRegistry",
     "MongoSettings",
     "NatsSettings",
@@ -189,6 +205,14 @@ _LAZY_IMPORTS = {
     "PresidioAnalyzerSettings": "swiss_ai_hub.core.infrastructure.presidio_analyzer.presidio_analyzer_settings",
     "SandboxHomePath": "swiss_ai_hub.core.infrastructure.open_terminal.sandbox_home_path",
     "PlaywrightSettings": "swiss_ai_hub.core.infrastructure.playwright.playwright_settings",
+    "SearxngClient": "swiss_ai_hub.core.infrastructure.searxng.searxng_client",
+    "SearxngLanguage": "swiss_ai_hub.core.infrastructure.searxng.searxng_language",
+    "SearxngAnswer": "swiss_ai_hub.core.infrastructure.searxng.searxng_answer",
+    "SearxngEngine": "swiss_ai_hub.core.infrastructure.searxng.searxng_engine",
+    "SearxngResult": "swiss_ai_hub.core.infrastructure.searxng.searxng_result",
+    "SearxngSafeSearch": "swiss_ai_hub.core.infrastructure.searxng.searxng_safe_search",
+    "SearxngSettings": "swiss_ai_hub.core.infrastructure.searxng.searxng_settings",
+    "SearxngTimeRange": "swiss_ai_hub.core.infrastructure.searxng.searxng_time_range",
     "MongoConnectionRegistry": "swiss_ai_hub.core.infrastructure.mongo.mongo_connection_registry",
     "MongoSettings": "swiss_ai_hub.core.infrastructure.mongo.mongo_settings",
     "NatsSettings": "swiss_ai_hub.core.infrastructure.nats.nats_settings",
