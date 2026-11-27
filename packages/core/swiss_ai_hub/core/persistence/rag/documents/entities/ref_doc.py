@@ -33,6 +33,12 @@ _RAW_CONTENT_HASH = "__data__.metadata.content_hash"
 _RAW_METADATA = "__data__.metadata"
 _RAW_EXCLUDED_EMBED = "__data__.excluded_embed_metadata_keys"
 _RAW_EXCLUDED_LLM = "__data__.excluded_llm_metadata_keys"
+# Re-uploading or finishing a document ends whatever failure it was reported with
+_CLEARED_INGESTION_FAILURE = {
+    "unset__data__metadata__ingestion_failed_attempts": True,
+    "unset__data__metadata__ingestion_failed_at": True,
+    "unset__data__metadata__ingestion_gave_up": True,
+}
 # What a summary needs from a row: type, metadata and mimetype, never either copy of the text
 _SUMMARY_FIELDS = {"__type__": 1, "__data__.metadata": 1, "__data__.mimetype": 1}
 _PROJECT = "$project"
@@ -59,6 +65,12 @@ class Metadata(DynamicEmbeddedDocument):
     # False = pending (not yet processed), True = ingested (fully processed)
     # Legacy docs without this field are treated as ingested
     is_ingested = BooleanField(default=True)
+
+    # Set by the pipeline's retry sensor while the latest ingestion attempt has failed; absent otherwise. A successful
+    # parse rewrites the record and mark_ingested clears them, so they never outlive the failure they describe.
+    ingestion_failed_attempts = IntField(required=False)
+    ingestion_failed_at = IntField(required=False)
+    ingestion_gave_up = BooleanField(required=False)
 
     # Set by classification; absent on a document that was not classified. The attribute values stay dynamic fields,
     # since their keys and value types come from `DocumentTypeCatalog`, not from this schema.
@@ -505,29 +517,62 @@ class RefDoc(Document):
         namespace: str,
         document_title: str | None = None,
     ) -> Self:
-        """Create a placeholder RefDoc for a file that is being uploaded/processed.
+        """Create a placeholder RefDoc for a file being uploaded or processed; NotUniqueError if a record exists.
 
-        Uses deterministic ID based on source path to enable upsert on processing completion.
+        Uses deterministic ID based on source path to enable upsert on processing completion. Insert-only, because
+        MongoEngine's save() of a document with an id replaces whatever record holds that id: a parse or an upload
+        finishing at the same moment would lose its record to an empty placeholder.
         """
-        doc_id = source_to_doc_id(source)
         current_time = int(time.time())
+        metadata = cls._placeholder_metadata(source, namespace, document_title, timestamp=current_time)
+        return cls._insert_placeholder(db_alias, source, metadata)
 
-        if not document_title:
-            document_title = source.split("/")[-1]
+    @classmethod
+    @trace_fn
+    def create_failed_placeholder(
+        cls,
+        db_alias: str,
+        source: str,
+        namespace: str,
+        failed_attempts: int,
+        gave_up: bool,
+        failed_at: int,
+    ) -> bool:
+        """Create a placeholder already showing a failed ingestion, returning False when a record exists.
 
-        metadata = Metadata(
+        For a file whose first parse failed, which leaves no record to report the failure on. Created in one insert
+        with the failure, so a record that appears meanwhile is never overwritten, and dated to the failure: the file's
+        own timestamp is unknown here, and every later attempt starts after it, so its failure passes the date check of
+        `record_ingestion_failure`.
+        """
+        metadata = cls._placeholder_metadata(source, namespace, None, timestamp=failed_at)
+        metadata.ingestion_failed_attempts = failed_attempts
+        metadata.ingestion_gave_up = gave_up
+        metadata.ingestion_failed_at = failed_at
+        try:
+            cls._insert_placeholder(db_alias, source, metadata)
+        except NotUniqueError:
+            return False
+        return True
+
+    @staticmethod
+    def _placeholder_metadata(source: str, namespace: str, document_title: str | None, timestamp: int) -> Metadata:
+        return Metadata(
             source=source,
             namespace=namespace,
             version="1",
             is_ingested=False,
-            created_at=current_time,
-            updated_at=current_time,
-            inserted_at=current_time,
+            created_at=timestamp,
+            updated_at=timestamp,
+            inserted_at=timestamp,
             content_hash="",
             type="content",
-            document_title=document_title,
+            document_title=document_title or source.split("/")[-1],
         )
 
+    @classmethod
+    def _insert_placeholder(cls, db_alias: str, source: str, metadata: Metadata) -> Self:
+        doc_id = source_to_doc_id(source)
         document_data = DocumentData(
             id=doc_id,
             metadata=metadata,
@@ -544,7 +589,7 @@ class RefDoc(Document):
                 data=document_data,
                 type_="placeholder",
             )
-            ref_doc.save()
+            ref_doc.save(force_insert=True)
             return ref_doc
 
     @classmethod
@@ -572,6 +617,7 @@ class RefDoc(Document):
             updated = SwitchedRefDoc.objects(id=doc_id).update_one(
                 set__data__metadata__is_ingested=False,
                 set__data__metadata__updated_at=int(time.time()),
+                **_CLEARED_INGESTION_FAILURE,
             )
             if updated:
                 return SwitchedRefDoc.objects.get(id=doc_id), False
@@ -627,7 +673,61 @@ class RefDoc(Document):
         data versions and the default document sort.
         """
         with switch_db(cls, db_alias) as SwitchedRefDoc:
-            return bool(SwitchedRefDoc.objects(id=doc_id).update_one(set__data__metadata__is_ingested=True))
+            return bool(
+                SwitchedRefDoc.objects(id=doc_id).update_one(
+                    set__data__metadata__is_ingested=True, **_CLEARED_INGESTION_FAILURE
+                )
+            )
+
+    @classmethod
+    @trace_fn
+    def record_ingestion_failure(
+        cls,
+        db_alias: str,
+        doc_id: str,
+        failed_attempts: int,
+        gave_up: bool,
+        failed_at: int,
+        attempt_started_at: int,
+    ) -> bool:
+        """Report a pending document's failed ingestion, returning whether a pending document was updated.
+
+        Matches only a document that is still pending: once its nodes are in the vector store it is retrievable,
+        and a later failure (of its summaries, say) must not show it as failed. Matches only a record dated strictly
+        before the failed attempt started: a re-upload resets the record and dates it to the upload, even while the
+        old run is still going, and that run never saw the new file. A record from the same second is left alone too,
+        as it cannot be ordered; the failure of a later attempt, which a retry always brings, is reported. Writes
+        nothing when the stored values are already these, so the retry sensor can report the same failure on every
+        tick at the cost of a read.
+        """
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            pending = SwitchedRefDoc.objects(
+                id=doc_id, data__metadata__is_ingested=False, data__metadata__updated_at__lt=attempt_started_at
+            )
+            if not pending.count():
+                return False
+            pending.filter(
+                Q(data__metadata__ingestion_failed_attempts__ne=failed_attempts)
+                | Q(data__metadata__ingestion_gave_up__ne=gave_up)
+            ).update_one(
+                set__data__metadata__ingestion_failed_attempts=failed_attempts,
+                set__data__metadata__ingestion_gave_up=gave_up,
+                set__data__metadata__ingestion_failed_at=failed_at,
+            )
+            return True
+
+    @classmethod
+    @trace_fn
+    def clear_ingestion_failures(cls, db_alias: str, doc_ids: list[str]) -> int:
+        """Return documents whose file is being ingested afresh to processing, returning how many were reported failed.
+
+        A file that changed at its source gets no new record until its parse succeeds, so without this it would show
+        the previous version's failure while the new version is being ingested.
+        """
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return SwitchedRefDoc.objects(
+                id__in=doc_ids, data__metadata__ingestion_failed_attempts__exists=True
+            ).update(**_CLEARED_INGESTION_FAILURE)
 
     @classmethod
     @trace_fn

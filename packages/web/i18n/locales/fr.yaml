@@ -558,6 +558,11 @@ document:
     number_of_pages: Nombre de pages
     download: Télécharger
     is_processing: Traitement en cours
+    ingestion_retrying: Nouvel essai
+    ingestion_retrying_hint: Le traitement a échoué {count} fois. Il est relancé automatiquement.
+    ingestion_failed: Échec du traitement
+    ingestion_failed_hint: Le traitement a échoué {count} fois et n'est plus relancé. Il sera relancé lorsque le
+      fichier changera ou que le pipeline sera mis à jour.
     actions: Actions
     selected_count: '{count} document(s) sélectionné(s)'
   delete:

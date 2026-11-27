@@ -32,6 +32,7 @@ from swiss_ai_hub.pipeline.jobs.backfill_document_classification_job import back
 from swiss_ai_hub.pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from swiss_ai_hub.pipeline.jobs.knowledge_teardown_job import knowledge_teardown_job
 from swiss_ai_hub.pipeline.jobs.repair_orphaned_nodes_job import repair_orphaned_nodes_job
+from swiss_ai_hub.pipeline.jobs.retry_failed_ingestion_job import retry_failed_ingestion_job
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_file_system_resource import S3DataLakeFileSystemResource
 from swiss_ai_hub.pipeline.resources.factory import default_io_manager_s3_datalake_resources
 from swiss_ai_hub.pipeline.resources.parser.document_classification_resource import DocumentClassificationResource
@@ -46,6 +47,7 @@ from swiss_ai_hub.pipeline.sensors.document_classification_backfill_sensor impor
     document_classification_backfill_sensor,
 )
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
+from swiss_ai_hub.pipeline.sensors.failed_ingestion_retry_sensor import failed_ingestion_retry_sensor
 from swiss_ai_hub.pipeline.sensors.ingestor_registration_sensor import ingestor_registration_sensor
 from swiss_ai_hub.pipeline.sensors.knowledge_teardown_sensor import knowledge_teardown_sensor
 from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import (
@@ -99,6 +101,7 @@ def document_ingestion_pipeline_definitions(
     data_lake_key = AssetKey([asset_group, "data_lake"])
     document_key = AssetKey([asset_group, "documents"])
     nodes_key = AssetKey([asset_group, "nodes"])
+    summary_nodes_key = AssetKey([asset_group, "summary_nodes"])
     removed_documents_key = AssetKey([asset_group, "removed_documents"])
 
     document_partitions = DynamicPartitionsDefinition(name=f"{ingestor}_document_partitions")
@@ -115,7 +118,7 @@ def document_ingestion_pipeline_definitions(
         documents_factory(document_key, data_lake_key=data_lake_key, partitions=document_partitions),
         nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
         summary_nodes_factory(
-            AssetKey([asset_group, "summary_nodes"]),
+            summary_nodes_key,
             document_key=document_key,
             nodes_key=nodes_key,
             partitions=document_partitions,
@@ -131,6 +134,8 @@ def document_ingestion_pipeline_definitions(
     teardown_job = knowledge_teardown_job(source_location_name=ingestor)
     repair_job = repair_orphaned_nodes_job(source_location_name=ingestor)
     backfill_job = backfill_document_classification_job(source_location_name=ingestor)
+    ingestion_asset_keys = [document_key, nodes_key, summary_nodes_key]
+    retry_job = retry_failed_ingestion_job(source_location_name=ingestor, asset_keys=ingestion_asset_keys)
 
     announced_config = config or DocumentIngestionConfig.as_form(
         llm_model=settings.LLM_MODEL,
@@ -167,12 +172,21 @@ def document_ingestion_pipeline_definitions(
             nats_document_uploaded_sensor(observe_job, ingestor=ingestor),
             knowledge_teardown_sensor(teardown_job, ingestor=ingestor),
             document_classification_backfill_sensor(backfill_job, ingestor=ingestor),
+            failed_ingestion_retry_sensor(
+                retry_job,
+                ingestor=ingestor,
+                asset_keys=ingestion_asset_keys,
+                partitions=document_partitions,
+                max_retries=settings.MAX_RETRIES,
+                backoff_minutes=settings.RETRY_BACKOFF_MINUTES,
+                encode_partition_keys=encode_partition_keys,
+            ),
             run_after_success_sensor(monitored_job=observe_job, triggered_job=remove_job, require_bucket_tag=True),
             registration_sensor,
             *run_failure_notification_sensors_from_settings(),
         ],
         executor=default_process_executor(),
-        jobs=[observe_job, remove_job, teardown_job, repair_job, backfill_job],
+        jobs=[observe_job, remove_job, teardown_job, repair_job, backfill_job, retry_job],
         schedules=[
             per_bucket_observe_schedule(
                 observe_job,

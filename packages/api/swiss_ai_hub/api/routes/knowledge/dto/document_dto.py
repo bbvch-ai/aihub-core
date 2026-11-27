@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 from swiss_ai_hub.core.generative_ai.document.types.ingested_document import IngestedDocument
 from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
 
+from swiss_ai_hub.api.routes.knowledge.dto.document_ingestion_state import DocumentIngestionState
+
 S3_PROTOCOL_PREFIX = "s3://"
 
 
@@ -18,6 +20,16 @@ class DocumentDTO(BaseModel):
         str | None, Field(description="Date source document was inserted into document store (ISO format string)")
     ]
     is_ingested: Annotated[bool, Field(description="Whether the document has been fully ingested.")]
+    ingestion_state: Annotated[
+        DocumentIngestionState,
+        Field(
+            description="Ingested; processing (waiting for or running an attempt); retrying (an attempt failed and "
+            "another is scheduled); or failed (no further attempt until the file changes or the pipeline is updated)."
+        ),
+    ] = DocumentIngestionState.INGESTED
+    ingestion_failed_attempts: Annotated[
+        int | None, Field(description="Failed ingestion attempts so far, while retrying or failed.")
+    ] = None
     content: Annotated[str | None, Field(description="Content of the document.")] = None
     number_of_pages: Annotated[int | None, Field(description="Number of Pages in the Document.")] = None
     document_title: Annotated[str | None, Field(description="Document title.")] = None
@@ -59,4 +71,17 @@ class DocumentDTO(BaseModel):
             updated_at=to_iso(entity.data.metadata.updated_at),
             inserted_at=to_iso(entity.data.metadata.inserted_at) if entity.data.metadata.inserted_at else None,
             is_ingested=is_ingested,
+            ingestion_state=cls._ingestion_state(entity, is_ingested),
+            ingestion_failed_attempts=None if is_ingested else entity.data.metadata.ingestion_failed_attempts,
         )
+
+    @staticmethod
+    def _ingestion_state(entity: RefDoc, is_ingested: bool) -> DocumentIngestionState:
+        metadata = entity.data.metadata
+        if is_ingested:
+            return DocumentIngestionState.INGESTED
+        if metadata.ingestion_gave_up:
+            return DocumentIngestionState.FAILED
+        if metadata.ingestion_failed_attempts:
+            return DocumentIngestionState.RETRYING
+        return DocumentIngestionState.PROCESSING

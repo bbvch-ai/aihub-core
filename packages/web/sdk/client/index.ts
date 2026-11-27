@@ -451,6 +451,7 @@ export {
   type DocumentBlock,
   type DocumentDeletionResult,
   type DocumentDto,
+  DocumentIngestionState,
   type DocumentParsingMetadata,
   type DocumentParsingResponse,
   type DocumentUploadRequest,

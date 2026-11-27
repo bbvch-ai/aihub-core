@@ -22,10 +22,11 @@ export function useDocumentIngestionPolling(
     () => route.params.namespace as string,
   )
 
-  // A row being deleted never becomes ingested and its cleanup can take hours, so it must not keep the page polling.
+  // A row being deleted never becomes ingested and its cleanup can take hours, and a failed row waits for its file
+  // to change or the pipeline to be updated, so neither may keep the page polling.
   const pendingIds = computed(() => new Set(
     toValue(documents)
-      .filter(document => !document.is_ingested && !isScheduled(document.id))
+      .filter(document => !document.is_ingested && document.ingestion_state !== 'failed' && !isScheduled(document.id))
       .map(document => document.id),
   ))
 
