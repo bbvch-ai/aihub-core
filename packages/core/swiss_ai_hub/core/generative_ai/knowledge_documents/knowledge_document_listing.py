@@ -36,6 +36,10 @@ class KnowledgeDocumentListing(BaseModel):
     def total(self) -> int:
         return len(self.documents)
 
+    def in_collection(self, name: str) -> Self:
+        """The documents of the collection named 'database/collection'; none for a name of no listed collection."""
+        return self.model_copy(update={"documents": [doc for doc in self.documents if doc.collection_name == name]})
+
     def matching_glob(self, pattern: str) -> Self:
         glob = PathGlob(pattern)
         return self.model_copy(update={"documents": [doc for doc in self.documents if glob.matches(doc.path)]})

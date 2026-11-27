@@ -174,6 +174,7 @@ def _summary(path: str, collection: BucketNamespacePair = FINANCE) -> KnowledgeD
     return KnowledgeDocumentSummary(
         id=path.replace("/", "-"),
         collection=collection,
+        collection_name=f"{collection.bucket_name}/{collection.namespace_name}",
         path=path,
         filename=path.rsplit("/", 1)[-1],
         title=path,
@@ -1131,11 +1132,15 @@ RECORDS = "swiss_ai_hub.agent.capabilities.record_extraction.record_extraction"
 
 
 async def _tool_call(
-    arguments: dict[str, Any], run_context: _Thread, call_id: str = "c1", answer: str | None = AS_UNDERSTOOD
+    arguments: dict[str, Any],
+    run_context: _Thread,
+    call_id: str = "c1",
+    answer: str | None = AS_UNDERSTOOD,
+    listing: KnowledgeDocumentListing | None = None,
 ) -> Any:
     """The tool step, and, when it asks the request form, the form's answer step with the given answer."""
     call = ToolCallApprovedEvent(tool_call_id=call_id, name="extract_records", arguments=arguments, kind="capability")
-    listing = KnowledgeDocumentListing.from_summaries(
+    listing = listing or KnowledgeDocumentListing.from_summaries(
         [_summary("invoices/2025/a.pdf"), _summary("invoices/2025/b.pdf"), _summary("invoices/2024/c.pdf")]
     )
     with (
@@ -1151,6 +1156,12 @@ async def _tool_call(
                 MagicMock(), response=response, t=T, run_context=run_context
             )
     return result
+
+
+def _two_collections() -> KnowledgeDocumentListing:
+    return KnowledgeDocumentListing.from_summaries(
+        [_summary("invoices/2025/a.pdf"), _summary("2024/b.pdf"), _summary("msa.pdf", LEGAL)]
+    )
 
 
 class TestAsATool:
@@ -1316,6 +1327,50 @@ class TestAsATool:
         assert corrected.tool_call_id == "c2"
         assert isinstance(next_one, ExtractionCallFormRequestEvent)
 
+    @pytest.mark.parametrize(
+        ("place", "criteria"),
+        [
+            ("legal-db/contracts", [KnowledgeDocumentCriteria(collection="legal-db/contracts")]),
+            (
+                "Finance-DB/Invoices/2024",
+                [KnowledgeDocumentCriteria(collection="finance-db/invoices", path_regex=r"(?<!\d)2024(?!\d)")],
+            ),
+            (
+                "finance-db/invoices/invoices",
+                [KnowledgeDocumentCriteria(collection="finance-db/invoices", path_glob="invoices/**")],
+            ),
+        ],
+        ids=["collection", "collection-and-year", "collection-and-folder"],
+    )
+    @pytest.mark.asyncio
+    async def test_a_written_collection_limits_the_extraction_to_it(
+        self, place: str, criteria: list[KnowledgeDocumentCriteria]
+    ):
+        answer = json.dumps({"where": {"type": "other", "text": place}})
+
+        request = await _tool_call(
+            {"any_of": [{"path_glob": "invoices/**"}], "fields": "number"},
+            _Thread(),
+            answer=answer,
+            listing=_two_collections(),
+        )
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert request.selection.any_of == criteria
+
+    @pytest.mark.asyncio
+    async def test_with_several_collections_the_form_names_them_and_shows_a_chosen_one(self):
+        form = await _tool_call(
+            {"any_of": [{"collection": "legal-db/contracts"}], "fields": "number"},
+            _Thread(),
+            answer=None,
+            listing=_two_collections(),
+        )
+
+        where = form.questions[0]
+        assert where.options[0].description == "in collection `legal-db/contracts`"
+        assert "Collections: finance-db/invoices (2), legal-db/contracts (1)" in where.question
+
     def test_the_form_replaces_the_yes_no_approval(self):
         assert RecordExtraction.tool_options.default_approval == ToolApprovalPolicy.NEVER
 
@@ -1466,3 +1521,41 @@ def test_a_config_without_the_extraction_settings_is_refused():
 
     with pytest.raises(ValueError, match="RecordExtractionFields"):
         TableAgent.validate_workflow(LoopOnlyConfig)
+
+
+SELECTION_TOOLS = "swiss_ai_hub.agent.capabilities.record_extraction.record_selection_tools"
+
+
+def _selection_tools() -> RecordSelectionTools:
+    from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+
+    context = ToolContext(agent_config=_config(), displayer=MagicMock(spec=EventDisplayer), t=T)
+    return RecordSelectionTools(context)
+
+
+def _two_collection_scope() -> KnowledgeDocumentRunScope:
+    return KnowledgeDocumentRunScope(
+        collections=[
+            KnowledgeDocumentCollection(identifier="finance/invoices", collection=FINANCE, label="Finance"),
+            KnowledgeDocumentCollection(identifier="legal/contracts", collection=LEGAL, label="Legal"),
+        ]
+    )
+
+
+@pytest.mark.asyncio
+async def test_selecting_a_collection_outside_the_scope_fails_the_call_naming_the_collections_in_scope():
+    resolve = AsyncMock(side_effect=AssertionError("nothing is resolved for a collection outside the scope"))
+    with (
+        patch(f"{SELECTION_TOOLS}.KnowledgeDocumentScope.for_tool", AsyncMock(return_value=_two_collection_scope())),
+        patch(f"{SELECTION_TOOLS}.KnowledgeDocumentSelector.resolve", resolve),
+    ):
+        tools = _selection_tools()
+        with pytest.raises(LookupError) as refused:
+            await tools.select_knowledge_documents(
+                any_of=[KnowledgeDocumentCriteria(path_glob="2025/**"), KnowledgeDocumentCriteria(collection="legal")],
+                fields="amount",
+            )
+
+    message = str(refused.value)
+    assert message.startswith("No collection 'legal' in scope.")
+    assert "finance/invoices (Finance), legal/contracts (Legal)" in message

@@ -11,6 +11,9 @@ class SelectionFallbackCriteria(BaseModel):
     narrows the table to those, silently.
     """
 
+    collection: Annotated[
+        str | None, Field(description="The collection, as 'database/collection' the scope lists it.")
+    ] = None
     path_glob: Annotated[str | None, Field(description="Glob on the path, e.g. 'contracts/**'.")] = None
     path_regex: Annotated[str | None, Field(description="Regular expression searched anywhere in the path.")] = None
     content_query: Annotated[

@@ -29,7 +29,7 @@ from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_coll
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_scope import (
     KnowledgeDocumentRunScope,
 )
-from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import ExtractionForm
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import FORM, ExtractionForm
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
 pytestmark = pytest.mark.external
@@ -88,7 +88,8 @@ async def _second_reading(
     dropped, and the answers that apply them."""
     t = AgentLocaleHandler(locale)
     understood = await _read(locale, message)
-    parts = ExtractionRequestParts.of(understood, t).form(understood, FOLDERS, t)
+    places = [t(f"{FORM}.where.folders", folders=FOLDERS)]
+    parts = ExtractionRequestParts.of(understood, t).form(understood, places, t)
     question = ExtractionForm.text(parts, [], t)
     answers = ExtractionRequestAnswers.of(reply, understood, t)
     assert answers.correction is not None

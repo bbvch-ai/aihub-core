@@ -33,6 +33,7 @@ def _summary(path: str) -> KnowledgeDocumentSummary:
     return KnowledgeDocumentSummary(
         id=path,
         collection=_FINANCE,
+        collection_name="kb/finance",
         path=path,
         filename=filename,
         title=filename,

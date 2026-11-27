@@ -45,7 +45,6 @@ from swiss_ai_hub.agent.capabilities.record_extraction.extraction_planner import
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import ExtractionTable
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields import RecordExtractionFields
 from swiss_ai_hub.agent.capabilities.record_extraction.records_tool_result import RecordsToolResult
-from swiss_ai_hub.agent.capabilities.record_extraction.selection_facets import SelectionFacets
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
@@ -265,7 +264,7 @@ class RecordExtraction(Capability):
             restricting_glob=scope.restricting_glob,
         )
         listing = await RecordExtraction._listing(form)
-        return await form.ask(SelectionFacets.folders(listing.documents), run_context, t)
+        return await form.ask(ExtractionForm.places(listing.documents, t), run_context, t)
 
     @staticmethod
     @step(
