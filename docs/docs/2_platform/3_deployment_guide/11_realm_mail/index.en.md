@@ -88,6 +88,15 @@ and `AIHubAccess`, and sends a *Credential Reset* with **Update Password** and *
 address, sets a password and signs in with email and password, also on instances whose tenants otherwise log in through
 Entra.
 
+After setting the password, the person sees **Account updated** with a **Go to Swiss AI-Hub** link. The `aihub` login
+theme points it at `https://<domain>`, from the Keycloak container's `AIHUB_FRONTEND_ORIGIN`. When one Keycloak serves
+several AI Hubs, each in its own realm, add one line per realm to the theme's `theme.properties`. A realm's own line
+wins:
+
+```properties
+aihubUrl.aihub-acme=https://acme.example.com
+```
+
 The step-by-step guide with screenshots and a demo video is [Invite users by email](./2_invite_users/).
 
 ## Users who sign in through Entra ID never use a password

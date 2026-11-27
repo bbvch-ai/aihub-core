@@ -52,8 +52,15 @@ def test_info_page_shows_the_ai_hub_link_only_where_keycloak_shows_none() -> Non
     branches = [line.strip() for line in form_section.splitlines() if line.strip().startswith(("<#if ", "<#elseif "))]
     branches = [branch for branch in branches if "requiredActions" not in branch]
 
-    assert branches[-1] == "<#elseif properties.aihubUrl?has_content>"
+    assert branches[-1] == "<#elseif aihubUrl?has_content>"
     assert all(branch.startswith(("<#if !skipLink??", "<#elseif !skipLink??")) for branch in branches[:-1])
+
+
+def test_a_realm_specific_address_wins_over_the_keycloak_wide_one() -> None:
+    """One Keycloak hosting several AI Hubs (a realm each, as on Kubernetes) needs a link per realm."""
+    info = (THEME_TEMPLATES / "keycloak-theme-info.ftl").read_text(encoding="utf-8")
+
+    assert '<#assign aihubUrl = properties["aihubUrl." + realm.name]!properties.aihubUrl!"">' in info
 
 
 def test_theme_files_are_published_into_the_mounted_theme_directory() -> None:
