@@ -1,0 +1,17 @@
+---
+tool:
+  label: "Einen Agenten fragen"
+  approval_summary: "{agent} fragen: {message}"
+  message: "Die Anfrage an den Agenten, vollständig und für sich verständlich: Der Agent sieht dieses Gespräch nicht, nenne also jedes Detail, das er braucht."
+  description: "Frage den Agenten %{agent}. %{purpose}"
+result:
+  not_offered: "Dieser Agent ist in diesem Gespräch nicht verfügbar."
+  no_answer: "Der Agent hat nicht innerhalb von %{seconds} s geantwortet. Antworte ohne ihn und sage das."
+  failed: "Der Agent ist gescheitert: %{message}. Antworte ohne ihn und sage das."
+steps:
+  ask_as_tool:
+    name: "Anderen Agenten fragen"
+    description: "Startet den Agenten, den das Modell gewählt hat, für den fragenden Benutzer"
+  answer_tool_call:
+    name: "Antwort des Agenten zurückgeben"
+    description: "Gibt die Antwort des Agenten an die Werkzeugschleife des Modells zurück"

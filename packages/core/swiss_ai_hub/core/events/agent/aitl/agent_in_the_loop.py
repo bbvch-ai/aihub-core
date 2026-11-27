@@ -50,6 +50,7 @@ class AgentInTheLoop:
         share_thread_id: bool = True,
         share_display_id: bool = True,
         timeout_seconds: float | None = None,
+        tool_call_id: str | None = None,
     ):
         """
         Create an `AgentInTheLoopRequestEvent` to delegate a task to another agent.
@@ -80,6 +81,7 @@ class AgentInTheLoop:
             share_thread_id=share_thread_id,
             share_display_id=share_display_id,
             timeout_seconds=timeout_seconds,
+            tool_call_id=tool_call_id,
             response=cls.response,
             exception=cls.exception,
         )

@@ -188,6 +188,8 @@ chat:
   document: Document
   image: Image
 event:
+  delegatedProgress:
+    summary: "{agent} started: {step}"
   inTheLoopTimeout:
     summary: No answer within {seconds} s, the run continued without it.
   list:

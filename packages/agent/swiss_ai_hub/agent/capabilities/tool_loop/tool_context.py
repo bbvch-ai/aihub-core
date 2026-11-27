@@ -1,12 +1,15 @@
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, SkipValidation
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import KnowledgeReference, UserUploadedFile
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.rpc import CallableAgentsClient
 from swiss_ai_hub.core.topics import AgentInstanceTopic
+
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 
 
 class ToolContext(BaseModel):
@@ -29,4 +32,12 @@ class ToolContext(BaseModel):
     topic: Annotated[
         AgentInstanceTopic | None,
         Field(description="The run's agent and thread, for tools that keep per-thread state."),
+    ] = None
+    callable_agents: Annotated[
+        SkipValidation[CallableAgentsClient | None],
+        Field(description="Lists the online agents, for the tools that call other agents."),
+    ] = None
+    run_context: Annotated[
+        SkipValidation[RunContext | None],
+        Field(description="The run's context, where a tool family keeps what it offered for its calls to find."),
     ] = None

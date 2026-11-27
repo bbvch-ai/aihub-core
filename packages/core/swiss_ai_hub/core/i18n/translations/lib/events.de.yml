@@ -362,3 +362,6 @@ aitl_timeout_event:
 bitl_timeout_event:
   name: Keine Antwort im Kanal
   description: Niemand hat die Frage in Slack oder Teams rechtzeitig beantwortet.
+delegated_progress_event:
+  name: "Beauftragter Agent arbeitet"
+  description: "Ein Schritt des Agenten, den dieser Werkzeugaufruf gefragt hat, hat begonnen."

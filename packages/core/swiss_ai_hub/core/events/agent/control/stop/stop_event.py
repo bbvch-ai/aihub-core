@@ -27,3 +27,7 @@ class StopEvent(ControlAndDisplayEvent):
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.stop_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.stop_event.description")
+
+    def answer_text(self) -> str | None:
+        """The run's answer as text, for a caller that reads it as a result; None for a run that answers nothing."""
+        return None

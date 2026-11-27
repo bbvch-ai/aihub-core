@@ -17,3 +17,6 @@ class RAGStopEvent(StopEvent):
         str | None,
         Field(description="Final assistant answer text, populated for non-streaming consumers."),
     ] = None
+
+    def answer_text(self) -> str | None:
+        return self.answer

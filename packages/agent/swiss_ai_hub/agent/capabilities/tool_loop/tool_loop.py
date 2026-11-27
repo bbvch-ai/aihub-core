@@ -26,6 +26,7 @@ from swiss_ai_hub.core.events.agent import (
     ToolResultEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.rpc import CallableAgentsClient
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic
 
@@ -142,11 +143,13 @@ class ToolLoop(Capability):
         topic: AgentInstanceTopic,
         user: UserIdentity | None = None,
         access: AccessChecker | None = None,
+        callable_agents: CallableAgentsClient | None = None,
     ) -> ToolLoopIterationEvent | ToolLoopFinishedEvent:
         """Work out which tools are on offer for this message; gathering with nothing to offer ends right away.
 
         Earlier answers get their tool calls and results back, which the chat client does not send."""
-        context = ToolLoop._context(request, agent_config, displayer, t, user, access, topic)
+        context = ToolLoop._context(request, agent_config, displayer, t, user, access, topic, run_context)
+        context.callable_agents = callable_agents
         offered, withheld = await ToolLoop._offered(agent, request, loop, context, run_context)
         if not offered and request.mode == ToolLoopMode.GATHER:
             return ToolLoopFinishedEvent(loop=request.loop)
@@ -228,7 +231,9 @@ class ToolLoop(Capability):
         remaining = loop.tool_loop.max_tool_calls - state.tool_calls_made
         assistant = assistant.model_copy(update={"tool_calls": assistant.tool_calls[:remaining]})
         tool_set = type(agent).tool_set(state.loop)
-        calls = [ToolLoop._tool_event(call, state.tools, tool_set, t) for call in assistant.tool_calls]
+        calls = [
+            await ToolLoop._tool_event(call, state.tools, tool_set, t, run_context) for call in assistant.tool_calls
+        ]
         decided = ToolCallsDecidedEvent(
             state=state.model_copy(update={"messages": [*state.messages, assistant]}),
             tool_call_ids=[call.tool_call_id for call in calls],
@@ -278,10 +283,13 @@ class ToolLoop(Capability):
             call.name or "", tool_set, loop.tool_loop, run_context, type(agent)
         ):
             return ToolLoop._unavailable(call.tool_call_id, call.name or "", t)
-        options = tool_set.options(call.name)
+        options = await tool_set.options_in_run(call.name, run_context)
+        family = tool_set.family_of(call.name)
         cite_sources = await run_context.get(CITE_SOURCES_KEY, True)
         arguments = call.parameters or {}
-        if await ToolApprovals.needs_approval(call.name, options, loop.tool_loop, run_context, thread_context, user):
+        if await ToolApprovals.needs_approval(
+            call.name, options, loop.tool_loop, run_context, thread_context, user, family
+        ):
             summary = options.summary_in(arguments, t.locale)
             request = ToolApprovalRequestEvent(
                 question=t(
@@ -307,7 +315,7 @@ class ToolLoop(Capability):
             arguments=arguments,
             kind=tool_set.kind(call.name),
             cite_sources=cite_sources,
-            approved_by=ToolApprovals.remembered_approver(call.name, options, loop.tool_loop, user),
+            approved_by=ToolApprovals.remembered_approver(call.name, options, loop.tool_loop, user, family),
         )
 
     @staticmethod
@@ -349,7 +357,13 @@ class ToolLoop(Capability):
         if not await ToolAvailability.allows(request.name, tool_set, loop.tool_loop, run_context, type(agent)):
             return ToolLoop._unavailable(request.tool_call_id, request.name, t)
         await ToolApprovals.remember(
-            request.name, tool_set.options(request.name), loop.tool_loop, run_context, thread_context, user
+            request.name,
+            await tool_set.options_in_run(request.name, run_context),
+            loop.tool_loop,
+            run_context,
+            thread_context,
+            user,
+            tool_set.family_of(request.name),
         )
         return ToolCallApprovedEvent(
             tool_call_id=request.tool_call_id,
@@ -482,9 +496,9 @@ class ToolLoop(Capability):
                 withheld.add_by_profile(tool_set.options(name).label_in(name, context.t.locale))
         offered = []
         for name, definition in (await tool_set.definitions(context, loop.tool_loop)).items():
-            if name not in requested:
+            if tool_set.family_of(name) not in requested:
                 continue
-            options = tool_set.options(name)
+            options = tool_set.options(tool_set.family_of(name))
             if options.chat_feature and not await RequestedFeatures.contains(
                 options.chat_feature, run_context, blueprint
             ):
@@ -511,6 +525,7 @@ class ToolLoop(Capability):
         user: UserIdentity | None,
         access: AccessChecker | None,
         topic: AgentInstanceTopic | None,
+        run_context: RunContext | None = None,
     ) -> ToolContext:
         return ToolContext(
             agent_config=agent_config,
@@ -522,6 +537,7 @@ class ToolLoop(Capability):
             knowledge_references=request.knowledge_references,
             web_references=request.web_references,
             topic=topic,
+            run_context=run_context,
         )
 
     @staticmethod
@@ -622,7 +638,9 @@ class ToolLoop(Capability):
         )
 
     @staticmethod
-    def _tool_event(tool_call: dict, offered: list[ToolDefinition], tool_set: ToolSet, t: LocaleHandler) -> ToolEvent:
+    async def _tool_event(
+        tool_call: dict, offered: list[ToolDefinition], tool_set: ToolSet, t: LocaleHandler, run_context: RunContext
+    ) -> ToolEvent:
         function = tool_call["function"]
         raw_arguments = function.get("arguments") or {}
         try:
@@ -634,7 +652,9 @@ class ToolLoop(Capability):
         return ToolEvent(
             tool_call_id=tool_call["id"],
             name=name,
-            label=tool_set.options(name).label_in(name, t.locale) if tool_set.kind(name) else name,
+            label=(await tool_set.options_in_run(name, run_context)).label_in(name, t.locale)
+            if tool_set.kind(name)
+            else name,
             description=definition.description if definition else None,
             json_schema=definition.parameters if definition else None,
             parameters=arguments if isinstance(arguments, dict) else {},

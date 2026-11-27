@@ -55,6 +55,10 @@ class AgentInTheLoopRequestEvent(DisplayEvent, ControlEvent):
     share_display_id: Annotated[
         bool, Field(description="Whether to share the display context with the other agent for UI consistency.")
     ] = True
+    tool_call_id: Annotated[
+        str | None,
+        Field(description="The tool call the delegation answers, when a model chose it in a tool loop."),
+    ] = None
     timeout_seconds: Annotated[
         float | None,
         Field(

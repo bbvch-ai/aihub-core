@@ -1,0 +1,17 @@
+---
+tool:
+  label: "Ask an Agent"
+  approval_summary: "Ask {agent}: {message}"
+  message: "The request to the agent, complete and self-contained: the agent does not see this conversation, so include every detail it needs."
+  description: "Ask the agent %{agent}. %{purpose}"
+result:
+  not_offered: "This agent is not available in this conversation."
+  no_answer: "The agent did not answer within %{seconds} s. Answer without it, and say so."
+  failed: "The agent failed: %{message}. Answer without it, and say so."
+steps:
+  ask_as_tool:
+    name: "Ask Another Agent"
+    description: "Starts the agent the model chose, for the asking user"
+  answer_tool_call:
+    name: "Return the Agent's Answer"
+    description: "Hands the agent's answer back to the model's tool loop"

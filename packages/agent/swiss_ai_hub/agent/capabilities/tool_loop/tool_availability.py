@@ -17,7 +17,7 @@ class ToolAvailability:
     async def allows(
         name: str, tool_set: ToolSet | None, config: ToolLoopConfig, run_context: RunContext, blueprint: type[Agent]
     ) -> bool:
-        if tool_set is None or tool_set.kind(name) is None or config.is_disabled(name):
+        if tool_set is None or tool_set.kind(name) is None or config.is_disabled(tool_set.family_of(name)):
             return False
-        feature = tool_set.options(name).chat_feature
+        feature = tool_set.options(tool_set.family_of(name)).chat_feature
         return feature is None or await RequestedFeatures.contains(feature, run_context, blueprint)
