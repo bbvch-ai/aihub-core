@@ -55,20 +55,28 @@ deployment/
 
 - `infra/docker-compose.{stage}{.gpu}.yml` — 10 compose files
 - `infra/configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~80 stage-variant config files
-- `infra/configs/litellm/litellm-config.{variant}.{stage}{.gpu}.yml` — 20 files, see "LiteLLM provider variants"
+- `infra/configs/litellm/litellm-config.{variant}.{stage}{.gpu}.yml` — 30 files, see "LiteLLM provider variants"
 - `infra/configs/{service}/{static-scripts}` — ~7 stage-independent scripts (etcd, seaweedfs, postgres, openwebui,
   ferretdb)
 
 ### LiteLLM provider variants
 
 The LiteLLM config carries a **third axis** on top of stage x hardware: `LITELLM_VARIANTS` in `generate_compose.py`
-(`infomaniak`, `stoney`). Any spec whose name pattern contains `{variant}` is rendered once per entry; everything else
-keeps the two-axis shape.
+(`infomaniak`, `stoney`, `infomaniak-stoney`). Any spec whose name pattern contains `{variant}` is rendered once per
+entry; everything else keeps the two-axis shape.
 
-Both files ship in every compose variant and in every release bundle, mounted side by side. The deployment chooses one
-at `docker compose up` via **`LITELLM_CONFIG_VARIANT`**, which compose interpolates into the litellm `command:`. Only
-the default chat model (`text-generation/gemma-4-31B-it`) differs between them — stoney-cloud with a 155648-token input
-limit on `stoney`, Infomaniak with 91824 on `infomaniak`. Every other model is identical.
+All files ship in every compose variant and in every release bundle, mounted side by side. The deployment chooses one at
+`docker compose up` via **`LITELLM_CONFIG_VARIANT`**, which compose interpolates into the litellm `command:`. They
+differ in two places:
+
+- **The default chat model** (`text-generation/gemma-4-31B-it`): stoney-cloud with a 155648-token input limit on
+  `stoney`, Infomaniak with 91824 on `infomaniak` and `infomaniak-stoney`.
+- **The stoney-only chat models** (GLM 5.3 Flash, DeepSeek V4.1 Flash): listed on `stoney` and `infomaniak-stoney` only.
+  A deployment without a stoney contract keeps `infomaniak` and never shows models whose every call would fail; the test
+  instances opt in with `infomaniak-stoney`, which changes nothing else.
+
+Every other model is identical. A model that needs credentials only some deployments hold belongs behind such a variant,
+never in every file.
 
 **`max_input_tokens` is the provider's window minus `max_output_tokens`.** Both providers count input and output against
 one window, and every agent call requests the full `max_output_tokens`, so agents fitting prompts to the provider's

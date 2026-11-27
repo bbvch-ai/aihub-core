@@ -31,7 +31,7 @@ STAGES = ["dev", "local", "latest", "nightly", "build"]
 GPU_MODES = {False: "", True: ".gpu"}
 
 # Configs with `{variant}` in their name render once per entry; LITELLM_CONFIG_VARIANT picks one at runtime.
-LITELLM_VARIANTS = ["infomaniak", "stoney"]
+LITELLM_VARIANTS = ["infomaniak", "stoney", "infomaniak-stoney"]
 
 LITELLM_TEMPLATE = "templates/configs/litellm-config.yml.j2"
 # The OpenWebUI provisioner rejects any other value at API startup, which aborts that whole provisioning run.

@@ -85,8 +85,9 @@ a provider rejects it, list it in the model's `additional_drop_params`, as the c
 
 ### Notes on the stoney-cloud models
 
-GLM 5.3 Flash and DeepSeek V4.1 Flash are served by stoney-cloud on both provider variants. A deployment without
-`STONEY_CLOUD_API_BASE_URL` and `STONEY_CLOUD_API_KEY` still lists them, and every call to them fails. Both have a
+GLM 5.3 Flash and DeepSeek V4.1 Flash are served by stoney-cloud. Only deployments with `LITELLM_CONFIG_VARIANT` set to
+`stoney` or `infomaniak-stoney` list them, and those need `STONEY_CLOUD_API_BASE_URL` and `STONEY_CLOUD_API_KEY`;
+`infomaniak-stoney` keeps every other model on Infomaniak. The default `infomaniak` does not list them. Both have a
 524288-token window for input and output together (458752 + 65536 in the configuration), call tools and return
 structured output. Their prices are in [Cost control](../../14_cost_control/). Measured on 2026-11-27:
 

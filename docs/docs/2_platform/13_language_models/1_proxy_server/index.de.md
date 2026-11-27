@@ -90,11 +90,12 @@ die Konfiguration für Ministral tut.
 
 ### Hinweise zu den Modellen von stoney-cloud
 
-GLM 5.3 Flash und DeepSeek V4.1 Flash werden in beiden Anbietervarianten von stoney-cloud bereitgestellt. Ein Deployment
-ohne `STONEY_CLOUD_API_BASE_URL` und `STONEY_CLOUD_API_KEY` listet sie trotzdem auf, und jeder Aufruf schlägt fehl.
-Beide haben ein Fenster von 524288 Tokens für Ein- und Ausgabe zusammen (458752 + 65536 in der Konfiguration), rufen
-Tools auf und liefern strukturierte Ausgaben. Ihre Preise stehen unter [Kostenkontrolle](../../14_cost_control/).
-Gemessen am 2026-11-27:
+GLM 5.3 Flash und DeepSeek V4.1 Flash werden von stoney-cloud bereitgestellt. Nur Deployments mit
+`LITELLM_CONFIG_VARIANT` gleich `stoney` oder `infomaniak-stoney` listen sie auf, und diese brauchen
+`STONEY_CLOUD_API_BASE_URL` und `STONEY_CLOUD_API_KEY`; `infomaniak-stoney` belässt alle anderen Modelle bei Infomaniak.
+Das voreingestellte `infomaniak` listet sie nicht auf. Beide haben ein Fenster von 524288 Tokens für Ein- und Ausgabe
+zusammen (458752 + 65536 in der Konfiguration), rufen Tools auf und liefern strukturierte Ausgaben. Ihre Preise stehen
+unter [Kostenkontrolle](../../14_cost_control/). Gemessen am 2026-11-27:
 
 **GLM 5.3 Flash**
 
