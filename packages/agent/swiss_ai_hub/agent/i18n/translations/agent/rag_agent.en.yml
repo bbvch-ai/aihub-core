@@ -4,6 +4,24 @@ metadata:
   description: AI assistant that searches and analyzes your documents to provide informed,
     context-aware answers
 config:
+  external_access_filter:
+    metadata_key:
+      label: Metadata key
+      help: The chunk metadata key the resolver's values are matched against, e.g.
+        lcdm_knowledge_code.
+    resolver_url:
+      label: Resolver URL
+      help: "Called with GET, the API key and the asking user in X-AIHub-User-Email and X-AIHub-Tenant. Answers {\"values\": [...]}."
+    api_key:
+      label: "API key"
+      help: "Lets the resolver know the AI Hub is asking. The AI Hub names the asking user by e-mail and tenant, after verifying them itself."
+    timeout_seconds:
+      label: Timeout (seconds)
+      help: How long to wait for the resolver. A later answer counts as no access.
+    cache_ttl_seconds:
+      label: Cache duration (seconds)
+      help: How long a user's answer is reused. A revoked permission takes effect
+        after at most this time.
   restrict_to_user_access:
     label: Restrict to the user's access
     help: Retrieve only from the configured collections the person asking may read

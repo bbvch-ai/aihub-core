@@ -4,6 +4,25 @@ metadata:
   description: KI-Assistent, der Ihre Dokumente durchsucht und analysiert, um fundierte,
     kontextbezogene Antworten zu geben
 config:
+  external_access_filter:
+    metadata_key:
+      label: Metadaten-Schlüssel
+      help: Der Metadaten-Schlüssel der Abschnitte, mit dem die Werte des Resolvers
+        verglichen werden, z. B. lcdm_knowledge_code.
+    resolver_url:
+      label: Resolver-URL
+      help: "Wird mit GET aufgerufen, mit dem API-Key und der fragenden Person in X-AIHub-User-Email und X-AIHub-Tenant. Antwortet mit {\"values\": [...]}."
+    api_key:
+      label: "API-Key"
+      help: "Damit erkennt der Resolver, dass der AI Hub fragt. Die fragende Person übergibt der AI Hub per E-Mail und Mandant, nachdem er sie selbst geprüft hat."
+    timeout_seconds:
+      label: Zeitlimit (Sekunden)
+      help: Wie lange auf den Resolver gewartet wird. Eine spätere Antwort gilt als
+        kein Zugriff.
+    cache_ttl_seconds:
+      label: Cache-Dauer (Sekunden)
+      help: Wie lange die Antwort für eine Person wiederverwendet wird. Ein entzogenes
+        Recht wirkt spätestens nach dieser Zeit.
   restrict_to_user_access:
     label: Auf die Rechte der Benutzerin oder des Benutzers beschränken
     help: Nur aus den konfigurierten Sammlungen abrufen, welche die fragende Person

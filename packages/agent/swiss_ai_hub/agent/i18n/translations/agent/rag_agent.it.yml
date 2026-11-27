@@ -4,6 +4,25 @@ metadata:
   description: Assistente IA che cerca e analizza i tuoi documenti per fornire risposte
     informate e consapevoli del contesto
 config:
+  external_access_filter:
+    metadata_key:
+      label: Chiave dei metadati
+      help: La chiave dei metadati dei frammenti con cui vengono confrontati i valori
+        del resolver, p. es. lcdm_knowledge_code.
+    resolver_url:
+      label: URL del resolver
+      help: "Chiamato in GET con la chiave API e la persona in X-AIHub-User-Email e X-AIHub-Tenant. Risponde {\"values\": [...]}."
+    api_key:
+      label: "Chiave API"
+      help: "Permette al resolver di sapere che chiede l'AI Hub. L'AI Hub indica la persona tramite e-mail e mandante, dopo averla verificata."
+    timeout_seconds:
+      label: Timeout (secondi)
+      help: Quanto attendere il resolver. Una risposta più tardiva vale come nessun
+        accesso.
+    cache_ttl_seconds:
+      label: Durata della cache (secondi)
+      help: Per quanto la risposta per una persona viene riutilizzata. Un diritto
+        revocato ha effetto al più tardi dopo questo tempo.
   restrict_to_user_access:
     label: Limitare ai diritti dell'utente
     help: Cerca solo nelle raccolte configurate che la persona che chiede può leggere

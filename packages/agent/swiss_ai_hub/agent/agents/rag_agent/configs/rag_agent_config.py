@@ -12,6 +12,7 @@ from swiss_ai_hub.core.generative_ai import (
 )
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 
+from swiss_ai_hub.agent.agents.rag_agent.configs.external_access_filter_config import ExternalAccessFilterConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
@@ -80,6 +81,14 @@ class RAGAgentConfig(
         bool | Checkbox,
         Field(description="Retrieve only from the configured collections the asking user may read."),
     ] = False
+    external_access_filter: Annotated[
+        ExternalAccessFilterConfig | None,
+        Field(
+            description="Let an external system decide per asking user which documents may be retrieved. Off keeps "
+            "retrieval as it was.",
+            title="External access filter",
+        ),
+    ] = None
     few_shot_guard_examples: Annotated[
         list[FewShotGuardExample],
         Field(
@@ -144,6 +153,7 @@ class RAGAgentConfig(
                 help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.restrict_to_user_access.help"),
                 value=True,
             ),
+            external_access_filter=ExternalAccessFilterConfig.as_form(),
             system_prompt=LocaleString.as_form(
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.system_prompt.label"),
                 help_text=AgentLocaleString.from_i18n_path("agent.rag_agent.config.system_prompt.help"),
