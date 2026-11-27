@@ -77,6 +77,7 @@ from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_
 from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_arguments import ExtractRecordsArguments
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_form import FORM, ExtractionForm
 from swiss_ai_hub.agent.capabilities.record_extraction.sample_awaiting_confirmation import SampleAwaitingConfirmation
+from swiss_ai_hub.agent.capabilities.record_extraction.selection_facets import SelectionFacets
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
@@ -143,6 +144,7 @@ def _document(path: str) -> KnowledgeDocumentSummary:
     return KnowledgeDocumentSummary(
         id=path,
         collection=BucketNamespacePair(bucket_name="finance", namespace_name="invoices"),
+        collection_name="finance/invoices",
         path=path,
         filename=path.rsplit("/", 1)[-1],
         title=path,
@@ -753,7 +755,7 @@ class TestWholeScope:
 
     @pytest.mark.asyncio
     async def test_a_named_place_narrows_the_scope_by_path(self):
-        location = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
 
         request, _, _ = await _discover(_reading(location))
 
@@ -762,7 +764,7 @@ class TestWholeScope:
     @pytest.mark.asyncio
     async def test_a_year_folder_the_first_reading_made_of_the_period_is_widened_before_the_form(self):
         """e2e N1: "invoice totals 2025" read as invoices/2025/** plus the period left out every undated invoice."""
-        location = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
 
         form, _, _ = await _discover(_dated_reading(location), message="invoice totals 2025", answer=None)
         request, _, _ = await _discover(_dated_reading(location), message="invoice totals 2025")
@@ -793,7 +795,7 @@ class TestWholeScope:
         name = named.rsplit("/", 1)[-1]
         listing = _listing("invoices/2025/b.pdf", "2025/x.pdf", "invoices/acme/g.pdf", named)
         scope = _scope().model_copy(update={"restricting_glob": None})
-        reading = _dated_reading(RequestedLocation(path_glob=glob, path_regex=None))
+        reading = _dated_reading(RequestedLocation(collection=None, path_glob=glob, path_regex=None))
 
         request, _, _ = await _discover(
             reading, message=f"invoice totals 2025, also {name}", listing=listing, scope=scope
@@ -811,7 +813,7 @@ class TestWholeScope:
             ChatMessage(role=MessageRole.USER, content="invoice totals 2025 from invoices/2025"),
             ChatMessage(role=MessageRole.ASSISTANT, content="Here are the invoice totals."),
         )
-        location = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
 
         request, _, _ = await _discover(_dated_reading(location), message="the same, only for 2025", earlier=earlier)
 
@@ -821,7 +823,7 @@ class TestWholeScope:
     async def test_a_location_the_dialog_keeps_is_not_brought_back_by_the_second_reading(self):
         """Review suggestion 8: a written Filter Condition is read again over the whole conversation, and the model
         wrote the year folder of the first message once more; the Location the dialog kept is the widened one."""
-        location = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
         answer = _dialog(rows={"type": "other", "text": "only hardware lines"})
 
         request, ask, _ = await _discover(
@@ -839,7 +841,7 @@ class TestWholeScope:
         named = "invoices/acme/credit_note_2025.pdf"
         listing = _listing("invoices/2025/b.pdf", "invoices/acme/g.pdf", named)
         answer = _dialog(documents={"type": "other", "text": "only credit_note_2025.pdf"})
-        reread = _reading(RequestedLocation(path_glob="**/credit_note_2025.pdf", path_regex=None))
+        reread = _reading(RequestedLocation(collection=None, path_glob="**/credit_note_2025.pdf", path_regex=None))
 
         request, ask, _ = await _discover(_reading(), answer=answer, reread=reread, listing=listing)
 
@@ -848,11 +850,11 @@ class TestWholeScope:
 
     @pytest.mark.asyncio
     async def test_a_folder_written_as_a_path_into_another_dialog_part_is_read(self):
-        location = RequestedLocation(path_glob="invoices/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="invoices/**", path_regex=None)
         listing = _listing("invoices/2025/b.pdf", "archive/2024/x.pdf")
         scope = _scope().model_copy(update={"restricting_glob": None})
         answer = _dialog(documents={"type": "other", "text": "only archive/2024"})
-        reread = _reading(RequestedLocation(path_glob="archive/2024/**", path_regex=None))
+        reread = _reading(RequestedLocation(collection=None, path_glob="archive/2024/**", path_regex=None))
 
         request, _, _ = await _discover(_reading(location), answer=answer, reread=reread, listing=listing, scope=scope)
 
@@ -860,7 +862,7 @@ class TestWholeScope:
 
     @pytest.mark.asyncio
     async def test_a_location_the_dialog_drops_stays_dropped_and_a_typed_reply_keeps_the_second_reading(self):
-        location = RequestedLocation(path_glob="invoices/2024/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="invoices/2024/**", path_regex=None)
         dropped = _dialog(where={"type": "option", "option_index": 1}, rows={"type": "other", "text": "only hardware"})
 
         dropped_request, _, _ = await _discover(_reading(location), answer=dropped, reread=_reading(location))
@@ -872,7 +874,7 @@ class TestWholeScope:
     @pytest.mark.asyncio
     async def test_a_year_folder_the_user_types_into_the_form_is_read_as_typed(self):
         """The answer names the folder in words, so only reading it as the user's own keeps the folder."""
-        location = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
         answer = _dialog(where={"type": "other", "text": "only the 2025 folder under invoices"})
 
         request, ask, _ = await _discover(_dated_reading(), answer=answer, reread=_dated_reading(location))
@@ -885,8 +887,8 @@ class TestWholeScope:
     @pytest.mark.asyncio
     async def test_several_named_places_select_any_of_them(self):
         locations = [
-            RequestedLocation(path_glob="invoices/2025/**", path_regex=None),
-            RequestedLocation(path_glob=None, path_regex="2024"),
+            RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None),
+            RequestedLocation(collection=None, path_glob=None, path_regex="2024"),
         ]
 
         request, _, _ = await _discover(_reading(*locations))
@@ -898,7 +900,7 @@ class TestWholeScope:
 
     @pytest.mark.asyncio
     async def test_a_named_place_without_documents_answers_with_the_scopes_folders(self):
-        location = RequestedLocation(path_glob="invoices/2026/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="invoices/2026/**", path_regex=None)
 
         answer, _, _ = await _discover(_reading(location))
 
@@ -929,7 +931,7 @@ class TestWholeScope:
     )
     async def test_a_named_file_wins_over_the_folder_the_reading_made_of_it(self, message: str, folder: str, glob: str):
         """Real invoices: Kimi read `einvoices/zugferd/x.pdf` as `einvoices/zugferd/**` and 81 rows came back for 6."""
-        reading = _reading(RequestedLocation(path_glob=f"{folder}/**", path_regex=None))
+        reading = _reading(RequestedLocation(collection=None, path_glob=f"{folder}/**", path_regex=None))
 
         request, _, _ = await _discover(reading, message=message, listing=_listing(*NAMED_FILES))
 
@@ -938,8 +940,8 @@ class TestWholeScope:
     @pytest.mark.asyncio
     async def test_another_place_the_user_named_next_to_the_file_is_kept(self):
         reading = _reading(
-            RequestedLocation(path_glob=f"{FOLDER}/**", path_regex=None),
-            RequestedLocation(path_glob="invoices/acme/**", path_regex=None),
+            RequestedLocation(collection=None, path_glob=f"{FOLDER}/**", path_regex=None),
+            RequestedLocation(collection=None, path_glob="invoices/acme/**", path_regex=None),
         )
 
         request, _, _ = await _discover(reading, message=f"{NAMED} and the acme folder", listing=_listing(*NAMED_FILES))
@@ -951,7 +953,7 @@ class TestWholeScope:
 
     @pytest.mark.asyncio
     async def test_a_reading_of_the_exact_file_is_not_doubled(self):
-        reading = _reading(RequestedLocation(path_glob=f"**/{NAMED}", path_regex=None))
+        reading = _reading(RequestedLocation(collection=None, path_glob=f"**/{NAMED}", path_regex=None))
 
         request, _, _ = await _discover(reading, message=f"Items of {NAMED}", listing=_listing(*NAMED_FILES))
 
@@ -994,7 +996,7 @@ class TestWholeScope:
 
     @pytest.mark.asyncio
     async def test_a_place_outside_the_profiles_glob_holds_nothing(self):
-        location = RequestedLocation(path_glob="other/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="other/**", path_regex=None)
 
         answer, _, _ = await _discover(_reading(location))
 
@@ -1004,7 +1006,7 @@ class TestWholeScope:
 
     @pytest.mark.asyncio
     async def test_an_invalid_path_pattern_is_left_to_the_extraction_to_report(self):
-        location = RequestedLocation(path_glob=None, path_regex="(unclosed")
+        location = RequestedLocation(collection=None, path_glob=None, path_regex="(unclosed")
 
         request, _, _ = await _discover(_reading(location))
 
@@ -1047,6 +1049,106 @@ class TestWholeScope:
         assert request.selection is not None
 
 
+RECEIPTS = BucketNamespacePair(bucket_name="uatinvoices", namespace_name="receipts")
+INVOICE = BucketNamespacePair(bucket_name="uatinvoices", namespace_name="invoice")
+RECEIPTS_FIELDS = {"collection": RECEIPTS, "collection_name": "uatinvoices/receipts"}
+INVOICE_FIELDS = {"collection": INVOICE, "collection_name": "uatinvoices/invoice"}
+
+
+def _two_collections() -> KnowledgeDocumentRunScope:
+    return KnowledgeDocumentRunScope(
+        collections=[
+            KnowledgeDocumentCollection(identifier="uatinvoices/receipts", collection=RECEIPTS, label="Receipts"),
+            KnowledgeDocumentCollection(identifier="uatinvoices/invoice", collection=INVOICE, label="Invoices"),
+        ]
+    )
+
+
+def _at_root() -> KnowledgeDocumentListing:
+    documents = [
+        _document("20181024_018.pdf").model_copy(update={"id": "r1", **RECEIPTS_FIELDS}),
+        _document("2019/20190102_001.pdf").model_copy(update={"id": "r2", **RECEIPTS_FIELDS}),
+        _document("20181024_018.pdf").model_copy(update={"id": "i1", **INVOICE_FIELDS}),
+    ]
+    return KnowledgeDocumentListing.from_summaries(documents)
+
+
+async def _from_collections(location: RequestedLocation, answer: str | None = AS_UNDERSTOOD) -> Any:
+    step, _, _ = await _discover(_reading(location), scope=_two_collections(), listing=_at_root(), answer=answer)
+    return step
+
+
+class TestCollectionAsLocation:
+    @pytest.mark.asyncio
+    async def test_a_named_collection_selects_only_its_documents(self):
+        receipts = RequestedLocation(collection="uatinvoices/receipts", path_glob=None, path_regex=None)
+
+        request = await _from_collections(receipts)
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(collection="uatinvoices/receipts")]
+
+    @pytest.mark.asyncio
+    async def test_a_collection_with_a_folder_selects_that_folder_of_that_collection(self):
+        receipts_2019 = RequestedLocation(collection="uatinvoices/receipts", path_glob="2019/**", path_regex=None)
+
+        request = await _from_collections(receipts_2019)
+
+        assert request.selection.any_of == [
+            KnowledgeDocumentCriteria(collection="uatinvoices/receipts", path_glob="2019/**")
+        ]
+
+    @pytest.mark.asyncio
+    async def test_the_form_shows_the_collection_and_lists_the_collections_to_name(self):
+        receipts = RequestedLocation(collection="uatinvoices/receipts", path_glob=None, path_regex=None)
+
+        form = await _from_collections(receipts, answer=None)
+
+        where = form.questions[0]
+        assert where.options[0].description == "uatinvoices/receipts"
+        assert "Collections: uatinvoices/receipts (2), uatinvoices/invoice (1)" in where.question
+        assert "No document" not in form.question
+
+    @pytest.mark.asyncio
+    async def test_a_collection_written_into_the_path_is_flagged_in_the_form_before_it_is_confirmed(self):
+        prefixed = RequestedLocation(collection=None, path_glob="uatinvoices/receipts/**", path_regex=None)
+
+        form = await _from_collections(prefixed, answer=None)
+
+        notice = (
+            "No document in this agent's scope is at `uatinvoices/receipts/**`. Name another collection, folder or "
+            "file, or choose all documents."
+        )
+        assert form.question.startswith(notice)
+        assert form.questions[0].question.startswith(notice)
+
+    @pytest.mark.asyncio
+    async def test_a_collection_outside_the_scope_holds_nothing(self):
+        other = RequestedLocation(collection="legal/contracts", path_glob=None, path_regex=None)
+
+        answer = await _from_collections(other)
+
+        assert isinstance(answer, CompleteConversationEvent)
+        assert "No document in this agent's scope is at `legal/contracts`" in answer.stop.output_messages[-1].content
+
+    @pytest.mark.asyncio
+    async def test_only_the_understood_places_that_hold_nothing_are_flagged_in_the_form(self):
+        receipts = RequestedLocation(collection="uatinvoices/receipts", path_glob=None, path_regex=None)
+        prefixed = RequestedLocation(collection=None, path_glob="uatinvoices/invoice/**", path_regex=None)
+
+        form, _, _ = await _discover(
+            _reading(receipts, prefixed), scope=_two_collections(), listing=_at_root(), answer=None
+        )
+
+        assert form.question.startswith("No document in this agent's scope is at `uatinvoices/invoice/**`.")
+        assert "`uatinvoices/receipts`" not in form.question.split("\n")[0]
+
+    def test_the_message_names_collections_as_the_scope_does(self):
+        lines = SelectionFacets.lines(_at_root().documents, T)
+
+        assert "**By collection:** uatinvoices/receipts (2), uatinvoices/invoice (1)" in lines
+
+
 def _dialog(**answers: dict[str, Any]) -> str:
     return json.dumps({"where": {"type": "option", "option_index": 0}, **answers})
 
@@ -1073,9 +1175,9 @@ class TestRequestForm:
             "Values to extract",
         ]
         assert where.question == (
-            "Which documents should I read? I understood: all documents in scope. To read only some, name a folder or "
-            "a file; a period goes under Document Condition. Folders: invoices/2024/q1 (1), invoices/2024/q2 (1), "
-            "invoices/2025/q1 (1)"
+            "Which documents should I read? I understood: all documents in scope. To read only some, name a "
+            "collection, a folder or a file; a period goes under Document Condition. Folders: invoices/2024/q1 (1), "
+            "invoices/2024/q2 (1), invoices/2025/q1 (1)"
         )
         assert documents.question.startswith("Which documents count? I understood: every document at the location.")
         assert rows.question.endswith(
@@ -1108,7 +1210,7 @@ class TestRequestForm:
 
     @pytest.mark.asyncio
     async def test_a_named_place_can_be_kept_or_dropped(self):
-        location = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
 
         form, _, _ = await _discover(_reading(location), answer=None)
 
@@ -1127,7 +1229,7 @@ class TestRequestForm:
 
     @pytest.mark.asyncio
     async def test_the_second_options_drop_the_place_and_the_row_condition(self):
-        location = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        location = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
         answer = json.dumps(
             {"where": {"type": "option", "option_index": 1}, "rows": {"type": "option", "option_index": 1}}
         )
@@ -1279,7 +1381,7 @@ class TestRequestForm:
         self, dropped: str, written: str, cleared: dict[str, Any]
     ):
         """The second reading sees the first message too and may bring the dropped part back (e2e S8c)."""
-        place = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        place = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
         understood = _reading(place, document_condition="from Hooli")
         answer = json.dumps(
             {dropped: {"type": "option", "option_index": 1}, written: {"type": "other", "text": "only hardware lines"}}
@@ -1354,7 +1456,7 @@ class TestRequestForm:
         second reading takes from it (round-3 review S1)."""
         understood = _reading().model_copy(update={"instructions": None})
         form, _, _ = await _discover(understood, answer=None)
-        place = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+        place = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
         reread = _reading(place, period_start="2024-01-01", period_end="2024-12-31")
         reply = f"{form.question}\n\nonly 2024, from invoices/2025, only Hooli hardware"
 
@@ -1900,7 +2002,7 @@ class TestConfirmedLocation:
 
     @pytest.mark.asyncio
     async def test_the_form_shows_the_named_file_not_the_folder_the_reading_made_of_it(self):
-        reading = _reading(RequestedLocation(path_glob=f"{FOLDER}/**", path_regex=None))
+        reading = _reading(RequestedLocation(collection=None, path_glob=f"{FOLDER}/**", path_regex=None))
 
         form, _, _ = await _discover(
             reading, message=f"Line items of {NAMED}", listing=_listing(*NAMED_FILES), answer=None
@@ -1910,7 +2012,7 @@ class TestConfirmedLocation:
 
     @pytest.mark.asyncio
     async def test_all_documents_chosen_for_a_named_file_reads_every_document(self):
-        reading = _reading(RequestedLocation(path_glob=f"{FOLDER}/**", path_regex=None))
+        reading = _reading(RequestedLocation(collection=None, path_glob=f"{FOLDER}/**", path_regex=None))
         answer = json.dumps({"where": {"type": "option", "option_index": 1}})
 
         request, _, _ = await _discover(
@@ -1921,8 +2023,8 @@ class TestConfirmedLocation:
 
     @pytest.mark.asyncio
     async def test_a_location_written_instead_of_the_named_file_is_read_as_written(self):
-        reading = _reading(RequestedLocation(path_glob=f"{FOLDER}/**", path_regex=None))
-        reread = _reading(RequestedLocation(path_glob="invoices/acme/**", path_regex=None))
+        reading = _reading(RequestedLocation(collection=None, path_glob=f"{FOLDER}/**", path_regex=None))
+        reread = _reading(RequestedLocation(collection=None, path_glob="invoices/acme/**", path_regex=None))
         answer = _dialog(where={"type": "other", "text": "invoices/acme"})
 
         request, ask, _ = await _discover(
@@ -1934,7 +2036,7 @@ class TestConfirmedLocation:
 
     @pytest.mark.asyncio
     async def test_a_file_written_into_the_form_wins_over_the_folder_the_second_reading_made_of_it(self):
-        reread = _reading(RequestedLocation(path_glob=f"{FOLDER}/**", path_regex=None))
+        reread = _reading(RequestedLocation(collection=None, path_glob=f"{FOLDER}/**", path_regex=None))
         answer = _dialog(where={"type": "other", "text": NAMED})
 
         request, _, _ = await _discover(_reading(), listing=_listing(*NAMED_FILES), answer=answer, reread=reread)
@@ -1963,7 +2065,7 @@ class TestDeclinedRequest:
         assert len(texts) == len(LOCALES)
 
 
-CONFIRMED_PLACE = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+CONFIRMED_PLACE = RequestedLocation(collection=None, path_glob="invoices/2025/**", path_regex=None)
 
 
 async def _plan(
@@ -2004,6 +2106,16 @@ def _selecting(any_of: list[dict[str, Any]]) -> ToolCallApprovedEvent:
 
 
 class TestConfirmedRequestInDiscovery:
+    @pytest.mark.asyncio
+    async def test_a_confirmed_collection_keeps_the_selection_in_that_collection(self):
+        collection = RequestedLocation(collection="finance/invoices", path_glob=None, path_regex=None)
+
+        request, _ = await _plan(_reading(collection), [_selecting([{"content_query": "Hooli"}])])
+
+        assert request.selection.any_of == [
+            KnowledgeDocumentCriteria(collection="finance/invoices", content_query="Hooli")
+        ]
+
     @pytest.mark.asyncio
     async def test_the_confirmed_values_and_condition_are_extracted_whatever_the_model_passed(self):
         request, _ = await _plan(_reading(), [_selecting([{"content_query": "Hooli"}])])
@@ -2072,7 +2184,7 @@ class TestConfirmedRequestInDiscovery:
 
     @pytest.mark.asyncio
     async def test_a_confirmed_place_without_documents_extracts_nothing_and_says_where(self):
-        empty = RequestedLocation(path_glob="archive/**", path_regex=None)
+        empty = RequestedLocation(collection=None, path_glob="archive/**", path_regex=None)
 
         answer, _ = await _plan(_reading(empty), [_selecting([{"path_glob": "invoices/**"}])])
 
@@ -2081,7 +2193,7 @@ class TestConfirmedRequestInDiscovery:
 
     @pytest.mark.asyncio
     async def test_several_confirmed_places_and_entries_select_each_entry_at_each_place(self):
-        places = [CONFIRMED_PLACE, RequestedLocation(path_glob=None, path_regex="2024")]
+        places = [CONFIRMED_PLACE, RequestedLocation(collection=None, path_glob=None, path_regex="2024")]
         selection = [{"content_query": "Hooli"}, {"content_query": "Acme"}]
 
         request, _ = await _plan(_reading(*places), [_selecting(selection)])

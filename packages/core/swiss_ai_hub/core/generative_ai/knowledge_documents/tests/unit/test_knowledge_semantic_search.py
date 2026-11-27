@@ -39,6 +39,7 @@ def _summary(document_id: str, path: str, collection: BucketNamespacePair = LEGA
     return KnowledgeDocumentSummary(
         id=document_id,
         collection=collection,
+        collection_name=f"{collection.bucket_name}/{collection.namespace_name}",
         path=path,
         filename=path.rsplit("/", 1)[-1],
         title=path,

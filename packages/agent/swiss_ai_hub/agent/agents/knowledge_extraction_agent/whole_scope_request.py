@@ -29,7 +29,7 @@ from swiss_ai_hub.agent.capabilities.record_extraction.sample_awaiting_confirmat
 from swiss_ai_hub.agent.capabilities.record_extraction.selection_facets import SelectionFacets
 
 _MESSAGES = "agent.knowledge_extraction_agent.messages"
-_PATH_FIELDS = ("path_glob", "path_regex")
+_PLACE_FIELDS = ("collection", "path_glob", "path_regex")
 
 
 class WholeScopeRequest:
@@ -42,9 +42,16 @@ class WholeScopeRequest:
     """
 
     @staticmethod
+    async def listing(scope: KnowledgeDocumentRunScope) -> KnowledgeDocumentListing:
+        """The documents in scope, listed once per step and handed to every method that reads them."""
+        listing = await KnowledgeDocumentReader.list_documents(scope.pairs())
+        return listing.matching_glob(scope.restricting_glob) if scope.restricting_glob else listing
+
+    @staticmethod
     async def reading(
         history: list[ChatMessage],
         scope: KnowledgeDocumentRunScope,
+        listing: KnowledgeDocumentListing,
         agent_config: KnowledgeExtractionAgentConfig,
         awaiting: SampleAwaitingConfirmation | None,
         displayer: EventDisplayer,
@@ -55,7 +62,16 @@ class WholeScopeRequest:
         """The confirmation of the waiting sample, the request as read for the user to confirm, or the notice to
         answer with instead."""
         reading = await WholeScopeRequest.read(
-            history, scope, agent_config, awaiting is not None, displayer, user, t, locale, widens_period_folders=True
+            history,
+            scope,
+            listing,
+            agent_config,
+            awaiting is not None,
+            displayer,
+            user,
+            t,
+            locale,
+            widens_period_folders=True,
         )
         if awaiting is not None and reading is not None and reading.confirms_sample:
             return RecordExtraction.confirm_sample(scope.pairs(), ExtractionNotices.for_table(scope, False, t))
@@ -69,6 +85,7 @@ class WholeScopeRequest:
     async def read(
         history: list[ChatMessage],
         scope: KnowledgeDocumentRunScope,
+        listing: KnowledgeDocumentListing,
         agent_config: KnowledgeExtractionAgentConfig,
         awaiting_sample: bool,
         displayer: EventDisplayer,
@@ -79,12 +96,11 @@ class WholeScopeRequest:
             bool, "Whether date folders that only repeat the period leave the locations; false for a typed Location"
         ] = False,
     ) -> ExtractionRequestAnswer | None:
-        """The conversation's last message read as a table request, with the folders and years in scope to name, and
-        the files that message names in place of the places the model made of them. With `widens_period_folders`
-        (the request itself, or a form answer that kept the Location as shown) the reading then loses the date folders
-        the model made of the period (ADR 2026_11_21), last, so a named file never makes a widened place drop out; a
-        Location the user typed into the form is read as written."""
-        listing = await WholeScopeRequest._listing(scope)
+        """The conversation's last message read as a table request, with the collections, folders and years in scope
+        to name, and the files that message names in place of the places the model made of them. With
+        `widens_period_folders` (the request itself, or a form answer that kept the Location as shown) the reading then
+        loses the date folders the model made of the period (ADR 2026_11_21), last, so a named file never makes a
+        widened place drop out; a Location the user typed into the form is read as written."""
         facets = SelectionFacets.lines(listing.documents, t)
         instructions = agent_config.instructions.in_locale(locale) if agent_config.instructions else None
         reading = await ExtractionRequestReading.ask(
@@ -109,19 +125,25 @@ class WholeScopeRequest:
         return reading.without_period_folders(ExtractionRequestReading.user_turns(history))
 
     @staticmethod
-    async def folders(scope: KnowledgeDocumentRunScope) -> str:
-        """The largest folders in scope, for the user to name one in the request form."""
-        listing = await WholeScopeRequest._listing(scope)
-        return SelectionFacets.folders(listing.documents)
+    def unmatched(reading: ExtractionRequestAnswer, listing: KnowledgeDocumentListing, t: LocaleHandler) -> list[str]:
+        """The notice naming each understood place that holds no document, shown in the form before the user confirms
+        it; an invalid pattern is left to the extraction to report."""
+        empty = [location for location in reading.locations if WholeScopeRequest._at(listing, location) == []]
+        if not empty:
+            return []
+        places = ", ".join(f"`{location.describe()}`" for location in empty)
+        return [t(f"{_MESSAGES}.nothing_at_understood_location", locations=places)]
 
     @staticmethod
-    async def extraction_of(
-        reading: ExtractionRequestAnswer, scope: KnowledgeDocumentRunScope, t: LocaleHandler
+    def extraction_of(
+        reading: ExtractionRequestAnswer,
+        scope: KnowledgeDocumentRunScope,
+        listing: KnowledgeDocumentListing,
+        t: LocaleHandler,
     ) -> ExtractRecordsEvent | str:
         """The extraction of a confirmed reading over the whole scope, or the notice that its places hold nothing. The
         places are taken as confirmed: the user may have widened or changed what the message named."""
-        listing = await WholeScopeRequest._listing(scope)
-        if reading.locations and not WholeScopeRequest._anything_at(listing, reading):
+        if reading.locations and not WholeScopeRequest._anything_at(listing, reading.locations):
             places = ", ".join(f"`{location.describe()}`" for location in reading.locations)
             facets = SelectionFacets.lines(listing.documents, t)
             return "\n\n".join([t(f"{_MESSAGES}.nothing_at_location", locations=places), *facets])
@@ -147,13 +169,13 @@ class WholeScopeRequest:
         t: LocaleHandler,
     ) -> KnowledgeDocumentSelection | str:
         """The model's selection at the places the user confirmed, or the notice that those places hold nothing. The
-        confirmed Location replaces any path the model set: a model combining it with a file the message named
-        selected nothing and reported the confirmed folder as empty."""
-        places = [location for location in locations if location.path_glob or location.path_regex]
+        confirmed Location replaces any collection or path the model set: a model combining it with a file the message
+        named selected nothing and reported the confirmed folder as empty."""
+        places = [location for location in locations if location.is_place]
         if not places:
             return selection
-        listing = await WholeScopeRequest._listing(scope)
-        if not any(WholeScopeRequest._at(listing, place) != [] for place in places):
+        listing = await WholeScopeRequest.listing(scope)
+        if not WholeScopeRequest._anything_at(listing, places):
             described = ", ".join(f"`{location.describe()}`" for location in places)
             facets = SelectionFacets.lines(listing.documents, t)
             return "\n\n".join([t(f"{_MESSAGES}.nothing_at_location", locations=described), *facets])
@@ -165,15 +187,11 @@ class WholeScopeRequest:
     def _at_place(
         entry: KnowledgeDocumentCriteria, place: RequestedLocation, listing: KnowledgeDocumentListing
     ) -> KnowledgeDocumentCriteria:
-        """The entry with the place's path instead of its own. Documents the model chose by id stay chosen when they
-        lie at the place; when none do, the whole place is read and the condition decides the rows."""
+        """The entry with the place's collection and path instead of its own. Documents the model chose by id stay
+        chosen when they lie at the place; when none do, the whole place is read and the condition decides the rows."""
         ids = sorted(set(entry.document_ids) & WholeScopeRequest._ids_at(listing, place))
-        return entry.model_copy(update={field: getattr(place, field) for field in _PATH_FIELDS} | {"document_ids": ids})
-
-    @staticmethod
-    async def _listing(scope: KnowledgeDocumentRunScope) -> KnowledgeDocumentListing:
-        listing = await KnowledgeDocumentReader.list_documents(scope.pairs())
-        return listing.matching_glob(scope.restricting_glob) if scope.restricting_glob else listing
+        place_fields = {field: getattr(place, field) for field in _PLACE_FIELDS}
+        return entry.model_copy(update=place_fields | {"document_ids": ids})
 
     @staticmethod
     def _named_files(message: str, listing: KnowledgeDocumentListing) -> list[RequestedLocation]:
@@ -197,15 +215,16 @@ class WholeScopeRequest:
         return [*named, *others]
 
     @staticmethod
-    def _anything_at(listing: KnowledgeDocumentListing, reading: ExtractionRequestAnswer) -> bool:
-        """Whether a named place holds a document in scope; an invalid pattern is left to the extraction to report."""
-        return any(WholeScopeRequest._at(listing, location) != [] for location in reading.locations)
+    def _anything_at(listing: KnowledgeDocumentListing, locations: list[RequestedLocation]) -> bool:
+        """Whether a place holds a document in scope; an invalid pattern is left to the extraction to report."""
+        return any(WholeScopeRequest._at(listing, location) != [] for location in locations)
 
     @staticmethod
     def _at(listing: KnowledgeDocumentListing, location: RequestedLocation) -> list[KnowledgeDocumentSummary] | None:
-        """The documents in scope at a place; None for an invalid pattern."""
+        """The documents in scope at a place; None for an invalid pattern. A collection outside the scope holds none."""
+        matched = listing.in_collection(location.collection) if location.collection else listing
         try:
-            matched = listing.matching_glob(location.path_glob) if location.path_glob else listing
+            matched = matched.matching_glob(location.path_glob) if location.path_glob else matched
             matched = matched.matching_regex(location.path_regex) if location.path_regex else matched
         except InvalidPathPatternError:
             return None

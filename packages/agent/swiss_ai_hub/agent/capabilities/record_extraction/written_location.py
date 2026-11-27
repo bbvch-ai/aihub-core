@@ -11,9 +11,10 @@ _GLOB_CHARACTERS = {"*": "[*]", "?": "[?]", "[": "[[]"}
 class WrittenLocation:
     """The documents a location the user typed into the request form names, matched against the paths in scope.
 
-    A typed location is a folder, a file, a year or a pattern, several separated by commas. Only what the paths in scope
-    hold is taken as a place: a word that names no folder, file or year there may be what the documents say, so it is
-    never turned into a pattern that would quietly match nothing or everything.
+    A typed location is a collection, a folder, a file, a year or a pattern, several separated by commas; a collection
+    may be followed by a place inside it ('database/collection/2019'). Only what the scope holds is taken as a place:
+    a word that names no collection, folder, file or year there may be what the documents say, so it is never turned
+    into a pattern that would quietly match nothing or everything.
     """
 
     @staticmethod
@@ -23,10 +24,27 @@ class WrittenLocation:
     ) -> list[KnowledgeDocumentCriteria] | None:
         """One entry per place named; None when any part names no place in scope."""
         pieces = [piece.strip().strip("/") for piece in _SEPARATORS.split(text)]
-        found = [WrittenLocation._place(piece, listing) for piece in pieces if piece]
+        found = [WrittenLocation._in_collection(piece, listing) for piece in pieces if piece]
         if not found or any(place is None for place in found):
             return None
         return [criteria for place in found if place for criteria in place]
+
+    @staticmethod
+    def _in_collection(piece: str, listing: KnowledgeDocumentListing) -> list[KnowledgeDocumentCriteria] | None:
+        """The place a piece names, in the collection it starts with. A path starts inside its collection, so a
+        collection written in front of a folder would otherwise match nothing; a folder of the same name wins."""
+        place = WrittenLocation._place(piece, listing)
+        if place is not None:
+            return place
+        names = dict.fromkeys(document.collection_name for document in listing.documents if document.collection_name)
+        wanted = piece.casefold()
+        for name in names:
+            if wanted == name.casefold():
+                return [KnowledgeDocumentCriteria(collection=name)]
+            if wanted.startswith(f"{name.casefold()}/"):
+                inside = WrittenLocation._place(piece[len(name) + 1 :].strip("/"), listing.in_collection(name))
+                return [criteria.model_copy(update={"collection": name}) for criteria in inside] if inside else None
+        return None
 
     @staticmethod
     def _place(piece: str, listing: KnowledgeDocumentListing) -> list[KnowledgeDocumentCriteria] | None:

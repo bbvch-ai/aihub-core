@@ -132,6 +132,36 @@ async def test_a_document_selected_twice_is_returned_once(documents: dict[str, s
 
 
 @pytest.mark.asyncio
+async def test_a_collection_selects_only_its_documents(documents: dict[str, str]) -> None:
+    selection = _selection(
+        KnowledgeDocumentCriteria(collection=f"{_DB}/legal"),
+        KnowledgeDocumentCriteria(collection=f"{_DB}/finance", path_glob="invoices/2024/**"),
+    )
+
+    result = await KnowledgeDocumentSelector.resolve(_BOTH, selection, limit=10)
+
+    assert _ids(result) == {documents["contract"], documents["acme_2024"]}
+
+
+@pytest.mark.asyncio
+async def test_a_collection_narrows_a_content_query_to_its_documents(documents: dict[str, str]) -> None:
+    selection = _selection(KnowledgeDocumentCriteria(collection=f"{_DB}/legal", content_query="Acme AG"))
+
+    result = await KnowledgeDocumentSelector.resolve(_BOTH, selection, limit=10)
+
+    assert _ids(result) == {documents["contract"]}
+
+
+@pytest.mark.asyncio
+async def test_a_collection_outside_the_callers_selects_nothing(documents: dict[str, str]) -> None:
+    selection = _selection(KnowledgeDocumentCriteria(collection=f"{_DB}/legal"))
+
+    result = await KnowledgeDocumentSelector.resolve([_FINANCE], selection, limit=10)
+
+    assert _ids(result) == set()
+
+
+@pytest.mark.asyncio
 async def test_the_period_leaves_out_documents_its_paths_date_outside_it(documents: dict[str, str]) -> None:
     selection = KnowledgeDocumentSelection(
         any_of=[KnowledgeDocumentCriteria(path_glob="**")],

@@ -39,7 +39,7 @@ class ExtractionRequestPlainAnswer(BaseModel):
     ]
     locations: Annotated[
         list[RequestedLocation],
-        Field(description="The folders or files the user named; empty when the whole scope is meant."),
+        Field(description="The collections, folders or files the user named; empty when the whole scope is meant."),
     ]
     fields: Annotated[
         str,
@@ -125,7 +125,7 @@ class ExtractionRequestPlainAnswer(BaseModel):
     def selection(self) -> KnowledgeDocumentSelection:
         """The named places, or the whole scope when the user named none, dated within the period and narrowed by the
         named types and values."""
-        criteria = [location.as_criteria() for location in self.locations if location.path_glob or location.path_regex]
+        criteria = [location.as_criteria() for location in self.locations if location.is_place]
         return KnowledgeDocumentSelection(
             any_of=criteria or [KnowledgeDocumentCriteria()],
             path_date_range=self.path_date_range,
@@ -142,7 +142,7 @@ class ExtractionRequestPlainAnswer(BaseModel):
         widened = [location.without_period_folders(period, message) for location in self.locations]
         if widened == self.locations:
             return self
-        unique = {(location.path_glob, location.path_regex): location for location in widened}
+        unique = {(location.collection, location.path_glob, location.path_regex): location for location in widened}
         locations = [] if any(location.is_everywhere for location in widened) else list(unique.values())
         logger.info(
             "[knowledge-extraction] locations %s widened to %s: their date folders only repeat the period",

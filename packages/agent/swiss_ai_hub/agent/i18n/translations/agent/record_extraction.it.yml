@@ -153,9 +153,10 @@ form:
   where:
     header: Posizione
     question: 'Quali documenti devo leggere? Ho capito: %{value}.'
-    hint: Per leggerne solo una parte, indica una cartella, un file o un anno.
-    hint_with_documents: Per leggerne solo una parte, indica una cartella o un file;
-      un periodo va sotto Condizione sul documento.
+    hint: Per leggerne solo una parte, indica una raccolta, una cartella, un file o un anno.
+    hint_with_documents: Per leggerne solo una parte, indica una raccolta, una cartella
+      o un file; un periodo va sotto Condizione sul documento.
+    collections: 'Raccolte: %{collections}'
     folders: 'Cartelle: %{folders}'
     anything: Tutti i documenti
     anything_description: Leggere ogni documento nell'ambito di questo agente

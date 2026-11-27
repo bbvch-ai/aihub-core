@@ -2,3 +2,7 @@ parent=keycloak.v2
 import=common/keycloak
 
 styles=css/styles.css css/login.css
+
+# Target of the link info.ftl shows when Keycloak itself offers none (admin-console invitations).
+# A Keycloak serving several realms can override it per realm: aihubUrl.<realm name>=https://...
+aihubUrl=${env.AIHUB_FRONTEND_ORIGIN}

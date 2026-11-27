@@ -80,6 +80,7 @@ def _document(index: int) -> KnowledgeDocumentSummary:
     return KnowledgeDocumentSummary(
         id=f"doc-{index}",
         collection=COLLECTION,
+        collection_name=f"{COLLECTION.bucket_name}/{COLLECTION.namespace_name}",
         path=path,
         filename=path.rsplit("/", 1)[-1],
         title=path,

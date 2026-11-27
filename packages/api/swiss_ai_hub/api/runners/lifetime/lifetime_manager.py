@@ -41,6 +41,7 @@ from swiss_ai_hub.api.routes.incident.github_issue_client import GitHubIssueClie
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
+    add_knowledge_root_rule,
     add_process_root_rule,
     adopt_legacy_organization_memories,
     carry_over_bucket_model_columns,
@@ -293,10 +294,13 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         else:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
+        # Before seeding: a default role deleted before deletions revoked it would otherwise be re-created first and
+        # reach its former holders again through the names this removes.
+        remove_stale_role_names()
         await initialize_startup_tenant()
         add_process_root_rule()
+        add_knowledge_root_rule()
         await finalize_role_setup(redis)
-        remove_stale_role_names()
         await initialize_knowledge_buckets()
         await carry_over_bucket_model_columns()
         await strip_retired_agent_config_keys()

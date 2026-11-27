@@ -21,6 +21,7 @@
         :group="group"
         :depth="0"
         :readonly="readonly"
+        :busy="capabilitiesAreLoading"
         @add="(rules) => emit('add', rules)"
         @remove="(rules) => emit('remove', rules)"
       />

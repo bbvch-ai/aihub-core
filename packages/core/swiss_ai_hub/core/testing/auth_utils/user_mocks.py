@@ -31,7 +31,9 @@ def _create_mock_keycloak_user(user_id: str | None = None, email: str | None = N
 _FAKE_KEYCLOAK_USERS: dict[str, dict] = {}
 
 
-def register_fake_keycloak_user(user_id: str, *, name: str, email: str, attributes: dict | None = None) -> None:
+def register_fake_keycloak_user(
+    user_id: str, *, name: str, email: str, attributes: dict | None = None, enabled: bool = True
+) -> None:
     """Registers a user in the fake Keycloak admin store.
 
     Call from test steps when you need ``KeycloakAdminService.get_user_by_id`` (or
@@ -44,6 +46,7 @@ def register_fake_keycloak_user(user_id: str, *, name: str, email: str, attribut
         "email": email,
         "firstName": first,
         "lastName": last,
+        "enabled": enabled,
         "attributes": attributes or {"active_tenant_id": [StartupTenantSettings().ID]},
     }
 

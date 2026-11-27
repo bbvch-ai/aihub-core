@@ -64,7 +64,9 @@ context, AI-Hub pushes permission state into Open WebUI rather than filtering at
    sysadmin has the rights of a regular user of that tenant: requests that come through Open WebUI never carry
    system-administration rights, such as deleting a tenant. The role name `AIHubSysAdmin` is reserved and cannot be used
    for a tenant role. Granting or revoking the `AIHubSysAdmin` realm role happens in Keycloak, which does not notify
-   AI-Hub, so it reaches the chat with the next access sync — switching tenants triggers one
+   AI-Hub, so it reaches the chat with the next access sync — switching tenants triggers one. Disabling or deleting a
+   user in Keycloak does not notify AI-Hub either, and Open WebUI keeps the user's session; the next access sync, within
+   about five minutes, takes them out of every group, so the chat offers them no model
 2. **Workspace models**: For each online agent, AI-Hub creates a workspace model that delegates to the corresponding
    pipe function
 3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using the platform's permission
@@ -72,7 +74,9 @@ context, AI-Hub pushes permission state into Open WebUI rather than filtering at
 
 The provisioner runs at API startup, when an agent instance is created, renamed, or deleted (reflected immediately in
 the model picker), when the set of online agents changes (the periodic 60-second reconciler), when users switch tenants,
-and when roles, tenants, or user-role assignments are modified. All changes propagate immediately.
+and when roles, tenants, or user-role assignments are modified. All changes propagate immediately. The access sync also
+runs with every LiteLLM user reconciliation (`LITE_LLM_PROXY_USER_RECONCILE_INTERVAL_SECONDS`, five minutes), so changes
+made only in Keycloak reach the chat without any of those triggers.
 
 **Reliability in multi-replica deployments:**
 

@@ -440,3 +440,56 @@ class TestSysAdminGroupMembership:
                 "grp-sys-1": ["owui-sys"],
                 "grp-sys-2": [],
             }
+
+
+class TestDisabledUserGroupMembership:
+    """Keycloak tells OpenWebUI nothing when it disables a user, whose session there goes on; the groups are what offer
+    them models."""
+
+    @pytest.mark.asyncio
+    async def test_a_user_disabled_in_keycloak_is_left_out_of_every_group(
+        self, provisioner: OpenWebuiProvisioner
+    ) -> None:
+        with (
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity") as mock_utr,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.KeycloakAdminService"
+            ) as mock_keycloak,
+            patch.object(
+                provisioner._openwebui,
+                "list_groups",
+                return_value=[_group("aihub:T1:R1", "grp-1"), _group(f"aihub:T1:{SYS_ADMIN_ROLE}", "grp-sys")],
+            ),
+            patch.object(
+                provisioner._openwebui,
+                "list_users",
+                return_value=[_user("alice@example.com", "owui-alice"), _user("bob@example.com", "owui-bob")],
+            ),
+            patch.object(provisioner._openwebui, "update_group_members") as mock_update_members,
+        ):
+            tenant = MagicMock()
+            tenant.name, tenant.id, tenant.access_rules = "T1", "tid-1", []
+            mock_tenant.objects.return_value = [tenant]
+            role = MagicMock()
+            role.name, role.access_rules = "R1", []
+            mock_role.get_roles_for_tenant.return_value = [role]
+            alice_role, bob_role = MagicMock(), MagicMock()
+            alice_role.user_id, bob_role.user_id = "kc-alice", "kc-bob"
+            mock_utr.objects.return_value = [alice_role, bob_role]
+            mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value={"kc-alice", "kc-bob"})
+            mock_keycloak.get_user_ids_with_realm_role = AsyncMock(return_value={"kc-bob"})
+            alice, bob = MagicMock(), MagicMock()
+            alice.id, alice.email, alice.enabled = "kc-alice", "alice@example.com", True
+            bob.id, bob.email, bob.enabled = "kc-bob", "bob@example.com", False
+            mock_keycloak.get_all_users = AsyncMock(return_value=[alice, bob])
+
+            await provisioner._sync_groups()
+
+            assert {call.args[0]: call.args[1] for call in mock_update_members.call_args_list} == {
+                "grp-1": ["owui-alice"],
+                "grp-sys": [],
+            }

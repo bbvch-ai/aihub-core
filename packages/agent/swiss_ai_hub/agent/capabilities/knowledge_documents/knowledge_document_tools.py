@@ -3,6 +3,7 @@ from typing import Annotated, Any
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from swiss_ai_hub.core.generative_ai import (
+    BucketNamespacePair,
     KnowledgeContentSearch,
     KnowledgeContentSearchLimits,
     KnowledgeContentSearchTimeoutError,
@@ -85,6 +86,9 @@ class KnowledgeDocumentTools(BaseToolSpec):
         path_glob: Annotated[
             str, "Glob on the path in its collection, e.g. 'invoices/**' or '**/*acme*'; '**' lists all."
         ],
+        collection: Annotated[
+            str | None, "Only this collection, as 'database/collection' the results list it; null for all of them."
+        ] = None,
         path_regex: Annotated[str | None, "A regular expression the path must also contain, e.g. '(?i)acme'."] = None,
         period_start: Annotated[
             str | None,
@@ -99,12 +103,13 @@ class KnowledgeDocumentTools(BaseToolSpec):
         offset: Annotated[int, "Where the page starts, from a previous result's 'more with offset='."] = 0,
     ) -> str:
         """Lists the documents of our knowledge collections whose path matches, with ids for the other document
-        tools. Use it to find documents by name, folder or file type, or to see what a collection holds. For a period,
-        pass period_start and period_end rather than a year in the glob. Paths are matched ignoring case; a glob that
-        is too narrow misses files, so prefer '**/*acme*' over '*.pdf'."""
+        tools. Use it to find documents by name, folder or file type, or to see what a collection holds. A path starts
+        inside its collection, so name a collection in collection, never in path_glob. For a period, pass period_start
+        and period_end rather than a year in the glob. Paths are matched ignoring case; a glob that is too narrow
+        misses files, so prefer '**/*acme*' over '*.pdf'."""
         date_range = PathDateRange.written(period_start, period_end)
         scope = await KnowledgeDocumentScope.for_tool(self.context)
-        everything = await KnowledgeDocumentReader.list_documents(scope.pairs())
+        everything = await KnowledgeDocumentReader.list_documents(self._named(scope, collection))
         allowed = everything.matching_glob(scope.restricting_glob) if scope.restricting_glob else everything
         matching = allowed.matching_glob(path_glob)
         if path_regex:
@@ -123,7 +128,10 @@ class KnowledgeDocumentTools(BaseToolSpec):
         query: Annotated[str, "Exact text to find, e.g. a supplier, an order number or 'RFC 9000'."],
         is_regex: Annotated[bool, "Whether the query is a regular expression, e.g. 'Acme( AG)?|ACME'."] = False,
         case_sensitive: Annotated[bool, "Whether letter case must match; ignored by default."] = False,
-        path_glob: Annotated[str | None, "Only documents whose path matches this glob."] = None,
+        path_glob: Annotated[str | None, "Only documents whose path in their collection matches this glob."] = None,
+        collection: Annotated[
+            str | None, "Only this collection, as 'database/collection' the results list it; null for all of them."
+        ] = None,
         offset: Annotated[int, "Where the page starts, from a previous result's 'more with offset='."] = 0,
     ) -> str:
         """Finds every knowledge document whose text contains the query, with the matching lines and ids. Unlike
@@ -132,7 +140,7 @@ class KnowledgeDocumentTools(BaseToolSpec):
         scope = await KnowledgeDocumentScope.for_tool(self.context)
         globs = [glob for glob in (scope.restricting_glob, path_glob) if glob]
         result = await KnowledgeContentSearch.search(
-            scope.pairs(),
+            self._named(scope, collection),
             query,
             is_regex=is_regex,
             case_sensitive=case_sensitive,
@@ -150,7 +158,10 @@ class KnowledgeDocumentTools(BaseToolSpec):
             "What the wanted documents are about, in a few words, e.g. 'supplier contract liability termination'; "
             "no amounts, dates or thresholds.",
         ],
-        path_glob: Annotated[str | None, "Only documents whose path matches this glob."] = None,
+        path_glob: Annotated[str | None, "Only documents whose path in their collection matches this glob."] = None,
+        collection: Annotated[
+            str | None, "Only this collection, as 'database/collection' the results list it; null for all of them."
+        ] = None,
         offset: Annotated[int, "Where the page starts, from a previous result's 'more with offset='."] = 0,
     ) -> str:
         """Ranks every knowledge document by how closely its passages match the meaning of the query, most similar
@@ -160,10 +171,12 @@ class KnowledgeDocumentTools(BaseToolSpec):
         documents are still relevant."""
         scope = await KnowledgeDocumentScope.for_tool(self.context)
         globs = [glob for glob in (scope.restricting_glob, path_glob) if glob]
-        ranking = await self._rank(scope, query, globs)
+        ranking = await self._rank(self._named(scope, collection), query, globs)
         return KnowledgeDocumentToolOutput.ranking(scope, ranking, max(offset, 0), RANKING_PAGE_SIZE)
 
-    async def _rank(self, scope: KnowledgeDocumentRunScope, query: str, globs: list[str]) -> KnowledgeSemanticRanking:
+    async def _rank(
+        self, collections: list[BucketNamespacePair], query: str, globs: list[str]
+    ) -> KnowledgeSemanticRanking:
         """The whole ranking, computed again for every page.
 
         Tools get no per-run store (`ToolContext` carries no `RunContext`), so a page cannot reuse an earlier call's
@@ -173,7 +186,7 @@ class KnowledgeDocumentTools(BaseToolSpec):
         """
         try:
             return await KnowledgeSemanticSearch.rank(
-                scope.pairs(),
+                collections,
                 query,
                 path_globs=globs,
                 passages_per_document=RANKING_PASSAGES,
@@ -205,6 +218,15 @@ class KnowledgeDocumentTools(BaseToolSpec):
         ):
             raise LookupError(self._no_access(scope, document_id))
         return KnowledgeDocumentToolOutput.excerpt(scope, document)
+
+    @staticmethod
+    def _named(scope: KnowledgeDocumentRunScope, collection: str | None) -> list[BucketNamespacePair]:
+        """The collections a call works on, narrowed before anything is listed, searched or ranked, so pages and
+        offsets count that collection only. An empty name means all, as models fill optional arguments with one."""
+        collections = scope.pairs_in(collection or None)
+        if collection and not collections:
+            raise LookupError(KnowledgeDocumentToolOutput.unknown_collection(scope, collection))
+        return collections
 
     @staticmethod
     async def _load(scope: KnowledgeDocumentRunScope, document_id: str, start: int) -> KnowledgeDocument:

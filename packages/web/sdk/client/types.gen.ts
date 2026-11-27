@@ -10772,6 +10772,12 @@ export type KnowledgeDatabaseSelector = {
  */
 export type KnowledgeDocumentCriteria = {
   /**
+   * Collection
+   *
+   * Only documents of this collection, named 'database/collection' as the scope lists it. A path starts inside its collection, so a collection is named here, never in path_glob.
+   */
+  collection?: string | null;
+  /**
    * Path Glob
    *
    * Glob on the path relative to the collection, e.g. 'invoices**' or 'contracts*.pdf'.
