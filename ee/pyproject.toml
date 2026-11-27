@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-ee"
-version = "0.326.0"
+version = "0.326.1"
 description = "bbv AI Hub enterprise agents, licensed under the bbv AI Hub Enterprise License."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -15,7 +15,7 @@ license-files = ["LICENSE"]
 readme = "README.md"
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
-    "swiss-ai-hub-agent==0.326.0",
+    "swiss-ai-hub-agent==0.326.1",
 ]
 
 [build-system]
