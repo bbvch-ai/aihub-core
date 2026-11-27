@@ -8575,6 +8575,98 @@ export const DisplayStatisticsSchema = {
     "Statistics for a display, including its runs, intended for API response.",
 } as const;
 
+export const DocumentAttributeSchema = {
+  type: "string",
+  enum: [
+    "document_date",
+    "document_reference_number",
+    "document_issuer",
+    "document_issuer_tax_id",
+    "document_recipient",
+    "document_parties",
+    "document_total_amount",
+    "document_currency",
+    "document_due_date",
+    "document_period",
+    "document_related_references",
+    "document_valid_until",
+    "document_notice_period",
+    "document_service_levels",
+    "document_product",
+    "document_participants",
+    "document_jurisdiction",
+  ],
+  title: "DocumentAttribute",
+  description:
+    'Attributes shared across document types; each value is also the metadata key the attribute is stored under.\n\nShared rather than per type, so one filter such as "dated 2025" works across every type that carries a date.\nWhat an attribute means for one type is the type\'s business, see `DocumentTypeDefinition.meanings`.',
+} as const;
+
+export const DocumentAttributeConditionSchema = {
+  properties: {
+    attribute: {
+      $ref: "#/components/schemas/DocumentAttribute",
+      description: "The attribute the condition is on.",
+    },
+    contains: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Contains",
+      description:
+        "Text the value contains, case ignored, e.g. 'Hooli' for the issuer or the parties, 'CHF' for the currency; null for a date or an amount.",
+    },
+    at_least: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "At Least",
+      description:
+        "Lowest value of a date (YYYY-MM-DD) or an amount (a number); null when open or for text.",
+    },
+    at_most: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "At Most",
+      description:
+        "Highest value of a date (YYYY-MM-DD) or an amount (a number); null when open or for text.",
+    },
+    currency: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Currency",
+      description:
+        "The currency an amount is stated in, as its ISO code, e.g. 'CHF' for 'over CHF 10'000'; null when the request names none, and always for a date or text.",
+    },
+  },
+  type: "object",
+  required: ["attribute"],
+  title: "DocumentAttributeCondition",
+  description:
+    'One condition on an attribute ingestion\'s classification stored, matched by code against the stored value.\n\nText matches when the value contains it, case ignored, since a request names "Hooli" where the document says\n"Hooli AG". Dates and amounts match a range, a stored date by the whole span it covers ("März 2025"), so a value\nthat overlaps the range is kept. A condition is matched only after `readable()` brought it into one form.',
+} as const;
+
 export const DocumentBlockSchema = {
   properties: {
     block_type: {
@@ -8765,6 +8857,34 @@ export const DocumentDeletionResultSchema = {
   description: "Outcome of a single document deletion within a batch request.",
 } as const;
 
+export const DocumentMetadataFilterSchema = {
+  properties: {
+    types: {
+      items: {
+        $ref: "#/components/schemas/DocumentType",
+      },
+      type: "array",
+      title: "Types",
+      description:
+        "The document is one of these types; empty when any type counts.",
+      default: [],
+    },
+    conditions: {
+      items: {
+        $ref: "#/components/schemas/DocumentAttributeCondition",
+      },
+      type: "array",
+      title: "Conditions",
+      description: "Every condition must hold for the document to match.",
+      default: [],
+    },
+  },
+  type: "object",
+  title: "DocumentMetadataFilter",
+  description:
+    "The documents a request wants by the type and attributes ingestion classified them with (#2348).\n\nMatched by code against the stored values, never by a model, and never narrowing on doubt: a document that was not\nclassified, or whose value is empty, is unknown and kept, so the extraction's document condition judges it. A\ndocument counts as a type when that is its primary or one of its secondary types.",
+} as const;
+
 export const DocumentParsingMetadataSchema = {
   properties: {
     filename: {
@@ -8803,6 +8923,31 @@ export const DocumentParsingResponseSchema = {
   title: "DocumentParsingResponse",
   description:
     "Response schema for document conversion.\n\nFollows the OpenWebUI External Document Loader specification.\nCan return either a single document or a list of documents (one per page).",
+} as const;
+
+export const DocumentTypeSchema = {
+  type: "string",
+  enum: [
+    "invoice",
+    "credit_note",
+    "offer",
+    "order",
+    "delivery_note",
+    "receipt",
+    "account_statement",
+    "payment_reminder",
+    "contract",
+    "service_level_agreement",
+    "letter",
+    "report",
+    "documentation",
+    "policy",
+    "email_thread",
+    "other",
+  ],
+  title: "DocumentType",
+  description:
+    "The closed set of document types ingestion classifies into.\n\nClosed on purpose: a filter over a fixed vocabulary is reliable, an open one the model invents per document is not.\n`OTHER` is everything outside the set: adding a type raises `OTHER`'s version in `DocumentTypeCatalog`, so a\nbackfill re-classifies only the documents marked `OTHER`.",
 } as const;
 
 export const DocumentUploadRequestSchema = {
@@ -16202,12 +16347,24 @@ export const KnowledgeDocumentSelectionSchema = {
       description:
         "Leaves out the selected documents whose path dates them outside this period, such as a year folder, 2026-03 or 20260406 in a file name; a document whose path gives no clear date is kept.",
     },
+    metadata_filter: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/DocumentMetadataFilter",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Leaves out the selected documents whose ingested type or attributes fail this filter, after the period; a document that was not classified, or whose value is empty, is kept.",
+    },
   },
   type: "object",
   required: ["any_of"],
   title: "KnowledgeDocumentSelection",
   description:
-    "The documents a request is about, described rather than listed: a document is selected when it meets any of the\ncriteria.\n\nDescribing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob\nand limits when it resolves the set, so a model can only narrow what it was given. A selection has one period,\napplied after the entries to all they selected, because a request names its period once.",
+    "The documents a request is about, described rather than listed: a document is selected when it meets any of the\ncriteria.\n\nDescribing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob\nand limits when it resolves the set, so a model can only narrow what it was given. A selection has one period,\napplied after the entries to all they selected, because a request names its period once, and so is its metadata\nfilter.",
 } as const;
 
 export const KnowledgeReferenceSchema = {

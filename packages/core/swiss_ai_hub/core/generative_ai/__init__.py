@@ -64,6 +64,12 @@ if TYPE_CHECKING:
         context_sufficient_guard_messages,
     )
     from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import few_shot_guard
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.document_attribute_condition import (
+        DocumentAttributeCondition,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.document_metadata_counts import DocumentMetadataCounts
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.document_metadata_filter import DocumentMetadataFilter
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.document_metadata_verdict import DocumentMetadataVerdict
     from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_path_pattern_error import InvalidPathPatternError
     from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_search_pattern_error import (
         InvalidSearchPatternError,
@@ -239,6 +245,10 @@ __all__ = [
     "KnowledgeSemanticPassage",
     "KnowledgeSemanticSearch",
     "KnowledgeSemanticRanking",
+    "DocumentAttributeCondition",
+    "DocumentMetadataCounts",
+    "DocumentMetadataFilter",
+    "DocumentMetadataVerdict",
     "PathDateCounts",
     "PathDateParser",
     "PathDateRange",
@@ -407,6 +417,10 @@ _LAZY_IMPORTS = {
     "KnowledgeSemanticSearch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search",
     "KnowledgeSemanticRanking": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_ranking",
     "KnowledgeSemanticSearchUnavailableError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search_unavailable_error",
+    "DocumentAttributeCondition": "swiss_ai_hub.core.generative_ai.knowledge_documents.document_attribute_condition",
+    "DocumentMetadataCounts": "swiss_ai_hub.core.generative_ai.knowledge_documents.document_metadata_counts",
+    "DocumentMetadataFilter": "swiss_ai_hub.core.generative_ai.knowledge_documents.document_metadata_filter",
+    "DocumentMetadataVerdict": "swiss_ai_hub.core.generative_ai.knowledge_documents.document_metadata_verdict",
     "PathDateCounts": "swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_counts",
     "PathDateParser": "swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_parser",
     "PathDateRange": "swiss_ai_hub.core.generative_ai.knowledge_documents.path_date_range",

@@ -4,6 +4,8 @@ from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import ExtractRecordsEvent, RecordsExtractedEvent
 from swiss_ai_hub.core.generative_ai import (
+    DocumentMetadataCounts,
+    DocumentMetadataFilter,
     KnowledgeContentSearchTimeoutError,
     KnowledgeDocumentCriteria,
     KnowledgeDocumentSelectionResult,
@@ -87,6 +89,8 @@ class ExtractionPlanner:
             if counts.outside_years:
                 years = ", ".join(str(year) for year in counts.outside_years)
                 lines.append(t(f"{_SUMMARY}.path_dates_years", years=years))
+        if selected.metadata is not None and selected.metadata.total > 0:
+            lines.extend(ExtractionTable.metadata_lines(selected.metadata, t))
         return "\n\n".join(lines)
 
     @staticmethod
@@ -140,7 +144,7 @@ class ExtractionPlanner:
                 user=user,
                 path_glob=config.knowledge_documents.path_glob or None,
             )
-        run = ExtractionPlanner._run(request, documents, schema, selected.path_dates)
+        run = ExtractionPlanner._run(request, documents, schema, selected.path_dates, selected.metadata)
         minutes = ExtractionEstimate.minutes(documents, config.record_extraction.max_parallel_extractions)
         await displayer.display_thought(
             t(
@@ -180,7 +184,7 @@ class ExtractionPlanner:
         notices = ExtractionPlanner._sample_notices(request, selected, schema, config, t)
         if not selected.truncated:
             await SampleAwaitingConfirmation.of(request, schema, len(documents)).save(thread, config.agent_id)
-        run = ExtractionPlanner._run(request, sample, schema, selected.path_dates).model_copy(
+        run = ExtractionPlanner._run(request, sample, schema, selected.path_dates, selected.metadata).model_copy(
             update={
                 "notices": [*notices, *request.notices],
                 "sample": True,
@@ -240,6 +244,7 @@ class ExtractionPlanner:
             if condition
             else t(f"{_SUMMARY}.interpretation", columns=columns, kept=kept),
             *SelectionFacets.lines(documents, t, counted=not selected.truncated),
+            *(ExtractionTable.metadata_lines(selected.metadata, t) if selected.metadata is not None else []),
         ]
         notices.append(
             t(f"{_SUMMARY}.options_narrow")
@@ -275,6 +280,7 @@ class ExtractionPlanner:
         documents: list[KnowledgeDocumentSummary],
         schema: RecordSchema,
         path_dates: PathDateCounts | None = None,
+        metadata: DocumentMetadataCounts | None = None,
     ) -> ExtractionRun:
         return ExtractionRun(
             extraction_id=request.event_id,
@@ -289,6 +295,7 @@ class ExtractionPlanner:
             document_condition=request.document_condition,
             period=request.selection.path_date_range if request.selection else None,
             path_dates=path_dates,
+            metadata=metadata,
         )
 
     @staticmethod
@@ -300,6 +307,9 @@ class ExtractionPlanner:
         """How the documents were chosen, short enough to ride on every document's event and in the summary."""
         any_of = request.selection.any_of if request.selection else []
         described = ExtractionPlanner.describe_any_of(any_of)
+        metadata_filter = request.selection.metadata_filter if request.selection else None
+        if metadata_filter is not None:
+            described = f"{described}; {ExtractionPlanner.describe_metadata(metadata_filter)}"
         if len(described) <= CRITERIA_CHARACTERS:
             return described
         return described[: CRITERIA_CHARACTERS - 1] + "…"
@@ -321,6 +331,23 @@ class ExtractionPlanner:
             f"{len(criteria.document_ids)} chosen documents" if criteria.document_ids else "",
         ]
         return " and ".join(part for part in parts if part) or "every document"
+
+    @staticmethod
+    def describe_metadata(metadata_filter: DocumentMetadataFilter) -> str:
+        """The filter as it reads in a summary, e.g. "type `contract` and `document_parties` contains `Hooli`"."""
+        code = ExtractionPlanner._code
+        parts = [f"type {' or '.join(code(name) for name in metadata_filter.types)}"] if metadata_filter.types else []
+        for condition in metadata_filter.conditions:
+            if condition.contains is not None:
+                parts.append(f"{code(condition.attribute)} contains {code(condition.contains)}")
+                continue
+            bounds = [
+                f">= {condition.at_least}" if condition.at_least else "",
+                f"<= {condition.at_most}" if condition.at_most else "",
+            ]
+            currency = f" {condition.currency}" if condition.currency else ""
+            parts.append(f"{code(condition.attribute)} {' and '.join(bound for bound in bounds if bound)}{currency}")
+        return " and ".join(parts)
 
     @staticmethod
     def _code(value: str) -> str:

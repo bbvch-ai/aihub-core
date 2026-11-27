@@ -5820,6 +5820,85 @@ export type DisplayStatistics = {
 };
 
 /**
+ * DocumentAttribute
+ *
+ * Attributes shared across document types; each value is also the metadata key the attribute is stored under.
+ *
+ * Shared rather than per type, so one filter such as "dated 2025" works across every type that carries a date.
+ * What an attribute means for one type is the type's business, see `DocumentTypeDefinition.meanings`.
+ */
+export const DocumentAttribute = {
+  DOCUMENT_DATE: "document_date",
+  DOCUMENT_REFERENCE_NUMBER: "document_reference_number",
+  DOCUMENT_ISSUER: "document_issuer",
+  DOCUMENT_ISSUER_TAX_ID: "document_issuer_tax_id",
+  DOCUMENT_RECIPIENT: "document_recipient",
+  DOCUMENT_PARTIES: "document_parties",
+  DOCUMENT_TOTAL_AMOUNT: "document_total_amount",
+  DOCUMENT_CURRENCY: "document_currency",
+  DOCUMENT_DUE_DATE: "document_due_date",
+  DOCUMENT_PERIOD: "document_period",
+  DOCUMENT_RELATED_REFERENCES: "document_related_references",
+  DOCUMENT_VALID_UNTIL: "document_valid_until",
+  DOCUMENT_NOTICE_PERIOD: "document_notice_period",
+  DOCUMENT_SERVICE_LEVELS: "document_service_levels",
+  DOCUMENT_PRODUCT: "document_product",
+  DOCUMENT_PARTICIPANTS: "document_participants",
+  DOCUMENT_JURISDICTION: "document_jurisdiction",
+} as const;
+
+/**
+ * DocumentAttribute
+ *
+ * Attributes shared across document types; each value is also the metadata key the attribute is stored under.
+ *
+ * Shared rather than per type, so one filter such as "dated 2025" works across every type that carries a date.
+ * What an attribute means for one type is the type's business, see `DocumentTypeDefinition.meanings`.
+ */
+export type DocumentAttribute =
+  (typeof DocumentAttribute)[keyof typeof DocumentAttribute];
+
+/**
+ * DocumentAttributeCondition
+ *
+ * One condition on an attribute ingestion's classification stored, matched by code against the stored value.
+ *
+ * Text matches when the value contains it, case ignored, since a request names "Hooli" where the document says
+ * "Hooli AG". Dates and amounts match a range, a stored date by the whole span it covers ("März 2025"), so a value
+ * that overlaps the range is kept. A condition is matched only after `readable()` brought it into one form.
+ */
+export type DocumentAttributeCondition = {
+  /**
+   * The attribute the condition is on.
+   */
+  attribute: DocumentAttribute;
+  /**
+   * Contains
+   *
+   * Text the value contains, case ignored, e.g. 'Hooli' for the issuer or the parties, 'CHF' for the currency; null for a date or an amount.
+   */
+  contains?: string | null;
+  /**
+   * At Least
+   *
+   * Lowest value of a date (YYYY-MM-DD) or an amount (a number); null when open or for text.
+   */
+  at_least?: string | null;
+  /**
+   * At Most
+   *
+   * Highest value of a date (YYYY-MM-DD) or an amount (a number); null when open or for text.
+   */
+  at_most?: string | null;
+  /**
+   * Currency
+   *
+   * The currency an amount is stated in, as its ISO code, e.g. 'CHF' for 'over CHF 10'000'; null when the request names none, and always for a date or text.
+   */
+  currency?: string | null;
+};
+
+/**
  * DocumentBlock
  *
  * A representation of a document to directly pass to the LLM.
@@ -5938,6 +6017,30 @@ export type DocumentDeletionResult = {
 };
 
 /**
+ * DocumentMetadataFilter
+ *
+ * The documents a request wants by the type and attributes ingestion classified them with (#2348).
+ *
+ * Matched by code against the stored values, never by a model, and never narrowing on doubt: a document that was not
+ * classified, or whose value is empty, is unknown and kept, so the extraction's document condition judges it. A
+ * document counts as a type when that is its primary or one of its secondary types.
+ */
+export type DocumentMetadataFilter = {
+  /**
+   * Types
+   *
+   * The document is one of these types; empty when any type counts.
+   */
+  types?: Array<DocumentType>;
+  /**
+   * Conditions
+   *
+   * Every condition must hold for the document to match.
+   */
+  conditions?: Array<DocumentAttributeCondition>;
+};
+
+/**
  * DocumentParsingMetadata
  *
  * Metadata about the converted document.
@@ -5971,6 +6074,45 @@ export type DocumentParsingResponse = {
    */
   metadata?: DocumentParsingMetadata | null;
 };
+
+/**
+ * DocumentType
+ *
+ * The closed set of document types ingestion classifies into.
+ *
+ * Closed on purpose: a filter over a fixed vocabulary is reliable, an open one the model invents per document is not.
+ * `OTHER` is everything outside the set: adding a type raises `OTHER`'s version in `DocumentTypeCatalog`, so a
+ * backfill re-classifies only the documents marked `OTHER`.
+ */
+export const DocumentType = {
+  INVOICE: "invoice",
+  CREDIT_NOTE: "credit_note",
+  OFFER: "offer",
+  ORDER: "order",
+  DELIVERY_NOTE: "delivery_note",
+  RECEIPT: "receipt",
+  ACCOUNT_STATEMENT: "account_statement",
+  PAYMENT_REMINDER: "payment_reminder",
+  CONTRACT: "contract",
+  SERVICE_LEVEL_AGREEMENT: "service_level_agreement",
+  LETTER: "letter",
+  REPORT: "report",
+  DOCUMENTATION: "documentation",
+  POLICY: "policy",
+  EMAIL_THREAD: "email_thread",
+  OTHER: "other",
+} as const;
+
+/**
+ * DocumentType
+ *
+ * The closed set of document types ingestion classifies into.
+ *
+ * Closed on purpose: a filter over a fixed vocabulary is reliable, an open one the model invents per document is not.
+ * `OTHER` is everything outside the set: adding a type raises `OTHER`'s version in `DocumentTypeCatalog`, so a
+ * backfill re-classifies only the documents marked `OTHER`.
+ */
+export type DocumentType = (typeof DocumentType)[keyof typeof DocumentType];
 
 /**
  * DocumentUploadRequest
@@ -10675,7 +10817,8 @@ export type KnowledgeDocumentCriteria = {
  *
  * Describing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob
  * and limits when it resolves the set, so a model can only narrow what it was given. A selection has one period,
- * applied after the entries to all they selected, because a request names its period once.
+ * applied after the entries to all they selected, because a request names its period once, and so is its metadata
+ * filter.
  */
 export type KnowledgeDocumentSelection = {
   /**
@@ -10688,6 +10831,10 @@ export type KnowledgeDocumentSelection = {
    * Leaves out the selected documents whose path dates them outside this period, such as a year folder, 2026-03 or 20260406 in a file name; a document whose path gives no clear date is kept.
    */
   path_date_range?: PathDateRange | null;
+  /**
+   * Leaves out the selected documents whose ingested type or attributes fail this filter, after the period; a document that was not classified, or whose value is empty, is kept.
+   */
+  metadata_filter?: DocumentMetadataFilter | null;
 };
 
 /**

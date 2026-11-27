@@ -1,7 +1,8 @@
-from swiss_ai_hub.core.generative_ai import PathDateRange
+from swiss_ai_hub.core.generative_ai import DocumentAttributeCondition, DocumentMetadataFilter, PathDateRange
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 _PERIOD = "agent.record_extraction.period"
+_METADATA = "agent.record_extraction.metadata"
 
 
 class DocumentConditionText:
@@ -9,9 +10,37 @@ class DocumentConditionText:
     code, since the model writes the period as dates and never into the condition."""
 
     @staticmethod
-    def of(condition: str | None, date_range: PathDateRange | None, t: LocaleHandler) -> str | None:
+    def of(
+        condition: str | None,
+        date_range: PathDateRange | None,
+        t: LocaleHandler,
+        metadata_filter: DocumentMetadataFilter | None = None,
+    ) -> str | None:
+        """`metadata_filter` is shown only where the user confirms the request: the judge reads the condition in the
+        user's words, which already name what the filter compares."""
         period = DocumentConditionText.period(date_range, t) if date_range is not None else None
-        return "; ".join(part for part in (condition, period) if part) or None
+        metadata = DocumentConditionText.metadata(metadata_filter, t) if metadata_filter is not None else None
+        return "; ".join(part for part in (condition, period, metadata) if part) or None
+
+    @staticmethod
+    def metadata(metadata_filter: DocumentMetadataFilter, t: LocaleHandler) -> str:
+        """The types and recorded values the filter compares, in words."""
+        types = [t(f"{_METADATA}.types", types=", ".join(metadata_filter.types))] if metadata_filter.types else []
+        conditions = [DocumentConditionText._condition(condition, t) for condition in metadata_filter.conditions]
+        return ", ".join([*types, *conditions])
+
+    @staticmethod
+    def _condition(condition: DocumentAttributeCondition, t: LocaleHandler) -> str:
+        attribute = condition.attribute.value.removeprefix("document_").replace("_", " ")
+        if condition.contains is not None:
+            return t(f"{_METADATA}.contains", attribute=attribute, text=condition.contains)
+        bounds = (condition.at_least, condition.at_most)
+        low, high = (" ".join(part for part in (condition.currency, bound) if part) for bound in bounds)
+        if condition.at_least is not None and condition.at_most is not None:
+            return t(f"{_METADATA}.between", attribute=attribute, low=low, high=high)
+        if condition.at_least is not None:
+            return t(f"{_METADATA}.at_least", attribute=attribute, low=low)
+        return t(f"{_METADATA}.at_most", attribute=attribute, high=high)
 
     @staticmethod
     def period(date_range: PathDateRange, t: LocaleHandler) -> str:

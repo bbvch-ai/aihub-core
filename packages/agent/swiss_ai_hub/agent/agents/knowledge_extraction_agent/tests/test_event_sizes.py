@@ -19,6 +19,8 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import RecordsExtractedEvent
 from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
+    DocumentMetadataCounts,
+    DocumentMetadataVerdict,
     ExtractedTableFile,
     ExtractionFileStore,
     KnowledgeDocumentListing,
@@ -69,6 +71,7 @@ def _run() -> ExtractionRun:
         document_condition=CONDITION,
         period=PERIOD,
         path_dates=PATH_DATES,
+        metadata=METADATA,
     )
 
 
@@ -93,6 +96,7 @@ def _left_out() -> KnowledgeDocumentSummary:
 
 # One path repeated: the parse is memoised, so the worst case costs milliseconds at import rather than seconds.
 PATH_DATES = KnowledgeDocumentListing(documents=[_left_out()] * 9_999).dated_within(PERIOD)[1]
+METADATA = DocumentMetadataCounts.collect([(_left_out().path, DocumentMetadataVerdict.EXCLUDED)] * 9_999)
 
 
 def _request(index: int) -> DocumentExtractionRequestedEvent:
@@ -229,6 +233,7 @@ async def test_the_failed_block_survives_when_every_list_is_full():
     assert summary.startswith(without_notices.summary)
     assert "**Zeitraum nach Pfad:**" in summary
     assert "**Wegen des Datums im Pfad ausgelassen:**" in summary
+    assert "**Wegen Typ oder Attribut ausgelassen:**" in summary
 
 
 @pytest.mark.asyncio
@@ -241,4 +246,9 @@ async def test_the_left_out_paths_are_bounded_on_every_documents_event():
     assert PATH_DATES.excluded == 9_999
     assert 0 < len(examples) <= PathDateCounts.EXCLUDED_EXAMPLE_LIMIT
     assert sum(len(json.dumps(example)) for example in examples) <= PathDateCounts.EXCLUDED_EXAMPLE_BYTES
+    assert len(METADATA.excluded_examples) <= DocumentMetadataCounts.EXCLUDED_EXAMPLE_LIMIT
+    assert (
+        sum(len(json.dumps(path)) for path in METADATA.excluded_examples)
+        <= DocumentMetadataCounts.EXCLUDED_EXAMPLE_BYTES
+    )
     assert max(_size(requested), _size(extracted)) < EVENT_LIMIT_BYTES

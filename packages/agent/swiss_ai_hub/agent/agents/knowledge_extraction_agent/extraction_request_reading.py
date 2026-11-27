@@ -1,5 +1,6 @@
 import logging
 from datetime import date
+from typing import Annotated
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.prompts.rich import RichPromptTemplate
@@ -45,6 +46,7 @@ class ExtractionRequestReading:
         displayer: EventDisplayer,
         user: UserIdentity | None,
         t: LocaleHandler,
+        document_types: Annotated[str, "The types in scope with their attributes, one per line; empty for none"] = "",
     ) -> ExtractionRequestAnswer | None:
         """The request as the model reads it; None when the model gave no usable answer. A model that loops in a term
         list until its output is cut is asked once more for the request without the terms."""
@@ -52,6 +54,7 @@ class ExtractionRequestReading:
         arguments = {
             "scope": scope.describe(),
             "facets": "\n".join(facets),
+            "document_types": document_types,
             "profile_instructions": profile_instructions or "",
             "awaiting_sample": awaiting_sample,
             "conversation": ExtractionRequestReading._conversation(history),

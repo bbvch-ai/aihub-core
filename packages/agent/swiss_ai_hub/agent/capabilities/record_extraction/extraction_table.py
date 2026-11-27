@@ -3,6 +3,7 @@ import json
 
 from swiss_ai_hub.core.events.agent import RecordsExtractedEvent
 from swiss_ai_hub.core.generative_ai import (
+    DocumentMetadataCounts,
     ExtractedTableMarkup,
     ExtractionFileStore,
     PathDateCounts,
@@ -245,6 +246,22 @@ class ExtractionTable:
         lines = [t(f"{key}.document_condition", condition=condition)] if condition else []
         if run.path_dates is not None:
             lines.extend(ExtractionTable.path_date_lines(run.path_dates, t))
+        if run.metadata is not None:
+            lines.extend(ExtractionTable.metadata_lines(run.metadata, t))
+        return lines
+
+    @staticmethod
+    def metadata_lines(counts: DocumentMetadataCounts, t: LocaleHandler) -> list[str]:
+        """How the type and attribute filter sorted the documents, and the first paths it left out."""
+        key = SUMMARY_KEY
+        lines: list[str] = []
+        if counts.total > 0:
+            lines.append(t(f"{key}.metadata", matched=counts.matched, excluded=counts.excluded, unknown=counts.unknown))
+        if counts.excluded_examples:
+            files = ExtractionTable._listed(
+                counts.excluded_examples, t, limit_bytes=PATH_DATE_LIST_BYTES, total=counts.excluded
+            )
+            lines.append(t(f"{key}.metadata_excluded", files=files))
         return lines
 
     @staticmethod

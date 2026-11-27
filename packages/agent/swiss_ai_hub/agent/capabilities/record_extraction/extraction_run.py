@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair, PathDateCounts, PathDateRange
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair, DocumentMetadataCounts, PathDateCounts, PathDateRange
 
 
 class ExtractionRun(BaseModel):
@@ -47,4 +47,8 @@ class ExtractionRun(BaseModel):
     path_dates: Annotated[
         PathDateCounts | None,
         Field(description="How the period sorted the selected documents by their paths, for the table's summary."),
+    ] = None
+    metadata: Annotated[
+        DocumentMetadataCounts | None,
+        Field(description="How the type and attribute filter sorted the selected documents, for the table's summary."),
     ] = None

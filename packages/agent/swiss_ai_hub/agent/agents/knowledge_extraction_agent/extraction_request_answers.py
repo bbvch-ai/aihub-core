@@ -108,12 +108,14 @@ class ExtractionRequestAnswers(BaseModel):
 
     @staticmethod
     def _cleared(keys: set[str]) -> dict[str, Any]:
-        """The reading fields the dropped parts clear; every document drops the period too."""
+        """The reading fields the dropped parts clear; every document drops the period and the types and values too."""
         cleared: dict[str, Any] = {}
         if "where" in keys:
             cleared["locations"] = []
         if "documents" in keys:
-            cleared.update(document_condition=None, period_start=None, period_end=None)
+            cleared.update(
+                document_condition=None, period_start=None, period_end=None, document_types=[], attribute_conditions=[]
+            )
         if "rows" in keys:
             cleared["instructions"] = None
         return cleared
