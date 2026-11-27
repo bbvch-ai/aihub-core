@@ -86,15 +86,16 @@ Keycloak confirms with **Email sent to user.**
 
    ![The invitation mail with the account update link](../../../../../media/platform/inviting_users/07_invitation_mail.png)
 
-2. The link opens the sign-in page, which asks for a new password. After **Submit**, Keycloak shows **Account updated**.
-   The address is now verified.
+2. The link opens the sign-in page, which asks for a new password. After **Submit**, Keycloak shows **Account updated**
+   with a **Go to Swiss AI-Hub** link. The address is now verified.
 
    ![Setting a password](../../../../../media/platform/inviting_users/08_set_password.png)
 
    ![Account updated](../../../../../media/platform/inviting_users/09_account_updated.png)
 
-3. From then on, the person opens Swiss AI-Hub, chooses **Login with Keycloak** and signs in with their email address
-   and the new password. This also works on instances whose other users sign in through Entra ID.
+3. The link opens Swiss AI-Hub. The person chooses **Login with Keycloak** and signs in with their email address and the
+   new password, and Swiss AI-Hub opens their tenant. They sign in the same way from then on. This also works on
+   instances whose other users sign in through Entra ID.
 
    ![Signing in with email and password](../../../../../media/platform/inviting_users/10_sign_in.png)
 
