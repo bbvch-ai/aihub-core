@@ -345,8 +345,10 @@ class KnowledgeService:
     def _revoke_knowledge_access(
         rules: Annotated[list[str], "User and admin rules to revoke from every tenant"],
         role_names: Annotated[list[str], "Per-resource admin roles to delete"],
+        resource_rules: Annotated[list[str], "User and admin rules of the deleted resource, revoked with their subtree"],
     ) -> None:
-        """Removes the grants a create made, so a deleted resource leaves no inert rules behind.
+        """Removes the grants a create made, and any an admin added to a role, so a deleted resource leaves
+        no inert rules behind.
 
         Best-effort throughout: teardown is already under way by the time this runs, and a stale rule
         must not block it.
@@ -358,6 +360,10 @@ class KnowledgeService:
             KnowledgeService._best_effort(
                 lambda name=role_name: RoleEntity.delete_role_from_all_tenants(name), f"delete role {role_name}"
             )
+        KnowledgeService._best_effort(
+            lambda: RoleEntity.revoke_access_rules_under_from_all_roles(resource_rules),
+            f"revoke {resource_rules} from roles",
+        )
 
     @staticmethod
     def _best_effort(action: Callable[[], Any], description: str) -> None:
@@ -1198,6 +1204,10 @@ class KnowledgeService:
                     for entity in namespaces
                 ],
             ],
+            resource_rules=[
+                AccessChecker.knowledge_database_user_rule(database),
+                AccessChecker.knowledge_database_admin_rule(database),
+            ],
         )
 
         BucketEntity.mark_deleting(str(bucket.id))
@@ -1235,6 +1245,10 @@ class KnowledgeService:
             ],
             role_names=[
                 KnowledgeService._knowledge_admin_role_name(database, namespace_entity.namespace_name),
+            ],
+            resource_rules=[
+                AccessChecker.knowledge_namespace_user_rule(database, namespace_entity.namespace_name),
+                AccessChecker.knowledge_namespace_admin_rule(database, namespace_entity.namespace_name),
             ],
         )
 

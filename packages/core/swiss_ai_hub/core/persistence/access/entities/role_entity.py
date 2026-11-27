@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Self
 
 from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentListField, IntField, ListField, StringField
@@ -194,6 +195,26 @@ class RoleEntity(Document):
         """
         tenant_ids = {role.tenant_id for role in cls.objects(name=role_name).only("tenant_id")}
         return sum(1 for tenant_id in tenant_ids if cls.delete_role(role_name, tenant_id))
+
+    @classmethod
+    @trace_fn
+    def revoke_access_rules_under_from_all_roles(cls, resource_rules: list[str]) -> int:
+        """Removes every rule naming one of ``resource_rules`` or anything beneath it from every role.
+
+        Matched by token prefix rather than exact rule because an admin can write any shape into a role
+        (``.>``, ``.*``, a single namespace), and any one left behind would grant a later resource of the
+        same name. Saves row by row so ``AccessChangeHook`` re-syncs OpenWebUI. Returns the roles changed.
+        """
+        if not resource_rules:
+            return 0
+
+        pattern = re.compile(rf"^(?:{'|'.join(re.escape(rule) for rule in resource_rules)})(?:\.|$)")
+        changed_roles = 0
+        for role in cls.objects(__raw__={"access_rules": {"$regex": pattern.pattern}}):
+            role.access_rules = [rule for rule in role.access_rules if not pattern.match(rule)]
+            role.save()
+            changed_roles += 1
+        return changed_roles
 
     @classmethod
     @trace_fn
