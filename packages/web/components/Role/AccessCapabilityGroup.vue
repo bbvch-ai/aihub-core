@@ -48,12 +48,12 @@
         v-for="cap in group.capabilities ?? []"
         :key="cap.key"
         class="group/cap flex items-start gap-3 rounded-md py-1 pr-1"
-        :class="readonly || !cap.toggleable || cap.locked ? 'cursor-default' : 'cursor-pointer'"
+        :class="isDisabled(cap) ? 'cursor-default' : 'cursor-pointer'"
       >
         <Checkbox
           :model-value="cap.granted"
           binary
-          :disabled="readonly || !cap.toggleable || cap.locked"
+          :disabled="isDisabled(cap)"
           size="small"
           class="mt-0.5"
           @update:model-value="(value) => onToggle(cap, value)"
@@ -96,6 +96,7 @@
         :group="sub"
         :depth="depth + 1"
         :readonly="readonly"
+        :busy="busy"
         @add="(rules) => emit('add', rules)"
         @remove="(rules) => emit('remove', rules)"
       />
@@ -114,10 +115,16 @@ const props = withDefaults(defineProps<{
   group: CapabilityGroup
   depth?: number
   readonly?: boolean
+  // While the catalog is re-evaluated the rows on screen are the previous result: `granted` and `locked`
+  // may already be outdated, so a click would add or remove based on the wrong state.
+  busy?: boolean
 }>(), {
   depth: 0,
   readonly: false,
+  busy: false,
 })
+
+const isDisabled = (cap: Capability) => props.readonly || props.busy || !cap.toggleable || cap.locked
 
 const emit = defineEmits<{
   add: [rules: string[]]

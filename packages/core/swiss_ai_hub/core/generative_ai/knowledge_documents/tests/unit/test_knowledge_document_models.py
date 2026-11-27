@@ -94,3 +94,22 @@ def test_a_text_range_ends_where_its_text_does() -> None:
     )
 
     assert (document.text, document.start, document.end, document.text_length) == ("a😀b", 4, 7, 10)
+
+
+def test_a_summary_names_its_collection_by_the_database_not_the_bucket() -> None:
+    resolved = _RESOLVED.model_copy(update={"db_name": "kb_db"})
+
+    summary = KnowledgeDocumentSummary.from_ref_doc(_ref_doc("s3://kb/Finanzen/notes.txt"), resolved)
+
+    assert summary.collection_name == "kb_db/finance"
+
+
+def test_a_summary_stored_before_collection_names_loads_without_one() -> None:
+    stored = KnowledgeDocumentSummary.from_ref_doc(_ref_doc("s3://kb/Finanzen/notes.txt"), _RESOLVED).model_dump(
+        mode="json", exclude={"collection_name"}
+    )
+
+    summary = KnowledgeDocumentSummary.model_validate(stored)
+
+    assert summary.collection_name is None
+    assert summary.path == "notes.txt"

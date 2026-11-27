@@ -136,9 +136,10 @@ form:
   where:
     header: Location
     question: 'Which documents should I read? I understood: %{value}.'
-    hint: To read only some, name a folder, a file or a year.
-    hint_with_documents: To read only some, name a folder or a file; a period goes
-      under Document Condition.
+    hint: To read only some, name a collection, a folder, a file or a year.
+    hint_with_documents: To read only some, name a collection, a folder or a file;
+      a period goes under Document Condition.
+    collections: 'Collections: %{collections}'
     folders: 'Folders: %{folders}'
     anything: All documents
     anything_description: Read every document in this agent's scope

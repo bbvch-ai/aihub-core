@@ -298,17 +298,19 @@ class OpenWebuiProvisioner:
         tenants: list[dict[str, Any]],
         roles_by_tenant: dict[str, list[dict[str, Any]]],
         aihub_groups: dict[str, Group],
+        enabled_user_ids: set[str],
     ) -> DesiredGroupMembers:
         """Only users whose active tenant is the group's tenant belong in it, matching the tenant they act in.
 
-        The sysadmin group is written after the role groups, so a tenant role that happens to share its name never
-        adds that role's holders to it.
+        Only enabled users belong anywhere: a user disabled in Keycloak keeps their active tenant and their OpenWebUI
+        session, and these groups are what offer them models there. The sysadmin group is written after the role
+        groups, so a tenant role that happens to share its name never adds that role's holders to it.
         """
         sys_admin_ids = await KeycloakAdminService.get_user_ids_with_realm_role(SYS_ADMIN_ROLE)
         desired: DesiredGroupMembers = {}
         for tenant in tenants:
             tenant_id = tenant["id"]
-            active_user_ids = await self._get_active_user_ids(tenant_id)
+            active_user_ids = await self._get_active_user_ids(tenant_id) & enabled_user_ids
 
             for role_data in roles_by_tenant.get(tenant["name"], []):
                 group_name = f"{AIHUB_GROUP_PREFIX}{tenant['name']}:{role_data['name']}"
@@ -424,7 +426,10 @@ class OpenWebuiProvisioner:
             keycloak_users = await KeycloakAdminService.get_all_users()
             aihub_users = [{"id": u.id, "email": u.email} for u in keycloak_users]
             user_id_mapping = self._build_user_id_mapping(aihub_users, owui_users)
-            desired_members = await self._build_desired_memberships(tenants, roles_by_tenant, aihub_groups)
+            enabled_user_ids = {user.id for user in keycloak_users if user.enabled}
+            desired_members = await self._build_desired_memberships(
+                tenants, roles_by_tenant, aihub_groups, enabled_user_ids
+            )
             group_member_ids = {uid for member_ids in desired_members.values() for uid in member_ids}
             user_id_mapping |= await self._provision_missing_accounts(
                 keycloak_users, group_member_ids, user_id_mapping, scim=scim

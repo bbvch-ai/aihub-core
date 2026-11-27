@@ -6,7 +6,9 @@ import type { MaybeRefOrGetter } from 'vue'
  * Evaluates the capability catalog (services / agents / processes) against a draft rule set.
  *
  * Keyed on the rules so it refetches whenever they change — ticking a capability adds its exact rule,
- * which re-evaluates the whole catalog (e.g. a broad rule then locks the capabilities it covers).
+ * which re-evaluates the whole catalog (e.g. a broad rule then locks the capabilities it covers). Every
+ * tick is a new key, so the previous catalog stays on screen while the next one loads: dropping it would
+ * collapse the list and lose the admin's scroll position after each tick.
  */
 export function useAccessCapabilities(
   rules: MaybeRefOrGetter<string[]>,
@@ -22,7 +24,7 @@ export function useAccessCapabilities(
 
   const {
     data: capabilities,
-    isPending: capabilitiesAreLoading,
+    isLoading: capabilitiesAreLoading,
   } = useQuery<AccessCapabilitiesResponse>({
     key: () => [
       'tenant', targetTenantId.value, 'access-capabilities',
@@ -40,6 +42,7 @@ export function useAccessCapabilities(
         },
       })
     },
+    placeholderData: previousData => previousData,
   })
 
   return {

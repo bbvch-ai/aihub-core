@@ -6,6 +6,13 @@ from pydantic import BaseModel, Field
 class KnowledgeDocumentCriteria(BaseModel):
     """One way to pick documents: every condition given must hold, conditions left out do not narrow."""
 
+    collection: Annotated[
+        str | None,
+        Field(
+            description="Only documents of this collection, named 'database/collection' as the scope lists it. A path "
+            "starts inside its collection, so a collection is named here, never in path_glob."
+        ),
+    ] = None
     path_glob: Annotated[
         str | None,
         Field(description="Glob on the path relative to the collection, e.g. 'invoices/**' or 'contracts/*.pdf'."),

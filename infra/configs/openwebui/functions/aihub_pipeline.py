@@ -1056,6 +1056,10 @@ class HumanInTheLoopHandler(EventHandler):
     - HumanInTheLoopChatRequestEvent: Chat-style input (appears as regular message)
     """
 
+    # OpenWebUI 0.12+ cancels the question dialog after timeout_ms, clamped to 60-240 s (120 s when unset); a slower
+    # answer is still taken from the chat after the text fallback
+    QUESTION_DIALOG_TIMEOUT_MS = 240_000
+
     async def can_handle(
         self, event: Annotated[dict[str, Any], "Event to check"]
     ) -> Annotated[bool, "True if HITL request event"]:
@@ -1180,7 +1184,11 @@ class HumanInTheLoopHandler(EventHandler):
             result = await context.caller(
                 {
                     "type": "request:user_input",
-                    "data": {"questions": questions, "allow_other": True, "timeout_ms": None},
+                    "data": {
+                        "questions": questions,
+                        "allow_other": True,
+                        "timeout_ms": HumanInTheLoopHandler.QUESTION_DIALOG_TIMEOUT_MS,
+                    },
                 }
             )
         except Exception as e:
@@ -2027,7 +2035,7 @@ class StreamingService:
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
         owui_file_ids: Annotated[Optional[dict[str, str]], "Agent file id -> Open WebUI file id"] = None,
         attachments: Annotated[Any, "Registers files the agent showed as Open WebUI files"] = None,
-    ) -> None:
+    ) -> Annotated[bool, "False when the API refused the event or the stream broke off"]:
         """Stream an event and process responses"""
         endpoint_url = self.build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
 
@@ -2066,7 +2074,8 @@ class StreamingService:
                 if result and result.get("type") == "error":
                     # HTTP error occurred - handle it
                     state_manager.finalize_all_blocks()
-                    await self._handle_http_error_from_info(result, event_emitter)
+                    await self._handle_http_error_from_info(result, event_emitter, state_manager)
+                    return False
                 else:
                     if attachments and (links := attachments.download_links(state_manager.serialize_to_html())):
                         state_manager.close_current_block()
@@ -2092,7 +2101,9 @@ class StreamingService:
                         )
             except Exception as e:
                 state_manager.finalize_all_blocks()
-                await self._handle_general_error(e, event_emitter)
+                await self._handle_general_error(e, event_emitter, state_manager)
+                return False
+        return True
 
     async def _process_stream(
         self,
@@ -2166,6 +2177,7 @@ class StreamingService:
         self,
         error_info: Annotated[dict[str, Any], "Error info with status_code and body"],
         emitter: Annotated[EventEmitter, "Event emitter"],
+        state_manager: Annotated[StreamingStateManager, "State manager"],
     ) -> None:
         """Handle HTTP errors using the pre-formatted message from the API response."""
         status_code = error_info["status_code"]
@@ -2200,17 +2212,24 @@ class StreamingService:
             }
         )
 
-        await emitter(
-            {
-                "type": "chat:message:delta",
-                "data": {"content": f"\n\n> [!CAUTION]\n> {error_msg}\n"},
-            }
-        )
+        await self._show_error_in_answer(error_msg, emitter, state_manager)
+
+    @staticmethod
+    async def _show_error_in_answer(
+        message: Annotated[str, "Error to show"],
+        emitter: Annotated[EventEmitter, "Event emitter"],
+        state_manager: Annotated[StreamingStateManager, "State manager"],
+    ) -> None:
+        """The pipe returns the state as the final answer, so an error emitted only as a delta was replaced by an
+        empty answer: a refused user saw nothing at all."""
+        state_manager.start_text_block(f"\n\n> [!CAUTION]\n> {message}\n")
+        await emitter({"type": "replace", "data": {"content": state_manager.serialize_to_html()}})
 
     async def _handle_general_error(
         self,
         error: Annotated[Exception, "General error"],
         emitter: Annotated[EventEmitter, "Event emitter"],
+        state_manager: Annotated[StreamingStateManager, "State manager"],
     ) -> None:
         """Handle general errors"""
         logger.exception(f"Streaming error: {error}")
@@ -2227,12 +2246,7 @@ class StreamingService:
             }
         )
 
-        await emitter(
-            {
-                "type": "chat:message:delta",
-                "data": {"content": f"\n\n> [!CAUTION]\n> {str(error)}\n"},
-            }
-        )
+        await self._show_error_in_answer(str(error), emitter, state_manager)
 
     async def send_hitl_response(
         self,
@@ -3454,7 +3468,7 @@ class Pipe:
                     )
 
                 # Stream the conversation
-                await self._streaming_service.stream_response(
+                completed = await self._streaming_service.stream_response(
                     agent_class,
                     agent_id,
                     event_name,
@@ -3475,17 +3489,18 @@ class Pipe:
                     ),
                 )
 
-                # Emit completion status
-                await __event_emitter__(
-                    {
-                        "type": "status",
-                        "data": {
-                            "action": None,
-                            "description": "Response completed",
-                            "done": True,
-                        },
-                    }
-                )
+                # A failed stream already set its error status, which this one would cover up
+                if completed:
+                    await __event_emitter__(
+                        {
+                            "type": "status",
+                            "data": {
+                                "action": None,
+                                "description": "Response completed",
+                                "done": True,
+                            },
+                        }
+                    )
 
                 logger.debug("Request processing completed")
                 return state_manager.serialize_to_html()

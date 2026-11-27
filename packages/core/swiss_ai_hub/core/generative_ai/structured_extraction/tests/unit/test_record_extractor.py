@@ -37,6 +37,7 @@ def _document(text: str, start: int = 0, end: int | None = None) -> KnowledgeDoc
     summary = KnowledgeDocumentSummary(
         id="doc-1",
         collection=BucketNamespacePair(bucket_name="kb", namespace_name="finance"),
+        collection_name="kb/finance",
         path="invoices/2025/acme.pdf",
         filename="acme.pdf",
         title="Acme invoice",

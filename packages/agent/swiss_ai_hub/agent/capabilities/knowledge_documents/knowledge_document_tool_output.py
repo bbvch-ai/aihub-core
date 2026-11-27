@@ -73,6 +73,14 @@ class KnowledgeDocumentToolOutput:
         )
 
     @staticmethod
+    def unknown_collection(scope: KnowledgeDocumentRunScope, collection: str) -> str:
+        """Named rather than answered with an empty result, which a model takes for a collection without documents."""
+        return (
+            f"No collection '{collection}' in scope. Name one exactly as 'database/collection' below, or leave "
+            f"collection empty for all. {scope.describe()}"
+        )
+
+    @staticmethod
     def search(scope: KnowledgeDocumentRunScope, result: KnowledgeContentSearchResult, offset: int) -> str:
         if not result.matches:
             return (

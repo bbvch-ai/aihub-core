@@ -10,12 +10,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
-from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_signature_rejected_error import (
-    OpenWebuiSignatureRejectedError,
-)
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 
 logger = logging.getLogger(__name__)
@@ -27,11 +25,17 @@ class OpenWebuiAuthHandler(AuthHandler):
 
     Validates the HMAC signature from OpenWebUI headers and resolves the user identity from Keycloak. The signature
     covers the time it was made, so a captured header set stops working once it is older than
-    ``SIGNATURE_MAX_AGE_SECONDS``.
+    ``SIGNATURE_MAX_AGE_SECONDS``. A signed request is decided here alone, see ``TokenAndOauth2Handler``.
     """
 
     SIGNATURE_MAX_AGE_SECONDS: ClassVar[int] = 300
+    SIGNATURE_HEADER: ClassVar[str] = "X-OpenWebUI-Signature"
     _TIMESTAMP_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"\d{1,12}", re.ASCII)
+
+    @classmethod
+    def is_signed(cls, request: Request) -> bool:
+        """Only the pipe functions sign. OpenWebUI's own connections forward the user in unsigned headers."""
+        return cls.SIGNATURE_HEADER in request.headers
 
     def __init__(self, base_auth_handler: TokenAuthHandler):
         """Initialize with a token auth handler to verify the bearer token."""
@@ -52,11 +56,11 @@ class OpenWebuiAuthHandler(AuthHandler):
         timestamp = request.headers.get("X-OpenWebUI-Timestamp")
         if timestamp is None or not self._TIMESTAMP_PATTERN.fullmatch(timestamp):
             logger.warning("OpenWebUI request without a valid signature timestamp. Is the pipe function up to date?")
-            raise OpenWebuiSignatureRejectedError("Missing or malformed X-OpenWebUI-Timestamp.")
+            raise HTTPException(status_code=401, detail="Missing or malformed X-OpenWebUI-Timestamp.")
 
         if not self._verify_signature(signature, timestamp, user_name, user_email):
             logger.warning("Invalid OpenWebUI signature for user. The request may be tampered.")
-            raise OpenWebuiSignatureRejectedError("Invalid OpenWebUI signature.")
+            raise HTTPException(status_code=401, detail="Invalid OpenWebUI signature.")
 
         age_seconds = int(time.time()) - int(timestamp)
         if abs(age_seconds) > self.SIGNATURE_MAX_AGE_SECONDS:
@@ -64,16 +68,32 @@ class OpenWebuiAuthHandler(AuthHandler):
                 f"OpenWebUI signature is {age_seconds}s old, outside the {self.SIGNATURE_MAX_AGE_SECONDS}s window. "
                 "The same age on every request points to clock skew between OpenWebUI and the API."
             )
-            raise OpenWebuiSignatureRejectedError("Expired OpenWebUI signature.")
+            raise HTTPException(status_code=401, detail="Expired OpenWebUI signature.")
+
+    @staticmethod
+    async def _find_enabled_keycloak_user(user_email: str) -> KeycloakUser:
+        """OpenWebUI keeps its own session after Keycloak deletes or disables the user, so the pipe goes on signing
+        for them."""
+        keycloak_user = await KeycloakAdminService.find_user_by_email(user_email)
+        if not keycloak_user:
+            logger.error(f"OpenWebUI user with email {user_email} not found in Keycloak")
+            raise HTTPException(
+                status_code=401,
+                detail="User not found. Please login via OAuth2 before using OpenWebUI integration.",
+            )
+        if not keycloak_user.enabled:
+            logger.warning(f"OpenWebUI user {keycloak_user.id} is disabled in Keycloak")
+            raise HTTPException(status_code=403, detail="This account is disabled.")
+        return keycloak_user
 
     async def __call__(
-        self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
+        self, request: Request, bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer())
     ) -> UserIdentity:
-        self.base_auth_handler.verify_token(bearer_token.credentials)
+        self.base_auth_handler.verify_token(bearer_token.credentials if bearer_token else "")
 
         user_name = request.headers.get("X-OpenWebUI-User-Name")
         user_email = request.headers.get("X-OpenWebUI-User-Email")
-        signature = request.headers.get("X-OpenWebUI-Signature")
+        signature = request.headers.get(self.SIGNATURE_HEADER)
 
         if not (user_name and user_email and signature):
             raise HTTPException(
@@ -86,14 +106,7 @@ class OpenWebuiAuthHandler(AuthHandler):
 
         logger.info("Successfully authenticated OpenWebUI user via signature")
 
-        # Lookup existing user by email in Keycloak
-        keycloak_user = await KeycloakAdminService.find_user_by_email(user_email)
-        if not keycloak_user:
-            logger.error(f"OpenWebUI user with email {user_email} not found in Keycloak")
-            raise HTTPException(
-                status_code=401,
-                detail="User not found. Please login via OAuth2 before using OpenWebUI integration.",
-            )
+        keycloak_user = await self._find_enabled_keycloak_user(user_email)
 
         # A sysadmin holding no tenant role would be refused every agent the chat offers them. The signed headers only
         # prove who the user is (this handler runs first on every route), so they get the chat's user access, never
