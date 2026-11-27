@@ -484,13 +484,13 @@ Rules when editing:
 **Realm mail** (`keycloak.smtp_server` in `compose-config.yml`): every stage sends from `KEYCLOAK_SMTP_MAILBOX` (default
 `noreply.ai-hub@bbv.ch`) through `smtp.office365.com` with an OAuth client-credentials token (`authType: token`); with
 empty `KEYCLOAK_SMTP_*` values (the dev default) Keycloak simply sends nothing. Invitations are Keycloak's own
-admin-triggered "Credential Reset" mail (no platform API or UI). Such a mail names no application, so Keycloak's "Account updated" page has no link back; the aihub login theme's
-`info.ftl` (template `keycloak-theme-info.ftl`) adds one to `AIHUB_FRONTEND_ORIGIN` (`https://${DOMAIN}` in deployed stages)
-wherever Keycloak shows none. A Keycloak hosting several realms (aihub-k8s) sets `aihubUrl.<realm name>` in
-`theme.properties` per realm; it wins over `aihubUrl`. The client secret is the one deliberate `${...}`
-placeholder in the realm: `${vault.smtp-client-secret}` is resolved by Keycloak's file vault, which the entrypoint fills
-from `KEYCLOAK_SMTP_CLIENT_SECRET` into a tmpfs at `/opt/keycloak/vault`. Operator setup:
-`docs/docs/2_platform/3_deployment_guide/11_realm_mail/`. Tests:
+admin-triggered "Credential Reset" mail (no platform API or UI). Such a mail names no application, so Keycloak's
+"Account updated" page has no link back; the aihub login theme's `info.ftl` (template `keycloak-theme-info.ftl`) adds
+one to `AIHUB_FRONTEND_ORIGIN` (`https://${DOMAIN}` in deployed stages) wherever Keycloak shows none. A Keycloak hosting
+several realms (aihub-k8s) sets `aihubUrl.<realm name>` in `theme.properties` per realm; it wins over `aihubUrl`. The
+client secret is the one deliberate `${...}` placeholder in the realm: `${vault.smtp-client-secret}` is resolved by
+Keycloak's file vault, which the entrypoint fills from `KEYCLOAK_SMTP_CLIENT_SECRET` into a tmpfs at
+`/opt/keycloak/vault`. Operator setup: `docs/docs/2_platform/3_deployment_guide/11_realm_mail/`. Tests:
 `uv run pytest infra/deployment/tests/test_keycloak_realm_mail.py`.
 
 **Federated-user gate**: users who sign in through an identity provider must never get a password, or "Forgot password"
