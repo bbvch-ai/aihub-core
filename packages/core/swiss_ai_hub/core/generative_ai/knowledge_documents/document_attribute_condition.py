@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from swiss_ai_hub.core.generative_ai.document.classification.amount_text_parser import AmountTextParser
 from swiss_ai_hub.core.generative_ai.document.classification.attribute_value_type import AttributeValueType
+from swiss_ai_hub.core.generative_ai.document.classification.currency_text_parser import CurrencyTextParser
 from swiss_ai_hub.core.generative_ai.document.classification.date_precision import DatePrecision
 from swiss_ai_hub.core.generative_ai.document.classification.document_attribute import DocumentAttribute
 from swiss_ai_hub.core.generative_ai.document.classification.document_attribute_definition import (
@@ -48,6 +49,13 @@ class DocumentAttributeCondition(BaseModel):
         str | None,
         Field(description="Highest value of a date (YYYY-MM-DD) or an amount (a number); null when open or for text."),
     ] = None
+    currency: Annotated[
+        str | None,
+        Field(
+            description="The currency an amount is stated in, as its ISO code, e.g. 'CHF' for 'over CHF 10'000'; null "
+            "when the request names none, and always for a date or text."
+        ),
+    ] = None
 
     @property
     def definition(self) -> DocumentAttributeDefinition:
@@ -63,7 +71,11 @@ class DocumentAttributeCondition(BaseModel):
                 return self._readable_amounts()
             case _:
                 text = (self.contains or "").strip()
-                return self.model_copy(update={"contains": text, "at_least": None, "at_most": None}) if text else None
+                return (
+                    self.model_copy(update={"contains": text, "at_least": None, "at_most": None, "currency": None})
+                    if text
+                    else None
+                )
 
     def verdict(
         self,
@@ -73,11 +85,13 @@ class DocumentAttributeCondition(BaseModel):
         ] = DocumentMetadataVerdict.EXCLUDED,
     ) -> DocumentMetadataVerdict:
         """A type the attribute does not apply to never carries it, so by default it fails the condition; an empty
-        value on a type it applies to is unknown."""
+        value on a type it applies to is unknown. When only a secondary type carries it, ingestion stored the primary
+        type's values alone, so the document is unknown rather than excluded."""
         if document.document_type not in DocumentType:
             return DocumentMetadataVerdict.UNKNOWN
-        if self.attribute not in DocumentTypeCatalog.type_definition(DocumentType(document.document_type)).attributes:
-            return inapplicable
+        if not self._applies_to(document.document_type):
+            secondary = any(self._applies_to(name) for name in document.document_types)
+            return DocumentMetadataVerdict.UNKNOWN if secondary else inapplicable
         values = document.document_attributes
         definition = self.definition
         match definition.value_type:
@@ -86,11 +100,18 @@ class DocumentAttributeCondition(BaseModel):
             case AttributeValueType.PERIOD:
                 return self._date_verdict(self._stored_period(values, definition))
             case AttributeValueType.AMOUNT:
-                return self._amount_verdict(values.get(definition.key))
+                return self._amount_verdict(values.get(definition.key), values)
             case _:
                 return self._text_verdict(values.get(definition.key))
 
+    def _applies_to(self, type_name: str) -> bool:
+        if type_name not in DocumentType:
+            return False
+        return self.attribute in DocumentTypeCatalog.type_definition(DocumentType(type_name)).attributes
+
     def _readable_dates(self) -> Self | None:
+        """A bound the model wrote that names no date drops the condition rather than the request: the condition stays
+        in the user's words in the document condition, so the judge still reads it."""
         try:
             period = PathDateRange.written(self.at_least, self.at_most)
         except ValueError:
@@ -102,21 +123,32 @@ class DocumentAttributeCondition(BaseModel):
                 "contains": None,
                 "at_least": period.start.isoformat() if period.start else None,
                 "at_most": period.end.isoformat() if period.end else None,
+                "currency": None,
             }
         )
 
     def _readable_amounts(self) -> Self | None:
+        """The currency is read from its own field or from a bound written with it ("CHF 10'000"); a currency named but
+        not readable drops the condition, since comparing the bare number would mix currencies."""
         low, high = AmountTextParser.parse(self.at_least), AmountTextParser.parse(self.at_most)
         unreadable = (self.at_least and low is None) or (self.at_most and high is None)
         if unreadable or (low is None and high is None):
             return None
         if low is not None and high is not None and low > high:
             return None
+        currency = (
+            CurrencyTextParser.parse(self.currency)
+            or CurrencyTextParser.parse(self.at_least)
+            or CurrencyTextParser.parse(self.at_most)
+        )
+        if (self.currency or "").strip() and currency is None:
+            return None
         return self.model_copy(
             update={
                 "contains": None,
                 "at_least": DocumentAttributeCondition._amount_text(low),
                 "at_most": DocumentAttributeCondition._amount_text(high),
+                "currency": currency,
             }
         )
 
@@ -133,9 +165,15 @@ class DocumentAttributeCondition(BaseModel):
             return DocumentMetadataVerdict.MATCH
         return DocumentMetadataVerdict.EXCLUDED
 
-    def _amount_verdict(self, stored: object) -> DocumentMetadataVerdict:
+    def _amount_verdict(self, stored: object, values: _StoredValues) -> DocumentMetadataVerdict:
+        """An amount in another currency, or one whose currency was not recorded, is unknown: nothing here converts
+        currencies, and the bare numbers say nothing about each other."""
         if not isinstance(stored, int | float):
             return DocumentMetadataVerdict.UNKNOWN
+        if self.currency is not None:
+            stored_currency = values.get(DocumentTypeCatalog.attribute_definition(DocumentAttribute.CURRENCY).key)
+            if not isinstance(stored_currency, str) or stored_currency.upper() != self.currency:
+                return DocumentMetadataVerdict.UNKNOWN
         too_low = self.at_least is not None and stored < float(self.at_least)
         too_high = self.at_most is not None and stored > float(self.at_most)
         return DocumentMetadataVerdict.EXCLUDED if too_low or too_high else DocumentMetadataVerdict.MATCH

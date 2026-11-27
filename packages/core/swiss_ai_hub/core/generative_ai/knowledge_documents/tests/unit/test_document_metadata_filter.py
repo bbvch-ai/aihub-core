@@ -59,7 +59,24 @@ def test_a_type_matches_the_primary_or_a_secondary_type() -> None:
     assert contracts.verdict(_document("contract")) is MATCH
     assert contracts.verdict(_document("letter", secondary=["contract"])) is MATCH
     assert contracts.verdict(_document("invoice")) is EXCLUDED
-    assert contracts.verdict(_document("other")) is EXCLUDED
+
+
+@pytest.mark.parametrize("document_type", ["other", "memo"])
+def test_other_and_a_type_the_catalog_no_longer_holds_are_unknown(document_type: str) -> None:
+    hooli_contracts = DocumentMetadataFilter(
+        types=[DocumentType.CONTRACT], conditions=[_condition(DocumentAttribute.PARTIES, contains="Hooli")]
+    )
+
+    assert hooli_contracts.verdict(_document(document_type)) is UNKNOWN
+
+
+def test_an_attribute_only_a_secondary_type_carries_is_unknown() -> None:
+    large_invoices = DocumentMetadataFilter(
+        types=[DocumentType.INVOICE], conditions=[_condition(DocumentAttribute.TOTAL_AMOUNT, at_least="10000")]
+    )
+
+    assert large_invoices.verdict(_document("email_thread", secondary=["invoice"])) is UNKNOWN
+    assert large_invoices.verdict(_document("report", secondary=["policy"])) is EXCLUDED
 
 
 def test_text_matches_when_the_value_contains_it_case_ignored() -> None:
@@ -79,10 +96,30 @@ def test_an_attribute_the_type_does_not_carry_excludes_the_document() -> None:
 
 
 def test_amounts_match_a_range() -> None:
-    large = DocumentMetadataFilter(conditions=[_condition(DocumentAttribute.TOTAL_AMOUNT, at_least="CHF 1'000")])
+    large = DocumentMetadataFilter(conditions=[_condition(DocumentAttribute.TOTAL_AMOUNT, at_least="1'000")])
 
     assert large.verdict(_document("invoice", total_amount=4860.35)) is MATCH
     assert large.verdict(_document("invoice", total_amount=999.0)) is EXCLUDED
+
+
+def test_an_amount_in_another_or_no_recorded_currency_is_unknown() -> None:
+    condition = _condition(DocumentAttribute.TOTAL_AMOUNT, at_least="CHF 10'000")
+    large = DocumentMetadataFilter(conditions=[condition])
+
+    assert condition.currency == "CHF"
+    assert large.verdict(_document("invoice", total_amount=12_000.0, currency="CHF")) is MATCH
+    assert large.verdict(_document("invoice", total_amount=9_000.0, currency="CHF")) is EXCLUDED
+    assert large.verdict(_document("invoice", total_amount=9_800.0, currency="EUR")) is UNKNOWN
+    assert large.verdict(_document("invoice", total_amount=500_000.0, currency="JPY")) is UNKNOWN
+    assert large.verdict(_document("invoice", total_amount=12_000.0)) is UNKNOWN
+
+
+def test_a_currency_the_parser_cannot_read_drops_the_amount_condition() -> None:
+    named = DocumentAttributeCondition(attribute=DocumentAttribute.TOTAL_AMOUNT, at_least="10000", currency="Franken")
+    unreadable = DocumentAttributeCondition(attribute=DocumentAttribute.TOTAL_AMOUNT, at_least="10000", currency="bits")
+
+    assert (readable := named.readable()) is not None and readable.currency == "CHF"
+    assert unreadable.readable() is None
 
 
 def test_a_stored_date_covers_its_whole_precision() -> None:

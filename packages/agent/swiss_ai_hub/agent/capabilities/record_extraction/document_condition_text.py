@@ -34,11 +34,13 @@ class DocumentConditionText:
         attribute = condition.attribute.value.removeprefix("document_").replace("_", " ")
         if condition.contains is not None:
             return t(f"{_METADATA}.contains", attribute=attribute, text=condition.contains)
+        bounds = (condition.at_least, condition.at_most)
+        low, high = (" ".join(part for part in (condition.currency, bound) if part) for bound in bounds)
         if condition.at_least is not None and condition.at_most is not None:
-            return t(f"{_METADATA}.between", attribute=attribute, low=condition.at_least, high=condition.at_most)
+            return t(f"{_METADATA}.between", attribute=attribute, low=low, high=high)
         if condition.at_least is not None:
-            return t(f"{_METADATA}.at_least", attribute=attribute, low=condition.at_least)
-        return t(f"{_METADATA}.at_most", attribute=attribute, high=condition.at_most)
+            return t(f"{_METADATA}.at_least", attribute=attribute, low=low)
+        return t(f"{_METADATA}.at_most", attribute=attribute, high=high)
 
     @staticmethod
     def period(date_range: PathDateRange, t: LocaleHandler) -> str:

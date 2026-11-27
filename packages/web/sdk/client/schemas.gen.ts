@@ -8646,6 +8646,19 @@ export const DocumentAttributeConditionSchema = {
       description:
         "Highest value of a date (YYYY-MM-DD) or an amount (a number); null when open or for text.",
     },
+    currency: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Currency",
+      description:
+        "The currency an amount is stated in, as its ISO code, e.g. 'CHF' for 'over CHF 10'000'; null when the request names none, and always for a date or text.",
+    },
   },
   type: "object",
   required: ["attribute"],

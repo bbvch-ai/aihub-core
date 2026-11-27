@@ -94,12 +94,21 @@ def test_dropping_the_document_condition_drops_the_types_and_values() -> None:
 
 
 def test_the_reading_is_shown_the_types_in_scope_with_their_attributes() -> None:
-    documents = [_summary("a.pdf", "contract"), _summary("b.pdf", "contract"), _summary("c.pdf", None)]
+    documents = [
+        _summary("a.pdf", "contract"),
+        _summary("b.pdf", "contract"),
+        _summary("c.pdf", None),
+        _summary("d.pdf", "memo"),
+    ]
 
     lines = SelectionFacets.document_types(documents).splitlines()
 
+    assert len(lines) == 1
     assert lines[0].startswith("- contract (2): document_date, document_reference_number, document_issuer")
-    assert lines[1] == "- unclassified (1)"
+
+
+def test_a_scope_without_a_known_type_lists_none() -> None:
+    assert SelectionFacets.document_types([_summary("c.pdf", None), _summary("d.pdf", "memo")]) == ""
 
 
 def test_the_summary_names_the_filter_and_what_it_left_out() -> None:
@@ -119,6 +128,7 @@ def test_the_summary_names_the_filter_and_what_it_left_out() -> None:
     ("condition", "described"),
     [
         (DocumentAttributeCondition(attribute=DocumentAttribute.TOTAL_AMOUNT, at_least="10000"), ">= 10000"),
+        (DocumentAttributeCondition(attribute=DocumentAttribute.TOTAL_AMOUNT, at_least="CHF 10'000"), ">= 10000 CHF"),
         (
             DocumentAttributeCondition(attribute=DocumentAttribute.DATE, at_least="2025-01", at_most="2025-03"),
             ">= 2025-01-01 and <= 2025-03-31",

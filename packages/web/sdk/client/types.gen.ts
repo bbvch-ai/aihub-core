@@ -5890,6 +5890,12 @@ export type DocumentAttributeCondition = {
    * Highest value of a date (YYYY-MM-DD) or an amount (a number); null when open or for text.
    */
   at_most?: string | null;
+  /**
+   * Currency
+   *
+   * The currency an amount is stated in, as its ISO code, e.g. 'CHF' for 'over CHF 10'000'; null when the request names none, and always for a date or text.
+   */
+  currency?: string | null;
 };
 
 /**

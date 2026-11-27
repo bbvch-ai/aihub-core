@@ -36,12 +36,15 @@ by what ingestion stored.
   `ExtractionRun.metadata` into the table's summary, the sample's notices, and the "nothing selected" answer.
 - **What each verdict means.** Every part of the filter must hold. One exclusion excludes the document. Otherwise, one
   unknown part leaves it unknown and kept.
-  - A document without a type (not classified, or classified before the database switched it on) is unknown.
+  - A document without a type (not classified, or classified before the database switched it on) is unknown. So is one
+    typed `other`, or with a type the catalog no longer holds: a backfill re-classifies those once a type is added.
   - A type matches the primary type or one of the secondary labels.
-  - An attribute the document's primary type does not carry excludes it. The catalog stores nothing there, so a filter
-    on it could never match. Treating it as unknown would let every report and policy through a filter on the issuer's
-    total.
+  - An attribute none of the document's types carries excludes it. The catalog stores nothing there, so a filter on it
+    could never match. Treating it as unknown would let every report and policy through a filter on the issuer's total.
+    When only a secondary type carries it, the document is unknown: ingestion stored the primary type's values alone.
   - An empty value on a type that carries the attribute is unknown.
+  - An amount condition that names a currency compares only amounts stored in that currency; another or no recorded
+    currency is unknown. Nothing converts currencies, so the bare numbers say nothing about each other.
   - Text matches when the value contains it, case ignored, any item of a list. A request names "Hooli" where the
     document says "Hooli AG", so equality would leave out nearly every match.
   - A stored date covers the whole span its precision states ("März 2025" is all of March). Stored dates and periods

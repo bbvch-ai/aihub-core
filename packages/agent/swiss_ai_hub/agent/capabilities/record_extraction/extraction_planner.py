@@ -344,7 +344,8 @@ class ExtractionPlanner:
                 f">= {condition.at_least}" if condition.at_least else "",
                 f"<= {condition.at_most}" if condition.at_most else "",
             ]
-            parts.append(f"{code(condition.attribute)} {' and '.join(bound for bound in bounds if bound)}")
+            currency = f" {condition.currency}" if condition.currency else ""
+            parts.append(f"{code(condition.attribute)} {' and '.join(bound for bound in bounds if bound)}{currency}")
         return " and ".join(parts)
 
     @staticmethod

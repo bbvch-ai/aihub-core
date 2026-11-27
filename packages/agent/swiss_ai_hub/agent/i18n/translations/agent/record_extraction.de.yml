@@ -123,8 +123,8 @@ facets:
   years: '**Nach Jahr im Pfad:** %{entries}'
   types: '**Nach Dokumenttyp:** %{entries}'
   collections: '**Nach Sammlung:** %{entries}'
-  first: Das sind die Ordner und Jahre der ersten %{total} Dokumente nach Pfad; es
-    gibt weitere.
+  first: Das sind die Ordner, Jahre und Dokumenttypen der ersten %{total} Dokumente
+    nach Pfad; es gibt weitere.
 period:
   between: datiert zwischen dem %{start} und dem %{end}
   from: datiert am oder nach dem %{start}

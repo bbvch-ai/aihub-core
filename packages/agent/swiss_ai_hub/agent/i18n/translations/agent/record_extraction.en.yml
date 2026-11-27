@@ -116,8 +116,8 @@ facets:
   years: '**By year in the path:** %{entries}'
   types: '**By document type:** %{entries}'
   collections: '**By collection:** %{entries}'
-  first: These are the folders and years of the first %{total} documents by path;
-    there are more.
+  first: These are the folders, years and document types of the first %{total} documents
+    by path; there are more.
 period:
   between: dated between %{start} and %{end}
   from: dated on or after %{start}

@@ -9,9 +9,6 @@ MAX_ENTRIES = 8
 _YEAR = re.compile(r"(?<!\d)(?:19|20)\d{2}(?!\d)")
 
 
-UNCLASSIFIED = "unclassified"
-
-
 class SelectionFacets:
     """How a broad selection breaks down, so the user can narrow it: by folder, by a year in the path, by the type
     ingestion classified it as and by collection, counted from the listing alone, and a small sample spread over the
@@ -48,13 +45,11 @@ class SelectionFacets:
     @staticmethod
     def document_types(documents: Annotated[list[KnowledgeDocumentSummary], "The documents in scope"]) -> str:
         """The types in scope with their counts and the attributes each carries, for a model to write a metadata
-        filter against; read from the catalog, so a type added to it reaches the model without a change here."""
-        counts = Counter(document.document_type or UNCLASSIFIED for document in documents)
+        filter against; read from the catalog, so a type added to it reaches the model without a change here. Only the
+        catalog's types are listed, since the model may answer with no other; empty when no document has one."""
+        counts = Counter(document.document_type for document in documents if document.document_type in DocumentType)
         lines = []
         for name, count in counts.most_common():
-            if name not in DocumentType:
-                lines.append(f"- {name} ({count})")
-                continue
             attributes = ", ".join(definition.key for definition in DocumentTypeCatalog.applicable(DocumentType(name)))
             lines.append(f"- {name} ({count}): {attributes or '-'}")
         return "\n".join(lines)

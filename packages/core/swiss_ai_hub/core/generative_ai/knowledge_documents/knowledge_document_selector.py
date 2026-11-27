@@ -57,7 +57,9 @@ class KnowledgeDocumentSelector:
             listing, path_dates = await asyncio.to_thread(listing.dated_within, selection.path_date_range)
         metadata = None
         if selection.metadata_filter is not None:
-            listing, metadata = listing.with_metadata(selection.metadata_filter, selection.path_date_range)
+            listing, metadata = await asyncio.to_thread(
+                listing.with_metadata, selection.metadata_filter, selection.path_date_range
+            )
         ordered = listing.documents
         return KnowledgeDocumentSelectionResult(
             documents=ordered[:limit], truncated=len(ordered) > limit, path_dates=path_dates, metadata=metadata

@@ -122,8 +122,8 @@ facets:
   years: '**Per anno nel percorso:** %{entries}'
   types: '**Per tipo di documento:** %{entries}'
   collections: '**Per collezione:** %{entries}'
-  first: Sono le cartelle e gli anni dei primi %{total} documenti per percorso; ce
-    ne sono altri.
+  first: Sono le cartelle, gli anni e i tipi di documento dei primi %{total} documenti
+    per percorso; ce ne sono altri.
 period:
   between: datato tra il %{start} e il %{end}
   from: datato il %{start} o dopo

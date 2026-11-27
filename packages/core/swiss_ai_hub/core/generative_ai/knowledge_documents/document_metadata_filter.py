@@ -47,8 +47,9 @@ class DocumentMetadataFilter(BaseModel):
         period: Annotated[PathDateRange | None, "The request's period, matched against the document's own date"] = None,
     ) -> DocumentMetadataVerdict:
         """The request's period applies to the document's own date as well as to its path. A type without such a date
-        is unknown for it rather than excluded: the period is the request's, not a condition on that type."""
-        if document.document_type is None:
+        is unknown for it rather than excluded: the period is the request's, not a condition on that type. `OTHER` and
+        a type the catalog no longer holds count as unclassified: a backfill re-classifies them once a type is added."""
+        if document.document_type not in DocumentType or document.document_type == DocumentType.OTHER:
             return DocumentMetadataVerdict.UNKNOWN
         verdicts = [self._type_verdict(document), *(condition.verdict(document) for condition in self.conditions)]
         if period is not None:
