@@ -81,8 +81,9 @@ jobs:
           APP_MODULE: ${{ matrix.app_module }}
           SPEC_DIR: ${{ runner.temp }}/spec/api/v1
         run: |
-          # Settings read the env; export .env.dev so import-time BaseSettings resolve.
-          set -a; . "${GITHUB_WORKSPACE}/.env.dev"; set +a
+          # Settings read the env; export a generated dev env so import-time BaseSettings resolve.
+          "${GITHUB_WORKSPACE}/setup-env.sh" -t "${GITHUB_WORKSPACE}/.env.dev" -o "${RUNNER_TEMP}/sdk.env" --force >/dev/null
+          set -a; . "${RUNNER_TEMP}/sdk.env"; set +a
           mkdir -p "$SPEC_DIR"
           # Import the ASGI app and dump the mounted FastAPI app's schema — identical
           # to the document served at /api/v1/openapi.json, without a running server.

@@ -94,6 +94,9 @@ curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${VERSION}/swi
 # Copy your existing .env into the new bundle
 cp .env /tmp/swissaihub-update/.env
 
+# Refuse secrets that are public in the repository or were never generated; rotate what it lists
+(cd /tmp/swissaihub-update && ./check-env-secrets.sh .env)
+
 # Review any new environment variables added in the release
 diff <(grep -oP '^[A-Z_]+=' .env.template) <(grep -oP '^[A-Z_]+=' /tmp/swissaihub-update/.env.template)
 

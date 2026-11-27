@@ -120,17 +120,18 @@ cd ~/projects/aihub-core
 make setup-all
 ```
 
-`make setup-all` runs two things: `make setup` resolves every workspace package with `uv sync --all-packages` and copies
-`.env.dev` to `.env` if you do not already have one, and `make setup-frontend` installs the frontend dependencies with
-pnpm. Run them separately if you only want one half.
+`make setup-all` runs two things: `make setup` resolves every workspace package with `uv sync --all-packages` and, if
+you do not already have a `.env`, generates one from `.env.dev` with `./setup-env.sh -t .env.dev -o .env`, and
+`make setup-frontend` installs the frontend dependencies with pnpm. Run them separately if you only want one half.
 
-The generated `.env` is a complete, working development configuration. Every secret in it is a known dev value, and the
-Swiss LLM Cloud endpoints are the only entries you may want to fill in for real model access.
+The generated `.env` is a complete, working development configuration. `.env.dev` holds no secrets, only placeholders,
+and `setup-env.sh` fills each with a fresh random value, so every checkout has its own passwords, tokens and signing
+keys. The Swiss LLM Cloud endpoints are the only entries you may want to fill in for real model access.
 
-::: danger Development credentials only
-`.env.dev` contains hard-coded passwords, signing keys and API tokens that are public in the repository, including
-`SUPERUSER_PASSWORD='admin'`. It is fine on your machine and unusable anywhere else. Never copy it to a shared or
-internet-facing host.
+::: warning Generate once, keep it
+The databases store the passwords from your first `make up-dev`. Regenerating `.env` afterwards locks the stack out of
+its own volumes, so keep the file (and copy it, not regenerate it, into another worktree that uses the same stack). If
+you must start over, remove the volumes with the stack.
 :::
 
 ## Step 5: Start the infrastructure
@@ -263,11 +264,11 @@ supply-chain hardening, not a broken lockfile.
 Open `http://localhost:3333` (or `http://localhost:3334` for the sysadmin UI). You are redirected to Keycloak on port
 8180\. Sign in with the superuser from `.env`:
 
-- Username: `admin`
-- Password: `admin`
+- Username: `admin` (`SUPERUSER_USERNAME`)
+- Password: the generated `SUPERUSER_PASSWORD`
 
 Authentication in development goes through the bundled Keycloak rather than Azure Entra ID, so you need neither an Azure
-tenant nor OAuth credentials. The credentials come from `SUPERUSER_USERNAME` and `SUPERUSER_PASSWORD` in `.env.dev`, and
+tenant nor OAuth credentials. The credentials come from `SUPERUSER_USERNAME` and `SUPERUSER_PASSWORD` in `.env`, and
 the account carries the `AIHubAccess` and `AIHubSysAdmin` roles, which is what the admin UI, the sysadmin endpoints and
 OpenWebUI check for. The same login works everywhere.
 

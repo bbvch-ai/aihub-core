@@ -127,8 +127,9 @@ automatically creates unique secrets for all database passwords, tokens, and sig
 
 ::: details What does setup-env.sh do?
 The script reads `.env.template` and replaces all `REPLACE_WITH_*` placeholders with cryptographically secure random
-values. Each placeholder gets its own unique secret. The script requires only `openssl` and `bash` — no Python or other
-dependencies needed.
+values, including the Fernet key `AIHUB_CONFIG_ENCRYPTION_KEY`. Each placeholder gets its own unique secret. A value
+written as `${VAR}` (a connection string carrying a generated password, say) then receives that variable's final value.
+The script requires only `openssl` and `bash` — no Python or other dependencies needed.
 
 ```bash
 # Options:
@@ -140,9 +141,17 @@ dependencies needed.
 
 **For Local Deployment:**
 
+From a repository checkout, generate `.env` from the development template. It gets fresh secrets too:
+
 ```bash
-cp .env.dev .env
+./setup-env.sh -t .env.dev -o .env
 ```
+
+::: danger Never reuse a development .env on a server
+Until setup-env.sh generated them, `.env.dev` shipped fixed passwords and tokens, and they stay public in the
+repository's history. `./check-env-secrets.sh .env` refuses any of them as well as a placeholder nobody generated, and
+the installer runs it before every upgrade. Rotate whatever it lists.
+:::
 
 ### Configure Remaining Values
 

@@ -80,7 +80,7 @@ image_tags.{service} in compose-config.yml:
 
 ### Env Var Conventions
 
-- `.env.dev` — local dev defaults (copy to `.env`)
+- `.env.dev` — local dev template; `make setup` generates `.env` from it with `setup-env.sh`
 - `.env.prod` — production template (secrets as `REPLACE_WITH_RANDOM_STRING`)
 - **NO** `${VAR:-default}` in templates — all defaults in `.env.*` files
 - Internal Docker hostnames are hardcoded as Jinja2 variables in the template (e.g.,
@@ -134,6 +134,7 @@ Read the changed files, then verify each applicable item:
 - [ ] No `${VAR:-default}` syntax in templates (defaults go in `.env.*` files)
 - [ ] New env vars added to both `.env.dev` and `.env.prod`
 - [ ] Secrets in `.env.prod` use `REPLACE_WITH_RANDOM_STRING` placeholder
+- [ ] Secrets in `.env.dev` use the same placeholder as `.env.prod`, never a literal (`make check-env` enforces it)
 - [ ] Internal Docker addresses use hardcoded Jinja2 variables, not env vars
 
 **For config template changes:**

@@ -43,12 +43,11 @@ BACKUP_PREFIX_RE = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}/$")
 # Environment helpers
 # ---------------------------------------------------------------------------
 def _load_env() -> dict[str, str | None]:
-    """Load .env.dev (or .env) from the repo root."""
-    for name in (".env.dev", ".env"):
-        path = REPO_ROOT / name
-        if path.exists():
-            return dotenv_values(str(path))
-    pytest.fail("Neither .env.dev nor .env found at repo root")
+    """Load the .env the stack runs with; .env.dev holds only placeholders for its secrets."""
+    path = REPO_ROOT / ".env"
+    if not path.exists():
+        pytest.fail(".env not found at repo root; generate it with ./setup-env.sh -t .env.dev -o .env")
+    return dotenv_values(str(path))
 
 
 # ---------------------------------------------------------------------------

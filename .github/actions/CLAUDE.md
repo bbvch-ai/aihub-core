@@ -84,8 +84,8 @@ cache key. Runs `nuxi prepare` before linting to generate Nuxt type stubs.
 - `docker_compose_services`: space-separated list of Docker services to start (empty = no Docker)
 - `install_ffmpeg`: installs FFmpeg with apt, caching the downloaded `.deb` files in `~/apt-archives` per runner image
   (the Ubuntu mirror takes anywhere from seconds to several minutes for them)
-- `huggingface_api_key`: added to `.env.dev` for model downloads
-- `swiss_llm_cloud_*`: Swiss LLM Cloud secrets (API, embedding, reranking, whisper, OCR) added to `.env.dev`. Only
+- `huggingface_api_key`: added to the generated `.env` for model downloads
+- `swiss_llm_cloud_*`: Swiss LLM Cloud secrets (API, embedding, reranking, whisper, OCR) added to the generated `.env`. Only
   `external-tests.yml` passes them; the PR checks run without provider credentials.
 - `pytest_markers`: the `-m` expression (default `not flaky`; PR checks pass `not flaky and not external`).
 - `shard_index` / `shard_count`: split the module's tests with pytest-split (`least_duration`, timings from the module's

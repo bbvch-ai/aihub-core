@@ -60,25 +60,32 @@ if [[ -f "$OUTPUT" ]] && [[ "$FORCE" != true ]]; then
 fi
 
 # --- Secret generators ---
+# Every generator strips '\r' too: the openssl of Git Bash for Windows ends its output with CRLF.
 
-# 32 bytes → base64url (matches Python secrets.token_urlsafe(32))
+# 32 bytes → base64url (matches Python secrets.token_urlsafe(32)). Never starts with '-': CLIs
+# such as neo4j-admin set-initial-password would parse that password as an option and fail.
 gen_urlsafe_32() {
-    openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n'
+    local value
+    value=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\r\n')
+    while [[ "$value" == -* ]]; do
+        value=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\r\n')
+    done
+    printf '%s' "$value"
 }
 
 # 24 bytes → base64url (matches Python secrets.token_urlsafe(24))
 gen_urlsafe_24() {
-    openssl rand -base64 24 | tr '+/' '-_' | tr -d '=\n'
+    openssl rand -base64 24 | tr '+/' '-_' | tr -d '=\r\n'
 }
 
 # 32 bytes → 64 hex chars (matches Python secrets.token_hex(32))
 gen_hex_64() {
-    openssl rand -hex 32 | tr -d '\n'
+    openssl rand -hex 32 | tr -d '\r\n'
 }
 
 # 32 bytes → padded base64url, the format of a Fernet key (cryptography.fernet.Fernet.generate_key())
 gen_fernet_key() {
-    openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n'
+    openssl rand -base64 32 | tr '+/' '-_' | tr -d '\r\n'
 }
 
 # Random UUIDv4 derived from openssl so the script keeps a single crypto
@@ -92,6 +99,25 @@ gen_uuid() {
         "${h:20:12}"
 }
 
+# Langfuse generators produce the full value including prefix
+gen_langfuse_pk() { echo -n "pk-lf-$(gen_urlsafe_24)"; }
+gen_langfuse_sk() { echo -n "sk-lf-$(gen_urlsafe_24)"; }
+
+ASSIGNMENT='^[A-Za-z_][A-Za-z0-9_]*='
+
+# Replace the first occurrence of $2 by $3 on an assignment line (comments stay as written) and
+# fail when there is none left. awk rather than `sed -i`, whose in-place and first-match syntax
+# differ between GNU and BSD; no pipelines, which `pipefail` would fail on an early-exiting grep.
+replace_first() {
+    local file="$1" search="$2" value="$3" status=0
+    awk -v s="$search" -v v="$value" -v a="$ASSIGNMENT" '
+        !done && $0 ~ a && (i = index($0, s)) { $0 = substr($0, 1, i - 1) v substr($0, i + length(s)); done = 1 }
+        { print }
+        END { exit !done }' "$file" >"$file.tmp" || status=$?
+    mv "$file.tmp" "$file"
+    return "$status"
+}
+
 # Replace all occurrences of a placeholder one at a time, each with a unique value.
 # Returns the number of replacements made.
 replace_placeholder() {
@@ -100,58 +126,72 @@ replace_placeholder() {
     local generator="$3"
     local count=0
 
-    while grep -qF "$placeholder" "$file"; do
-        local value
-        value=$($generator)
-        # Use a separator that won't appear in base64url or hex output
-        sed -i "0,/${placeholder}/{s|${placeholder}|${value}|}" "$file"
+    while replace_first "$file" "$placeholder" "$($generator)"; do
         count=$((count + 1))
     done
 
     echo "$count"
 }
 
+# A value may reference another variable as ${NAME}, e.g. a connection string carrying a generated
+# password. Substitute the final value so every consumer (compose, python-dotenv, shell scripts that
+# grep the file) reads the same literal.
+resolve_references() {
+    local file="$1" name value
+    for name in $(awk -v a="$ASSIGNMENT" '$0 ~ a {
+            while (match($0, /\$\{[A-Za-z_][A-Za-z0-9_]*\}/)) {
+                print substr($0, RSTART + 2, RLENGTH - 3)
+                $0 = substr($0, RSTART + RLENGTH)
+            }
+        }' "$file" | sort -u); do
+        value=$(awk -v n="$name" 'index($0, n "=") == 1 { sub(/^[^=]*=/, ""); sub(/\r$/, ""); print; exit }' "$file")
+        if ! grep -qE "^${name}=" "$file"; then
+            echo "ERROR: ${name} is referenced but not defined in $file" >&2
+            exit 1
+        fi
+        if [[ "$value" == *'${'* ]]; then
+            echo "ERROR: ${name} is referenced but itself holds a reference; nest one level only" >&2
+            exit 1
+        fi
+        value="${value#\'}"
+        value="${value%\'}"
+        value="${value#\"}"
+        value="${value%\"}"
+        while replace_first "$file" "\${${name}}" "$value"; do :; done
+    done
+}
+
 # --- Main ---
 
 cp "$TEMPLATE" "$OUTPUT"
 
-# Placeholder → generator function, processed in order.
-# Langfuse placeholders (which contain their prefix) must be processed before
-# the generic REPLACE_WITH_RANDOM_STRING to avoid partial matches.
-declare -A PLACEHOLDERS=(
-    ["pk-lf-REPLACE_WITH_LANGFUSE_PUBLIC_KEY"]="gen_langfuse_pk"
-    ["sk-lf-REPLACE_WITH_LANGFUSE_SECRET_KEY"]="gen_langfuse_sk"
-    ["REPLACE_WITH_64_HEX_CHARS"]="gen_hex_64"
-    ["REPLACE_WITH_RANDOM_UUID"]="gen_uuid"
-    ["REPLACE_WITH_FERNET_KEY"]="gen_fernet_key"
-    ["REPLACE_WITH_RANDOM_STRING"]="gen_urlsafe_32"
-)
-
-# Langfuse generators produce the full value including prefix
-gen_langfuse_pk() { echo -n "pk-lf-$(gen_urlsafe_24)"; }
-gen_langfuse_sk() { echo -n "sk-lf-$(gen_urlsafe_24)"; }
-
-# Process specific placeholders before generic ones to avoid partial matches
-ORDERED_KEYS=(
-    "pk-lf-REPLACE_WITH_LANGFUSE_PUBLIC_KEY"
-    "sk-lf-REPLACE_WITH_LANGFUSE_SECRET_KEY"
-    "REPLACE_WITH_64_HEX_CHARS"
-    "REPLACE_WITH_RANDOM_UUID"
-    "REPLACE_WITH_FERNET_KEY"
-    "REPLACE_WITH_RANDOM_STRING"
+# Placeholder:generator pairs, processed in order. Specific placeholders come before the generic
+# REPLACE_WITH_RANDOM_STRING to avoid partial matches. A plain list, not an associative array,
+# so the script also runs on the bash 3.2 macOS ships.
+PLACEHOLDERS=(
+    "pk-lf-REPLACE_WITH_LANGFUSE_PUBLIC_KEY:gen_langfuse_pk"
+    "sk-lf-REPLACE_WITH_LANGFUSE_SECRET_KEY:gen_langfuse_sk"
+    "REPLACE_WITH_FERNET_KEY:gen_fernet_key"
+    "REPLACE_WITH_64_HEX_CHARS:gen_hex_64"
+    "REPLACE_WITH_RANDOM_UUID:gen_uuid"
+    "REPLACE_WITH_RANDOM_STRING:gen_urlsafe_32"
 )
 
 total=0
 echo "Generated $OUTPUT from $TEMPLATE"
 
-for placeholder in "${ORDERED_KEYS[@]}"; do
-    generator="${PLACEHOLDERS[$placeholder]}"
+for entry in "${PLACEHOLDERS[@]}"; do
+    placeholder="${entry%%:*}"
+    generator="${entry##*:}"
     count=$(replace_placeholder "$OUTPUT" "$placeholder" "$generator")
     if [[ "$count" -gt 0 ]]; then
         total=$((total + count))
         echo "  ${count}x ${placeholder}"
     fi
 done
+
+resolve_references "$OUTPUT"
+chmod 600 "$OUTPUT"
 
 echo "  ${total} secrets auto-generated"
 echo
