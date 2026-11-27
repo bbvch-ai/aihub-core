@@ -5,17 +5,25 @@
   >
     <div class="size-full p-4">
       <div class="flex size-full flex-col justify-start gap-2 rounded-xl border border-surface-200 bg-white p-4 shadow-lg dark:border-surface-800 dark:bg-surface-900">
-        <div class="flex w-full justify-between">
+        <div class="flex w-full items-center justify-between">
           <Tag
             severity="secondary"
             :value="timeRangeName"
           />
-          <button @click="handleRemove">
-            <Icon
-              name="oui:cross"
-              size="xl"
-            />
-          </button>
+          <Button
+            severity="secondary"
+            text
+            rounded
+            class="size-11"
+            @click="handleRemove"
+          >
+            <template #icon>
+              <Icon
+                name="oui:cross"
+                size="xl"
+              />
+            </template>
+          </Button>
         </div>
         <ProgressSpinner
           v-if="timeseriesIsLoading"

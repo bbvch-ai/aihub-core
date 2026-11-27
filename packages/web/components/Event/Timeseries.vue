@@ -29,6 +29,30 @@ const props = withDefaults(defineProps<{
 const { t } = useI18n()
 const isDark = useDarkMode()
 
+const DENSE_BUCKET_COUNT = 31
+const Y_AXIS_HEADROOM = 0.1
+const SMALLEST_SHOWN_PERCENTAGE = 0.1
+
+const formatShareOfTotal = (value: number, total: number): string => {
+  if (total <= 0) {
+    return '0%'
+  }
+  const percentage = value / total * 100
+  if (percentage > 0 && percentage < SMALLEST_SHOWN_PERCENTAGE) {
+    return `<${SMALLEST_SHOWN_PERCENTAGE}%`
+  }
+  return `${Number(percentage.toFixed(1))}%`
+}
+
+const largestBucketTotal = (bucketCount: number): number => {
+  let largest = 0
+  for (let index = 0; index < bucketCount; index++) {
+    const total = chartSeries.value.reduce((sum, series) => sum + (series.data[index] ?? 0), 0)
+    largest = Math.max(largest, total)
+  }
+  return largest
+}
+
 const chartSeries = computed(() => {
   if (!props.seriesInputs || props.seriesInputs.length === 0) {
     return []
@@ -82,6 +106,13 @@ const chartOptions = computed<ApexOptions>(() => {
     const date = new Date(bucket.start_time)
     return date.toISOString()
   })
+
+  const isSingleSeries = chartSeries.value.length <= 1
+  const largestTotal = largestBucketTotal(buckets.length)
+  const labelFontSize = buckets.length > DENSE_BUCKET_COUNT ? 10 : 13
+  const labelColor = isDark.value ? 'var(--p-surface-200)' : 'var(--p-surface-800)'
+  const { max: yAxisMax, tickAmount } = niceAxisScale(largestTotal, Y_AXIS_HEADROOM)
+  const seriesTotals = chartSeries.value.map(series => series.data.reduce((sum, value) => sum + value, 0))
 
   const activeSeriesColors = props.seriesInputs
     .filter(input =>
@@ -137,14 +168,11 @@ const chartOptions = computed<ApexOptions>(() => {
       bar: {
         horizontal: false,
         columnWidth: resolution === '1m' ? '80%' : '50%',
+        // A single series' values are in the tooltip, where they never collide with each other.
         dataLabels: {
           total: {
-            enabled: true,
-            style: {
-              fontSize: '13px',
-              fontWeight: 900,
-              color: isDark.value ? 'var(--p-surface-200)' : 'var(--p-surface-800)',
-            },
+            enabled: !isSingleSeries,
+            style: { fontSize: `${labelFontSize}px`, fontWeight: 900, color: labelColor },
           },
         },
       },
@@ -183,13 +211,16 @@ const chartOptions = computed<ApexOptions>(() => {
       title: {
         text: `# ${props.title}`,
         offsetX: 5,
+        // ApexCharts' default weight of 900 at 11px smears once the title is rotated, worst on Windows' subpixel
+        // font smoothing.
+        style: { fontSize: '12px', fontWeight: 600 },
       },
       min: 0,
+      max: yAxisMax,
+      tickAmount,
       labels: {
         formatter: (value: number) => Number.isInteger(value) ? String(value) : '',
       },
-      tickAmount: 5,
-      forceNiceScale: true,
     },
     legend: {
       show: true,
@@ -209,6 +240,13 @@ const chartOptions = computed<ApexOptions>(() => {
             return date.toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'medium', hour12: false })
           }
           return date.toLocaleDateString('de-CH', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+        },
+      },
+      y: {
+        formatter: (value: number, { seriesIndex }: { seriesIndex: number }) =>
+          `${value} (${formatShareOfTotal(value, seriesTotals[seriesIndex] ?? 0)})`,
+        title: {
+          formatter: (seriesName: string) => isSingleSeries ? '' : `${seriesName}:`,
         },
       },
     },
