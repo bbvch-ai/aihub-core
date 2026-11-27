@@ -4,11 +4,9 @@ from pydantic import Field
 from swiss_ai_hub.core.form import InputNumber, MultiSelect, Select
 from swiss_ai_hub.core.form.constraints import Ge, Le
 from swiss_ai_hub.core.form.form import Form
-from swiss_ai_hub.core.infrastructure import SearxngEngine, SearxngSafeSearch, SearxngTimeRange
+from swiss_ai_hub.core.infrastructure import SearxngEngine, SearxngLanguage, SearxngSafeSearch, SearxngTimeRange
 
 from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch_config import (
-    CHARACTERS_PER_TOKEN,
-    MAX_PAGE_CHARACTERS,
     MAX_TIMEOUT_SECONDS,
     MIN_PAGE_CHARACTERS,
     MIN_TIMEOUT_SECONDS,
@@ -17,8 +15,10 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 MIN_RESULTS, MAX_RESULTS = 1, 20
 MIN_READ, MAX_READ = 0, 10
-SEARCH_LANGUAGES = ("auto", "de", "en", "fr", "it")
-SNIPPET_TOKENS = 100
+MAX_PAGE_CHARACTERS = 20_000
+# The search's result event carries every page read whole twice (its block and its sources), events escape non-ASCII
+# text (6 bytes a character, 12 for an emoji), and NATS refuses an event over 1 MB; the pages of one search share this.
+PAGES_CHARACTER_BUDGET = 40_000
 _I18N = "agent.web_search.config"
 
 
@@ -46,8 +46,9 @@ class WebSearchConfig(Form):
         Field(description="The search engines asked; none asks every engine the platform's search runs."),
     ] = None
     language: Annotated[
-        str | Select, Field(description="The language results are asked in, or `auto` to leave it to the engines.")
-    ] = "auto"
+        SearxngLanguage | Select,
+        Field(description="The language results are asked in, or `auto` to leave it to the engines."),
+    ] = SearxngLanguage.AUTO
     safe_search: Annotated[
         SearxngSafeSearch | Select, Field(description="How strictly the engines filter adult content.")
     ] = SearxngSafeSearch.MODERATE
@@ -63,15 +64,17 @@ class WebSearchConfig(Form):
     ] = 15
     max_page_characters: Annotated[
         int | InputNumber,
-        Field(description="Longest page text passed to the model; longer pages are cut at a paragraph break."),
+        Field(
+            description="Longest page text passed to the model; longer pages are cut at a paragraph break. The pages of "
+            "one search share 40,000 characters, so reading many pages shortens each."
+        ),
         Ge(MIN_PAGE_CHARACTERS),
         Le(MAX_PAGE_CHARACTERS),
     ] = 10_000
 
-    def context_reserve(self) -> int:
-        """Tokens one search can add to the prompt: the pages read whole and the snippets of the other hits."""
-        read = min(self.read_top_results, self.max_results)
-        return read * self.max_page_characters // CHARACTERS_PER_TOKEN + (self.max_results - read) * SNIPPET_TOKENS
+    def page_characters(self, pages: int) -> int:
+        """The longest text each page of one search keeps, so the pages read together fit the search's budget."""
+        return min(self.max_page_characters, PAGES_CHARACTER_BUDGET // max(pages, 1))
 
     @classmethod
     def as_form(cls) -> Self:
@@ -88,7 +91,7 @@ class WebSearchConfig(Form):
                 **cls._labels("language"),
                 options=[
                     {"label": AgentLocaleString.from_i18n_path(f"{_I18N}.languages.{code}"), "value": code}
-                    for code in SEARCH_LANGUAGES
+                    for code in SearxngLanguage
                 ],
                 option_label="label",
                 option_value="value",

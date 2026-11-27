@@ -42,6 +42,7 @@ def _searched() -> WebSearchedEvent:
         block=[ChatMessage(role=MessageRole.SYSTEM, content="<page>Version 2 was released today.</page>")],
         grounding_nodes=[_hit_node()],
         failures=[WebFetchFailure(url="https://example.com/slow", reason=WebFetchFailureReason.TIMEOUT)],
+        unresponsive_engines=["duckduckgo: CAPTCHA"],
         tool_call_id="call-1",
     )
 
@@ -75,7 +76,8 @@ def test_trace_shows_the_search_as_a_retrieval_of_its_hits_for_its_queries():
     assert attributes[SpanAttributes.INPUT_VALUE] == "latest release"
     assert attributes[f"{SpanAttributes.RETRIEVAL_DOCUMENTS}.0.document.content"] == "Version 2 was released today."
     assert json.loads(attributes[SpanAttributes.METADATA]) == {
-        "failures": [{"url": "https://example.com/slow", "reason": "timeout"}]
+        "failures": [{"url": "https://example.com/slow", "reason": "timeout"}],
+        "unresponsive_engines": ["duckduckgo: CAPTCHA"],
     }
 
 

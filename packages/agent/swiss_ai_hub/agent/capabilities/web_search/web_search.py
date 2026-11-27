@@ -94,8 +94,9 @@ class WebSearch(Capability):
 
     @staticmethod
     def search(queries: list[str], web: WebSearchFields, cite_sources: bool = True) -> SearchWebEvent:
-        """The request says whether the profile searches, so a chat client shows search progress only when it
-        happens; the step answers either way."""
+        """The request says whether the profile searches, so a chat client shows search progress only when it may
+        happen. The user's toggle is checked by the step, so a blueprint calling this checks it too
+        (`RequestedFeatures.contains`) before it asks; the step answers either way."""
         return SearchWebEvent(queries=list(queries), searching=web.web_search is not None, cite_sources=cite_sources)
 
     @staticmethod
@@ -118,9 +119,9 @@ class WebSearch(Capability):
         toggled_on = await RequestedFeatures.contains(ChatFeature.WEB_SEARCH, run_context, type(agent))
         if config is None or not queries or not toggled_on:
             return WebSearchedEvent(tool_call_id=request.tool_call_id)
-        hits = await WebSearch._hits(queries, config)
+        hits, unresponsive_engines = await WebSearch._hits(queries, config)
         to_read = UrlExtractor.classify([hit.url for hit in hits[: config.read_top_results]]).urls
-        read = await WebPageFetcher.fetch_all(to_read, config.timeout_seconds, config.max_page_characters)
+        read = await WebPageFetcher.fetch_all(to_read, config.timeout_seconds, config.page_characters(len(to_read)))
         pages = {page.url: page for page in read if isinstance(page, FetchedWebPage)}
         failures = [failure for failure in read if isinstance(failure, WebFetchFailure)]
         nodes = [WebSearch._node(hit, pages.get(hit.url), t) for hit in hits]
@@ -130,6 +131,7 @@ class WebSearch(Capability):
             block=WebSearch._block(queries, nodes, t, request.cite_sources),
             grounding_nodes=nodes,
             failures=failures,
+            unresponsive_engines=unresponsive_engines,
             tool_call_id=request.tool_call_id,
         )
 
@@ -167,10 +169,11 @@ class WebSearch(Capability):
         )
 
     @staticmethod
-    async def _hits(queries: list[str], config: WebSearchConfig) -> list[WebSearchHit]:
-        """Every query's hits, taken in turns so each query is represented, each site once, the best first."""
+    async def _hits(queries: list[str], config: WebSearchConfig) -> tuple[list[WebSearchHit], list[str]]:
+        """Every query's hits, taken in turns so each query is represented, each site once, the best first; and the
+        engines that did not answer, so a search they all refused does not pass for one that matched nothing."""
         client = SearxngClient()
-        per_query = await asyncio.gather(
+        answers = await asyncio.gather(
             *(
                 client.search(
                     query,
@@ -184,11 +187,12 @@ class WebSearch(Capability):
             )
         )
         unique: dict[str, WebSearchHit] = {}
-        for rank in itertools.zip_longest(*per_query):
+        for rank in itertools.zip_longest(*(answer.results for answer in answers)):
             for result in rank:
                 if result is not None:
                     unique.setdefault(result.url, WebSearchHit.from_searxng(result))
-        return list(unique.values())[: config.max_results]
+        unresponsive = list(dict.fromkeys(engine for answer in answers for engine in answer.unresponsive_engines))
+        return list(unique.values())[: config.max_results], unresponsive
 
     @staticmethod
     def _node(hit: WebSearchHit, page: FetchedWebPage | None, t: LocaleHandler) -> IngestedNode:

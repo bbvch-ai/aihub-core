@@ -340,6 +340,7 @@ event:
     pagesRead: Pages read
     searchQueries: Search queries
     sitesFound: Sites found
+    unresponsiveEngines: Search engines that did not answer
     notRead: Not read
     webFetchFailure:
       malformed_url: Malformed link

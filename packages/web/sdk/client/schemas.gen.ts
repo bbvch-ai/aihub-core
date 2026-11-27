@@ -26436,7 +26436,7 @@ export const SearchWebEventSchema = {
       type: "boolean",
       title: "Searching",
       description:
-        "Whether the search runs: false while the profile has web search off or the user's Web Search toggle is, so a chat client shows no search progress.",
+        "Whether the profile searches the web, so a chat client shows no search progress while it does not. The step also checks the user's Web Search toggle and answers empty while it is off.",
       default: true,
     },
     cite_sources: {
@@ -33283,6 +33283,16 @@ export const WebSearchedEventSchema = {
       title: "Failures",
       description:
         "Hits whose page could not be read, so only their snippet was used.",
+      default: [],
+    },
+    unresponsive_engines: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Unresponsive Engines",
+      description:
+        "Search engines that did not answer, with SearXNG's reason (a CAPTCHA, a rate limit), so a search every engine refused does not read as one that matched nothing.",
       default: [],
     },
     tool_call_id: {
@@ -49446,7 +49456,7 @@ export const SearchWebEventWritableSchema = {
       type: "boolean",
       title: "Searching",
       description:
-        "Whether the search runs: false while the profile has web search off or the user's Web Search toggle is, so a chat client shows no search progress.",
+        "Whether the profile searches the web, so a chat client shows no search progress while it does not. The step also checks the user's Web Search toggle and answers empty while it is off.",
       default: true,
     },
     cite_sources: {
@@ -54041,6 +54051,16 @@ export const WebSearchedEventWritableSchema = {
       title: "Failures",
       description:
         "Hits whose page could not be read, so only their snippet was used.",
+      default: [],
+    },
+    unresponsive_engines: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Unresponsive Engines",
+      description:
+        "Search engines that did not answer, with SearXNG's reason (a CAPTCHA, a rate limit), so a search every engine refused does not read as one that matched nothing.",
       default: [],
     },
     tool_call_id: {

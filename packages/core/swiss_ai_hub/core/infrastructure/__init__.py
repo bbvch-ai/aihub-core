@@ -73,8 +73,10 @@ if TYPE_CHECKING:
         use_s3,
         use_s3_service,
     )
+    from swiss_ai_hub.core.infrastructure.searxng.searxng_answer import SearxngAnswer
     from swiss_ai_hub.core.infrastructure.searxng.searxng_client import SearxngClient
     from swiss_ai_hub.core.infrastructure.searxng.searxng_engine import SearxngEngine
+    from swiss_ai_hub.core.infrastructure.searxng.searxng_language import SearxngLanguage
     from swiss_ai_hub.core.infrastructure.searxng.searxng_result import SearxngResult
     from swiss_ai_hub.core.infrastructure.searxng.searxng_safe_search import SearxngSafeSearch
     from swiss_ai_hub.core.infrastructure.searxng.searxng_settings import SearxngSettings
@@ -125,6 +127,8 @@ __all__ = [
     "SandboxHomePath",
     "PlaywrightSettings",
     "SearxngClient",
+    "SearxngLanguage",
+    "SearxngAnswer",
     "SearxngEngine",
     "SearxngResult",
     "SearxngSafeSearch",
@@ -202,6 +206,8 @@ _LAZY_IMPORTS = {
     "SandboxHomePath": "swiss_ai_hub.core.infrastructure.open_terminal.sandbox_home_path",
     "PlaywrightSettings": "swiss_ai_hub.core.infrastructure.playwright.playwright_settings",
     "SearxngClient": "swiss_ai_hub.core.infrastructure.searxng.searxng_client",
+    "SearxngLanguage": "swiss_ai_hub.core.infrastructure.searxng.searxng_language",
+    "SearxngAnswer": "swiss_ai_hub.core.infrastructure.searxng.searxng_answer",
     "SearxngEngine": "swiss_ai_hub.core.infrastructure.searxng.searxng_engine",
     "SearxngResult": "swiss_ai_hub.core.infrastructure.searxng.searxng_result",
     "SearxngSafeSearch": "swiss_ai_hub.core.infrastructure.searxng.searxng_safe_search",

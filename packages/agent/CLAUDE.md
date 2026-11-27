@@ -309,8 +309,11 @@ the snippets of the rest, marked as such. Hits come from core's `SearxngClient` 
 taken in turns, each site once). It serves the Web Search toggle (`chat_feature = WEB_SEARCH`) only on profiles that
 turned it on (`chat_feature_config_field = "web_search"`, published as `Agent.feature_config_fields()` and applied by
 the provisioner), and `web_search_step` searches nothing unless `RequestedFeatures.contains(WEB_SEARCH, ...)`. Its steps
-are named `web_search_*`, since `Knowledge` already has `search_*`. `UniversalAgent` offers it as the `search_web` tool.
-ADR `2026_11_25_agents_search_the_web_through_searxng`.
+are named `web_search_*`, since `Knowledge` already has `search_*`. Hits without a host are dropped by the client, and
+`WebSearchedEvent.unresponsive_engines` names the engines that refused, so a blocked search does not pass for an empty
+one. The pages of one search share `PAGES_CHARACTER_BUDGET` (40,000 characters, `WebSearchConfig.page_characters`),
+because the result carries every page twice and events escape non-ASCII text, while NATS refuses an event over 1 MB.
+`UniversalAgent` offers it as the `search_web` tool. ADR `2026_11_25_agents_search_the_web_through_searxng`.
 
 **`ToolLoop`** (needs `ToolLoopFields`: iteration and call limits, the per-result token cap, disabled tools and approval
 rules; the runner publishes its form with the blueprint's tools as options, so `as_form()` spreads nothing): the model

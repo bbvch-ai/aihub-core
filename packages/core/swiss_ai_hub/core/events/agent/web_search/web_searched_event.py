@@ -38,6 +38,13 @@ class WebSearchedEvent(SemanticEvent):
         list[WebFetchFailure],
         Field(description="Hits whose page could not be read, so only their snippet was used."),
     ] = []
+    unresponsive_engines: Annotated[
+        list[str],
+        Field(
+            description="Search engines that did not answer, with SearXNG's reason (a CAPTCHA, a rate limit), so a "
+            "search every engine refused does not read as one that matched nothing."
+        ),
+    ] = []
     tool_call_id: Annotated[
         str | None,
         Field(description="The tool call this answers when the model chose the search in a tool loop; none otherwise."),
@@ -50,8 +57,10 @@ class WebSearchedEvent(SemanticEvent):
         }
         for i, node in enumerate(self.grounding_nodes):
             attributes.update(node.to_semantic_convention(SpanAttributes.RETRIEVAL_DOCUMENTS, i))
-        if self.failures:
-            attributes[SpanAttributes.METADATA] = json.dumps(
-                {"failures": [failure.model_dump(mode="json") for failure in self.failures]}
-            )
+        metadata = {
+            "failures": [failure.model_dump(mode="json") for failure in self.failures],
+            "unresponsive_engines": self.unresponsive_engines,
+        }
+        if any(metadata.values()):
+            attributes[SpanAttributes.METADATA] = json.dumps({key: value for key, value in metadata.items() if value})
         return {key: value for key, value in attributes.items() if value is not None}

@@ -99,9 +99,9 @@ Where an attribute means something specific for a type:
   Kraft", "prend effet le", "from") stores only its start, and one that names only its end ("endet am 30. Juni 2027",
   "until") only its end. Only words in the date's own sentence count. So "contracts ending in 2026" finds every contract
   that states its end, and the date it was signed is never its start. A contract that states its start and its end on
-  lines of their own ("Vertragsbeginn 1. April 2025", "Vertragsende 31. März 2028") keeps both, when every date the
-  model names is in the document; a word the model adds to a date is not read, only the date's own line. Every other
-  type's period stays whole, whatever words stand near it.
+  lines of their own ("Vertragsbeginn 1. April 2025", "Vertragsende 31. März 2028") keeps both, when every date the model
+  names is in the document; a word the model adds to a date is not read, only the date's own line. Every other type's
+  period stays whole, whatever words stand near it.
 - **Valid until**, **notice period** and **service levels** are new with these types: the date an offer is valid until;
   the notice period of a contract or SLA, kept as written; and up to five service levels an SLA commits to, copied as
   written ("Verfügbarkeit 99,9 % pro Monat").

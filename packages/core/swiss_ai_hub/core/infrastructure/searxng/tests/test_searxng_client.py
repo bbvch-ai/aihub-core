@@ -10,6 +10,7 @@ import yaml
 from swiss_ai_hub.core.infrastructure.searxng import searxng_client
 from swiss_ai_hub.core.infrastructure.searxng.searxng_client import SearxngClient
 from swiss_ai_hub.core.infrastructure.searxng.searxng_engine import SearxngEngine
+from swiss_ai_hub.core.infrastructure.searxng.searxng_language import SearxngLanguage
 from swiss_ai_hub.core.infrastructure.searxng.searxng_safe_search import SearxngSafeSearch
 from swiss_ai_hub.core.infrastructure.searxng.searxng_settings import SearxngSettings
 
@@ -35,6 +36,9 @@ def requests(monkeypatch: pytest.MonkeyPatch) -> list[httpx.Request]:
         recorded.append(request)
         if request.url.params["q"] == "broken":
             return httpx.Response(500, text="engine error")
+        if request.url.params["q"] == "blocked":
+            unresponsive = [["duckduckgo", "CAPTCHA"], ["brave", "Suspended: too many requests"]]
+            return httpx.Response(200, json={"query": "blocked", "results": [], "unresponsive_engines": unresponsive})
         return httpx.Response(200, json={"query": request.url.params["q"], "results": HITS})
 
     real_client = httpx.AsyncClient
@@ -52,7 +56,7 @@ def _client() -> SearxngClient:
 
 @pytest.mark.asyncio
 async def test_asks_for_json_and_keeps_only_the_hits_linking_to_a_web_page(requests: list[httpx.Request]) -> None:
-    results = await _client().search("swiss ai", max_results=10)
+    results = (await _client().search("swiss ai", max_results=10)).results
 
     assert [result.url for result in results] == ["https://a.example", "https://b.example", "https://c.example"]
     assert results[1].title == ""
@@ -65,21 +69,31 @@ async def test_asks_for_json_and_keeps_only_the_hits_linking_to_a_web_page(reque
 
 @pytest.mark.asyncio
 async def test_narrows_to_the_engines_period_and_count_asked_for(requests: list[httpx.Request]) -> None:
-    results = await _client().search(
+    answer = await _client().search(
         "swiss ai",
         engines=[SearxngEngine.BRAVE, SearxngEngine.WIKIPEDIA],
-        language="de",
+        language=SearxngLanguage.DE,
         safe_search=SearxngSafeSearch.STRICT,
         time_range="week",
         max_results=1,
     )
 
-    assert len(results) == 1
+    assert len(answer.results) == 1
     params = requests[0].url.params
     assert params["engines"] == "brave,wikipedia"
     assert params["language"] == "de"
     assert params["safesearch"] == "2"
     assert params["time_range"] == "week"
+
+
+@pytest.mark.asyncio
+async def test_engines_that_refused_are_named_so_a_blocked_search_is_not_an_empty_one(
+    requests: list[httpx.Request],
+) -> None:
+    answer = await _client().search("blocked")
+
+    assert answer.results == []
+    assert answer.unresponsive_engines == ["duckduckgo: CAPTCHA", "brave: Suspended: too many requests"]
 
 
 @pytest.mark.asyncio

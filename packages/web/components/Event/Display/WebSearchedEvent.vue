@@ -28,6 +28,7 @@ const facts = computed<EventFact[]>(() => [
   { label: t('event.capability.searchQueries'), value: props.event.event.queries ?? [] },
   { label: t('event.capability.sitesFound'), value: results.value.map(result => result.url) },
   { label: t('event.capability.pagesRead'), value: results.value.filter(result => result.read).length },
+  { label: t('event.capability.unresponsiveEngines'), value: props.event.event.unresponsive_engines ?? [] },
   { label: t('event.capability.toolCall'), value: props.event.event.tool_call_id },
 ])
 </script>

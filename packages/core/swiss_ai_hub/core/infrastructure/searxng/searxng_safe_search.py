@@ -4,7 +4,7 @@ from enum import StrEnum
 class SearxngSafeSearch(StrEnum):
     """How strictly SearXNG asks its engines to filter adult content."""
 
-    OFF = "off"
+    NONE = "none"
     MODERATE = "moderate"
     STRICT = "strict"
 

@@ -2,7 +2,8 @@
 steps:
   search_web:
     name: Im Web suchen
-    description: Durchsucht das Web, liest die besten Treffer und gibt sie dem Modell als Kontext
+    description: Durchsucht das Web, liest die besten Treffer und gibt sie dem Modell
+      als Kontext
   search_as_tool:
     name: Im Web suchen als Werkzeug
     description: Führt die Websuche aus, die das Modell gewählt hat
@@ -46,7 +47,8 @@ config:
       was am schnellsten ist.
   engines:
     label: Suchmaschinen
-    help: "Die Suche auf diese Suchmaschinen beschränken. Aus, werden alle Suchmaschinen der Plattformsuche gefragt."
+    help: Die Suche auf diese Suchmaschinen beschränken. Aus, werden alle Suchmaschinen
+      der Plattformsuche gefragt.
   language:
     label: Sprache der Ergebnisse
     help: Die Sprache, in der die Suchmaschinen Ergebnisse liefern sollen.
@@ -64,7 +66,8 @@ config:
   max_page_characters:
     label: Max. Zeichen pro Seite
     help: Längere Seiten werden an einem Absatz gekürzt, bevor das Modell sie liest.
-      Etwa 4 Zeichen ergeben ein Token.
+      Die Seiten einer Suche teilen sich 40'000 Zeichen, mehr gelesene Seiten kürzen
+      also jede. Etwa 4 Zeichen ergeben ein Token.
   languages:
     auto: Jede Sprache
     de: Deutsch
@@ -72,7 +75,7 @@ config:
     fr: Französisch
     it: Italienisch
   safe_search_levels:
-    'off': Aus
+    none: Kein Filter
     moderate: Mittel
     strict: Streng
   time_ranges:

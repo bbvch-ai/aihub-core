@@ -23,10 +23,6 @@ class WebSearchFields(Form):
         ),
     ] = None
 
-    def web_search_reserve(self) -> int:
-        """Tokens a blueprint keeps free for one search's hits; none while searching is off."""
-        return self.web_search.context_reserve() if self.web_search else 0
-
     @classmethod
     def web_search_form_elements(cls) -> dict[str, Any]:
         """The form elements for this class's own fields, for a subclass's `as_form()` to spread."""

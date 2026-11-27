@@ -3,7 +3,9 @@ from urllib.parse import urlparse
 
 import httpx
 
+from swiss_ai_hub.core.infrastructure.searxng.searxng_answer import SearxngAnswer
 from swiss_ai_hub.core.infrastructure.searxng.searxng_engine import SearxngEngine
+from swiss_ai_hub.core.infrastructure.searxng.searxng_language import SearxngLanguage
 from swiss_ai_hub.core.infrastructure.searxng.searxng_result import SearxngResult
 from swiss_ai_hub.core.infrastructure.searxng.searxng_safe_search import SearxngSafeSearch
 from swiss_ai_hub.core.infrastructure.searxng.searxng_settings import SearxngSettings
@@ -19,11 +21,11 @@ class SearxngClient:
         self,
         query: Annotated[str, "What to search for."],
         engines: Annotated[list[SearxngEngine] | None, "Engines to ask; none asks every engine SearXNG runs."] = None,
-        language: Annotated[str, "Result language, a code like `de` or `auto`."] = "auto",
+        language: SearxngLanguage = SearxngLanguage.AUTO,
         safe_search: SearxngSafeSearch = SearxngSafeSearch.MODERATE,
         time_range: Annotated[str | None, "Only results from the last day, week, month or year."] = None,
         max_results: Annotated[int, "How many hits to keep, best first."] = 10,
-    ) -> list[SearxngResult]:
+    ) -> SearxngAnswer:
         params: dict[str, str | int] = {
             "q": query,
             "format": "json",
@@ -37,8 +39,14 @@ class SearxngClient:
         async with httpx.AsyncClient(base_url=self._settings.BASE_URL, timeout=self._settings.TIMEOUT) as http:
             response = await http.get("/search", params=params)
         response.raise_for_status()
-        hits = response.json().get("results", [])
-        return [SearxngResult.from_searxng(hit) for hit in hits if self._links_somewhere(hit.get("url"))][:max_results]
+        answer = response.json()
+        hits = [
+            SearxngResult.from_searxng(hit)
+            for hit in answer.get("results", [])
+            if self._links_somewhere(hit.get("url"))
+        ]
+        unresponsive = [": ".join(str(part) for part in engine) for engine in answer.get("unresponsive_engines", [])]
+        return SearxngAnswer(results=hits[:max_results], unresponsive_engines=unresponsive)
 
     @staticmethod
     def _links_somewhere(url: str | None) -> bool:

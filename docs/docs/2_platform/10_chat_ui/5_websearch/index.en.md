@@ -93,7 +93,8 @@ towards the agent like any other step.
   search keeps, how many of the best are read whole, which search engines are asked, the result language, safe search
   and how recent the results must be. While it is off, the profile shows no "Web Search" button in the chat.
 - **Users switch it on per message.** With the button on, the agent decides for itself whether the question needs a
-  search; with it off, nothing is searched.
+  search; with it off, nothing is searched. Admins who want every search confirmed first set an approval rule for the
+  `search_web` tool in the profile's tool settings.
 - **The chat shows it like Open WebUI's own search.** The queries appear while the agent searches, then "Searched N
   sites" with the sites listed, and every result the answer cites is a numbered, clickable source.
 

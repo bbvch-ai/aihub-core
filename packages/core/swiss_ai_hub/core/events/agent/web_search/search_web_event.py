@@ -23,8 +23,8 @@ class SearchWebEvent(ControlAndDisplayEvent):
     searching: Annotated[
         bool,
         Field(
-            description="Whether the search runs: false while the profile has web search off or the user's Web "
-            "Search toggle is, so a chat client shows no search progress."
+            description="Whether the profile searches the web, so a chat client shows no search progress while it "
+            "does not. The step also checks the user's Web Search toggle and answers empty while it is off."
         ),
     ] = True
     cite_sources: Annotated[

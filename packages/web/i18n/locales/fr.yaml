@@ -341,6 +341,7 @@ event:
     pagesRead: Pages lues
     searchQueries: Requêtes de recherche
     sitesFound: Sites trouvés
+    unresponsiveEngines: Moteurs de recherche sans réponse
     notRead: Non lues
     webFetchFailure:
       malformed_url: Lien mal formé

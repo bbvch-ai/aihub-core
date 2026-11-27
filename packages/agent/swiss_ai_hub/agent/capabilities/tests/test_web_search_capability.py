@@ -25,7 +25,7 @@ from swiss_ai_hub.core.events.agent import (
     WebSearchedEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import SearxngEngine, SearxngResult
+from swiss_ai_hub.core.infrastructure import SearxngAnswer, SearxngEngine, SearxngResult
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
@@ -34,13 +34,18 @@ from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
 from swiss_ai_hub.agent.capabilities.web_fetch.fetched_web_page import FetchedWebPage
 from swiss_ai_hub.agent.capabilities.web_search.web_search import SEARCH_WEB_TOOL, WebSearch
-from swiss_ai_hub.agent.capabilities.web_search.web_search_config import WebSearchConfig
+from swiss_ai_hub.agent.capabilities.web_search.web_search_config import (
+    MAX_PAGE_CHARACTERS,
+    PAGES_CHARACTER_BUDGET,
+    WebSearchConfig,
+)
 from swiss_ai_hub.agent.capabilities.web_search.web_search_fields import WebSearchFields
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 T = AgentLocaleHandler("en")
 MODULE = "swiss_ai_hub.agent.capabilities.web_search.web_search"
+NATS_PAYLOAD_LIMIT = 1_048_576
 ON = WebSearchFields(web_search=WebSearchConfig(max_results=3, read_top_results=1))
 
 
@@ -59,8 +64,14 @@ async def _search(
     fields: WebSearchFields = ON,
     toggled_on: bool = True,
     cite_sources: bool = True,
+    unresponsive_engines: list[str] | None = None,
 ) -> tuple[WebSearchedEvent, AsyncMock, AsyncMock]:
-    search = AsyncMock(side_effect=lambda query, **_: hits_per_query.get(query, []))
+    unresponsive_engines = unresponsive_engines or []
+    search = AsyncMock(
+        side_effect=lambda query, **_: SearxngAnswer(
+            results=hits_per_query.get(query, []), unresponsive_engines=unresponsive_engines
+        )
+    )
     fetch_all = AsyncMock(return_value=read or [])
     with (
         patch(f"{MODULE}.SearxngClient") as client,
@@ -80,6 +91,10 @@ def _text(event: WebSearchedEvent) -> str:
 def test_the_request_says_whether_the_profile_searches():
     assert WebSearch.search(["news"], ON).searching
     assert not WebSearch.search(["news"], WebSearchFields()).searching
+
+
+def test_a_few_pages_keep_the_length_the_profile_allows():
+    assert WebSearchConfig(max_page_characters=10_000).page_characters(3) == 10_000
 
 
 @pytest.mark.asyncio
@@ -149,6 +164,38 @@ class TestSearch:
         assert event.grounding_nodes == []
         assert "found nothing" in _text(event)
         assert "- nothing" in _text(event)
+
+    async def test_engines_that_refused_are_named_on_the_result(self):
+        """A search every engine refused (a CAPTCHA, a rate limit) must not read as one that matched nothing."""
+        event, _, _ = await _search(
+            ["one", "two"], {}, unresponsive_engines=["duckduckgo: CAPTCHA", "brave: too many requests"]
+        )
+
+        assert event.results == []
+        assert event.unresponsive_engines == ["duckduckgo: CAPTCHA", "brave: too many requests"]
+
+    @pytest.mark.parametrize("character", ["a", "ä", "😀"])
+    async def test_the_largest_search_a_profile_allows_stays_within_the_brokers_payload_limit(self, character: str):
+        """NATS refuses an event over 1 MB; the result carries every page read whole twice (block and sources), and
+        events escape non-ASCII text, so the pages of one search share a character budget."""
+        limits = WebSearchConfig(max_results=20, read_top_results=10, max_page_characters=MAX_PAGE_CHARACTERS)
+        names = [f"site{i}" for i in range(20)]
+        per_page = limits.page_characters(10)
+        pages = [
+            FetchedWebPage(url=f"https://{name}.example", title=name, markdown=character * per_page)
+            for name in names[:10]
+        ]
+
+        event, _, fetch_all = await _search(
+            ["a", "b", "c"],
+            {"a": [_hit(name) for name in names]},
+            read=pages,
+            fields=WebSearchFields(web_search=limits),
+        )
+
+        assert fetch_all.await_args.args[2] == PAGES_CHARACTER_BUDGET // 10
+        assert len(event.grounding_nodes) == 20
+        assert len(event.model_dump_json().encode()) < NATS_PAYLOAD_LIMIT
 
     async def test_without_citations_the_hits_are_named_instead(self):
         event, _, _ = await _search(["news"], {"news": [_hit("a")]}, cite_sources=False)

@@ -17572,7 +17572,7 @@ export type SearchWebEvent = {
   /**
    * Searching
    *
-   * Whether the search runs: false while the profile has web search off or the user's Web Search toggle is, so a chat client shows no search progress.
+   * Whether the profile searches the web, so a chat client shows no search progress while it does not. The step also checks the user's Web Search toggle and answers empty while it is off.
    */
   searching?: boolean;
   /**
@@ -22245,6 +22245,12 @@ export type WebSearchedEvent = {
    * Hits whose page could not be read, so only their snippet was used.
    */
   failures?: Array<WebFetchFailure>;
+  /**
+   * Unresponsive Engines
+   *
+   * Search engines that did not answer, with SearXNG's reason (a CAPTCHA, a rate limit), so a search every engine refused does not read as one that matched nothing.
+   */
+  unresponsive_engines?: Array<string>;
   /**
    * Tool Call Id
    *
@@ -32354,7 +32360,7 @@ export type SearchWebEventWritable = {
   /**
    * Searching
    *
-   * Whether the search runs: false while the profile has web search off or the user's Web Search toggle is, so a chat client shows no search progress.
+   * Whether the profile searches the web, so a chat client shows no search progress while it does not. The step also checks the user's Web Search toggle and answers empty while it is off.
    */
   searching?: boolean;
   /**
@@ -35299,6 +35305,12 @@ export type WebSearchedEventWritable = {
    * Hits whose page could not be read, so only their snippet was used.
    */
   failures?: Array<WebFetchFailure>;
+  /**
+   * Unresponsive Engines
+   *
+   * Search engines that did not answer, with SearXNG's reason (a CAPTCHA, a rate limit), so a search every engine refused does not read as one that matched nothing.
+   */
+  unresponsive_engines?: Array<string>;
   /**
    * Tool Call Id
    *

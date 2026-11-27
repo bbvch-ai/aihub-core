@@ -47,9 +47,20 @@ whole through `WebPageFetcher`, the Playwright path web fetch uses (ADR
 `browser-proxy`. The other hits, and a page that cannot be read, reach the model as the engine's snippet, marked as one.
 Each hit is one node whose id comes from its URL, as a fetched page's does, so it is cited like retrieved knowledge.
 
+Hits whose link has no host are dropped: an engine whose page layout changed returns links SearXNG cannot resolve
+(Brave's `http:///go/v1/…` redirects in the pinned image), which can be neither read nor opened. SearXNG answers 200
+with no hits when every engine refused (a CAPTCHA, a rate limit), so `WebSearchedEvent.unresponsive_engines` names the
+engines that did not answer, in the trace metadata and in our UI, and a blocked search does not pass for an empty one.
+
+The result event carries every page read whole twice (its block and its sources), and events escape non-ASCII text (6
+bytes a character, 12 for an emoji), while NATS refuses an event over 1 MB. So the pages one search reads share a budget
+of 40,000 characters: each keeps at most the profile's `max_page_characters` (at most 20,000) or its share of the
+budget, whichever is smaller.
+
 A profile's `web_search` section is nullable (ADR `2026_05_07_nullable_form_fields_over_enabled_toggle`), `null` for
 stored and new profiles. It sets the result count, how many are read whole, the engines (any of those `settings.yml`
-runs; none means all), language, safe search, time range and the page limits.
+runs; none means all), language and safe search (both enums, so a direct API save cannot store anything the form does
+not offer), time range and the page limits.
 
 ### Toggles that follow the profile
 
@@ -68,7 +79,9 @@ number as for knowledge. Any agent emitting the events gets this without a pipe 
 ## Consequences
 
 - **Queries leave the platform.** The engines see the queries the model wrote, without the user's identity. The toggle
-  is the user's consent per message; no PII filtering applies to queries.
+  is the user's consent per message; no PII filtering applies to queries. An instruction hidden in a file or page could
+  steer what is searched for; the recipients are the engines SearXNG asks, not a host the instruction names (unlike a
+  fetched URL), and a cautious tenant can require approval for `search_web` in the profile's tool-loop approval rules.
 - **Favicons.** Open WebUI's result list loads each site's favicon from Google's favicon service in the user's browser,
   as it does for Open WebUI's own search.
 - **Turn length.** A search waits for SearXNG's slowest engine and for the pages read whole; `read_top_results: 0`
