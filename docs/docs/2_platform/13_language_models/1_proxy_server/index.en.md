@@ -83,6 +83,34 @@ selectable, but is left out of every picker that requires a capability it does n
 LiteLLM passes a request's `reasoning_effort` on to every model it does not know, whatever `supports_reasoning` says. If
 a provider rejects it, list it in the model's `additional_drop_params`, as the configuration does for Ministral.
 
+### Notes on the stoney-cloud models
+
+GLM 5.3 Flash and DeepSeek V4.1 Flash are served by stoney-cloud on both provider variants. A deployment without
+`STONEY_CLOUD_API_BASE_URL` and `STONEY_CLOUD_API_KEY` still lists them, and every call to them fails. Both have a
+524288-token window for input and output together (458752 + 65536 in the configuration), call tools and return
+structured output. Their prices are in [Cost control](../../14_cost_control/). Measured on 2026-11-27:
+
+**GLM 5.3 Flash**
+
+- **It always thinks.** Its chat template has no switch to turn thinking off and reads only `low` and `high` from
+  `reasoning_effort`; without a value, or with any other, it thinks at maximum effort.
+- **Short helper steps are slower.** The steps that switch thinking off to get a short answer (guards, question
+  condensing, meta-question and mail language detection, titles, follow-ups, routing) think anyway. A one-label
+  classification took 3.4 to 3.9 s, against 0.8 to 0.9 s on Gemma 4 31B and DeepSeek V4.1 Flash, and a structured answer
+  5.4 s against 1.4 s. The answers stay correct; the thinking is billed as output. When an agent uses GLM as its main
+  model, pick another model as its task model where the profile offers one.
+- **`reasoning_effort: none` puts the thinking into the answer.** OpenWebUI users can set it in a chat's advanced
+  parameters, and API clients can send it. Use `low` to shorten the thinking instead. For the same reason the
+  configuration drops `chat_template_kwargs` for this model.
+
+**DeepSeek V4.1 Flash**
+
+- **No images.** stoney serves it without image input ("At most 0 image(s) may be provided in one prompt"), although the
+  model itself reads images. Pickers that require vision do not offer it.
+- **Thinking can be switched off**, and the answer stays clean, so the helper steps above run as fast as on Gemma.
+- **stoney caps `max_tokens` instead of refusing** a request that exceeds the window. The configured split keeps room
+  for the answer.
+
 ### Embedding and reranking models
 
 The platform sizes every input to an embedding or reranking model before sending it: document chunks at ingestion,
