@@ -88,6 +88,38 @@ LiteLLM gibt das `reasoning_effort` einer Anfrage an jedes Modell weiter, das es
 `supports_reasoning`. Lehnt ein Anbieter es ab, tragen Sie es in die `additional_drop_params` des Modells ein, wie es
 die Konfiguration für Ministral tut.
 
+### Hinweise zu den Modellen von stoney-cloud
+
+GLM 5.3 Flash und DeepSeek V4.1 Flash werden von stoney-cloud bereitgestellt. Nur Deployments mit
+`LITELLM_CONFIG_VARIANT` gleich `stoney` oder `infomaniak-stoney` listen sie auf, und diese brauchen
+`STONEY_CLOUD_API_BASE_URL` und `STONEY_CLOUD_API_KEY`; `infomaniak-stoney` belässt alle anderen Modelle bei Infomaniak.
+Das voreingestellte `infomaniak` listet sie nicht auf. Beide haben ein Fenster von 524288 Tokens für Ein- und Ausgabe
+zusammen (458752 + 65536 in der Konfiguration), rufen Tools auf und liefern strukturierte Ausgaben. Ihre Preise stehen
+unter [Kostenkontrolle](../../14_cost_control/). Gemessen am 2026-11-27:
+
+**GLM 5.3 Flash**
+
+- **Es denkt immer.** Sein Chat-Template hat keinen Schalter, um das Denken abzuschalten, und liest von
+  `reasoning_effort` nur `low` und `high`; ohne Wert oder mit jedem anderen denkt es mit maximalem Aufwand.
+- **Kurze Hilfsschritte sind langsamer.** Die Schritte, die das Denken für eine kurze Antwort abschalten (Guards,
+  Umformulieren der Frage, Erkennung von Meta-Fragen und der Mail-Sprache, Titel, Folgefragen, Routing), denken
+  trotzdem. Eine Klassifikation mit einem Label dauerte 3.4 bis 3.9 s, gegenüber 0.8 bis 0.9 s mit Gemma 4 31B und
+  DeepSeek V4.1 Flash, eine strukturierte Antwort 5.4 s gegenüber 1.4 s. Die Antworten bleiben korrekt; das Denken wird
+  als Ausgabe verrechnet. Nutzt ein Agent GLM als Hauptmodell, wählen Sie als Task-Modell ein anderes Modell, wo das
+  Profil eines anbietet.
+- **`reasoning_effort: none` schreibt das Denken in die Antwort.** Benutzer von OpenWebUI können es in den erweiterten
+  Parametern eines Chats setzen, und API-Clients können es senden. Verwenden Sie stattdessen `low`, um das Denken zu
+  verkürzen. Aus demselben Grund entfernt die Konfiguration `chat_template_kwargs` für dieses Modell.
+
+**DeepSeek V4.1 Flash**
+
+- **Keine Bilder.** stoney stellt es ohne Bildeingabe bereit ("At most 0 image(s) may be provided in one prompt"),
+  obwohl das Modell selbst Bilder liest. Auswahlfelder, die Vision verlangen, bieten es nicht an.
+- **Das Denken lässt sich abschalten**, und die Antwort bleibt sauber, sodass die Hilfsschritte oben so schnell laufen
+  wie mit Gemma.
+- **stoney kürzt `max_tokens`, statt eine Anfrage abzulehnen**, die das Fenster überschreitet. Die konfigurierte
+  Aufteilung lässt Platz für die Antwort.
+
 ### Embedding- und Reranking-Modelle
 
 Die Plattform bemisst jede Eingabe an ein Embedding- oder Reranking-Modell, bevor sie sie sendet: Dokument-Chunks bei

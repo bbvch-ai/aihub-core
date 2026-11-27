@@ -123,6 +123,8 @@ Am 2026-11-17 mit den Preislisten der Provider abgeglichen. Preise pro Million T
 | ----------------------------------------------- | ---------------- | ------------------ | ------- | ---------------------------------------------------------------------------------- |
 | `text-generation/gemma-4-31B-it`                | Infomaniak       | 0.20               | 0.40    | Preisseite von Infomaniak; stimmt überein                                          |
 | `text-generation/gemma-4-31B-it` (stoney)       | stoney           | 0.25               | 1.00    | Aus dem Nutzungsbericht von stoney ermittelt, der keine öffentliche Preisliste hat |
+| `text-generation/GLM-5.3-Flash`                 | stoney           | 0.30               | 1.50    | Am 2026-11-27 aus dem Nutzungsbericht von stoney ermittelt                         |
+| `text-generation/DeepSeek-V4.1-Flash`           | stoney           | 0.47               | 1.95    | Am 2026-11-27 aus dem Nutzungsbericht von stoney ermittelt                         |
 | `text-generation/Ministral-3-14B-Instruct-2512` | Infomaniak       | 0.30               | 0.40    | Preisseite von Infomaniak; stimmt überein                                          |
 | `text-generation/Kimi-K2.6`                     | Infomaniak       | 0.60               | 3.00    | Preisseite von Infomaniak; stimmt überein                                          |
 | `text-generation/Apertus-70B-Instruct-2509`     | Infomaniak       | 0.70               | 2.50    | Die Preisseite führt nur Apertus-v1.5-70B, zu diesem Preis                         |

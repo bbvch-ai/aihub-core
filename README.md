@@ -424,6 +424,7 @@ configuration.
 | Task                   | Model                                                                                                                           | Served by       |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------- |
 | Chat & text generation | [Apertus 70B](https://huggingface.co/swiss-ai/Apertus-70B-Instruct-2509), Gemma 4 31B, Kimi K2.6, Ministral 3 14B, Qwen3.5 122B | Swiss LLM Cloud |
+| Chat & text generation | GLM 5.3 Flash, DeepSeek V4.1 Flash (opt-in: `LITELLM_CONFIG_VARIANT=infomaniak-stoney` and `STONEY_CLOUD_API_*`)                | stoney-cloud    |
 | Text embeddings        | [BGE-M3](https://huggingface.co/BAAI/bge-m3)                                                                                    | Swiss LLM Cloud |
 | Reranking              | [BGE-Reranker-v2-M3](https://huggingface.co/BAAI/bge-reranker-v2-m3)                                                            | Swiss LLM Cloud |
 | Document parsing (OCR) | [MinerU 2.5 1.2B](https://huggingface.co/opendatalab/MinerU2.5-2509-1.2B)                                                       | Swiss LLM Cloud |

@@ -1366,6 +1366,7 @@ services:
       # LITELLM_CONFIG_VARIANT picks one mounted variant; an unknown value makes LiteLLM fail to start.
       - ./configs/litellm/litellm-config.infomaniak.dev.yml:/app/config.infomaniak.yml:z
       - ./configs/litellm/litellm-config.stoney.dev.yml:/app/config.stoney.yml:z
+      - ./configs/litellm/litellm-config.infomaniak-stoney.dev.yml:/app/config.infomaniak-stoney.yml:z
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro,z
       - ./configs/litellm/tenant_attribution.py:/app/tenant_attribution.py:ro,z
       - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro,z
