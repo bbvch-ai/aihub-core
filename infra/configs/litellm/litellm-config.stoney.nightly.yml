@@ -160,6 +160,67 @@ model_list:
       input_cost_per_token: 0.0000004
       output_cost_per_token: 0.0000032
 
+  # Served by stoney-cloud on both variants: they are not Infomaniak alternatives to swap with LITELLM_CONFIG_VARIANT.
+  # A deployment without stoney credentials still lists them, and every call to them fails.
+  - model_name: text-generation/GLM-5.3-Flash
+    litellm_params:
+      model: openai/zai-org/GLM-5.3-Flash
+      api_base: os.environ/STONEY_CLOUD_API_BASE_URL
+      api_key: os.environ/STONEY_CLOUD_API_KEY
+      drop_params: true
+    model_info:
+      aihub_display_name: GLM 5.3 Flash
+      aihub_hosting_location: swiss_cloud
+      aihub_general_purpose: true
+      mode: chat
+      # stoney's max_model_len 524288 is input + output combined (its 400 names max_total_tokens), so these two must
+      # sum to it. 65536 output as for Kimi: thinking by default needs room for the reasoning before the answer.
+      max_input_tokens: 458752
+      max_output_tokens: 65536
+      supports_function_calling: true
+      supports_response_schema: true
+      # Probed 2026-11-27: images are read (colours named correctly).
+      supports_vision: true
+      # Probed 2026-11-27: thinks by default; reasoning_effort none and chat_template_kwargs.enable_thinking false
+      # turn it off, and no reasoning_effort value is rejected.
+      supports_reasoning: true
+      # No max_images: none was hit up to 128 images per request; the input window bounds it instead.
+      # Sampling defaults from the model's generation_config.json.
+      default_temperature: 1.0
+      default_top_p: 0.95
+      # CHF 0.30 / 1.50 per MTok, measured 2026-11-27 via stoney's GET /v1/usage (no published rate card).
+      input_cost_per_token: 0.0000003
+      output_cost_per_token: 0.0000015
+  - model_name: text-generation/DeepSeek-V4.1-Flash
+    litellm_params:
+      model: openai/deepseek-ai/DeepSeek-V4.1-Flash-1017
+      api_base: os.environ/STONEY_CLOUD_API_BASE_URL
+      api_key: os.environ/STONEY_CLOUD_API_KEY
+      drop_params: true
+    model_info:
+      aihub_display_name: DeepSeek V4.1 Flash
+      aihub_hosting_location: swiss_cloud
+      aihub_general_purpose: true
+      mode: chat
+      # stoney's max_model_len 524288 is input + output combined, so these two must sum to it.
+      max_input_tokens: 458752
+      max_output_tokens: 65536
+      supports_function_calling: true
+      supports_response_schema: true
+      # Probed 2026-11-27: stoney's 400 says "At most 0 image(s) may be provided in one prompt", although the model
+      # card describes an image-text-to-text model.
+      supports_vision: false
+      # Probed 2026-11-27: thinks by default; reasoning_effort none and chat_template_kwargs.thinking false turn it
+      # off, and no reasoning_effort value is rejected.
+      supports_reasoning: true
+      # Sampling defaults recommended on the model card, which ships no generation_config.json.
+      default_temperature: 1.0
+      default_top_p: 1.0
+      # CHF 0.47 / 1.95 per MTok, measured 2026-11-27 via stoney's GET /v1/usage (no published rate card yet); cache
+      # writes cost the same as plain input.
+      input_cost_per_token: 0.00000047
+      output_cost_per_token: 0.00000195
+
   # ===================================================================
   # OCR Model
   # ===================================================================

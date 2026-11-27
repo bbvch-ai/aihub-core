@@ -119,6 +119,8 @@ Checked against the providers' price lists on 2026-11-17. Prices per million tok
 | ----------------------------------------------- | ---------- | ------------------ | ------ | ------------------------------------------------------------------- |
 | `text-generation/gemma-4-31B-it`                | Infomaniak | 0.20               | 0.40   | Infomaniak price page; matches                                      |
 | `text-generation/gemma-4-31B-it` (stoney)       | stoney     | 0.25               | 1.00   | measured from stoney's usage report, which has no public price list |
+| `text-generation/GLM-5.3-Flash`                 | stoney     | 0.30               | 1.50   | measured from stoney's usage report on 2026-11-27                   |
+| `text-generation/DeepSeek-V4.1-Flash`           | stoney     | 0.47               | 1.95   | measured from stoney's usage report on 2026-11-27                   |
 | `text-generation/Ministral-3-14B-Instruct-2512` | Infomaniak | 0.30               | 0.40   | Infomaniak price page; matches                                      |
 | `text-generation/Kimi-K2.6`                     | Infomaniak | 0.60               | 3.00   | Infomaniak price page; matches                                      |
 | `text-generation/Apertus-70B-Instruct-2509`     | Infomaniak | 0.70               | 2.50   | the price page lists only Apertus-v1.5-70B, at this price           |
