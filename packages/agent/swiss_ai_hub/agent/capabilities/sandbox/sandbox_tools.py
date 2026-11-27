@@ -59,16 +59,17 @@ class SandboxTools(BaseToolSpec):
     ) -> str:
         """Run a shell command in the user's code sandbox, in this conversation's folder.
 
-        The folder holds the files attached to the conversation, unchanged, and keeps every file you write between
-        calls. Python 3 has pandas, numpy, openpyxl, xlsxwriter, matplotlib, python-docx, python-pptx, pypdf and
-        pdfplumber; nothing else can be installed (no internet).
-        - Use it to compute, convert or create files, and for attached spreadsheets, presentations and CSV files,
-          which code reads natively. Read PDF and Word files with the tool for attached files, but a PDF table you
-          need every row of with pdfplumber.
-        - Print what the next step needs, such as counts, totals or the first rows, not whole tables: long output is
-          cut.
-        - The result says whether the command succeeded and which files it created or changed. A command that
-          succeeded has done its work: do not run it again unless you changed it or need its effect again.
+        The folder holds the attached files, unchanged, and keeps every file you write between calls. Python 3 has
+        pandas, numpy, openpyxl, xlsxwriter, matplotlib, python-docx, python-pptx, pypdf and pdfplumber; nothing
+        else can be installed (no internet).
+        - Use it to compute, convert or create files, and for attached spreadsheets, presentations and CSV files.
+          Read PDF and Word files with the tool for attached files, but a PDF table you need every row of with
+          pdfplumber.
+        - Print counts, totals or the first rows, not whole tables: long output is cut. A parser prints how many
+          lines it skipped.
+        - Run a multi-statement script from write_file, not `python3 -c`: a `with` or `for` block cannot follow a `;`.
+        - The result says whether it succeeded and which files it changed. Do not rerun a command that succeeded
+          unless you changed it or need its effect again.
         - A file you made for the user only reaches them through display_file."""
         workspace = await self._workspace()
         before = await self._files(workspace)
